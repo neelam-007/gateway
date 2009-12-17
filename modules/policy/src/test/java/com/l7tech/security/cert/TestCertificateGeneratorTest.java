@@ -155,6 +155,21 @@ public class TestCertificateGeneratorTest {
     }
 
     @Test
+    public void testGenerateDsaCert() throws Exception {
+        Pair<X509Certificate, PrivateKey> got =
+                new TestCertificateGenerator().
+                        dsaKeySize(1024).
+                        subject("cn=test_dsa_1024_sha1").
+                        generateWithKey();
+
+        System.out.println("Cert: " + got.left + "\n" + CertUtils.encodeAsPEM(got.left));
+
+        assertEquals("PKCS#8", got.right.getFormat());
+        System.out.println("Private key: " + HexUtils.encodeBase64(got.right.getEncoded()));
+        System.out.println("Keystore PKCS#12 (alias 'entry', passphrase 'password'): \n" + TestCertificateGenerator.convertToBase64Pkcs12(got.left, got.right));
+    }
+
+    @Test
     public void testSha256WithRSAEncryption() throws Exception {
         String OID = "1.2.840.113549.1.1.11";  // sha256WithRSAEncryption
 

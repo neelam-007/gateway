@@ -186,6 +186,67 @@ public class WssRoundTripTest {
     }
 
     @Test
+    public void testSigningOnly_dsa_sha1() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_dsa_sha1",
+                                               wssDecoratorTest.getSigningOnly_dsa_sha1_TestDocument()));
+    }
+
+    @Ignore("Fails because we currently do not support sha256 with DSA and fall back to sha1 instead (which signs and verifies ok, but fails the post-check for SHA-256)")
+    @Test
+    public void testSigningOnly_dsa_sha256() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_dsa_sha256",
+                                               wssDecoratorTest.getSigningOnly_dsa_sha256_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_rsa_sha1() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_rsa_sha1",
+                                               wssDecoratorTest.getSigningOnly_rsa_sha1_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_rsa_sha256() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_rsa_sha256",
+                                               wssDecoratorTest.getSigningOnly_rsa_sha256_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_rsa_sha384() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_rsa_sha384",
+                                               wssDecoratorTest.getSigningOnly_rsa_sha384_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_rsa_sha512() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_rsa_sha512",
+                                               wssDecoratorTest.getSigningOnly_rsa_sha512_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_ec_sha1() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_ec_sha1",
+                                               wssDecoratorTest.getSigningOnly_ec_sha1_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_ec_sha256() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_ec_sha256",
+                                               wssDecoratorTest.getSigningOnly_ec_sha256_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_ec_sha384() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_ec_sha384",
+                                               wssDecoratorTest.getSigningOnly_ec_sha384_TestDocument()));
+    }
+
+    @Test
+    public void testSigningOnly_ec_sha512() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_ec_sha512",
+                                               wssDecoratorTest.getSigningOnly_ec_sha512_TestDocument()));
+    }
+
+    @Test
     public void testSigningOnlyWithProtectTokens() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithProtectTokens",
                                                wssDecoratorTest.getSigningOnlyWithProtectTokensTestDocument()));
@@ -566,6 +627,18 @@ public class WssRoundTripTest {
                 final boolean signingTokenElWasSigned = signedDomElements.contains(signingTokenEl);
                 assertTrue("ProtectTokens implies that all signing tokens were signed", signingTokenElWasSigned);
             }
+        }
+
+        // Ensure signature method and hash algorithm are those requested
+        if (!td.req.getElementsToSign().isEmpty() && td.req.getSenderMessageSigningPrivateKey() != null && td.req.getSignatureMessageDigest() != null) {
+            SupportedSignatureMethods sigmeth = SupportedSignatureMethods.fromKeyAndMessageDigest(td.req.getSenderMessageSigningPrivateKey().getAlgorithm(), td.req.getSignatureMessageDigest());
+            String signatureUri = sigmeth.getAlgorithmIdentifier();
+            String digestUri = sigmeth.getMessageDigestIdentifier();
+
+            // We'll just do an extremely crude sanity check to rule out obvious failure modes (ignoring configured digest/falling back to SHA-1/not signing at all/etc)
+            String decoratedMessageString = new String(decoratedMessage);
+            assertTrue(decoratedMessageString.contains(signatureUri));
+            assertTrue(decoratedMessageString.contains(digestUri));
         }
 
         // Check Security header actor and mustUnderstand

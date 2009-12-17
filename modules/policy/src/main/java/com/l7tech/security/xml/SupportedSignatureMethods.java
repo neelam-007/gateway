@@ -1,6 +1,6 @@
 package com.l7tech.security.xml;
 
-import java.util.EnumSet;
+import java.util.*;
 
 /**
  * All supported crypto algorithms used in the gateway for XML/message based security.  Along with each algorithm
@@ -19,6 +19,10 @@ public enum SupportedSignatureMethods {
     HMAC_SHA1("SecretKey", "SHA-1", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
+    /** RSA with SHA-384 extension*/
+    RSA_SHA384("RSA", "SHA-384", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#sha384"),
+    /** RSA with SHA-512 extension*/
+    RSA_SHA512("RSA", "SHA-512", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", "http://www.w3.org/2001/04/xmlenc#sha512"),
     /** ECDSA with SHA-1 (Suite-B crypto support) */
     ECDSA_SHA1("EC", "SHA-1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
     /** ECDSA with SHA-256 (Suite-B crypto support) */
@@ -29,6 +33,20 @@ public enum SupportedSignatureMethods {
     /** ECDSA with SHA-512 (Suite-B crypto support) */
     ECDSA_SHA512("EC", "SHA-512", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512", "http://www.w3.org/2001/04/xmlenc#sha512")
     ;
+
+    private static final Map<String, List<String>> digestAliases = new HashMap<String, List<String>>() {{
+        put("SHA", Arrays.asList("SHA-1", "SHA1", "SHA"));
+        put("SHA1", Arrays.asList("SHA-1", "SHA1", "SHA"));
+        put("SHA-1", Arrays.asList("SHA-1", "SHA1", "SHA"));
+        put("SHA224", Arrays.asList("SHA-224", "SHA224"));
+        put("SHA-224", Arrays.asList("SHA-224", "SHA224"));
+        put("SHA256", Arrays.asList("SHA-256", "SHA256"));
+        put("SHA-256", Arrays.asList("SHA-256", "SHA256"));
+        put("SHA384", Arrays.asList("SHA-384", "SHA384"));
+        put("SHA-384", Arrays.asList("SHA-384", "SHA384"));
+        put("SHA512", Arrays.asList("SHA-512", "SHA512"));
+        put("SHA-512", Arrays.asList("SHA-512", "SHA512"));
+    }};
 
     /** The key algorithm name, ie "RSA" or "EC", for public or private keys, or "SecretKey" for secret keys. */
     private String keyAlg;
@@ -126,6 +144,23 @@ public enum SupportedSignatureMethods {
     }
 
     /**
+     * Returns a SupportedSignatureMethod that matches the specified key algorithm name.  This will use the smallest
+     * supported hash size; this is less secure but means we won't later try to use (for example) an SHA-512 signature method
+     * with a puny 768 bit RSA key or 256 bit EC key.
+     *
+     * @param keyAlgorithm  the key algorithm, ie "EC", "RSA", or "DSA" for a public or private key; or "SecretKey" for a SecretKey.  Required.
+     * @return a matching SupportedSignatureMethod, or null if there is no match.
+     */
+    public static SupportedSignatureMethods fromKeyAlg(String keyAlgorithm) {
+        if (keyAlgorithm == null) throw new IllegalArgumentException("keyAlgorithm is required");
+        for (SupportedSignatureMethods m : SupportedSignatureMethods.values()) {
+            if (m.keyAlg != null && m.keyAlg.equalsIgnoreCase(keyAlgorithm) && m.digestAlg != null)
+                return m;
+        }
+        return null;
+    }
+
+    /**
      * Returns the SupportedSignatureMethod that matches the algorithm argument value.
      *
      * @param algorithm
@@ -153,5 +188,15 @@ public enum SupportedSignatureMethods {
                 ECDSA_SHA256,
                 ECDSA_SHA384,
                 ECDSA_SHA512);
+    }
+
+    /**
+     * Get a collection of known aliases for the specified JCE digest algorithm name.
+     *
+     * @param digest a digest algorithm name, ie "SHA-1".  Required.
+     * @return  a collection of recognized aliases for the specified digest, ie { "SHA-1", "SHA1", "SHA" }, or null.
+     */
+    public static List<String> getDigestAliases(String digest) {
+        return digestAliases.get(digest.toUpperCase());
     }
 }

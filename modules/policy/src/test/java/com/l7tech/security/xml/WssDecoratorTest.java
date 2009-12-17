@@ -4,6 +4,7 @@
 package com.l7tech.security.xml;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
@@ -277,6 +278,147 @@ public class WssDecoratorTest {
     @Test
 	public void testSigningOnly() throws Exception {
         runTest(getSigningOnlyTestDocument());
+    }
+
+    @Test
+	public void testSigningOnly_dsa_sha1() throws Exception {
+        runTest(getSigningOnly_dsa_sha1_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_dsa_sha1_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("DSA_1024");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-1");
+        return td;
+    }
+
+    @Ignore("This actually passes, but is misleading, since we currently just ignore the SHA-256 for DSA and just use SHA-1")
+    @Test
+	public void testSigningOnly_dsa_sha256() throws Exception {
+        runTest(getSigningOnly_dsa_sha256_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_dsa_sha256_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("DSA_1024");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-256");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_rsa_sha1() throws Exception {
+        runTest(getSigningOnly_rsa_sha1_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_rsa_sha1_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_512");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-1");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_rsa_sha256() throws Exception {
+        runTest(getSigningOnly_rsa_sha256_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_rsa_sha256_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_512");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-256");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_rsa_sha384() throws Exception {
+        runTest(getSigningOnly_rsa_sha384_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_rsa_sha384_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_768");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-384");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_rsa_sha512() throws Exception {
+        runTest(getSigningOnly_rsa_sha512_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_rsa_sha512_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-512");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_ec_sha1() throws Exception {
+        runTest(getSigningOnly_ec_sha1_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_ec_sha1_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("EC_secp256r1");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-1");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_ec_sha256() throws Exception {
+        runTest(getSigningOnly_ec_sha256_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_ec_sha256_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("EC_secp256r1");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-256");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_ec_sha384() throws Exception {
+        runTest(getSigningOnly_ec_sha384_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_ec_sha384_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("EC_secp384r1");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-384");
+        return td;
+    }
+
+    @Test
+	public void testSigningOnly_ec_sha512() throws Exception {
+        runTest(getSigningOnly_ec_sha512_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_ec_sha512_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("EC_secp521r1");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-512");
+        return td;
     }
 
     @Test

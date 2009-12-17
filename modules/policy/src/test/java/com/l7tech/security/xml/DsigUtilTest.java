@@ -162,9 +162,9 @@ public class DsigUtilTest {
                 String wantKeyAlg = key instanceof SecretKey ? "SecretKey" : key.getAlgorithm();
 
                 try {
-                    SupportedSignatureMethods method = DsigUtil.getSignatureMethodForSignerPrivateKey(key, hash);
-                    assertEquals(method.getKeyAlgorithmName(), wantKeyAlg);
-                    assertEquals(method.getDigestAlgorithmName(), hash);
+                    SupportedSignatureMethods method = DsigUtil.getSignatureMethodForSignerPrivateKey(key, hash, false);
+                    assertEquals("key alg for " + method + " should be " + wantKeyAlg, method.getKeyAlgorithmName(), wantKeyAlg);
+                    assertEquals("hash alg for " + method + " should be " + hash, method.getDigestAlgorithmName(), hash);
 
                 } catch (SignatureException e) {
                     if (null != SupportedSignatureMethods.fromKeyAndMessageDigest(wantKeyAlg, hash)) 

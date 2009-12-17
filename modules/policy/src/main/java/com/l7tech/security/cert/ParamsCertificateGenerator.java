@@ -17,9 +17,7 @@ import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.interfaces.ECKey;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -213,10 +211,24 @@ public class ParamsCertificateGenerator {
      * @return the signature algorithm name, ie "SHA384withECDSA".
      */
     public static String getSigAlg(PublicKey publicKey, Provider signatureProvider) {
-        boolean usingEcc = (publicKey instanceof ECKey) || "EC".equalsIgnoreCase(publicKey.getAlgorithm());
+        String strongSigAlg;
+        String weakSigAlg;
 
-        String strongSigAlg = usingEcc ? "SHA384withECDSA" : "SHA384withRSA";
-        String weakSigAlg = usingEcc ? "SHA1withECDSA" : "SHA1withRSA";
+        final String keyAlg = publicKey.getAlgorithm();
+        if (publicKey instanceof ECKey || "EC".equalsIgnoreCase(keyAlg))  {
+            strongSigAlg = "SHA384withECDSA";
+            weakSigAlg = "SHA1withECDSA";
+        } else if (publicKey instanceof RSAKey || "RSA".equalsIgnoreCase(keyAlg)) {
+            strongSigAlg = "SHA384withRSA";
+            weakSigAlg = "SHA1withRSA";
+        } else if (publicKey instanceof DSAKey || "DSA".equalsIgnoreCase(keyAlg)) {
+            strongSigAlg = "SHA384withDSA";
+            weakSigAlg = "SHA1withDSA";
+        } else {
+            strongSigAlg = "SHA384with" + keyAlg;
+            weakSigAlg = "SHA1with" + keyAlg;
+        }
+
         if (PREFER_SHA1_SIG || isShortKey(publicKey))
             return weakSigAlg;
 

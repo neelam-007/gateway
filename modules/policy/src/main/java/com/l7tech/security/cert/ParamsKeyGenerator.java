@@ -33,7 +33,7 @@ public class ParamsKeyGenerator {
         } else if ("EC".equals(alg)) {
             return generateEcKeyPair();
         } else
-            throw new NoSuchAlgorithmException(alg);
+            return generateGenericKeyPair();
     }
 
     protected KeyPair generateEcKeyPair() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
@@ -50,6 +50,20 @@ public class ParamsKeyGenerator {
             keyBits = getDefaultRsaKeySize();
 
         KeyPairGenerator kpg = JceProvider.getInstance().getKeyPairGenerator("RSA");
+        if (random != null) {
+            kpg.initialize(keyBits, random);
+        } else {
+            kpg.initialize(keyBits);
+        }
+        return kpg.generateKeyPair();
+    }
+
+    protected KeyPair generateGenericKeyPair() throws NoSuchAlgorithmException {
+        int keyBits = k.getKeySize();
+        if (keyBits < 1)
+            keyBits = 1024;
+
+        KeyPairGenerator kpg = JceProvider.getInstance().getKeyPairGenerator(k.getAlgorithm());
         if (random != null) {
             kpg.initialize(keyBits, random);
         } else {

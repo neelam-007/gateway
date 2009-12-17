@@ -115,6 +115,8 @@ public class TestCertificateGenerator {
 
     /**
      * Configure the next key pair generation to use the provided SecureRandom instead of the system default.
+     * @param random the SecureRandom to use for key generation, or null.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
      */
     public TestCertificateGenerator random(SecureRandom random) {
         this.random = random;
@@ -123,6 +125,8 @@ public class TestCertificateGenerator {
 
     /**
      * Configure the next key pair generation to produce an RSA keypair with the specified size in bits.
+     * @param keyBits RSA key size, ie 1024.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
      */
     public TestCertificateGenerator keySize(int keyBits) {
         k.setAlgorithm("RSA");
@@ -131,7 +135,20 @@ public class TestCertificateGenerator {
     }
 
     /**
+     * Configure the next key pair generation to produce a DSA keypair with the specified size in bits.
+     * @param keyBits size of DSA key to generate, ie 1024.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
+     */
+    public TestCertificateGenerator dsaKeySize(int keyBits) {
+        k.setAlgorithm("DSA");
+        k.setKeySize(keyBits);
+        return this;
+    }
+
+    /**
      * Configure the next key pair generation to produce an ECC keypair with the specified named curve.
+     * @param curveName ECC named curve, ie "secp384r1".  Required.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
      */
     public TestCertificateGenerator curveName(String curveName) {
         k.setAlgorithm("EC");
@@ -389,6 +406,7 @@ public class TestCertificateGenerator {
      * @param cert  certificate to use as entire certificate chain for this private key.  Required.
      * @param privateKey  private key to store as key entry with alias "entry".  Required.
      * @return a Base-64 encoded PKCS#12 file with a single entry with alias "entry" and passphrase "password".
+     * @throws java.security.GeneralSecurityException on failure to convert
      */
     public static String convertToBase64Pkcs12(X509Certificate cert, PrivateKey privateKey) throws GeneralSecurityException {
         try {
@@ -410,6 +428,8 @@ public class TestCertificateGenerator {
      *
      * @param base64pkcs12 a base-64 encoded PKCS#12 file, expected to have at least one key entry and expected to use the passphrase "password".  Required.
      * @return the private key and certificate from this entry.  Never null and never contains a null cert or private key.
+     * @throws java.io.IOException on IOException
+     * @throws java.security.GeneralSecurityException on other exception
      */
     public static Pair<X509Certificate, PrivateKey> convertFromBase64Pkcs12(String base64pkcs12) throws GeneralSecurityException, IOException {
         char[] pass = "password".toCharArray();

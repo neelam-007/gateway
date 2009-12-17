@@ -38,9 +38,6 @@ import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAPrivateKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.ECPrivateKey;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -1165,31 +1162,11 @@ public class WssDecoratorImpl implements WssDecorator {
             signedIds[i] = getOrCreateWsuId(c, eleToSign, null);
         }
 
-        SupportedSignatureMethods signaturemethod;
-        if (senderSigningKey instanceof RSAPrivateKey || "RSA".equals(senderSigningKey.getAlgorithm())) {
-            if ("SHA-256".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.RSA_SHA256;
-            else
-                signaturemethod = SupportedSignatureMethods.RSA_SHA1;
-
-        } else if (senderSigningKey instanceof ECPrivateKey || "EC".equals(senderSigningKey.getAlgorithm()) || "ECDSA".equals(senderSigningKey.getAlgorithm())) {
-            if ("SHA-256".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
-            else if ("SHA-512".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA512;
-            else if ("SHA-1".equals(messageDigestAlgorithm))
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA1;
-            else
-                // SHA-384 is the chosen default for GD
-                signaturemethod = SupportedSignatureMethods.ECDSA_SHA384;
-
-        } else if (senderSigningKey instanceof DSAPrivateKey) {
-            signaturemethod = SupportedSignatureMethods.DSA_SHA1;
-        } else if (senderSigningKey instanceof SecretKey) {
-            signaturemethod = SupportedSignatureMethods.HMAC_SHA1;
-        } else {
-            throw new DecoratorException("Private Key type not supported " +
-                    senderSigningKey.getClass().getName());
+        final SupportedSignatureMethods signaturemethod;
+        try {
+            signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
+        } catch (SignatureException e) {
+            throw new DecoratorException("Private Key type not supported " + senderSigningKey.getClass().getName(), e);
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope

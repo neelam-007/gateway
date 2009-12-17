@@ -62,7 +62,7 @@ public class DsigUtil {
                                                    String messageDigestAlgorithm)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
-        SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm);
+        SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
@@ -135,12 +135,21 @@ public class DsigUtil {
      *
      * @param senderSigningKey  the private key that is to be used to create the signature.  Required.
      * @param messageDigestAlgorithm  the message digest algorithm, ie "SHA-1".  Required.
+     * @param allowDigestFallback if true, and no signature method is available with the specified key type and digest, we will fall back to SHA-1 as the digest if possible.
+     *                            if false, we will fail and return null rather than falling back to SHA-1.
      * @return an instance of SupportedSignatureMethods encoding the signature method to use.  Never null.
      * @throws SignatureException if the combination of private key type and message digest is not supported.
      */
-    public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm) throws SignatureException {
+    public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm, boolean allowDigestFallback) throws SignatureException {
         if (messageDigestAlgorithm == null)
             messageDigestAlgorithm = getDefaultMessageDigest("EC".equals(senderSigningKey.getAlgorithm()));
+
+        if (messageDigestAlgorithm != null) {
+            // Use canonical name of digest algorithm (ie, "SHA-384" rather than "SHA384")
+            List<String> digestAliases = SupportedSignatureMethods.getDigestAliases(messageDigestAlgorithm);
+            if (digestAliases != null && !digestAliases.isEmpty())
+                messageDigestAlgorithm = digestAliases.get(0);
+        }
 
         String keyAlg;
         if (senderSigningKey instanceof PublicKey || senderSigningKey instanceof PrivateKey)
@@ -156,6 +165,14 @@ public class DsigUtil {
         SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromKeyAndMessageDigest(keyAlg, messageDigestAlgorithm);
         if (sigMethod != null)
             return sigMethod;
+
+        if (allowDigestFallback) {
+            // Couldn't find that exact combination -- find the one we can use with this key type
+            sigMethod = SupportedSignatureMethods.fromKeyAlg(keyAlg);
+            if (sigMethod != null)
+                return sigMethod;
+        }
+
         throw new SignatureException("No signature method available for key type " + keyAlg + " and message digest " + messageDigestAlgorithm);
     }
 

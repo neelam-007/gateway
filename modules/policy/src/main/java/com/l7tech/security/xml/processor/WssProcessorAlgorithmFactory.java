@@ -31,20 +31,6 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private static final boolean USE_IBM_EXC_C11R = Boolean.getBoolean("com.l7tech.common.security.xml.c14n.useIbmExcC11r");
     private static final String PROP_PERMITTED_DIGEST_ALGS = "com.l7tech.security.xml.dsig.permittedDigestAlgorithms";
 
-    private static final Map<String, Collection<String>> digestAliases = new HashMap<String, Collection<String>>() {{
-        put("SHA", Arrays.asList("SHA", "SHA-1", "SHA1"));
-        put("SHA1", Arrays.asList("SHA", "SHA-1", "SHA1"));
-        put("SHA-1", Arrays.asList("SHA", "SHA-1", "SHA1"));
-        put("SHA224", Arrays.asList("SHA224", "SHA224"));
-        put("SHA-224", Arrays.asList("SHA-224", "SHA224"));
-        put("SHA256", Arrays.asList("SHA256", "SHA256"));
-        put("SHA-256", Arrays.asList("SHA-256", "SHA256"));
-        put("SHA384", Arrays.asList("SHA384", "SHA384"));
-        put("SHA-384", Arrays.asList("SHA-384", "SHA384"));
-        put("SHA512", Arrays.asList("SHA512", "SHA512"));
-        put("SHA-512", Arrays.asList("SHA-512", "SHA512"));                
-    }};
-    
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
@@ -60,6 +46,8 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public WssProcessorAlgorithmFactory(Map<Node, Node> strToTarget) {
         this.strToTarget = strToTarget;
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA384.getAlgorithmIdentifier(), "SHA384withRSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA512.getAlgorithmIdentifier(), "SHA512withRSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "SHA1withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA256.getAlgorithmIdentifier(), "SHA256withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
@@ -69,12 +57,13 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
         enabledDigestSet = new HashSet<String>(Arrays.asList(enabledDigests));
         for (String digest : enabledDigests) {
-            Collection<String> aliases = digestAliases.get(digest);
+            Collection<String> aliases = SupportedSignatureMethods.getDigestAliases(digest);
             if (aliases != null)
                 enabledDigestSet.addAll(aliases);
         }
     }
 
+    @Override
     public Canonicalizer getCanonicalizer(String string) {
          if (Transform.C14N_EXCLUSIVE.equals(string)) {
              // Use the Sun canonicalizer to avoid some bugs in xss4j (Bug #6002)
@@ -101,6 +90,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         return signatureMethod;
     }
 
+    @Override
     public Transform getTransform(String s) throws NoSuchAlgorithmException {
         if (Transform.ENVELOPED.equals(s)) {
             sawEnvelopedTransform = true;
@@ -125,6 +115,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         return sawEnvelopedTransform;
     }
 
+    @Override
     public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
 
         MessageDigest md;
