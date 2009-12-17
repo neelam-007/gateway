@@ -36,7 +36,7 @@
     </bean>
 
     <!-- Crypto init -->
-    <bean id="initLunaPinFinder" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="initLunaPinFinder" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder"/>
         <property name="targetMethod" value="setClusterPassphrase"/>
         <property name="arguments">
@@ -80,7 +80,7 @@
     </bean>
 
     <bean id="configureServerVariablesClusterPropertyCache"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.server.policy.variable.ServerVariables.setClusterPropertyCache"/>
         <property name="arguments">
             <list>
@@ -298,16 +298,6 @@
         <property name="entityFinder" ref="entityFinder"/>
     </bean>
 
-    <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl" depends-on="gatewaySanityChecker">
-        <constructor-arg ref="trustedCertManager"/>
-        <constructor-arg ref="revocationCheckPolicyManager"/>
-        <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="serverConfig"/>
-        <!-- These make use of the certificate validation processor so cannot be constructor args -->
-        <property name="crlCache" ref="crlCache"/>
-        <property name="ocspCache" ref="ocspCache"/>
-    </bean>
-
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
         <constructor-arg ref="identityProviderConfigManager"/>
@@ -508,7 +498,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="roleManagerHelper" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
         <property name="targetMethod" value="setIdentitySource"/>
         <property name="arguments">
@@ -519,7 +509,7 @@
     </bean>
 
     <!-- Initialize the client-side SSLSocketFactory with the trust manager -->
-    <bean id="anonClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="anonClientSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -528,7 +518,7 @@
             </list>
         </property>
     </bean>
-    <bean id="anonClientHostnameAwareSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="anonClientHostnameAwareSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -537,7 +527,7 @@
             </list>
         </property>
     </bean>
-    <bean id="anonClientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="anonClientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory"/>
         <property name="targetMethod" value="setHostnameVerifier"/>
         <property name="arguments">
@@ -546,7 +536,7 @@
             </list>
         </property>
     </bean>
-    <bean id="clientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="clientSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -555,7 +545,7 @@
             </list>
         </property>
     </bean>
-    <bean id="clientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="clientSocketFactoryKeyManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
         <property name="targetMethod" value="setDefaultKeyManagers"/>
         <property name="arguments">
@@ -564,7 +554,7 @@
             </list>
         </property>
     </bean>
-    <bean id="clientHostnameAwareSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="clientHostnameAwareSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -573,7 +563,7 @@
             </list>
         </property>
     </bean>
-    <bean id="clientHostnameAwareSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="clientHostnameAwareSocketFactoryKeyManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
         <property name="targetMethod" value="setDefaultKeyManagers"/>
         <property name="arguments">
@@ -582,7 +572,7 @@
             </list>
         </property>
     </bean>
-    <bean id="clientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="clientHostnameAwareSocketFactoryHostnameVerifierInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory"/>
         <property name="targetMethod" value="setHostnameVerifier"/>
         <property name="arguments">
@@ -593,7 +583,7 @@
     </bean>
 
     <!-- SSL for Syslog -->
-    <bean id="syslogClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="syslogClientSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -602,7 +592,7 @@
             </list>
         </property>
     </bean>
-    <bean id="syslogClientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="syslogClientSocketFactoryKeyManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
         <property name="targetMethod" value="setDefaultKeyManagers"/>
         <property name="arguments">
@@ -611,7 +601,7 @@
             </list>
         </property>
     </bean>
-    <bean id="syslogClientSocketFactoryKeyStoreManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="syslogClientSocketFactoryKeyStoreManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
         <property name="targetMethod" value="setSsgKeyStoreManager"/>
         <property name="arguments">
@@ -622,7 +612,7 @@
     </bean>
 
     <!-- SSL for JMS -->
-    <bean id="mqSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="mqSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.jms.JmsSslCustomizerSupport"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -631,7 +621,7 @@
             </list>
         </property>
     </bean>
-    <bean id="mqSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="mqSocketFactoryKeyManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.jms.JmsSslCustomizerSupport"/>
         <property name="targetMethod" value="setSsgKeyStoreManager"/>
         <property name="arguments">
@@ -642,7 +632,7 @@
     </bean>
 
     <!-- SSL for LDAP -->
-    <bean id="ldapSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="ldapSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
         <property name="targetMethod" value="setTrustManager"/>
         <property name="arguments">
@@ -651,7 +641,7 @@
             </list>
         </property>
     </bean>
-    <bean id="ldapSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="ldapSocketFactoryKeyManagerInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
         <property name="targetMethod" value="setSsgKeyStoreManager"/>
         <property name="arguments">
@@ -660,7 +650,7 @@
             </list>
         </property>
     </bean>
-    <bean id="ldapSocketFactoryHostnameVerifierInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="ldapSocketFactoryHostnameVerifierInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
         <property name="targetMethod" value="setHostnameVerifier"/>
         <property name="arguments">
@@ -1184,7 +1174,7 @@
 
     <!-- Use managed timer for all background tasks -->
     <bean id="configureBackgroundTimer"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.util.Background.installTimer"/>
         <property name="arguments">
             <list>
@@ -1291,6 +1281,16 @@
     <bean id="ocspCache" class="com.l7tech.server.security.cert.OCSPCache">
         <constructor-arg ref="httpClientFactory"/>
         <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="revocationCheckPolicyManager"/>
+        <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="serverConfig"/>
+        <!-- These make use of the certificate validation processor so cannot be constructor args -->
+        <property name="crlCache" ref="crlCache"/>
+        <property name="ocspCache" ref="ocspCache"/>
     </bean>
 
     <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
@@ -1477,7 +1477,7 @@
             </list>
         </constructor-arg>
     </bean>
-    <bean id="jmsInit" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="jmsInit" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.jms.JmsUtil"/>
         <property name="targetMethod" value="setContextClassLoader"/>
         <property name="arguments">
@@ -1577,7 +1577,7 @@
       <constructor-arg ref="resolutionManager"/>
     </bean>
 
-    <bean id="wsdlStrategyServiceDocumentsInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="wsdlStrategyServiceDocumentsInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy"/>
         <property name="targetMethod" value="setServiceDocumentManager"/>
         <property name="arguments">
