@@ -31,11 +31,13 @@ import java.util.Map;
 public final class Message {
     public static final String PROPERTY_ENABLE_ORIGINAL_DOCUMENT = "com.l7tech.message.enableOriginalDocument";
 
+    private static boolean defaultEnableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+
     /**
      * enable this to enable XmlKnob.getOriginalDocument().
      * This is off by default since only certain messages need this.
      */
-    private boolean enableOriginalDocument = SyspropUtil.getBooleanCached(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+    private boolean enableOriginalDocument = defaultEnableOriginalDocument;
 
     private MessageFacet rootFacet;
 
@@ -598,6 +600,14 @@ public final class Message {
         soapKnob = null;
         mimeKnob = null;
         securityKnob = null;
+    }
+
+    public static boolean isDefaultEnableOriginalDocument() {
+        return defaultEnableOriginalDocument;
+    }
+
+    public static void setDefaultEnableOriginalDocument(Object defaultEnableOriginalDocument) {
+        Message.defaultEnableOriginalDocument = Boolean.valueOf(String.valueOf(defaultEnableOriginalDocument));
     }
 
     /**

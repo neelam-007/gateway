@@ -89,6 +89,21 @@
         </property>
     </bean>    
 
+    <bean id="originalRequestUpdator" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.message.Message.setDefaultEnableOriginalDocument"/>
+        <property name="arguments">
+            <list>
+                <bean class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+                    <property name="targetObject" ref="clusterPropertyCache"/>
+                    <property name="targetMethod" value="getPropertyValue"/>
+                    <property name="arguments">
+                        <list><value>audit.originalMainPart.enable</value></list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
     <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="policyCache"/>
