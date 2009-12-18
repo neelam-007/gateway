@@ -78,12 +78,10 @@ public class ExternalSchemaReference extends ExternalReference {
         }
         try {
             if (name == null || reg.getSchemaAdmin().findByName(name).isEmpty()) {
-                return false;
-                /* dont allow resolution from ns
-                if (tns == null || reg.getSchemaAdmin().findByTNS(tns).isEmpty()) {
-                    return false;
+                if (tns != null && reg.getSchemaAdmin().findByTNS(tns).size() == 1) {
+                    return true;
                 }
-                */
+                return false;
             }
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
