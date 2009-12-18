@@ -174,7 +174,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                 final String where = messageDesc + " message MIME part " + Integer.toString(partPosition);
                 final PartInfo partInfo = itor.next();
                 final ContentTypeHeader partContentType = partInfo.getContentType();
-                if (partContentType.matches("text", "xml")) {
+                if (partContentType.isXml()) {
                     auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML, where);
 
                     try {
