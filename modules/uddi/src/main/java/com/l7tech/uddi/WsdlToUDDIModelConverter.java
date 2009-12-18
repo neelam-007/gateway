@@ -108,42 +108,27 @@ public class WsdlToUDDIModelConverter {
     }
 
     /**
-     * Get the Map of String BusinessService name to the wsdl:service localname which generated the BusinessService name.
-     * Note: it is ok if two BusinessService's have the same name from a single WSDL. Anywhere those BusinessServices
-     * are used, their unique namespace must be taken into consideration.
-     *
-     * @return Map String BusinessService name to wsdl:service localname. Never null. Can be empty if the model has yet
-     *         to be converted
-     */
-    public Map<String, String> getServiceNameToWsdlServiceNameMap() {
-        return serviceNameToWsdlServiceNameMap;
-    }
-
-    /**
-     * Regardles of what is in UDDI, the job of this method is to convert the Wsdl instance variable into a List
-     * of Business Services. These services and everything they contain / reference may already exist in UDDI.
-     * All tModelkeys of required tModels contain placeholders
-     * <p/>
-     * Note: BusinessServices and bindingTemplates do not need placeholders, as if they do not already exist, then
-     * they will be filled in automatically on save by the UDDI.
-     * <p/>
+     * Convert a WSDL into the UDDI data model. After conversion the converted data is available via the applicable
+     * get method.
      * <p/>
      * A best effort conversion is attempted. Errors in the WSDL are tolerated up to the point where no valid wsdl:service
      * elements are defined. In this case an exception will be thrown.
      * <p/>
-     * Note: it is up to the client to work out what tModelKeys need to be created / retrieved from UDDI
-     * <p/>
-     * Note: Never set the service key on the BusinessService with setServiceKey. This will break publish functionality
      *
-     * @param allEndpointPairs Collection<Pair<String, String>> A bindingTemplate will be created for each pair in this
-     *                         collection. The left hand side is the external gateway url for service for the endpoint and the right hand side
-     *                         is the WSDL URL for the service. More than one Pair is included if the cluster defines more than one http(s) listener.
-     *                         Cannot be null or empty. Each String value is validated to be not null and not empty.
-     * @param prependToServiceName
-     *@param appendToServiceName @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
+     * @param allEndpointPairs     Collection<Pair<String, String>> A bindingTemplate will be created for each pair in this
+     *                             collection. The left hand side is the external gateway url for service for the endpoint and the right hand side
+     *                             is the WSDL URL for the service. More than one Pair is included if the cluster defines more than one http(s) listener.
+     *                             Cannot be null or empty. Each String value is validated to be not null and not empty.
+     * @param prependToServiceName String if not null this value will be prepended to the start of the name property for
+     *                             each BusinessService created. The name property of each created BusinessService will be the corresponding
+     *                             wsdl:service localname value.
+     * @param appendToServiceName  String if not null this value will be appeneded to the end of the name property for
+     *                             each BusinessService created. The name property of each created BusinessService will be the corresponding
+     *                             wsdl:service localname value.
+     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException
      *          if the WSDL contains no valid
      *          wsdl:service definitions due to each wsdl:service containing references to bindings which either themselves
-     *          don't exist or reference wsdl:portType elements which dont exist.
+     *          don't exist or reference wsdl:portType elements which dont exist. This means we cannot do any conversion.
      */
     public void convertWsdlToUDDIModel(final Collection<Pair<String, String>> allEndpointPairs,
                                        final String prependToServiceName,
@@ -174,6 +159,30 @@ public class WsdlToUDDIModelConverter {
         }
     }
 
+    /**
+     * Get the Map of String BusinessService name to the wsdl:service localname which generated the BusinessService name.
+     * Note: it is ok if two BusinessService's have the same name from a single WSDL. Anywhere those BusinessServices
+     * are used, their unique namespace must be taken into consideration.
+     *
+     * @return Map String BusinessService name to wsdl:service localname. Never null. Can be empty if the model has yet
+     *         to be converted
+     */
+    public Map<String, String> getServiceNameToWsdlServiceNameMap() {
+        return serviceNameToWsdlServiceNameMap;
+    }
+    
+    /**
+     * Get the List of BusinessServices that the WSDL produced after it was converted.
+     *
+     * @return List of Pairs. Each Pair contains a BusinessService and a unique Map of TModels. Each BusinessService
+     *         contains a null serviceKey property. It is up to clients to know when a service is being created for the first
+     *         time or is being updated.
+     *         The Map in each pair contains a Map of String placeholder key to it's corresponding tModel.
+     *         This key will be referenced from within the corresponding BusinessService from it's bindingTemplates. Each
+     *         bindingTemplate references two tModels. Each bindingTemplate references unique tModels. The tModelKey value in
+     *         each bindingTemplates is a key into the Map.
+     *         Each Map and tModel is unique to the corresponding BusinessService. No two maps will contain the same tModel reference.
+     */
     public List<Pair<BusinessService, Map<String, TModel>>> getServicesAndDependentTModels() {
         return servicesAndDependentTModels;
     }
@@ -363,7 +372,8 @@ public class WsdlToUDDIModelConverter {
      * wsdl:binding tModel is being created for. This is important as the conversion can create the same bindingTemplate
      * which represents a wsdl:port twice or more..one for each endpoint, so its important that we can later identify which
      * bindingTemplate requires which specific tModels. This value is how this works.
-     * @return String key of the created tModel
+     * @return String key of the created tModel. This key is not set on the tModel. This is a placeholder key used to
+     * uniquely identify the created wsdl:binding tModel
      * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException if the binding contains a reference
      * to a wsdl:portType which does not exist
      */
@@ -374,10 +384,10 @@ public class WsdlToUDDIModelConverter {
                                            final String wsdlUrl) throws MissingWsdlReferenceException {
         final String bindingName = binding.getQName().getLocalPart();//+ " " + serviceOid; - don't do this, it breaks the technical note
 
-        //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL!
+        //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL, but not unique when imports are used
         //See http://www.w3.org/TR/wsdl#_bindings
-        //appending BINDING_TMODEL_IDENTIFIER as a wsdl:portType could have the same name
-        final String key = bindingName + wsdlPort.getName() + HexUtils.encodeBase64(HexUtils.getMd5Digest(bindingUniqueValue.getBytes())) + BINDING_TMODEL_IDENTIFIER;
+        //need to ensure a unique key is created for each tModel.
+        final String key = bindingName + wsdlPort.getName() + HexUtils.encodeBase64(HexUtils.getMd5Digest(bindingUniqueValue.getBytes())) + BINDING_TMODEL_IDENTIFIER;//don't append to the end of this key
 
         final TModel tModel = new TModel();
 
@@ -452,6 +462,7 @@ public class WsdlToUDDIModelConverter {
     }
 
     /**
+     * Create a wsdl:portType tModel
      *
      * @param serviceToTModels
      * @param portType
@@ -461,7 +472,8 @@ public class WsdlToUDDIModelConverter {
      * which represents a wsdl:port twice or more..one for each endpoint, so its important that we can later identify which
      * bindingTemplate requires which specific tModels. This value is how this works.
      * @param wsdlUrl
-     * @return
+     * @return String key of the created tModel. This key is not set on the tModel. This is a placeholder key used to
+     * uniquely identify the created wsdl:portType tModel
      */
     private String createUddiPortTypeTModel(final Map<String, TModel> serviceToTModels,
                                             final PortType portType,
@@ -472,9 +484,9 @@ public class WsdlToUDDIModelConverter {
         if(portType == null) throw new NullPointerException("Missing reference to wsdl:portType");
         final String portTypeName = portType.getQName().getLocalPart();//+ " " + serviceOid; - this breaks the techincal spec - don't modify the name
 
-        //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL!
+        //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL, but not when imports are used
         //See http://www.w3.org/TR/wsdl#_porttypes
-        //appending PORT_TMODEL_IDENTIFIER as a wsdl:binding could have the same name
+        //need to make a unique key for the tModel
         final String key = portTypeName + wsdlPort.getName() + HexUtils.encodeBase64(HexUtils.getMd5Digest(bindingUniqueValue.getBytes())) +  PORT_TMODEL_IDENTIFIER;//Cannot append any value to this constant
 
         final TModel tModel = new TModel();
