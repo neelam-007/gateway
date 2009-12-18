@@ -30,5 +30,7 @@
         </dependency>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
+
+        <override org="xerces" module="xercesImpl" matcher="exact" rev="2.9.1-l7p1"/>
     </dependencies>
 </ivy-module>

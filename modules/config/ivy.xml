@@ -34,10 +34,12 @@
             <exclude org="xerces" module="xerces" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
+        <override org="xalan" module="xalan" matcher="exact" rev="2.7.1"/>
     </dependencies>
 </ivy-module>

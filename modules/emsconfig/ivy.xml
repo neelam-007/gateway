@@ -36,5 +36,8 @@
             <exclude org="xerces" module="xerces" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+
+        <override org="xalan" module="xalan" matcher="exact" rev="2.7.1"/>
     </dependencies>
 </ivy-module>

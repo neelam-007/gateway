@@ -46,6 +46,10 @@
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
 
         <dependency org="org.springframework" name="spring-test" rev="2.5.6" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+
+        <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+        <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
         <override org="org.mortbay.jetty" module="jetty" matcher="exact" rev="6.1.8"/>
     </dependencies>
