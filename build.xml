@@ -577,10 +577,25 @@
                 ${modules.xml.text}
             &lt;/modules&gt;
         </echo>
+        <!-- Generate module library XML -->
+        <concat destfile="${build.etc}/module-dependencies.xml">
+            <resources><string value="&lt;modules&gt;${line.separator}"/></resources>
+            <fileset dir="modules" includes="*/build/etc/dependency_gen.xml"/>
+            <fileset dir="modules" includes="gateway/*/build/etc/dependency_gen.xml"/>
+            <fileset dir="modules" includes="gateway/assertions/*/build/etc/dependency_gen.xml"/>
+            <resources><string value="&lt;/modules&gt;"/></resources>
+            <filterchain>
+                <linecontains negate="true">
+                  <contains value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;"/>
+                </linecontains>
+            </filterchain>
+        </concat>
         <!-- Transform to a project file -->
         <copy file="etc/build/idea_project.xml" tofile="UneasyRooster.ipr" overwrite="false"/>
         <xslt in="UneasyRooster.ipr" out="UneasyRooster.ipr.tmp" style="etc/build/idea_project.xsl">
             <param name="data" expression="${build.etc}/modules.xml"/>
+            <param name="datalibs" expression="${build.etc}/module-dependencies.xml"/>
+            <param name="projectmeta" expression="${src.root}/etc/build/idea_meta.xml"/>
             <param name="idea.javac.out" expression="${idea.javac.out}" if="idea.javac.out"/>
             <param name="idea.jdk" expression="${idea.jdk}" if="idea.jdk"/>
         </xslt>

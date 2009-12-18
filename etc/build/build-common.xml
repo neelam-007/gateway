@@ -528,10 +528,10 @@
 
     <!--
     -->
-    <target name="idea" depends="info, init, ivy-new-version" description="Generate Intellij IDEA module">
+    <target name="idea.init" depends="info, init, ivy-new-version">
         <mkdir dir="${build.etc.dir}"/>
 
-        <ivy-resolve conf="test" haltonfailure="false"/>
+        <ivy-resolve conf="default,test" haltonfailure="false"/>
         <!--<ivy:deliver deliverpattern="build/idearepo/[organisation]/[module]-ivy-[revision].xml"-->
                      <!--pubrevision="${module.version.target}"-->
                      <!--status="integration"-->
@@ -545,9 +545,15 @@
                      forcedeliver="true"
                      overwrite="true"
                 />
-
+    </target>
+    <target name="idea.report.module" depends="idea.init" unless="module.useProjectLibraries">
         <ivy:report todir="${build.etc.dir}" outputpattern="dependency_gen.xml" conf="test" graph="false" xsl="false" xml="true"/>
-
+    </target>
+    <target name="idea.report.project" depends="idea.init" if="module.useProjectLibraries">
+        <ivy:artifactreport tofile="${build.etc.dir}/dependency_gen.xml"/>
+    </target>
+    <target name="idea.report" depends="idea.report.module,idea.report.project"/>
+    <target name="idea" depends="idea.report" description="Generate Intellij IDEA module">
         <copy file="${ivy.module}.iml" tofile="${build.etc.dir}/${ivy.module}.tmp.xml" overwrite="true" failonerror="false"/>
         <copy file="${src.root}/etc/build/idea_module.xml" tofile="${build.etc.dir}/${ivy.module}.tmp.xml" overwrite="false"/> <!-- Default to empty module -->
         <xslt in="${build.etc.dir}/dependency_gen.xml" out="${build.etc.dir}/dependency.xml"

@@ -14,8 +14,17 @@
   <library name="org.springframework.spring-webmvc" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
 
   <!-- Hibernate -->
-  <library name="org.hibernate.hibernate" javadoc-url="http://www.hibernate.org/hib_docs/v3/api/"/>
+  <library name="org.hibernate.hibernate-core" javadoc-url="http://docs.jboss.org/hibernate/stable/core/api/"/>
   <library name="org.hibernate.hibernate-annotations" javadoc-url="http://www.hibernate.org/hib_docs/annotations/api/"/>
+
+  <!-- Commons -->
+  <library name="commons-beanutils.commons-beanutils" javadoc-url="http://commons.apache.org/beanutils/commons-beanutils-1.7.0/docs/api/"/>
+  <library name="commons-codec.commons-codec" javadoc-url="http://commons.apache.org/codec/apidocs/"/>
+  <library name="commons-collections.commons-collections" javadoc-url="http://commons.apache.org/collections/api-release/"/>
+  <library name="commons-configuration.commons-configuration" javadoc-url="http://commons.apache.org/configuration/apidocs/"/>
+  <library name="commons-io.commons-io" javadoc-url="http://commons.apache.org/io/api-release/"/>
+  <library name="commons-lang.commons-lang" javadoc-url="http://commons.apache.org/lang/api-release/"/>
+  <library name="commons-logging.commons-logging" javadoc-url="http://commons.apache.org/logging/commons-logging-1.1.1/apidocs/"/>
 
   <!-- JAVA EE -->
   <library name="javax.mail.mail" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
