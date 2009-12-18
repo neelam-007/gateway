@@ -816,7 +816,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                     final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
                     context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
                     //take out of UDDI Control
-                    UDDIHandledTaskException handledTaskException = new UDDIHandledTaskException(
+                    throw new UDDIHandledTaskException(
                             "Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
                             " for a bindingTemplate representing the wsdl:port '"+serviceControl.getWsdlPortName()+"'" +
                             " from UDDIRegistry #(" + uddiRegistry.getOid()+"): " + msg) {
@@ -836,7 +836,6 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             }
                         }
                     };
-                    throw handledTaskException;
                 }
             }
 

@@ -307,7 +307,10 @@ public class UDDIUtilities {
      * This can be used to determine if  WSDL can go under the control of a UDDI Business Service.
      * The wsdl parameters should have been obtained from UDDI
      * <p/>
-     * Supports namespaces
+     * Supports namespaces. Note that callers can just supply null for wsdlServiceNamespace. This utility method
+     * supports it however its only job is to distinquish between two services with the same name, which contain
+     * the same wsdl:port which implements the same binding. In this scenario it doesn't really matter which is found
+     * as they are identical, and they both belong to the WSDL.
      *
      * @param wsdl Wsdl for a published service
      * @param wsdlServiceName wsdl:service local name
@@ -663,20 +666,23 @@ public class UDDIUtilities {
      * <p/>
      * The URLs are required in the dependent tModels which will also be created.
      * <p/>
-     * None of the UDDI Objects contain real keys
+     * None of the UDDI Objects are required to contain real keys
      *
-     * @param wsdl             Wsdl for a published service
-     * @param wsdlPortName     a wsdl:port name is unique in a WSDL document
-     * @param wsdlPortBinding  a wsdl:binding name is unique in a WSDL document
-     * @param wsdlPortBindingNamespace
-     * @param allEndpointPairs
-     * @return Pair of BindingTemplate to it's dependent tModels
+     * @param wsdl                     Wsdl for a published service
+     * @param wsdlPortName             a wsdl:port name is unique in a WSDL document. Required.
+     * @param wsdlPortBinding          a wsdl:binding name is unique in a WSDL document. Required.
+     * @param wsdlPortBindingNamespace namespace for the wsdl:binding. Used if not null and not empty.
+     * @param allEndpointPairs         Collection of Pairs, String Gateway URL + String Gateway WSDL URL, which a
+     *                                 bindingTemplate is required for each Pair in the collection.
+     * @return Pair of BindingTemplate to it's dependent tModels. All bindingTemplates have a null bindingKey property
+     *         and all tModels have a null tModelKey property.
      * @throws PortNotFoundException if the wsdl:port implementation cannot be found
      * @throws WsdlToUDDIModelConverter.MissingWsdlReferenceException
      *                               if the Wsdl does not have a complete graph to wsdl:portType
      * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.NonSoapWsdlPortException
      *                               if no soap:bindings are found in the Wsdl (nothing to do)
-     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.NonHttpBindingException
+     * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.NonHttpBindingException if no http bindings are found
+     *
      */
     static Pair<List<BindingTemplate>, Map<String, TModel>> createBindingTemplateFromWsdl(
             final Wsdl wsdl,
@@ -703,8 +709,8 @@ public class UDDIUtilities {
                 final QName qName = entry.getValue().getBinding().getQName();
                 if (qName.getLocalPart().equalsIgnoreCase(wsdlPortBinding)) {
                     //check namespace if applicable
-                    if(wsdlPortBindingNamespace != null && !wsdlPortBindingNamespace.isEmpty()){
-                        if(!qName.getNamespaceURI().equalsIgnoreCase(wsdlPortBindingNamespace)) continue;    
+                    if (wsdlPortBindingNamespace != null && !wsdlPortBindingNamespace.isEmpty()) {
+                        if (!qName.getNamespaceURI().equalsIgnoreCase(wsdlPortBindingNamespace)) continue;
                     }
                     candidatePort = entry.getValue();
                 }

@@ -433,12 +433,17 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
      * If any UDDI Registry has meta data requirements specific to it, then here is the current place to collect
      * that infomration from the UDDIServiceControl and UDDIRegistry. If the UDDIProxiedServiceInfo is required it
      * can also be added as an argument
+     *
+     * For ActiveSOA, if the Gateway WSDL is being published to the same instance as the original, then the retured
+     * UDDIRegistrySpecificMetaData will contain the required meta data to make the publisehed business services virtual
+     * and to have associations to the original.
      * 
-     * @param uddiRegistry
-     * @param serviceControl
-     * @param uddiProxiedServiceInfo
-     *@param uddiFactory
-     * @param uddiClient DO NOT CLOSE IT   @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
+     * @param uddiRegistry UDDIRegistry the uddi registry a WSDL is being published to. Required.
+     * @param serviceControl UDDIServiceControl which represents the original service. Required
+     * @param uddiProxiedServiceInfo UDDIProxiedServiceInfo which represents the information being published to UDDI
+     * @param uddiFactory PublishingUDDITaskFactory required for access to system properties
+     * @param uddiClient UDDIClient if any infomration is required from UDDI. Required. Will not be closed by this method   
+     * @return UDDIRegistrySpecificMetaData, not null if there are registry specific meta data requirements, null otherwise
      */
     private static UDDIRegistrySpecificMetaData getRegistrySpecificMetaData(final UDDIRegistry uddiRegistry,
                                                                             final UDDIServiceControl serviceControl,

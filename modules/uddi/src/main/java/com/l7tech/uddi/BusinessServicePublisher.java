@@ -18,10 +18,7 @@ import java.io.IOException;
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
- * Responsible for publishing a set of BusinessServices extracted from a WSDL to a UDDI Registry.
- *
- * Part of publishing requires publising tModels in the correct order and following the publishing of tModels,
- * updating any dependent tModels and BusinessServices with the tModelKeys.
+ * Responsible for publishing a set of BusinessServices or Gateway endpoints extracted from a WSDL to a UDDI Registry.
  *
  * @author darmstrong
  */
@@ -44,14 +41,14 @@ public class BusinessServicePublisher implements Closeable {
                                     final long serviceOid,
                                     final UDDIClientConfig uddiCfg) {
 
-        this( wsdl, serviceOid, buildUDDIClient(uddiCfg), true);
+        this(buildUDDIClient(uddiCfg), wsdl, serviceOid);
     }
 
     public BusinessServicePublisher(final Wsdl wsdl,
                                     final long serviceOid,
                                     final UDDIClient uddiClient) {
 
-        this( wsdl, serviceOid, uddiClient, true);
+        this(uddiClient, wsdl, serviceOid);
     }
 
     /**
@@ -64,7 +61,7 @@ public class BusinessServicePublisher implements Closeable {
      * Any previously published endpoints with the same publishedHostname and this.serviceOid will be deleted first
      *
      * Provides best effort commit / rollback. If any UDDIException occurs during the published an attempt to roll back
-     * any previously published tModes and bindingTemplates will be made.
+     * any previously published tModels and bindingTemplates will be made.
      *
      * @param serviceKey               String serviceKey of the owning BusinessService
      * @param wsdlPortName             String wsdl:port local name of the wsdl:port to publish as a bindingTemplate to UDDI
@@ -129,13 +126,13 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
-     * Should only be called once for a WSDL. Will do the house cleaning required to publish a proxied wsdl:service
-     * to UDDI, which represents an 'overwritten' service
+     * Overwrite all soap + http endpoints of an original Business Service in UDDI with soap + http endpoints from a
+     * published service's WSDL.
+     * <p/>
+     * Should only be called once for an original business service in UDDI.
      * <p/>
      * This will overwrite a single BusinessService in UDDI with the contents of a single wsdl:service from the
      * gateways WSDL.
-     * <p/>
-     * Only soap + http endpoints will be removed from the BusinessService in UDDI
      *
      * @param serviceKey       String serviceKey of a BusinessService to overwrite. Required.
      * @param businessKey      Stirng businessKey which owns the BusinessService identified by serviceKey. Required
@@ -202,24 +199,14 @@ public class BusinessServicePublisher implements Closeable {
             throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
         }
 
-        final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels = modelConverter.getServicesAndDependentTModels();
+        final List<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels = modelConverter.getServicesAndDependentTModels();
 
         final List<Pair<BusinessService, Map<String, TModel>>> pairToUseList =
-                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlServiceNameToDependentTModels);
+                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
 
         //now we are ready to work with this service. We will publish all soap bindings found and leave any others on
         //the original service in UDDI intact - this will likely be a configurable option in the future
         final Map<String, String> serviceNameToWsdlNameMap = new HashMap<String, String>();
-        //todo the name does not need to be changed as we no longer modify the name - see above line: modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
-
-        //todo delete from here
-        Name name = new Name();
-        Pair<BusinessService, Map<String, TModel>> foundPair = pairToUseList.get(0);
-        name.setValue(foundPair.left.getName().get(0).getValue());
-        overwriteService.getName().clear();
-        overwriteService.getName().add(name);
-        jaxWsUDDIClient.updateBusinessService(overwriteService);
-        //todo delete to here
 
         serviceNameToWsdlNameMap.put(overwriteService.getName().get(0).getValue(), serviceNameAndNameSpace.left);
         //true here means that we will keep any existing bindings found on the BusinessService
@@ -231,19 +218,19 @@ public class BusinessServicePublisher implements Closeable {
      * of publishing the WSDL
      * <p/>
      * This handles both an initial publish and a subsequent publish. For updates, existing serviceKeys are reused
-     * where they represent the same wsdl:service from the wsdl
+     * where they represent the same wsdl:service from the wsdl, this is determined by the wsdl:service localnames matching
      * <p/>
      * If isOverWriteUpdate is true, then publishedServiceKeys must contain at least 1 key.
      *
-     * @param businessKey              String business key of the BusinessEntity in UDDI which owns all services published
+     * @param businessKey              String businessKey of the BusinessEntity in UDDI which owns all services published
      * @param publishedServiceKeys     Set String of serviceKeys for BusinessServices which were already published at an earlier time for this WSDL. Can be empty, but not null
-     * @param isOverwriteUpdate        boolean if true, then we aer updating an overwritten service. In this case we need
+     * @param isOverwriteUpdate        boolean if true, then we are updating an overwritten service. In this case we need
      *                                 to make sure we only publish a single service from the WSDL. The first serviceKey found in publishedServiceKeys is then
      *                                 assumed to be the serviceKey of the overwritten service.
-     * @param registrySpecificMetaData if not null, the registry specific meta data will be added appropriately to each uddi piece of infomation published
+     * @param registrySpecificMetaData if not null, the registry specific meta data will be added appropriately to each applicable UDDI entity published
      * @param allEndpointPairs         Collection<Pair<String, String>> all endpoints which should be published to UDDI
      *                                 as distinct endpoints for each service published. This means that a single wsdl:port may have more than one
-     *                                 bindingTemplate in UDDI. The left side of each pair is String URL which will become the value of the'endPoint'
+     *                                 bindingTemplate in UDDI. The left side of each pair is String URL which will become the value of the 'endPoint'
      *                                 in the accessPoint element of a bindingTemplate. The right hand side of each pair is a String WSDL URL.
      *                                 This will be included in every tModel published to UDDI as an overviewURL.
      * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of BusinessServices published
@@ -278,18 +265,18 @@ public class BusinessServicePublisher implements Closeable {
         }
 
         //not final as we may modify the reference
-        List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels = modelConverter.getServicesAndDependentTModels();
+        List<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels = modelConverter.getServicesAndDependentTModels();
 
         if (isOverwriteUpdate) {
             final BusinessService overwriteService = jaxWsUDDIClient.getBusinessService(publishedServiceKeys.iterator().next());
             final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
-            wsdlServiceNameToDependentTModels =
-                    extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlServiceNameToDependentTModels);
+            wsdlBusinessServicesToDependentTModels =
+                    extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
         }
 
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
-        return publishToUDDI(publishedServiceKeys, wsdlServiceNameToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate, registrySpecificMetaData);
+        return publishToUDDI(publishedServiceKeys, wsdlBusinessServicesToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate, registrySpecificMetaData);
     }
 
     @Override
@@ -302,15 +289,14 @@ public class BusinessServicePublisher implements Closeable {
     /**
      * Create a new BusinessServicePublisher.
      *
+     * @param uddiClient UDDIClient for the UDDI Registry to publish to
      * @param wsdl WSDL to publish to UDDI
      * @param serviceOid services OID, which originates from the WSDL
-     * @param uddiClient UDDIClient for the UDDI Registry to publish to
-     * @param flagJustIngoreMe as it says
      */
-    protected BusinessServicePublisher(final Wsdl wsdl,
-                                       final long serviceOid,
-                                       final UDDIClient uddiClient,
-                                       boolean flagJustIngoreMe) {
+    protected BusinessServicePublisher(final UDDIClient uddiClient,
+                                       final Wsdl wsdl,
+                                       final long serviceOid
+    ) {
         if(wsdl == null) throw new NullPointerException("wsdl cannot be null");
         if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
 
@@ -493,22 +479,27 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
+     * From a Collection of BusinessServices, extract a single BusinessService who's name matches the requiredNameSpace
+     * parameter and if requiredNameSpace is not null, who's namespace matches this parameter.
      *
-     * @param foundServiceName String service name. Required.
-     * @param foundNameSpace String Can be null. If not null it cannot be the empty string after a trim
-     * @param wsdlServiceNameToDependentTModels
-     * @return
-     * @throws UDDIException
+     * @param requiredServiceName String service name. Required.
+     * @param requiredNameSpace   String Can be null. If not null it cannot be the empty string after a trim
+     * @param wsdlBusinessServicesToDependentTModels
+     *                            Collection of Pairs of BusinessServices to dependent tModels. This should
+     *                            represent a gateway WSDL converted into the UDDI data model.
+     * @return the required BusinessService and dependent tModels. For convenience for callers, it's returned as a list.
+     *         The list will only every contain a single element.
+     * @throws UDDIException if the required BusinessService is not found in the wsdlBusinessServicesToDependentTModels Collection
      */
     private List<Pair<BusinessService, Map<String, TModel>>> extractSingleService(
-            final String foundServiceName,
-            final String foundNameSpace,
-            final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels) throws UDDIException {
-        if(foundNameSpace != null && foundNameSpace.trim().isEmpty())
-            throw new IllegalArgumentException("If foundNameSpace is supplied, it cannot be the empty string");
+            final String requiredServiceName,
+            final String requiredNameSpace,
+            final Collection<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels) throws UDDIException {
+        if (requiredNameSpace != null && requiredNameSpace.trim().isEmpty())
+            throw new IllegalArgumentException("If requiredNameSpace is supplied, it cannot be the empty string");
 
         Pair<BusinessService, Map<String, TModel>> foundPair = null;
-        for (Pair<BusinessService, Map<String, TModel>> pair : wsdlServiceNameToDependentTModels) {
+        for (Pair<BusinessService, Map<String, TModel>> pair : wsdlBusinessServicesToDependentTModels) {
             final BusinessService checkIfItsTheOne = pair.left;
 
             String uddiServiceLocalName = null;
@@ -522,14 +513,14 @@ public class BusinessServicePublisher implements Closeable {
             }
 
             final boolean localNameOk = uddiServiceLocalName != null && !uddiServiceLocalName.trim().isEmpty();
-            final boolean nameSpaceOk = foundNameSpace != null && (uddiNameSpace != null && !uddiNameSpace.trim().isEmpty());
+            final boolean nameSpaceOk = requiredNameSpace != null && (uddiNameSpace != null && !uddiNameSpace.trim().isEmpty());
 
             if (!localNameOk) {
                 continue;//this service is not valid, cannot use
             }
 
-            if (uddiServiceLocalName.equalsIgnoreCase(foundServiceName) &&
-                    (!nameSpaceOk || uddiNameSpace.equalsIgnoreCase(foundNameSpace))) {
+            if (uddiServiceLocalName.equalsIgnoreCase(requiredServiceName) &&
+                    (!nameSpaceOk || uddiNameSpace.equalsIgnoreCase(requiredNameSpace))) {
                 foundPair = pair;
                 break;
             }
@@ -537,7 +528,7 @@ public class BusinessServicePublisher implements Closeable {
 
         //if foundPair is null, then the UDDI does not model the WSDL, we cannot work with this
         if (foundPair == null)
-            throw new UDDIException("The wsdl:service '" + foundServiceName + "' is not contained in the Gateway's WSDL. Cannot overwrite original service");
+            throw new UDDIException("The wsdl:service '" + requiredServiceName + "' is not contained in the Gateway's WSDL. Cannot overwrite original service");
 
         return Arrays.asList(foundPair);
     }
@@ -720,8 +711,7 @@ public class BusinessServicePublisher implements Closeable {
     private String getUniqueKeyForService(BusinessService bs) {
         final String nameSpace = UDDIUtilities.extractNamespace(bs);
         final String serviceName = bs.getName().get(0).getValue();
-        final String uniqueKey = (nameSpace == null) ? serviceName : serviceName + "_" + nameSpace;
-        return uniqueKey;
+        return (nameSpace == null) ? serviceName : serviceName + "_" + nameSpace;
     }
 
     /**
@@ -824,8 +814,9 @@ public class BusinessServicePublisher implements Closeable {
      * Publish a BusinessService to UDDI. The BusinessService may already have been published to UDDI.
      *
      * @param businessService BusinessService to publish to UDDI. Required.
-     * @param rollbackTModelsToDelete
-     * @param allPublishedServicesSoFar
+     * @param rollbackTModelsToDelete Collection of all published tModels for the current publish operation
+     * @param allPublishedServicesSoFar Collection of all published BusinessServices so far. The left side of each Pair
+     * is not used.
      * @return Pair of String newly created serviceKey to the newly published BusinessService. If this value is null, then
      *         the BusinessService was though to already exist in UDDI due to it already having a non null serviceKey, which was used
      *         as the value when saving the BusinessService.
@@ -855,7 +846,7 @@ public class BusinessServicePublisher implements Closeable {
      * individually. It is possible then that some will fail / succeed. It is only a best effort to clean up UDDI.
      *
      * @param rollbackTModelsToDelete Collection of tModels to delete
-     * @param allPublishedServicesSoFar Collection of BusinessServices to delete
+     * @param allPublishedServicesSoFar Collection of BusinessServices to delete. The left side of each Pair is not used
      */
     private void handleUDDIRollback(
             final Collection<TModel> rollbackTModelsToDelete,

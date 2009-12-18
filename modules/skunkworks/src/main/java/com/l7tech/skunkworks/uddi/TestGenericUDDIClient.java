@@ -105,12 +105,12 @@ public class TestGenericUDDIClient {
 
     @Test
     public void updateBindingTemplateToCauseNotification() throws UDDIException{
-        String bindingKey = "uddi:54999220-e5b7-11de-a429-25a7e540a3f8";
-//        String bindingKey = "uddi:5582b874-e35e-11de-93c3-dc2d2b7e3068";
+//        String bindingKey = "uddi:847b0264-ea9a-11de-84ef-f026cfc018c3";
+        String bindingKey = "uddi:84789164-ea9a-11de-84ef-c38c850cc694";
         GenericUDDIClient genericUDDIClient = (GenericUDDIClient) uddiClient;
 
-        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:54994400-e5b7-11de-a429-25a7e540a3f8");
-//        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:1c83799c-e35e-11de-93c3-9366805f4bbc");
+//        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:84789164-ea9a-11de-84ef-ddc3284465e0");
+        final BusinessService businessService = genericUDDIClient.getBusinessService("uddi:74659130-ea9a-11de-84ef-87e349cf495d");
         BindingTemplate foundTemplate = null;
         for(BindingTemplate bt: businessService.getBindingTemplates().getBindingTemplate()){
             if(bt.getBindingKey().equals(bindingKey)){
@@ -121,10 +121,11 @@ public class TestGenericUDDIClient {
 
         Assert.assertNotNull(foundTemplate);
 
-//        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle2.asmx");
+        foundTemplate.getAccessPoint().setValue("http://thehostwedontwanttorouteto.com:1610/SpaceOrderofBattle1.asmx");
 //        foundTemplate.getAccessPoint().setValue("http://hugh:8081/axis/services/PlayerStats/11");
 //        foundTemplate.getAccessPoint().setValue("http://hugh/ACMEWarehouseWS/12/Service.asmx");
-        foundTemplate.getAccessPoint().setValue("http://www50.brinkster.com/vbfacileinpt/np2.asmx");
+//        foundTemplate.getAccessPoint().setValue("http://www50.brinkster.com/vbfacileinpt/np2.asmx");
+//        foundTemplate.getAccessPoint().setValue("http://ThisHostIsFromTheImportedDocument1.asmx");
         genericUDDIClient.publishBusinessService(businessService);
         //genericUDDIClient.publishBindingTemplate(foundTemplate);
     }
@@ -460,13 +461,13 @@ public class TestGenericUDDIClient {
     }
 
     private UDDIClient getUDDIClient(){
-//        return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
-//                        "http://DONALWINXP:53307/UddiRegistry/publish",
-//                        null,
-//                        "http://DONALWINXP:53307/UddiRegistry/security",
-//                        "administrator",
-//                        "7layer",
-//                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+        return new GenericUDDIClient("http://DONALWINXP:53307/UddiRegistry/inquiry",
+                        "http://DONALWINXP:53307/UddiRegistry/publish",
+                        null,
+                        "http://DONALWINXP:53307/UddiRegistry/security",
+                        "administrator",
+                        "7layer",
+                        PolicyAttachmentVersion.v1_2/*not important here*/, null, false){};
 
 //        return new GenericUDDIClient("http://activesoa:53307/UddiRegistry/inquiry",
 //                        "http://activesoa:53307/UddiRegistry/publish",
@@ -474,17 +475,17 @@ public class TestGenericUDDIClient {
 //                        "http://activesoa:53307/UddiRegistry/security",
 //                        "administrator",
 //                        "7layer",
-//                        PolicyAttachmentVersion.v1_2/*not important here*/, null){};
+//                        PolicyAttachmentVersion.v1_2/*not important here*/, null, false){};
 
-        return new GenericUDDIClient("http://systinet.l7tech.com:8080/uddi/inquiry",
-                        "http://systinet.l7tech.com:8080/uddi/publishing",
-                        null,
-                        "http://systinet.l7tech.com:8080/uddi/security",
-                        "admin",
-                        "7layer",
-                        PolicyAttachmentVersion.v1_2/*not important here*/,
-                        null,
-                        true){};
+//        return new GenericUDDIClient("http://systinet.l7tech.com:8080/uddi/inquiry",
+//                        "http://systinet.l7tech.com:8080/uddi/publishing",
+//                        null,
+//                        "http://systinet.l7tech.com:8080/uddi/security",
+//                        "admin",
+//                        "7layer",
+//                        PolicyAttachmentVersion.v1_2/*not important here*/,
+//                        null,
+//                        true){};
 
 //        return new GenericUDDIClient("http://centrasiteuddi:53307/UddiRegistry/inquiry",
 //                        "http://centrasiteuddi:53307/UddiRegistry/publish",

@@ -287,7 +287,7 @@ public class WsdlToUDDIModelConverter {
                     javax.wsdl.extensions.soap.SOAPBinding soapBinding = (javax.wsdl.extensions.soap.SOAPBinding) ee;
                     endPointUri = soapBinding.getTransportURI();
                 }else if(ee instanceof javax.wsdl.extensions.soap12.SOAP12Binding){
-                    SOAP12Binding soapBinding = (SOAP12Binding) ee;
+                    javax.wsdl.extensions.soap12.SOAP12Binding soapBinding = (javax.wsdl.extensions.soap12.SOAP12Binding) ee;
                     endPointUri = soapBinding.getTransportURI();
                 }
                 if(endPointUri != null && endPointUri.equalsIgnoreCase(HTTP_SCHEMAS_SOAP_HTTP)){
@@ -327,7 +327,7 @@ public class WsdlToUDDIModelConverter {
         //tModel for wsdl:binding, that this wsdl:port implements
         final Binding binding = wsdlPort.getBinding();
         if(binding == null){
-            final String msg = "wsdl:port '" + wsdlPort.getName() + "'contains a reference to a non existing wsdl:portType";
+            final String msg = "wsdl:port '" + wsdlPort.getName() + "' contains a reference to a non existing wsdl:portType";
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
@@ -359,7 +359,10 @@ public class WsdlToUDDIModelConverter {
     /**
      * Create a wsdl:binding tModel according to the spec and return the tModel key of the created tModel
      * @param binding Binding wsdl:binding to model as a tModel in UDDI
-     * @param gatewayUrl
+     * @param bindingUniqueValue String a unique value which is guaranteed to be unique to the bindingTemplate that this
+     * wsdl:binding tModel is being created for. This is important as the conversion can create the same bindingTemplate
+     * which represents a wsdl:port twice or more..one for each endpoint, so its important that we can later identify which
+     * bindingTemplate requires which specific tModels. This value is how this works.
      * @return String key of the created tModel
      * @throws com.l7tech.uddi.WsdlToUDDIModelConverter.MissingWsdlReferenceException if the binding contains a reference
      * to a wsdl:portType which does not exist
@@ -367,14 +370,14 @@ public class WsdlToUDDIModelConverter {
     private String createUddiBindingTModel(final Map<String, TModel> serviceToTModels,
                                            final Binding binding,
                                            final Port wsdlPort,
-                                           final String gatewayUrl,
+                                           final String bindingUniqueValue,
                                            final String wsdlUrl) throws MissingWsdlReferenceException {
         final String bindingName = binding.getQName().getLocalPart();//+ " " + serviceOid; - don't do this, it breaks the technical note
 
         //A binding name is UNIQUE across all wsdl:bindings in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_bindings
         //appending BINDING_TMODEL_IDENTIFIER as a wsdl:portType could have the same name
-        final String key = bindingName + wsdlPort.getName() + HexUtils.encodeBase64(gatewayUrl.getBytes()) + BINDING_TMODEL_IDENTIFIER;
+        final String key = bindingName + wsdlPort.getName() + HexUtils.encodeBase64(HexUtils.getMd5Digest(bindingUniqueValue.getBytes())) + BINDING_TMODEL_IDENTIFIER;
 
         final TModel tModel = new TModel();
 
@@ -390,11 +393,11 @@ public class WsdlToUDDIModelConverter {
         categoryBag.getKeyedReference().add(bindingEntityReference);
 
         if(binding.getPortType() == null) {
-            final String msg = "wsdl:binding '" + binding.getQName().getLocalPart() + "'contains a reference to a non existing wsdl:portType";
+            final String msg = "wsdl:binding '" + binding.getQName().getLocalPart() + "' contains a reference to a non existing wsdl:portType";
             logger.log(Level.INFO, msg);
             throw new MissingWsdlReferenceException(msg);
         }
-        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType(), wsdlPort, gatewayUrl, wsdlUrl);
+        final String portTypeTModelKey = createUddiPortTypeTModel(serviceToTModels, binding.getPortType(), wsdlPort, bindingUniqueValue, wsdlUrl);
         final KeyedReference portTypeReference = new KeyedReference();
         portTypeReference.setKeyName("portType reference");
         portTypeReference.setTModelKey(UDDI_WSDL_PORTTYPEREFERENCE);
@@ -428,8 +431,7 @@ public class WsdlToUDDIModelConverter {
         categoryBag.getKeyedReference().add(httpTransportReference);
 
         tModel.setCategoryBag(categoryBag);
-        //don't set the key, as it's meaningless to the tModel, its just used as a placeholder for references
-//        tModel.setTModelKey(key);
+        //do not set the tModelKey property. Clients expect this value to be null on a newly created tModel
         serviceToTModels.put(key, tModel);
         return key;
     }
@@ -449,10 +451,22 @@ public class WsdlToUDDIModelConverter {
         return returnList;
     }
 
+    /**
+     *
+     * @param serviceToTModels
+     * @param portType
+     * @param wsdlPort
+     * @param bindingUniqueValue String a unique value which is guaranteed to be unique to the bindingTemplate that this
+     * wsdl:binding tModel is being created for. This is important as the conversion can create the same bindingTemplate
+     * which represents a wsdl:port twice or more..one for each endpoint, so its important that we can later identify which
+     * bindingTemplate requires which specific tModels. This value is how this works.
+     * @param wsdlUrl
+     * @return
+     */
     private String createUddiPortTypeTModel(final Map<String, TModel> serviceToTModels,
                                             final PortType portType,
                                             final Port wsdlPort,
-                                            final String gatewayUrl, 
+                                            final String bindingUniqueValue,
                                             final String wsdlUrl) {
         //calling code should not have called with null pointer
         if(portType == null) throw new NullPointerException("Missing reference to wsdl:portType");
@@ -461,7 +475,7 @@ public class WsdlToUDDIModelConverter {
         //A portName is UNIQUE across all wsdl:portTypes in the entire WSDL!
         //See http://www.w3.org/TR/wsdl#_porttypes
         //appending PORT_TMODEL_IDENTIFIER as a wsdl:binding could have the same name
-        final String key = portTypeName + wsdlPort.getName() + HexUtils.encodeBase64(gatewayUrl.getBytes()) +  PORT_TMODEL_IDENTIFIER;//Cannot append any value to this constant
+        final String key = portTypeName + wsdlPort.getName() + HexUtils.encodeBase64(HexUtils.getMd5Digest(bindingUniqueValue.getBytes())) +  PORT_TMODEL_IDENTIFIER;//Cannot append any value to this constant
 
         final TModel tModel = new TModel();
         tModel.setName(getName(portTypeName));
@@ -487,8 +501,7 @@ public class WsdlToUDDIModelConverter {
         }
 
         tModel.setCategoryBag(categoryBag);
-        //don't set the key, as it's meaningless to the tModel, its just used as a placeholder for references
-//        tModel.setTModelKey(key);
+        //do not set the tModelKey property. Clients expect this value to be null on a newly created tModel
         serviceToTModels.put(key, tModel);
         return key;
     }
