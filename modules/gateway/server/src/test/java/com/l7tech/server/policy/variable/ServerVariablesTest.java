@@ -357,6 +357,7 @@ public class ServerVariablesTest {
     @Test
     public void testOriginalRequest() throws Exception {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        Message.setDefaultEnableOriginalDocument(true);
         Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY));
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         addTextNode(c.getRequest(), "reqfoo");
@@ -518,6 +519,7 @@ public class ServerVariablesTest {
     @Test
     public void testMessageAuditRecordFields() throws Exception {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "false");
+        Message.setDefaultEnableOriginalDocument(false);
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         expandAndCheck(c, "${audit.mappingValuesOid}", "49585");
         expandAndCheck(c, "${audit.operationName}", "listProducts");
@@ -540,6 +542,7 @@ public class ServerVariablesTest {
     @Test
     public void testMessageAuditRecordFields_with_OrigRequest() throws Exception {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
+        Message.setDefaultEnableOriginalDocument(true);
         final AuditSinkPolicyEnforcementContext c = sinkcontext();
         addTextNode(c.getOriginalRequest(), "reqfoo");
         addTextNode(c.getOriginalResponse(), "respfoo");
