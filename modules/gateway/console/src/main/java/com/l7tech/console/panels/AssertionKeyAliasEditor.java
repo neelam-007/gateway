@@ -141,8 +141,15 @@ public class AssertionKeyAliasEditor extends JDialog {
                 populateCombobox();
 
                 // Resize the dialog size if needed.
-                if (getSize().width < mainPanel.getMinimumSize().width) {
-                    setSize(mainPanel.getMinimumSize().width, getSize().height);
+                JRootPane rootpane = mainPanel.getRootPane();
+                Container rootparent = rootpane.getParent();
+                if (rootparent instanceof JInternalFrame) {
+                    JInternalFrame jif = (JInternalFrame)rootparent;
+                    Dimension newSize = mainPanel.getPreferredSize();
+                    Dimension fullSize = new Dimension(10 + (int)newSize.getWidth(), 32 + (int)newSize.getHeight());
+                    jif.setSize(fullSize);
+                } else {
+                    pack();
                 }
             }
         });
