@@ -443,6 +443,7 @@ public class GatewayFeatureSets {
             ass(FalseAssertion.class),
             ass(SetVariableAssertion.class),
             ass(Include.class),
+            ass(ExportVariablesAssertion.class),
             mass("assertion:EchoRouting"),
             mass("assertion:HardcodedResponse"),
             mass("assertion:CertificateAttributes"));
