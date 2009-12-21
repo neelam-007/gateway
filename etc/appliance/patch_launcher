@@ -45,7 +45,7 @@ extractProperty() {
 
 
 if [ "$(id -u)" != "0" ] ; then
-    echo "Must be root to intall appliance patches."
+    echo "Must be root to install appliance patches."
     exit 1
 fi
 
@@ -53,7 +53,7 @@ self="${0}"
 java="${1}"
 
 if [ -z "${java}" ] ; then
-    echo no arguments speficied
+    echo "No arguments specified."
     exit 1
 fi
 
