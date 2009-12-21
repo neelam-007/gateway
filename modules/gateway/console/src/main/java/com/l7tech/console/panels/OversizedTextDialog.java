@@ -91,7 +91,7 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("attribute name length", attrNameLengthField, 0, Integer.MAX_VALUE);
-        validator.constrainTextFieldToNumberRange("maximum payload count", payloadCountField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("maximum payload count", payloadCountField, 1, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
                                                   OversizedTextAssertion.MAX_NESTING_LIMIT);
