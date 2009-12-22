@@ -44,7 +44,7 @@ public class AdditionalPropertiesDialog extends JDialog {
 
         setContentPane(mainPanel);
         setModal(true);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
         DocumentListener docListener = new RunOnChangeListener(new Runnable() {
