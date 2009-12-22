@@ -150,9 +150,9 @@ public class BootstrapConfig {
     }
 
     private static String generatePassword() {
-        final byte[] passBytes = new byte[4];
+        final byte[] passBytes = new byte[32];
         rand.nextBytes(passBytes);
-        return HexUtils.hexDump(passBytes);
+        return HexUtils.encodeBase64(passBytes, true);
     }
 
     private static File checkFile(File file, boolean mustExist) {
