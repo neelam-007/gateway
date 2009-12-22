@@ -396,31 +396,22 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private String isDuplicatedColumnOrVariable(final MutablePair<String, String> newPair, final MutablePair<String, String> originalPair) {
-
         // Check Column
-        boolean duplicated = false;
         String originalColumnLabel = originalPair.left;
         for (String key: namingMap.keySet()) {
-            if (originalColumnLabel.compareToIgnoreCase(key) != 0 && newPair.left.compareToIgnoreCase(key) == 0) {
-                duplicated = true;
-                break;
+            if (originalColumnLabel.compareToIgnoreCase(key) != 0 // make sure not to compare itself
+                && newPair.left.compareToIgnoreCase(key) == 0) {
+                return MessageFormat.format(resources.getString("warning.message.duplicated.column"), newPair.left);
             }
-        }
-        if (duplicated) {
-            return MessageFormat.format(resources.getString("warning.message.duplicated.column"), newPair.left);
         }
 
         // Check Variable
-        duplicated = false;
         String originalVariable = originalPair.right;
         for (String value: namingMap.values()) {
-            if (originalVariable.compareToIgnoreCase(value) != 0 && newPair.right.compareToIgnoreCase(value) == 0) {
-                duplicated = true;
-                break;
+            if (originalVariable.compareToIgnoreCase(value) != 0 // make sure not to compare itself
+                && newPair.right.compareToIgnoreCase(value) == 0) {
+                return MessageFormat.format(resources.getString("warning.message.duplicated.variable"), newPair.right);
             }
-        }
-        if (duplicated) {
-            return MessageFormat.format(resources.getString("warning.message.duplicated.variable"), newPair.right);
         }
 
         return null;

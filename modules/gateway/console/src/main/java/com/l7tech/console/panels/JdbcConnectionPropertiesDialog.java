@@ -364,7 +364,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
-                    String warningMessage = checkDuplicateProperty(property.left);
+                    String warningMessage = checkDuplicateProperty(property.left, originalPropName);
                     if (warningMessage != null) {
                         DialogDisplayer.showMessageDialog(JdbcConnectionPropertiesDialog.this, warningMessage,
                             resources.getString("dialog.title.duplicate.property"), JOptionPane.WARNING_MESSAGE, null);
@@ -376,8 +376,10 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                         additionalPropMap.remove(originalPropName);
                     }
                     additionalPropMap.put(property.left, property.right);
+
                     // Refresh the table
                     additionalPropertyTableModel.fireTableDataChanged();
+
                     // Refresh the selection highlight
                     ArrayList<String> keyset = new ArrayList<String>();
                     keyset.addAll(additionalPropMap.keySet());
@@ -388,23 +390,33 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         });
     }
 
-    private String checkDuplicateProperty(String propName) {
-        if (propName.length() > 5 && propName.startsWith("c3p0.")) propName = propName.substring(5);
-        
-        if ("driverClass".compareToIgnoreCase(propName) == 0) {
+    private String checkDuplicateProperty(String newPropName, final String originalPropName) {
+        if (newPropName.length() > 5 && newPropName.startsWith("c3p0.")) newPropName = newPropName.substring(5);
+
+        // Check if there exists a duplicate with Basic Connection Configuration.
+        if ("driverClass".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.driver.class"));
-        } else if ("jdbcUrl".compareToIgnoreCase(propName) == 0) {
+        } else if ("jdbcUrl".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.jdbc.url"));
-        } else if ("user".compareToIgnoreCase(propName) == 0) {
+        } else if ("user".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.user.name"));
-        } else if ("password".compareToIgnoreCase(propName) == 0) {
+        } else if ("password".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.password"));
         }
 
-         if ("minPoolSize".compareToIgnoreCase(propName) == 0) {
+        // Check if there exists a duplicate with C3P0 Pool Configuration.
+         if ("minPoolSize".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.minPoolSize"));
-        } else if ("maxPoolSize".compareToIgnoreCase(propName) == 0) {
+        } else if ("maxPoolSize".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.maxPoolSize"));
+        }
+
+        // Check if there exists a duplicate with other properties.
+        for (String key: additionalPropMap.keySet()) {
+            if (originalPropName.compareToIgnoreCase(key) != 0 // make sure not to compare itself 
+                && newPropName.compareToIgnoreCase(key) == 0) {
+                return MessageFormat.format(resources.getString("warning.message.duplicated.property"), newPropName);
+            }
         }
 
         return null;
