@@ -174,7 +174,12 @@
                             </list>
                         </entry>
                         <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
-                        <entry key="httpTransportModule"><list><value>ioHttpPoolMaxConcurrency</value></list></entry>
+                        <entry key="httpTransportModule">
+                            <list>
+                                <value>ioHttpPoolMaxConcurrency</value>
+                                <value>ioHttpPoolMinSpareThreads</value>
+                            </list>
+                        </entry>
                         <entry key="trafficLogger">
                             <list>
                                 <value>trafficLoggerDetail</value>

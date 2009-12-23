@@ -215,21 +215,24 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     public void propertyChange(PropertyChangeEvent evt) {
         if (executor == null) return; // not yet started
 
-        final String clusterProp = ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY;
-        if (evt.getPropertyName().equals(clusterProp)) {
+        final String propertyName = evt.getPropertyName();
+        if (ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
+                ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS.equals(propertyName))
+        {
             try {
-                final Object v = evt.getNewValue();
-                if (v != null) {
-                    final int threads = Integer.parseInt(v.toString());
-                    logger.info("Changing maximum HTTP/HTTPS concurrency to " + threads);
-                    executor.setMaxThreads(threads);
-                    executor.stop();
-                    executor.start();
-                }
-            } catch (NumberFormatException nfe) {
-                logger.warning("Unable to parse value of cluster property " + clusterProp + ": " + ExceptionUtils.getMessage(nfe));
+                int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
+                int coreSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
+                Pair<Integer, Integer> adjusted = adjustCoreAndMaxThreads(coreSize, maxSize);
+                coreSize = adjusted.left;
+                maxSize = adjusted.right;
+
+                logger.info("Changing HTTP/HTTPS concurrency to core=" + coreSize + ", max=" + maxSize);
+                executor.setMaxThreads(maxSize);
+                executor.setMinSpareThreads(coreSize);
+                executor.stop();
+                executor.start();
             } catch (org.apache.catalina.LifecycleException e) {
-                final String msg = "Unable to restart executor after changing property " + clusterProp + ": " + ExceptionUtils.getMessage(e);
+                final String msg = "Unable to restart executor after changing property " + evt.getPropertyName() + ": " + ExceptionUtils.getMessage(e);
                 logger.log(Level.SEVERE, msg, e);
                 getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             }
@@ -307,16 +310,23 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private StandardThreadExecutor createExecutor( final String name,
-                                                   int coreSize,
-                                                   int maxSize)
-    {
+    private Pair<Integer, Integer> adjustCoreAndMaxThreads(int coreSize, int maxSize) {
         if ( maxSize < 1 || maxSize > 100000 ) maxSize = 40;
         if ( coreSize < 0 && coreSize > -1000 ) coreSize = maxSize / Math.abs(coreSize);
         if ( coreSize < 1 )
             coreSize = 1;
         else if ( coreSize > maxSize )
             coreSize = maxSize;
+        return new Pair<Integer, Integer>(coreSize, maxSize);
+    }
+
+    private StandardThreadExecutor createExecutor( final String name,
+                                                   int coreSize,
+                                                   int maxSize)
+    {
+        Pair<Integer, Integer> adjusted = adjustCoreAndMaxThreads(coreSize, maxSize);
+        coreSize = adjusted.left;
+        maxSize = adjusted.right;
 
         StandardThreadExecutor executor = new StandardThreadExecutor();
         executor.setName(name);
