@@ -6,9 +6,12 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -36,6 +39,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JComboBox cbXslLocation;
     private TargetMessagePanel targetMessagePanel;
     private JTextField messageVariablePrefixTextField;
+    private JLabel prefixStatusLabel;
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
@@ -118,6 +122,21 @@ public class XslTransformationPropertiesDialog extends JDialog {
             }
         });
         messageVariablePrefixTextField.setText(assertion.getMsgVarPrefix());
+        validateVariablePrefix();
+        messageVariablePrefixTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                boolean isValidPrefix = validateVariablePrefix();
+                okButton.setEnabled(isValidPrefix);
+
+                // If the prefix is not valid, then the validation message will need to resize the dialog.
+                if (! isValidPrefix) {
+                    if (getSize().width < mainPanel.getMinimumSize().width) {
+                        setSize(mainPanel.getMinimumSize().width, getSize().height);
+                    }
+                }
+            }
+        }));
 
         AssertionResourceInfo ri = assertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -143,16 +162,21 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 cancel();
             }
         });
-/*
-        helpButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Actions.invokeHelp(XslTransformationPropertiesDialog.this);
-            }
-        });
-*/
+
         add(mainPanel);
 
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
+     */
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            messageVariablePrefixTextField.getText(),
+            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            new String[] {XslTransformation.VARIABLE_NAME},
+            prefixStatusLabel);
     }
 
     private String getCurrentFetchMode() {
