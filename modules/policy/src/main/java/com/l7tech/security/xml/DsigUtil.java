@@ -354,13 +354,6 @@ public class DsigUtil {
         }
     }
 
-    /*
-            hmacOutputLengthFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod/ds:HMACOutputLength");
-            hmacOutputLengthFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
-            hmacSigMethodFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod[contains(string(@Algorithm), \"#hmac-\")]");
-            hmacSigMethodFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
-     */
-
     private static Element findSigMethod(Element sigElement) throws InvalidDocumentFormatException {
         if (sigElement == null) throw new IllegalArgumentException("need sigElement");
         Element signedInfo = DomUtils.findExactlyOneChildElementByName(sigElement, SoapUtil.DIGSIG_URI, "SignedInfo");
