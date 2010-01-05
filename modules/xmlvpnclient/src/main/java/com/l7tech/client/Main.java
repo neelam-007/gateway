@@ -1,17 +1,14 @@
 package com.l7tech.client;
 
-import com.l7tech.util.BuildInfo;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.kerberos.KerberosClient;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.Background;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.proxy.Constants;
+import com.l7tech.proxy.MessageLogger;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.Constants;
-import com.l7tech.proxy.MessageLogger;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.*;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -38,21 +35,6 @@ public class Main {
     public static final String PROPERTY_LISTENER_PORT = "com.l7tech.proxy.listener.port";
     public static final String PROPERTY_LISTENER_MINTHREADS = "com.l7tech.proxy.listener.minthreads";
     public static final String PROPERTY_LISTENER_MAXTHREADS = "com.l7tech.proxy.listener.maxthreads";
-
-    /** @return the specified system property as an int, with the specified default. */
-    protected static int getIntProperty(String name, int def) {
-        try {
-            String p = System.getProperty(name);
-            if (p == null || p.length() < 1) {
-                log.log(Level.FINE, "System property " + name + " is not set.  Using default of " + def);
-                return def;
-            }
-            return Integer.parseInt(p);
-        } catch (NumberFormatException e) {
-            log.log(Level.WARNING, "System property " + name + " is not a valid int.  Using default of " + def);
-            return def;
-        }
-    }
 
     /**
      * Initialize logging.  Attempts to mkdir ClientProxy.PROXY_CONFIG first, so the log file
@@ -131,8 +113,8 @@ public class Main {
      */
     protected static ClientProxy createClientProxy(SsgFinder ssgFinder) {
         int port = getBindPort();
-        int minThreads = getIntProperty(PROPERTY_LISTENER_MINTHREADS, MIN_THREADS);
-        int maxThreads = getIntProperty(PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS);
+        int minThreads = SyspropUtil.getInteger(PROPERTY_LISTENER_MINTHREADS, MIN_THREADS);
+        int maxThreads = SyspropUtil.getInteger(PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS);
 
         ClientProxy clientProxy = new ClientProxy(ssgFinder,
                                                   new MessageProcessor(),
@@ -149,7 +131,7 @@ public class Main {
     }
 
     protected static int getBindPort() {
-        return getIntProperty(PROPERTY_LISTENER_PORT, DEFAULT_PORT);
+        return SyspropUtil.getInteger(PROPERTY_LISTENER_PORT, DEFAULT_PORT);
     }
 
     /**
