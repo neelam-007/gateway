@@ -8,18 +8,16 @@ package com.l7tech.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
-import org.jaxen.JaxenException;
-import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -347,45 +345,42 @@ public class DsigUtil {
      * @throws java.security.SignatureException if there is something unsavory about the signature element
      */
     public static void precheckSigElement(Element sigElement, Key verificationKey) throws SignatureException {
-        checkForHmacOutputLength(sigElement);
-        checkForHmacWithNonSecretKey(sigElement, verificationKey);
+        try {
+            Element sigMethod = findSigMethod(sigElement);
+            checkForHmacOutputLength(sigMethod);
+            checkForHmacWithNonSecretKey(sigMethod, verificationKey);
+        } catch (InvalidDocumentFormatException e) {
+            throw new SignatureException(e);
+        }
     }
 
-    private static final DOMXPath hmacOutputLengthFinder;
-    private static final DOMXPath hmacSigMethodFinder;
-    static {
-        try {
+    /*
             hmacOutputLengthFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod/ds:HMACOutputLength");
             hmacOutputLengthFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
             hmacSigMethodFinder = new DOMXPath("ds:SignedInfo/ds:SignatureMethod[contains(string(@Algorithm), \"#hmac-\")]");
             hmacSigMethodFinder.addNamespace("ds", SoapUtil.DIGSIG_URI);
-        } catch (JaxenException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+     */
+
+    private static Element findSigMethod(Element sigElement) throws InvalidDocumentFormatException {
+        if (sigElement == null) throw new IllegalArgumentException("need sigElement");
+        Element signedInfo = DomUtils.findExactlyOneChildElementByName(sigElement, SoapUtil.DIGSIG_URI, "SignedInfo");
+        return DomUtils.findExactlyOneChildElementByName(signedInfo, SoapUtil.DIGSIG_URI, "SignatureMethod");
     }
 
-    private static void checkForHmacOutputLength(Element sigElement) throws SignatureException {
-        try {
-            List results = hmacOutputLengthFinder.selectNodes(sigElement);
-            if (results != null && results.size() > 0)
-                throw new SignatureException("Unsupported Signature: Signature contains HMACOutputLength parameter");
-        } catch (JaxenException e) {
-            throw new SignatureException("Unable to check for HMACOutputLength elements within Signature: " + ExceptionUtils.getMessage(e), e);
-        }
+    private static void checkForHmacOutputLength(Element sigMethod) throws SignatureException {
+        Element hmacOutputLen = DomUtils.findFirstChildElementByName(sigMethod, SoapUtil.DIGSIG_URI, "HMACOutputLength");
+        if (hmacOutputLen != null)
+            throw new SignatureException("Unsupported Signature: Signature contains HMACOutputLength parameter");
     }
 
-    private static void checkForHmacWithNonSecretKey(Element sigElement, Key verificationKey) throws SignatureException {
-        if (usesHmacSignatureMethod(sigElement) && !(verificationKey instanceof SecretKey))
+    private static void checkForHmacWithNonSecretKey(Element sigMethod, Key verificationKey) throws SignatureException {
+        if (usesHmacSignatureMethod(sigMethod) && !(verificationKey instanceof SecretKey))
             throw new SignatureException("Unable to verify HMAC signature with key of type " + verificationKey.getAlgorithm() + " (" + verificationKey.getClass() + ")");
     }
 
-    private static boolean usesHmacSignatureMethod(Element sigElement) throws SignatureException {
-        try {
-            List results = hmacSigMethodFinder.selectNodes(sigElement);
-            return results != null && results.size() > 0;
-        } catch (JaxenException e) {
-            throw new SignatureException("Unable to check for HMAC signature method: " + ExceptionUtils.getMessage(e), e);
-        }
+    private static boolean usesHmacSignatureMethod(Element sigMethod) throws SignatureException {
+        String alg = sigMethod.getAttribute("Algorithm");
+        return alg != null && alg.indexOf("#hmac-") >= 0;
     }
 
     /**

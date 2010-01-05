@@ -18,6 +18,7 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
+import java.io.IOException;
 
 /**
  *
@@ -31,9 +32,9 @@ public class DsigUtilTest {
         rsaPublicKey = new TestCertificateGenerator().generate().getPublicKey();
     }
 
-    @Test
+    @Test(expected = SignatureException.class)
     @BugNumber(7526)
-    public void testHmacOutputLength_notpresent() throws Exception {
+    public void testHmacOutputLength_missingSignedInfo() throws Exception {
         DsigUtil.precheckSigElement(getSigElement(
                 "<foo xmlns:z=\"urn:qwer\">\n" +
                 "<x:Signature xmlns:x=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
@@ -44,7 +45,7 @@ public class DsigUtilTest {
                 "</foo>"), secretKey);
     }
 
-    @Test
+    @Test(expected = SignatureException.class)
     @BugNumber(7526)
     public void testHmacOutputLength_presentButWrongNs() throws Exception {
         DsigUtil.precheckSigElement(getSigElement(
@@ -72,7 +73,7 @@ public class DsigUtilTest {
                 "</foo>"), secretKey);
     }
 
-    @Test
+    @Test(expected = SignatureException.class)
     @BugNumber(7526)
     public void testHmacOutputLength_outside() throws Exception {
         DsigUtil.precheckSigElement(getSigElement(
@@ -112,31 +113,36 @@ public class DsigUtilTest {
                 "</soapenv:Envelope>"), secretKey);
     }
 
-    @Ignore("Enable to ensure that dsig prechecks have negligible impact on performance")
+    //@Ignore("Enable to ensure that dsig prechecks have negligible impact on performance")
     @Test
     public void testCheckPerformance() throws Exception {
-        final Element sigEl = getSigElement(
-                "<foo xmlns=\"urn:qwer\">\n" +
-                "<x:Signature xmlns:x=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
-                " <x:SignedInfo>" +
-                "  <x:SignatureMethod Algorithm=\"urn:blah\"/>\n" +
-                " </x:SignedInfo>" +
-                "</x:Signature>\n" +
-                "</foo>");
-
-        // Ensure DOM is fully parsed
-        XmlUtil.nodeToOutputStream(sigEl.getOwnerDocument(), new NullOutputStream());
 
         new BenchmarkRunner(new Runnable() {
             @Override
             public void run() {
                 try {
-                    DsigUtil.precheckSigElement(sigEl, secretKey);
+                    final Element sigEl = getSigElement(
+                            "<foo xmlns=\"urn:qwer\">\n" +
+                                    "<x:Signature xmlns:x=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+                                    " <x:SignedInfo>" +
+                                    "  <x:SignatureMethod Algorithm=\"urn:blah\"/>\n" +
+                                    " </x:SignedInfo>" +
+                                    "</x:Signature>\n" +
+                                    "</foo>");
+
+                    // Ensure DOM is fully parsed
+                    XmlUtil.nodeToOutputStream(sigEl.getOwnerDocument(), new NullOutputStream());
+
+                    for (int i = 0; i < 10000; ++i) {
+                        DsigUtil.precheckSigElement(sigEl, secretKey);
+                    }
                 } catch (SignatureException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
-        }, 1000000, 10, "Dsig prechecks").run();
+        }, 100, 10, "Dsig prechecks").run();
     }
 
     private static Element getSigElement(String testDoc) {
