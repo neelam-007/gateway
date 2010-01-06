@@ -28,11 +28,14 @@ import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import org.junit.*;
 import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -1207,7 +1210,7 @@ public class WssDecoratorTest {
     private void doTestSecHdrMustUnderstand(boolean expect) throws IOException, SAXException, InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
         String oldPropertyValue = System.getProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
         try {
-            System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
+            SyspropUtil.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
             DecorationRequirements req = new DecorationRequirements();
             req.setUsernameTokenCredentials(new UsernameTokenImpl("joe", "sekrit".toCharArray()));
             Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
@@ -1217,9 +1220,9 @@ public class WssDecoratorTest {
             assertEquals(expect ? "1" : "0", sechdr.getAttributeNS(doc.getDocumentElement().getNamespaceURI(), "mustUnderstand"));
         } finally {
             if (oldPropertyValue == null)
-                System.clearProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
+                SyspropUtil.clearProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
             else
-                System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, oldPropertyValue);
+                SyspropUtil.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, oldPropertyValue);
         }
     }
 

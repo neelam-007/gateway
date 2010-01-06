@@ -913,7 +913,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return true if the specified property is marked as mutable
      */
     boolean isMutable(String propName) {
-        return SyspropUtil.getBoolean(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
+        return SyspropUtil.getBooleanCached(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
     }
 
     /**
@@ -1126,6 +1126,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                 }
             }
         }
+        SyspropUtil.clearCache();
     }
 
     private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {

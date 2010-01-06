@@ -1,8 +1,9 @@
 package com.l7tech.util;
 
-import com.l7tech.util.IOUtils;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -130,7 +131,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
         if (masterPasswordFile != null)
             return masterPasswordFile;
 
-        String path = SyspropUtil.getProperty(PROP_MASTER_PASSWORD_PATH);
+        String path = SyspropUtil.getPropertyCached(PROP_MASTER_PASSWORD_PATH);
         if ( path == null ) {
             throw new IllegalStateException("Master password file was not specified and is not set using the system property '"+PROP_MASTER_PASSWORD_PATH+"'.");            
         }

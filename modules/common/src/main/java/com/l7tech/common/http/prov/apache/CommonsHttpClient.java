@@ -180,17 +180,18 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        return SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200);
+        return SyspropUtil.getIntegerCached(PROP_MAX_CONN_PER_HOST, 200);
     }
 
     public static int getDefaultMaxTotalConnections() {
-        return SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000);
+        return SyspropUtil.getIntegerCached(PROP_MAX_TOTAL_CONN, 2000);
     }
 
     public static int getDefaultStaleCheckCount() {
-        return SyspropUtil.getInteger(PROP_STALE_CHECKS, 1);
+        return SyspropUtil.getIntegerCached(PROP_STALE_CHECKS, 1);
     }
 
+    @Override
     public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
@@ -278,7 +279,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             state.setCredentials(AuthScope.ANY,
                                  new UsernamePasswordCredentials(username, new String(password)));
             clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
-            clientParams.setCredentialCharset(SyspropUtil.getString(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
+            clientParams.setCredentialCharset(SyspropUtil.getStringCached(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
         }
 
         final Long contentLen = params.getContentLength();
@@ -302,6 +303,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             private org.apache.commons.httpclient.HttpMethod method = httpMethod;
             private boolean requestEntitySet = false;
 
+            @Override
             public void setInputStream(final InputStream bodyInputStream) {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
@@ -314,18 +316,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 if (method instanceof PostMethod) {
                     PostMethod postMethod = (PostMethod)method;
                     postMethod.setRequestEntity(new RequestEntity(){
+                        @Override
                         public long getContentLength() {
                             return contentLen != null ? contentLen : -1;
                         }
 
+                        @Override
                         public String getContentType() {
                             return rct != null ? rct.getFullValue() : null;
                         }
 
+                        @Override
                         public boolean isRepeatable() {
                             return false;
                         }
 
+                        @Override
                         public void writeRequest(OutputStream outputStream) throws IOException {
                             IOUtils.copyStream(bodyInputStream, outputStream);
                         }
@@ -333,18 +339,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 } else {
                     PutMethod putMethod = (PutMethod)method;
                     putMethod.setRequestEntity(new RequestEntity(){
+                        @Override
                         public long getContentLength() {
                             return contentLen != null ? contentLen : -1;
                         }
 
+                        @Override
                         public String getContentType() {
                             return rct != null ? rct.getFullValue() : null;
                         }
 
+                        @Override
                         public boolean isRepeatable() {
                             return false;
                         }
 
+                        @Override
                         public void writeRequest(OutputStream outputStream) throws IOException {
                             IOUtils.copyStream(bodyInputStream, outputStream);
                         }
@@ -352,6 +362,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
 
+            @Override
             public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
                 if (method == null) {
                     logger.warning("addParam is called before method is assigned");
@@ -367,6 +378,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
 
+            @Override
             public void setInputStreamFactory(final InputStreamFactory inputStreamFactory) {
                 if (inputStreamFactory == null)
                     throw new IllegalArgumentException("inputStreamFactory must not be null");
@@ -381,18 +393,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 if (method instanceof PostMethod) {
                     PostMethod postMethod = (PostMethod)method;
                     postMethod.setRequestEntity(new RequestEntity(){
+                        @Override
                         public long getContentLength() {
                             return contentLen != null ? contentLen : -1;
                         }
 
+                        @Override
                         public String getContentType() {
                             return rct != null ? rct.getFullValue() : null;
                         }
 
+                        @Override
                         public boolean isRepeatable() {
                             return true;
                         }
 
+                        @Override
                         public void writeRequest(OutputStream outputStream) throws IOException {
                             InputStream inputStream = null;
                             try {
@@ -406,18 +422,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 } else {
                     PutMethod putMethod = (PutMethod)method;
                     putMethod.setRequestEntity(new RequestEntity(){
+                        @Override
                         public long getContentLength() {
                             return contentLen != null ? contentLen : -1;
                         }
 
+                        @Override
                         public String getContentType() {
                             return rct != null ? rct.getFullValue() : null;
                         }
 
+                        @Override
                         public boolean isRepeatable() {
                             return true;
                         }
 
+                        @Override
                         public void writeRequest(OutputStream outputStream) throws IOException {
                             InputStream inputStream = null;
                             try {
@@ -431,6 +451,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
 
+            @Override
             public GenericHttpResponse getResponse() throws GenericHttpException {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
@@ -467,6 +488,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
                     private org.apache.commons.httpclient.HttpMethod response = method; { method = null; } // Take ownership of the HttpMethod
 
+                    @Override
                     public InputStream getInputStream() throws GenericHttpException {
                         if (response == null)
                             throw new IllegalStateException("This response has already been closed");
@@ -477,10 +499,12 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         }
                     }
 
+                    @Override
                     public int getStatus() {
                         return status;
                     }
 
+                    @Override
                     public HttpHeaders getHeaders() {
                         if (response == null)
                             throw new IllegalStateException("This response has already been closed");
@@ -492,14 +516,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         return new GenericHttpHeaders(out.toArray(new HttpHeader[out.size()]));
                     }
 
+                    @Override
                     public ContentTypeHeader getContentType() {
                         return contentType;
                     }
 
+                    @Override
                     public Long getContentLength() {
                         return contentLength;
                     }
 
+                    @Override
                     public void close() {
                         if (response != null) {
                             response.releaseConnection();
@@ -511,6 +538,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 return genericHttpResponse;
             }
 
+            @Override
             public void close() {
                 stampBindingIdentity();
                 if (method != null) {
@@ -596,18 +624,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
             protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
+                @Override
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return verify(sockFac.createSocket(socket, host, port, autoClose), host);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                     return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port) throws IOException {
                     return verify(sockFac.createSocket(host, port), host);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                     Socket socket = sockFac.createSocket();
                     int connectTimeout = httpConnectionParams.getConnectionTimeout();
@@ -666,7 +698,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Pattern commasWithWhitespace = Pattern.compile("\\s*,\\s*");
 
     private static String[] getCommaDelimitedSystemProperty(String propertyName) {
-        String delimited = SyspropUtil.getString(propertyName, null);
+        String delimited = SyspropUtil.getStringCached(propertyName, null);
         return delimited == null || delimited.length() < 1 ? null : commasWithWhitespace.split(delimited);
     }
 }

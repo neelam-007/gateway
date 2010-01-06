@@ -1,27 +1,26 @@
 package com.l7tech.server.processcontroller.patching.client;
 
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.server.processcontroller.patching.*;
-import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.ConfigServiceImpl;
+import com.l7tech.server.processcontroller.CxfUtils;
 import com.l7tech.server.processcontroller.PCUtils;
+import com.l7tech.server.processcontroller.patching.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.SyspropUtil;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
-import java.security.cert.X509Certificate;
-
-import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
+import java.util.logging.Logger;
 
 /**
  * @author jbufu
@@ -126,7 +125,7 @@ public class PatchCli {
         } else {
             try {
                 logger.log(Level.INFO, "Using patch configuration from Process Controller.");
-                System.setProperty(ConfigService.PC_HOMEDIR_PROPERTY, target);
+                SyspropUtil.setProperty(ConfigService.PC_HOMEDIR_PROPERTY, target);
                 final ConfigService config = new ConfigServiceImpl();
                 PatchPackageManager packageManager = new PatchPackageManagerImpl(config.getPatchesDirectory(), new PatchTrustStore() {
                     @Override

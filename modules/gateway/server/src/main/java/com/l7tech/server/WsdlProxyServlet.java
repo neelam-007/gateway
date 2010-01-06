@@ -548,7 +548,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
-        if (!SyspropUtil.getBoolean(PROPERTY_WSSP_ATTACH, true)) {
+        if (!SyspropUtil.getBooleanCached(PROPERTY_WSSP_ATTACH, true)) {
             logger.fine("WS-SecurityPolicy decoration not enabled.");
             return;
         }

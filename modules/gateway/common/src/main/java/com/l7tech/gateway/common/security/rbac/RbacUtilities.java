@@ -46,7 +46,7 @@ public class RbacUtilities {
     }
 
     public static boolean isEnableRoleEditing() {
-        return StringUtils.equalsIgnoreCase(SyspropUtil.getProperty(SYSTEM_PROP_ENABLEROLEEDIT), "true");
+        return StringUtils.equalsIgnoreCase(SyspropUtil.getPropertyCached(SYSTEM_PROP_ENABLEROLEEDIT), "true");
     }
 
     public static String getDescriptionString(Role role, boolean asHtml) {

@@ -20,8 +20,15 @@ import java.util.logging.Logger;
 public class SyspropUtil {
     private static final Logger logger = Logger.getLogger(SyspropUtil.class.getName());
 
+    private static final Object NULL_VALUE = new Object();
+
+    //
+    // In an ideal world this caching would be unnecessary.  Unfortunately system properties inherit from Hashtable which is synchronized
+    // so frequent lookups of settings stored as system properties can lead to small-but-measurable concurrency bottlenecks.
+    //
+
     private static class CacheHolder {
-        private static final ConcurrentMap<String, String> propertyCache = new ConcurrentHashMap<String, String>();
+        private static final ConcurrentMap<String, Object> propertyCache = new ConcurrentHashMap<String, Object>();
         static {
             Background.scheduleRepeated(new TimerTask() {
                 @Override
@@ -46,6 +53,17 @@ public class SyspropUtil {
             return Integer.getInteger(name, value);
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + value);
+            return value;
+        }
+    }
+
+    public static Integer getIntegerCached(String name, int value) {
+        try {
+            String s = getPropertyCached(name);
+            if (s == null)
+                return value;
+            return Integer.decode(s);
+        } catch (NumberFormatException nfe) {
             return value;
         }
     }
@@ -87,18 +105,25 @@ public class SyspropUtil {
         }
     }
 
+    public static String getStringCached(String name, String dflt) {
+        String result = getPropertyCached(name);
+        return result == null ? dflt : result;
+    }
+
     public static String getProperty(String name) {
         return getString(name, null);
     }
 
     public static String getPropertyCached(String name) {
-        String value = CacheHolder.propertyCache.get(name);
+        Object value = CacheHolder.propertyCache.get(name);
+        if (value == NULL_VALUE)
+            return null;
         if (value != null)
-            return value;
+            return (String)value;
         value = getProperty(name);
-        if (name != null && value != null)
-            CacheHolder.propertyCache.put(name, value);
-        return value;
+        if (name != null)
+            CacheHolder.propertyCache.put(name, value != null ? value : NULL_VALUE);
+        return (String)value;
     }
 
     public static void clearCache() {
@@ -110,6 +135,17 @@ public class SyspropUtil {
              return Long.getLong(name, dflt);
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
+            return dflt;
+        }
+    }
+
+    public static Long getLongCached(String name, long dflt) {
+        try {
+            String s = getPropertyCached(name);
+            if (s == null)
+                return dflt;
+            return Long.decode(s);
+        } catch (NumberFormatException nfe) {
             return dflt;
         }
     }
@@ -150,6 +186,22 @@ public class SyspropUtil {
                     clearCache();
                 } catch (AccessControlException e) {
                     logger.warning("Unable to set system property " + name);
+                }
+                return null;
+            }
+        });
+    }
+
+    public static void clearProperty(final String name) {
+        //noinspection unchecked
+        AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
+            public Object run() {
+                try {
+                    System.clearProperty(name);
+                    clearCache();
+                } catch (AccessControlException e) {
+                    logger.warning("Unable to clear system property " + name);
                 }
                 return null;
             }

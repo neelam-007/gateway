@@ -51,10 +51,10 @@ public class SecureHttpClient extends HttpClient {
                 (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
 
         HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxTotalConnections( SyspropUtil.getInteger(PROP_MAX_CONNECTIONS, 20) );
-        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, SyspropUtil.getInteger(PROP_MAX_HOSTCONNECTIONS, 20));
-        params.setConnectionTimeout( SyspropUtil.getInteger(PROP_CONNECTION_TIMEOUT, 30000) );
-        params.setSoTimeout( SyspropUtil.getInteger(PROP_READ_TIMEOUT, 60000) );
+        params.setMaxTotalConnections( SyspropUtil.getIntegerCached(PROP_MAX_CONNECTIONS, 20) );
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, SyspropUtil.getIntegerCached(PROP_MAX_HOSTCONNECTIONS, 20));
+        params.setConnectionTimeout( SyspropUtil.getIntegerCached(PROP_CONNECTION_TIMEOUT, 30000) );
+        params.setSoTimeout( SyspropUtil.getIntegerCached(PROP_READ_TIMEOUT, 60000) );
 
         updateHostConfiguration();
         getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
@@ -156,7 +156,7 @@ public class SecureHttpClient extends HttpClient {
 
     private TrustManager[] getTrustManagers() {
         try {
-            String tmalg = SyspropUtil.getString("com.l7tech.console.trustMananagerFactoryAlgorithm",
+            String tmalg = SyspropUtil.getStringCached("com.l7tech.console.trustMananagerFactoryAlgorithm",
                     TrustManagerFactory.getDefaultAlgorithm());
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
             tmf.init((KeyStore)null);

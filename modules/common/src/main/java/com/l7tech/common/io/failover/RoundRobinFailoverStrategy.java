@@ -25,7 +25,7 @@ public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST>
     private static final Logger logger = Logger.getLogger(RoundRobinFailoverStrategy.class.getName());
     private static final long DEFAULT_PROBE_MILLIS = 5 * 60 * 1000; // Retry failed server every 5 min by default
 
-    private long probeTime = SyspropUtil.getLong("com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS);
+    private long probeTime = SyspropUtil.getLongCached("com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS);
 
     int next = 0;
     LinkedHashMap<ST, Long> up = new LinkedHashMap<ST, Long>();

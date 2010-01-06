@@ -43,7 +43,7 @@ public class WssRoundTripTest {
     private static final WsiBSPValidator validator = new WsiBSPValidator();
 
     static {
-        System.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
+        SyspropUtil.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
     }
 
     private static class NamedTestDocument {

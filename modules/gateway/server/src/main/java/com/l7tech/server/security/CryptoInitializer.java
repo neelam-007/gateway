@@ -5,6 +5,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.Starting;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -32,7 +33,7 @@ public class CryptoInitializer implements ApplicationListener {
         serverConfig.getBooleanProperty(ServerConfig.PARAM_FIPS, false);
         if (licenseManager.isFeatureEnabled(GatewayFeatureSets.FLAG_PERMAFIPS)) {
             permafips = true;
-            System.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");
+            SyspropUtil.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");
         }
     }
 

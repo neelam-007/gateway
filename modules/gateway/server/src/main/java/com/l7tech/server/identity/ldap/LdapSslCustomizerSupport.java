@@ -1,36 +1,23 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.util.FilterClassLoader;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.objectmodel.ObjectModelException;
+import javassist.*;
 
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
 import javax.naming.NamingException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.logging.Logger;
+import javax.net.ssl.*;
 import java.security.GeneralSecurityException;
-
-import javassist.ClassPool;
-import javassist.ClassClassPath;
-import javassist.Translator;
-import javassist.NotFoundException;
-import javassist.CannotCompileException;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.Loader;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Support class for LDAP SSL configuration.
@@ -250,7 +237,7 @@ public class LdapSslCustomizerSupport {
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
-                int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                int timeout = SyspropUtil.getIntegerCached(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
                 context.getClientSessionContext().setSessionTimeout(timeout);
                 instance = context;
             } catch (GeneralSecurityException e) {

@@ -53,7 +53,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
 
-        String enabledDigestStr = SyspropUtil.getString(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
+        String enabledDigestStr = SyspropUtil.getStringCached(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
         String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
         enabledDigestSet = new HashSet<String>(Arrays.asList(enabledDigests));
         for (String digest : enabledDigests) {

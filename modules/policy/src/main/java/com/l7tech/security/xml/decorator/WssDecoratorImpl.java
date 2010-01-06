@@ -91,7 +91,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
     private static long getExtraTime( final Boolean includeNanoseconds ) {
-        return  (includeNanoseconds != null && !includeNanoseconds) || (includeNanoseconds == null && SyspropUtil.getBoolean(PROPERTY_SUPPRESS_NANOSECONDS)) ?
+        return  (includeNanoseconds != null && !includeNanoseconds) || (includeNanoseconds == null && SyspropUtil.getBooleanCached(PROPERTY_SUPPRESS_NANOSECONDS)) ?
                 -1L : 
                 (long) rand.nextInt(1000000);
     }

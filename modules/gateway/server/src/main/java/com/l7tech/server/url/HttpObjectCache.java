@@ -57,7 +57,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
         this.cache = new LRUMap(maxCachedObjects);
-        this.maxCrlSize = SyspropUtil.getInteger(SYSPROP_MAX_CRL_SIZE, DEFAULT_MAX_CRL_SIZE);
+        this.maxCrlSize = SyspropUtil.getIntegerCached(SYSPROP_MAX_CRL_SIZE, DEFAULT_MAX_CRL_SIZE);
 
         if (httpClientFactory == null || userObjectFactory == null) throw new NullPointerException();
     }

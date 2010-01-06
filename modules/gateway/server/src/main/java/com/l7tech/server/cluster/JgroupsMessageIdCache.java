@@ -1,18 +1,19 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.util.SyspropUtil;
+import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
-import org.jboss.cache.Cache;
-import org.jboss.cache.lock.TimeoutException;
 import org.jboss.cache.config.Configuration;
+import org.jboss.cache.lock.TimeoutException;
 import org.jgroups.stack.IpAddress;
 
-import java.net.MalformedURLException;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-import java.util.List;
 
 /**
  *
@@ -31,9 +32,9 @@ class JgroupsMessageIdCache implements MessageIdCache {
         Configuration config = cache.getConfiguration();
         if ( jgroupsConfigFile != null ) {
             logger.config( "Using JGroups configuration file '" + jgroupsConfigFile + "'.");
-            System.setProperty( "com.l7tech.server.cluster.jgroups.mcast_addr", address );
-            System.setProperty( "com.l7tech.server.cluster.jgroups.mcast_port", Integer.toString(port) );
-            System.setProperty( "com.l7tech.server.cluster.jgroups.bind_addr", interfaceAddress);
+            SyspropUtil.setProperty( "com.l7tech.server.cluster.jgroups.mcast_addr", address );
+            SyspropUtil.setProperty( "com.l7tech.server.cluster.jgroups.mcast_port", Integer.toString(port) );
+            SyspropUtil.setProperty( "com.l7tech.server.cluster.jgroups.bind_addr", interfaceAddress);
             config.setJgroupsConfigFile( new File(jgroupsConfigFile).toURI().toURL() );
         } else {
             String props = config.getClusterConfig(); // JGroups configuration string (not XML format)

@@ -3,39 +3,41 @@
  */
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.LdapUrlObjectCache;
-import com.l7tech.util.*;
-import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
+import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.security.cert.CRLException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.util.Date;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.math.BigInteger;
-
-import org.springframework.beans.factory.DisposableBean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A read-through cache of X.509 CRLs that knows how to retrieve them from http(s) and ldap(s) URLs
@@ -85,11 +87,11 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
         ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
 
-        int httpObjectCacheSize = SyspropUtil.getInteger(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
+        int httpObjectCacheSize = SyspropUtil.getIntegerCached(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
         if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
             httpObjectCacheSize = DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE;
         }
-        if (SyspropUtil.getProperty(MAX_HTTP_CACHE_OBJECTS_PROP) != null) {
+        if (SyspropUtil.getPropertyCached(MAX_HTTP_CACHE_OBJECTS_PROP) != null) {
             logger.config("Using system property " + MAX_HTTP_CACHE_OBJECTS_PROP + "=" + httpObjectCacheSize);
         }
 

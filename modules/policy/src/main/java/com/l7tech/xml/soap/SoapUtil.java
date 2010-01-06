@@ -122,7 +122,7 @@ public class SoapUtil extends SoapConstants {
     public static MessageFactory getMessageFactory(String soapProtocol) {
         try {
             // bugzilla #2171, avoid 3rd party imposing their own implementations here
-            if (SyspropUtil.getProperty("javax.xml.soap.MessageFactory") == null) {
+            if (SyspropUtil.getPropertyCached("javax.xml.soap.MessageFactory") == null) {
                 SyspropUtil.setProperty("javax.xml.soap.MessageFactory",
                         "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
             }
@@ -275,7 +275,7 @@ public class SoapUtil extends SoapConstants {
      *         is not explicitly made at the time of creation.
      */
     public static boolean isSecHdrDefaultsToMustUnderstand() {
-        return SyspropUtil.getBoolean(PROPERTY_MUSTUNDERSTAND, true);
+        return SyspropUtil.getBooleanCached(PROPERTY_MUSTUNDERSTAND, true);
     }
 
     public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, Boolean mustUnderstand) {
@@ -536,8 +536,8 @@ public class SoapUtil extends SoapConstants {
 
         SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( soapMsg.getDocumentElement().getNamespaceURI() );
         String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
-                SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
-                SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+                SyspropUtil.getStringCached( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                SyspropUtil.getStringCached( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
         for ( String actor : actors.split("\\s{1,1024}") ) {
            l7secheader = SoapUtil.getSecurityElement( soapMsg, actor );
@@ -570,8 +570,8 @@ public class SoapUtil extends SoapConstants {
             if ( actorValue != null ) {
                 SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( document.getDocumentElement().getNamespaceURI() );
                 String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
-                        SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
-                        SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+                        SyspropUtil.getStringCached( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                        SyspropUtil.getStringCached( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
                 for ( String actor : actors.split("\\s{1,1024}") ) {
                     if ( actor.equals(actorValue) ) {

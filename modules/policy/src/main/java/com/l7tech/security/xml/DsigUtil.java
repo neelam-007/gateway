@@ -445,6 +445,6 @@ public class DsigUtil {
     }
 
     static String getDefaultMessageDigest(boolean ellipticCurve) {
-        return SyspropUtil.getString("com.l7tech.security.xml.decorator.digsig.messagedigest", ellipticCurve ? "SHA-384" : "SHA-1");
+        return SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", ellipticCurve ? "SHA-384" : "SHA-1");
     }
 }
