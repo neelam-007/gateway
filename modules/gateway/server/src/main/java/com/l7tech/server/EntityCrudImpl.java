@@ -28,7 +28,7 @@ import java.sql.SQLException;
  * @author alex
  */
 @SuppressWarnings({"unchecked"})
-@Transactional(propagation = Propagation.REQUIRED)
+@Transactional(propagation = Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     private final EntityFinder entityFinder;
     private final Map<Class<? extends Entity>, ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managersByClass;
@@ -58,7 +58,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         ReadOnlyEntityManager manager = getReadOnlyManager(entityClass);
         if ( manager != null ){
             Collection<EntityHeader> headers;
-            if ( manager instanceof SearchableEntityManager ) {
+            if ( manager instanceof PropertySearchableEntityManager ) {
                 headers = ((PropertySearchableEntityManager)manager).findHeaders( offset, max, filters );
             } else {
                 headers = manager.findAllHeaders( offset, max );
@@ -75,7 +75,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
             Collection<EntityHeader> headers;
             if ( scope != null && manager instanceof ScopedSearchableEntityManager ) {
                 headers = ((ScopedSearchableEntityManager)manager).findHeadersInScope( offset, max, scope, filters );
-            } else if ( manager instanceof SearchableEntityManager ) {
+            } else if ( manager instanceof PropertySearchableEntityManager ) {
                 headers = ((PropertySearchableEntityManager)manager).findHeaders( offset, max, filters );
             } else {
                 headers = manager.findAllHeaders( offset, max );
@@ -144,10 +144,11 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     public void update(final Entity e) throws UpdateException {
         final EntityManager manager = getManager(e.getClass());
         if (manager != null) {
+            PersistentEntity pe = (PersistentEntity) e;
             if (e instanceof HasFolder && manager instanceof FolderedEntityManager) {
-                ((FolderedEntityManager)manager).updateWithFolder((PersistentEntity) e);
+                ((FolderedEntityManager)manager).updateWithFolder(pe);
             } else {
-                manager.update((PersistentEntity)e);
+                manager.update(pe);
             }
             return;
         }

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 import org.junit.Test;
@@ -42,6 +43,7 @@ public class ApplicationContextTest  {
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = new HashSet<String>( Arrays.asList( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" ) );
+    private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = new HashSet<String>( Arrays.asList( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager" ) );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList(
         EntityType.ESM_ENTERPRISE_FOLDER,  
         EntityType.ESM_SSG_CLUSTER,
@@ -111,6 +113,48 @@ public class ApplicationContextTest  {
                     }
                 }
             }
+        }
+    }
+
+    @Test
+    public void testTransactionRollback() throws Exception {
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        // Test admin beans
+        List<String> adminBeans = getAdminBeanIds( dlbf );
+        for ( String adminBeanId : adminBeans ) {
+            BeanDefinition beanDef = dlbf.getBeanDefinition( adminBeanId );
+            Class<?> adminClass = Class.forName(beanDef.getBeanClassName());
+
+            for ( Class interfaceClass : adminClass.getInterfaces() ) {
+                if ( interfaceClass.getName().endsWith("Admin") ) {
+                    enforceTransactionRollbackForClass(interfaceClass, adminBeanId);
+                }
+            }
+        }
+
+        // Test manager beans
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            if ( beanId.endsWith("Manager") || beanId.startsWith("entity") || beanId.equals("auditExporter") ) {
+                BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+                Class<?> beanClass = Class.forName(beanDef.getBeanClassName());
+                if ( HibernateDaoSupport.class.isAssignableFrom(beanClass) ) {
+                    enforceTransactionRollbackForClass(beanClass, beanId);
+                }
+            }
+        }
+    }
+
+    private void enforceTransactionRollbackForClass( final Class<?> beanClass, final String beanId ) throws ClassNotFoundException {
+        Transactional classTransactional = beanClass.getAnnotation(Transactional.class);
+        if ( (classTransactional == null || classTransactional.rollbackFor().length==0) &&
+             !TRANSACTION_ROLLBACK_WHITELIST.contains(beanId)) {
+            Assert.fail( "Entity manager does not rollback transaction on checked exceptions '" + beanId  + "' (add rollbackFor or add to TRANSACTION_ROLLBACK_WHITELIST)." );
         }
     }
 

@@ -22,7 +22,7 @@ import java.sql.SQLException;
  * @Author: ghuang
  * @Date: Aug 13, 2008
  */
-@Transactional(propagation= Propagation.REQUIRED)
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class MessageContextMappingValueManagerImpl
     extends HibernateEntityManager<MessageContextMappingValues, EntityHeader>
     implements MessageContextMappingValueManager {
@@ -33,9 +33,11 @@ public class MessageContextMappingValueManagerImpl
     private final String HQL_GET_MAPPING_VALUES_BY_DIGEST = "FROM " + getTableName() +
         " IN CLASS " + getImpClass().getName() + " WHERE digested = ?";
 
+    @Override
     public MessageContextMappingValues getMessageContextMappingValues(final long oid) throws FindException {
         try {
             return (MessageContextMappingValues)getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_GET_MAPPING_VALUES);
                     q.setLong(0, oid);
@@ -48,11 +50,13 @@ public class MessageContextMappingValueManagerImpl
         }
     }
 
+    @Override
     public MessageContextMappingValues getMessageContextMappingValues(final MessageContextMappingValues lookupValues) throws FindException {
         if ( lookupValues.getDigested()==null ) lookupValues.setDigested( lookupValues.generateDigest() );
         final String digested = lookupValues.getDigested();
         try {
             return (MessageContextMappingValues)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_GET_MAPPING_VALUES_BY_DIGEST);
@@ -82,18 +86,12 @@ public class MessageContextMappingValueManagerImpl
         }
     }
 
+    @Override
     public Class<MessageContextMappingValues> getImpClass() {
         return MessageContextMappingValues.class;
     }
 
-    public Class<MessageContextMappingValues> getInterfaceClass() {
-        return MessageContextMappingValues.class;
-    }
-
-    public String getTableName() {
-        return "message_context_mapping_values";
-    }
-
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }

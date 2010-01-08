@@ -15,8 +15,6 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -33,7 +31,7 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-@Transactional(propagation=Propagation.REQUIRED)
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClusterPropertyManagerImpl
         extends HibernateEntityManager<ClusterProperty, EntityHeader>
         implements ClusterPropertyManager, ApplicationContextAware {
@@ -50,6 +48,7 @@ public class ClusterPropertyManagerImpl
     /**
      * @return may return null if the property is not set. will return the property value otherwise
      */
+    @Override
     @Transactional(readOnly=true)
     public String getProperty(String key) throws FindException {
         ClusterProperty prop = findByKey(key);
@@ -69,6 +68,7 @@ public class ClusterPropertyManagerImpl
         }
     }
 
+    @Override
     public ClusterProperty putProperty(String key, String value) throws FindException, SaveException, UpdateException {
         ClusterProperty prop = findByKey(key);
         if (prop == null) {
@@ -83,12 +83,14 @@ public class ClusterPropertyManagerImpl
         return prop;
     }
 
+    @Override
     public long save(ClusterProperty p) throws SaveException {
         // monitor certain property changes
         propertyChangeMonitor(p);
         return super.save(p);
     }
 
+    @Override
     public void update(ClusterProperty p) throws UpdateException {
         // monitor certain property changes
         propertyChangeMonitor(p);
@@ -103,11 +105,13 @@ public class ClusterPropertyManagerImpl
         return cp;
     }
 
+    @Override
     public ClusterProperty getCachedEntityByName(String name, int maxAge) throws FindException {
         ClusterProperty cp = super.getCachedEntityByName(name, maxAge);
         return cp == null ? null : describe(cp);
     }
 
+    @Override
     public Collection<ClusterProperty> findAll() throws FindException {
         Collection<ClusterProperty> all = super.findAll();
         for (ClusterProperty clusterProperty : all) {
@@ -120,6 +124,7 @@ public class ClusterPropertyManagerImpl
     private ClusterProperty findByKey(final String key) throws FindException {
         try {
             return (ClusterProperty)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
                     Query q = session.createQuery(HQL_FIND_BY_NAME);
@@ -151,18 +156,12 @@ public class ClusterPropertyManagerImpl
         return cp != null ? cp : super.findByUniqueName(header.getName());
     }
 
-    public Class getImpClass() {
+    @Override
+    public Class<? extends Entity> getImpClass() {
         return ClusterProperty.class;
     }
 
-    public Class getInterfaceClass() {
-        return ClusterProperty.class;
-    }
-
-    public String getTableName() {
-        return "cluster_properties";
-    }
-
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }

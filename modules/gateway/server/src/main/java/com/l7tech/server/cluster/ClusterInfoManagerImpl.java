@@ -38,10 +38,8 @@ import java.util.regex.Pattern;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Dec 17, 2003<br/>
- * $Id$
- *
  */
-@Transactional(propagation= Propagation.REQUIRED)
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
 
     //- PUBLIC
@@ -50,12 +48,13 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         this.nodeid = nodeid;
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
 
     @Override
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public String thisNodeId() {
         return nodeid;
     }
@@ -164,7 +163,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * table.
      */
     @Override
-    @Transactional(propagation= Propagation.REQUIRED)
     public void updateSelfUptime() throws UpdateException {
         ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {

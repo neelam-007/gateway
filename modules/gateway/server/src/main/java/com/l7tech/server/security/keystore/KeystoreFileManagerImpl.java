@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  *
  * @author mike@layer7-tech.com
  */
-@Transactional(propagation= Propagation.REQUIRED)
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class KeystoreFileManagerImpl
         extends HibernateEntityManager<KeystoreFile, EntityHeader>
         implements KeystoreFileManager, ApplicationContextAware
@@ -51,25 +51,21 @@ public class KeystoreFileManagerImpl
 
     }
 
+    @Override
     public Class<KeystoreFile> getImpClass() {
         return KeystoreFile.class;
     }
 
-    public Class<KeystoreFile> getInterfaceClass() {
-        return KeystoreFile.class;
-    }
-
-    public String getTableName() {
-        return "keystore";
-    }
-
+    @Override
     public EntityType getEntityType() {
         return EntityType.SSG_KEY_ENTRY;
     }
 
+    @Override
     public KeystoreFile updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {
         try {
             return (KeystoreFile)getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
                         KeystoreFile keystoreFile = (KeystoreFile)session.load(KeystoreFile.class, id, LockMode.UPGRADE);
@@ -89,6 +85,7 @@ public class KeystoreFileManagerImpl
     }
 
     //reads hsm_init.properties first (if it exists), and then stores the password in the KeystoreFile
+    @Override
     public void initializeHsmKeystorePasswordFromFile() throws UpdateException {
         if (!isHsmAvailable()) return;
 
@@ -117,7 +114,11 @@ public class KeystoreFileManagerImpl
 
                 if (hsmKeystoreFile == null) throw new UpdateException("Could not find an HSM keystore row in the database");
                 updatePassword(hsmKeystoreFile.getOidAsLong(), hsmPasswordDecrypted.toCharArray());
-                if (hsmInitFile.exists()) hsmInitFile.delete();
+                if (hsmInitFile.exists()) {
+                    if (!hsmInitFile.delete()) {
+                        logger.warning("Delete failed for HSM init file '"+hsmInitFile.getAbsolutePath()+"'.");
+                    }
+                }
             }
         } catch (Exception e) {
             throw new UpdateException(e);
@@ -129,6 +130,7 @@ public class KeystoreFileManagerImpl
         try {
             final MasterPasswordManager dbEncrypter = (MasterPasswordManager) appContext.getBean("dbPasswordEncryption");
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
                         KeystoreFile keystoreFile = (KeystoreFile)session.load(KeystoreFile.class, id, LockMode.UPGRADE);
@@ -175,6 +177,7 @@ public class KeystoreFileManagerImpl
         return JceProvider.PKCS11_ENGINE.equals( JceProvider.getEngineClass());
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appContext = applicationContext;
     }

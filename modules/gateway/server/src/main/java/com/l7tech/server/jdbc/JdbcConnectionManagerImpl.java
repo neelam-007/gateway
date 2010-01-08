@@ -13,20 +13,10 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
  *
  * @author ghuang
  */
-@Transactional(propagation= Propagation.REQUIRED)
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
-
-    @Override
-    public Class<? extends Entity> getInterfaceClass() {
-        return JdbcConnection.class;
-    }
-
-    @Override
-    public String getTableName() {
-        return "jdbc_connection";
-    }
 
     @Override
     public Class<? extends Entity> getImpClass() {
