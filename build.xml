@@ -1444,11 +1444,10 @@
     </target>
     <target name="deploy-controller-config" if="deploycontroller.config.isrequired" depends="deploy-controller-config-check">
         <ivy:cachepath organisation="com.l7tech" module="layer7-gateway-processcontroller" inline="true" conf="default" pathid="sspc.path"/>
-        <java classname="com.l7tech.server.processcontroller.BootstrapConfig" fork="true">
+        <java classname="com.l7tech.server.processcontroller.BootstrapConfig" fork="true" dir="${dev.deploy.pc.dir}">
             <classpath>
                 <path refid="sspc.path"/>
             </classpath>
-            <sysproperty key="com.l7tech.server.processcontroller.homeDirectory" value="${dev.deploy.pc.dir}"/>
         </java>
     </target>
     <target name="deploy-controller" description="Deploy a development Process Controller (run with ./run.sh controller)" depends="deploy-controller-init,deploy-controller-config"/>
