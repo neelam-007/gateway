@@ -143,18 +143,6 @@
         <constructor-arg value="Background timer"/>
     </bean>
 
-    <!-- Use managed timer for all background tasks -->
-    <bean id="configureBackgroundTimer"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod" value="com.l7tech.util.Background.installTimer"/>
-        <property name="arguments">
-            <list>
-                <ref local="managedBackgroundTimer"/>
-            </list>
-        </property>
-    </bean>
-
-
     <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>
 
     <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
@@ -167,7 +155,7 @@
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
     -->
-    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" depends-on="configureBackgroundTimer">
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance">
         <property name="propertyChangeListener">
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>

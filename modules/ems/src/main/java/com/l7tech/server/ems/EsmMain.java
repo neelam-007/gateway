@@ -1,10 +1,12 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.ManagedTimer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +45,9 @@ public class EsmMain {
             // create Logger after initializing logging framework
             Logger logger = Logger.getLogger(EsmMain.class.getName());
             logger.info("Starting " + BuildInfo.getLongBuildString());
+
+            // configure background timer
+            Background.installTimer( new ManagedTimer( "Default background timer" ) );
 
             if ( SyspropUtil.getBoolean("com.l7tech.ems.development") ) {
                 System.setProperty("com.l7tech.ems.showExceptions", "true");
