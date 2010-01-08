@@ -596,7 +596,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      * Code called by Idea form code
      */
     private void createUIComponents() {
-        privateKeyComboBox = new PrivateKeysComboBox();
+        privateKeyComboBox = new PrivateKeysComboBox(true, false);
 
         //Registry type
         UDDIRegistry.UDDIRegistryType[] types = UDDIRegistry.UDDIRegistryType.values();

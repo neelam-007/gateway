@@ -37,24 +37,28 @@ public class PrivateKeysComboBox extends JComboBox {
             this.keyAlias = keyAlias;
             this.keyAlgorithm = keyAlgorithm;
         }
+        @Override
         public String toString() {
             return "'" + keyAlias + "'" + " in " + keystoreName;
         }
     }
 
     private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null, "NONE") {
+        @Override
         public String toString() {
             return "<Default SSL Key>";
         }
     };
 
     private boolean _includeHardwareKeystore;
+    private boolean _includeDefaultSslKey;
 
     /**
      * Sorts the private key by alias while maintaining that the default private key label is the first one
      * on the list.
      */
     public static class PrivateKeyItemComparator implements Comparator<PrivateKeyItem> {
+        @Override
         public int compare(PrivateKeyItem pk1, PrivateKeyItem pk2) {
             if (pk1.keyAlias == null) {
                 return -1;
@@ -71,15 +75,18 @@ public class PrivateKeysComboBox extends JComboBox {
      * keystores; and with none selected initially.
      */
     public PrivateKeysComboBox() {
-        this(true);
+        this(true, true);
     }
 
     /**
      * Creates a combo box prepopulated with a list of private keys from specified SSG keystores.
      * @param includeHardwareKeystore  if true, hardware keystores should be included in the list.
+     * @param includeDefaultSslKey   if true, includes the < Default SSK Key > in the list.  Otherwise, only explicitly
+     *                               configured key aliases are permitted.
      */
-    public PrivateKeysComboBox(final boolean includeHardwareKeystore) {
+    public PrivateKeysComboBox(final boolean includeHardwareKeystore, final boolean includeDefaultSslKey) {
         _includeHardwareKeystore = includeHardwareKeystore;
+        _includeDefaultSslKey = includeDefaultSslKey;
         populate();
     }
 
@@ -97,7 +104,8 @@ public class PrivateKeysComboBox extends JComboBox {
             }
             final java.util.List<KeystoreFileEntityHeader> keystores = certAdmin.findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
-            items.add(ITEM_DEFAULT_SSL);
+            if (_includeDefaultSslKey)
+                items.add(ITEM_DEFAULT_SSL);
             for (KeystoreFileEntityHeader keystore : keystores) {
                 for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getOid())) {
                     items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));

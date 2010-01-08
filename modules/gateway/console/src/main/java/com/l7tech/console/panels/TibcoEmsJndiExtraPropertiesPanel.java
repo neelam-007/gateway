@@ -164,6 +164,6 @@ public class TibcoEmsJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
 
     private void createUIComponents() {
         // TIBCO EMS API cannot use private keys stored in hardware keystore.
-        clientCertsComboBox = new PrivateKeysComboBox(false);
+        clientCertsComboBox = new PrivateKeysComboBox(false, false);
     }
 }
