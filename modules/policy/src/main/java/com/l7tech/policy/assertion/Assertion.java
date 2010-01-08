@@ -651,6 +651,10 @@ public abstract class Assertion implements Cloneable, Serializable {
         return hasAnnotation(assertion, ProcessesMultipart.class);
     }
 
+    public static boolean hasMessageTarget(Assertion assertion) {
+        return isRequest(assertion) || isResponse(assertion) || assertion instanceof MessageTargetable;
+    }
+
     public static boolean isWSSecurity(Assertion assertion) {
         boolean isWss = false;
 

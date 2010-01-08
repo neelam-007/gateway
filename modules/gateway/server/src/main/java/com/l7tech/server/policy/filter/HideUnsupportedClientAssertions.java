@@ -49,10 +49,10 @@ public class HideUnsupportedClientAssertions implements Filter {
                 return true;
             }
         } else {
-            if ( ( !arg.isEnabled() ||
+            if ( ( !arg.isEnabled() || (Assertion.hasMessageTarget(arg) && (
                    (!Assertion.isRequest(arg) && !Assertion.isResponse(arg)) ||
                    (Assertion.isRequest(arg) && !ArrayUtils.contains((String[])arg.meta().get(AssertionMetadata.CLIENT_ASSERTION_TARGETS), "request")) ||
-                   (Assertion.isResponse(arg) && !ArrayUtils.contains((String[])arg.meta().get(AssertionMetadata.CLIENT_ASSERTION_TARGETS), "response")))
+                   (Assertion.isResponse(arg) && !ArrayUtils.contains((String[])arg.meta().get(AssertionMetadata.CLIENT_ASSERTION_TARGETS), "response")))))
                  && parentIterator != null) {
                 parentIterator.remove();
                 return true;
