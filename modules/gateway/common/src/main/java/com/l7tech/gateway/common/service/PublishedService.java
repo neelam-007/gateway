@@ -9,15 +9,16 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.Service;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.util.Service;
 
+import javax.persistence.Transient;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
@@ -25,7 +26,6 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -64,6 +65,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * <p>This will copy the identity of the orginal, if you don't want
      * this you will need to reset the id and version (and the id and version
      * of the policy).</p>
+     * @param objToCopy source object.  required
      */
     public PublishedService( final PublishedService objToCopy ) {
         super(objToCopy);
@@ -146,7 +148,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      */
     public synchronized void setWsdlXml(String wsdlXml) {
         _wsdlXml = wsdlXml;
-        _parsedWsdl = null;
+        _parsedWsdl.set(null);
         _soapVersion = null;
     }
 
@@ -189,6 +191,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     /**
      * get base URI
      *
+     * @return the base URI from the WDSL, or null
      */
     public String getBaseURI() {
          if (_wsdlUrl == null) return null;
@@ -200,19 +203,30 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * <code>null</code> if wsdl xml document has not been set.
      *
      * @return the {@link Wsdl} object generated from this service's WSDL document.
-     * @throws WSDLException
+     * @throws WSDLException if the WSDL cannot be parsed
      */
-    public synchronized Wsdl parsedWsdl() throws WSDLException {
-        if (_parsedWsdl == null) {
-            String cachedWsdl = getWsdlXml();
-            if (cachedWsdl != null) {
-                WsdlStrategy strategy = wsdlStrategy;
-                if (strategy == null)
-                    strategy = new DefaultWsdlStrategy();
-                _parsedWsdl = strategy.parseWsdl(this, getWsdlUrl(), cachedWsdl);
-            }
+    public Wsdl parsedWsdl() throws WSDLException {
+        Wsdl wsdl = _parsedWsdl.get();
+        if (wsdl != null)
+            return wsdl;
+
+        String cachedWsdl = getWsdlXml();
+        if (cachedWsdl == null)
+            return null;        
+        
+        synchronized (this) {
+            wsdl = _parsedWsdl.get();
+            if (wsdl != null)
+                return wsdl;
+
+            WsdlStrategy strategy = wsdlStrategy;
+            if (strategy == null)
+                strategy = new DefaultWsdlStrategy();
+            wsdl = strategy.parseWsdl(this, getWsdlUrl(), cachedWsdl);
+            _parsedWsdl.set(wsdl);
         }
-        return _parsedWsdl;
+        
+        return wsdl;
     }
 
     /**
@@ -239,12 +253,25 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @return the {@link Port} for this service. May be null.
      * @throws WSDLException if the WSDL cannot be parsed
      */
-    public synchronized Port wsdlPort() throws WSDLException {
-        if (_wsdlPort == null) {
-            _wsdlPort = parsedWsdl().getSoapPort();
+    public Port wsdlPort() throws WSDLException {
+        Port port = _wsdlPort.get();
+        if (port != null)
+            return port;
+
+        Wsdl wsdl = parsedWsdl();
+        if (wsdl == null)
+            return null;
+
+        synchronized (this) {
+            port = _wsdlPort.get();
+            if (port != null)
+                return port;
+
+            port = wsdl.getSoapPort();
+            _wsdlPort.set(port);
         }
 
-        return _wsdlPort;
+        return port;
     }
 
     /**
@@ -366,7 +393,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
     /**
      * Sets the flag indicating whether or not this service is internal.
-     * @param internal
+     * @param internal  flag value to set
      */
     public void setInternal(boolean internal) {
         this.internal = internal;
@@ -472,6 +499,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      * @return true if multipart data is expected
      * @see #parsedWsdl
+     * @throws com.l7tech.gateway.common.service.PublishedService.ServiceException if unable to parse WSDL to check multipart flag
      */
     public boolean isMultipart() throws ServiceException {
         if (multipart == null) {
@@ -574,8 +602,8 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     private Folder folder;
 
     private transient WsdlStrategy wsdlStrategy;
-    private transient Wsdl _parsedWsdl;
-    private transient Port _wsdlPort;
+    private final AtomicReference<Wsdl> _parsedWsdl = new AtomicReference<Wsdl>(null);
+    private final AtomicReference<Port> _wsdlPort = new AtomicReference<Port>(null);
     private transient URL _serviceUrl;
 
     private transient Boolean multipart;
