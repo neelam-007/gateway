@@ -34,8 +34,6 @@ import java.util.logging.Logger;
 
 /**
  * Object that represents a complete, running Gateway instance.
- * 
- * TODO: merge this with BootProcess
  */
 public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
