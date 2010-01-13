@@ -17,6 +17,7 @@ public class ReportViewCodingStrategy implements IRequestTargetUrlCodingStrategy
         this.mountPath = path + "/";
     }
 
+    @Override
     public IRequestTarget decode(RequestParameters requestParameters) {
         String path = requestParameters.getPath();
         if ( path.startsWith(mountPath) ) {
@@ -42,10 +43,12 @@ public class ReportViewCodingStrategy implements IRequestTargetUrlCodingStrategy
         return new SharedResourceRequestTarget(requestParameters);
     }
 
+    @Override
     public CharSequence encode(IRequestTarget requestTarget) {
         return null;
     }
 
+    @Override
     public String getMountPath() {
         return mountPath;
     }
@@ -54,7 +57,13 @@ public class ReportViewCodingStrategy implements IRequestTargetUrlCodingStrategy
         return path.startsWith(mountPath);
     }
 
+    @Override
     public boolean matches(IRequestTarget requestTarget) {
+        return false;
+    }
+
+    @Override
+    public boolean matches(String s, boolean b) {
         return false;
     }
 }

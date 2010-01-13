@@ -90,14 +90,14 @@ public class StandardReports extends EsmStandardWebPage {
         fromDateField.addInteractionWithOtherDateSelector(toDateField, false, new YuiDateSelector.InteractionTasker() {
             @Override
             protected void doExtraTask(AjaxRequestTarget ajaxRequestTarget) {
-                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
+                fromDateJavascript.setDefaultModelObject(buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
                 ajaxRequestTarget.addComponent(fromDateJavascript);
             }
         });
         toDateField.addInteractionWithOtherDateSelector(fromDateField, true, new YuiDateSelector.InteractionTasker() {
             @Override
             protected void doExtraTask(AjaxRequestTarget ajaxRequestTarget) {
-                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
+                toDateJavascript.setDefaultModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
                 ajaxRequestTarget.addComponent(toDateJavascript);
             }
         });
@@ -126,13 +126,13 @@ public class StandardReports extends EsmStandardWebPage {
 
                 fromDateField.getDateTextField().setModelObject(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)));
                 fromDateField.setDateSelectorModel(null, now);
-                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getModelObject()));
+                fromDateJavascript.setDefaultModelObject(buildDateJavascript(true, fromDateField.getDefaultModelObject()));
                 ajaxRequestTarget.addComponent(fromDateJavascript);
                 ajaxRequestTarget.addComponent(fromDateField);
 
                 toDateField.getDateTextField().setModelObject(now);
                 toDateField.setDateSelectorModel(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now);
-                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getModelObject()));
+                toDateJavascript.setDefaultModelObject(buildDateJavascript(false, toDateField.getDefaultModelObject()));
                 ajaxRequestTarget.addComponent(toDateJavascript);
                 ajaxRequestTarget.addComponent(toDateField);
 
@@ -725,13 +725,13 @@ public class StandardReports extends EsmStandardWebPage {
 
                 fromDateField.getDateTextField().setModelObject(from);
                 fromDateField.setDateSelectorModel(null, to);
-                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getModelObject()));
+                fromDateJavascript.setDefaultModelObject(buildDateJavascript(true, fromDateField.getDefaultModelObject()));
                 ajaxRequestTarget.addComponent(fromDateJavascript);
                 ajaxRequestTarget.addComponent(fromDateField);
 
                 toDateField.getDateTextField().setModelObject(to);
                 toDateField.setDateSelectorModel(from, now);
-                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getModelObject()));
+                toDateJavascript.setDefaultModelObject(buildDateJavascript(false, toDateField.getDefaultModelObject()));
                 ajaxRequestTarget.addComponent(toDateJavascript);
                 ajaxRequestTarget.addComponent(toDateField);
 

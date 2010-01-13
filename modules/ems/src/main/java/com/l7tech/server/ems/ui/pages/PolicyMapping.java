@@ -131,7 +131,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                final String migrationId = (String) form.get("migrationId").getModelObject();
+                final String migrationId = (String) form.get("migrationId").getDefaultModelObject();
                 final MigrationRecord record = findMigrationRecordById( migrationId );
                 if ( record != null && canDelete(record) ) {
                     String warningText = "<p>Really delete migration record?</p>";
@@ -169,7 +169,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton renameMigrationButton = new YuiAjaxButton("renameMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                final String migrationId = (String) form.get("migrationId").getModelObject();
+                final String migrationId = (String) form.get("migrationId").getDefaultModelObject();
 
                 final MigrationRecord record = findMigrationRecordById( migrationId );
                 if ( record != null && canUpdate(record) ) {
@@ -207,7 +207,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton downloadArchiveButton = new YuiAjaxButton("downloadArchiveButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                final String migrationId = (String) form.get("migrationId").getModelObject();
+                final String migrationId = (String) form.get("migrationId").getDefaultModelObject();
                 if ( migrationId != null && migrationId.length() > 0 ) {
                     ValueMap vm = new ValueMap();
                     vm.add("migrationId", migrationId);
@@ -221,7 +221,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton deleteArchiveButton = new YuiAjaxButton("deleteArchiveButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                final String migrationId = (String) form.get("migrationId").getModelObject();
+                final String migrationId = (String) form.get("migrationId").getDefaultModelObject();
 
                 final MigrationRecord record = findMigrationRecordById( migrationId );
                 if ( record != null && canUpdate(record) ) {

@@ -94,7 +94,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         final YuiAjaxButton reloadMigrationButton = new YuiAjaxButton("reloadMigrationButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getModelObject();
+                final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getDefaultModelObject();
                 logger.fine( "Reloading migration '" + model + "'.");
                 try {
                     MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
@@ -121,7 +121,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
 
                         // Update UI selections
-                        javascript.setModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"', "+summary.isMigrateFolders()+", "+summary.isEnableNewServices()+", "+summary.isOverwrite()+");");
+                        javascript.setDefaultModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"', "+summary.isMigrateFolders()+", "+summary.isEnableNewServices()+", "+summary.isOverwrite()+");");
                         ajaxRequestTarget.addComponent( javascript );
 
                         // Clear dependencies mapping section
@@ -308,8 +308,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         AjaxFormSubmitBehavior dependenciesBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
             @Override
             protected void onSubmit(final AjaxRequestTarget target) {
-                final String value = hiddenSelectionForm.getModelObjectAsString();
-                lastTargetClusterId = hiddenDestClusterId.getModelObjectAsString();
+                final String value = hiddenSelectionForm.getDefaultModelObjectAsString();
+                lastTargetClusterId = hiddenDestClusterId.getDefaultModelObjectAsString();
                 try {
                     String jsonData = value.replaceAll("&quot;", "\"");
 
@@ -378,12 +378,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         AjaxFormSubmitBehavior migrateBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
             @Override
             protected void onSubmit(final AjaxRequestTarget target) {
-                final String value = hiddenSelectionForm.getModelObjectAsString();
-                final String targetClusterId = hiddenDestClusterId.getModelObjectAsString();
-                final String targetFolderId = hiddenDestFolderId.getModelObjectAsString();
-                final String migrateFolders = hiddenMigrateFolders.getModelObjectAsString();
-                final String enableNewServices = hiddenEnableNewServices.getModelObjectAsString();
-                final String overwriteDependencies = hiddenOverwriteDependencies.getModelObjectAsString();
+                final String value = hiddenSelectionForm.getDefaultModelObjectAsString();
+                final String targetClusterId = hiddenDestClusterId.getDefaultModelObjectAsString();
+                final String targetFolderId = hiddenDestFolderId.getDefaultModelObjectAsString();
+                final String migrateFolders = hiddenMigrateFolders.getDefaultModelObjectAsString();
+                final String enableNewServices = hiddenEnableNewServices.getDefaultModelObjectAsString();
+                final String overwriteDependencies = hiddenOverwriteDependencies.getDefaultModelObjectAsString();
                 try {
                     String jsonData = value.replaceAll("&quot;", "\"");
 

@@ -72,8 +72,8 @@ public class StandardReportsManagementPanel extends Panel {
         final Button downloadButton = new YuiAjaxButton("downloadReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                String reportIdentifier = (String)form.get("reportId").getModel().getObject();
-                String reportFormat = (String)form.get("reportFormat").getModel().getObject();
+                String reportIdentifier = (String)form.get("reportId").getDefaultModelObject();
+                String reportFormat = (String)form.get("reportFormat").getDefaultModelObject();
                 if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
                     ValueMap vm = new ValueMap();
                     if ( reportIdentifier.indexOf(',') > 0 ) {
@@ -92,7 +92,7 @@ public class StandardReportsManagementPanel extends Panel {
         Button deleteButton = new YuiAjaxButton("deleteReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                String reportIdentifierStr = (String)form.get("reportId").getModel().getObject();
+                String reportIdentifierStr = (String)form.get("reportId").getDefaultModel().getObject();
                 if ( reportIdentifierStr != null && reportIdentifierStr.length() > 0 ) {
                     try {
                         final String[] reportIdentifiers = reportIdentifierStr.split(",");

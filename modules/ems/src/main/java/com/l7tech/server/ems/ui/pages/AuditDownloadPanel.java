@@ -41,8 +41,8 @@ public class AuditDownloadPanel extends Panel {
         Form form = new SecureForm("audit.form", new AttemptedReadAll(EntityType.AUDIT_RECORD)){
             @Override
             protected void onSubmit() {
-                Date startDate = startOfDay((Date) startDateField.getModelObject());
-                Date endDate = startOfDay((Date) endDateField.getModelObject());
+                Date startDate = startOfDay((Date) startDateField.getDefaultModelObject());
+                Date endDate = startOfDay((Date) endDateField.getDefaultModelObject());
 
                 ValueMap vm = new ValueMap();
                 vm.add("start", Long.toString(startDate.getTime()));

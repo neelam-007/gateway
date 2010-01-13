@@ -46,7 +46,7 @@ public class Logs extends EsmStandardWebPage {
         Button viewButton = new YuiAjaxButton("viewLogButton") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                String logIdentifier = (String)form.get("logId").getModel().getObject();
+                String logIdentifier = (String)form.get("logId").getDefaultModelObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
                     File file = getLogFile(logIdentifier);
                     if ( file != null ) {
@@ -61,7 +61,7 @@ public class Logs extends EsmStandardWebPage {
         Button downloadButton = new YuiAjaxButton("downloadLogButton") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                String logIdentifier = (String)form.get("logId").getModel().getObject();
+                String logIdentifier = (String)form.get("logId").getDefaultModelObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
                     ValueMap vm = new ValueMap();
                     vm.add("id", logIdentifier);

@@ -10,9 +10,9 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.IObjectClassAwareModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.NumberValidator;
 import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.validation.validator.AbstractValidator;
+import org.apache.wicket.validation.validator.RangeValidator;
 import org.apache.wicket.validation.IValidatable;
 
 import java.util.logging.Logger;
@@ -61,7 +61,7 @@ public class ListenerEditPanel extends Panel {
 
         addr.add( new PatternValidator("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*)$") );
         addr.add( new LocalIpAddressValidator() );
-        port.add( new NumberValidator.RangeValidator(1024, 65535) );
+        port.add( new RangeValidator(1024, 65535) );
 
         Form listenerForm = new Form("listenerForm"){
             @Override

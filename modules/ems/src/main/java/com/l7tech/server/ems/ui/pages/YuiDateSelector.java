@@ -155,7 +155,7 @@ public class YuiDateSelector extends Panel {
     }
 
     public void setDateSelectorModel(Date minDate, Date maxDate) {
-        javascriptLabel.setModel(new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
+        javascriptLabel.setDefaultModel(new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
     }
 
     /**
@@ -193,9 +193,9 @@ public class YuiDateSelector extends Panel {
          */
         private void doBasicTask(YuiDateSelector currentDateSelector, YuiDateSelector otherDateSelector, boolean isFromDateSelector, AjaxRequestTarget ajaxRequestTarget) {
             if (isFromDateSelector) {
-                otherDateSelector.setDateSelectorModel(null, (Date) currentDateSelector.getModelObject());
+                otherDateSelector.setDateSelectorModel(null, (Date) currentDateSelector.getDefaultModelObject());
             } else {
-                otherDateSelector.setDateSelectorModel((Date) currentDateSelector.getModelObject(), new Date());
+                otherDateSelector.setDateSelectorModel((Date) currentDateSelector.getDefaultModelObject(), new Date());
             }
             ajaxRequestTarget.addComponent(otherDateSelector);
         }

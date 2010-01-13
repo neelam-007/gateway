@@ -152,7 +152,7 @@ public class YuiDialog extends Panel {
         dialog.add( new Label("title", title) );
         dialog.add( feedback );
         dialog.add( contentComponent );
-        
+
         Form defaultForm = new Form("dialogDefaultForm");
         Form targetForm = null;
         if ( content instanceof MarkupContainer ) {
@@ -172,13 +172,14 @@ public class YuiDialog extends Panel {
 
         String initScript = buildInitJavascript(dialog.getMarkupId(), ajaxButtons, defaultButton, buttons, width);
         Component script = new Label("javascript", initScript).setEscapeModelStrings(false);
-        
+
+        for ( Component ajaxButton : ajaxButtons ) {
+            defaultForm.add( ajaxButton );
+        }
+
         add( dialog );
         add( defaultForm );
         add( script );
-        for ( Component ajaxButton : ajaxButtons ) {
-            add( ajaxButton );
-        }
     }
 
     /**

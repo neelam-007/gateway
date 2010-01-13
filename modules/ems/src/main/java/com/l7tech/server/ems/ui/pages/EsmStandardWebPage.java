@@ -31,7 +31,7 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
         final EsmSecurityManager.LoginInfo info = getLoginInfo();
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
             @Override
-            public Object getObject() {
+            public String getObject() {
                 return getSession().buildDateFormat().format(info.getDate());
             }
         }} );

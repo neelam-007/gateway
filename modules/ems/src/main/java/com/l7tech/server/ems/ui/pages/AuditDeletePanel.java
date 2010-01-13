@@ -4,7 +4,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IObjectClassAwareModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.NumberValidator;
+import org.apache.wicket.validation.validator.RangeValidator;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -37,7 +37,7 @@ public class AuditDeletePanel extends Panel {
             @Override
             public void detach() { }
         });
-        minAgeTextField.add( new NumberValidator.RangeValidator(7, 365) );
+        minAgeTextField.add( new RangeValidator(7, 365) );
         minAgeTextField.setRequired(true);
 
         SecureForm form = new SecureForm("audit.form",  new AttemptedDeleteAll(EntityType.AUDIT_RECORD) ){

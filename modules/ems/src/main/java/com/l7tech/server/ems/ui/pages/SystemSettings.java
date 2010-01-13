@@ -36,8 +36,8 @@ import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
+import org.apache.wicket.validation.validator.RangeValidator;
 import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
-import org.apache.wicket.validation.validator.NumberValidator;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.xml.sax.SAXException;
 
@@ -380,7 +380,7 @@ public class SystemSettings extends EsmStandardWebPage {
         String timeUnit = config.getProperty("em.server.session.timeout", "30m");
         final GlobalSettings settingsModel = new GlobalSettings( (int)(TimeUnit.parse(timeUnit, TimeUnit.MINUTES) / (1000L*60L)) );
         RequiredTextField sessionTimeout = new RequiredTextField("timeout", new PropertyModel( settingsModel, "sessionTimeout" ) );
-        sessionTimeout.add( new NumberValidator.RangeValidator(1,1440) );
+        sessionTimeout.add( new RangeValidator(1, 1440) );
 
         final FeedbackPanel feedback = new FeedbackPanel("globalFeedback");
 

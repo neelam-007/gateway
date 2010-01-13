@@ -26,7 +26,7 @@ public class PagesTest {
                 AbstractApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[] {
                         "com/l7tech/server/ems/resources/testEsmApplicationContext.xml",
                 });
-                addComponentInstantiationListener(new SpringComponentInjector(this, applicationContext));
+                addComponentInstantiationListener(new SpringComponentInjector(this, applicationContext, true));
             }
 
             @Override
