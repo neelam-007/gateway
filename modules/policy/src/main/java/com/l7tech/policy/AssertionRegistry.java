@@ -9,7 +9,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.SERVER_ASSERTION_CLA
 import static com.l7tech.policy.assertion.AssertionMetadata.USED_BY_CLIENT;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE;
-import com.l7tech.policy.assertion.AuditRecordToXmlAssertion;
 import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.*;
@@ -81,7 +80,10 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
      * Register an assertion subclass.  This will invoke newInstance on the specified
      * class to create a prototype instance.
      * <p/>
-     * Nothing happens if the specified assertion class has already been registered with this registry.
+     * If the specified assertion class has already been registered with this registry, this will unregister
+     * its old prototype instance (and laster publish an AssertionUnregistrationEvent).
+     * <p/>
+     * Once the new prototype instance is registered this method will publish an AssertionRegistrationEvent.
      *
      * @param assertionClass the Assertion subclass to register.  Must not be null.
      * @return the prototype instance that is now registered for this class.  Never null.
