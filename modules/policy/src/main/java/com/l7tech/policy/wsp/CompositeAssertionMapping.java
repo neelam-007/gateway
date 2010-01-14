@@ -19,15 +19,15 @@ import java.util.List;
 /**
  * TypeMapping that knows how to serliaze a CompositeAssertion and its children into a policy XML document.
  */
-class CompositeAssertionMapping implements TypeMapping {
+public class CompositeAssertionMapping implements TypeMapping {
     private final CompositeAssertion prototype;
     private Class<? extends CompositeAssertion> clazz;
     private String externalName;
 
-    CompositeAssertionMapping(CompositeAssertion a, String externalName) {
+    protected CompositeAssertionMapping(CompositeAssertion a, String externalName) {
         this.clazz = a.getClass();
         this.externalName = externalName;
-        prototype = makeAssertion(externalName); // consistency check
+        prototype = makeAssertion(a, externalName); // consistency check
     }
 
     protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) throws InvalidPolicyTreeException {
@@ -87,7 +87,7 @@ class CompositeAssertionMapping implements TypeMapping {
 
     @Override
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-        CompositeAssertion cass = makeAssertion(externalName);
+        CompositeAssertion cass = makeAssertion(prototype, externalName);
         cass.setEnabled(getDisableAttribute(source));
         populateObject(cass, source, visitor);
         return new TypedReference(clazz, cass);
@@ -111,9 +111,18 @@ class CompositeAssertionMapping implements TypeMapping {
         return (TypeMappingFinder)prototype.meta().get(AssertionMetadata.WSP_SUBTYPE_FINDER);
     }
 
-    private CompositeAssertion makeAssertion(String externalName) throws IllegalArgumentException {
+    private CompositeAssertion makeAssertion(CompositeAssertion prototype, String externalName) throws IllegalArgumentException {
         CompositeAssertion cass;
-        if ("OneOrMore".equals(externalName)) {
+
+        if (this.externalName != null && prototype != null && this.externalName.equals(externalName)) {
+            try {
+                cass = prototype.getClass().newInstance();
+            } catch (InstantiationException e) {
+                throw new IllegalArgumentException(e);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException(e);
+            }
+        } else if ("OneOrMore".equals(externalName)) {
             cass = new OneOrMoreAssertion();
         } else if ("All".equals(externalName)) {
             cass = new AllAssertion();
