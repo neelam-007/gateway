@@ -10,9 +10,9 @@ import com.l7tech.policy.variable.VariableMetadata;
  */
 public interface SetsVariables {
     /**
-     * Get a description of the variables this assertion uses.  The general expectation is that these
-     * variables will exist and have been assigned values before the server assertion's checkRequest method
-     * is invoked.
+     * Get a description of the variables this assertion sets.  The general expectation is that these
+     * variables will exist and be assigned values after the server assertion's checkRequest method
+     * has returned.
      *
      * @return an array of VariableMetadata instances.  May be empty, but should never be null.
      * @throws com.l7tech.policy.variable.VariableNameSyntaxException (unchecked) if one of the variable names
