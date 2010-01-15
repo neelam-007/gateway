@@ -1,11 +1,10 @@
 package com.l7tech.test;
 
-import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
-import EDU.oswego.cs.dl.util.concurrent.Rendezvous;
-
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +31,7 @@ public class BenchmarkRunner {
 
     private final Set runnerResults = new HashSet();
 
-    private Rendezvous rendezvous;
+    private CyclicBarrier rendezvous;
     private int threadCount;
     private Thread[] threads;
     private Runnable runnable;
@@ -127,7 +126,7 @@ public class BenchmarkRunner {
         try {
             prepareRunnables();
             // last rendezvois signals the release
-            rendezvous.rendezvous(new Object());
+            rendezvous.await();
 
             // Wait for all test threads to die
             for (int i = 0; i < threads.length; i++) {
@@ -135,6 +134,8 @@ public class BenchmarkRunner {
                 thread.join();
             }
 
+        } catch (BrokenBarrierException e) {
+            throw new RuntimeException(e);
         } finally {
             killAllThreads();
             running = false;
@@ -171,7 +172,7 @@ public class BenchmarkRunner {
 
         log.info( name + ": Runnables = " + runnableCount + " threads to use = " + threadCount + "  (about " + perThread + " iterations per thread)");
 
-        rendezvous = new Rendezvous(threadCount + 1);
+        rendezvous = new CyclicBarrier(threadCount + 1);
         // Make sure any old threads get killed
         killAllThreads();
         this.threads = new Thread[threadCount];
@@ -270,7 +271,7 @@ public class BenchmarkRunner {
         }
 
         /** barrier */
-        private final Rendezvous rzvs;
+        private final CyclicBarrier rzvs;
         private final Runnable runnable;
         private final int iterations;
 
@@ -281,7 +282,7 @@ public class BenchmarkRunner {
          * @param iterations number of times to repeat the work
          * @param runnable  the work to do
          */
-        public ThreadRunner(Rendezvous rzvs, int iterations, Runnable runnable) {
+        public ThreadRunner(CyclicBarrier rzvs, int iterations, Runnable runnable) {
             this.rzvs = rzvs;
             this.iterations = iterations;
             this.runnable = runnable;
@@ -292,7 +293,7 @@ public class BenchmarkRunner {
          */
         public void run() {
             try {
-                rzvs.rendezvous(new Object()); // join barrier
+                rzvs.await(); // join barrier
 
                 final long start = System.currentTimeMillis();
                 for (int i = 0; i < iterations; ++i)

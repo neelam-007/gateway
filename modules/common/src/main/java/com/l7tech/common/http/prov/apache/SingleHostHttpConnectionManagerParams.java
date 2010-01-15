@@ -1,10 +1,10 @@
 package com.l7tech.common.http.prov.apache;
 
-import java.util.Map;
-
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.HostConfiguration;
-import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HttpConnectionManagerParams extension that does not support multiple hosts.

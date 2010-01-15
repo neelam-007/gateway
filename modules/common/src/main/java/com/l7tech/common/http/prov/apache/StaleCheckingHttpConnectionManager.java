@@ -1,24 +1,18 @@
 package com.l7tech.common.http.prov.apache;
 
-import java.lang.ref.WeakReference;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.io.IOException;
-
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ShutdownExceptionHandler;
+import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 
-import com.l7tech.util.ShutdownExceptionHandler;
-import com.l7tech.util.ExceptionUtils;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Extension of the MultiThreadedHttpConnectionManager that will close stale connections.

@@ -123,6 +123,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JPanel speedIndicatorPanel;
     private JPanel encryptionConfigPanel;
     private JPanel signatureResponseConfigPanel;
+    private JComboBox signatureDigestComboBox;
+    private JPanel signatureDigestAlgorithmPanel;
     private JCheckBox aes128CheckBox;
     private JCheckBox aes192CheckBox;
     private JCheckBox aes256CheckBox;
@@ -285,6 +287,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
 
         signatureResponseConfigPanel.setVisible(assertion instanceof WssSignElement);
+        signatureDigestAlgorithmPanel.setVisible(assertion instanceof WssSignElement);
         if (serviceNode != null) {
             try {
                 serviceWsdl = serviceNode.getEntity().parsedWsdl();

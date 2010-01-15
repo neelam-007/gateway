@@ -1,20 +1,17 @@
 package com.l7tech.common.http.prov.apache;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
+import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.protocol.Protocol;
+
+import java.net.InetAddress;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Connection manager that manages connections with an implicit identity association.
@@ -41,7 +38,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
     public IdentityBindingHttpConnectionManager() {
         bindingTimeout = DEFAULT_BINDING_TIMEOUT;
         bindingMaxAge = DEFAULT_BINDING_MAX_AGE;
-        lock = new ReaderPreferenceReadWriteLock();
+        lock = new ReentrantReadWriteLock();
         connectionsById = new HashMap();
         info = new ThreadLocal();
     }
@@ -203,16 +200,13 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
         boolean gotLock = false;
         while (!gotLock) {
             try {
-                lock.writeLock().acquire();
+                lock.writeLock().lock();
                 gotLock = true;
                 timeNow = System.currentTimeMillis();
                 connectionInfo = new HashMap(connectionsById);
             }
-            catch(InterruptedException ie) {
-                logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
-            }
             finally {
-                if (gotLock) lock.writeLock().release();
+                if (gotLock) lock.writeLock().unlock();
             }
         }
 
@@ -240,15 +234,12 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
         gotLock = false;
         while (!gotLock) {
             try {
-                lock.writeLock().acquire();
+                lock.writeLock().lock();
                 gotLock = true;
                 connectionsById.keySet().removeAll(identitiesForRemoval);
             }
-            catch(InterruptedException ie) {
-                logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
-            }
             finally {
-                if (gotLock) lock.writeLock().release();
+                if (gotLock) lock.writeLock().unlock();
             }
         }
         if (!identitiesForRemoval.isEmpty()) {
@@ -313,8 +304,8 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
         boolean gotLock = false;
         while (!gotLock) {
             try {
-                if (timeout == 0) lock.readLock().acquire();
-                else if(!lock.readLock().attempt(timeout)) {
+                if (timeout == 0) lock.readLock().lock();
+                else if(!lock.readLock().tryLock(timeout, TimeUnit.MILLISECONDS)) {
                     throw new ConnectionPoolTimeoutException("Timeout acquiring lock.");
                 }
                 gotLock = true;
@@ -346,7 +337,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
                 logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
             }
             finally {
-                if (gotLock) lock.readLock().release();
+                if (gotLock) lock.readLock().unlock();
             }
         }
 
@@ -381,7 +372,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
         boolean bound = false;
         boolean gotLock = false;
         try {
-            lock.writeLock().acquire();
+            lock.writeLock().lock();
             gotLock = true;
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Binding HTTP connection for identity '"+identity+"'.");
@@ -398,11 +389,8 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
                 previouslyBoundHttpConnectionInfo.dispose();
             }
         }
-        catch(InterruptedException ie) {
-            logger.log(Level.WARNING, "Interrupted waiting for write lock, NOT binding connection for identity '"+identity+"'.", ie);
-        }
         finally {
-            if (gotLock) lock.writeLock().release();
+            if (gotLock) lock.writeLock().unlock();
         }
 
         if (!bound) {

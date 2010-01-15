@@ -1,14 +1,14 @@
 package com.l7tech.gateway.common.spring.util;
 
-import java.util.Set;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import org.springframework.context.event.ApplicationEventMulticaster;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
+
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ApplicationEventMulticaster multicaster implementation that supports runtime listener changes.

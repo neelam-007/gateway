@@ -1,18 +1,17 @@
 package com.l7tech.common.http.prov.apache;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Set;
+import com.l7tech.util.ShutdownExceptionHandler;
+import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.HttpConnection;
+
 import java.util.HashSet;
 import java.util.Iterator;
-
-import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
-import EDU.oswego.cs.dl.util.concurrent.Channel;
-import EDU.oswego.cs.dl.util.concurrent.WaitFreeQueue;
-
-import com.l7tech.util.ShutdownExceptionHandler;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * HttpConnectionManager that eliminates connection pool contention with a thread local cache.
@@ -73,7 +72,7 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
     /**
      * Queue into which connections to re-pool are dropped (non-blocking)
      */
-    private static final Channel timeoutQueue = new WaitFreeQueue();
+    private static final Queue timeoutQueue = new ConcurrentLinkedQueue();
 
     // Create and start the timer daemon
     static {
@@ -169,16 +168,14 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
             boolean release = false;
             try {
                 if( httpConnection.isOpen() )
-                    timeoutQueue.put(this);
+                    timeoutQueue.add(this);
                 else
                     release = true;
-            }
-            catch(InterruptedException ie) {
-                release = true;
-            }
+            } finally {
 
-            if (release) {
-                localConnection.set(null);    
+                if (release) {
+                    localConnection.set(null);
+                }
             }
 
             return release; // release underlying connection?
@@ -215,7 +212,7 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
 
         private CachedConnectionInfo safePoll() throws InterruptedException {
             try {
-                return (CachedConnectionInfo) timeoutQueue.poll(0);
+                return (CachedConnectionInfo) timeoutQueue.poll();
             }
             catch(NullPointerException npe) {
                 // npe can be thrown on shutdown, pretend it was an interruption
