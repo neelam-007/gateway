@@ -15,7 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.BeanFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,14 +30,14 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
     private static final Logger logger = Logger.getLogger(ServerCompositeAssertion.class.getName());
     private List<ServerAssertion> children;
 
-    public ServerCompositeAssertion(CT composite, ApplicationContext spring) throws PolicyAssertionException, LicenseException {
+    public ServerCompositeAssertion(CT composite, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(composite);
-        if (spring == null)
+        if (beanFactory == null)
             throw new IllegalArgumentException("The Application Context is required");
 
         if (composite.getChildren().isEmpty()) throw new PolicyAssertionException(assertion, "Must have children");
 
-        ServerPolicyFactory pf = (ServerPolicyFactory)spring.getBean("policyFactory");
+        ServerPolicyFactory pf = (ServerPolicyFactory)beanFactory.getBean("policyFactory");
         Assertion child;
         List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
         for (Iterator i = composite.children(); i.hasNext();) {
