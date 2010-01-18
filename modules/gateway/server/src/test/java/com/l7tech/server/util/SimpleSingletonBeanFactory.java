@@ -2,11 +2,11 @@ package com.l7tech.server.util;
 
 import com.l7tech.util.Pair;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.AbstractBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * A bean factory to use in unit tests that don't need to bring up an entire ApplicationContext.
  */
-public class SimpleSingletonBeanFactory extends AbstractBeanFactory {
+public class SimpleSingletonBeanFactory extends DefaultListableBeanFactory {
     private final Map<String, Pair<BeanDefinition, Object>> beans = new HashMap<String, Pair<BeanDefinition, Object>>();
 
     public SimpleSingletonBeanFactory() {
@@ -48,12 +48,12 @@ public class SimpleSingletonBeanFactory extends AbstractBeanFactory {
     }
 
     @Override
-    protected boolean containsBeanDefinition(String beanName) {
+    public boolean containsBeanDefinition(String beanName) {
         return beans.containsKey(beanName);
     }
 
     @Override
-    protected BeanDefinition getBeanDefinition(String beanName) throws BeansException {
+    public BeanDefinition getBeanDefinition(String beanName) throws BeansException {
         Pair<BeanDefinition, Object> bean = beans.get(beanName);
         if (bean == null) throw new NoSuchBeanDefinitionException(beanName, "no such bean " + beanName);
         return bean.left;
