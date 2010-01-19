@@ -1,11 +1,14 @@
 package com.l7tech.external.assertions.concall.server;
 
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -16,12 +19,14 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.IOUtils;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 import org.junit.*;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -148,5 +153,36 @@ public class ServerConcurrentAllAssertionTest {
         } catch (NoSuchVariableException e) {
             // Ok
         }
+    }
+
+    static Message makeMessage(ContentTypeHeader contentType, String body) throws IOException {
+        return new Message(new ByteArrayStashManager(), contentType, new ByteArrayInputStream(body.getBytes()));
+    }
+
+    static String toString(Message message) throws IOException, NoSuchPartException {
+        return new String(IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()));
+    }
+
+    @Test
+    public void testMessageVariables() throws Exception {
+        ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+                new AllAssertion(Arrays.asList(
+                        new DelayedCopyVariableAssertion(2000L, "source1", "dest1")
+                )),
+                new AllAssertion(Arrays.asList(
+                        new DelayedCopyVariableAssertion(2000L, "source2", "dest2")
+                ))
+        ));
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("source1", makeMessage(ContentTypeHeader.TEXT_DEFAULT, "var content 1"));
+        context.setVariable("source2", makeMessage(ContentTypeHeader.XML_DEFAULT, "<foo>var content 2</foo>"));
+
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals("var content 1", toString((Message)context.getVariable("dest1")));
+        assertEquals("<foo>var content 2</foo>", toString((Message)context.getVariable("dest2")));
     }
 }

@@ -179,10 +179,17 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         return result;
     }
 
-    private void mergeContextVariables(String[] varsSetByKid, PolicyEnforcementContext source, PolicyEnforcementContext dest) {
+    private void mergeContextVariables(String[] varsSetByKid, PolicyEnforcementContext source, PolicyEnforcementContext dest) throws IOException {
         Map<String, Object> map = source.getVariableMap(varsSetByKid, auditor);
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-            dest.setVariable(entry.getKey(), entry.getValue());
+            String name = entry.getKey();
+            Object value = entry.getValue();
+
+            if (value instanceof String) {
+                dest.setVariable(name, value);
+            } else if (value instanceof Message) {
+                dest.setVariable(name, cloneMessageBody((Message)value));
+            }
         }
     }
 
