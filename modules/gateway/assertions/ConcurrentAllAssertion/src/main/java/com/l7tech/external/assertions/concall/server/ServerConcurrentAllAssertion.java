@@ -9,6 +9,7 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -185,10 +186,16 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             String name = entry.getKey();
             Object value = entry.getValue();
 
-            if (value instanceof String) {
-                dest.setVariable(name, value);
-            } else if (value instanceof Message) {
-                dest.setVariable(name, cloneMessageBody((Message)value));
+            try {
+                if (value instanceof String) {
+                    dest.setVariable(name, value);
+                } else if (value instanceof Message) {
+                    dest.setVariable(name, cloneMessageBody((Message)value));
+                }
+            } catch (VariableNotSettableException e) {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Unable to set non-settable variable: " + name);
+                // Ignore it and fallthrough    
             }
         }
     }
