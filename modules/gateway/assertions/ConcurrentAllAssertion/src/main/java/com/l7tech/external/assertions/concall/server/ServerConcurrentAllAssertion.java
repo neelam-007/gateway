@@ -38,7 +38,8 @@ import java.util.logging.Logger;
 public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<ConcurrentAllAssertion> {
     private static final Logger logger = Logger.getLogger(ServerConcurrentAllAssertion.class.getName());
 
-    private static ExecutorService assertionExecutor;
+    private static final Object assertionExecutorInitLock = new Object();
+    private static volatile ExecutorService assertionExecutor;
 
     private final Auditor auditor;
     private final List<String[]> varsUsed;
@@ -58,14 +59,21 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
 
         // Initialize the executor if necessary
-        if (assertionExecutor == null) {
-            ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : (ServerConfig)beanFactory.getBean("serverConfig", ServerConfig.class);
-            int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
-            int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
-            int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 512);
+        if (assertionExecutor == null)
+            initializeAssertionExecutor(beanFactory);
+    }
 
-            BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<Runnable>(globalMaxWorkQueue, true);
-            assertionExecutor = new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5 * 60, TimeUnit.SECONDS, assertionQueue);
+    private static void initializeAssertionExecutor(BeanFactory beanFactory) {
+        synchronized (assertionExecutorInitLock) {
+            if (assertionExecutor == null) {
+                ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : (ServerConfig)beanFactory.getBean("serverConfig", ServerConfig.class);
+                int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
+                int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
+                int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 512);
+
+                BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<Runnable>(globalMaxWorkQueue, true);
+                assertionExecutor = new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5 * 60, TimeUnit.SECONDS, assertionQueue);
+            }
         }
     }
 
