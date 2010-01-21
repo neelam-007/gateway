@@ -24,7 +24,7 @@ class YuiCommon {
     static final String RES_JS_DOM_EVENT = "yui/yahoo-dom-event/yahoo-dom-event.js";
     static final String RES_JS_ANIMATION = "yui/animation/animation-min.js";
     static final String RES_JS_CONTAINER = "yui/container/container-min.js";
-    static final String RES_JS_ELEMENT = "yui/element/element-beta-min.js";
+    static final String RES_JS_ELEMENT = "yui/element/element-min.js";
     static final String RES_JS_BUTTON = "yui/button/button-min.js";
     static final String RES_JS_MENU = "yui/menu/menu-min.js";
     static final String RES_JS_DATASOURCE = "yui/datasource/datasource-min.js";
