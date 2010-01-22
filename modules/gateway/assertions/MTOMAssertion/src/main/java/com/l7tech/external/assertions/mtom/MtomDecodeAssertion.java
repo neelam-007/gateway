@@ -72,7 +72,8 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(SHORT_NAME, "MTOM Decode");
+        meta.put(SHORT_NAME, "Decode MTOM Message");
+        meta.put(PROPERTIES_ACTION_NAME, "MTOM Decode Properties");
         meta.put(DESCRIPTION, "Process a SOAP message in Optimized MIME Multipart/Related Serialization (MTOM) format and optionally covert to a plain SOAP message.");
         meta.put(WSP_EXTERNAL_NAME, "MTOMDecodeAssertion");
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });

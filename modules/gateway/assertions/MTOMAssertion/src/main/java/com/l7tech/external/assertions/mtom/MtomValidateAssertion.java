@@ -44,7 +44,8 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(SHORT_NAME, "MTOM Validate");
+        meta.put(SHORT_NAME, "Validate MTOM Message");
+        meta.put(PROPERTIES_ACTION_NAME, "MTOM Validate Properties");
         meta.put(DESCRIPTION, "Validate a SOAP message in Optimized MIME Multipart/Related Serialization (MTOM) format.");
         meta.put(WSP_EXTERNAL_NAME, "MTOMValidateAssertion");
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });
