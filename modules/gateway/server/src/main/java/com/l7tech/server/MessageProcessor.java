@@ -34,6 +34,7 @@ import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
@@ -263,6 +264,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
     }
 
+    private void publishMessageReceivedEvent(PolicyEnforcementContext context) {
+        try {
+            messageProcessingEventChannel.publishEvent(new MessageReceived(this, context));
+        } catch (Throwable t){
+            auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
+        }
+    }
+
     private void notifyTrafficMonitors(PolicyEnforcementContext context, AssertionStatus status) {
         for (TrafficMonitor tm : trafficMonitors) {
             tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
@@ -465,6 +474,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (context.getRequest().isHttpRequest())
                 processRequestHttpHeaders(context);
+
+           publishMessageReceivedEvent(context);
 
             // Get the server policy
             lookupServerPolicy();
