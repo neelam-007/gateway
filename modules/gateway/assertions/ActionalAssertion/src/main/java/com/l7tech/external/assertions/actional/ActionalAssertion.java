@@ -24,7 +24,7 @@ public class ActionalAssertion extends Assertion implements SetsVariables {
 
     public static final String INTERCEPTOR_ENABLE_CLUSTER_PROPERTY = "interceptor.enabled";
     public static final String INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitProviderPayloads";
-    public static final String INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitConsumerPaylods";
+    public static final String INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitConsumerPayloads";
     public static final String INTERCEPTOR_CONFIG_DIRECTORY = "interceptor.configDir";
     public static final String INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE = "interceptor.enforceInboundTrustZone";
 
