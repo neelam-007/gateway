@@ -95,6 +95,15 @@ public class MigrationManagerImpl implements MigrationManager {
                 } catch (MigrationApi.MigrationException e) {
                     throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
                 }
+
+                if (EntityType.SERVICE == header.getType()) {
+                    for (MigrationDependency dep : metadata.getDependants(header)) {
+                        ExternalEntityHeader maybeDocument = dep.getDependant();
+                        if (EntityType.SERVICE_DOCUMENT == maybeDocument.getType()) {
+                            metadata.addHeader(maybeDocument);
+                        }
+                    }
+                }
             }
         }
 

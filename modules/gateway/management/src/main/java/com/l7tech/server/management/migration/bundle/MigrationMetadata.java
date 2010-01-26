@@ -63,6 +63,7 @@ public class MigrationMetadata implements Serializable {
         Set<ExternalEntityHeader> allHeaders = new HashSet<ExternalEntityHeader>();
         allHeaders.addAll(headers);
         for(MigrationDependency dep : dependencies) {
+            allHeaders.add(dep.getDependant());
             allHeaders.add(dep.getDependency());
         }
         return allHeaders;
