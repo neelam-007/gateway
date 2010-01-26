@@ -15,10 +15,12 @@ import static com.l7tech.objectmodel.migration.PropertyResolver.Type.VALUE_REFER
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SCHEMA_ENTRY;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.JDBC_CONNECTION;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 
@@ -36,17 +38,19 @@ public class PropertyResolverFactory {
     private ClusterPropertyManager cpManager;
     private SchemaEntryManager schemaManager;
     private ServerConfig serverConfig;
+    private JdbcConnectionManager jdbcConnectionManager;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
     public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager,
-                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager, ServerConfig serverConfig) {
+                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager, ServerConfig serverConfig, JdbcConnectionManager jdbcConnectionManager) {
         this.entityFinder = entityFinder;
         this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.cpManager = cpManager;
         this.schemaManager = schemaManager;
         this.serverConfig = serverConfig;
+        this.jdbcConnectionManager = jdbcConnectionManager;
         initRegistry();
     }
 
@@ -73,6 +77,7 @@ public class PropertyResolverFactory {
         addToRegistry(new SsgKeyResolver(this, SSGKEY, keyManager));
         addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager, serverConfig));
         addToRegistry(new SchemaEntryPropertyResolver(this, SCHEMA_ENTRY, schemaManager));
+        addToRegistry(new JdbcConnectionPropertyResolver(this, JDBC_CONNECTION, jdbcConnectionManager));
     }
 
     private void addToRegistry(PropertyResolver resolver) {

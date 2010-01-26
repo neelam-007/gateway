@@ -25,7 +25,8 @@ public interface PropertyResolver {
         VALUE_REFERENCE,
         SSGKEY,
         SERVER_VARIABLE,
-        SCHEMA_ENTRY
+        SCHEMA_ENTRY,
+        JDBC_CONNECTION,
     }
 
     /**
@@ -54,7 +55,7 @@ public interface PropertyResolver {
      * @param targetHeader the target value's (entity) header;
      *                     needed if the target value is not enough to reconstruct the target header (e.g. value references)
      * @param targetValue the new value that is set for the sourceEntity's propName
-     * @param originalHeader the dependan't header from the source cluster; needed in some cases (e.g. UsesEntities) to apply the mappings
+     * @param originalHeader the dependant header from the source cluster; needed in some cases (e.g. UsesEntities) to apply the mappings
      */
     public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader)
         throws PropertyResolverException;

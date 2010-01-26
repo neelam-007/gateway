@@ -1,6 +1,11 @@
 package com.l7tech.external.assertions.jdbcquery;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
@@ -57,6 +62,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.JDBC_CONNECTION)
     public String getConnectionName() {
         return connectionName;
     }
@@ -129,6 +135,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames((sqlQuery == null? "" : sqlQuery) + " " + (variablePrefix == null? "" : variablePrefix));
     }

@@ -23,10 +23,12 @@ public abstract class AbstractPropertyResolver implements PropertyResolver {
         this.type = type;
     }
 
+    @Override
     public Type getType() {
         return type;
     }
 
+    @Override
     public PropertyResolver getResolver(Method property) throws PropertyResolverException {
 
         PropertyResolver resolver = factory.getPropertyResolver(MigrationUtils.getTargetType(property));
@@ -38,6 +40,7 @@ public abstract class AbstractPropertyResolver implements PropertyResolver {
         return resolver;
     }
 
+    @Override
     public Entity valueMapping(ExternalEntityHeader header) throws PropertyResolverException {
         throw new PropertyResolverException("Value mapping not supported for header: " + header);
     }
