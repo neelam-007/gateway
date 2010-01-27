@@ -73,6 +73,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         this(next, showTitleLabel, false, parent);
     }
 
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion ass = (SamlPolicyAssertion) settings;
         ass.setAudienceRestriction(textFieldAudienceRestriction.getText());
@@ -80,7 +81,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             SamlIssuerAssertion sia = (SamlIssuerAssertion) ass;
             if (validityCheckbox.isSelected()) {
                 sia.setConditionsNotBeforeSecondsInPast((Integer)notBeforeSpinner.getValue());
-                sia.setConditionsNotOnOrAfterExpirySeconds((Integer)notBeforeSpinner.getValue());
+                sia.setConditionsNotOnOrAfterExpirySeconds((Integer)notOnOrAfterSpinner.getValue());
             } else {
                 sia.setConditionsNotBeforeSecondsInPast(-1);
                 sia.setConditionsNotOnOrAfterExpirySeconds(-1);
@@ -90,6 +91,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         }
     }
 
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion requestWssSaml = (SamlPolicyAssertion)settings;
         textFieldAudienceRestriction.setText(requestWssSaml.getAudienceRestriction());
@@ -124,6 +126,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             notOnOrAfterSpinner.setModel(new SpinnerNumberModel(300, 30, 3600, 1));
             validationRules.add(new InputValidator.NumberSpinnerValidationRule(notOnOrAfterSpinner, "Not On Or After seconds in future"));
             validityCheckbox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     final boolean b = validityCheckbox.isSelected();
                     notBeforeLabel.setEnabled(b);
@@ -153,10 +156,12 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Conditions";
     }
 
+    @Override
     public String getDescription() {
         if (issueMode) {
             return
