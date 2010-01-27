@@ -85,6 +85,12 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                     String message = "Multiple signing assertions present with different token signature requirements";
                     result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
                 }
+
+                // Check for the same signature digest
+                if ( wdc1.getDigestAlgorithmName() != null && wdc2.getDigestAlgorithmName() != null && !wdc1.getDigestAlgorithmName().equals(wdc2.getDigestAlgorithmName()) ) {
+                    String message = "Multiple signing assertions present with different explicit \"Signature Digest Algorithm\" selections.  If one assertion specifies a digest, the other assertions in the same path should either specify the same digest or else leave it as \"Automatic\".";
+                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
+                }
             }
         }
     }

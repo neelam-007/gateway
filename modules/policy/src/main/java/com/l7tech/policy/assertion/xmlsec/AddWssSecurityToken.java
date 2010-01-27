@@ -21,6 +21,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean includePassword;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
+    private String digestAlgorithmName;
 
     public AddWssSecurityToken() {
         super(TargetMessageType.RESPONSE);
@@ -71,6 +72,16 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     @Override
     public void setProtectTokens(boolean protectTokens) {
         this.protectTokens = protectTokens;
+    }
+
+    @Override
+    public String getDigestAlgorithmName() {
+        return this.digestAlgorithmName;
+    }
+
+    @Override
+    public void setDigestAlgorithmName(String digestAlgorithmName) {
+        this.digestAlgorithmName = digestAlgorithmName;
     }
 
     @Override

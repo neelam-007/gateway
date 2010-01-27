@@ -183,6 +183,12 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.ISSUER_SERIAL);
         }
 
+        // Was digest algorithm overridden?
+        String digestAlgorithm = wssConfig.getDigestAlgorithmName();
+        if (digestAlgorithm != null) {
+            wssReq.setSignatureMessageDigest(digestAlgorithm);
+        }
+
         auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_SIGNED, messageDescription, String.valueOf(howMany));
 
         return AssertionStatus.NONE;

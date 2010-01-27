@@ -38,4 +38,18 @@ public interface WssDecorationConfig extends SecurityHeaderAddressable {
      * @param protectTokens true to sign the BST (or other signing token); false to leave it unsigned.
      */
     void setProtectTokens(boolean protectTokens);
+
+    /**
+     * Get the digest algorithm to use for the SignatureMethod and DigestMethod.
+     *
+     * @return the preferred digest algorithm name (ie, "SHA-384").  May be null.
+     */
+    String getDigestAlgorithmName();
+
+    /**
+     * Set the digest algorithm to use for the SignatureMethod and DigestMethod.
+     *
+     * @param digestAlgorithmName the digest algorithm name (ie, "SHA-1" or "SHA-512"), or null to allow the WSS decorator to choose.
+     */
+    void setDigestAlgorithmName(String digestAlgorithmName);
 }

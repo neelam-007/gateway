@@ -141,6 +141,16 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     }
 
     @Override
+    public String getDigestAlgorithmName() {
+        return digestAlgorithmName;
+    }
+
+    @Override
+    public void setDigestAlgorithmName(String digestAlgorithmName) {
+        this.digestAlgorithmName = digestAlgorithmName;
+    }
+
+    @Override
     public String getKeyAlias() {
         return privatekeyableSupport.getKeyAlias();
     }
@@ -228,4 +238,5 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     private boolean signatureRequired = true;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private Resolution resolution;
+    private String digestAlgorithmName;
 }

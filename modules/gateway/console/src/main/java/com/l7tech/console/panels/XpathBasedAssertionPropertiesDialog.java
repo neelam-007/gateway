@@ -41,21 +41,14 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.xml.KeyReference;
+import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.security.xml.XencAlgorithm;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
-import com.l7tech.xml.xpath.FastXpath;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
-import com.l7tech.xml.xpath.XpathVariableFinder;
-import com.l7tech.xml.xpath.NoSuchXpathVariableException;
+import com.l7tech.xml.xpath.*;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
@@ -72,9 +65,9 @@ import javax.swing.tree.*;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
+import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPConstants;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -286,8 +279,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             xmlMsgSrcPanel.setVisible(false);
         }
 
-        signatureResponseConfigPanel.setVisible(assertion instanceof WssSignElement);
-        signatureDigestAlgorithmPanel.setVisible(assertion instanceof WssSignElement);
+        final boolean isSignature = assertion instanceof WssSignElement;
+        signatureResponseConfigPanel.setVisible(isSignature);
+        signatureDigestAlgorithmPanel.setVisible(isSignature);
+        if (isSignature) {
+            String[] digests = SupportedSignatureMethods.getDigestNames();
+            digests = ArrayUtils.unshift(digests, "Automatic");
+            signatureDigestComboBox.setModel(new DefaultComboBoxModel(digests));
+        }
         if (serviceNode != null) {
             try {
                 serviceWsdl = serviceNode.getEntity().parsedWsdl();
@@ -790,6 +789,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } else {
             skiReferenceRadioButton.setSelected(true);
         }
+        signatureDigestComboBox.setSelectedIndex(0);
+        String digAlg = rwssi.getDigestAlgorithmName();
+        if (digAlg != null)
+            signatureDigestComboBox.setSelectedItem(digAlg);
     }
 
     private void initializeResponseEncryptionConfig() {
@@ -898,6 +901,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } else if (issuerSerialReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.ISSUER_SERIAL.getName());            
         }
+        if (0 == signatureDigestComboBox.getSelectedIndex()) {
+            rwssi.setDigestAlgorithmName(null);
+        } else {
+            String digAlg = (String)signatureDigestComboBox.getSelectedItem();
+            rwssi.setDigestAlgorithmName(digAlg);
+        }
+
     }
 
     private void collectResponseEncryptionConfig() {

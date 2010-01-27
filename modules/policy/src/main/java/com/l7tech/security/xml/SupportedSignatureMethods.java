@@ -199,4 +199,13 @@ public enum SupportedSignatureMethods {
     public static List<String> getDigestAliases(String digest) {
         return digestAliases.get(digest.toUpperCase());
     }
+
+    /**
+     * Get list of digest algorithm names that it would be reasonable to offer in a GUI for selecting a signature and digest method.
+     *
+     * @return an array of canonical algorithm names (ie, { "SHA-1", "SHA-256" } ).  Never null or empty.
+     */
+    public static String[] getDigestNames() {
+        return new String[] { "SHA-1", "SHA-256", "SHA-384", "SHA-512" };
+    }
 }

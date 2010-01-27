@@ -76,6 +76,16 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
         this.protectTokens = protectTokens;
     }
 
+    @Override
+    public String getDigestAlgorithmName() {
+        return digestAlgorithmName;
+    }
+
+    @Override
+    public void setDigestAlgorithmName(String digestAlgorithmName) {
+        this.digestAlgorithmName = digestAlgorithmName;
+    }
+
     final static String baseName = "Sign Element";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<WssSignElement>(){
@@ -118,5 +128,6 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     private boolean usesDefaultKeyStore = true;
     private long nonDefaultKeystoreId;
     private String keyId;
+    private String digestAlgorithmName;
     
 }
