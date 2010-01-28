@@ -157,7 +157,7 @@ public class SignedSamlTest extends TestCase {
 
         SamlAssertionGenerator ag = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        samlOptions.setExpiryMinutes(5);
+        samlOptions.setNotAfterSeconds(300);
         samlOptions.setProofOfPosessionRequired(false);
         SubjectStatement statement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class),
@@ -169,7 +169,7 @@ public class SignedSamlTest extends TestCase {
     public Document getSignedRequestWithSenderVouchesToken() throws Exception {
         // Make a SAML assertion
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        samlOptions.setExpiryMinutes(5);
+        samlOptions.setNotAfterSeconds(300);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId("TestAssertionId-001");
         final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);

@@ -295,7 +295,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
         }
         samlOptions.setVersion(assertion.getSamlAssertionVersion());
-        samlOptions.setExpiryMinutes(assertion.getSamlAssertionExpiry());
+        samlOptions.setNotAfterSeconds(assertion.getSamlAssertionExpiry() * 60);
         samlOptions.setIssuerKeyInfoType(assertion.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
         KeyInfoInclusionType keyInfoType = assertion.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
         if (assertion.getRecipientContext() != null)

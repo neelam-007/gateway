@@ -58,6 +58,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
     private final Auditor auditor;
     private final int defaultBeforeOffsetMinutes;
+    private final int defaultAfterOffsetMinutes;
     private final SubjectStatement.Confirmation confirmationMethod;
     private final String[] varsUsed;
     private final Integer version;
@@ -82,6 +83,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         this.decorator = (WssDecorator) spring.getBean("wssDecorator");
 
         this.defaultBeforeOffsetMinutes = sc.getIntProperty("samlBeforeOffsetMinute", 2);
+        this.defaultAfterOffsetMinutes = sc.getIntProperty("samlAfterOffsetMinute", 2);
         this.varsUsed = assertion.getVariablesUsed();
         this.confirmationMethod = SubjectStatement.Confirmation.forUri(assertion.getSubjectConfirmationMethodUri());
         try {
@@ -119,7 +121,11 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         if (version == 2) {
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         }
-        options.setBeforeOffsetMinutes(defaultBeforeOffsetMinutes);
+
+        int assertionNotBeforeSeconds = assertion.getConditionsNotBeforeSecondsInPast();
+        options.setNotBeforeSeconds(assertionNotBeforeSeconds != -1 ? assertionNotBeforeSeconds : defaultBeforeOffsetMinutes * 60);
+        int assertionNotAfterSeconds = assertion.getConditionsNotOnOrAfterExpirySeconds();
+        options.setNotAfterSeconds(assertionNotAfterSeconds != -1 ? assertionNotAfterSeconds : defaultAfterOffsetMinutes * 60);
 
         final Map<String, Object> vars;
         if (varsUsed.length == 0) {

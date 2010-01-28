@@ -79,8 +79,8 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
             options.setSignAssertion(true);
-            options.setExpiryMinutes(24*60); // Good for one day (including some skew)
-            options.setBeforeOffsetMinutes(60); // Allow up to one hour of clock skew
+            options.setNotAfterSeconds(24*60*60); // Good for one day (including some skew)
+            options.setNotBeforeSeconds(60*60); // Allow up to one hour of clock skew
             options.setProofOfPosessionRequired(false);
             options.setIssuerKeyInfoType(KeyInfoInclusionType.CERT);
 

@@ -42,6 +42,7 @@ public class SamlAssertionGenerator {
     public static final String SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY = "com.l7tech.security.saml.enableDNS";
 
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+    private static final String DEFAULT_PREFIX = "SamlAssertion";
     private static final SecureRandom random = new SecureRandom();
     private final SignerInfo assertionSigner;
     private final SamlAssertionGeneratorSaml1 sag1;
@@ -324,22 +325,29 @@ public class SamlAssertionGenerator {
     }
 
     public static String generateAssertionId(String prefix) {
-        if (prefix == null) prefix = "SamlAssertion";
         byte[] disambig = new byte[16];
         random.nextBytes(disambig);
-        return prefix + "-" + HexUtils.hexDump(disambig);
+        return (prefix != null ? prefix : DEFAULT_PREFIX) + "-" + HexUtils.hexDump(disambig);
     }
 
     public static class Options {
         public static final int VERSION_1 = 1;
         public static final int VERSION_2 = 2;
 
-        public int getExpiryMinutes() {
-            return expiryMinutes;
+        public int getNotBeforeSeconds() {
+            return notBeforeSeconds;
         }
 
-        public void setExpiryMinutes(int expiryMinutes) {
-            this.expiryMinutes = expiryMinutes;
+        public void setNotBeforeSeconds(int notBeforeSeconds) {
+            this.notBeforeSeconds = notBeforeSeconds;
+        }
+
+        public int getNotAfterSeconds() {
+            return notAfterSeconds;
+        }
+
+        public void setNotAfterSeconds(int notAfterSeconds) {
+            this.notAfterSeconds = notAfterSeconds;
         }
 
         public boolean isProofOfPosessionRequired() {
@@ -406,14 +414,6 @@ public class SamlAssertionGenerator {
             this.securityHeaderActor = securityHeaderActor;
         }
 
-        public int getBeforeOffsetMinutes() {
-            return beforeOffsetMinutes;
-        }
-
-        public void setBeforeOffsetMinutes(int beforeOffsetMinutes) {
-            this.beforeOffsetMinutes = beforeOffsetMinutes;
-        }
-
         public KeyInfoInclusionType getIssuerKeyInfoType() {
             return issuerKeyInfoType;
         }
@@ -432,7 +432,8 @@ public class SamlAssertionGenerator {
 
         private KeyInfoInclusionType issuerKeyInfoType = KeyInfoInclusionType.CERT;
         private boolean proofOfPosessionRequired = true;
-        private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
+        private int notBeforeSeconds = DEFAULT_NOT_BEFORE_SECONDS;
+        private int notAfterSeconds = DEFAULT_NOT_AFTER_SECONDS;
         private InetAddress clientAddress;
         private boolean clientAddressDNS = SyspropUtil.getBoolean( SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY, false );
         private boolean signAssertion = true;
@@ -440,9 +441,9 @@ public class SamlAssertionGenerator {
         private String id = null;
         private int samlVersion = VERSION_1;
         private String securityHeaderActor = null;
-        private int beforeOffsetMinutes = 2; // TODO surely the default should be a little tighter
         private String audienceRestriction = null;
     }
 
-    static final int DEFAULT_EXPIRY_MINUTES = 5;
+    static final int DEFAULT_NOT_BEFORE_SECONDS = 120;
+    static final int DEFAULT_NOT_AFTER_SECONDS = 300;
 }

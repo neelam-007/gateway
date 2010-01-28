@@ -82,7 +82,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
         SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
         opts.setClientAddress(InetAddressUtil.getLocalHost());       // TODO allow override from API caller (i.e. portal)
-        opts.setExpiryMinutes(5);
+        opts.setNotAfterSeconds(300);
         opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
         opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
         opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));

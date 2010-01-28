@@ -52,9 +52,9 @@ public class SamlAssertionGeneratorSaml2 {
                                               String caDn) throws CertificateException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now, options.getExpiryMinutes(),
+                now, options.getNotAfterSeconds(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction());
+                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
         if (subjectStatement instanceof AuthenticationStatement) {
@@ -210,7 +210,7 @@ public class SamlAssertionGeneratorSaml2 {
         }
     }
 
-    private AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId, String caDn, int beforeOffsetMinutes, String audienceRestriction) {
+    private AssertionType getGenericAssertion(Calendar now, int expirySeconds, String assertionId, String caDn, int beforeOffsetSeconds, String audienceRestriction) {
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
 
@@ -230,12 +230,11 @@ public class SamlAssertionGeneratorSaml2 {
         ConditionsType ct = ConditionsType.Factory.newInstance();
         if (audienceRestriction != null) ct.addNewAudienceRestriction().addAudience(audienceRestriction);
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
         calendar.set(Calendar.MILLISECOND, 0);
-        calendar.add(Calendar.MINUTE, (-1 * beforeOffsetMinutes)); //bzilla #3616
         ct.setNotBefore(calendar);
         Calendar c2 = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        c2.add(Calendar.MINUTE, expiryMinutes);
+        c2.add(Calendar.SECOND, expirySeconds);
         ct.setNotOnOrAfter(c2);
         assertion.setConditions(ct);
         return assertion;
@@ -313,9 +312,9 @@ public class SamlAssertionGeneratorSaml2 {
     private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
-                now, options.getExpiryMinutes(),
+                now, options.getNotAfterSeconds(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getBeforeOffsetMinutes(), options.getAudienceRestriction()
+                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction()
         );
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
