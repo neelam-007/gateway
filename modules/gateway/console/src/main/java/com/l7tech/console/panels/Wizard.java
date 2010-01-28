@@ -593,7 +593,7 @@ public class Wizard extends JDialog {
         if (buttonNext == null) {
             buttonNext = new JButton();
             buttonNext.setText("Next");
-            buttonNext.addActionListener(new ActionListener() {
+            inputValidator.attachToButton(buttonNext, new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     if (wizardIterator.current().onNextButton()) {
                         advance(evt);
@@ -608,7 +608,7 @@ public class Wizard extends JDialog {
         if (buttonBack == null) {
             buttonBack = new JButton();
             buttonBack.setText("Back");
-            buttonBack.addActionListener(new ActionListener() {
+            inputValidator.attachToButton(buttonBack, new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     reverse(evt);
                 }
