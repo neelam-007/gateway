@@ -158,6 +158,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setProxyUsername(source.getProxyUsername());
         this.setProxyPassword(source.getProxyPassword());
         this.setUseKeepAlives(source.isUseKeepAlives());
+        this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
     }
 
     @Override
