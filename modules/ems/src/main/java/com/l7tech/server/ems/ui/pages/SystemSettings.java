@@ -47,7 +47,9 @@ import java.io.Serializable;
 import java.security.cert.X509Certificate;
 import java.security.SignatureException;
 import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
 import java.util.Date;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -149,6 +151,12 @@ public class SystemSettings extends EsmStandardWebPage {
         // Build Number
         Label buildNumberLabel = new Label("build.number", BuildInfo.getBuildNumber());
         add(buildNumberLabel);
+
+        // Copyright Notice
+        String year = BuildInfo.getBuildDate().substring(0, 4);
+        ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.server.ems.ui.pages.SystemSettings");
+        Label copyrightLabel = new Label("copyright", MessageFormat.format(resources.getString("label.copyright"), year));
+        add(copyrightLabel);
     }
 
     /**
