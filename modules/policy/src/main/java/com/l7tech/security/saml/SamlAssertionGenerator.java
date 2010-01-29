@@ -39,6 +39,7 @@ import java.util.TimeZone;
  */
 public class SamlAssertionGenerator {
     public static final String BEFORE_OFFSET_SYSTEM_PROPERTY = "saml.before.minute.offset.l7tech.com";
+    public static final String AFTER_OFFSET_SYSTEM_PROPERTY = "saml.after.minute.offset.l7tech.com";
     public static final String SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY = "com.l7tech.security.saml.enableDNS";
 
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");

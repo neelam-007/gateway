@@ -83,7 +83,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         this.decorator = (WssDecorator) spring.getBean("wssDecorator");
 
         this.defaultBeforeOffsetMinutes = sc.getIntProperty("samlBeforeOffsetMinute", 2);
-        this.defaultAfterOffsetMinutes = sc.getIntProperty("samlAfterOffsetMinute", 2);
+        this.defaultAfterOffsetMinutes = sc.getIntProperty("samlAfterOffsetMinute", 5);
         this.varsUsed = assertion.getVariablesUsed();
         this.confirmationMethod = SubjectStatement.Confirmation.forUri(assertion.getSubjectConfirmationMethodUri());
         try {
