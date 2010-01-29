@@ -64,16 +64,37 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private static void initializeAssertionExecutor(BeanFactory beanFactory) {
+        ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : (ServerConfig)beanFactory.getBean("serverConfig", ServerConfig.class);
+        int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
+        int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
+        int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 64);
         synchronized (assertionExecutorInitLock) {
             if (assertionExecutor == null) {
-                ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : (ServerConfig)beanFactory.getBean("serverConfig", ServerConfig.class);
-                int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
-                int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
-                int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 512);
-
-                BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<Runnable>(globalMaxWorkQueue, true);
-                assertionExecutor = new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5 * 60, TimeUnit.SECONDS, assertionQueue);
+                assertionExecutor = createAssertionExecutor(globalMaxConcurrency, globalCoreConcurrency, globalMaxWorkQueue);
             }
+        }
+    }
+
+    private static ThreadPoolExecutor createAssertionExecutor(int globalMaxConcurrency, int globalCoreConcurrency, int globalMaxWorkQueue) {
+        BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<Runnable>(globalMaxWorkQueue, true);
+        return new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5 * 60, TimeUnit.SECONDS, assertionQueue, new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+    /**
+     * Reset the executor limits.  This method is intended to be used only by unit tests.
+     * <p/>
+     * This will shut down the existing executor and create a new one in its place.
+     * <p/>
+     * Caller must ensure that no other threads call {@link #checkRequest} during this process.
+     *
+     * @param maxConc  new max concurrency.
+     * @param coreConc new core concurrency.
+     * @param maxQueue new max queue length.
+     */
+    static void resetAssertionExecutor(int maxConc, int coreConc, int maxQueue) {
+        synchronized (assertionExecutorInitLock) {
+            assertionExecutor.shutdown();
+            assertionExecutor = createAssertionExecutor(maxConc, coreConc, maxQueue);
         }
     }
 

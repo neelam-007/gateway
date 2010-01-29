@@ -185,4 +185,46 @@ public class ServerConcurrentAllAssertionTest {
         assertEquals("var content 1", toString((Message)context.getVariable("dest1")));
         assertEquals("<foo>var content 2</foo>", toString((Message)context.getVariable("dest2")));
     }
+
+    @Test
+    public void testRejectedSubmission() throws Exception {
+        ServerConcurrentAllAssertion.resetAssertionExecutor(1, 1, 1);
+        try {
+            ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+                    new AllAssertion(Arrays.asList(
+                            new DelayedCopyVariableAssertion(2000L, "source1", "dest1")
+                    )),
+                    new AllAssertion(Arrays.asList(
+                            new DelayedCopyVariableAssertion(2000L, "source2", "dest2")
+                    )),
+                    new AllAssertion(Arrays.asList(
+                            new DelayedCopyVariableAssertion(2000L, "source3", "dest3")
+                    )),
+                    new AllAssertion(Arrays.asList(
+                            new DelayedCopyVariableAssertion(2000L, "source4", "dest4")
+                    ))
+            ));
+            ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+
+            PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            context.setVariable("source1", makeMessage(ContentTypeHeader.TEXT_DEFAULT, "var content 1"));
+            context.setVariable("source2", makeMessage(ContentTypeHeader.XML_DEFAULT, "<foo>var content 2</foo>"));
+            context.setVariable("source3", makeMessage(ContentTypeHeader.TEXT_DEFAULT, "var content 3"));
+            context.setVariable("source4", makeMessage(ContentTypeHeader.XML_DEFAULT, "<foo>var content 4</foo>"));
+
+            long before = System.currentTimeMillis();
+            AssertionStatus status = sass.checkRequest(context);
+            long after = System.currentTimeMillis();
+            assertEquals(AssertionStatus.NONE, status);
+
+            assertTrue("Should not have achieved full concurrency with only 1 worker thread", after - before > 4000L);
+
+            assertEquals("var content 1", toString((Message)context.getVariable("dest1")));
+            assertEquals("<foo>var content 2</foo>", toString((Message)context.getVariable("dest2")));
+            assertEquals("var content 3", toString((Message)context.getVariable("dest3")));
+            assertEquals("<foo>var content 4</foo>", toString((Message)context.getVariable("dest4")));
+        } finally {
+            ServerConcurrentAllAssertion.resetAssertionExecutor(64, 32, 64);
+        }
+    }
 }

@@ -69,8 +69,8 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
         props.put(CP_MAX_QUEUE, new String[] {
                 "Maximum number of assertions that may be waiting to execute concurrently.  " +
                         "When this limit is reached assertions will be run serially until the system catches up. " +
-                        "This is a global limit across all such assertions. (default=512)",
-                "512"
+                        "This is a global limit across all such assertions. (default=64)",
+                "64"
         });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
