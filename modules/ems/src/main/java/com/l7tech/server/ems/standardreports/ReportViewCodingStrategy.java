@@ -53,17 +53,16 @@ public class ReportViewCodingStrategy implements IRequestTargetUrlCodingStrategy
         return mountPath;
     }
 
-    public boolean matches(String path) {
-        return path.startsWith(mountPath);
-    }
-
     @Override
     public boolean matches(IRequestTarget requestTarget) {
         return false;
     }
 
     @Override
-    public boolean matches(String s, boolean b) {
-        return false;
+    public boolean matches(String path, boolean caseSensitive) {
+        if ( caseSensitive )
+            return path.startsWith(mountPath);
+        else
+            return path.compareToIgnoreCase(mountPath) == 0;
     }
 }
