@@ -4,7 +4,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.servicesAndPolicies.PolicyNodeFilter;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -19,9 +18,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Level;
 
 /** @author alex */
+@SuppressWarnings( { "serial" } )
 public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
     protected volatile Reference<Policy> policy;
 
@@ -39,6 +38,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         getEntity();
     }
     
+    @Override
     public Policy getPolicy() throws FindException {
         if (policy != null) {
             Policy p = policy.get();
@@ -65,14 +65,17 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return updatedPolicy;
     }
 
+    @Override
     public Policy getEntity() throws FindException {
         return getPolicy();
     }
 
+    @Override
     public void collectSearchableChildren(List<AbstractTreeNode> collect, NodeFilter filter) {
         // No need to recurse any further
     }
 
+    @Override
     public boolean isSearchable(NodeFilter filter) {
         return filter == null || filter instanceof PolicyNodeFilter;
     }
@@ -92,7 +95,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             actions.add(secureCut);
         }
         
-        return actions.toArray(new Action[0]);
+        return actions.toArray(new Action[actions.size()]);
     }
 
     @Override
@@ -100,6 +103,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return getEntityHeader().getName();
     }
 
+    @Override
     public void clearCachedEntities() {
         policy = null;
     }
@@ -114,18 +118,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         PolicyHeader header = getEntityHeader();
         if(header == null) return "com/l7tech/console/resources/include16.png";
 
-        boolean isSoap;
-        boolean isInternal;
-        try {
-            isSoap = getPolicy().isSoap();
-            isInternal = getPolicy().getType() == PolicyType.INTERNAL;
-        } catch (Exception e) {
-            ErrorManager.getDefault().
-              notify(
-                  Level.SEVERE, e,
-                "Error accessing policy entity");
-            return "com/l7tech/console/resources/include16.png";
-        }
+        boolean isSoap = header.isSoap();
+        boolean isInternal = header.getPolicyType() == PolicyType.INTERNAL;
 
         if (isInternal) {
             if (isSoap){

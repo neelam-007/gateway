@@ -5,34 +5,21 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.objectmodel.migration.EntityHeaderWithDependencies;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.policy.PolicyType;
+import org.junit.Test;
 
 import javax.xml.bind.JAXB;
 import java.util.Collections;
-import java.util.logging.Logger;
 
 /** @author alex */
-public class EntityHeaderMarshallingTest extends TestCase {
-    private static final Logger log = Logger.getLogger(EntityHeaderMarshallingTest.class.getName());
+public class EntityHeaderMarshallingTest {
 
-    public EntityHeaderMarshallingTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(EntityHeaderMarshallingTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSomething() throws Exception {
-        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(-1,true,"a policy", "desc", "abc-123", -1L, null, 2, 2), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, "-1234"))), System.out);
+        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(-1,true, PolicyType.INCLUDE_FRAGMENT,"a policy", "desc", "abc-123", -1L, null, 2, 2), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, "-1234"))), System.out);
     }
 
+    @Test
     public void testIdentityHeader() throws Exception {
         JAXB.marshal(new IdentityHeader(1, "2", EntityType.USER, "username", "some user", null, null), System.out);
     }

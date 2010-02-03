@@ -5,17 +5,14 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.action.*;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 
 import javax.swing.*;
 import java.util.Comparator;
 import java.util.Collection;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
+@SuppressWarnings( { "serial" } )
 public class PolicyEntityNodeAlias extends PolicyEntityNode{
     public PolicyEntityNodeAlias(PolicyHeader e) {
         super(e);
@@ -38,7 +35,7 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
             actions.add(secureCut);
         }
 
-        return actions.toArray(new Action[0]);
+        return actions.toArray(new Action[actions.size()]);
     }
 
     @Override
@@ -51,18 +48,8 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         PolicyHeader header = getEntityHeader();
         if(header == null) return "com/l7tech/console/resources/include16.png";
 
-        boolean isSoap;
-        boolean isInternal;
-        try {
-            isSoap = getPolicy().isSoap();
-            isInternal = getPolicy().getType() == PolicyType.INTERNAL;
-        } catch (Exception e) {
-            ErrorManager.getDefault().
-              notify(
-                  Level.SEVERE, e,
-                "Error accessing policy entity");
-            return "com/l7tech/console/resources/include16.png";
-        }
+        boolean isSoap = header.isSoap();
+        boolean isInternal = header.getPolicyType() == PolicyType.INTERNAL;
 
         if (isInternal) {
             if (isSoap){

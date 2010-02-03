@@ -11,12 +11,16 @@ import javax.xml.bind.annotation.XmlTransient;
  *
  * @author Steve Jones
  */
+@SuppressWarnings( { "serial" } )
 @XmlRootElement(name="policyHeader")
 public class PolicyHeader extends OrganizationHeader {
+
     //- PUBLIC
+
     public PolicyHeader(final Policy policy) {
         this(policy.getOid(),
              policy.isSoap(),
+             policy.getType(),
              policy.getName(),
              policy.getInternalTag(),
              policy.getGuid(),
@@ -35,6 +39,7 @@ public class PolicyHeader extends OrganizationHeader {
     public PolicyHeader(final PolicyHeader policyHeader){
         this(policyHeader.getOid(),
              policyHeader.isSoap(),
+             policyHeader.getPolicyType(),
              policyHeader.getName(),
              policyHeader.getDescription(),
              policyHeader.getGuid(),
@@ -46,6 +51,7 @@ public class PolicyHeader extends OrganizationHeader {
 
     public PolicyHeader(final long oid,
                         final boolean isSoap,
+                        final PolicyType policyType,
                         final String name,
                         final String description,
                         final String policyGuid,
@@ -58,6 +64,7 @@ public class PolicyHeader extends OrganizationHeader {
 
         this.guid = policyGuid;
         this.isSoap = isSoap;
+        this.policyType = policyType;
         this.folderOid = folderOid;
         this.aliasOid = aliasOid;
         this.policyRevision = policyRevision;
@@ -65,6 +72,10 @@ public class PolicyHeader extends OrganizationHeader {
 
     public boolean isSoap() {
         return isSoap;
+    }
+
+    public PolicyType getPolicyType() {
+        return policyType;
     }
 
     /**
@@ -85,4 +96,5 @@ public class PolicyHeader extends OrganizationHeader {
 
     private final boolean isSoap;
     private final long policyRevision;
+    private final PolicyType policyType;
 }
