@@ -409,6 +409,7 @@ div.fineRule {
 .panel {
     border: 1px black solid;
     margin: 8px 0 8px 0;
+    padding: 1px;
 }
 
 .panelTitle {
