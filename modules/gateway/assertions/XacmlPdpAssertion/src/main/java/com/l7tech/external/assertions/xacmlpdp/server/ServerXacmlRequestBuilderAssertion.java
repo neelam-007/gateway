@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.xacmlpdp.server;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -19,6 +20,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
@@ -99,20 +101,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         final String defaultNS = assertion.getXacmlVersion().getNamespace();
         final Element root = xacmlRequestDocument.createElementNS(defaultNS, "Request");
         root.setAttribute("xmlns", defaultNS);
-        // Add all other namespaces from the request
-        try {
-            Message request = context.getRequest();
-            Map<String, String> namespacesMap = getAllNamespaces(request.getXmlKnob().getDocumentReadOnly());
-            for (String prefix: namespacesMap.keySet()) {
-                String namespace = namespacesMap.get(prefix);
-                // Don't add duplicate namespaces such as default namespace and "soapenv".
-                if (!defaultNS.equals(namespace) && !prefix.equals("soapenv")) {
-                    root.setAttribute("xmlns:" + prefix, namespace);
-                }
-            }
-        } catch (Exception e) {
-            // Don't add any namespaces if any exceptions thrown.
-        }
 
         if(rootParent == null) {
             xacmlRequestDocument.appendChild(root);
@@ -1134,8 +1122,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 }
 
                 Element resultNode = wrapper.getElement();
-                Node importedNode = element.getOwnerDocument().importNode(resultNode, true);
-                element.appendChild(importedNode);
+                addElementAsAttributeValue(element, resultNode);
                 return true;
             }
 
@@ -1163,10 +1150,52 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return false;
         }
 
+        /**
+         * Adds an Element from an unknown source document into the XACML request document as a child of parentElement.
+         * <p/>
+         * The incoming Element is first canonicalized into a String. The resulting String will then contain explicit
+         * namespace declarations for each element which had a namespace defined, whether explicitly or inherited from
+         * it's scope. The String is then parsed back into an Element.
+         * <p/>
+         * The Element cannot be imported directly into the document without this process as any declared prefixes
+         * will remain in the XACML request document, however the prefix namespace will not have been declared, which
+         * will result in an invalid xml document.
+         * <p/>
+         * If the imported Element does not define a xmlns attribute, then this is added xmlns="".  This is
+         * to ensure that any children of the incoming element which had no namespace in scope do not become a part of
+         * the default namespace in the XACML request document. This can happen when the documented from which the
+         * incoming Element originates has no xmlns=".." declaration in the elements ancestory.
+         *
+         * @param parentElement        Element the parent Element from the XACML request document to add the incoming Element to
+         * @param elementToAddToParent Element the incoming element to add to the XACML request document
+         */
         private void addElementAsAttributeValue(final Element parentElement, final Element elementToAddToParent) {
-            final Document docOwner = parentElement.getOwnerDocument();
-            final Node newNode = docOwner.importNode(elementToAddToParent, true);
-            parentElement.appendChild(newNode);
+            try {
+                final BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+                XmlUtil.canonicalize(elementToAddToParent, baos);
+                final String nodeAsText = baos.toString("UTF-8");
+                final Element nsSelfContainedNode = XmlUtil.parse(nodeAsText).getDocumentElement();
+                Node importedNode = parentElement.getOwnerDocument().importNode(nsSelfContainedNode, true);
+
+                if (importedNode instanceof Element) {
+                    final Element element = (Element) importedNode;
+                    if (!element.hasAttribute("xmlns")) {
+                        element.setAttributeNS(DomUtils.XMLNS_NS, "xmlns", "");
+                    }
+                }
+
+                parentElement.appendChild(importedNode);
+            } catch (IOException e) {
+                final String msg = "Cannot canonicalize Element or convert Element to a string: " +
+                        ExceptionUtils.getMessage(e);
+                auditor.logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
+                throw new AssertionStatusException(AssertionStatus.FAILED, msg);
+            } catch (Exception e) {
+                final String msg = "Cannot convert canonicalized string back into XML: " +
+                        ExceptionUtils.getMessage(e);
+                auditor.logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
+                throw new AssertionStatusException(AssertionStatus.FAILED, msg);
+            }
         }
 
         /**
@@ -1192,9 +1221,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 if (message.isXml()) {
                     final XmlKnob xmlKnob = message.getXmlKnob();
                     final Document doc = xmlKnob.getDocumentReadOnly();
-                    final Document docOwner = element.getOwnerDocument();
-                    final Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
-                    element.appendChild(newNode);
+                    addElementAsAttributeValue(element, doc.getDocumentElement());
                 } else {
                     auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, new String[]{messageName});
                     throw new AssertionStatusException(AssertionStatus.FAILED, "Message does not contain xml");

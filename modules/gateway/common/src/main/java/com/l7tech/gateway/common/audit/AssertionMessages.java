@@ -679,6 +679,7 @@ public class AssertionMessages extends Messages {
     public static final M XACML_NOT_ALL_CTX_VARS_USED      = m(8909, Level.INFO, "Only {0} values from all referenced context variables will be used. The largest referenced variable has {1} values");
     public static final M XACML_INCORRECT_NAMESPACE_URI    = m(8910, Level.INFO, "Namespace prefix {0} with incorrect namespace URI may cause XPath base pattern to match no results");
     public static final M XACML_UNSUPPORTED_MIXED_CONTENT  = m(8911, Level.INFO, "Unsupported type of mixed content found for AttributeValue: {0}");
+    public static final M XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST  = m(8912, Level.WARNING, "Cannot import XML element into XACML request document: {0}");
 
     public static final M XACML_PDP_INVALID_REQUEST           = m(8930, Level.WARNING, "Error processing XACML request: {0}");
     public static final M XACML_PDP_REQUEST_NOT_ENCAPSULATED  = m(8931, Level.WARNING, "XACML request is not SOAP encapsulated");
