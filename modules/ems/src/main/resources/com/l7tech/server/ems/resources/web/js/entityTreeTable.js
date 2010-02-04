@@ -772,10 +772,11 @@ if (!l7.EntityTreeTable) {
                 /**
                  * @param {string} propertyName
                  * @param {string} entityType       an l7.Constants.ENTITY_TYPE enum value
+                 * @param {boolean} ssgTrustStatus  indicate if a SSG Cluster is trusted or not
                  * @return {boolean}
                  */
-                function isMonitoringPropertyApplicableToEntity(propertyName, entityType) {
-                    if (entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                function isMonitoringPropertyApplicableToEntity(propertyName, entityType, ssgTrustStatus) {
+                    if (entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER && ssgTrustStatus) {  // If a SSG Cluster is not in trust, then we won't monitor it.
                         return l7.Util.hasPropertyValue(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, propertyName);
                     } else if (entityType == l7.Constants.ENTITY_TYPE.SSG_NODE) {
                         return l7.Util.hasPropertyValue(l7.Constants.SSG_NODE_MONITORING_PROPERTY, propertyName);
@@ -785,7 +786,7 @@ if (!l7.EntityTreeTable) {
                 }
 
                 var propertyType = getMonitoringPropertyTypeInColumn(column);
-                if (isMonitoringPropertyApplicableToEntity(propertyType, entity.type)) {
+                if (isMonitoringPropertyApplicableToEntity(propertyType, entity.type, entity.trustStatus)) {
                     // We need a DIV element inside the TD element in order to have the
                     // dialog button float in front of the property value.
                     var div = document.createElement('div');
