@@ -876,16 +876,6 @@ public class WspReaderTest {
         assertNotNull(sri.getDocument());
     }
 
-    @Test
-    public void testSamlIssuerAssertion() throws Exception {
-        SamlIssuerAssertion sia = new SamlIssuerAssertion();
-        sia.setNameIdentifierType(NameIdentifierInclusionType.NONE);
-        String xml = WspWriter.getPolicyXml(sia);
-
-        SamlIssuerAssertion sia2 = (SamlIssuerAssertion) wspReader.parseStrictly(xml, INCLUDE_DISABLED);
-        assertEquals(sia2.getNameIdentifierType(), NameIdentifierInclusionType.NONE);
-    }
-
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
     "    <wsp:All wsp:Usage=\"Required\">\n" +

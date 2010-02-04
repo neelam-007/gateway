@@ -1,7 +1,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
+import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,21 +52,22 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
-        signAssertionCheckBox.setSelected(sia.isSignAssertion());
+        SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+        signAssertionCheckBox.setSelected(issuerConfiguration.isSignAssertion());
 
-        EnumSet<SamlIssuerAssertion.DecorationType> dts = sia.getDecorationTypes();
+        EnumSet<SamlIssuerConfiguration.DecorationType> dts = issuerConfiguration.getDecorationTypes();
         if (dts == null || dts.isEmpty()) return;
 
-        decorateAddAssertionCheckBox.setSelected(dts.contains(SamlIssuerAssertion.DecorationType.ADD_ASSERTION));
-        if (dts.contains(SamlIssuerAssertion.DecorationType.RESPONSE)) {
+        decorateAddAssertionCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.ADD_ASSERTION));
+        if (dts.contains(SamlIssuerConfiguration.DecorationType.RESPONSE)) {
             decorateRequestOrResponseCombo.setSelectedItem("Response");
         } else {
             decorateRequestOrResponseCombo.setSelectedItem("Request");
         }
-        decorateSignatureIncludeAssertionCheckBox.setSelected(dts.contains(SamlIssuerAssertion.DecorationType.SIGN_ASSERTION));
-        decorateSignatureIncludeBodyCheckBox.setSelected(dts.contains(SamlIssuerAssertion.DecorationType.SIGN_BODY));
+        decorateSignatureIncludeAssertionCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.SIGN_ASSERTION));
+        decorateSignatureIncludeBodyCheckBox.setSelected(dts.contains(SamlIssuerConfiguration.DecorationType.SIGN_BODY));
         enableDisable();
     }
 
@@ -83,22 +84,23 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
-        sia.setSignAssertion(signAssertionCheckBox.isSelected());
+        SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+        issuerConfiguration.setSignAssertion(signAssertionCheckBox.isSelected());
         if (decorateAddAssertionCheckBox.isSelected()) {
-            Set<SamlIssuerAssertion.DecorationType> tempDts = new HashSet<SamlIssuerAssertion.DecorationType>();
-            tempDts.add(SamlIssuerAssertion.DecorationType.ADD_ASSERTION);
+            Set<SamlIssuerConfiguration.DecorationType> tempDts = new HashSet<SamlIssuerConfiguration.DecorationType>();
+            tempDts.add(SamlIssuerConfiguration.DecorationType.ADD_ASSERTION);
             if (decorateRequestOrResponseCombo.getSelectedItem() == "Response") {
-                tempDts.add(SamlIssuerAssertion.DecorationType.RESPONSE);
+                tempDts.add(SamlIssuerConfiguration.DecorationType.RESPONSE);
             } else {
-                tempDts.add(SamlIssuerAssertion.DecorationType.REQUEST);
+                tempDts.add(SamlIssuerConfiguration.DecorationType.REQUEST);
             }
-            if (decorateSignatureIncludeBodyCheckBox.isSelected()) tempDts.add(SamlIssuerAssertion.DecorationType.SIGN_BODY);
-            if (decorateSignatureIncludeAssertionCheckBox.isSelected()) tempDts.add(SamlIssuerAssertion.DecorationType.SIGN_ASSERTION);
-            sia.setDecorationTypes(EnumSet.copyOf(tempDts));
+            if (decorateSignatureIncludeBodyCheckBox.isSelected()) tempDts.add(SamlIssuerConfiguration.DecorationType.SIGN_BODY);
+            if (decorateSignatureIncludeAssertionCheckBox.isSelected()) tempDts.add(SamlIssuerConfiguration.DecorationType.SIGN_ASSERTION);
+            issuerConfiguration.setDecorationTypes(EnumSet.copyOf(tempDts));
         } else {
-            sia.setDecorationTypes(EnumSet.noneOf(SamlIssuerAssertion.DecorationType.class));
+            issuerConfiguration.setDecorationTypes(EnumSet.noneOf(SamlIssuerConfiguration.DecorationType.class));
         }
     }
 
@@ -114,6 +116,7 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
         }
 
         decorateAddAssertionCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisable();
             }
@@ -133,10 +136,12 @@ public class SamlSignatureStepPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Digital Signatures";
     }
 
+    @Override
     public String getDescription() {
         return "<html>Specify the digital signatures that the Gateway should create (if any) after issuing the Assertion.</html>";
     }

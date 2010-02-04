@@ -1,16 +1,15 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.policy.assertion;
+package com.l7tech.external.assertions.samlissuer;
 
+import com.l7tech.policy.assertion.*;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
-import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
-import com.l7tech.policy.validator.SamlIssuerAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
@@ -28,7 +27,7 @@ import java.util.*;
 /**
  * @author alex
  */
-public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateKeyable, SetsVariables, UsesVariables {
+public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateKeyable, SetsVariables, UsesVariables, SamlIssuerConfiguration {
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
     /**
@@ -46,20 +45,8 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     private long nonDefaultKeystoreId = -1;
     private String keyAlias = "SSL";
 
-    public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-        SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
-        SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY
-    )));
+    private static final String META_INITIALIZED = SamlIssuerAssertion.class.getName() + ".metadataInitialized";
 
-    public static final Set<String> SV_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-        SamlConstants.CONFIRMATION_SENDER_VOUCHES,
-        SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES
-    )));
-
-    public static final Set<String> BEARER_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-        SamlConstants.CONFIRMATION_BEARER,
-        SamlConstants.CONFIRMATION_SAML2_BEARER
-    )));
 
     public SamlIssuerAssertion() {
     }
@@ -106,51 +93,42 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.keyAlias = keyAlias;
     }
 
-    public static enum DecorationType {
-        /** Apply decorations to request */
-        REQUEST,
-
-        /** Apply decorations to response */
-        RESPONSE,
-
-        /** Insert the assertion into the message as a child of the Security header, but don't sign it */
-        ADD_ASSERTION,
-
-        /** Insert the assertion into the message, and ensure it's signed with a message-level signature */
-        SIGN_ASSERTION,
-
-        /** Sign the SOAP Body */
-        SIGN_BODY,
-    }
-
+    @Override
     public NameIdentifierInclusionType getNameIdentifierType() {
         return nameIdentifierType;
     }
 
+    @Override
     public void setNameIdentifierType(NameIdentifierInclusionType nameIdentifierType) {
         this.nameIdentifierType = nameIdentifierType;
     }
 
+    @Override
     public String getSubjectConfirmationMethodUri() {
         return subjectConfirmationMethodUri;
     }
 
+    @Override
     public void setSubjectConfirmationMethodUri(String subjectConfirmationMethodUri) {
         this.subjectConfirmationMethodUri = subjectConfirmationMethodUri;
     }
 
+    @Override
     public boolean isSignAssertion() {
         return signAssertion;
     }
 
+    @Override
     public void setSignAssertion(boolean signAssertion) {
         this.signAssertion = signAssertion;
     }
 
+    @Override
     public EnumSet<DecorationType> getDecorationTypes() {
         return decorationTypes;
     }
 
+    @Override
     public void setDecorationTypes(EnumSet<DecorationType> decorationTypes) {
         this.decorationTypes = decorationTypes;
     }
@@ -189,42 +167,52 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         varNames.addAll(Arrays.asList(vars));
     }
 
+    @Override
     public int getConditionsNotBeforeSecondsInPast() {
         return conditionsNotBeforeSecondsInPast;
     }
 
+    @Override
     public void setConditionsNotBeforeSecondsInPast(int conditionsNotBeforeSecondsInPast) {
         this.conditionsNotBeforeSecondsInPast = conditionsNotBeforeSecondsInPast;
     }
 
+    @Override
     public int getConditionsNotOnOrAfterExpirySeconds() {
         return conditionsNotOnOrAfterExpirySeconds;
     }
 
+    @Override
     public void setConditionsNotOnOrAfterExpirySeconds(int conditionsNotOnOrAfterExpirySeconds) {
         this.conditionsNotOnOrAfterExpirySeconds = conditionsNotOnOrAfterExpirySeconds;
     }
 
+    @Override
     public void setNameIdentifierFormat(String formatUri) {
         this.nameIdentifierFormat = formatUri;
     }
 
+    @Override
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;
     }
 
+    @Override
     public void setNameIdentifierValue(String value) {
         this.nameIdentifierValue = value;
     }
 
+    @Override
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
     }
 
+    @Override
     public KeyInfoInclusionType getSubjectConfirmationKeyInfoType() {
         return subjectConfirmationKeyInfoType;
     }
 
+    @Override
     public void setSubjectConfirmationKeyInfoType(KeyInfoInclusionType subjectConfirmationKeyInfoType) {
         this.subjectConfirmationKeyInfoType = subjectConfirmationKeyInfoType;
     }
@@ -278,12 +266,15 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Create and optionally sign a SAML token.");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Token Creation Wizard");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlissuer.console.SamlIssuerAssertionPropertiesEditor");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.samlissuer.AddSamlIssuerAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
@@ -291,7 +282,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
             new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes")
         )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

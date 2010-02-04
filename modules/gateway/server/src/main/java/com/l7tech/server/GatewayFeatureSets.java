@@ -280,7 +280,6 @@ public class GatewayFeatureSets {
             ass(SpecificUser.class),
             ass(MemberOfGroup.class),
             ass(AuthenticationAssertion.class),
-            ass(SamlIssuerAssertion.class),
             ass(HttpBasic.class),
             ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
@@ -294,6 +293,7 @@ public class GatewayFeatureSets {
             ass(SamlBrowserArtifact.class),
             ass(PreemptiveCompression.class),
             ass(RemoteDomainIdentityInjection.class),
+            mass("assertion:SamlIssuer"),
             mass("assertion:LDAPQuery"),
             mass("assertion:IdentityAttributes"));
 

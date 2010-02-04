@@ -4,6 +4,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.security.saml.SamlConstants;
+import java.util.*;
 
 /**
  * @author alex
@@ -16,6 +18,21 @@ public class SamlPolicyAssertion extends Assertion {
     protected SamlAuthenticationStatement authenticationStatement;
     protected SamlAuthorizationStatement authorizationStatement;
     protected SamlAttributeStatement attributeStatement;
+
+    public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
+        SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY
+    )));
+
+    public static final Set<String> SV_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_SENDER_VOUCHES,
+        SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES
+    )));
+
+    public static final Set<String> BEARER_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+        SamlConstants.CONFIRMATION_BEARER,
+        SamlConstants.CONFIRMATION_SAML2_BEARER
+    )));
 
     /**
      * Get the SAML version for this assertion

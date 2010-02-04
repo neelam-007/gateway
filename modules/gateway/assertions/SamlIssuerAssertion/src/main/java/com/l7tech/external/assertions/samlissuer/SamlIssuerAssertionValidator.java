@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.policy.validator;
+package com.l7tech.external.assertions.samlissuer;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.wsdl.Wsdl;
 

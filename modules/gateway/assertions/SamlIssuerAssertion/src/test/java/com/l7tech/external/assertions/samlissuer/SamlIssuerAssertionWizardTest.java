@@ -1,15 +1,15 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels.saml;
+package com.l7tech.external.assertions.samlissuer;
 
 import com.l7tech.console.panels.Wizard;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import com.l7tech.console.panels.saml.*;
 import org.junit.Ignore;
 
 @Ignore
@@ -25,7 +25,7 @@ public class SamlIssuerAssertionWizardTest extends JFrame {
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                             new SubjectConfirmationWizardStepPanel(
                                 new ConditionsWizardStepPanel(
-                                        new SamlSignatureStepPanel(null, true), true, true), true), true), true), true), true), true), true);
+                                    new SamlSignatureStepPanel(null, true), true, true), true), true), true), true), true), true), true);
         SamlIssuerAssertion assertion = new SamlIssuerAssertion();
         Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false);
         w.pack();

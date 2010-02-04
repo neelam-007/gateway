@@ -1,13 +1,14 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels.saml;
+package com.l7tech.external.assertions.samlissuer.console;
 
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.saml.*;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
+import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
 
 import javax.swing.*;
 

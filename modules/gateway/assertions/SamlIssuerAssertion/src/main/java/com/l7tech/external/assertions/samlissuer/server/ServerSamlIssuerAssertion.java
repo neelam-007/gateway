@@ -1,9 +1,10 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.policy.assertion;
+package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.User;
 import com.l7tech.message.Message;
@@ -11,8 +12,8 @@ import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
-import static com.l7tech.policy.assertion.SamlIssuerAssertion.DecorationType.*;
+import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
+
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -31,6 +32,8 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;

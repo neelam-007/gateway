@@ -487,7 +487,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     }
 
     /**
-     * Taken from <code>ServerSamlIssuerAssertion</code>.  Extracts the NameIdentifier based on the selected
+     * Taken from <code>ServerSamlTokenIssuerAssertion</code>.  Extracts the NameIdentifier based on the selected
      * assertion property.
      *
      * @param ctx the PolicyEnforcementContext

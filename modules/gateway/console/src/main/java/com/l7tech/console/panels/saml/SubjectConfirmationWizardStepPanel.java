@@ -3,11 +3,11 @@
  */
 package com.l7tech.console.panels.saml;
 
+import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 
 import javax.swing.*;
@@ -51,6 +51,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
 
     private final boolean issueMode;
     private final ActionListener enableDisableListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             enableDisable();
         }
@@ -97,10 +98,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (issueMode) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
-            final SubjectStatement.Confirmation confirmation = SubjectStatement.Confirmation.forUri(sia.getSubjectConfirmationMethodUri());
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            final SubjectStatement.Confirmation confirmation = SubjectStatement.Confirmation.forUri(issuerConfiguration.getSubjectConfirmationMethodUri());
             if (confirmation == SubjectStatement.HOLDER_OF_KEY) {
                 confirmationHolderOfKeyButton.setSelected(true);
             } else if (confirmation == SubjectStatement.SENDER_VOUCHES) {
@@ -111,7 +113,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 confirmationNoneButton.setSelected(true);
             }
 
-            KeyInfoInclusionType ckitype = sia.getSubjectConfirmationKeyInfoType();
+            KeyInfoInclusionType ckitype = issuerConfiguration.getSubjectConfirmationKeyInfoType();
             if (ckitype == null) ckitype = KeyInfoInclusionType.CERT;
             switch(ckitype) {
                 case NONE:
@@ -195,31 +197,32 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (issueMode) {
-            SamlIssuerAssertion assertion = (SamlIssuerAssertion) settings;
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
             if (confirmationHolderOfKeyButton.isSelected()) {
-                assertion.setSubjectConfirmationMethodUri(SubjectStatement.HOLDER_OF_KEY.getUri());
+                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.HOLDER_OF_KEY.getUri());
             } else if (confirmationSenderVouchesButton.isSelected()) {
-                assertion.setSubjectConfirmationMethodUri(SubjectStatement.SENDER_VOUCHES.getUri());
+                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.SENDER_VOUCHES.getUri());
             } else if (confirmationBearerButton.isSelected()) {
-                assertion.setSubjectConfirmationMethodUri(SubjectStatement.BEARER.getUri());
+                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.BEARER.getUri());
             } else if (confirmationNoneButton.isSelected()) {
-                assertion.setSubjectConfirmationMethodUri(null);
+                issuerConfiguration.setSubjectConfirmationMethodUri(null);
             }
 
             if (subjectCertIncludeCheckbox.isSelected()) {
                 if (subjectCertLiteralRadioButton.isSelected()) {
-                    assertion.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.CERT);
+                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.CERT);
                 } else if (subjectCertSkiRadioButton.isSelected()) {
-                    assertion.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_SKI);
+                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_SKI);
                 } else if (subjectCertThumbprintRadioButton.isSelected()) {
-                    assertion.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_THUMBPRINT);
+                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_THUMBPRINT);
                 } else {
                     throw new RuntimeException("No Subject Cert radio button selected"); //Can't happen
                 }
             } else {
-                assertion.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.NONE);
+                issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.NONE);
             }
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
@@ -230,7 +233,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                     confirmations.add(entry.getKey());
                 }
             }
-            requestWssSaml.setSubjectConfirmations(confirmations.toArray(new String[0]));
+            requestWssSaml.setSubjectConfirmations(confirmations.toArray(new String[confirmations.size()]));
             requestWssSaml.setRequireHolderOfKeyWithMessageSignature(checkBoxHoKMessageSignature.isSelected());
             requestWssSaml.setRequireSenderVouchesWithMessageSignature(checkBoxSVMessageSignature.isSelected());
             requestWssSaml.setNoSubjectConfirmation(confirmationNoneButton.isSelected());
@@ -296,6 +299,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
           " MUST be present within the Subject Confirmation.</html>");
 
         confirmationHolderOfKeyButton.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
             }
@@ -306,6 +310,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         confirmationSenderVouchesButton.setToolTipText("<html>The attesting entity, different form the subject,<br>" +
           " vouches for the verification of the subject.</html>");
         confirmationSenderVouchesButton.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
             }
@@ -323,12 +328,14 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         for (Map.Entry<String, JToggleButton> entry : confirmationsMap.entrySet()) {
             JToggleButton jc = entry.getValue();
             jc.addChangeListener(new ChangeListener() {
+                @Override
                 public void stateChanged(ChangeEvent e) {
                     notifyListeners();
                 }
             });
         }
         confirmationNoneButton.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 notifyListeners();
             }
@@ -338,10 +345,12 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Subject Confirmation";
     }
 
+    @Override
     public String getDescription() {
         if (!issueMode) {
             return "<html>Specify one or more subject confirmations that will be accepted by the gateway" +
@@ -356,6 +365,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         if (confirmationNoneButton.isSelected()) {
             return true;

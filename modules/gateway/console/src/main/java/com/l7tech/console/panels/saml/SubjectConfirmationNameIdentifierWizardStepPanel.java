@@ -6,9 +6,9 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 
@@ -54,6 +54,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private static final String UNSPECIFIED = "Unspecified";
     private int version;
     private final ActionListener enableDisableListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             enableDisable();
         }
@@ -104,6 +105,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         final SamlPolicyAssertion assertion = (SamlPolicyAssertion) settings;
         version = assertion.getVersion() == null ? 1 : assertion.getVersion();
@@ -111,10 +113,10 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         nameQualifierTextField.setText(assertion.getNameQualifier());
 
         if (issueMode) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
-            NameIdentifierInclusionType type = sia.getNameIdentifierType();
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
+            NameIdentifierInclusionType type = issuerConfiguration.getNameIdentifierType();
             if (type == null) {
-                if (sia.getNameIdentifierValue() != null) {
+                if (issuerConfiguration.getNameIdentifierValue() != null) {
                     type = NameIdentifierInclusionType.SPECIFIED;
                 } else {
                     type = NameIdentifierInclusionType.FROM_CREDS;
@@ -135,13 +137,13 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                 case SPECIFIED:
                     includeNameCheckBox.setSelected(true);
                     valueSpecifiedRadio.setSelected(true);
-                    valueTextField.setText(sia.getNameIdentifierValue());
+                    valueTextField.setText(issuerConfiguration.getNameIdentifierValue());
                     break;
             }
 
             boolean chose = false;
             for (String formatUri : nameFormatsMap.keySet()) {
-                if (formatUri.equals(sia.getNameIdentifierFormat())) {
+                if (formatUri.equals(issuerConfiguration.getNameIdentifierFormat())) {
                     nameFormatsMap.get(formatUri).setSelected(true);
                     chose = true;
                     break;
@@ -182,34 +184,35 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         ((SamlPolicyAssertion) settings).setNameQualifier(nameQualifierTextField.getText());
 
         if (issueMode) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) settings;
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
             if (includeNameCheckBox.isSelected()) {
                 for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                     JToggleButton jc = entry.getValue();
                     if (jc.isSelected() && jc.isEnabled()) {
                         final String uri = entry.getKey();
-                        sia.setNameIdentifierFormat(FAKE_URI_AUTOMATIC.equals(uri) ? null : uri);
+                        issuerConfiguration.setNameIdentifierFormat(FAKE_URI_AUTOMATIC.equals(uri) ? null : uri);
                         break;
                     }
                 }
                 if (valueFromCredsRadioButton.isSelected()) {
-                    sia.setNameIdentifierType(NameIdentifierInclusionType.FROM_CREDS);
+                    issuerConfiguration.setNameIdentifierType(NameIdentifierInclusionType.FROM_CREDS);
                 } else if (valueFromUserRadioButton.isSelected()) {
-                    sia.setNameIdentifierType(NameIdentifierInclusionType.FROM_USER);
+                    issuerConfiguration.setNameIdentifierType(NameIdentifierInclusionType.FROM_USER);
                 } else if (valueSpecifiedRadio.isSelected()) {
-                    sia.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
-                    sia.setNameIdentifierValue(valueTextField.getText());
+                    issuerConfiguration.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+                    issuerConfiguration.setNameIdentifierValue(valueTextField.getText());
                 } else {
                     throw new RuntimeException("No NameIdentifier value radio button selected"); // Can't happen
                 }
             } else {
-                sia.setNameIdentifierType(NameIdentifierInclusionType.NONE);
-                sia.setNameIdentifierFormat(null);
-                sia.setNameIdentifierValue(null);
+                issuerConfiguration.setNameIdentifierType(NameIdentifierInclusionType.NONE);
+                issuerConfiguration.setNameIdentifierFormat(null);
+                issuerConfiguration.setNameIdentifierValue(null);
             }
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
@@ -259,6 +262,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
             valueFromCredsRadioButton.addActionListener(enableDisableListener);
             valueFromUserRadioButton.addActionListener(enableDisableListener);
             valueSpecifiedRadio.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     enableDisableListener.actionPerformed(e);
                     valueTextField.requestFocus();
@@ -317,6 +321,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
             JToggleButton jc = entry.getValue();
             jc.addChangeListener(new ChangeListener() {
+                @Override
                 public void stateChanged(ChangeEvent e) {
                     notifyListeners();
                 }
@@ -373,10 +378,12 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Name Identifier";
     }
 
+    @Override
     public String getDescription() {
         return
         "<html>Specify one or more name formats that will be accepted by the gateway " +
@@ -389,6 +396,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         if (issueMode && !includeNameCheckBox.isSelected()) return true;
         for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {

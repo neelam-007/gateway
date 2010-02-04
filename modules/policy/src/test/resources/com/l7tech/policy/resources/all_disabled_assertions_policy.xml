@@ -266,9 +266,6 @@
         <L7p:WsiSamlAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:WsiSamlAssertion>
-        <L7p:SamlIssuer>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:SamlIssuer>
         <L7p:Include>
             <L7p:Enabled booleanValue="false"/>
         </L7p:Include>

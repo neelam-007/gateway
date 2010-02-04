@@ -6,9 +6,9 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
-import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
@@ -75,17 +75,12 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlPolicyAssertion ass = (SamlPolicyAssertion) settings;
-        ass.setAudienceRestriction(textFieldAudienceRestriction.getText());
+        SamlPolicyAssertion samlAssertion = (SamlPolicyAssertion) settings;
+        samlAssertion.setAudienceRestriction(textFieldAudienceRestriction.getText());
         if (issueMode) {
-            SamlIssuerAssertion sia = (SamlIssuerAssertion) ass;
-            if (validityCheckbox.isSelected()) {
-                sia.setConditionsNotBeforeSecondsInPast((Integer)notBeforeSpinner.getValue());
-                sia.setConditionsNotOnOrAfterExpirySeconds((Integer)notOnOrAfterSpinner.getValue());
-            } else {
-                sia.setConditionsNotBeforeSecondsInPast(-1);
-                sia.setConditionsNotOnOrAfterExpirySeconds(-1);
-            }
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
+            issuerConfiguration.setConditionsNotBeforeSecondsInPast(validityCheckbox.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
+            issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds(validityCheckbox.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
         } else {
             ((RequireWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
         }
@@ -93,13 +88,13 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlPolicyAssertion requestWssSaml = (SamlPolicyAssertion)settings;
-        textFieldAudienceRestriction.setText(requestWssSaml.getAudienceRestriction());
+        SamlPolicyAssertion samlAssertion = (SamlPolicyAssertion)settings;
+        textFieldAudienceRestriction.setText(samlAssertion.getAudienceRestriction());
 
         if (issueMode) {
-            SamlIssuerAssertion ass = (SamlIssuerAssertion) requestWssSaml;
-            final int secondsInPast = ass.getConditionsNotBeforeSecondsInPast();
-            final int onOrAfterExpirySeconds = ass.getConditionsNotOnOrAfterExpirySeconds();
+            SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
+            final int secondsInPast = issuerConfiguration.getConditionsNotBeforeSecondsInPast();
+            final int onOrAfterExpirySeconds = issuerConfiguration.getConditionsNotOnOrAfterExpirySeconds();
             if (secondsInPast != -1 || onOrAfterExpirySeconds != -1) {
                 validityCheckbox.setSelected(true);
                 notBeforeLabel.setEnabled(true);
@@ -111,7 +106,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             if (secondsInPast != -1) notBeforeSpinner.setValue(secondsInPast);
             if (onOrAfterExpirySeconds != -1) notOnOrAfterSpinner.setValue(onOrAfterExpirySeconds);
         } else {
-            RequireWssSaml ass = (RequireWssSaml) requestWssSaml;
+            RequireWssSaml ass = (RequireWssSaml) samlAssertion;
             checkBoxCheckAssertionValidity.setSelected(ass.isCheckAssertionValidity());
         }
     }

@@ -244,7 +244,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
                 if (saml != null) {
                     final String[] scs = saml.getSubjectConfirmations();
                     // RequestWssSaml is only a cert-based credential source if it's Holder of Key and has the signature constraint
-                    if (scs.length == 1 && SamlIssuerAssertion.HOK_URIS.contains(scs[0]) && saml.isRequireHolderOfKeyWithMessageSignature()) {
+                    if (scs.length == 1 && SamlPolicyAssertion.HOK_URIS.contains(scs[0]) && saml.isRequireHolderOfKeyWithMessageSignature()) {
                         return EnumSet.of(ValidatorFlag.GATHERS_X509_CREDENTIALS);
                     }
                 }
