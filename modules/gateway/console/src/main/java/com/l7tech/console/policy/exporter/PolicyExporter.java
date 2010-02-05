@@ -128,19 +128,9 @@ public class PolicyExporter {
             } else if (schemaResource instanceof GlobalResourceInfo) {
                 String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
                 ref = new ExternalSchemaReference(globalSchemaName, null);
-                try {
-                    Collection<SchemaEntry> schemaEntries = Registry.getDefault().getSchemaAdmin().findByName(globalSchemaName);
-                    if (schemaEntries != null && schemaEntries.size() == 1) { // schema name is unique
-                        schema = XmlUtil.stringToDocument(schemaEntries.iterator().next().getSchema());
-                    }
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "Global schema not found: " + globalSchemaName);
-                } catch (SAXException e) {
-                    logger.log(Level.WARNING, "Error parsing global schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
             }
 
-            // process external or global schema imports, if any
+            // process external schema imports, if any
             if (schema != null) {
                 ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
                 for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {

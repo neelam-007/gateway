@@ -116,16 +116,6 @@ public class ExternalSchemaReference extends ExternalReference {
                     String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
                     if (globalSchemaName.equals(name))
                         return false;
-                    try {
-                        Collection<SchemaEntry> schemaEntries = Registry.getDefault().getSchemaAdmin().findByName(globalSchemaName);
-                        if (schemaEntries != null && schemaEntries.size() == 1) { // schema name is unique
-                            schema = XmlUtil.stringToDocument(schemaEntries.iterator().next().getSchema());
-                        }
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Global schema not found: " + globalSchemaName);
-                    } catch (SAXException e) {
-                        logger.log(Level.WARNING, "Error parsing global schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
                 }
 
                 // check schema imports, if any
