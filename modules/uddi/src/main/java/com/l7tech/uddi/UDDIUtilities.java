@@ -1,6 +1,7 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.Pair;
 
@@ -124,6 +125,13 @@ public class UDDIUtilities {
         if (foundTemplate == null) {
             logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " does not contain a bindingTemplate which maps to the wsdl:port with name '" + wsdlPortName + "'.");
             final boolean namespaceSupplied = wsdlBindingNamespace != null && !wsdlBindingNamespace.trim().isEmpty();
+
+            //UDDI has been updated to no longer contain the bindingTemplate which maps to the wsdl:port we were searching for
+            //Return null in this case unless the SSG has been configured to allow for this, in which case we continue
+            //and search for the first found bindingTemplate which implements the required wsdl:binding
+            if(!SyspropUtil.getBoolean("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", false)){
+                return null;
+            }
 
             logger.log(Level.INFO, "Searching for a bindingTemplate which implements the wsdl:binding with name '" + wsdlBinding + "'" +
                     ((namespaceSupplied) ? " and namespace '" + wsdlBindingNamespace + "'." : "."));
