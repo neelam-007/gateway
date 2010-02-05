@@ -394,18 +394,15 @@ public class ServerXslTransformation
         // Get the name of the context variable
         final String msgVarName = getXsltMessagesContextVariableName();
 
-        // Get previous messages
-        String[] prevMessageArray;
-        try {
-            prevMessageArray = (String[]) context.getVariable(msgVarName);
-        } catch (NoSuchVariableException e) {
-            prevMessageArray = null;
-        }
-
         // Initialize a message list by adding all previous messages.
         List<String> messageList = new ArrayList<String>();
-        if (prevMessageArray != null) {
-            messageList.addAll(Arrays.asList(prevMessageArray));
+        try {
+            Object existing = context.getVariable(msgVarName);
+            if (existing != null && existing.getClass().isArray() && String.class.equals(existing.getClass().getComponentType())) {
+                messageList.addAll(Arrays.asList((String[])existing));
+            }
+        } catch (NoSuchVariableException e) {
+            // nothing to carry over
         }
 
         // Insert the current message
