@@ -1,5 +1,10 @@
 package com.l7tech.console.policy.exporter;
 
+import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.assertion.GlobalResourceInfo;
+import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -12,11 +17,11 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
 
 /**
  * A reference to an imported schema from a schema validation assertion
@@ -58,6 +63,7 @@ public class ExternalSchemaReference extends ExternalReference {
         return tns;
     }
 
+    @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(TOPEL_NAME);
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, ExternalSchemaReference.class.getName());
@@ -70,6 +76,7 @@ public class ExternalSchemaReference extends ExternalReference {
         referencesParentElement.appendChild(refEl);
     }
 
+    @Override
     boolean verifyReference() {
         // check that the schema is present on this target system
         Registry reg = Registry.getDefault();
@@ -78,10 +85,7 @@ public class ExternalSchemaReference extends ExternalReference {
         }
         try {
             if (name == null || reg.getSchemaAdmin().findByName(name).isEmpty()) {
-                if (tns != null && reg.getSchemaAdmin().findByTNS(tns).size() == 1) {
-                    return true;
-                }
-                return false;
+                return tns != null && reg.getSchemaAdmin().findByTNS(tns).size() == 1;
             }
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
@@ -93,23 +97,40 @@ public class ExternalSchemaReference extends ExternalReference {
         return true;
     }
 
+    @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
         if (removeRefferees) {
             // check if this assertion indeed refers to this external schema
             if (assertionToLocalize instanceof SchemaValidation) {
-                SchemaValidation ass = (SchemaValidation)assertionToLocalize;
-                if (ass.getResourceInfo() instanceof StaticResourceInfo) {
-                    StaticResourceInfo sri = (StaticResourceInfo)ass.getResourceInfo();
-                    final ArrayList imports;
+                Document schema = null;
+                AssertionResourceInfo schemaResource = ((UsesResourceInfo) assertionToLocalize).getResourceInfo();
+                if (schemaResource instanceof StaticResourceInfo) {
                     try {
-                        imports = listImports( XmlUtil.stringToDocument(sri.getDocument()));
+                        schema = XmlUtil.stringToDocument(((StaticResourceInfo) schemaResource).getDocument());
                     } catch (SAXException e) {
                         logger.log(Level.SEVERE, "cannot parse schema");
                         // nothing more to do since assertion has no valid xml, nothing to localize
                         return true;
                     }
-                    for (Iterator iterator = imports.iterator(); iterator.hasNext();) {
-                        ListedImport listedImport = (ListedImport) iterator.next();
+                } else if (schemaResource instanceof GlobalResourceInfo) {
+                    String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
+                    if (globalSchemaName.equals(name))
+                        return false;
+                    try {
+                        Collection<SchemaEntry> schemaEntries = Registry.getDefault().getSchemaAdmin().findByName(globalSchemaName);
+                        if (schemaEntries != null && schemaEntries.size() == 1) { // schema name is unique
+                            schema = XmlUtil.stringToDocument(schemaEntries.iterator().next().getSchema());
+                        }
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Global schema not found: " + globalSchemaName);
+                    } catch (SAXException e) {
+                        logger.log(Level.WARNING, "Error parsing global schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                }
+
+                // check schema imports, if any
+                if (schema != null) {
+                    for (ExternalSchemaReference.ListedImport listedImport : listImports(schema)) {
                         if (listedImport.name.equals(name)) return false;
                         if (listedImport.tns.equals(tns)) return false;
                     }
@@ -136,7 +157,7 @@ public class ExternalSchemaReference extends ExternalReference {
     static ArrayList<ListedImport> listImports(Document schemaDoc) {
         Element schemael = schemaDoc.getDocumentElement();
         List<Element> listofimports = DomUtils.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-        ArrayList output = new ArrayList();
+        ArrayList<ListedImport> output = new ArrayList<ListedImport>();
         if (listofimports.isEmpty()) return output;
 
         for (Element importEl : listofimports) {

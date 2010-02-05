@@ -4,9 +4,13 @@
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
@@ -16,6 +20,7 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -44,7 +49,7 @@ public class PolicyExporter {
         traverseAssertionTreeForReferences(rootAssertion, refs);
         // add external dependencies to document
         Element referencesEl = wrapExportReferencesToPolicyDocument(policydoc);
-        serializeReferences(referencesEl, refs.toArray(new ExternalReference[0]));
+        serializeReferences(referencesEl, refs.toArray(new ExternalReference[refs.size()]));
         return policydoc;
     }
 
@@ -109,21 +114,40 @@ public class PolicyExporter {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
             ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
         } else if (assertion instanceof SchemaValidation) {
-            SchemaValidation sva = (SchemaValidation)assertion;
-            if (sva.getResourceInfo() instanceof StaticResourceInfo) {
-                StaticResourceInfo sri = (StaticResourceInfo)sva.getResourceInfo();
+            Document schema = null;
+            SchemaValidation sva = (SchemaValidation) assertion;
+            AssertionResourceInfo schemaResource = sva.getResourceInfo();
+            if (schemaResource instanceof StaticResourceInfo) {
                 try {
-                    ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sri.getDocument()));
-                    for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                        ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name, unresolvedImport.tns);
-                        if (!refs.contains(esref)) {
-                            refs.add(esref);
-                        }
-                    }
+                    schema = XmlUtil.stringToDocument(((StaticResourceInfo) sva.getResourceInfo()).getDocument());
                 } catch (SAXException e) {
-                    logger.log(Level.WARNING, "cannot read schema doc properly");
-                    // fallthrough since it's possible this assertion is just badly configured in which care we wont care
+                    logger.log(Level.WARNING, "Error parsing external schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    // fallthrough since it's possible this assertion is just badly configured in which case we wont care
                     // about external references
+                }
+            } else if (schemaResource instanceof GlobalResourceInfo) {
+                String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
+                ref = new ExternalSchemaReference(globalSchemaName, null);
+                try {
+                    Collection<SchemaEntry> schemaEntries = Registry.getDefault().getSchemaAdmin().findByName(globalSchemaName);
+                    if (schemaEntries != null && schemaEntries.size() == 1) { // schema name is unique
+                        schema = XmlUtil.stringToDocument(schemaEntries.iterator().next().getSchema());
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Global schema not found: " + globalSchemaName);
+                } catch (SAXException e) {
+                    logger.log(Level.WARNING, "Error parsing global schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+
+            // process external or global schema imports, if any
+            if (schema != null) {
+                ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
+                for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
+                    ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name, unresolvedImport.tns);
+                    if (!refs.contains(esref)) {
+                        refs.add(esref);
+                    }
                 }
             }
         } else if (assertion instanceof PolicyReference) {
@@ -138,7 +162,7 @@ public class PolicyExporter {
                 Policy fragmentPolicy;
                 //bug 5316: if we are dealing with include assertions, we'll just get the policy fragment from the assertion.
                 if (assertion instanceof Include) {
-                    fragmentPolicy = ((Include)assertion).retrieveFragmentPolicy();
+                    fragmentPolicy = ((PolicyReference) assertion).retrieveFragmentPolicy();
                     //bug 5316: this is here to handle the scenario where if the policy was imported, added new policy
                     //fragment and export it. The new added policy fragment needs to be created because it does not
                     //exist in the assertion yet.
