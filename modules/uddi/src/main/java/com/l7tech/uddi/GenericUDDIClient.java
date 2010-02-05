@@ -737,7 +737,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     refTModelKeys.add(tmii.getTModelKey());
                     allTModelKeys.add(tmii.getTModelKey());
                     if(tmii.getInstanceDetails() != null){
-                        tModelKeyToPotentialInstanceParam.put(tmii.getTModelKey(), tmii.getInstanceDetails().getInstanceParms());
+                        //bug 8384 - tModelKey is not unique enough..as two wsdl:ports may implement the same wsdl:binding
+                        tModelKeyToPotentialInstanceParam.put(tmii.getTModelKey() + bindingTemplate.getBindingKey()
+                                , tmii.getInstanceDetails().getInstanceParms());
                     }
                 }
                 bindingKeyToRefTModels.put(bindingTemplate.getBindingKey(), refTModelKeys);
@@ -828,7 +830,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 }
 
                 //find out what the wsdl:port name is
-                final String wsdlPortName = tModelKeyToPotentialInstanceParam.get(bindingTModel.getTModelKey());
+                final String wsdlPortName = tModelKeyToPotentialInstanceParam.get(bindingTModel.getTModelKey() + entry.getKey());
                 if(wsdlPortName == null){
                     logger.log(Level.FINE,
                             "Not including binding in results as we could not find an instanceParam for a tModel of type wsdl:binding. bindingKey: "
