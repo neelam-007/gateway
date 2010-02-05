@@ -391,8 +391,6 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     }
 
     private String checkDuplicateProperty(String newPropName, final String originalPropName) {
-        if (newPropName.length() > 5 && newPropName.startsWith("c3p0.")) newPropName = newPropName.substring(5);
-
         // Check if there exists a duplicate with Basic Connection Configuration.
         if ("driverClass".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.basic.conn.prop.configured"), resources.getString("property.driver.class"));
