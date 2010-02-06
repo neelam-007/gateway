@@ -269,24 +269,30 @@ public class UDDIUtilitiesTest {
      */
     @Test
     public void testGetUDDIBindingImplInfoFindOtherBinding() throws UDDIException {
-        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/BusinessServiceDiffBindings.xml");
-        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
-        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
-        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_portType.xml");
-        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        System.setProperty("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", "true");
+        try {
+            InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/BusinessServiceDiffBindings.xml");
+            final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+            stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_binding.xml");
+            final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+            stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/tModel_portType.xml");
+            final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
 
-        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+            TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
 
-        UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
-                "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap", "http://warehouse.acme.com/ws");
+            UDDIUtilities.UDDIBindingImplementionInfo bindingInfo = UDDIUtilities.getUDDIBindingImplInfo(uddiClient,
+                    "uddi:8617fae0-c987-11de-8486-efda8c54fa31", "WarehouseSoap", "WarehouseSoap", "http://warehouse.acme.com/ws");
 
-        Assert.assertNotNull(bindingInfo);
+            Assert.assertNotNull(bindingInfo);
 
-        Assert.assertEquals("Invalid access point found", "http://irishman.l7tech.com:8080/service/91783168", bindingInfo.getEndPoint());
-        Assert.assertEquals("Invalid WSDL URL found", "http://irishman.l7tech.com:8080/ssg/wsdl?serviceoid=91783168", bindingInfo.getImplementingWsdlUrl());
-        Assert.assertFalse("Invalid wsdl:port information found", "WarehouseSoap".equals(bindingInfo.getImplementingWsdlPort()));
-        Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap1" , bindingInfo.getImplementingWsdlPort());
+            Assert.assertEquals("Invalid access point found", "http://irishman.l7tech.com:8080/service/91783168", bindingInfo.getEndPoint());
+            Assert.assertEquals("Invalid WSDL URL found", "http://irishman.l7tech.com:8080/ssg/wsdl?serviceoid=91783168", bindingInfo.getImplementingWsdlUrl());
+            Assert.assertFalse("Invalid wsdl:port information found", "WarehouseSoap".equals(bindingInfo.getImplementingWsdlPort()));
+            Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap1" , bindingInfo.getImplementingWsdlPort());
+        } finally {
+            System.clearProperty("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort");
+        }
+
     }
 
     /**
