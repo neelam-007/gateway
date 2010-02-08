@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.comparison;
 
 import com.l7tech.util.ComparisonOperator;
-import com.l7tech.util.Functions;
 import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
 import com.l7tech.policy.assertion.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -211,7 +210,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
     @Override
     public Object clone()  {
-        final ComparisonAssertion clone = new ComparisonAssertion();
+        ComparisonAssertion clone = (ComparisonAssertion) super.clone();
         try {
             clone.setExpression1(getExpression1());
 
