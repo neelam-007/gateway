@@ -271,6 +271,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         newRole.addEntityPermission(DELETE, POLICY, policy.getId()); // Delete this policy
         newRole.addEntityPermission(READ, SERVICE_TEMPLATE, null);
 
+        // Read all JDBC Connections
+        newRole.addEntityPermission(READ, JDBC_CONNECTION, null);
+
         // Read this policy's folder ancestry
         newRole.addEntityFolderAncestryPermission(POLICY, policy.getId());
 
@@ -282,6 +285,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, POLICY);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, POLICY);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, FOLDER);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JDBC_CONNECTION);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

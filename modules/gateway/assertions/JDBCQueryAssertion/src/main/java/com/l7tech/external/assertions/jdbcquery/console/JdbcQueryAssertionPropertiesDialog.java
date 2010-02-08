@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jdbcquery.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.MutablePair;
@@ -10,6 +11,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.variable.Syntax;
@@ -55,6 +57,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private Map<String, String> namingMap;
     private JdbcQueryAssertion assertion;
     private boolean confirmed;
+    private PermissionFlags jdbcConnPermFlags;
 
     public JdbcQueryAssertionPropertiesDialog(Window owner, JdbcQueryAssertion assertion) {
         super(owner, assertion);
@@ -82,9 +85,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     protected void configureView() {
         enableOrDisableOkButton();
         enableOrDisableTableButtons();
+        enableOrDisableJdbcConnList();
     }
 
     private void initialize() {
+        jdbcConnPermFlags = PermissionFlags.get(EntityType.JDBC_CONNECTION);
+
         setContentPane(mainPanel);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
@@ -289,6 +295,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
              isNonEmptyRequiredTextField(variablePrefixTextField.getText());
 
         okButton.setEnabled(enabled);
+    }
+
+    private void enableOrDisableJdbcConnList() {
+        connectionComboBox.setEnabled(jdbcConnPermFlags.canReadAll());
     }
 
     private boolean isNonEmptyRequiredTextField(String text) {

@@ -280,6 +280,9 @@ public class ServiceManagerImp
         newRole.addEntityPermission(READ, JMS_CONNECTION, null);
         newRole.addEntityPermission(READ, JMS_ENDPOINT, null);
 
+        // Read all JDBC Connections
+        newRole.addEntityPermission(READ, JDBC_CONNECTION, null);
+
         // Read this service's folder ancestry
         newRole.addEntityFolderAncestryPermission(EntityType.SERVICE, service.getId());
 
@@ -321,6 +324,7 @@ public class ServiceManagerImp
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SERVICE_USAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JMS_CONNECTION);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JMS_ENDPOINT);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, JDBC_CONNECTION);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, CREATE, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, SAMPLE_MESSAGE);
