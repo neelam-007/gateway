@@ -274,6 +274,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         }
         if (regexAssertion.getEncoding() != null) {
             encodingField.setText(regexAssertion.getEncoding());
+            encodingCustomButton.setSelected(true);
         }
         if (regexAssertion.getRegexName() != null) {
             nameTextField.setText(regexAssertion.getRegexName());
