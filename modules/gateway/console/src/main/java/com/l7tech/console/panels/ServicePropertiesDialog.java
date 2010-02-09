@@ -109,6 +109,7 @@ public class ServicePropertiesDialog extends JDialog {
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
+    private Long lastModifiedTimeStamp;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
@@ -343,40 +344,44 @@ public class ServicePropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                if(uddiServiceControl == null) return;
+                if(uddiServiceControl == null) return;//this is a programming error
 
-                try {
-                    final UDDIProxiedServiceInfo serviceInfo =
-                            Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceOid());
-                    if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
-                        int selection = JOptionPane.showConfirmDialog(ServicePropertiesDialog.this, "The association to the original UDDI BusinessService will be lost.", "Remove BusinessService Association", JOptionPane.WARNING_MESSAGE);
-                        if (selection == 0) {
-                            Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
-                            uddiServiceControl = null;
+                if(uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID){
+                    clearLocalUDDIServiceControl();
+                }else{
+                    try {
+                        final UDDIProxiedServiceInfo serviceInfo =
+                                Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(uddiServiceControl.getPublishedServiceOid());
+                        if(serviceInfo == null || serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.PROXY){
+                            int selection = JOptionPane.showConfirmDialog(ServicePropertiesDialog.this, "The association to the original UDDI BusinessService will be lost.", "Remove BusinessService Association", JOptionPane.WARNING_MESSAGE);
+                            if (selection == 0) {
+                                Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(uddiServiceControl.getOid());
+                                clearLocalUDDIServiceControl();
+                            } else {
+                                return;
+                            }
                         } else {
+                            String errorMsg = "";
+                            if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
+                                errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
+                            }else if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT){
+                                errorMsg = "BusinessService in UDDI has had a Gateway endpoint added. Please remove before deleting";
+                            }else{
+                                throw new IllegalStateException("Illegal publish type found");//can only happen if either publish type enum changes or above logic does
+                            }
+                            showErrorMessage("Cannot delete", errorMsg, null, false);
                             return;
                         }
-                    } else {
-                        String errorMsg = "";
-                        if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
-                            errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
-                        }else if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT){
-                            errorMsg = "BusinessService in UDDI has had a Gateway endpoint added. Please remove before deleting";
-                        }else{
-                            throw new IllegalStateException("Illegal publish type found");//can only happen if either publish type enum changes or above logic does
-                        }
-                        showErrorMessage("Cannot delete", errorMsg, null, false);
+                    } catch (FindException e1) {
+                        showErrorMessage("Cannot find", "Cannot determine if any proxied UDDI info was published to the service from the Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                        return;
+                    } catch (DeleteException e1) {
+                        showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                        return;
+                    } catch (UpdateException e1) {
+                        showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
                         return;
                     }
-                } catch (FindException e1) {
-                    showErrorMessage("Cannot find", "Cannot determine if any proxied UDDI info was published to the service from the Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
-                    return;
-                } catch (DeleteException e1) {
-                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
-                    return;
-                } catch (UpdateException e1) {
-                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
-                    return;
                 }
 
                 modelToView();
@@ -385,9 +390,12 @@ public class ServicePropertiesDialog extends JDialog {
         });
 
         selectButton.addActionListener(new ActionListener() {
+            //The select button should only ever be enabled when uddiServiceControl == null
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    if(uddiServiceControl != null) throw new RuntimeException("uddiServiceControl should be null");
+                    
                     SearchUddiDialog swd = new SearchUddiDialog(ServicePropertiesDialog.this, SearchUddiDialog.SEARCH_TYPE.WSDL_SEARCH, true);
                     swd.addSelectionListener(new SearchUddiDialog.ItemSelectedListener() {
                         @Override
@@ -395,59 +403,9 @@ public class ServicePropertiesDialog extends JDialog {
                             if(!(item instanceof WsdlPortInfo)) return;
                             WsdlPortInfo wsdlPortInfo = (WsdlPortInfo) item;
                             wsdlPortInfo.setWasWsdlPortSelected(true);
+                            uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
+                            lastModifiedTimeStamp = wsdlPortInfo.getLastUddiMonitoredTimeStamp();
 
-                            //if none of the UDDI related final values have changed, then we can reuse the existing UDDIServiceControl
-                            final boolean existingOk = uddiServiceControl != null &&
-                                    wsdlPortInfo.getUddiRegistryOid() == uddiServiceControl.getUddiRegistryOid() &&
-                                    wsdlPortInfo.getBusinessEntityKey().equals(uddiServiceControl.getUddiBusinessKey()) &&
-                                    wsdlPortInfo.getBusinessServiceKey().equals(uddiServiceControl.getUddiServiceKey());
-
-                            final boolean needsToBeSaved;
-                            final boolean needToDelete;
-                            long oldOid = -1L;
-                            Long lastModifiedTimeStamp = null;
-                            if(!existingOk){
-                                needToDelete = uddiServiceControl != null;//do this before variable is reset on next line
-                                if(needToDelete) oldOid = uddiServiceControl.getOid();
-                                uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
-                                lastModifiedTimeStamp = wsdlPortInfo.getLastUddiMonitoredTimeStamp();
-                                needsToBeSaved = true;
-                            }else{
-                                //repopulate the existing UDDIServiceControl
-                                needsToBeSaved = uddiServiceControl.setUddiModifiableProperties(wsdlPortInfo);
-                                needToDelete = false;
-                            }
-
-                            if(needsToBeSaved){
-                                try {
-                                    if(needToDelete) Registry.getDefault().getUDDIRegistryAdmin().deleteUDDIServiceControl(oldOid);
-
-                                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, lastModifiedTimeStamp);
-                                    //download it again as it gets populated with info on save
-                                    uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(uddiServiceControl.getPublishedServiceOid());
-                                } catch (DeleteException e1) {
-                                    showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway", e1, true);
-                                    return;
-                                } catch (FindException e1) {
-                                    showErrorMessage("Cannot find", "Cannot find UDDI information from Gateway", e1, true);
-                                    return;
-                                } catch (Exception e1) {
-                                    //save and update exception
-                                    if(e1 instanceof SaveException || e1 instanceof UpdateException){
-                                        final String msg = "Cannot save UDDI information to Gateway: " + ExceptionUtils.getMessage(e1);
-                                        showErrorMessage("Cannot save", msg, ExceptionUtils.getDebugException(e1), true);
-                                    }else throw new RuntimeException(e1);
-                                }
-                            }
-
-                            //reset the UDDIServiceControl
-                            try {
-                                uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
-                            } catch (FindException e1) {
-                                final String msg = "Cannot look up UDDI information from the Gateway: " + ExceptionUtils.getMessage(e1);
-                                showErrorMessage("Cannot find", msg, ExceptionUtils.getDebugException(e1), true);
-                                uddiServiceControl = null;
-                            }
                             //now update the UI with selections
                             modelToView();
                             enableDisableControls();
@@ -501,6 +459,11 @@ public class ServicePropertiesDialog extends JDialog {
 
         //apply permissions last
         applyPermissions();
+    }
+
+    private void clearLocalUDDIServiceControl() {
+        uddiServiceControl = null;
+        lastModifiedTimeStamp = null;
     }
 
     private void enableDisableControls(){
@@ -811,13 +774,17 @@ public class ServicePropertiesDialog extends JDialog {
                 if( wsdlUnderUDDIControlCheckBox.isSelected() != uddiServiceControl.isUnderUddiControl() ||
                     enableMonitoring != uddiServiceControl.isMonitoringEnabled() ||
                     updateWsdlOnChange != uddiServiceControl.isUpdateWsdlOnChange() ||
-                    disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ){
+                    disableServiceOnChange != uddiServiceControl.isDisableServiceOnChange() ||
+                    uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
+                    
                     uddiServiceControl.setUnderUddiControl( wsdlUnderUDDIControlCheckBox.isSelected() );
                     uddiServiceControl.setMonitoringEnabled( enableMonitoring );
                     uddiServiceControl.setUpdateWsdlOnChange( updateWsdlOnChange );
                     uddiServiceControl.setDisableServiceOnChange( disableServiceOnChange );
 
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, null);
+                    //note accessPointURL and lastModifiedTimeStamp will be null when the UDDIServiceControl already existed
+                    //if they are not null they are ignored by the admin method when it's not a save
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, lastModifiedTimeStamp);
                 }
             }
 
