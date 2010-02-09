@@ -410,6 +410,7 @@ public class GlobalSchemaDialog extends JDialog {
         int selectedRow = schemaTable.getSelectedRow();
         if (selectedRow < 0) return;
         final SchemaEntry toedit = globalSchemas.get(selectedRow);
+        final SchemaEntry originalSelectedSchema = toedit.asCopy();
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome() && !toedit.isSystem());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -422,19 +423,25 @@ public class GlobalSchemaDialog extends JDialog {
                         logger.warning("No access to registry. Cannot save.");
                         return;
                     }
-                    Throwable err = null;
                     try {
                         checkEntryForUnresolvedImports(toedit, null);
                         reg.getSchemaAdmin().saveSchemaEntry(toedit);
                         populate();
                     } catch (Exception e) {
-                        err = e;
-                    }
+                        String errMsg;
+                        if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                            errMsg = "Unable to save schema entry: (name) must be unique";
+                            JOptionPane.showMessageDialog(GlobalSchemaDialog.this, errMsg, "Unable to save schema entry", JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            errMsg = "Unable to save edited schema entry:" + ExceptionUtils.getMessage(e);
+                            showErrorMessage(errMsg);
+                        }
+                        logger.log(Level.WARNING, errMsg, e);
 
-                    if (err != null) {
-                        String mess = "Unable to save edited schema: " + ExceptionUtils.getMessage(err);
-                        logger.log(Level.WARNING, mess, err);
-                        showErrorMessage(mess);
+                        // Roll back
+                        toedit.setName(originalSelectedSchema.getName());
+                        toedit.setTns((originalSelectedSchema.getTns()));
+                        toedit.setSchema(originalSelectedSchema.getSchema());
                     }
                 }
             }

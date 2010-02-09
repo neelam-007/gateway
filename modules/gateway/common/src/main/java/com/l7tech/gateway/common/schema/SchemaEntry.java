@@ -63,6 +63,15 @@ public class SchemaEntry extends NamedEntityImp {
         return "SchemaEntry oid:" + getOid() + " schema: " + schema;
     }
 
+    public SchemaEntry asCopy() {
+        SchemaEntry copy = new SchemaEntry();
+        copy.setName(getName());
+        copy.setTns(getTns());
+        copy.setSchema(getSchema());
+
+        return copy;
+    }
+
     private String schema;
     private String tns;
     private boolean system;
