@@ -19,7 +19,7 @@ import org.hibernate.annotations.Proxy;
  */
 @Entity
 @Proxy(lazy=false)
-@Table(name="uddi_service_control_runtime")
+@Table(name="uddi_service_control_monitor_runtime")
 public class UDDIServiceControlRuntime extends PersistentEntityImp{
 
     // - PUBLIC

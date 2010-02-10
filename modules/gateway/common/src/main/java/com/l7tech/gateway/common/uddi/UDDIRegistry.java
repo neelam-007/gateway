@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 @Entity
 @Proxy(lazy=false)
-@Table(name="uddi_registry")
+@Table(name="uddi_registries")
 public class UDDIRegistry extends NamedEntityImp {
 
     public enum UDDIRegistryType{

@@ -26,15 +26,10 @@ WHERE ur.uddi_service_control_oid = uc.objectid;
 
 ALTER TABLE uddi_service_control DROP access_point_url;
 
-ALTER TABLE uddi_service_control_monitor_runtime RENAME TO uddi_service_control_runtime;
-
 --
 -- bug 8258
 --
 DROP INDEX base_url ON uddi_registries;
-
-ALTER TABLE uddi_registries RENAME TO uddi_registry;
-
 
 --
 -- Remove 'READ' permission on 'SERVICE' for 'Manage JDBC Connections' role.
