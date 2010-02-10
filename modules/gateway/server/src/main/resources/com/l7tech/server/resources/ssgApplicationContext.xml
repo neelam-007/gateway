@@ -1696,6 +1696,6 @@
 
     <bean id="uddiBusinessServiceStatusManager" class="com.l7tech.server.uddi.UDDIBusinessServiceStatusManagerImpl" parent="hibernateBean" />
 
-    <bean id="uddiServiceControlMonitorRuntimeManager" class="com.l7tech.server.uddi.UDDIServiceControlMonitorRuntimeManagerImpl" parent="hibernateBean" />
+    <bean id="uddiServiceControlMonitorRuntimeManager" class="com.l7tech.server.uddi.UDDIServiceControlRuntimeManagerImpl" parent="hibernateBean" />
 
 </beans>

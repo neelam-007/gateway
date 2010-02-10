@@ -270,11 +270,11 @@ public interface UDDIRegistryAdmin {
      *
      * @param serviceControlOid the UDDIServiceControl to get runtime information for
      * @return UDDIServiceControlMonitorRuntime never null
-     * @throws com.l7tech.objectmodel.FindException Any problem finding the UDDIServiceControlMonitorRuntime
+     * @throws com.l7tech.objectmodel.FindException Any problem finding the UDDIServiceControlRuntime
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE, stereotype= MethodStereotype.FIND_ENTITY)
-    UDDIServiceControlMonitorRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException;
+    UDDIServiceControlRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException;
 
     /**
      * Find all UDDIServiceControls for a UDDIRegistry

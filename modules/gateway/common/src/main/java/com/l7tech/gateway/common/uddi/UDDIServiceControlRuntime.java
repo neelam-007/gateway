@@ -16,18 +16,18 @@ import org.hibernate.annotations.Proxy;
 /**
  * Represents the runtime information for a UDDI BusinessService which we are monitoring.
  * Stores the last time it was modified. This helps us processing notifications, so we can ignore duplicates
- */                          //todo rename to UDDIServiceControlRuntime
+ */
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control_runtime")
-public class UDDIServiceControlMonitorRuntime extends PersistentEntityImp{
+public class UDDIServiceControlRuntime extends PersistentEntityImp{
 
     // - PUBLIC
 
-    public UDDIServiceControlMonitorRuntime() {
+    public UDDIServiceControlRuntime() {
     }
 
-    public UDDIServiceControlMonitorRuntime(final long uddiServiceControlOid,
+    public UDDIServiceControlRuntime(final long uddiServiceControlOid,
                                             final long lastUDDIModifiedTimeStamp) {
         this.uddiServiceControlOid = uddiServiceControlOid;
         this.lastUDDIModifiedTimeStamp = lastUDDIModifiedTimeStamp;

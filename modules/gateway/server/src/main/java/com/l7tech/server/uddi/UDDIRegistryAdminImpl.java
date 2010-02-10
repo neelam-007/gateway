@@ -32,7 +32,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager;
     final private UDDIPublishStatusManager uddiPublishStatusManager;
     final private UDDIServiceControlManager uddiServiceControlManager;
-    final private UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
+    final private UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager;
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
     final private UDDIBusinessServiceStatusManager businessServiceStatusManager;
@@ -46,7 +46,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final ServiceCache serviceCache,
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager,
-                                 final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
+                                 final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager,
                                  final UDDIBusinessServiceStatusManager businessServiceStatusManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
@@ -55,7 +55,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.serviceCache = serviceCache;
         this.uddiProxiedServiceInfoManager = uddiProxiedServiceInfoManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
-        this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
+        this.uddiServiceControlRuntimeManager = uddiServiceControlRuntimeManager;
         this.businessServiceStatusManager = businessServiceStatusManager;
     }
 
@@ -305,9 +305,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
             long oid = uddiServiceControlManager.save(uddiServiceControl);
             //Create the monitor runtime record for this service control as it has just been created
-            final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastModifiedServiceTimeStamp);
+            final UDDIServiceControlRuntime monitorRuntime = new UDDIServiceControlRuntime(oid, lastModifiedServiceTimeStamp);
             monitorRuntime.setAccessPointUrl(serviceEndPoint);
-            uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
+            uddiServiceControlRuntimeManager.save(monitorRuntime);
 
             //Has the published service been published to UDDI?
             final UDDIProxiedServiceInfo info = uddiProxiedServiceInfoManager.findByPublishedServiceOid(uddiServiceControl.getPublishedServiceOid());
@@ -415,8 +415,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIServiceControlMonitorRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException {
-        final UDDIServiceControlMonitorRuntime monitorRuntime = uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControlOid);
+    public UDDIServiceControlRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException {
+        final UDDIServiceControlRuntime monitorRuntime = uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControlOid);
         if(monitorRuntime == null) throw new FindException("Could not find the runtime information for UDDIServiceControl with id#(" + serviceControlOid+")");
         return monitorRuntime;
     }

@@ -1,6 +1,6 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
@@ -60,7 +60,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                        final UDDIHelper uddiHelper,
                                        final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager,
                                        final UDDIServiceControlManager uddiServiceControlManager,
-                                       final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager,
+                                       final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager,
                                        final ServiceManager serviceManager,
                                        final ServiceDocumentManager serviceDocumentManager,
                                        final HttpClientFactory httpClientFactory ) {
@@ -68,7 +68,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         this.uddiHelper = uddiHelper;
         this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
         this.uddiServiceControlManager = uddiServiceControlManager;
-        this.uddiServiceControlMonitorRuntimeManager = uddiServiceControlMonitorRuntimeManager;
+        this.uddiServiceControlRuntimeManager = uddiServiceControlRuntimeManager;
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.httpClientFactory = httpClientFactory;
@@ -140,7 +140,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final UDDIHelper uddiHelper;
     private final UDDIRegistrySubscriptionManager uddiRegistrySubscriptionManager;
     private final UDDIServiceControlManager uddiServiceControlManager;
-    private final UDDIServiceControlMonitorRuntimeManager uddiServiceControlMonitorRuntimeManager;
+    private final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager;
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;
     private final HttpClientFactory httpClientFactory;
@@ -600,14 +600,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                                 final PublishedService ps =
                                         factory.serviceManager.findByPrimaryKey(serviceControl.getPublishedServiceOid());
-                                final UDDIServiceControlMonitorRuntime monitorRuntime =
-                                        factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                                final UDDIServiceControlRuntime monitorRuntime =
+                                        factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 if(!forceUpdate){
                                     if (monitorRuntime == null) {
                                         //this should never happen, (its a coding error managing UDDIServiceControl entities),
                                         // if it does we will just create a record for it. If the db allows it, then proceed
-                                        final UDDIServiceControlMonitorRuntime monitorRuntimeNew = new UDDIServiceControlMonitorRuntime(serviceControl.getOid(), uddiModifiedTime);
-                                        factory.uddiServiceControlMonitorRuntimeManager.save(monitorRuntimeNew);
+                                        final UDDIServiceControlRuntime monitorRuntimeNew = new UDDIServiceControlRuntime(serviceControl.getOid(), uddiModifiedTime);
+                                        factory.uddiServiceControlRuntimeManager.save(monitorRuntimeNew);
                                         logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
                                                 "information. Created record for serviceKey: " + serviceControl.getUddiServiceKey() +
                                                 " from registry " + describe(uddiRegistry) + ".");
@@ -659,7 +659,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     continue;
                                 }
 
-                                final UDDIServiceControlMonitorRuntime serviceRuntime = factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                                final UDDIServiceControlRuntime serviceRuntime = factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, serviceRuntime, context, uddiRegistry);
 
                                 if ( endPoint != null && (serviceRuntime.getAccessPointUrl()==null || !serviceRuntime.getAccessPointUrl().equals( endPoint ))) {
@@ -668,7 +668,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     serviceUpdated = true;
                                     ps.setDefaultRoutingUrl(endPoint);
                                     serviceRuntime.setAccessPointUrl(endPoint);
-                                    factory.uddiServiceControlMonitorRuntimeManager.update(serviceRuntime);
+                                    factory.uddiServiceControlRuntimeManager.update(serviceRuntime);
                                     context.logAndAudit(
                                             SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
                                             endPoint,
@@ -759,9 +759,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     factory.serviceManager.update(ps);
                                 }
 
-                                UDDIServiceControlMonitorRuntime monitorRuntimeToUpdate = factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                                UDDIServiceControlRuntime monitorRuntimeToUpdate = factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 monitorRuntimeToUpdate.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
-                                factory.uddiServiceControlMonitorRuntimeManager.update(monitorRuntimeToUpdate);
+                                factory.uddiServiceControlRuntimeManager.update(monitorRuntimeToUpdate);
                             }
                         } finally {
                             ResourceUtils.closeQuietly( uddiClient );
@@ -787,7 +787,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
          */
         private String getUpdatedEndPoint(final UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo,
                                           final UDDIServiceControl serviceControl,
-                                          final UDDIServiceControlMonitorRuntime serviceRuntime,
+                                          final UDDIServiceControlRuntime serviceRuntime,
                                           final UDDITaskContext context,
                                           final UDDIRegistry uddiRegistry) throws UDDITaskException {
 

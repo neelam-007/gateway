@@ -20,7 +20,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -110,7 +110,7 @@ public class ServicePropertiesDialog extends JDialog {
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
-    private UDDIServiceControlMonitorRuntime serviceControlRuntime;
+    private UDDIServiceControlRuntime serviceControlRuntime;
     private Long lastModifiedTimeStamp;
     private String accessPointURL;
 

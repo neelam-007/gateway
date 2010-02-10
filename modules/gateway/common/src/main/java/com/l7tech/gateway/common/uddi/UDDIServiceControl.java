@@ -10,13 +10,12 @@ import javax.persistence.Column;
 
 import org.hibernate.annotations.Proxy;
 /**
- * Represents the UDDI location from which a published service was created.
+ * Represents the UDDI location from which a published service was created. 
  */
 @Entity
 @Proxy(lazy=false)
 @Table(name="uddi_service_control")
 public class UDDIServiceControl extends PersistentEntityImp {
-//TODO rename to the UDDIOriginalService - as it may not be under UDDI Control - rename associated managers also. Not done for Bondo as too large a changeset
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
 
     //- PUBLIC
@@ -174,7 +173,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.disableServiceOnChange = disableServiceOnChange;
     }
 
-    @Column(name = "metrics_enabled")//todo not needed as not supported right now with original service - remove
+    @Column(name = "metrics_enabled")//todo not needed as not supported right now with original service
     public boolean isMetricsEnabled() {
         return metricsEnabled;
     }

@@ -4,7 +4,7 @@
  */
 package com.l7tech.server.uddi;
 
-import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -15,15 +15,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Arrays;
 
-public class UDDIServiceControlMonitorRuntimeManagerImpl extends HibernateEntityManager<UDDIServiceControlMonitorRuntime,EntityHeader> implements UDDIServiceControlMonitorRuntimeManager{
+public class UDDIServiceControlRuntimeManagerImpl extends HibernateEntityManager<UDDIServiceControlRuntime,EntityHeader> implements UDDIServiceControlRuntimeManager {
 
     @Override
     public Class<? extends Entity> getImpClass() {
-        return UDDIServiceControlMonitorRuntime.class;
+        return UDDIServiceControlRuntime.class;
     }
 
     @Override
-    public UDDIServiceControlMonitorRuntime findByServiceControlOid( final long uddiServiceControlOid) throws FindException {
+    public UDDIServiceControlRuntime findByServiceControlOid( final long uddiServiceControlOid) throws FindException {
         return findByUniqueKey("uddiServiceControlOid", uddiServiceControlOid);
     }
 
@@ -35,7 +35,7 @@ public class UDDIServiceControlMonitorRuntimeManagerImpl extends HibernateEntity
     }
 
     @Override
-    protected Collection<Map<String, Object>> getUniqueConstraints( final UDDIServiceControlMonitorRuntime controlMonitorRuntime ) {
+    protected Collection<Map<String, Object>> getUniqueConstraints( final UDDIServiceControlRuntime controlMonitorRuntime ) {
         Map<String,Object> serviceOidMap = new HashMap<String, Object>();
         serviceOidMap.put( "uddiServiceControlOid", controlMonitorRuntime.getUddiServiceControlOid() );
         return Arrays.asList(serviceOidMap);
