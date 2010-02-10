@@ -880,8 +880,8 @@ CREATE TABLE jdbc_connection (
 -- Note: base_url is unique and has a size limit of 255 bytes, which is the max allowed for a unique key
 -- in mysql when using utf-8 encoding. It is the max size of a hostname
 --
-DROP TABLE IF EXISTS uddi_registries;
-CREATE TABLE uddi_registries (
+DROP TABLE IF EXISTS uddi_registry;
+CREATE TABLE uddi_registry (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
@@ -903,8 +903,7 @@ CREATE TABLE uddi_registries (
   subscribe_for_notifications tinyint(1) NOT NULL DEFAULT 0,
   monitor_frequency integer NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid),
-  UNIQUE(name),
-  UNIQUE(base_url)
+  UNIQUE(name)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -921,7 +920,7 @@ CREATE TABLE uddi_registry_subscription (
   uddi_subscription_check_time bigint NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE KEY  (uddi_registry_oid),
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registry (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -950,7 +949,7 @@ CREATE TABLE uddi_proxied_service_info (
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registry (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1005,7 +1004,7 @@ CREATE TABLE uddi_business_service_status (
   metrics_reference_status varchar(32) NOT NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registry (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -1038,7 +1037,7 @@ CREATE TABLE uddi_service_control (
   PRIMARY KEY (objectid),
   UNIQUE KEY  (published_service_oid),
   FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registries (objectid) ON DELETE CASCADE
+  FOREIGN KEY (uddi_registry_oid) REFERENCES uddi_registry (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

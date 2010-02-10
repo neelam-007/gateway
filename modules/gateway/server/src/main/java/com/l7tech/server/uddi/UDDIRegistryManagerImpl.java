@@ -37,15 +37,12 @@ public class UDDIRegistryManagerImpl extends HibernateEntityManager<UDDIRegistry
         Map<String,Object> nameMap = new HashMap<String, Object>();
         nameMap.put("name", uddiRegistry.getName());
         
-        Map<String,Object> baseUrlMap = new HashMap<String, Object>();
-        baseUrlMap.put("baseUrl", uddiRegistry.getBaseUrl());
-
-        return Arrays.asList(nameMap, baseUrlMap);
+        return Arrays.asList(nameMap);
     }
 
     @Override
     protected String describeAttributes(Collection<Map<String, Object>> maps) {
-        return "UDDI Registry Name and the UDDI Base URL are unique across all UDDI Registries";
+        return "UDDI Registry Name must be unique across all UDDI Registries";
     }
 
     @Override
