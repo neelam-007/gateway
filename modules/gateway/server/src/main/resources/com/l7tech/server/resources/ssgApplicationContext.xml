@@ -1698,4 +1698,12 @@
 
     <bean id="uddiServiceControlMonitorRuntimeManager" class="com.l7tech.server.uddi.UDDIServiceControlRuntimeManagerImpl" parent="hibernateBean" />
 
+    <bean id="uddiServiceWsdlUpdateChecker" class="com.l7tech.server.uddi.ServiceWsdlUpdateChecker">
+        <constructor-arg index="0" ref="serviceManager"/>
+        <constructor-arg index="1" ref="uddiServiceControlManager"/>
+    </bean>
+    
+    <bean id="serviceDocumentResolver" class="com.l7tech.server.service.ServiceDocumentResolver">
+        <constructor-arg index="0" ref="trustManager"/>
+    </bean>
 </beans>

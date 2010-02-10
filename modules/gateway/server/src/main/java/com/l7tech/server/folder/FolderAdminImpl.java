@@ -44,7 +44,7 @@ public class FolderAdminImpl implements FolderAdmin {
 
     @Override
     public void deleteFolder( final long oid ) throws FindException, DeleteException {
-        roleManager.deleteEntitySpecificRoles(FOLDER, oid);
+        folderManager.deleteRoles(oid);
         folderManager.delete(oid);
     }
 

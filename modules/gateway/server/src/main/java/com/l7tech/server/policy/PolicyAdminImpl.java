@@ -11,7 +11,6 @@ import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
@@ -32,7 +31,6 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
     private final PolicyVersionManager policyVersionManager;
-    private final RoleManager roleManager;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -43,29 +41,31 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public PolicyAdminImpl(PolicyManager policyManager,
                            PolicyAliasManager policyAliasManager,
                            PolicyCache policyCache,
-                           PolicyVersionManager policyVersionManager,
-                           RoleManager roleManager)
+                           PolicyVersionManager policyVersionManager)
     {
         this.policyManager = policyManager;
         this.policyAliasManager = policyAliasManager;
         this.policyCache = policyCache;
         this.policyVersionManager = policyVersionManager;
-        this.roleManager = roleManager;
     }
 
+    @Override
     public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) throws FindException{
         return policyManager.findHeadersWithTypes(types);
     }
 
+    @Override
     public PolicyAlias findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
         return policyAliasManager.findAliasByEntityAndFolder(entityOid, folderOid);
     }
 
+    @Override
     public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
             throws FindException{
         return policyManager.findHeadersWithTypes(types, includeAliases);
     }
 
+    @Override
     public Policy findPolicyByPrimaryKey(long oid) throws FindException {
         Policy policy = policyManager.findByPrimaryKey(oid);
         if (policy == null) return null;
@@ -77,6 +77,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return policy;
     }
 
+    @Override
     public Policy findPolicyByUniqueName(String name) throws FindException {
         Policy policy = policyManager.findByUniqueName(name);
         if (policy == null) return null;
@@ -88,6 +89,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return policy;
     }
 
+    @Override
     public Policy findPolicyByGuid(String guid) throws FindException {
         Policy policy = policyManager.findByGuid(guid);
         if (policy == null) return null;
@@ -99,14 +101,16 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return policy;
     }
 
+    @Override
     public Collection<PolicyHeader> findPolicyHeadersByType( PolicyType type) throws FindException {
         return policyManager.findHeadersByType(type);
     }
 
+    @Override
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         checkForActiveAuditSinkPolicy(oid);
         policyManager.delete(oid);
-        roleManager.deleteEntitySpecificRoles(EntityType.POLICY, oid);
+        policyManager.deleteRoles(oid);
     }
 
     private void checkForActiveAuditSinkPolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
@@ -123,10 +127,12 @@ public class PolicyAdminImpl implements PolicyAdmin {
             throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");         
     }
 
+    @Override
     public long savePolicy(Policy policy) throws SaveException {
         return savePolicy(policy, true).getPolicyOid();
     }
 
+    @Override
     public void deleteEntityAlias(String policyOid) throws DeleteException {
         final PolicyAlias alias;
         try {
@@ -139,6 +145,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         }
     }
 
+    @Override
     public long saveAlias(PolicyAlias pa) throws SaveException {
         long oid;
         try {
@@ -166,6 +173,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return oid;
     }
 
+    @Override
     public PolicyCheckpointState savePolicy(Policy policy, boolean activateAsWell) throws SaveException {
         try {
             if (!activateAsWell)
@@ -206,6 +214,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         UPDATE
     }
     
+    @Override
     public SavePolicyWithFragmentsResult savePolicy( Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws SaveException {
         try {
             HashMap<String, String> fragmentNameGuidMap = new HashMap<String, String>();
@@ -396,18 +405,22 @@ public class PolicyAdminImpl implements PolicyAdmin {
         }
     }
 
+    @Override
     public Set<Policy> findUsages(long oid) throws FindException {
         return policyCache.findUsages(oid);
     }
 
+    @Override
     public PolicyVersion findPolicyVersionByPrimaryKey(long policyOid, long versionOid) throws FindException {
         return policyVersionManager.findByPrimaryKey(policyOid, versionOid);
     }
 
+    @Override
     public List<PolicyVersion> findPolicyVersionHeadersByPolicy(long policyOid) throws FindException {
         final Set<PropertyDescriptor> allButXml = BeanUtils.omitProperties(BeanUtils.getProperties(PolicyVersion.class), "xml");
 
         return map(policyVersionManager.findAllForPolicy(policyOid), new Unary<PolicyVersion, PolicyVersion>() {
+            @Override
             public PolicyVersion call(PolicyVersion version) {
                 PolicyVersion ret = new PolicyVersion();
                 try {
@@ -420,6 +433,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         });
     }
 
+    @Override
     public void setPolicyVersionComment(long policyOid, long versionOid, String comment) throws FindException, UpdateException {
         PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyOid, versionOid);
         if (ver == null) throw new FindException("No PolicyVersion found with policyOid=" + policyOid + " and oid=" + versionOid);
@@ -427,6 +441,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         policyVersionManager.update(ver);
     }
 
+    @Override
     public void setActivePolicyVersion(long policyOid, long versionOid) throws FindException, UpdateException {
         PolicyVersion ver = policyVersionManager.findByPrimaryKey(policyOid, versionOid);
         if (ver == null) throw new FindException("No PolicyVersion found with policyOid=" + policyOid + " and oid=" + versionOid);
@@ -441,10 +456,12 @@ public class PolicyAdminImpl implements PolicyAdmin {
         policyVersionManager.deactivateVersions(policyOid, versionOid);
     }
 
+    @Override
     public PolicyVersion findActivePolicyVersionForPolicy(long policyOid) throws FindException {
         return policyVersionManager.findActiveVersionForPolicy(policyOid);
     }
 
+    @Override
     public void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException {
         Policy policy = policyManager.findByPrimaryKey(policyOid);
         if (policy == null) throw new FindException("No Policy found with policyOid=" + policyOid);

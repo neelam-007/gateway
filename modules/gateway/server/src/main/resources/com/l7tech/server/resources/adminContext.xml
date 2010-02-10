@@ -213,15 +213,14 @@
         <constructor-arg ref="sampleMessageManager"/>
         <constructor-arg ref="serviceDocumentManager"/>
         <constructor-arg ref="counterIDManager"/>
-        <constructor-arg ref="trustManager"/>
-        <constructor-arg ref="roleManager"/>
         <constructor-arg ref="wspReader"/>
         <constructor-arg ref="uddiTemplateManager"/>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="serviceTemplateManager"/>
+        <constructor-arg ref="serviceDocumentResolver"/>
         <constructor-arg ref="uddiRegistryAdmin"/>
-        <constructor-arg ref="uddiServiceControlManager"/>
+        <constructor-arg ref="uddiServiceWsdlUpdateChecker"/>
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
@@ -336,7 +335,6 @@
         <constructor-arg ref="policyAliasManager"/>
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="policyVersionManager"/>
-        <constructor-arg ref="roleManager"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 

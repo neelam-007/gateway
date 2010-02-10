@@ -1,14 +1,10 @@
 package com.l7tech.server.service;
 
-import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -18,31 +14,16 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.*;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.springframework.beans.factory.DisposableBean;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
@@ -60,8 +41,6 @@ import java.util.logging.Logger;
 public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
-    private SSLContext sslContext;
-
     private final AssertionLicense licenseManager;
     private final UDDIHelper uddiHelper;
     private final ServiceManager serviceManager;
@@ -70,18 +49,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final SampleMessageManager sampleMessageManager;
     private final ServiceDocumentManager serviceDocumentManager;
     private final CounterIDManager counterIDManager;
-    private final X509TrustManager trustManager;
-    private final RoleManager roleManager;
     private final WspReader wspReader;
     private final UDDITemplateManager uddiTemplateManager;
     private final PolicyVersionManager policyVersionManager;
     private final ServiceTemplateManager serviceTemplateManager;
+    private final ServiceDocumentResolver serviceDocumentResolver;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final ExecutorService validatorExecutor;
 
     private final UDDIRegistryAdmin uddiRegistryAdmin;
-    private final UDDIServiceControlManager uddiServiceControlManager;
+    private final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker;
 
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
@@ -99,15 +77,14 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             SampleMessageManager sampleMessageManager,
                             ServiceDocumentManager serviceDocumentManager,
                             CounterIDManager counterIDManager,
-                            X509TrustManager trustManager,
-                            RoleManager roleManager,
                             WspReader wspReader,
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
                             ServerConfig serverConfig,
                             ServiceTemplateManager serviceTemplateManager,
+                            ServiceDocumentResolver serviceDocumentResolver,
                             UDDIRegistryAdmin uddiRegistryAdmin,
-                            UDDIServiceControlManager uddiServiceControlManager)
+                            ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker )
     {
         this.licenseManager = licenseManager;
         this.uddiHelper = uddiHelper;
@@ -117,14 +94,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.sampleMessageManager = sampleMessageManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.counterIDManager = counterIDManager;
-        this.trustManager = trustManager;
-        this.roleManager = roleManager;
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
         this.policyVersionManager = policyVersionManager;
         this.serviceTemplateManager = serviceTemplateManager;
+        this.serviceDocumentResolver = serviceDocumentResolver;
         this.uddiRegistryAdmin = uddiRegistryAdmin;
-        this.uddiServiceControlManager = uddiServiceControlManager;
+        this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 18);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -133,56 +109,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public String resolveWsdlTarget(String url) throws IOException {
-        GetMethod get = null;
-        try {
-            URL urltarget = new URL(url);
-            HttpClient client = new HttpClient();
-            HttpClientParams clientParams = client.getParams();
-            HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
-            // bugfix for 1857 (next 3 lines)
-            clientParams.setVersion( HttpVersion.HTTP_1_1);
-            StringBuilder hostval = new StringBuilder(urltarget.getHost());
-            if (urltarget.getPort() > 0)
-                hostval.append(':').append(urltarget.getPort());
-            get = hconf == null ? new GetMethod(url) : new GetMethod(urltarget.getFile());
-            get.setRequestHeader("HOST", hostval.toString());
-
-            // support for passing username and password in the url from the ssm
-            String userinfo = urltarget.getUserInfo();
-            if (userinfo != null && userinfo.indexOf(':') > -1) {
-                String login = userinfo.substring(0, userinfo.indexOf(':'));
-                String passwd = userinfo.substring(userinfo.indexOf(':')+1, userinfo.length());
-                HttpState state = client.getState();
-                get.setDoAuthentication(true);
-                clientParams.setAuthenticationPreemptive(true);
-                state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(login, passwd));
-            }
-
-            int ret;
-            if (hconf != null) {
-                ret = client.executeMethod(hconf, get);
-            } else {
-                ret = client.executeMethod(get);
-            }
-            if (ret == 200) {
-                //noinspection IOResourceOpenedButNotSafelyClosed
-                byte[] body = IOUtils.slurpStream(new ByteOrderMarkInputStream(new ByteLimitInputStream(get.getResponseBodyAsStream(), 16, 10*1024*1024)));
-                String charset = get.getResponseCharSet();
-                return new String(body, charset);
-            } else {
-                String msg = "The URL '" + url + "' is returning status code " + ret;
-                throw new IOException(msg);
-            }
-        } catch ( HttpException e) {
-            String msg = "Http error getting " + url;
-            IOException ioe =new  IOException(msg);
-            ioe.initCause(e);
-            throw ioe;
-        } finally {
-            if (get != null) {
-                get.releaseConnection();
-            }
-        }
+        return serviceDocumentResolver.resolveWsdlTarget( url );
     }
 
     @Override
@@ -303,11 +230,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
      * this save method handles both save and updates.
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
-     * @param service the object to be saved or upodated
+     * @param service the object to be saved or updated
      *
      */
     @Override
     public long savePublishedService(PublishedService service)
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException
+    {
+        return doSavePublishedService( service, true );
+    }
+
+    private long doSavePublishedService(PublishedService service, boolean checkWsdl)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
         final Policy policy = service.getPolicy();
@@ -321,25 +254,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
 
-                //check if it's under UDDI Control
-                final UDDIServiceControl uddiServiceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
-                if (uddiServiceControl != null && uddiServiceControl.isUnderUddiControl()) {
-                    final PublishedService original = serviceManager.findByPrimaryKey(service.getOid());
-                    if(original != null){
-                        //check the WSDL
-                        try {
-                            final String updatedHash = service.parsedWsdl().getHash();
-                            final String originalHash = original.parsedWsdl().getHash();
-                            if (!updatedHash.equals(originalHash)) {
-                                logger.log(Level.INFO, "Published Service id(#" + service.getOid()+" is under UDDI control. Incoming WSDL XML is out of date and will be ignored");
-                                service.setWsdlXml(original.getWsdlXml());
-                            }
-                        } catch (WSDLException e) {
-                            throw new UpdateException("Error parsing WSDL: " + ExceptionUtils.getMessage(e));
-                        } catch (IOException e) {
-                            throw new UpdateException("Error computing WSDL hash: " + ExceptionUtils.getMessage(e));
-                        }
-                    }
+                if ( checkWsdl ) {
+                    uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service, true );
                 }
 
                 if (policy != null) {
@@ -403,7 +319,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
      * this save method handles both save and updates.
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
-     * @param service the object to be saved or upodated
+     * @param service the object to be saved or updated
      */
     @Override
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
@@ -417,7 +333,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         }
 
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
-        oid = savePublishedService(service);
+        if ( !uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service ) ) {
+            throw new UpdateException("Cannot change the WSDL for a Published Service when it's WSDL is under UDDI control");
+        }
+        oid = doSavePublishedService(service, false);
 
         try {
             Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(oid);
@@ -432,11 +351,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         } catch (FindException fe) {
             String message = "Error getting service documents '"+fe.getMessage()+"'.";
             if (newService) throw new SaveException(message);
-            else throw new UpdateException(message); 
+            else throw new UpdateException(message);
         } catch (DeleteException de) {
             String message = "Error removing old service document '"+de.getMessage()+"'.";
             if (newService) throw new SaveException(message);
-            else throw new UpdateException(message);             
+            else throw new UpdateException(message);
         }
 
         return oid;
@@ -455,7 +374,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
-            roleManager.deleteEntitySpecificRoles(SERVICE, service.getOid());
+            serviceManager.deleteRoles(service.getOid());
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
@@ -700,65 +619,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         if  (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
         }
-    }
-
-    private synchronized SSLContext getSSLContext() {
-        if (sslContext == null) {
-            try {
-                sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, new TrustManager[]{trustManager}, null);
-            } catch (NoSuchAlgorithmException e) {
-                logger.log(Level.SEVERE, "Unable to get sslcontext", e);
-                throw new RuntimeException(e);
-            } catch (KeyManagementException e) {
-                logger.log(Level.SEVERE, "Unable to get sslcontext", e);
-                throw new RuntimeException(e);
-            }
-        }
-        return sslContext;
-    }
-
-    private HostConfiguration getHostConfigurationWithTrustManager(URL url) {
-        HostConfiguration hconf = null;
-        if ("https".equals(url.getProtocol())) {
-            final int fport = url.getPort() == -1 ? 443 : url.getPort();
-            hconf = new HostConfiguration();
-            Protocol protocol = new Protocol(url.getProtocol(), (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-                @Override
-                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
-                    return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
-                    return getSSLContext().getSocketFactory().createSocket(host, port, clientAddress, clientPort);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port) throws IOException {
-                    return getSSLContext().getSocketFactory().createSocket(host, port);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-                    Socket socket = getSSLContext().getSocketFactory().createSocket();
-                    int connectTimeout = httpConnectionParams.getConnectionTimeout();
-
-                    socket.bind(new InetSocketAddress(clientAddress, clientPort));
-
-                    try {
-                        socket.connect(new InetSocketAddress(host, port), connectTimeout);
-                    }
-                    catch(SocketTimeoutException ste) {
-                        throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
-                    }
-
-                    return socket;
-                }
-            }, fport);
-            hconf.setHost(url.getHost(), fport, protocol);
-        }
-        return hconf;
     }
 
     @Override

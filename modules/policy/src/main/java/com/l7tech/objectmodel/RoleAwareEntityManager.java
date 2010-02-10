@@ -14,4 +14,12 @@ public interface RoleAwareEntityManager<PET extends PersistentEntity> {
      * @throws SaveException If an error occurs
      */
     void createRoles( PET entity ) throws SaveException;
+
+    /**
+     * Delete any roles for the given entity identifier.
+     *
+     * @param entityOid The OID for the entity whose roles should be deleted.
+     * @throws DeleteException If an error occurs.
+     */
+    void deleteRoles( long entityOid ) throws DeleteException;
 }

@@ -186,4 +186,8 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public void createRoles(ET entity) throws SaveException {        
     }
+
+    @Override
+    public void deleteRoles( final long entityOid ) throws DeleteException {
+    }
 }

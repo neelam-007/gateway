@@ -230,6 +230,11 @@ public class ServiceManagerImp
         addManageServiceRole(service);
     }
 
+    @Override
+    public void deleteRoles( final long serviceOid ) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(SERVICE, serviceOid);
+    }
+
     /**
      * Creates a new role for the specified PublishedService.
      *
