@@ -9,7 +9,6 @@ import javax.persistence.Version;
 import javax.persistence.Column;
 
 import org.hibernate.annotations.Proxy;
-//todo this entity holds both runtime and configuration data. Needs to be split to avoid hibernate stale object exceptions
 /**
  * Represents the UDDI location from which a published service was created.
  */
@@ -31,7 +30,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
                               String wsdlServiceName,
                               String wsdlPortName,
                               String wsdlPortBinding,
-                              String accessPointUrl,
                               String wsdlPortBindingNamespace,
                               boolean underUddiControl) {
         this.publishedServiceOid = publishedServiceOid;
@@ -43,77 +41,11 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.wsdlServiceName = wsdlServiceName;
         this.wsdlPortName = wsdlPortName;
         this.wsdlPortBinding = wsdlPortBinding;
-        this.accessPointUrl = accessPointUrl;
         this.wsdlPortBindingNamespace = wsdlPortBindingNamespace;
         this.underUddiControl = underUddiControl;
     }
 
     public UDDIServiceControl() {
-    }
-
-    /**
-     * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
-     * the entity has been created based on application logic
-     *
-     * All properties can be modified except those which define the WSDL at a high level - the uddi registry
-     * and the business entity. As there is a 1:1 mapping from UDDIServiceControl there is no use case where the
-     * published service oid can change.
-     * Values like the wsdl port can change, as its still the same WSDL.
-     * //todo go over this 
-     * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
-     * changed in 'this'
-     */
-    public void throwIfFinalPropertyModified(final UDDIServiceControl original){
-        testProperty("published service oid", Long.toString(this.getPublishedServiceOid()), Long.toString(original.getPublishedServiceOid()));
-        testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
-        testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
-        testProperty("services key", this.getUddiServiceKey(), original.getUddiServiceKey());
-    }
-
-    private void testProperty(final String propName, final String propValue, final String lastKnownValue){
-        if(propValue == null)
-            throw new IllegalStateException(propName + " property must be set");
-        //the service identifier is not allowed to be modified by client code once saved
-        if(!lastKnownValue.equals(propValue)){
-            throw new IllegalStateException("It is not possible to modify property " + propName);
-        }
-    }
-
-    /**
-     * Set the properties which can change in either UDDI or in the selection of wsdl:port from the existing
-     * BusinessService in UDDI
-     * @param portInfo WsdlPortInfo info from UDDI
-     * @return true if a property was changed, false otherwise
-     */
-    public boolean setUddiModifiableProperties(WsdlPortInfo portInfo){
-        boolean modified = false;
-
-        if(!this.getUddiBusinessName().equals(portInfo.getBusinessEntityName())) modified = true;
-        this.setUddiBusinessName(portInfo.getBusinessEntityName());
-
-        if(!this.getUddiServiceName().equals(portInfo.getBusinessServiceName())) modified = true;
-        this.setUddiServiceName(portInfo.getBusinessServiceName());
-
-        if(!this.getWsdlServiceName().equals(portInfo.getWsdlServiceName())) modified = true;
-        this.setWsdlServiceName(portInfo.getWsdlServiceName());
-
-        if(!this.getWsdlPortName().equals(portInfo.getWsdlPortName())) modified = true;
-        this.setWsdlPortName(portInfo.getWsdlPortName());
-
-        if(!this.getWsdlPortBinding().equals(portInfo.getWsdlPortBinding())) modified = true;
-        this.setWsdlPortBinding(portInfo.getWsdlPortBinding());
-
-        if(!this.getAccessPointUrl().equals(portInfo.getAccessPointURL())) modified = true;
-        this.setAccessPointUrl(portInfo.getAccessPointURL());
-
-        if(portInfo.isWasWsdlPortSelected()){
-            if(!this.isUnderUddiControl()){
-                this.setUnderUddiControl(true);
-                modified = true;
-            }
-        }
-
-        return modified;
     }
 
     @Column(name = "published_service_oid", updatable = false)
@@ -143,7 +75,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.uddiBusinessKey = uddiBusinessKey;
     }
 
-    @Column(name = "uddi_business_name")
+    @Column(name = "uddi_business_name", updatable = false)
     public String getUddiBusinessName() {
         return uddiBusinessName;
     }
@@ -161,7 +93,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.uddiServiceKey = uddiServiceKey;
     }
 
-    @Column(name = "uddi_service_name")
+    @Column(name = "uddi_service_name", updatable = false)
     public String getUddiServiceName() {
         return uddiServiceName;
     }
@@ -170,7 +102,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.uddiServiceName = uddiServiceName;
     }
 
-    @Column(name = "wsdl_service_name")
+    @Column(name = "wsdl_service_name", updatable = false)
     public String getWsdlServiceName() {
         return wsdlServiceName;
     }
@@ -188,7 +120,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.wsdlPortName = wsdlPortName;
     }
 
-    @Column(name = "wsdl_port_binding")
+    @Column(name = "wsdl_port_binding", updatable = false)
     public String getWsdlPortBinding() {
         return wsdlPortBinding;
     }
@@ -197,7 +129,7 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.wsdlPortBinding = wsdlPortBinding;
     }
 
-    @Column(name = "wsdl_port_binding_namespace")
+    @Column(name = "wsdl_port_binding_namespace", updatable = false)
     public String getWsdlPortBindingNamespace() {
         return wsdlPortBindingNamespace;
     }
@@ -242,22 +174,13 @@ public class UDDIServiceControl extends PersistentEntityImp {
         this.disableServiceOnChange = disableServiceOnChange;
     }
 
-    @Column(name = "metrics_enabled")
+    @Column(name = "metrics_enabled")//todo not needed as not supported right now with original service - remove
     public boolean isMetricsEnabled() {
         return metricsEnabled;
     }
 
     public void setMetricsEnabled( final boolean metricsEnabled ) {
         this.metricsEnabled = metricsEnabled;
-    }
-
-    @Column(name = "access_point_url")
-    public String getAccessPointUrl() {
-        return accessPointUrl;
-    }
-
-    public void setAccessPointUrl(String accessPointUrl) {
-        this.accessPointUrl = accessPointUrl;
     }
 
     @Column(name = "publish_wspolicy_enabled")
@@ -333,7 +256,6 @@ public class UDDIServiceControl extends PersistentEntityImp {
     private String wsdlServiceName;
     private String wsdlPortName;
     private String wsdlPortBinding;
-    private String accessPointUrl;
     private boolean underUddiControl;
     private boolean monitoringEnabled;
     private boolean updateWsdlOnChange;

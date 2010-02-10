@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
@@ -652,21 +653,22 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 //only want changes to the accessPoint
                                 //we do this regardless of configuration. UDDI is the authorative source of info for the endPoint
                                 boolean serviceUpdated = false;
-                                boolean serviceControlUpdated = false;
                                 //update serviceControl in case it has been updated
                                 serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
                                 if(serviceControl == null){
                                     continue;
                                 }
 
-                                final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, context, uddiRegistry);
-                                if ( endPoint != null && (serviceControl.getAccessPointUrl()==null || !serviceControl.getAccessPointUrl().equals( endPoint ))) {
+                                final UDDIServiceControlMonitorRuntime serviceRuntime = factory.uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControl.getOid());
+                                final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, serviceRuntime, context, uddiRegistry);
+
+                                if ( endPoint != null && (serviceRuntime.getAccessPointUrl()==null || !serviceRuntime.getAccessPointUrl().equals( endPoint ))) {
                                     //now we can update our records
                                     //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
-                                    serviceControlUpdated = true;
                                     serviceUpdated = true;
                                     ps.setDefaultRoutingUrl(endPoint);
-                                    serviceControl.setAccessPointUrl(endPoint);
+                                    serviceRuntime.setAccessPointUrl(endPoint);
+                                    factory.uddiServiceControlMonitorRuntimeManager.update(serviceRuntime);
                                     context.logAndAudit(
                                             SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
                                             endPoint,
@@ -677,12 +679,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
                                 //do we need to update our serviceControl record?
                                 if(!bindingImplInfo.getImplementingWsdlPort().equals(serviceControl.getWsdlPortName())){
-                                    serviceControlUpdated = true;
-                                    serviceControl.setWsdlPortName(bindingImplInfo.getImplementingWsdlPort());
-                                }
-
-                                if (serviceControlUpdated) {
                                     factory.uddiServiceControlManager.update(serviceControl);
+                                    serviceControl.setWsdlPortName(bindingImplInfo.getImplementingWsdlPort());
                                 }
 
                                 //if we didn't accept the endpoint above, we can still update our wsdl, which makes all available
@@ -789,6 +787,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
          */
         private String getUpdatedEndPoint(final UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo,
                                           final UDDIServiceControl serviceControl,
+                                          final UDDIServiceControlMonitorRuntime serviceRuntime,
                                           final UDDITaskContext context,
                                           final UDDIRegistry uddiRegistry) throws UDDITaskException {
 
@@ -810,7 +809,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 return null;
             }
             
-            if(!serviceControl.getAccessPointUrl().equals(endPoint)){
+            if(!serviceRuntime.getAccessPointUrl().equals(endPoint)){
                 //check if it's a gateway endpoint
                 if(factory.uddiHelper.isGatewayUrl(endPoint)){
                     final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();

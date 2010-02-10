@@ -2,7 +2,7 @@
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
  */
-package com.l7tech.server.uddi;
+package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
@@ -16,10 +16,10 @@ import org.hibernate.annotations.Proxy;
 /**
  * Represents the runtime information for a UDDI BusinessService which we are monitoring.
  * Stores the last time it was modified. This helps us processing notifications, so we can ignore duplicates
- */
+ */                          //todo rename to UDDIServiceControlRuntime
 @Entity
 @Proxy(lazy=false)
-@Table(name="uddi_service_control_monitor_runtime")
+@Table(name="uddi_service_control_runtime")
 public class UDDIServiceControlMonitorRuntime extends PersistentEntityImp{
 
     // - PUBLIC
@@ -62,8 +62,18 @@ public class UDDIServiceControlMonitorRuntime extends PersistentEntityImp{
         return super.getVersion();
     }
 
+    @Column(name = "access_point_url")
+    public String getAccessPointUrl() {
+        return accessPointUrl;
+    }
+
+    public void setAccessPointUrl(String accessPointUrl) {
+        this.accessPointUrl = accessPointUrl;
+    }
+    
     // - PRIVATE
 
     private long uddiServiceControlOid;
     private long lastUDDIModifiedTimeStamp;
+    private String accessPointUrl;
 }

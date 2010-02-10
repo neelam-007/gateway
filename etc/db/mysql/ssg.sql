@@ -1025,7 +1025,6 @@ CREATE TABLE uddi_service_control (
   wsdl_port_name varchar(255) NOT NULL,
   wsdl_port_binding varchar(255) NOT NULL,
   wsdl_port_binding_namespace varchar(255) NOT NULL,        
-  access_point_url varchar(4096) NOT NULL,
   under_uddi_control tinyint(1) NOT NULL DEFAULT 0,
   monitoring_enabled tinyint(1) NOT NULL DEFAULT 0,
   update_wsdl_on_change tinyint(1) NOT NULL DEFAULT 0,
@@ -1046,12 +1045,13 @@ CREATE TABLE uddi_service_control (
 -- UDDIServiceControl runtime information. Stores the last modified timestamp for a service we are monitoring in UDDI
 -- Useful as it stops us processing duplicate notifications from UDDI
 --
-DROP TABLE IF EXISTS uddi_service_control_monitor_runtime;
-CREATE TABLE uddi_service_control_monitor_runtime (
+DROP TABLE IF EXISTS uddi_service_control_runtime;
+CREATE TABLE uddi_service_control_runtime (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
   uddi_service_control_oid bigint(20) NOT NULL,
   last_uddi_modified_timestamp bigint(20) NOT NULL,
+  access_point_url varchar(4096) NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE KEY  (uddi_service_control_oid),
   FOREIGN KEY (uddi_service_control_oid) REFERENCES uddi_service_control (objectid) ON DELETE CASCADE

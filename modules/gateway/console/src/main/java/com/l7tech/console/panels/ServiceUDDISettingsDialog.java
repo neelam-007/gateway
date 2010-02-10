@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
-import static com.l7tech.gateway.common.uddi.UDDIPublishStatus.PublishStatus.*;
+
 import static com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo.PublishType.*;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -583,7 +583,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 uddiServiceControl.setPublishWsPolicyInlined( false );
             }
             try {
-                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl, null);
+                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl, null, null);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error saving UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
                 DialogDisplayer.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)

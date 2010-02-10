@@ -337,7 +337,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                         } catch (WSDLException e) {
                             throw new UpdateException("Error parsing WSDL: " + ExceptionUtils.getMessage(e));
                         } catch (IOException e) {
-                            throw new UpdateException("Error computng WSDL hash: " + ExceptionUtils.getMessage(e));
+                            throw new UpdateException("Error computing WSDL hash: " + ExceptionUtils.getMessage(e));
                         }
                     }
                 }

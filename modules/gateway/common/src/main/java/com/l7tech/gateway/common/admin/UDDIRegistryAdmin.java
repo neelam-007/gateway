@@ -7,16 +7,14 @@
  */
 package com.l7tech.gateway.common.admin;
 
+import com.l7tech.gateway.common.uddi.*;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
+
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.*;
@@ -227,6 +225,7 @@ public interface UDDIRegistryAdmin {
      * Save / Update UDDIServiceControl without changes to related UDDI.
      *
      * @param uddiServiceControl the updated UDDIServiceControl
+     * @param serviceEndPoint String endpoint of the protected service
      * @param lastModifiedServiceTimeStamp Long last time the BusinessService or any of it's children were modified
      * in Uddi. Only required when the entity is being saved for the first time. Otherwise it is ignored
      * @return the unique object ID that was updated or created.
@@ -237,7 +236,7 @@ public interface UDDIRegistryAdmin {
      *                         if the UDDI Registry is not enabled
      */
     @Secured(types = EntityType.UDDI_SERVICE_CONTROL, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
-    long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, Long lastModifiedServiceTimeStamp)
+    long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, String serviceEndPoint, Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException;
 
     /**
@@ -264,6 +263,18 @@ public interface UDDIRegistryAdmin {
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE, stereotype= MethodStereotype.FIND_ENTITY)
     UDDIServiceControl getUDDIServiceControl(long serviceOid) throws FindException;
+
+    /**
+     * Find the UDDIServiceControlRuntime for a UDDIServiceControl.
+     * Provides access to runtime information.
+     *
+     * @param serviceControlOid the UDDIServiceControl to get runtime information for
+     * @return UDDIServiceControlMonitorRuntime never null
+     * @throws com.l7tech.objectmodel.FindException Any problem finding the UDDIServiceControlMonitorRuntime
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.SERVICE, stereotype= MethodStereotype.FIND_ENTITY)
+    UDDIServiceControlMonitorRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException;
 
     /**
      * Find all UDDIServiceControls for a UDDIRegistry

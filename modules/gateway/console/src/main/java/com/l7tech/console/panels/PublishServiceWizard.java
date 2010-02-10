@@ -235,10 +235,10 @@ public class PublishServiceWizard extends Wizard {
                         wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
                         wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
                         wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
-                        wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(), true);
+                        wsdlPortInfo.getWsdlPortBindingNamespace(), true);
 
                 try {
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getLastUddiMonitoredTimeStamp());
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getLastUddiMonitoredTimeStamp());
                 } catch (Exception e) {
                     final String msg = "Error: " + ExceptionUtils.getMessage(e);
                     logger.log(Level.WARNING, msg, e);

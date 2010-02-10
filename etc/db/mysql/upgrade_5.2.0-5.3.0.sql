@@ -15,6 +15,16 @@ SET FOREIGN_KEY_CHECKS=0;
 
 UPDATE ssg_version SET current_version = '5.3.0';
 
+ALTER TABLE uddi_service_control_monitor_runtime ADD COLUMN access_point_url varchar(4096) NOT NULL;
+
+UPDATE uddi_service_control_monitor_runtime ur, uddi_service_control uc
+SET ur.access_point_url = uc.access_point_url
+WHERE ur.uddi_service_control_oid = uc.objectid;
+
+ALTER TABLE uddi_service_control DROP access_point_url;
+
+ALTER TABLE uddi_service_control_monitor_runtime RENAME TO uddi_service_control_runtime;
+
 --
 -- Remove 'READ' permission on 'SERVICE' for 'Manage JDBC Connections' role.
 --

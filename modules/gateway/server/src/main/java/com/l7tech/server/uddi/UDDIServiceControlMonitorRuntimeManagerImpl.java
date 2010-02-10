@@ -4,6 +4,7 @@
  */
 package com.l7tech.server.uddi;
 
+import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;

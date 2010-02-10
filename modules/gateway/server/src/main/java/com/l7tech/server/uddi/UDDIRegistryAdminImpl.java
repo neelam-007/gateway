@@ -266,7 +266,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl, final Long lastModifiedServiceTimeStamp)
+    public long saveUDDIServiceControlOnly(final UDDIServiceControl uddiServiceControl,
+                                           final String serviceEndPoint,
+                                           final Long lastModifiedServiceTimeStamp)
             throws UpdateException, SaveException, FindException, UDDIRegistryNotEnabledException {
         if ( uddiServiceControl.getOid() == UDDIServiceControl.DEFAULT_OID ){
             if(lastModifiedServiceTimeStamp == null || lastModifiedServiceTimeStamp < 0){
@@ -281,8 +283,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             } catch (WSDLException e) {
                 throw new SaveException("Cannot parse services WSDL: " + ExceptionUtils.getDebugException(e));
             }
-            //validate that an end point can be found
-            final String endPoint = uddiServiceControl.getAccessPointUrl();
             //Namespace support is not needed for wsdl:service based on how we use them.
             final boolean wsdlImplementUddiWsdlPort = UDDIUtilities.validatePortBelongsToWsdl(wsdl, uddiServiceControl.getWsdlServiceName(), null,
                     uddiServiceControl.getWsdlPortName(), uddiServiceControl.getWsdlPortBinding(), uddiServiceControl.getWsdlPortBindingNamespace());
@@ -293,7 +293,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
             
             //make sure that we are not monitoring an endpoint of this SSG
-            if(uddiHelper.isGatewayUrl(endPoint)){
+            if(uddiHelper.isGatewayUrl(serviceEndPoint)){
                 final String msg = "WSDL endpoint routes back to the SecureSpan Gateway";
                 logger.log(Level.WARNING, msg);
                 throw new SaveException(msg);
@@ -306,6 +306,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             long oid = uddiServiceControlManager.save(uddiServiceControl);
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlMonitorRuntime monitorRuntime = new UDDIServiceControlMonitorRuntime(oid, lastModifiedServiceTimeStamp);
+            monitorRuntime.setAccessPointUrl(serviceEndPoint);
             uddiServiceControlMonitorRuntimeManager.save(monitorRuntime);
 
             //Has the published service been published to UDDI?
@@ -335,7 +336,6 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
 
             final String wsdlRefreshRequiredMessage = isWsdlRefreshRequired(original, uddiServiceControl);
-            uddiServiceControl.throwIfFinalPropertyModified(original);
             //make sure the wsdl under uddi control is not being set when it is not allowed
             if(uddiServiceControl.isHasHadEndpointRemoved() && uddiServiceControl.isUnderUddiControl()){
                 throw new UpdateException("Cannot save UDDIServiceControl. Incorrect state. " +
@@ -365,7 +365,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     /**
-     * Note: Mke sure this is called before the updated object is updated, as they will then both be synchronized and
+     * Note: Make sure this is called before the updated object is updated, as they will then both be synchronized and
      * will both be the same object.
      *
      * @param original Most recent value from the database
@@ -412,6 +412,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     @Override
     public UDDIServiceControl getUDDIServiceControl( final long serviceOid ) throws FindException {
         return uddiServiceControlManager.findByPublishedServiceOid( serviceOid );
+    }
+
+    @Override
+    public UDDIServiceControlMonitorRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException {
+        final UDDIServiceControlMonitorRuntime monitorRuntime = uddiServiceControlMonitorRuntimeManager.findByServiceControlOid(serviceControlOid);
+        if(monitorRuntime == null) throw new FindException("Could not find the runtime information for UDDIServiceControl with id#(" + serviceControlOid+")");
+        return monitorRuntime;
     }
 
     @Override

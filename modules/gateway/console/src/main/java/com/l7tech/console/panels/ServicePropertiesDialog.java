@@ -20,6 +20,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIServiceControlMonitorRuntime;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -109,7 +110,9 @@ public class ServicePropertiesDialog extends JDialog {
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
+    private UDDIServiceControlMonitorRuntime serviceControlRuntime;
     private Long lastModifiedTimeStamp;
+    private String accessPointURL;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
@@ -405,6 +408,7 @@ public class ServicePropertiesDialog extends JDialog {
                             wsdlPortInfo.setWasWsdlPortSelected(true);
                             uddiServiceControl = getNewUDDIServiceControl(wsdlPortInfo);
                             lastModifiedTimeStamp = wsdlPortInfo.getLastUddiMonitoredTimeStamp();
+                            accessPointURL = wsdlPortInfo.getAccessPointURL();
 
                             //now update the UI with selections
                             modelToView();
@@ -446,6 +450,9 @@ public class ServicePropertiesDialog extends JDialog {
 
         try {
             uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
+            if(uddiServiceControl != null){
+                serviceControlRuntime = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControlRuntime(uddiServiceControl.getOid());
+            }
             uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getOid());
         } catch (FindException e) {
             uddiServiceControl = null;
@@ -464,6 +471,7 @@ public class ServicePropertiesDialog extends JDialog {
     private void clearLocalUDDIServiceControl() {
         uddiServiceControl = null;
         lastModifiedTimeStamp = null;
+        accessPointURL = null;
     }
 
     private void enableDisableControls(){
@@ -505,7 +513,7 @@ public class ServicePropertiesDialog extends JDialog {
         return new UDDIServiceControl(subject.getOid(), wsdlPortInfo.getUddiRegistryOid(),
                 wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(), wsdlPortInfo.getBusinessServiceKey(),
                 wsdlPortInfo.getBusinessServiceName(), wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(),
-                wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getWsdlPortBindingNamespace(),
+                wsdlPortInfo.getWsdlPortBinding(), wsdlPortInfo.getWsdlPortBindingNamespace(),
                 wsdlUnderUDDIControlCheckBox.isSelected() || wsdlPortInfo.isWasWsdlPortSelected());
     }
 
@@ -745,8 +753,8 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        if ( wsdlUnderUDDIControlCheckBox.isSelected() && uddiServiceControl != null ) {
-            subject.setDefaultRoutingUrl( uddiServiceControl.getAccessPointUrl() );
+        if ( wsdlUnderUDDIControlCheckBox.isSelected() && serviceControlRuntime != null ) {
+            subject.setDefaultRoutingUrl( serviceControlRuntime.getAccessPointUrl() );
         } else {
             subject.setDefaultRoutingUrl( null );
         }
@@ -784,7 +792,7 @@ public class ServicePropertiesDialog extends JDialog {
 
                     //note accessPointURL and lastModifiedTimeStamp will be null when the UDDIServiceControl already existed
                     //if they are not null they are ignored by the admin method when it's not a save
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, lastModifiedTimeStamp);
+                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, accessPointURL, lastModifiedTimeStamp);
                 }
             }
 
