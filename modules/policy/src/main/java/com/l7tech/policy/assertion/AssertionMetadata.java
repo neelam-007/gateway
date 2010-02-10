@@ -515,6 +515,7 @@ public interface AssertionMetadata {
      *  audit
      *  policyLogic
      *  threatProtection
+     *  internalAssertions (since 5.3)
      * </pre>
      * <p/>
      * The default value is an empty array.

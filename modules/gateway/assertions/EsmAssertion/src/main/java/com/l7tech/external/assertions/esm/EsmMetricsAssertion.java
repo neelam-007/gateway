@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 /**
  * 
  */
+@SuppressWarnings({ "serial" })
 public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(EsmMetricsAssertion.class.getName());
     private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
@@ -52,8 +53,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         meta.put(SHORT_NAME, "Collect ESM Metrics");
         meta.put(DESCRIPTION, "Collect metrics for a specified resource based on the Joint Enterprise Service Management (ESM) Specification.");
 
-        // This is a pseudo-assertion and so should appear in no palette folders
-        meta.put(PALETTE_FOLDERS, new String[] {"audit"});
+        meta.put(PALETTE_FOLDERS, new String[] {"internalAssertions"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
@@ -66,7 +66,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
 
         meta.put(POLICY_VALIDATOR_CLASSNAME, EsmMetricsAssertion.Validator.class.getName());
 
-        // request default feature set name for our claslss name, since we are a known optional module
+        // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_EXTERNAL_NAME, "ESMAssertion");

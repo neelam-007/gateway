@@ -12,6 +12,7 @@ import com.l7tech.wsdl.Wsdl;
 /**
  * 
  */
+@SuppressWarnings({ "serial" })
 public class UDDINotificationAssertion extends Assertion {
     private static final String META_INITIALIZED = UDDINotificationAssertion.class.getName() + ".metadataInitialized";
 
@@ -23,7 +24,7 @@ public class UDDINotificationAssertion extends Assertion {
 
         meta.put(SHORT_NAME, "Handle UDDI Subscription Notification");
         meta.put(DESCRIPTION, "Process a UDDI subscription notification and generate a result message.");
-        meta.put(PALETTE_FOLDERS, new String[] { "audit" });
+        meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(FEATURE_SET_NAME, "(fromClass)");

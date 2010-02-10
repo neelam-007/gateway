@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /** User: megery */
+@SuppressWarnings({ "serial" })
 public class EsmSubscriptionAssertion extends Assertion implements UsesVariables, PolicyReference {
     protected static final Logger logger = Logger.getLogger(EsmSubscriptionAssertion.class.getName());
     private String notificationPolicyGuid;
@@ -79,7 +80,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         meta.put(SHORT_NAME, "Subscribe to ESM Resource");
         meta.put(DESCRIPTION, "Send subscription requests to a specified resource based on the ESM specification.");
 
-        meta.put(PALETTE_FOLDERS, new String[] {"audit"});
+        meta.put(PALETTE_FOLDERS, new String[] {"internalAssertions"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
         meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.esm.console.EsmSubscriptionAssertionPolicyNode");
@@ -93,7 +94,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         //set the routing assertion flag
         meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);
 
-        // request default feature set name for our claslss name, since we are a known optional module
+        // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
