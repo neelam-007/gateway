@@ -38,6 +38,7 @@ public class IpListPanel extends JPanel {
     private JButton editButton;
 
     private Functions.Unary<Boolean, String> contextVariableValidator; // to check if a URL contains context variable
+    private String[] prevIpList = new String[0];
 
     public IpListPanel() {
         init();
@@ -196,7 +197,9 @@ public class IpListPanel extends JPanel {
         if (rbSpecify.isSelected()) newmode = rbSpecify;
         if (newmode != null && newmode != lastmode) {
             // clear list if switch between incompatible modes
-            ipList.setListData(new String[0]);
+            String[] currentIpList = getAddresses();
+            ipList.setListData(prevIpList);
+            prevIpList = currentIpList;
         }
         if (newmode != null) lastmode = newmode;
         ipList.setEnabled(ips);
