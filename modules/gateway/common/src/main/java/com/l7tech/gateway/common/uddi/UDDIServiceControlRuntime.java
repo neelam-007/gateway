@@ -27,8 +27,16 @@ public class UDDIServiceControlRuntime extends PersistentEntityImp{
     public UDDIServiceControlRuntime() {
     }
 
+    /**
+     *
+     * @param accessPointURL String must not be null or empty.
+     */
     public UDDIServiceControlRuntime(final long uddiServiceControlOid,
-                                            final long lastUDDIModifiedTimeStamp) {
+                                     final long lastUDDIModifiedTimeStamp,
+                                     final String accessPointURL) {
+        if(accessPointURL == null || accessPointURL.trim().isEmpty()) throw new IllegalArgumentException("accessPoint must not be null or empty");
+        this.accessPointURL = accessPointURL;
+        
         this.uddiServiceControlOid = uddiServiceControlOid;
         this.lastUDDIModifiedTimeStamp = lastUDDIModifiedTimeStamp;
     }
@@ -63,17 +71,17 @@ public class UDDIServiceControlRuntime extends PersistentEntityImp{
     }
 
     @Column(name = "access_point_url")
-    public String getAccessPointUrl() {
-        return accessPointUrl;
+    public String getAccessPointURL() {
+        return accessPointURL;
     }
 
-    public void setAccessPointUrl(String accessPointUrl) {
-        this.accessPointUrl = accessPointUrl;
+    public void setAccessPointURL(String accessPointURL) {
+        this.accessPointURL = accessPointURL;
     }
     
     // - PRIVATE
 
     private long uddiServiceControlOid;
     private long lastUDDIModifiedTimeStamp;
-    private String accessPointUrl;
+    private String accessPointURL;
 }

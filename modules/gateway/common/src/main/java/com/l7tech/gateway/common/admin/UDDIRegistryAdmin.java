@@ -225,7 +225,8 @@ public interface UDDIRegistryAdmin {
      * Save / Update UDDIServiceControl without changes to related UDDI.
      *
      * @param uddiServiceControl the updated UDDIServiceControl
-     * @param serviceEndPoint String endpoint of the protected service
+     * @param serviceEndPoint String endpoint of the protected service. If the entity is being saved for the first time
+     * it must not be null, empty or contain only spaces. If the entity already exists, this parameter is ignored.
      * @param lastModifiedServiceTimeStamp Long last time the BusinessService or any of it's children were modified
      * in Uddi. Only required when the entity is being saved for the first time. Otherwise it is ignored
      * @return the unique object ID that was updated or created.
@@ -265,16 +266,17 @@ public interface UDDIRegistryAdmin {
     UDDIServiceControl getUDDIServiceControl(long serviceOid) throws FindException;
 
     /**
-     * Find the UDDIServiceControlRuntime for a UDDIServiceControl.
-     * Provides access to runtime information.
+     * Find the value of the endpoint of the Original Service. This value is used to populate the ${service.defaultRoutingURL}
+     * context variable. This is the most upto date value of this value, which may be updated from UDDI.
      *
-     * @param serviceControlOid the UDDIServiceControl to get runtime information for
-     * @return UDDIServiceControlMonitorRuntime never null
-     * @throws com.l7tech.objectmodel.FindException Any problem finding the UDDIServiceControlRuntime
+     * @param serviceControlOid the oid of UDDIServiceControl to retireve the original business service end point value
+     * from.
+     * @return String most uptodate value of the endPoint of the original business service. Never null or empty.  
+     * @throws com.l7tech.objectmodel.FindException Any problem finding the end point
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.SERVICE, stereotype= MethodStereotype.FIND_ENTITY)
-    UDDIServiceControlRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException;
+    @Secured(types=EntityType.UDDI_SERVICE_CONTROL, stereotype= MethodStereotype.GET_PROPERTY_BY_ID)
+    String getOriginalServiceEndPoint(long serviceControlOid) throws FindException;
 
     /**
      * Find all UDDIServiceControls for a UDDIRegistry

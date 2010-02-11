@@ -20,7 +20,6 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
-import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -110,7 +109,7 @@ public class ServicePropertiesDialog extends JDialog {
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
-    private UDDIServiceControlRuntime serviceControlRuntime;
+    private String originalServiceEndPoint;
     private Long lastModifiedTimeStamp;
     private String accessPointURL;
 
@@ -451,7 +450,7 @@ public class ServicePropertiesDialog extends JDialog {
         try {
             uddiServiceControl = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControl(subject.getOid());
             if(uddiServiceControl != null){
-                serviceControlRuntime = Registry.getDefault().getUDDIRegistryAdmin().getUDDIServiceControlRuntime(uddiServiceControl.getOid());
+                originalServiceEndPoint = Registry.getDefault().getUDDIRegistryAdmin().getOriginalServiceEndPoint(uddiServiceControl.getOid());
             }
             uddiProxiedServiceInfo = Registry.getDefault().getUDDIRegistryAdmin().findProxiedServiceInfoForPublishedService(subject.getOid());
         } catch (FindException e) {
@@ -753,8 +752,8 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        if ( wsdlUnderUDDIControlCheckBox.isSelected() && serviceControlRuntime != null ) {
-            subject.setDefaultRoutingUrl( serviceControlRuntime.getAccessPointUrl() );
+        if ( wsdlUnderUDDIControlCheckBox.isSelected() && originalServiceEndPoint != null ) {
+            subject.setDefaultRoutingUrl(originalServiceEndPoint);
         } else {
             subject.setDefaultRoutingUrl( null );
         }

@@ -901,25 +901,29 @@ public class BusinessServicePublisher implements Closeable {
     /**
      * Get all the bindingTemplates which should be removed. Any template which implements a wsdl:binding
      * with soap / http should be returned
-     * @param templates List of BindingTemplates from which to determine which should be removed
+     *
+     * @param templates           List of BindingTemplates from which to determine which should be removed
      * @param allDependentTModels Every single tmodel keyed by it's tModelKey which the owning BusinessService is
-     * known to depend on. It is only needed for it's binding tModels, if it only contained that, it would suffice
-     * @return Set String of bindingKeys to delete. Can be empty, never null. Left is the set to keep, right is the set to delete
+     *                            known to depend on. It is only needed for it's binding tModels, if it only contained that, it would suffice
+     * @return Pair of Sets String of bindingKeys to delete and keep. Pair will never be null. Sets can be empty,
+     * never null. Left is the set to keep, right is the set to delete
      */
     private Pair<Set<String>, Set<String>> getBindingsToDeleteAndKeep(List<BindingTemplate> templates, Map<String, TModel> allDependentTModels) {
+
         final Set<String> bindingKeysToDelete = new HashSet<String>();
-        for(final BindingTemplate bindingTemplate: templates){
+        for (final BindingTemplate bindingTemplate : templates) {
             //remove all soap/http bindings
             final TModelInstanceDetails modelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-            if(modelInstanceDetails == null){
+            if (modelInstanceDetails == null) {
                 bindingKeysToDelete.add(bindingTemplate.getBindingKey());
                 continue;
             }
 
-            for(final TModelInstanceInfo tii: modelInstanceDetails.getTModelInstanceInfo()){
+            for (final TModelInstanceInfo tii : modelInstanceDetails.getTModelInstanceInfo()) {
                 final String tModelRefKey = tii.getTModelKey();
                 final TModel tModel = allDependentTModels.get(tModelRefKey);
-                if(tModel == null) throw new IllegalStateException("Should have all dependent tModels. Missing tModel: " + tModelRefKey);
+                if (tModel == null)
+                    throw new IllegalStateException("Should have all dependent tModels. Missing tModel: " + tModelRefKey);
 
                 final UDDIUtilities.TMODEL_TYPE type = UDDIUtilities.getTModelType(tModel, false);
                 switch (type) {
@@ -931,7 +935,7 @@ public class BusinessServicePublisher implements Closeable {
                 }
 
                 final CategoryBag categoryBag = tModel.getCategoryBag();
-                if(categoryBag == null){
+                if (categoryBag == null) {
                     //this is a messed up tModel which from the above switch is a wsdl:binding
                     //which means we can't tell what the implementing protocol / transport is - leave it alone
                     //nothing to do, this is for the comment only
@@ -941,20 +945,20 @@ public class BusinessServicePublisher implements Closeable {
                 boolean protocolIsSoap = UDDIUtilities.isSoapBinding(tModel);
                 boolean transportIsHttp = UDDIUtilities.isHttpBinding(tModel);
 
-                if(protocolIsSoap && transportIsHttp){
+                if (protocolIsSoap && transportIsHttp) {
                     bindingKeysToDelete.add(bindingTemplate.getBindingKey());
                 }
             }
         }
 
         final Set<String> bindingKeysToKeep = new HashSet<String>();
-        for(final BindingTemplate bindingTemplate: templates){
-            if(!bindingKeysToDelete.contains(bindingTemplate.getBindingKey())){
+        for (final BindingTemplate bindingTemplate : templates) {
+            if (!bindingKeysToDelete.contains(bindingTemplate.getBindingKey())) {
                 bindingKeysToKeep.add(bindingTemplate.getBindingKey());
             }
         }
 
-        if(bindingKeysToKeep.size() + bindingKeysToDelete.size() != templates.size()){
+        if (bindingKeysToKeep.size() + bindingKeysToDelete.size() != templates.size()) {
             throw new IllegalStateException("Invalid calculation of which bindings to keep and which to delete");
         }
 

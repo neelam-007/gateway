@@ -48,6 +48,10 @@ public interface WsdlPortInfo {
      */
     boolean isLikelyGatewayWsdl();
 
+    /**
+     * Get the value of the accessPoint element which belons to the bindingTemplate representign this wsdl:port
+     * @return String endpoint URL. Never null or empty.
+     */
     String getAccessPointURL();
 
     /**

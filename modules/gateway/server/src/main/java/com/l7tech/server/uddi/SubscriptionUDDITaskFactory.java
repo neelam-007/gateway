@@ -603,21 +603,18 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 final UDDIServiceControlRuntime monitorRuntime =
                                         factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
                                 if(!forceUpdate){
-                                    if (monitorRuntime == null) {
-                                        //this should never happen, (its a coding error managing UDDIServiceControl entities),
-                                        // if it does we will just create a record for it. If the db allows it, then proceed
-                                        final UDDIServiceControlRuntime monitorRuntimeNew = new UDDIServiceControlRuntime(serviceControl.getOid(), uddiModifiedTime);
-                                        factory.uddiServiceControlRuntimeManager.save(monitorRuntimeNew);
-                                        logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
-                                                "information. Created record for serviceKey: " + serviceControl.getUddiServiceKey() +
-                                                " from registry " + describe(uddiRegistry) + ".");
-                                    } else {
+                                    if(monitorRuntime != null){
                                         final long lastKnownModificationTime = monitorRuntime.getLastUDDIModifiedTimeStamp();
                                         if (uddiModifiedTime <= lastKnownModificationTime) {
                                             logger.log(Level.FINE, "Recieved duplicate notification for serviceKey: " + serviceControl.getUddiServiceKey() +
                                                     " from registry " + describe(uddiRegistry) + ".");
-                                            return;
+                                            continue;
                                         }
+                                    }else{
+                                        logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
+                                                "information. BusinessService: " + serviceControl.getUddiServiceKey() +
+                                                " from registry " + describe(uddiRegistry) + ". Related PublishedService #(" + serviceControl.getPublishedServiceOid()+").");
+                                        continue;
                                     }
                                 }
 
@@ -659,16 +656,15 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     continue;
                                 }
 
-                                final UDDIServiceControlRuntime serviceRuntime = factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
-                                final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, serviceRuntime, context, uddiRegistry);
+                                final String endPoint = getUpdatedEndPoint(bindingImplInfo, serviceControl, monitorRuntime.getAccessPointURL(), context, uddiRegistry);
 
-                                if ( endPoint != null && (serviceRuntime.getAccessPointUrl()==null || !serviceRuntime.getAccessPointUrl().equals( endPoint ))) {
+                                if ( endPoint != null && (monitorRuntime.getAccessPointURL()==null || !monitorRuntime.getAccessPointURL().equals( endPoint ))) {
                                     //now we can update our records
                                     //if we need to extract a url from the wsdl see UDDIUtilities.extractEndPointFromWsdl
                                     serviceUpdated = true;
                                     ps.setDefaultRoutingUrl(endPoint);
-                                    serviceRuntime.setAccessPointUrl(endPoint);
-                                    factory.uddiServiceControlRuntimeManager.update(serviceRuntime);
+                                    monitorRuntime.setAccessPointURL(endPoint);
+                                    factory.uddiServiceControlRuntimeManager.update(monitorRuntime);
                                     context.logAndAudit(
                                             SystemMessages.UDDI_NOTIFICATION_ENDPOINT_UPDATED,
                                             endPoint,
@@ -759,9 +755,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     factory.serviceManager.update(ps);
                                 }
 
-                                UDDIServiceControlRuntime monitorRuntimeToUpdate = factory.uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControl.getOid());
-                                monitorRuntimeToUpdate.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
-                                factory.uddiServiceControlRuntimeManager.update(monitorRuntimeToUpdate);
+                                monitorRuntime.setLastUDDIModifiedTimeStamp(uddiModifiedTime);
+                                factory.uddiServiceControlRuntimeManager.update(monitorRuntime);
                             }
                         } finally {
                             ResourceUtils.closeQuietly( uddiClient );
@@ -783,11 +778,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
         /**
          * Get the endpoint from UDDI for this update. All auditing, logging and throwing is done here.
-         * @return String endpoint. Null if not found
+         * @param existingEndPoint String Must not be null.
+         * @return String endpoint. Null if not found. Never the empty string or only spaces.
          */
         private String getUpdatedEndPoint(final UDDIUtilities.UDDIBindingImplementionInfo bindingImplInfo,
                                           final UDDIServiceControl serviceControl,
-                                          final UDDIServiceControlRuntime serviceRuntime,
+                                          final String existingEndPoint,
                                           final UDDITaskContext context,
                                           final UDDIRegistry uddiRegistry) throws UDDITaskException {
 
@@ -809,12 +805,14 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 return null;
             }
             
-            if(!serviceRuntime.getAccessPointUrl().equals(endPoint)){
+            if(!existingEndPoint.equals(endPoint)){
                 //check if it's a gateway endpoint
                 if(factory.uddiHelper.isGatewayUrl(endPoint)){
                     final String msg = "endPoint found which would route back to the gateway: " + endPoint+" for serviceKey: " + serviceControl.getUddiServiceKey();
                     context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_PROCESSING_FAILED, msg);
-                    //take out of UDDI Control
+                    //take out of UDDI Control - this only stops processing of the current notification,
+                    //which may apply to more than 1 UDDIServiceControl, but as they are all monitoring the same service,
+                    //it applies to them all so it's correct to stop processing the notification.
                     throw new UDDIHandledTaskException(
                             "Problem with endPoint found for serviceKey: " + serviceControl.getUddiServiceKey()+
                             " for a bindingTemplate representing the wsdl:port '"+serviceControl.getWsdlPortName()+"'" +
@@ -825,6 +823,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                             try {
                                 context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceControl.getUddiServiceKey(), Long.toString(serviceControl.getUddiRegistryOid()));
                                 logger.log(Level.WARNING, "Deleting UDDIServiceControl as the original service in UDDI can no longer be monitored");
+                                //todo any UDDIServiceControl which is monitoring the same serviceKey needs to be deleted.
                                 factory.uddiServiceControlManager.delete(serviceControl.getOid());
                             } catch (DeleteException e) {
                                 context.logAndAudit( SystemMessages.DATABASE_ERROR, e,

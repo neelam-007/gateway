@@ -334,6 +334,7 @@ public class ServiceManagerImp
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, SAMPLE_MESSAGE);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, SAMPLE_MESSAGE);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, UDDI_REGISTRY);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

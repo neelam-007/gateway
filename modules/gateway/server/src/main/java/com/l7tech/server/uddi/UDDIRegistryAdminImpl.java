@@ -275,6 +275,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 throw new SaveException("lastModifiedServiceTimeStamp is required when saving a UDDIServiceControl. Cannot be null or negative");    
             }
 
+            if(serviceEndPoint == null || serviceEndPoint.trim().isEmpty()){
+                throw new SaveException("serviceEndPoint is required when saving a UDDIServiceControl. Cannot be null, empty or contain only spaces");
+            }
+            
             final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
 
             final Wsdl wsdl;
@@ -305,8 +309,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
             long oid = uddiServiceControlManager.save(uddiServiceControl);
             //Create the monitor runtime record for this service control as it has just been created
-            final UDDIServiceControlRuntime monitorRuntime = new UDDIServiceControlRuntime(oid, lastModifiedServiceTimeStamp);
-            monitorRuntime.setAccessPointUrl(serviceEndPoint);
+            final UDDIServiceControlRuntime monitorRuntime = new UDDIServiceControlRuntime(oid, lastModifiedServiceTimeStamp, serviceEndPoint);
             uddiServiceControlRuntimeManager.save(monitorRuntime);
 
             //Has the published service been published to UDDI?
@@ -415,10 +418,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public UDDIServiceControlRuntime getUDDIServiceControlRuntime(long serviceControlOid) throws FindException {
+    public String getOriginalServiceEndPoint(long serviceControlOid) throws FindException {
         final UDDIServiceControlRuntime monitorRuntime = uddiServiceControlRuntimeManager.findByServiceControlOid(serviceControlOid);
         if(monitorRuntime == null) throw new FindException("Could not find the runtime information for UDDIServiceControl with id#(" + serviceControlOid+")");
-        return monitorRuntime;
+        return monitorRuntime.getAccessPointURL();
     }
 
     @Override
