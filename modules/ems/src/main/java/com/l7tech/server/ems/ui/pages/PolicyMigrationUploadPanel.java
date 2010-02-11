@@ -135,6 +135,7 @@ public class PolicyMigrationUploadPanel extends Panel {
 
     private static final class UploadFormModel implements Serializable {
         private String label = "";
+        private String archive = "";
 
         public String getLabel() {
             return label;
@@ -142,6 +143,14 @@ public class PolicyMigrationUploadPanel extends Panel {
 
         public void setLabel( final String label ) {
             this.label = label;
+        }
+
+        public String getArchive() {
+            return archive;
+        }
+
+        public void setArchive(String archive) {
+            this.archive = archive;
         }
     }
 }
