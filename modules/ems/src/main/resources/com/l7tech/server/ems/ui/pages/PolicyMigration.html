@@ -981,7 +981,7 @@
             <tr>
                 <td class="srcDestBottom" style="padding-top: 0;">
                     <div id="srcItemDiv" style="border: 1px solid #606060; overflow: scroll; height: 150px" class="dataIFrame">
-                        <div id="srcItemDetailsDiv">
+                        <div id="srcItemDetailsDiv" style="overflow: auto">
                             <table class="dataTable" wicket:id="srcItemDetails" width="100%">
                                 <thead>
                                     <tr>
@@ -995,7 +995,7 @@
                                 </tr>
                             </table>
                         </div>
-                        <div id="srcItemDependenciesDiv">
+                        <div id="srcItemDependenciesDiv" style="overflow: auto">
                             <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
                                 <thead>
                                     <tr>
@@ -1018,7 +1018,7 @@
                 <td class="srcDestCenter"></td>
                 <td class="srcDestBottom" style="padding-top: 0;">
                     <div id="destItemDiv" style="border: 1px solid #606060; overflow: scroll; height: 150px" class="dataIFrame">
-                        <div id="destItemDetailsDiv">
+                        <div id="destItemDetailsDiv" style="overflow: auto">
                             <table class="dataTable" wicket:id="destItemDetails" width="100%">
                                 <thead>
                                     <tr>
@@ -1032,7 +1032,7 @@
                                 </tr>
                             </table>
                         </div>
-                        <div id="destItemDependenciesDiv">
+                        <div id="destItemDependenciesDiv" style="overflow: auto">
                             <table class="dataTable" wicket:id="destItemDependencies" width="100%">
                                 <thead>
                                     <tr>
@@ -1068,7 +1068,7 @@
             </div>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
-                <div class="panelContent" style="height: 390px; overflow: hidden">
+                <div class="panelContent" style="overflow: hidden">
                     <table width="100%" wicket:id="dependencies" cellpadding="0" cellspacing="0">
                         <tr>
                             <th width="49%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
@@ -1153,7 +1153,7 @@
 
                                         <br/>
 
-                                        <div style="border: 1px solid black; height: 185px; width: 400px; overflow: scroll">
+                                        <div style="border: 1px solid black; height: 185px; width: 400px; overflow: auto">
                                             <table class="dataTable" wicket:id="dependencyOptions" width="100%">
                                                 <thead>
                                                     <tr>
