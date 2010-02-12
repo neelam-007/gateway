@@ -1400,30 +1400,29 @@ if (!l7.Dialog) {
          * @requires YAHOO.widget.Button
          */
         l7.Dialog.showInfoDialog = function(header, body, okText) {
-            if (l7.Dialog._infoDialog == undefined) {
-                /**
-                 * @private
-                 */
-                l7.Dialog._infoDialog = new YAHOO.widget.Dialog('l7_Dialog_infoDialog', {
-                    buttons     : [
-                        {
-                            text      : 'OK',
-                            handler   : function() {
-                                this.hide();
-                                this.setBody('');       // This is to prevent the hidden dialog from
-                                this.moveTo(0, 0);      //     taking up phantom space.
-                            },
-                            isDefault : true
-                        }
-                    ],
-                    close       : true,
-                    draggable   : true,
-                    icon        : YAHOO.widget.SimpleDialog.ICON_INFO,
-                    modal       : true,
-                    visible     : false,
-                    zindex      : 999
-                });
-            }
+            /**
+                    * @private
+                    */
+            l7.Dialog._infoDialog = new YAHOO.widget.SimpleDialog('l7_Dialog_infoDialog', {
+                buttons     : [
+                    {
+                        text      : 'OK',
+                        handler   : function() {
+                            this.hide();
+                            this.setBody('');       // This is to prevent the hidden dialog from
+                            this.moveTo(0, 0);      //     taking up phantom space.
+                        },
+                        isDefault : true
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_INFO,
+                modal       : true,
+                visible     : false,
+                zindex      : 999
+            });
+
             l7.Dialog._infoDialog.setHeader(header == null ? 'Info' : header);
             l7.Dialog._infoDialog.setBody(body);
             l7.Dialog._infoDialog.render(document.body);
