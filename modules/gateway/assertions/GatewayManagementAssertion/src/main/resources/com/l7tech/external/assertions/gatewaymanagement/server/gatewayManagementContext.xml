@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Application context for the Gateway Management assertion 
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:spr="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+    <bean id="policyHelper" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper">
+        <constructor-arg index="0" ref="licenseManager"/>
+        <constructor-arg index="1" ref="serverPolicyValidator"/>
+        <constructor-arg index="2" ref="wspReader"/>        
+    </bean>
+
+    <bean id="resourceFactoryParent" abstract="true">
+        <constructor-arg index="0" ref="rbacServices"/>
+        <constructor-arg index="1">
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="rbacAdvice"/>
+                <property name="targetMethod" value="getSecurityFilter"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="2" ref="transactionManager"/>
+    </bean>
+
+    <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
+        <constructor-arg index="0">
+            <list>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="trustedCertManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="clusterPropertyManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="schemaEntryManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="folderManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="identityProviderConfigManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="jmsEndpointManager"/>
+                    <constructor-arg index="4" ref="jmsConnectionManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="jdbcConnectionManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3">
+                        <bean class="com.l7tech.server.policy.VersioningPolicyManager">
+                            <constructor-arg index="0" ref="policyManager"/>
+                            <constructor-arg index="1" ref="policyVersionManager"/>
+                        </bean>                        
+                    </constructor-arg>
+                    <constructor-arg index="4" ref="policyHelper"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="ssgKeyStoreManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3">
+                        <bean class="com.l7tech.server.service.PolicyVersioningServiceManager">
+                            <constructor-arg index="0" ref="serviceManager"/>
+                            <constructor-arg index="1" ref="policyVersionManager"/>
+                        </bean>
+                    </constructor-arg>
+                    <constructor-arg index="4" ref="serviceDocumentManager"/>
+                    <constructor-arg index="5" ref="serviceDocumentResolver"/>
+                    <constructor-arg index="6" ref="uddiServiceWsdlUpdateChecker"/>                    
+                    <constructor-arg index="7" ref="policyHelper"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
+</beans>

@@ -8,6 +8,9 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -75,6 +78,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
                : null;
     }
 
+    @Size(max=32)
     @Column(name="username",length=32)
     public String getUsername() {
         return _username;
@@ -84,6 +88,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _username = username;
     }
 
+    @Size(max=32)
     @Column(name="password",length=32)
     public String getPassword() {
         return _password;
@@ -132,6 +137,9 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _connectionOid = conn;
     }
 
+    @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
+    @NotNull
+    @Size(min=1,max=128)
     @Column(name="destination_name", nullable=false, length=128)
     public String getDestinationName() {
         return _destinationName;
@@ -141,6 +149,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _destinationName = name;
     }
 
+    @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
+    @Size(max=128)
     @Column(name="failure_destination_name", length=128)
     public String getFailureDestinationName() {
         return _failureDestinationName;
@@ -172,6 +182,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _replyType = replyType;
     }
 
+    @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
+    @Size(max=128)
     @Column(name="reply_to_queue_name", length=128)
     public String getReplyToQueueName() {
         return replyToQueueName;

@@ -19,6 +19,8 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 
 import javax.persistence.Transient;
+import javax.validation.Valid;
+import javax.validation.constraints.Size;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
@@ -62,7 +64,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     /**
      * Create a PublishedService that is a copy of the given PublishedService.
      *
-     * <p>This will copy the identity of the orginal, if you don't want
+     * <p>This will copy the identity of the original, if you don't want
      * this you will need to reset the id and version (and the id and version
      * of the policy).</p>
      * @param objToCopy source object.  required
@@ -111,6 +113,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      * @return the URL from which the WSDL was originally downloaded.  Never null, but could be empty.
      */
+    @Size(max=255)
     public String getWsdlUrl() {
         if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
         return _wsdlUrl;
@@ -137,6 +140,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      * @return A String containing the WSDL document or  null if not set.
      */
+    @Size(max=5242880)
     public String getWsdlXml() {
         return _wsdlXml;
     }
@@ -191,7 +195,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     /**
      * get base URI
      *
-     * @return the base URI from the WDSL, or null
+     * @return the base URI from the WSDL, or null
      */
     public String getBaseURI() {
          if (_wsdlUrl == null) return null;
@@ -317,6 +321,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         return _name;
     }
 
+    @Valid
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY)
     public Policy getPolicy() {
         return policy;
@@ -423,6 +428,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      * @return the HTTP URI (the part of a URL after the hostname) for this service.
      */
+    @Size(max=128)
     public String getRoutingUri() {
         return routingUri;
     }
@@ -442,6 +448,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @return The default routing URL
      * @see #serviceUrl() <code>serviceUrl</code>, which should be used to get the URL with fallback to WSDL endpoint
      */
+    @Size(max=4096)
     public String getDefaultRoutingUrl() {
         return defaultRoutingUrl;
     }

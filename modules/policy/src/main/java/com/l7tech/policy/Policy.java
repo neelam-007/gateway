@@ -18,6 +18,8 @@ import com.l7tech.policy.wsp.WspWriter;
 
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -113,6 +115,8 @@ public class Policy extends NamedEntityImp implements HasFolder {
         assertion = null;
     }
 
+    @NotNull
+    @Size(min=1,max=5242880)
     @Migration(resolver = PropertyResolver.Type.POLICY)
     public String getXml() {
         return xml;
@@ -124,6 +128,8 @@ public class Policy extends NamedEntityImp implements HasFolder {
         this.assertion = null;
     }
 
+    @NotNull
+    @Size(min=36,max=36)
     public String getGuid() {
         return guid;
     }
@@ -132,6 +138,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         this.guid = guid;
     }
 
+    @NotNull
     public PolicyType getType() {
         return type;
     }
@@ -225,6 +232,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
      *
      * Suggested naming convention: moduleName-type[-subtype], e.g. esm-notification
      */
+    @Size(min=1,max=64)
     public String getInternalTag() {
         return internalTag;
     }

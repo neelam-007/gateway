@@ -28,6 +28,7 @@
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
         <dependency org="aopalliance" name="aopalliance" rev="1.0" force="true" conf="core"/>
+        <dependency org="javax.validation" name="validation-api" rev="1.0.0.GA" force="true" conf="core"/>
         <!-- Hibernate annotations used on beans -->
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>

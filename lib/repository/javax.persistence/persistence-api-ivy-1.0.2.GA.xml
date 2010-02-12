@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="javax.persistence"
 		module="persistence-api"
-		revision="3.0"
+		revision="1.0.2.GA"
 		status="release"
-		publication="20080707125244"
+		publication="20100211234327"
 		default="true"
 	/>
 	<configurations>

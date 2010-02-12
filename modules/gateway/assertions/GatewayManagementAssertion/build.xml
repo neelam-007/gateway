@@ -1,0 +1,63 @@
+<project name="GatewayManagementAssertion" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
+    <property name="privateLibraries" value="AAR-INF/lib/wiseman.jar"/>
+
+    <import file="../assertion-build.xml"/>
+
+    <!--
+      Override compile-main-resources and add dependency on WSDL generation
+    -->
+    <target name="compile-main-resources" depends="common.compile-main-resources, generate-wsdl"/>
+
+    <target name="generate-wsdl" depends="compile-main-java">
+        <echo>Generating WSDL for Gateway Management service</echo>
+
+        <property name="gatewaymanagementassertion.servicetemplate" value="${classes.main.dir}/com/l7tech/external/assertions/gatewaymanagement/server/serviceTemplate"/>
+        <mkdir dir="${gatewaymanagementassertion.servicetemplate}"/>
+        <mkdir dir="${basedir}/build/etc/wsdl"/>
+        <mkdir dir="${basedir}/build/tools"/>
+
+        <!-- Classpath -->
+        <ivy:resolve showprogress="false"
+                     checkIfChanged="false"
+                     log="quiet"
+                     conf="compile"/>
+        <ivy:cachepath pathid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+        <path id="gatewaymanagementassertion.generate.wsdl.path">
+            <pathelement location="${classes.main.dir}"/>
+            <pathelement location="${basedir}/build/tools"/>
+            <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+        </path>
+
+        <pathconvert property="gatewaymanagementassertion.generate.wsdl.path.text" targetos="unix" pathsep="${line.separator}"
+                     refid="gatewaymanagementassertion.generate.wsdl.path"/>
+        <echo level="debug">Resolved test path:${line.separator}${gatewaymanagementassertion.generate.wsdl.path.text}</echo>
+
+        <!-- Compile / run WSDL Generator -->
+        <javac debug="on"
+               verbose="no"
+               source="1.6"
+               target="1.6"
+               srcdir="${basedir}/tools"
+               destdir="${basedir}/build/tools"
+                >
+            <classpath refid="gatewaymanagementassertion.generate.wsdl.path"/>
+        </javac>
+
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true">
+            <arg value="${basedir}/build/etc/wsdl"/>
+        </java>
+
+        <xslt
+            in="${basedir}/build/etc/wsdl/resources.xml"
+            out="${basedir}/build/etc/wsdl/gateway-management.wsdl"
+            style="${src.test.res.dir}/com/l7tech/external/assertions/gatewaymanagement/server/gateway-management-wsdl.xsl"
+            />
+
+        <copy todir="${gatewaymanagementassertion.servicetemplate}">
+            <fileset dir="${basedir}/build/etc/wsdl">
+                <include name="*.wsdl"/>
+                <include name="*.xsd"/>
+            </fileset>
+        </copy>
+    </target>
+</project>

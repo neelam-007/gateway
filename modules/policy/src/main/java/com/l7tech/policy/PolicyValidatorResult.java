@@ -63,7 +63,7 @@ public class PolicyValidatorResult implements Serializable {
      *
      * @return the <code>List</code> of all the messages
      */
-    public List getMessages() {
+    public List<Message> getMessages() {
         List<Message> all = new ArrayList<Message>();
         all.addAll(getErrors());
         all.addAll(getWarnings());

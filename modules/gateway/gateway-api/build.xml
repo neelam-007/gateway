@@ -1,0 +1,5 @@
+<project name="layer7-gateway-api" default="compile">
+    <property name="module.package.root" value="com/l7tech/gateway/api"/>
+    <property name="module.sign" value="true"/>
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

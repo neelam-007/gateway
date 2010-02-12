@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -47,6 +49,8 @@ public class ServiceDocument extends PersistentEntityImp {
      * @return The type identifier
      * @see #getContentType
      */
+    @NotNull
+    @Size(min=1,max=32)
     public String getType() {
         return type;
     }
@@ -67,6 +71,8 @@ public class ServiceDocument extends PersistentEntityImp {
      *
      * @return The URI for the document
      */
+    @NotNull
+    @Size(min=1,max=4096)
     public String getUri() {
         return uri;
     }
@@ -87,6 +93,8 @@ public class ServiceDocument extends PersistentEntityImp {
      *
      * @return The content type
      */
+    @NotNull
+    @Size(min=1,max=32)
     public String getContentType() {
         return contentType;
     }
@@ -105,6 +113,8 @@ public class ServiceDocument extends PersistentEntityImp {
      *
      * @return The document text
      */
+    @NotNull
+    @Size(min=1,max=5242880)
     public String getContents() {
         return contents;
     }

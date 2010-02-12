@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -60,6 +62,15 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         this.value = value;
     }
 
+    @Size(max=128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @NotNull
+    @Size(min=1,max=131072) // limit to 128k
     @Column(name="propValue", nullable=false, length=Integer.MAX_VALUE)
     @Lob
     public String getValue() {

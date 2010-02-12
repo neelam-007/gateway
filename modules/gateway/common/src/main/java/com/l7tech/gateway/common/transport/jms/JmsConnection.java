@@ -6,6 +6,8 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Table;
 import javax.persistence.Entity;
@@ -99,6 +101,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
     }
 
+    @Size(max=32)
     @Column(name="username", length=32)
     public String getUsername() {
         return _username;
@@ -108,6 +111,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _username = username;
     }
 
+    @Size(max=32)
     @Column(name="password", length=32)
     public String getPassword() {
         return _password;
@@ -117,6 +121,8 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _password = password;
     }
 
+    @NotNull
+    @Size(min=1,max=255)
     @Column(name="factory_classname", nullable=false, length=255)
     public String getInitialContextFactoryClassname() {
         return _initialContextFactoryClassname;
@@ -126,6 +132,8 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _initialContextFactoryClassname = initialContextFactoryClassname;
     }
 
+    @NotNull
+    @Size(min=1,max=255)
     @Column(name="jndi_url", nullable=false, length=255)
     public String getJndiUrl() {
         return _jndiUrl;
@@ -135,6 +143,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _jndiUrl = jndiUrl;
     }
 
+    @Size(min=1,max=255)
     @Column(name="queue_factory_url", length=255)
     public String getQueueFactoryUrl() {
         return _queueFactoryUrl;
@@ -144,6 +153,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _queueFactoryUrl = queueFactoryUrl;
     }
 
+    @Size(min=1,max=255)
     @Column(name="topic_factory_url", length=255)
     public String getTopicFactoryUrl() {
         return _topicFactoryUrl;
@@ -153,6 +163,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _topicFactoryUrl = topicFactoryUrl;
     }
 
+    @Size(min=1,max=255)
     @Column(name="destination_factory_url", length=255)
     public String getDestinationFactoryUrl() {
         return _destinationFactoryUrl;
@@ -191,6 +202,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         }
     }
 
+    @Size(max=131072)
     @Column(name="properties", length=Integer.MAX_VALUE)
     @Lob
     public String getProperties() {

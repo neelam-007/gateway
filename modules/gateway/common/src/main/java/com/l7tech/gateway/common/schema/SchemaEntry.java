@@ -8,6 +8,9 @@ package com.l7tech.gateway.common.schema;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -29,7 +32,16 @@ import org.hibernate.annotations.Proxy;
 @XmlRootElement
 public class SchemaEntry extends NamedEntityImp {
 
+    @Size(max=128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     /** @return the schema text, which may be empty or null. */
+    @NotNull
+    @Size(min=0,max=5242880)
     @Column(name="schema_xml", length=Integer.MAX_VALUE)
     @Lob
     public String getSchema() {
@@ -41,6 +53,7 @@ public class SchemaEntry extends NamedEntityImp {
         this.schema = schema;
     }
 
+    @Size(min=0,max=128)
     @Column(name="tns", length=128)
     public String getTns() {
         return tns;

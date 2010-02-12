@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.NamedEntity;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
@@ -26,6 +28,8 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
         return super.getVersion();
     }
 
+    @NotNull
+    @Size(min=1,max=255) // some names are length 255 and constraints are inherited
     @Column(name="name", nullable=false, length=128)
     @XmlElement(namespace="http://ns.l7tech.com/secureSpan/1.0/core")
     public String getName() {

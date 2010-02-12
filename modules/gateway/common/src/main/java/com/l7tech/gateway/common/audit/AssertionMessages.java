@@ -697,6 +697,8 @@ public class AssertionMessages extends Messages {
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
     public static final M MCM_TOO_LONG_VALUE     = m(9004, Level.WARNING, "Message context mapping value truncated {0}.");
 
+    public static final M GATEWAYMANAGEMENT_ERROR = m(9050, Level.WARNING, "Error processing management request: {0}" );
+
     public static final M JDBC_CANNOT_START_POOLING              = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to: {0}");
     public static final M JDBC_CANNOT_CONFIG_CONNECTION_POOL     = m(9101, Level.WARNING, "Cannot configure a pool associated with a JDBC connection {0} due to: {1}");
     public static final M JDBC_CANNOT_DELETE_CONNECTION_POOL     = m(9102, Level.WARNING, "Cannot delete a pool associated with a JDBC connection {0} due to: {1}");
