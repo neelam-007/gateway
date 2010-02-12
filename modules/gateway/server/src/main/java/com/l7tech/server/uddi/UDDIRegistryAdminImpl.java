@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.uddi.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
@@ -36,6 +37,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     final private UDDICoordinator uddiCoordinator;
     final private ServiceCache serviceCache;
     final private UDDIBusinessServiceStatusManager businessServiceStatusManager;
+    final private ServiceManager serviceManager;
 
     private static final String UDDI_ORG_SPECIFICATION_V3_POLICY = "uddi:uddi.org:specification:v3_policy";
 
@@ -47,7 +49,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                                  final UDDIProxiedServiceInfoManager uddiProxiedServiceInfoManager,
                                  final UDDIPublishStatusManager uddiPublishStatusManager,
                                  final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager,
-                                 final UDDIBusinessServiceStatusManager businessServiceStatusManager) {
+                                 final UDDIBusinessServiceStatusManager businessServiceStatusManager,
+                                 final ServiceManager serviceManager) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiServiceControlManager = uddiServiceControlManager;
@@ -57,6 +60,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         this.uddiPublishStatusManager = uddiPublishStatusManager;
         this.uddiServiceControlRuntimeManager = uddiServiceControlRuntimeManager;
         this.businessServiceStatusManager = businessServiceStatusManager;
+        this.serviceManager = serviceManager;
     }
 
     @Override
@@ -279,7 +283,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 throw new SaveException("serviceEndPoint is required when saving a UDDIServiceControl. Cannot be null, empty or contain only spaces");
             }
             
-            final PublishedService service = serviceCache.getCachedService(uddiServiceControl.getPublishedServiceOid());
+            final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
 
             final Wsdl wsdl;
             try {
@@ -311,6 +315,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             //Create the monitor runtime record for this service control as it has just been created
             final UDDIServiceControlRuntime monitorRuntime = new UDDIServiceControlRuntime(oid, lastModifiedServiceTimeStamp, serviceEndPoint);
             uddiServiceControlRuntimeManager.save(monitorRuntime);
+            service.setDefaultRoutingUrl(serviceEndPoint);
+            serviceManager.save(service);
+            logger.log(Level.INFO, "Set context variable ${service.defaultRoutingURL} with UDDI endpoint value for service #(" + service.getOid()+")");
 
             //Has the published service been published to UDDI?
             final UDDIProxiedServiceInfo info = uddiProxiedServiceInfoManager.findByPublishedServiceOid(uddiServiceControl.getPublishedServiceOid());
@@ -339,6 +346,8 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
 
             final String wsdlRefreshRequiredMessage = isWsdlRefreshRequired(original, uddiServiceControl);
+            final boolean clearServiceDefaultURL = original.isUnderUddiControl() && !uddiServiceControl.isUnderUddiControl();
+
             //make sure the wsdl under uddi control is not being set when it is not allowed
             if(uddiServiceControl.isHasHadEndpointRemoved() && uddiServiceControl.isUnderUddiControl()){
                 throw new UpdateException("Cannot save UDDIServiceControl. Incorrect state. " +
@@ -352,6 +361,13 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
 
             uddiServiceControlManager.update( uddiServiceControl );
+            if(clearServiceDefaultURL){
+                final PublishedService service = serviceManager.findByPrimaryKey(uddiServiceControl.getPublishedServiceOid());
+                service.setDefaultRoutingUrl(null);
+                serviceManager.update(service);
+                logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getOid()+")");
+            }
+
             if(wsdlRefreshRequiredMessage != null){
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
@@ -403,6 +419,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPrimaryKey(uddiServiceControlOid);
         if(serviceControl == null)
             throw new FindException("Cannot find UDDIServiceControl with id #(" + uddiServiceControlOid + ")");
+
+
+        final PublishedService service = serviceManager.findByPrimaryKey(serviceControl.getOid());
+        if(service != null){
+            service.setDefaultRoutingUrl(null);
+            serviceManager.update(service);
+            logger.log(Level.INFO, "Cleared context variable ${service.defaultRoutingURL} of UDDI endpoint value for service #(" + service.getOid()+")");
+        }
 
         final UDDIProxiedServiceInfo serviceInfo = uddiProxiedServiceInfoManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
         if(serviceInfo != null && serviceInfo.getPublishType() != UDDIProxiedServiceInfo.PublishType.PROXY){
