@@ -37,8 +37,8 @@ public class UDDIUtilities {
     //- PUBLIC
 
     /**
-     * Get a UDDIBindingImplementionInfo which contains information from UDDI on the UDDI information found
-     * from a bindingTemplate which implements the wsdlBinding we are interested in.
+     * Get a UDDIBindingImplementionInfo which contains information from a bindingTemplate from UDDI. UDDI is searched
+     * for the bindingTemplate which matches the wsdl:port name and wsdl:binding names supplied. (wsdlPortName and wsdlBinding)
      * <p/>
      * We request the specific wsdl:port implementation, but if it is not found, then the first bindingTemplate
      * found which implements the wsdl:binding value of wsdlBinding is returned.
@@ -50,14 +50,12 @@ public class UDDIUtilities {
      *
      * @param uddiClient           UDDIClient configured for the correct uddi registry
      * @param serviceKey           String serviceKey belonging to the above uddi registry
-     * @param wsdlPortName         name of the wsdl:port, whose corresponding bindingTemplate's accessPoint's endPoint URL
-     *                             location should be obtained
-     * @param wsdlBinding          String wsdl:port name
+     * @param wsdlPortName         name of the wsdl:port, whose corresponding bindingTemplate information should be retrieved.
+     * @param wsdlBinding          String name of the wsdl:binding the wsdl:port implements. Used for validation and searching if so configured.
      * @param wsdlBindingNamespace String namespace of the binding. Should be null when ever there is no namespace,
      *                             otherwise it should be provided. This method can tell when it's needed if a found binding contains a namespace
      *                             but no namespace was provided. When this happens a warning is logged.
-     * @return String URL of the protected service's end point from UDDI. Null if not found, i.e. no wsdl:port implements
-     *         the binding supplied
+     * @return UDDIBindingImplementionInfo representing the bindingTemplate which represents the wsdl:port from the WSDL.
      * @throws UDDIException any problems searching UDDI
      */
     public static UDDIBindingImplementionInfo getUDDIBindingImplInfo(final UDDIClient uddiClient,
@@ -218,9 +216,10 @@ public class UDDIUtilities {
             return null;
         }
 
-        if (!accessPoint.getUseType().equalsIgnoreCase("endPoint") && !accessPoint.getUseType().equalsIgnoreCase("http")) {
+        final boolean strictAccessPoint = SyspropUtil.getBoolean("com.l7tech.uddi.UDDIUtilities.strictAccessPointAttributes", false);
+        if (!accessPoint.getUseType().equalsIgnoreCase("endPoint") && strictAccessPoint) {
             logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contains a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
-                    " but it does not contain an accessPoint element with a useType of 'endPoint' or 'http'");
+                    " but it does not contain an accessPoint element with a useType of 'endPoint'");
             return null;
         }
 

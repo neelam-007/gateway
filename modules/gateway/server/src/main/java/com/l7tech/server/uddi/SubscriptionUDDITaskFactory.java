@@ -801,7 +801,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             }
 
             if(!endPointValid){
-                logger.log(Level.INFO, "Found invalid URL from UDDI. Ignoring");
+                logger.log(Level.INFO, "accessPoint element in monitored bindingTemplate did not contain any value for an endpoint URL.");
                 return null;
             }
             
