@@ -177,6 +177,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
         dontPublishRadioButton.addActionListener(enableDisableChangeListener);
         metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
         publishPolicyCheckBox.addActionListener( enableDisableChangeListener );
+        publishFullPolicyCheckBox.addActionListener( enableDisableChangeListener );
 
         disposeSettingsDialogCallback = new Runnable() {
             @Override
@@ -396,7 +397,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
             policyServiceLabel.setEnabled( enablePolicyOptions );
             policyServiceComboBox.setEnabled( enablePolicyOptions );
             publishFullPolicyCheckBox.setEnabled( enablePolicyOptions );
-            inlinePolicyIncludesCheckBox.setEnabled( enablePolicyOptions );
+            inlinePolicyIncludesCheckBox.setEnabled( enablePolicyOptions && publishFullPolicyCheckBox.isSelected());
 
             //metrics tab
             boolean enableMetrics = uddiProxyServiceInfo != null &&
