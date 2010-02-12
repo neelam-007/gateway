@@ -1080,11 +1080,6 @@
         <constructor-arg ref="certValidationProcessor"/>
     </bean>
 
-    <!-- Identity mapping stuff -->
-    <bean id="identityMappingManager" class="com.l7tech.server.identity.mapping.IdentityMappingManagerImpl" parent="hibernateBean"/>
-    <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManagerImpl" parent="hibernateBean"/>
-    <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManagerImpl" parent="hibernateBean"/>
-
     <!--
     The MAC of this cluster node, so that we don't need to throw the whole
     ClusterInfoManager around
@@ -1535,9 +1530,6 @@
               <ref bean="federatedGroupManager"/>
               <ref bean="internalUserManager"/>
               <ref bean="internalGroupManager"/>
-              <ref bean="attributeConfigManager"/>
-              <ref bean="identityMappingManager"/>
-              <ref bean="securityTokenMappingManager"/>
               <!--<ref bean="sinkLogManager"/>-->
               <!--<ref bean="logonInfoManager"/>-->
               <ref bean="messageContextMappingKeyManager"/>
