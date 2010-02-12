@@ -273,7 +273,7 @@ public class WsdlLocationPanel extends JPanel {
         wsdlUrlTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
 
         // buttons
-        if (!allowUddi) uddiWsdlUrlBrowseButton.setVisible(false);
+        if (!allowUddi) uddiWsdlUrlBrowseButton.setEnabled(false);
         uddiWsdlUrlBrowseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
