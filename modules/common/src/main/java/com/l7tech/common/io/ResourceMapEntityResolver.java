@@ -89,6 +89,24 @@ public class ResourceMapEntityResolver implements EntityResolver {
         return inputSource;
     }
 
+    /**
+     * A copy of this entity resolver that will fail on a missing entity.
+     *
+     * @return The entity resolver.
+     */
+    public EntityResolver failOnMissing() {
+        return new EntityResolver(){
+            @Override
+            public InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
+                InputSource resolved = ResourceMapEntityResolver.this.resolveEntity( publicId, systemId );
+                if ( resolved == null ) {
+                    throw new IOException("Entity not resolved '"+publicId+"', '"+systemId+"'.");                    
+                }
+                return resolved;
+            }
+        };
+    }
+
     //- PRIVATE
 
     private final Map<String,String> systemIdsToResources;

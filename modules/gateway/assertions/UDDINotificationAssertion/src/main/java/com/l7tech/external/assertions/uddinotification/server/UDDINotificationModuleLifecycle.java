@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.external.assertions.uddinotification.UDDINotificationAssertion;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
@@ -32,9 +33,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
- * Module initialization for the UDDINotifiationAssertion module.
+ * Module initialization for the UDDINotificationAssertion module.
  */
 public class UDDINotificationModuleLifecycle implements ApplicationListener {
 
@@ -55,8 +58,8 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
     }
 
     /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
+     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any global
+     * resources that would otherwise keep our instances from getting collected.
      */
     public static synchronized void onModuleUnloaded() {
         UDDINotificationModuleLifecycle instance = UDDINotificationModuleLifecycle.instance;
@@ -144,7 +147,7 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
         try {
             String url = FAKE_URL_PREFIX + "uddi_subr_v3_service.wsdl";
 
-            final EntityResolver doctypeResolver = new WsdlEntityResolver();
+            final WsdlEntityResolver entityResolver = new WsdlEntityResolver( true );
             final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
             final Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
                 @Override
@@ -153,8 +156,8 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
                     if ( resource.startsWith(FAKE_URL_PREFIX) ) {
                         resource = resourceUrl.substring(FAKE_URL_PREFIX.length());
                     }
-                    String content = loadMyResource( resource );
-                    return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, doctypeResolver, false, true);
+                    String content = loadMyResource( resource, entityResolver );
+                    return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, entityResolver.failOnMissing(), false, true);
                 }
             } );
 
@@ -186,23 +189,42 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
         serviceTemplateManager.unregister(svcTemplate);
     }
 
-    private String loadMyResource( final String resource ) throws IOException {
-        String resourcePath = resource;
-        int dirIndex = resource.lastIndexOf( '/' );
-        if ( dirIndex > 0 ) {
-            resourcePath = resource.substring( dirIndex+1 );
+    private String loadMyResource( final String resource, final EntityResolver resolver ) throws IOException {
+        byte[] bytes = null;
+
+        InputSource in = null;
+        try {
+            in = resolver.resolveEntity( null, resource );
+            if ( in != null ) {
+                bytes = IOUtils.slurpStream( in.getByteStream() );
+            }
+        } catch ( SAXException e) {
+            throw new IOException("Cannot load resource '"+resource+"'.", e);
+        } finally {
+            if ( in != null ) {
+                ResourceUtils.closeQuietly( in.getByteStream() );
+            }
         }
 
-        logger.fine("Loading wsdl resource '" + resource + "' as '" + resourcePath +"'.");        
+        if ( bytes == null ) {
+            String resourcePath = resource;
+            int dirIndex = resource.lastIndexOf( '/' );
+            if ( dirIndex > 0 ) {
+                resourcePath = resource.substring( dirIndex+1 );
+            }
 
-        byte[] bytes = IOUtils.slurpUrl(getClass().getResource("serviceTemplate/" + resourcePath));
+            logger.fine("Loading wsdl resource '" + resource + "' as '" + resourcePath +"'.");
+
+            bytes = IOUtils.slurpUrl(getClass().getResource("serviceTemplate/" + resourcePath));
+        }
+
         return HexUtils.decodeUtf8(bytes);
     }
 
     private String getDefaultPolicyXml() throws IOException {
         Assertion allAss = new AllAssertion(Arrays.asList(new UDDINotificationAssertion()));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        WspWriter.writePolicy(allAss, baos);
-        return HexUtils.decodeUtf8(baos.toByteArray());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        WspWriter.writePolicy(allAss, outputStream);
+        return HexUtils.decodeUtf8(outputStream.toByteArray());
     }
 }

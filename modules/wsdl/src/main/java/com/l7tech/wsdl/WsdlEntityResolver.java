@@ -39,6 +39,7 @@ public class WsdlEntityResolver extends ResourceMapEntityResolver {
         Map<String,String> sres = new HashMap<String,String>();
         sres.put( "http://www.w3.org/2001/XMLSchema.dtd", "com/l7tech/wsdl/resources/XMLSchema.dtd" );
         sres.put( "http://www.w3.org/2001/datatypes.dtd", "com/l7tech/wsdl/resources/datatypes.dtd" );
+        sres.put( "http://www.w3.org/2001/xml.xsd", "com/l7tech/common/resources/xml.xsd");
         systemIdsToResources = Collections.unmodifiableMap( sres );
     }
 }
