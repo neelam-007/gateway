@@ -11,16 +11,16 @@ import java.util.List;
 /**
  * Option form component that supports option groups.
  */
-public class GroupingDropDownChoice extends AbstractSingleSelectChoice {
+public class GroupingDropDownChoice<T> extends AbstractSingleSelectChoice<T> {
 
     //- PUBLIC
 
     /**
      *
 	 */
-	public GroupingDropDownChoice( final String id, final List data ) {
+	public GroupingDropDownChoice( final String id, final List<? extends T> data ) {
 		super( id, data );
-        this.defaultChoiceRenderer = new ChoiceRenderer();
+        this.defaultChoiceRenderer = new ChoiceRenderer<T>();
         this.setChoiceRenderer( new OptionChoiceRenderer() );
     }
 
@@ -28,7 +28,7 @@ public class GroupingDropDownChoice extends AbstractSingleSelectChoice {
 
     @Override
     protected void appendOptionHtml( final AppendingStringBuffer buffer,
-                                     final Object choice,
+                                     final T choice,
                                      final int index,
                                      final String selected ) {
         String optionGroup = getOptionGroupForChoice( choice );
@@ -62,11 +62,11 @@ public class GroupingDropDownChoice extends AbstractSingleSelectChoice {
         super.onComponentTag(tag);
 	}
 
-    protected Object getOptionDisplayValue( final Object object ) {
+    protected Object getOptionDisplayValue( final T object ) {
         return defaultChoiceRenderer.getDisplayValue( object );
     }
 
-    protected String getOptionIdValue( final Object object, final int index ) {
+    protected String getOptionIdValue( final T object, final int index ) {
         return defaultChoiceRenderer.getIdValue( object, index );
     }
 
@@ -77,16 +77,16 @@ public class GroupingDropDownChoice extends AbstractSingleSelectChoice {
     //- PRIVATE
 
     private String lastRenderedOptionGroup;
-    private ChoiceRenderer defaultChoiceRenderer;
+    private ChoiceRenderer<T> defaultChoiceRenderer;
 
-    private class OptionChoiceRenderer implements IChoiceRenderer {
+    private class OptionChoiceRenderer implements IChoiceRenderer<T> {
         @Override
-        public Object getDisplayValue(Object object) {
+        public Object getDisplayValue(T object) {
             return getOptionDisplayValue( object );
         }
 
         @Override
-        public String getIdValue(Object object, int index) {
+        public String getIdValue(T object, int index) {
             return getOptionIdValue( object, index );
         }
     }

@@ -8,6 +8,7 @@ import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.StringValidator;
@@ -48,13 +49,13 @@ public class PolicyMigrationUploadPanel extends Panel {
         super( id );
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
-        final FileUploadField archive = new FileUploadField("archive");
+        final FileUploadField archive = new FileUploadField("archive", new Model<FileUpload>());
 
-        TextField label = new TextField("label");
+        TextField<String> label = new TextField<String>("label");
         label.add( new StringValidator.LengthBetweenValidator(0, 32) );
 
         final UploadFormModel model = new UploadFormModel();
-        final Form archiveForm = new YuiFileUploadForm("archiveForm", new CompoundPropertyModel(model)){
+        final Form<UploadFormModel> archiveForm = new YuiFileUploadForm<UploadFormModel>("archiveForm", new CompoundPropertyModel<UploadFormModel>(model)){
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
              protected void onError( final AjaxRequestTarget target ) {
@@ -135,7 +136,6 @@ public class PolicyMigrationUploadPanel extends Panel {
 
     private static final class UploadFormModel implements Serializable {
         private String label = "";
-        private String archive = "";
 
         public String getLabel() {
             return label;
@@ -143,14 +143,6 @@ public class PolicyMigrationUploadPanel extends Panel {
 
         public void setLabel( final String label ) {
             this.label = label;
-        }
-
-        public String getArchive() {
-            return archive;
-        }
-
-        public void setArchive(String archive) {
-            this.archive = archive;
         }
     }
 }

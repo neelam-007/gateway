@@ -144,13 +144,13 @@ public class Configure extends EsmStandardWebPage {
             }
         });
 
-        final HiddenField addFolderDialogInputParentId = new HiddenField("addFolderDialog_parentId", new Model(""));
-        final RequiredTextField addFolderInputName = new RequiredTextField("addFolderDialog_name", new Model(""));
+        final HiddenField<String> addFolderDialogInputParentId = new HiddenField<String>("addFolderDialog_parentId", new Model<String>(""));
+        final RequiredTextField<String> addFolderInputName = new RequiredTextField<String>("addFolderDialog_name", new Model<String>(""));
         Form addFolderForm = new JsonDataResponseForm("addFolderForm", new AttemptedCreate( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
-                String newFolderName = (String)addFolderInputName.getConvertedInput();
-                String parentFolderGuid = (String)addFolderDialogInputParentId.getConvertedInput();
+                String newFolderName = addFolderInputName.getConvertedInput();
+                String parentFolderGuid = addFolderDialogInputParentId.getConvertedInput();
                 try {
                     logger.fine("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentFolderGuid + ").");
                     //noinspection UnnecessaryLocalVariable
@@ -175,13 +175,13 @@ public class Configure extends EsmStandardWebPage {
         addFolderForm.add(addFolderDialogInputParentId);
         addFolderForm.add(addFolderInputName);
 
-        final HiddenField editFolderDialogInputId = new HiddenField("editFolderDialog_id", new Model(""));
-        final RequiredTextField editFolderInputName = new RequiredTextField("editFolderDialog_name", new Model(""));
+        final HiddenField<String> editFolderDialogInputId = new HiddenField<String>("editFolderDialog_id", new Model<String>(""));
+        final RequiredTextField<String> editFolderInputName = new RequiredTextField<String>("editFolderDialog_name", new Model<String>(""));
         Form editFolderForm = new JsonDataResponseForm("editFolderForm", new AttemptedUpdateAny( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
-                String editedFolderGuid = (String)editFolderDialogInputId.getConvertedInput();
-                String newFolderName = (String)editFolderInputName.getConvertedInput();
+                String editedFolderGuid = editFolderDialogInputId.getConvertedInput();
+                String newFolderName = editFolderInputName.getConvertedInput();
                 try {
                     logger.fine("Editing folder (GUID = "+ editedFolderGuid + ") by changing a new name, " + newFolderName);
 
@@ -207,13 +207,13 @@ public class Configure extends EsmStandardWebPage {
         editFolderForm.add(editFolderDialogInputId);
         editFolderForm.add(editFolderInputName);
 
-        final HiddenField moveFolderDialogEntityId = new HiddenField("moveFolderDialog_entityId", new Model(""));
-        final HiddenField moveFolderDialogDestFolderId = new HiddenField("moveFolderDialog_destFolderId", new Model(""));
+        final HiddenField<String> moveFolderDialogEntityId = new HiddenField<String>("moveFolderDialog_entityId", new Model<String>(""));
+        final HiddenField<String> moveFolderDialogDestFolderId = new HiddenField<String>("moveFolderDialog_destFolderId", new Model<String>(""));
         final Form moveFolderForm = new JsonDataResponseForm("moveFolderForm", new AttemptedUpdateAny(EntityType.ESM_ENTERPRISE_FOLDER)){
             @Override
             protected Object getJsonResponseData() {
-                String entityId = (String)moveFolderDialogEntityId.getConvertedInput();
-                String destFolderId = (String)moveFolderDialogDestFolderId.getConvertedInput();
+                String entityId = moveFolderDialogEntityId.getConvertedInput();
+                String destFolderId = moveFolderDialogDestFolderId.getConvertedInput();
                 try {
                     logger.fine("Moving folder (GUID = "+ entityId + ") into folder with GUID = " + destFolderId + ".");
                     enterpriseFolderManager.moveByGuid(entityId, destFolderId);
@@ -227,12 +227,12 @@ public class Configure extends EsmStandardWebPage {
         moveFolderForm.add(moveFolderDialogEntityId);
         moveFolderForm.add(moveFolderDialogDestFolderId);
 
-        final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
+        final HiddenField<String> deleteFolderDialogInputId = new HiddenField<String>("deleteFolderDialog_id", new Model<String>(""));
         Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm", new AttemptedDeleteAll( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String deletedFolderGuid = (String)deleteFolderDialogInputId.getConvertedInput();
+                    String deletedFolderGuid = deleteFolderDialogInputId.getConvertedInput();
                     logger.fine("Deleting folder (GUID = "+ deletedFolderGuid + ").");
 
                     enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
@@ -248,17 +248,17 @@ public class Configure extends EsmStandardWebPage {
         };
         deleteFolderForm.add(deleteFolderDialogInputId );
 
-        final HiddenField addSSGClusterDialogInputParentId = new HiddenField("addSSGClusterDialog_parentId", new Model(""));
-        final RequiredTextField addSSGClusterInputName = new RequiredTextField("addSSGClusterDialog_name", new Model(""));
-        final RequiredTextField addSSGClusterInputHostName = new RequiredTextField("addSSGClusterDialog_hostName", new Model(""));
-        final RequiredTextField addSSGClusterInputPort = new RequiredTextField("addSSGClusterDialog_port", new Model(""));
+        final HiddenField<String> addSSGClusterDialogInputParentId = new HiddenField<String>("addSSGClusterDialog_parentId", new Model<String>(""));
+        final RequiredTextField<String> addSSGClusterInputName = new RequiredTextField<String>("addSSGClusterDialog_name", new Model<String>(""));
+        final RequiredTextField<String> addSSGClusterInputHostName = new RequiredTextField<String>("addSSGClusterDialog_hostName", new Model<String>(""));
+        final RequiredTextField<String> addSSGClusterInputPort = new RequiredTextField<String>("addSSGClusterDialog_port", new Model<String>(""));
         Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm", new AttemptedCreate( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
-                String newClusterName = (String)addSSGClusterInputName.getConvertedInput();
-                String parentFolderGuid = (String)addSSGClusterDialogInputParentId.getConvertedInput();
-                String hostname = (String)addSSGClusterInputHostName.getConvertedInput();
-                int port = Integer.parseInt((String)addSSGClusterInputPort.getConvertedInput());
+                String newClusterName = addSSGClusterInputName.getConvertedInput();
+                String parentFolderGuid = addSSGClusterDialogInputParentId.getConvertedInput();
+                String hostname = addSSGClusterInputHostName.getConvertedInput();
+                int port = Integer.parseInt(addSSGClusterInputPort.getConvertedInput());
                 try {
                     logger.fine("Adding SSG Cluster \""+ newClusterName +
                         "\" (parent folder GUID = "+ parentFolderGuid + ").");
@@ -287,17 +287,17 @@ public class Configure extends EsmStandardWebPage {
         addSSGClusterForm.add(addSSGClusterInputHostName);
         addSSGClusterForm.add(addSSGClusterInputPort);
 
-        final HiddenField editSSGClusterDialogInputId = new HiddenField("editSSGClusterDialog_id", new Model(""));
-        final RequiredTextField editSSGClusterInputName = new RequiredTextField("editSSGClusterDialog_name", new Model(""));
-        final RequiredTextField editSSGClusterInputSslHostname = new RequiredTextField("editSSGClusterDialog_hostName", new Model(""));
-        final RequiredTextField editSSGClusterInputAdminPort = new RequiredTextField("editSSGClusterDialog_adminPort", new Model(""));
+        final HiddenField<String> editSSGClusterDialogInputId = new HiddenField<String>("editSSGClusterDialog_id", new Model<String>(""));
+        final RequiredTextField<String> editSSGClusterInputName = new RequiredTextField<String>("editSSGClusterDialog_name", new Model<String>(""));
+        final RequiredTextField<String> editSSGClusterInputSslHostname = new RequiredTextField<String>("editSSGClusterDialog_hostName", new Model<String>(""));
+        final RequiredTextField<String> editSSGClusterInputAdminPort = new RequiredTextField<String>("editSSGClusterDialog_adminPort", new Model<String>(""));
         Form editSSGClusterForm = new JsonDataResponseForm("editSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
-                String editedSSGClusterGuid = (String)editSSGClusterDialogInputId.getConvertedInput();
-                String newClusterName = (String)editSSGClusterInputName.getConvertedInput();
-                String newSslHostname = (String)editSSGClusterInputSslHostname.getConvertedInput();
-                String newAdminPort = (String)editSSGClusterInputAdminPort.getConvertedInput();
+                String editedSSGClusterGuid = editSSGClusterDialogInputId.getConvertedInput();
+                String newClusterName = editSSGClusterInputName.getConvertedInput();
+                String newSslHostname = editSSGClusterInputSslHostname.getConvertedInput();
+                String newAdminPort = editSSGClusterInputAdminPort.getConvertedInput();
 
                 try {
                     logger.fine("Editing SSG Cluster (GUID = "+ editedSSGClusterGuid + ") by changing the name, the ssl hostname, or the admin port.");
@@ -329,13 +329,13 @@ public class Configure extends EsmStandardWebPage {
         editSSGClusterForm.add(editSSGClusterInputSslHostname);
         editSSGClusterForm.add(editSSGClusterInputAdminPort);
 
-        final HiddenField moveSSGClusterDialogEntityId = new HiddenField("moveSSGClusterDialog_entityId", new Model(""));
-        final HiddenField moveSSGClusterDialogDestFolderId = new HiddenField("moveSSGClusterDialog_destFolderId", new Model(""));
+        final HiddenField<String> moveSSGClusterDialogEntityId = new HiddenField<String>("moveSSGClusterDialog_entityId", new Model<String>(""));
+        final HiddenField<String> moveSSGClusterDialogDestFolderId = new HiddenField<String>("moveSSGClusterDialog_destFolderId", new Model<String>(""));
         final Form moveSSGClusterForm = new JsonDataResponseForm("moveSSGClusterForm", new AttemptedUpdateAny(EntityType.ESM_ENTERPRISE_FOLDER)){
             @Override
             protected Object getJsonResponseData() {
-                String entityId = (String)moveSSGClusterDialogEntityId.getConvertedInput();
-                String destSSGClusterId = (String)moveSSGClusterDialogDestFolderId.getConvertedInput();
+                String entityId = moveSSGClusterDialogEntityId.getConvertedInput();
+                String destSSGClusterId = moveSSGClusterDialogDestFolderId.getConvertedInput();
                 try {
                     logger.fine("Moving SSG Cluster (GUID = "+ entityId + ") into folder with GUID = " + destSSGClusterId + ".");
                     ssgClusterManager.moveByGuid(entityId, destSSGClusterId);
@@ -349,12 +349,12 @@ public class Configure extends EsmStandardWebPage {
         moveSSGClusterForm.add(moveSSGClusterDialogEntityId);
         moveSSGClusterForm.add(moveSSGClusterDialogDestFolderId);
 
-        final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
+        final HiddenField<String> deleteSSGClusterDialogInputId = new HiddenField<String>("deleteSSGClusterDialog_id", new Model<String>(""));
         Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String guid = (String)deleteSSGClusterDialogInputId.getConvertedInput();
+                    String guid = deleteSSGClusterDialogInputId.getConvertedInput();
                     logger.fine("Deleting SSG Cluster (GUID = "+ guid + ").");
 
                     // Delete all monitoring property setups of the SSG cluster and all its SSG nodes.
@@ -384,12 +384,12 @@ public class Configure extends EsmStandardWebPage {
         };
         deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
 
-        final HiddenField reconfirmSSGClusterDeletionDialogInputId = new HiddenField("reconfirmSSGClusterDeletionDialog_id", new Model(""));
+        final HiddenField<String> reconfirmSSGClusterDeletionDialogInputId = new HiddenField<String>("reconfirmSSGClusterDeletionDialog_id", new Model<String>(""));
         Form reconfirmSSGClusterDeletionForm = new JsonDataResponseForm("reconfirmSSGClusterDeletionForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String guid = (String)reconfirmSSGClusterDeletionDialogInputId.getConvertedInput();
+                    String guid = reconfirmSSGClusterDeletionDialogInputId.getConvertedInput();
                     SsgCluster ssgCluster = ssgClusterManager.findByGuid(guid);
 
                     logger.fine("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
@@ -427,11 +427,11 @@ public class Configure extends EsmStandardWebPage {
             }
         };
 
-        final HiddenField startSsgNodeInputId = new HiddenField("startSsgNode_id", new Model(""));
+        final HiddenField<String> startSsgNodeInputId = new HiddenField<String>("startSsgNode_id", new Model<String>(""));
         Form startSsgNodeForm = new JsonDataResponseForm("startSsgNodeForm") {
             @Override
             protected Object getJsonResponseData() {
-                String ssgNodeGuid = (String)startSsgNodeInputId.getConvertedInput();
+                String ssgNodeGuid = startSsgNodeInputId.getConvertedInput();
                 try {
                     logger.fine("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
                     
@@ -462,11 +462,11 @@ public class Configure extends EsmStandardWebPage {
         };
         startSsgNodeForm.add(startSsgNodeInputId);
 
-        final HiddenField stopSsgNodeInputId = new HiddenField("stopSsgNode_id", new Model(""));
+        final HiddenField<String> stopSsgNodeInputId = new HiddenField<String>("stopSsgNode_id", new Model<String>(""));
         Form stopSsgNodeForm = new JsonDataResponseForm("stopSsgNodeForm") {
             @Override
             protected Object getJsonResponseData() {
-                String ssgNodeGuid = (String)stopSsgNodeInputId.getConvertedInput();
+                String ssgNodeGuid = stopSsgNodeInputId.getConvertedInput();
                 try {
                     logger.fine("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
 

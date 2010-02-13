@@ -158,8 +158,8 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      * @return a proxy for the API that will use the configured failover strategy to select a different cluster
      *         node to talk to if the one it is talking to goes down.
      */
+    @SuppressWarnings({ "unchecked" })
     private <IT> IT addFailover(Class<IT> interfaceClass, final Functions.Unary<IT, GatewayContext> apiFinder) {
-        //noinspection unchecked
         return (IT) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {

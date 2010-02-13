@@ -36,12 +36,12 @@ public class PolicyMigrationMappingValueEditPanel extends Panel {
         final FeedbackPanel feedback = new FeedbackPanel( "feedback" );
         final Label description = new Label( "description", descriptionText );
         final TextField source = new TextField( "source" );
-        final RequiredTextField target = new RequiredTextField( "target" );
+        final RequiredTextField<String> target = new RequiredTextField<String>( "target" );
         final CheckBox applyToAll = new CheckBox( "applyToAll" );
 
         target.add( new PatternValidator( targetPattern ) );
 
-        Form mappingValueForm = new Form("mappingValueForm", new CompoundPropertyModel(model)){
+        Form<MigrationMappingValue> mappingValueForm = new Form<MigrationMappingValue>("mappingValueForm", new CompoundPropertyModel<MigrationMappingValue>(model)){
             @Override
             protected void onSubmit() {
                 logger.info("Processing updated mapping value.");

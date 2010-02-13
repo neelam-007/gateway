@@ -102,11 +102,11 @@ public class Monitor extends EsmStandardWebPage {
             new SavingSystemMonitoringNotificationRuleDataProvider()));
 
         // Wicket component for deleting a system monitoring notification rule
-        final HiddenField deleteNotificationRuleDialog_id = new HiddenField("deleteNotificationRuleDialog_id", new Model(""));
+        final HiddenField<String> deleteNotificationRuleDialog_id = new HiddenField<String>("deleteNotificationRuleDialog_id", new Model<String>(""));
         Form deleteNotificationRuleForm = new JsonDataResponseForm("deleteNotificationRuleForm", new AttemptedDeleteAll( EntityType.ESM_NOTIFICATION_RULE ) ) {
             @Override
             protected Object getJsonResponseData() {
-                String guid = (String)deleteNotificationRuleDialog_id.getConvertedInput();
+                String guid = deleteNotificationRuleDialog_id.getConvertedInput();
                 if (guid == null || guid.isEmpty()) {
                     return new JSONException("The selected notification rule has empty GUID.");
                 }

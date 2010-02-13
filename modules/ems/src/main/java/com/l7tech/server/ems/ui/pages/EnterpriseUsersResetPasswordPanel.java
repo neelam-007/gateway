@@ -123,9 +123,9 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     /**
      * Password form
      */
-    private  final class PasswordResetForm extends Form {
+    private  final class PasswordResetForm extends Form<UserModel> {
         public PasswordResetForm( final String componentName, final UserModel userModel ) {
-            super(componentName, new CompoundPropertyModel(userModel));
+            super(componentName, new CompoundPropertyModel<UserModel>(userModel));
 
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
@@ -140,7 +140,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
 
         @Override
         public final void onSubmit() {
-            updateUser( (UserModel)getModelObject(), this );
+            updateUser( getModelObject(), this );
         }
     }
 }

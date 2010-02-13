@@ -8,7 +8,7 @@ import com.l7tech.server.ems.ui.SecureComponent;
 /**
  * Secure version of Form.
  */
-public class SecureForm extends Form implements SecureComponent {
+public class SecureForm<T> extends Form<T> implements SecureComponent {
 
     //- PUBLIC
 
@@ -16,7 +16,7 @@ public class SecureForm extends Form implements SecureComponent {
         super(id);
     }
 
-    public SecureForm( final String id, final IModel model ) {
+    public SecureForm( final String id, final IModel<T> model ) {
         super(id, model);
     }
 
@@ -26,7 +26,7 @@ public class SecureForm extends Form implements SecureComponent {
         this.attemptedOperation = attemptedOperation;
     }
 
-    public SecureForm( final String id, final AttemptedOperation attemptedOperation, final IModel model ) {
+    public SecureForm( final String id, final AttemptedOperation attemptedOperation, final IModel<T> model ) {
         super(id, model);
         this.attemptedOperation = attemptedOperation;
     }

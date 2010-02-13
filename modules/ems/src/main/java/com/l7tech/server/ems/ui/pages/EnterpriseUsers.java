@@ -123,16 +123,16 @@ public class EnterpriseUsers extends EsmStandardWebPage {
             }
         };
 
-        HiddenField hidden = new HiddenField("userId", new Model(""));
+        HiddenField<String> hidden = new HiddenField<String>("userId", new Model<String>(""));
 
         pageForm.add( addButton );
         pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.login", this, null), "login", "login"));
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.login", this, null), "login", "login"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
         YuiDataTable table = new YuiDataTable("usertable", columns, "login", true, new UserDataProvider("login", true), hidden, "login", false, new Button[]{ deleteButton }){
             @Override
@@ -158,25 +158,23 @@ public class EnterpriseUsers extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsers.class.getName() );
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EsmAccountManager emsAccountManager;
 
-    private class UserDataProvider extends SortableDataProvider {
+    private class UserDataProvider extends SortableDataProvider<InternalUser> {
         public UserDataProvider(String sort, boolean asc) {
             setSort(sort, asc);
         }
 
         @Override
-        @SuppressWarnings({"unchecked"})
-        public Iterator iterator(int first, int count) {
+        public Iterator<InternalUser> iterator(int first, int count) {
             try {
                 Collection<InternalUser> users = emsAccountManager.getUserPage(first, count, getSort().getProperty(), getSort().isAscending());
 
                 return users.iterator();
             } catch (FindException fe) {
                 logger.log( Level.WARNING, "Error finding users", fe );
-                return Collections.emptyList().iterator();
+                return Collections.<InternalUser>emptyList().iterator();
             }
         }
 
@@ -191,10 +189,10 @@ public class EnterpriseUsers extends EsmStandardWebPage {
         }
 
         @Override
-        public IModel model(final Object userObject) {
-             return new AbstractReadOnlyModel() {
+        public IModel<InternalUser> model(final InternalUser userObject) {
+             return new AbstractReadOnlyModel<InternalUser>() {
                 @Override
-                public Object getObject() {
+                public InternalUser getObject() {
                     return userObject;
                 }
             };

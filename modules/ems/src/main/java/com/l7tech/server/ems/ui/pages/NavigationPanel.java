@@ -51,9 +51,9 @@ public class NavigationPanel extends Panel {
         for ( String section : navigationModel.getNavigationSections() ) {
             Fragment fragment = new Fragment(Integer.toString(viewCount++), "navigationTabTopFragment", this );
             fragment.setRenderBodyOnly(true);
-            fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model(section))) );
-            fragment.add( new WebMarkupContainer("idSection2").add(new AppendingAttributeModifier("id", new Model(section))) );
-            fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model(section))) );
+            fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
+            fragment.add( new WebMarkupContainer("idSection2").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
+            fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
             navigationTopContainer.add( fragment );
         }
 
@@ -63,21 +63,21 @@ public class NavigationPanel extends Panel {
         for ( String section : navigationModel.getNavigationSections() ) {
             if ( currentSection.equals(section) ) {
                 Fragment fragment = new Fragment(Integer.toString(viewCount++),  "navigationTabMiddleFragmentOn" , this );
-                fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model(section))) );
+                fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
                 WebMarkupContainer td = new WebMarkupContainer("idSection2");
-                td.add(new AppendingAttributeModifier("id", new Model(section)));
+                td.add(new AppendingAttributeModifier("id", new Model<String>(section)));
                 fragment.add( td );
                 Label label = new Label("name", new StringResourceModel( "section." + section + ".label", this, null ) );
                 label.setRenderBodyOnly(true);
                 td.add( label );
                 fragment.setRenderBodyOnly(true);
-                fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model(section))) );
+                fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
                 navigationMiddleContainer.add( fragment );
             } else {
                 Fragment fragment = new Fragment(Integer.toString(viewCount++),  "navigationTabMiddleFragmentOff", this );
-                fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model(section))) );
+                fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
                 WebMarkupContainer td = new WebMarkupContainer("idSection2");
-                td.add(new AppendingAttributeModifier("id", new Model(section)));
+                td.add(new AppendingAttributeModifier("id", new Model<String>(section)));
                 fragment.add( td );
                 ExternalLink link = new ExternalLink("link", navigationModel.getPageUrlForSection(section) );
                 td.add( link );
@@ -85,7 +85,7 @@ public class NavigationPanel extends Panel {
                 label.setRenderBodyOnly(true);
                 link.add( label );
                 fragment.setRenderBodyOnly(true);
-                fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model(section))) );
+                fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
                 navigationMiddleContainer.add( fragment );
             }
         }
@@ -96,9 +96,9 @@ public class NavigationPanel extends Panel {
         for ( String section : navigationModel.getNavigationSections() ) {
             Fragment fragment = new Fragment(Integer.toString(viewCount++), currentSection.equals(section) ? "navigationTabBottomFragmentOn" : "navigationTabBottomFragmentOff", this );
             fragment.setRenderBodyOnly(true);
-            fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model(section))) );
-            fragment.add( new WebMarkupContainer("idSection2").add(new AppendingAttributeModifier("id", new Model(section))) );
-            fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model(section))) );
+            fragment.add( new WebMarkupContainer("idSection1").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
+            fragment.add( new WebMarkupContainer("idSection2").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
+            fragment.add( new WebMarkupContainer("idSection3").add(new AppendingAttributeModifier("id", new Model<String>(section))) );
             navigationBottomContainer.add( fragment );
         }
 

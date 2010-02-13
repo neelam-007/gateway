@@ -1,12 +1,13 @@
 package com.l7tech.server.ems.ui.pages;
 
 import org.apache.wicket.extensions.markup.html.form.DateTextField;
+import org.apache.wicket.markup.html.CSSPackageResource;
+import org.apache.wicket.markup.html.JavascriptPackageResource;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -38,7 +39,7 @@ public class YuiDateSelector extends Panel {
      * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
      */
-    public YuiDateSelector( final String id, final IModel model, final Date minDate, final Date maxDate ) {
+    public YuiDateSelector( final String id, final IModel<Date> model, final Date minDate, final Date maxDate ) {
         this(id, null, model, minDate, maxDate, false, null) ;
     }
 
@@ -52,7 +53,7 @@ public class YuiDateSelector extends Panel {
      * @param maxDate Maximumn permitted date (may be null)
      * @param newTimeZoneUsed The new time zone used by the date selector.
      */
-    public YuiDateSelector( final String id, final String dateFieldMarkupId, final IModel model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final IModel<Date> model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
         this(id, dateFieldMarkupId, model, minDate, maxDate, false, newTimeZoneUsed);
     }
 
@@ -67,23 +68,23 @@ public class YuiDateSelector extends Panel {
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      * @param newTimeZoneUsed The new time zone used by the date selector.
      */
-    public YuiDateSelector(final String id, final String dateFieldMarkupId, final IModel model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect, final String newTimeZoneUsed) {
+    public YuiDateSelector(final String id, final String dateFieldMarkupId, final IModel<Date> model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect, final String newTimeZoneUsed) {
         super(id, model);
         this.ignoreFirstSelect = ignoreFirstSelect;
         this.newTimeZoneUsed = newTimeZoneUsed;
 
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CALENDAR ) );
+        add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_CONTAINER ) );
+        add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_BUTTON ) );
+        add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_CALENDAR ) );
 
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CALENDAR ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DOM_EVENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DRAGDROP ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_ELEMENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_BUTTON ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_CONTAINER ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_CALENDAR ) );
 
-        add( HeaderContributor.forJavaScript( "js/dateSelector.js" ) );
+        add( JavascriptPackageResource.getHeaderContribution( "js/dateSelector.js" ) );
 
         dateTextField = new DateTextField("date", model) {
             @Override
@@ -288,7 +289,7 @@ public class YuiDateSelector extends Panel {
 
         // date selected
         scriptBuilder.append(", '");
-        scriptBuilder.append( YuiCommon.toYuiDate(((Date)dateTextField.getModelObject()), timeZoneId) );
+        scriptBuilder.append( YuiCommon.toYuiDate((dateTextField.getModelObject()), timeZoneId) );
         scriptBuilder.append("'");
 
         // min date if any

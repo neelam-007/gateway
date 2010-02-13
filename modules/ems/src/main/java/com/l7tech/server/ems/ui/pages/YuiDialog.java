@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.markup.html.CSSPackageResource;
+import org.apache.wicket.markup.html.JavascriptPackageResource;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -131,16 +131,16 @@ public class YuiDialog extends Panel {
         super( id );
         this.callback = callback;
 
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
+        add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_BUTTON ) );
+        add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_CONTAINER ) );
 
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DOM_EVENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_ELEMENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_BUTTON ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DRAGDROP ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_CONTAINER ) );
 
-        add( HeaderContributor.forJavaScript( "js/dialog.js" ) );
+        add( JavascriptPackageResource.getHeaderContribution( "js/dialog.js" ) );
 
         final Component contentComponent = content!=null ? content : new WebMarkupContainer("content");
         contentComponent.setOutputMarkupId(true);
@@ -157,9 +157,9 @@ public class YuiDialog extends Panel {
         Form targetForm = null;
         if ( content instanceof MarkupContainer ) {
             MarkupContainer container = (MarkupContainer) content;
-            targetForm = (Form) container.visitChildren(Form.class, new Component.IVisitor(){
+            targetForm = (Form) container.visitChildren(Form.class, new Component.IVisitor<Form>(){
                 @Override
-                public Object component(Component component) { return component; }
+                public Object component(Form component) { return component; }
             });
         }
         boolean isFileUpload = false;

@@ -85,21 +85,21 @@ public class EnterpriseUsersNewPanel extends Panel {
     /**
      * User form
      */
-    public final class UserForm extends Form {
+    public final class UserForm extends Form<UserModel> {
 
         public UserForm(final String componentName) {
-            super(componentName, new CompoundPropertyModel(new UserModel()));
+            super(componentName, new CompoundPropertyModel<UserModel>(new UserModel()));
 
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
             pass1.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32)) );
 
-            add(new RequiredTextField("userId").add(new StringValidator.LengthBetweenValidator(3, 128)).add(new PatternValidator("^[^#,+\"\\\\<>;]{3,128}$")));
-            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)).add(EmailAddressValidator.getInstance()));
-            add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
-            add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
-            add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
+            add(new RequiredTextField<String>("userId").add(new StringValidator.LengthBetweenValidator(3, 128)).add(new PatternValidator("^[^#,+\"\\\\<>;]{3,128}$")));
+            add(new TextField<String>("email").add(new StringValidator.LengthBetweenValidator(1, 128)).add(EmailAddressValidator.getInstance()));
+            add(new TextField<String>("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
+            add(new TextField<String>("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
+            add(new TextField<String>("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
 
@@ -108,7 +108,7 @@ public class EnterpriseUsersNewPanel extends Panel {
 
         @Override
         public final void onSubmit() {
-            UserModel model = (UserModel) getModelObject();
+            UserModel model = getModelObject();
             try {
                 InternalUser user = new InternalUser();
                 user.setLogin( model.userId );

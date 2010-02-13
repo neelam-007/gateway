@@ -52,8 +52,8 @@ public class PolicyMapping extends EsmStandardWebPage {
     private WebMarkupContainer migrationTableContainer;
     private WebMarkupContainer migrationSummaryContainer;
     private WebMarkupContainer dynamicDialogHolder;
-    private Model dateStartModel;
-    private Model dateEndModel;
+    private Model<Date> dateStartModel;
+    private Model<Date> dateEndModel;
     private MigrationModel selectedMigrationModel;
 
     public PolicyMapping() {
@@ -85,8 +85,8 @@ public class PolicyMapping extends EsmStandardWebPage {
 
         Date now = new Date();
         Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
-        dateStartModel = new Model(last7thDay);
-        dateEndModel = new Model(now);
+        dateStartModel = new Model<Date>(last7thDay);
+        dateEndModel = new Model<Date>(now);
         
         YuiDateSelector startDate = new YuiDateSelector("migrationStartSelector", dateStartModel, null, now);
         YuiDateSelector endDate = new YuiDateSelector("migrationEndSelector", dateEndModel, last7thDay, now);
@@ -125,7 +125,7 @@ public class PolicyMapping extends EsmStandardWebPage {
     private void initMigrationTableContainer() {
         // Create a form for selected migration
         Form migrationForm = new Form("deleteMigrationForm");
-        HiddenField hiddenFieldForMigration = new HiddenField("migrationId", new Model(""));
+        HiddenField<String> hiddenFieldForMigration = new HiddenField<String>("migrationId", new Model<String>(""));
         migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
 
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
@@ -336,16 +336,16 @@ public class PolicyMapping extends EsmStandardWebPage {
      * @return a panel that contains a migration table.
      */
     private Panel buildMigrationTablePanel( final HiddenField hidden, final Button[] selectionComponents, final Button[] archiveSelectionComponents ) {
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new Model("id"), "id"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.name", this, null), MigrationRecordManager.SortProperty.NAME.toString(), "name"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.time", this, null), MigrationRecordManager.SortProperty.TIME.toString(), "timeCreated"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.from", this, null), "sourceCluster"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.to", this, null), "targetCluster"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.size", this, null), "size"));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new Model<String>("id"), "id"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("migration.column.name", this, null), MigrationRecordManager.SortProperty.NAME.toString(), "name"));
+        columns.add(new PropertyColumn<Date>(new StringResourceModel("migration.column.time", this, null), MigrationRecordManager.SortProperty.TIME.toString(), "timeCreated"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("migration.column.from", this, null), "sourceCluster"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("migration.column.to", this, null), "targetCluster"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("migration.column.size", this, null), "size"));
 
-        Date start = startOfDay((Date)dateStartModel.getObject());
-        Date end = new Date(startOfDay((Date)dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
+        Date start = startOfDay(dateStartModel.getObject());
+        Date end = new Date(startOfDay(dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
 
         return new YuiDataTable("migrationTable", columns, "timeCreated", false, new MigrationDataProvider(start, end, "timeCreated", false), hidden, "id", true, selectionComponents) {
             @Override
@@ -490,7 +490,7 @@ public class PolicyMapping extends EsmStandardWebPage {
     /**
      * Migration Data Provider used by the migration table.
      */
-    private final class MigrationDataProvider extends SortableDataProvider {
+    private final class MigrationDataProvider extends SortableDataProvider<MigrationModel> {
         private final Date start;
         private final Date end;
         private final User user;
@@ -509,7 +509,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         @Override
-        public Iterator iterator(int first, int count) {
+        public Iterator<MigrationModel> iterator(int first, int count) {
             try {
                 MigrationRecordManager.SortProperty sort = MigrationRecordManager.SortProperty.valueOf(getSort().getProperty());
                 Iterator<MigrationRecord> itr = migrationManager.findPage(user, sort, getSort().isAscending(), first, count, start, end).iterator();
@@ -522,7 +522,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                 });
             } catch (FindException fe) {
                 logger.log( Level.WARNING, "Error finding policy migration records", fe);
-                return Collections.emptyList().iterator();
+                return Collections.<MigrationModel>emptyList().iterator();
             }
         }
 
@@ -537,10 +537,10 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         @Override
-        public IModel model(final Object migrationObject) {
-            return new AbstractReadOnlyModel() {
+        public IModel<MigrationModel> model(final MigrationModel migrationObject) {
+            return new AbstractReadOnlyModel<MigrationModel>() {
                 @Override
-                public Object getObject() {
+                public MigrationModel getObject() {
                     return migrationObject;
                 }
             };

@@ -3,7 +3,7 @@ package com.l7tech.server.ems.ui.pages;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
-import org.apache.wicket.behavior.HeaderContributor;
+import org.apache.wicket.markup.html.JavascriptPackageResource;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
 import org.apache.wicket.model.IModel;
@@ -16,11 +16,11 @@ import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
  *
  * @author steve
  */
-public class YuiFileUploadForm extends Form implements SecureComponent {
+public class YuiFileUploadForm<T> extends Form<T> implements SecureComponent {
 
     //- PUBLIC
 
-    public YuiFileUploadForm( final String id, final IModel model ) {
+    public YuiFileUploadForm( final String id, final IModel<T> model ) {
         super( id, model );
         init();
     }
@@ -104,9 +104,9 @@ public class YuiFileUploadForm extends Form implements SecureComponent {
     private void init() {
         setOutputMarkupId( true );
         setMultiPart( true );
-        add( HeaderContributor.forJavaScript( WicketAjaxReference.INSTANCE ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONNECTION ) );        
+        add( JavascriptPackageResource.getHeaderContribution( WicketAjaxReference.INSTANCE ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DOM_EVENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_CONNECTION ) );
     }
 
     private boolean isAjax() {

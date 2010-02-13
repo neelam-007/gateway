@@ -144,24 +144,24 @@ public class StandardReportsManagementPanel extends Panel {
             }
         };
 
-        HiddenField hidden = new HiddenField("reportId", new Model(""));
+        HiddenField<String> hidden = new HiddenField<String>("reportId", new Model<String>(""));
 
 
         downloadButton.setEnabled(false);
 
-        pageForm.add( new DropDownChoice( "reportFormat", new Model("PDF"), Arrays.asList("HTML", "PDF") ) );
+        pageForm.add( new DropDownChoice<String>( "reportFormat", new Model<String>("PDF"), Arrays.asList("HTML", "PDF") ) );
         pageForm.add( downloadButton.setOutputMarkupId(true) );
         pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new Model("id"), "id"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.name", this, null), "name", "name"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.date", this, null), "statusTime", "statusTime"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.statusMessage", this, null), "statusMessage"));
-        columns.add(new TypedPropertyColumn(new StringResourceModel("reporttable.column.htmlReport", this, null), "viewLinkHtml", String.class, false));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new Model<String>("id"), "id"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("reporttable.column.name", this, null), "name", "name"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("reporttable.column.date", this, null), "statusTime", "statusTime"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("reporttable.column.status", this, null), "status"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("reporttable.column.statusMessage", this, null), "statusMessage"));
+        columns.add(new TypedPropertyColumn<String>(new StringResourceModel("reporttable.column.htmlReport", this, null), "viewLinkHtml", String.class, false));
 
         YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, true, "id", true, new Button[]{ deleteButton, downloadButton }){
             @Override
@@ -284,7 +284,7 @@ public class StandardReportsManagementPanel extends Panel {
        }
     }
 
-    private class ReportDataProvider extends SortableDataProvider {
+    private class ReportDataProvider extends SortableDataProvider<ReportModel> {
         private final User user;
 
         public ReportDataProvider( final String sort, final boolean asc ) {
@@ -299,7 +299,7 @@ public class StandardReportsManagementPanel extends Panel {
         }
 
         @Override
-        public Iterator iterator( final int first, final int count ) {
+        public Iterator<ReportModel> iterator( final int first, final int count ) {
             try {
                 Iterator<StandardReport> iter = reportManager.findPage(user, getSort().getProperty(), getSort().isAscending(), first, count).iterator();
                 return Functions.map( iter, new Functions.Unary<ReportModel, StandardReport>(){
@@ -310,7 +310,7 @@ public class StandardReportsManagementPanel extends Panel {
                 });
             } catch (FindException fe) {
                 logger.log( Level.WARNING, "Error finding audit records", fe );
-                return Collections.emptyList().iterator();
+                return Collections.<ReportModel>emptyList().iterator();
             }
         }
 
@@ -325,10 +325,10 @@ public class StandardReportsManagementPanel extends Panel {
         }
 
         @Override
-        public IModel model(final Object reportObject) {
-             return new AbstractReadOnlyModel() {
+        public IModel<ReportModel> model(final ReportModel reportObject) {
+             return new AbstractReadOnlyModel<ReportModel>() {
                 @Override
-                public Object getObject() {
+                public ReportModel getObject() {
                     return reportObject;
                 }
             };

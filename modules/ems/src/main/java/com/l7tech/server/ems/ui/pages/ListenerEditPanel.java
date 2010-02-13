@@ -46,29 +46,29 @@ public class ListenerEditPanel extends Panel {
         }
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
-        final RequiredTextField addr = new RequiredTextField("addr", new Model(listenerAddr));
-        final RequiredTextField port = new RequiredTextField("port", new IObjectClassAwareModel(){
+        final RequiredTextField<String> addr = new RequiredTextField<String>("addr", new Model<String>(listenerAddr));
+        final RequiredTextField<Integer> port = new RequiredTextField<Integer>("port", new IObjectClassAwareModel<Integer>(){
             private int value = Integer.parseInt(listenerPort);
             @Override
-            public Class getObjectClass() { return Integer.class; }
+            public Class<Integer> getObjectClass() { return Integer.class; }
             @Override
-            public Object getObject() { return value; }
+            public Integer getObject() { return value; }
             @Override
-            public void setObject(Object object) { value = (Integer) object; }
+            public void setObject(Integer object) { value = object; }
             @Override
             public void detach() { }
         });
 
         addr.add( new PatternValidator("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*)$") );
         addr.add( new LocalIpAddressValidator() );
-        port.add( new RangeValidator(1024, 65535) );
+        port.add( new RangeValidator<Integer>(1024, 65535) );
 
         Form listenerForm = new Form("listenerForm"){
             @Override
             protected void onSubmit() {
                 logger.fine("Processing HTTPS listener update.");
                 try {
-                    setupManager.configureListener( (String)addr.getConvertedInput(), (Integer)port.getConvertedInput() );
+                    setupManager.configureListener( addr.getConvertedInput(), port.getConvertedInput() );
                 } catch ( SetupException se ) {
                     logger.log( Level.WARNING, "Error configuring listener.", se );                
                 }
@@ -83,10 +83,10 @@ public class ListenerEditPanel extends Panel {
         add( listenerForm );
     }
 
-    private static final class LocalIpAddressValidator extends AbstractValidator {
+    private static final class LocalIpAddressValidator extends AbstractValidator<String> {
         @Override
-        protected void onValidate( final IValidatable validatable ) {
-            String ipAddress = (String) validatable.getValue();
+        protected void onValidate( final IValidatable<String> validatable ) {
+            String ipAddress = validatable.getValue();
 
             boolean isOk = false;
             try {

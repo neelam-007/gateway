@@ -100,10 +100,10 @@ public class UserRoles extends EsmStandardWebPage {
         final Form unassignedUsersRoleForm = new Form("form.unassignedUsers");
 
         // Step 1: create a textarea to display the description of the selected role.
-        TextArea roleDescriptionTextArea = new TextArea("textarea.roleDescription", new PropertyModel(roleModel, "roleDescription"));
+        TextArea<String> roleDescriptionTextArea = new TextArea<String>("textarea.roleDescription", new PropertyModel<String>(roleModel, "roleDescription"));
 
         // Step 2: create components to unassign assigned users from a role.
-        HiddenField hiddenFieldForAssignedUser = new HiddenField("assignedUserId", new Model(""));
+        HiddenField<String> hiddenFieldForAssignedUser = new HiddenField<String>("assignedUserId", new Model<String>(""));
         hiddenFieldForAssignedUser.setOutputMarkupId(true);
         YuiAjaxButton buttonToUnassignRole = new YuiAjaxButton("button.unassignRole") {
             @Override
@@ -152,7 +152,7 @@ public class UserRoles extends EsmStandardWebPage {
         assignedUsersRoleForm.add(searchAssignedUsersPanel);
 
         // Step 3: create components to assign a role to unassigned users
-        HiddenField hiddenFieldForUnassignedUser = new HiddenField("unassignedUserId", new Model(""));
+        HiddenField<String> hiddenFieldForUnassignedUser = new HiddenField<String>("unassignedUserId", new Model<String>(""));
         hiddenFieldForUnassignedUser.setOutputMarkupId(true);
         YuiAjaxButton buttonToAssignRole = new YuiAjaxButton("button.assignRole") {
             @Override
@@ -259,10 +259,10 @@ public class UserRoles extends EsmStandardWebPage {
             super(componentName);
             try {
                 final List<Role> roles = new ArrayList<Role>(roleManager.findAll());
-                ListChoice listChoice = new ListChoice("listChoice.roleList", new PropertyModel(roleModel, "selectedRole"),
-                    new LoadableDetachableModel() {
+                ListChoice<Role> listChoice = new ListChoice<Role>("listChoice.roleList", new PropertyModel<Role>(roleModel, "selectedRole"),
+                    new LoadableDetachableModel<List<Role>>() {
                         @Override
-                        protected Object load() {
+                        protected List<Role> load() {
                             return roles;
                         }
                     }
@@ -320,10 +320,10 @@ public class UserRoles extends EsmStandardWebPage {
      * @return a panel with a user table.
      */
     private Panel getUserTablePanel(boolean usersAssigned, HiddenField hidden, final Button button) {
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.login", this, null), "login", "login"));
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
-        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.login", this, null), "login", "login"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
         String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
         return (YuiDataTable) new YuiDataTable(panelId, columns, "login", true, newArrayList(new UserDataProvider("login", true, usersAssigned).iterator(0,1000)), hidden,
@@ -338,7 +338,7 @@ public class UserRoles extends EsmStandardWebPage {
         }.setOutputMarkupId(true);
     }
 
-    private final class UserDataProvider extends SortableDataProvider {
+    private final class UserDataProvider extends SortableDataProvider<InternalUser> {
         private boolean assigned;  // an indicator for the table storing assigned users or unassigned users.
 
         public UserDataProvider(String sort, boolean asc, boolean assigned) {
@@ -347,7 +347,7 @@ public class UserRoles extends EsmStandardWebPage {
         }
 
         @Override
-        public Iterator iterator(int first, int count) {
+        public Iterator<InternalUser> iterator(int first, int count) {
             try {
                 Collection<InternalUser> users =
                     emsAccountManager.getUserPage(first, count, getSort().getProperty(), getSort().isAscending());
@@ -368,7 +368,7 @@ public class UserRoles extends EsmStandardWebPage {
                 return filterUsers(assigned, users).iterator();
             } catch (FindException fe) {
                 logger.log( Level.WARNING, "Error finding users", fe );
-                return Collections.emptyList().iterator();
+                return Collections.<InternalUser>emptyList().iterator();
             }
         }
 
@@ -388,10 +388,10 @@ public class UserRoles extends EsmStandardWebPage {
         }
 
         @Override
-        public IModel model(final Object userObject) {
-            return new AbstractReadOnlyModel() {
+        public IModel<InternalUser> model(final InternalUser userObject) {
+            return new AbstractReadOnlyModel<InternalUser>() {
                 @Override
-                public Object getObject() {
+                public InternalUser getObject() {
                     return userObject;
                 }
             };

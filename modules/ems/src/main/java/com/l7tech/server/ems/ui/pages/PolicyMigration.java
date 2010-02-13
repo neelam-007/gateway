@@ -143,7 +143,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         List<PreviousMigrationModel> previous = loadPreviousMigrations();
         final Form reloadForm = new Form("reloadForm");
         reloadForm.add( reloadMigrationButton.setOutputMarkupId(true).setEnabled(!previous.isEmpty()) );
-        reloadForm.add( new DropDownChoice( "reloadSelect", new Model(previous.isEmpty() ? null : previous.iterator().next()), previous ){
+        reloadForm.add( new DropDownChoice<PreviousMigrationModel>( "reloadSelect", new Model<PreviousMigrationModel>(previous.isEmpty() ? null : previous.iterator().next()), previous ){
             @Override
             protected String getDefaultChoice( final Object selected ) {
                 return "-";
@@ -157,7 +157,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             @Override
             protected void onEvent( final AjaxRequestTarget target ) {
                 List<PreviousMigrationModel> previous = loadPreviousMigrations();
-                DropDownChoice reloadDropDown = (DropDownChoice) reloadForm.get("reloadSelect");
+                @SuppressWarnings({"unchecked"})
+                DropDownChoice<PreviousMigrationModel> reloadDropDown = (DropDownChoice<PreviousMigrationModel>) reloadForm.get("reloadSelect");
                 reloadDropDown.setChoices( previous );
                 reloadDropDown.setModelObject( previous.isEmpty() ? null : previous.iterator().next() );                
                 reloadMigrationButton.setEnabled(!previous.isEmpty());
@@ -293,12 +294,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
 
         Form selectionJsonForm = new Form("selectionForm");
-        final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
-        final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));
-        final HiddenField hiddenDestFolderId = new HiddenField("destinationFolderId", new Model(""));
-        final HiddenField hiddenMigrateFolders = new HiddenField("migrateFolders", new Model(""));
-        final HiddenField hiddenEnableNewServices = new HiddenField("enableNewServices", new Model(""));
-        final HiddenField hiddenOverwriteDependencies = new HiddenField("overwriteDependencies", new Model(""));
+        final HiddenField<String> hiddenSelectionForm = new HiddenField<String>("selectionJson", new Model<String>(""));
+        final HiddenField<String> hiddenDestClusterId = new HiddenField<String>("destinationClusterId", new Model<String>(""));
+        final HiddenField<String> hiddenDestFolderId = new HiddenField<String>("destinationFolderId", new Model<String>(""));
+        final HiddenField<String> hiddenMigrateFolders = new HiddenField<String>("migrateFolders", new Model<String>(""));
+        final HiddenField<String> hiddenEnableNewServices = new HiddenField<String>("enableNewServices", new Model<String>(""));
+        final HiddenField<String> hiddenOverwriteDependencies = new HiddenField<String>("overwriteDependencies", new Model<String>(""));
         selectionJsonForm.add( hiddenSelectionForm );
         selectionJsonForm.add( hiddenDestClusterId );
         selectionJsonForm.add( hiddenDestFolderId );
@@ -347,7 +348,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
                         resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                     } else {
-                        resultDialog = new YuiDialog("dialog", " Error Identifying Dependencies", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                        resultDialog = new YuiDialog("dialog", " Error Identifying Dependencies", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
                     }
                     dialogContainer.replace( resultDialog );
                     target.addComponent( dialogContainer );
@@ -394,7 +395,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     try {
                         String dependencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
                         if ( dependencyValidationMessage != null && !dependencyValidationMessage.isEmpty() ) {
-                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(dependencyValidationMessage));
+                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model<String>(dependencyValidationMessage));
                             YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
                             dialogContainer.replace( dialog );
                             target.addComponent( dialogContainer );
@@ -405,7 +406,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                             // load mappings for top-level items that have been previously migrated
                             loadMappings( mappingModel, dir.clusterId, targetClusterId, retrieveDependencies(dir, null, null), true);
-                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
+                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model<String>(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, confirmationPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
                                 public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
@@ -413,7 +414,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                         logger.fine("Migration confirmed.");
                                         try {
                                             String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, confirmationPanel.getLabel(), false );
-                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(message)), null, "600px");
+                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(message)), null, "600px");
                                             dialogContainer.replace( resultDialog );
                                         } catch ( MigrationFailedException mfe ) {
                                             String failureMessage = mfe.getMessage();
@@ -421,7 +422,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                             if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
                                                 resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                                             } else {
-                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
                                             }
                                             dialogContainer.replace( resultDialog );
                                             target.addComponent( dialogContainer );
@@ -461,7 +462,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
                             resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                         } else {
-                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
                         }
                         dialogContainer.replace( resultDialog );
                         target.addComponent( dialogContainer );
@@ -522,18 +523,18 @@ public class PolicyMigration extends EsmStandardWebPage {
         dependenciesContainer.add( dependencyCandidateContainer.setOutputMarkupId(true) );
         dependenciesContainer.add( dependenciesOptionsContainer.setOutputMarkupId(true) );
 
-        dependenciesOptionsContainer.add(new DropDownChoice("dependencySearchTarget", new PropertyModel(searchModel, "searchTarget"), Arrays.asList(new SearchTarget())));
+        dependenciesOptionsContainer.add(new DropDownChoice<SearchTarget>("dependencySearchTarget", new PropertyModel<SearchTarget>(searchModel, "searchTarget"), Arrays.asList(new SearchTarget())));
         String[] searchManners = new String[] {
             "contains",
             "starts with"
         };
-        dependenciesOptionsContainer.add(new DropDownChoice("dependencySearchManner", new PropertyModel(searchModel, "searchManner"), Arrays.asList(searchManners)) {
+        dependenciesOptionsContainer.add(new DropDownChoice<String>("dependencySearchManner", new PropertyModel<String>(searchModel, "searchManner"), Arrays.asList(searchManners)) {
             @Override
             protected CharSequence getDefaultChoice(Object o) {
                 return "contains";
             }
         });
-        dependenciesOptionsContainer.add(new TextField("dependencySearchText", new PropertyModel(searchModel, "searchValue")));
+        dependenciesOptionsContainer.add(new TextField<String>("dependencySearchText", new PropertyModel<String>(searchModel, "searchValue")));
         dependenciesOptionsContainer.add(new YuiAjaxButton("dependencySearchButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
@@ -821,10 +822,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                                    final WebMarkupContainer detailsContainer,
                                    final DependencyItem detailsItem ) {
         // dependencies
-        ListView listView = new ListView("optionRepeater", visible(options, false)) {
+        ListView<DependencyItem> listView = new ListView<DependencyItem>("optionRepeater", visible(options, false)) {
             @Override
-            protected void populateItem( final ListItem item ) {
-                final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
+            protected void populateItem( final ListItem<DependencyItem> item ) {
+                final DependencyItem dependencyItem = item.getModelObject();
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
                 item.add(new Label("name", dependencyItem.getDisplayNameWithScope()));
                 item.add(new Label("type", com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type).getName().toLowerCase()));
@@ -838,11 +839,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         // details
-        ListView detailsListView = new ListView("itemDetailsRepeater", nvp(detailsItem)) {
+        ListView<Pair<String,String>> detailsListView = new ListView<Pair<String,String>>("itemDetailsRepeater", nvp(detailsItem)) {
             @SuppressWarnings({"unchecked"})
             @Override
-            protected void populateItem( final ListItem item ) {
-                final Pair<String,String> nvp = (Pair<String,String>)item.getModelObject();
+            protected void populateItem( final ListItem<Pair<String,String>> item ) {
+                final Pair<String,String> nvp = item.getModelObject();
                 item.add(new Label("name", nvp.left));
                 item.add(new Label("value", nvp.right));
             }
@@ -906,12 +907,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         // update UI
-        final List<PropertyColumn> dependencyColumns =  Arrays.asList(
-            new PropertyColumn(new Model(""), "uid"),
-            new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
-            new TypedPropertyColumn(new Model("Name"), "displayNameWithScope", "displayNameWithScope", String.class, true, true),
-            new PropertyColumn(new Model("Type"), "type", "type"),
-            new PropertyColumn(new Model("Dest. Name / Value"), "destName", "destName")
+        final List<PropertyColumn<?>> dependencyColumns =  Arrays.<PropertyColumn<?>>asList(
+            new PropertyColumn<String>(new Model<String>(""), "uid"),
+            new TypedPropertyColumn<String>(new Model<String>(""), "optional", "optional", String.class, false),
+            new TypedPropertyColumn<String>(new Model<String>("Name"), "displayNameWithScope", "displayNameWithScope", String.class, true, true),
+            new PropertyColumn<String>(new Model<String>("Type"), "type", "type"),
+            new PropertyColumn<String>(new Model<String>("Dest. Name / Value"), "destName", "destName")
         );
 
         final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "displayNameWithScope", true, items, null, false, "uid", true, null ){
@@ -988,7 +989,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         List<DependencyItem> options  = Collections.emptyList();
-        DropDownChoice targetChoice = (DropDownChoice) optionRefreshComponents[1].get("dependencySearchTarget");
+        @SuppressWarnings({"unchecked"})
+        DropDownChoice<SearchTarget> targetChoice = (DropDownChoice<SearchTarget>) optionRefreshComponents[1].get("dependencySearchTarget");
         if ( skipSearch ) {
             searchModel.setSearchManner("contains");
             searchModel.setSearchValue("");
@@ -1031,10 +1033,10 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
         }
 
-        markupContainer.add(new ListView("optionRepeater", options) {
+        markupContainer.add(new ListView<DependencyItem>("optionRepeater", options) {
             @Override
-            protected void populateItem( final ListItem item ) {
-                final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
+            protected void populateItem( final ListItem<DependencyItem> item ) {
+                final DependencyItem dependencyItem = item.getModelObject();
 
                 Component radioComponent = new WebComponent("uid").add( new AjaxEventBehavior("onchange"){
                     @Override
@@ -1050,7 +1052,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 DependencyItem currentItem = mappingModel.dependencyMap.get( mappingKey );
                 if ( currentItem!=null && currentItem.equals( dependencyItem ) ) {
-                    radioComponent.add( new AttributeModifier("checked", true, new Model("checked")) );
+                    radioComponent.add( new AttributeModifier("checked", true, new Model<String>("checked")) );
                 }
 
                 item.add(radioComponent);

@@ -42,7 +42,7 @@ public class AuditDetailPanel extends Panel {
      *
      */
     public AuditDetailPanel( final String identifier, final AuditRecord record ) {
-        super( identifier, new Model(record) );
+        super( identifier, new Model<AuditRecord>(record) );
 
         RepeatingView summary = new RepeatingView("auditsummary");
         int count=0;
@@ -58,10 +58,10 @@ public class AuditDetailPanel extends Panel {
             summary.add(container);
         }
 
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.date", this, null), "DATE", "date"));
-        columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.level", this, null), "LEVEL", "level"));
-        columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.message", this, null), "MESSAGE", "message"));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<Date>(new StringResourceModel("auditdetailtable.column.date", this, null), "DATE", "date"));
+        columns.add(new PropertyColumn<Level>(new StringResourceModel("auditdetailtable.column.level", this, null), "LEVEL", "level"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("auditdetailtable.column.message", this, null), "MESSAGE", "message"));
         YuiDataTable table = new YuiDataTable("auditdetailtable", columns, "date", false,  new AuditDetailDataProvider(record, "date", false));
         table.setVisible(!record.getDetails().isEmpty());
         
@@ -188,7 +188,7 @@ public class AuditDetailPanel extends Panel {
         }
     }
 
-    private class AuditDetailDataProvider extends SortableDataProvider {
+    private class AuditDetailDataProvider extends SortableDataProvider<AuditDetailModel> {
         private final List<AuditDetailModel> details;
 
         public AuditDetailDataProvider( final AuditRecord auditRecord,
@@ -209,7 +209,7 @@ public class AuditDetailPanel extends Panel {
         }
 
         @Override
-        public Iterator iterator( int first, int count ) {
+        public Iterator<AuditDetailModel> iterator( int first, int count ) {
             return newAuditIter( details, first, first+count, getSort().getProperty(), getSort().isAscending() );
         }
 
@@ -219,10 +219,10 @@ public class AuditDetailPanel extends Panel {
         }
 
         @Override
-        public IModel model(final Object auditObject) {
-             return new AbstractReadOnlyModel() {
+        public IModel<AuditDetailModel> model(final AuditDetailModel auditObject) {
+             return new AbstractReadOnlyModel<AuditDetailModel>() {
                 @Override
-                public Object getObject() {
+                public AuditDetailModel getObject() {
                     return auditObject;
                 }
             };
@@ -279,7 +279,7 @@ public class AuditDetailPanel extends Panel {
         }
 
         AuditDetailModel( final Date date, final AuditDetailMessage message, final String[] params ) {
-            this( date, message.getLevel(), MessageFormat.format(message.getMessage(), params) );
+            this( date, message.getLevel(), MessageFormat.format(message.getMessage(), (Object[])params) );
         }
 
         AuditDetailModel( final Date date, final Level level, final String message ) {

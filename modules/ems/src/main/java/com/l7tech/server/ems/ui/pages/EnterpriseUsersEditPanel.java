@@ -129,19 +129,19 @@ public class EnterpriseUsersEditPanel extends Panel {
     /**
      * User form
      */
-    public final class UserForm extends Form {
+    public final class UserForm extends Form<UserModel> {
         public UserForm( final String componentName, final UserModel userModel ) {
-            super(componentName, new CompoundPropertyModel(userModel));
+            super(componentName, new CompoundPropertyModel<UserModel>(userModel));
 
-            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(0, 128)).add(EmailAddressValidator.getInstance()));
-            add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(0, 32)));
-            add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(0, 32)));
-            add(new TextField("description").add(new StringValidator.LengthBetweenValidator(0, 255)));
+            add(new TextField<String>("email").add(new StringValidator.LengthBetweenValidator(0, 128)).add(EmailAddressValidator.getInstance()));
+            add(new TextField<String>("lastName").add(new StringValidator.LengthBetweenValidator(0, 32)));
+            add(new TextField<String>("firstName").add(new StringValidator.LengthBetweenValidator(0, 32)));
+            add(new TextField<String>("description").add(new StringValidator.LengthBetweenValidator(0, 255)));
         }
 
         @Override
         public final void onSubmit() {
-            updateUser( (UserModel) getModelObject(), this );
+            updateUser( getModelObject(), this );
         }
     }
 }

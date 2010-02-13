@@ -63,13 +63,13 @@ public class Audits extends EsmStandardWebPage {
         Button downloadButton = new YuiAjaxButton("downloadAuditsButton") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                final Model downloadModel = new Model();
+                final Model<String> downloadModel = new Model<String>();
                 AuditDownloadPanel download = new AuditDownloadPanel( YuiDialog.getContentId(), downloadModel );
                 YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Download", YuiDialog.Style.OK_CANCEL, download, new YuiDialog.OkCancelCallback(){
                     @Override
                     public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                         if ( button == YuiDialog.Button.OK ) {
-                            String url = (String)downloadModel.getObject();
+                            String url = downloadModel.getObject();
                             target.appendJavascript( "window.setTimeout(function() { window.location = '" + url + "'; }, 0)" );
                         }
                     }
@@ -89,14 +89,14 @@ public class Audits extends EsmStandardWebPage {
             }
         }.add( new AttemptedDeleteAll(EntityType.AUDIT_RECORD) );
 
-        final HiddenField hidden = new HiddenField("auditId", new Model(""));
+        final HiddenField<String> hidden = new HiddenField<String>("auditId", new Model<String>(""));
         hidden.setOutputMarkupId( true );
 
-        final List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new Model("id"), "id"));
-        columns.add(new PropertyColumn(new StringResourceModel("audittable.column.time", this, null), "TIME", "time"));
-        columns.add(new PropertyColumn(new StringResourceModel("audittable.column.level", this, null), "LEVEL", "level"));
-        columns.add(new PropertyColumn(new StringResourceModel("audittable.column.message", this, null), "MESSAGE", "message"));
+        final List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new Model<String>("id"), "id"));
+        columns.add(new PropertyColumn<Date>(new StringResourceModel("audittable.column.time", this, null), "TIME", "time"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("audittable.column.level", this, null), "LEVEL", "level"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("audittable.column.message", this, null), "MESSAGE", "message"));
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         Date now = new Date();
@@ -105,10 +105,10 @@ public class Audits extends EsmStandardWebPage {
         final DataProviderOptions options = new DataProviderOptions( values[0], last7thDay, now);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
-        CompoundPropertyModel formModel = new CompoundPropertyModel(options);
-        Form auditSelectionForm = new Form("auditselectform", formModel);
-        final YuiDateSelector startDate = new YuiDateSelector("auditstart", formModel.bind("auditstart"), null, now );
-        final YuiDateSelector endDate = new YuiDateSelector("auditend", formModel.bind("auditend"), last7thDay, now );
+        CompoundPropertyModel<DataProviderOptions> formModel = new CompoundPropertyModel<DataProviderOptions>(options);
+        Form auditSelectionForm = new Form<DataProviderOptions>("auditselectform", formModel);
+        final YuiDateSelector startDate = new YuiDateSelector("auditstart", formModel.<Date>bind("auditstart"), null, now );
+        final YuiDateSelector endDate = new YuiDateSelector("auditend", formModel.<Date>bind("auditend"), last7thDay, now );
 
         startDate.addInteractionWithOtherDateSelector(endDate, false, new YuiDateSelector.InteractionTasker());
         endDate.addInteractionWithOtherDateSelector(startDate, true, new YuiDateSelector.InteractionTasker());
@@ -116,13 +116,13 @@ public class Audits extends EsmStandardWebPage {
         final AuditDataProvider provider = new AuditDataProvider( options, "time", false );
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
-        auditSelectionForm.add( new DropDownChoice( "audittype", null, Arrays.asList(values), new IChoiceRenderer(){
+        auditSelectionForm.add( new DropDownChoice<String>( "audittype", null, Arrays.asList(values), new IChoiceRenderer<String>(){
             @Override
-            public Object getDisplayValue( final Object key ) {
+            public Object getDisplayValue( final String key ) {
                 return new StringResourceModel( "audit.type."+key, Audits.this, null ).getString();
             }
             @Override
-            public String getIdValue( final Object value, final int index ) {
+            public String getIdValue( final String value, final int index ) {
                 return values[index];
             }
         } ) );
@@ -153,8 +153,8 @@ public class Audits extends EsmStandardWebPage {
             }
             @Override
             public void validate( final Form form ) {
-                Date start = (Date) startDate.getDateTextField().getConvertedInput();
-                Date end = (Date) endDate.getDateTextField().getConvertedInput();
+                Date start = startDate.getDateTextField().getConvertedInput();
+                Date end = endDate.getDateTextField().getConvertedInput();
                 if ( end.before(start) ) {
                     form.error( new StringResourceModel("message.daterange", Audits.this, null).getString() );
                 }
@@ -205,7 +205,7 @@ public class Audits extends EsmStandardWebPage {
     }
     
     private YuiDataTable buildDataTable( final AuditDataProvider provider,
-                                         final List<PropertyColumn> columns,
+                                         final List<PropertyColumn<?>> columns,
                                          final HiddenField hidden,
                                          final WebMarkupContainer detailsContainer ) {
         return new YuiDataTable("audittable", columns, "time", false,  provider, hidden, "id", true, null ){
@@ -301,7 +301,7 @@ public class Audits extends EsmStandardWebPage {
         }
     }
 
-    private class AuditDataProvider extends SortableDataProvider {
+    private class AuditDataProvider extends SortableDataProvider<AuditModel> {
         private final User user;
         private AuditSearchCriteria auditSearchCriteria;
 
@@ -333,7 +333,7 @@ public class Audits extends EsmStandardWebPage {
         }
 
         @Override
-        public Iterator iterator(int first, int count) {
+        public Iterator<AuditModel> iterator(int first, int count) {
             try {
                 AuditRecordManager.SortProperty sort = AuditRecordManager.SortProperty.valueOf(getSort().getProperty());
                 Iterator<AuditRecord> iter = auditRecordManager.findPage(sort, getSort().isAscending(), first, count, auditSearchCriteria).iterator();
@@ -345,7 +345,7 @@ public class Audits extends EsmStandardWebPage {
                 });
             } catch (FindException fe) {
                 logger.log( Level.WARNING, "Error finding audit records", fe );
-                return Collections.emptyList().iterator();
+                return Collections.<AuditModel>emptyList().iterator();
             }
         }
 
@@ -360,10 +360,10 @@ public class Audits extends EsmStandardWebPage {
         }
 
         @Override
-        public IModel model(final Object auditObject) {
-             return new AbstractReadOnlyModel() {
+        public IModel<AuditModel> model(final AuditModel auditObject) {
+             return new AbstractReadOnlyModel<AuditModel>() {
                 @Override
-                public Object getObject() {
+                public AuditModel getObject() {
                     return auditObject;
                 }
             };

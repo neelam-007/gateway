@@ -26,14 +26,14 @@ public class AuditDownloadPanel extends Panel {
 
     //- PUBLIC
 
-    public AuditDownloadPanel( final String id, final Model model ) {
+    public AuditDownloadPanel( final String id, final Model<String> model ) {
         super(id, model);
         setOutputMarkupId(true);
 
         final Date now = new Date();
         Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
-        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(last7thDay), null, now);
-        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(now), last7thDay, now);
+        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model<Date>(last7thDay), null, now);
+        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model<Date>(now), last7thDay, now);
 
         startDateField.addInteractionWithOtherDateSelector(endDateField, false, new YuiDateSelector.InteractionTasker());
         endDateField.addInteractionWithOtherDateSelector(startDateField, true, new YuiDateSelector.InteractionTasker());
@@ -66,8 +66,8 @@ public class AuditDownloadPanel extends Panel {
             }
             @Override
             public void validate( final Form form ) {
-                Date start = (Date) startDateField.getDateTextField().getConvertedInput();
-                Date end = (Date) endDateField.getDateTextField().getConvertedInput();
+                Date start = startDateField.getDateTextField().getConvertedInput();
+                Date end = endDateField.getDateTextField().getConvertedInput();
                 if ( end.before(start) ) {
                     form.error( new StringResourceModel("message.daterange", AuditDownloadPanel.this, null).getString() );
                 }

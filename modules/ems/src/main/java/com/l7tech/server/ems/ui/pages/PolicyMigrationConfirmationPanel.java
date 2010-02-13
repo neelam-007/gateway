@@ -27,10 +27,10 @@ public class PolicyMigrationConfirmationPanel extends Panel {
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
 
-        final TextField name = new TextField("name");
+        final TextField<String> name = new TextField<String>("name");
         name.add( new StringValidator.LengthBetweenValidator(0, 32) );
 
-        Form editForm = new Form("editForm", new CompoundPropertyModel(model));
+        Form<ConfirmationModel> editForm = new Form<ConfirmationModel>("editForm", new CompoundPropertyModel<ConfirmationModel>(model));
 
         editForm.add( feedback );
         editForm.add( name );

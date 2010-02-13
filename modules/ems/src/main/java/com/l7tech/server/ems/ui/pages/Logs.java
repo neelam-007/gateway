@@ -72,16 +72,16 @@ public class Logs extends EsmStandardWebPage {
             }
         };
 
-        HiddenField hidden = new HiddenField("logId", new Model(""));
+        HiddenField<String> hidden = new HiddenField<String>("logId", new Model<String>(""));
 
         pageForm.add( viewButton );
         pageForm.add( downloadButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 
-        List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        columns.add(new PropertyColumn(new StringResourceModel("logtable.column.name", this, null), "name", "name"));
-        columns.add(new PropertyColumn(new StringResourceModel("logtable.column.date", this, null), "date", "date"));
-        columns.add(new PropertyColumn(new StringResourceModel("logtable.column.size", this, null), "size", "size"));
+        List<PropertyColumn<?>> columns = new ArrayList<PropertyColumn<?>>();
+        columns.add(new PropertyColumn<String>(new StringResourceModel("logtable.column.name", this, null), "name", "name"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("logtable.column.date", this, null), "date", "date"));
+        columns.add(new PropertyColumn<String>(new StringResourceModel("logtable.column.size", this, null), "size", "size"));
 
         YuiDataTable table = new YuiDataTable("logtable", columns, "name", true,  new LogDataProvider(), hidden, "name", false, new Button[]{ viewButton, downloadButton });
         pageForm.add( table );
@@ -97,7 +97,7 @@ public class Logs extends EsmStandardWebPage {
         return LogResource.getLogFileIfValid( name );
     }
 
-    private static class LogDataProvider extends SortableDataProvider {
+    private static class LogDataProvider extends SortableDataProvider<FileModel> {
         final List<FileModel> files = listFiles();
 
         public LogDataProvider() {
@@ -105,7 +105,7 @@ public class Logs extends EsmStandardWebPage {
         }
 
         @Override
-        public Iterator iterator(int first, int count) {
+        public Iterator<FileModel> iterator(int first, int count) {
             return newLogIter( files, first, first+count, getSort().getProperty(), getSort().isAscending() );
         }
 
@@ -115,10 +115,10 @@ public class Logs extends EsmStandardWebPage {
         }
 
         @Override
-        public IModel model(final Object auditObject) {
-             return new AbstractReadOnlyModel() {
+        public IModel<FileModel> model(final FileModel auditObject) {
+             return new AbstractReadOnlyModel<FileModel>() {
                 @Override
-                public Object getObject() {
+                public FileModel getObject() {
                     return auditObject;
                 }
             };

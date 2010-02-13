@@ -62,7 +62,7 @@ public class StandardReports extends EsmStandardWebPage {
     @SpringBean
     GatewayClusterClientManager gatewayClusterClientManager;
 
-    private DropDownChoice timeZoneChoice;
+    private DropDownChoice<String> timeZoneChoice;
     private YuiDateSelector fromDateField;
     private YuiDateSelector toDateField;
     private Label fromDateJavascript;
@@ -78,8 +78,8 @@ public class StandardReports extends EsmStandardWebPage {
 
         Date now = new Date();
         Date yesterday = new Date(now.getTime() - TimeUnit.DAYS.toMillis(1));
-        fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox", new Model(yesterday), null, now, currentTimeZoneId);
-        toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox", new Model(now), yesterday, now, currentTimeZoneId);
+        fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox", new Model<Date>(yesterday), null, now, currentTimeZoneId);
+        toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox", new Model<Date>(now), yesterday, now, currentTimeZoneId);
 
         fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
         fromDateJavascript.setEscapeModelStrings(false);
@@ -104,22 +104,22 @@ public class StandardReports extends EsmStandardWebPage {
 
         List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
         Collections.sort(zoneIds);
-        timeZoneChoice = new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
+        timeZoneChoice = new DropDownChoice<String>("timezone", new Model<String>(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer<String>(){
             @Override
-            public Object getDisplayValue(Object object) {
+            public Object getDisplayValue(String object) {
                 return object;
             }
 
             @Override
-            public String getIdValue(Object object, int index) {
-                return object.toString();
+            public String getIdValue(String object, int index) {
+                return object;
             }
         });
         timeZoneChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
                 Date now = new Date();
-                String newTimeZoneId = (String)timeZoneChoice.getModelObject();
+                String newTimeZoneId = timeZoneChoice.getModelObject();
                 format.setTimeZone(TimeZone.getTimeZone(newTimeZoneId));
                 fromDateField.setNewTimeZoneUsed(newTimeZoneId);
                 toDateField.setNewTimeZoneUsed(newTimeZoneId);
@@ -145,12 +145,12 @@ public class StandardReports extends EsmStandardWebPage {
         reportParametersForm.add( fromDateField.setOutputMarkupId(true) );
         reportParametersForm.add( toDateField.setOutputMarkupId(true) );
 
-        final HiddenField deleteSettingsDialogInputId = new HiddenField("deleteSettingsDialog_id", new Model(""));
+        final HiddenField<String> deleteSettingsDialogInputId = new HiddenField<String>("deleteSettingsDialog_id", new Model<String>(""));
         Form deleteSettingsForm = new JsonDataResponseForm("deleteSettingsForm"){
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             @Override
             protected Object getJsonResponseData() {
-                String deletedSettingsOid = (String)deleteSettingsDialogInputId.getConvertedInput();
+                String deletedSettingsOid = deleteSettingsDialogInputId.getConvertedInput();
                 try {
                     logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
                     final StandardReportSettings settings = standardReportSettingsManager.findByPrimaryKey(Long.parseLong(deletedSettingsOid));
@@ -707,7 +707,7 @@ public class StandardReports extends EsmStandardWebPage {
 
                 // Update "from" and "to" date selectors 
                 Date now = new Date();
-                String newTimeZoneId = (String)timeZoneChoice.getModelObject();
+                String newTimeZoneId = timeZoneChoice.getModelObject();
                 format.setTimeZone(TimeZone.getTimeZone(newTimeZoneId));
                 fromDateField.setNewTimeZoneUsed(newTimeZoneId);
                 toDateField.setNewTimeZoneUsed(newTimeZoneId);

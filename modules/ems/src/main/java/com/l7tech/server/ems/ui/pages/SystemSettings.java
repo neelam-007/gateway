@@ -283,7 +283,6 @@ public class SystemSettings extends EsmStandardWebPage {
                 } else {
                     SslEditPanel sslEditPanel = new SslEditPanel( YuiDialog.getContentId() ){
                         @Override
-                        @SuppressWarnings({"UnusedDeclaration"})
                         protected void onSubmit(final AjaxRequestTarget target) {
                             sslModel.detach();
 
@@ -328,11 +327,11 @@ public class SystemSettings extends EsmStandardWebPage {
         WebMarkupContainer licenseDetailsContainer = new WebMarkupContainer("license.container");
         licenseDetailsContainer.setOutputMarkupId(true);
         licenseDetailsContainer.setOutputMarkupPlaceholderTag(true);
-        licenseDetailsContainer.add(new Label("licenseStatus", new StringResourceModel("license.signaturevalid.${valid}", this, new Model(licenseModel))));
+        licenseDetailsContainer.add(new Label("licenseStatus", new StringResourceModel("license.signaturevalid.${valid}", this, new Model<LicenseModel>(licenseModel))));
         licenseDetailsContainer.add(new Label("licenseId", new PropertyModel(licenseModel, "id")));
         licenseDetailsContainer.add(new Label("licenseDescription", new PropertyModel(licenseModel, "description")));
         licenseDetailsContainer.add(new Label("licenseAttributes", new PropertyModel(licenseModel, "attributes")));
-        licenseDetailsContainer.add(new Label("licenseIssuer", new StringResourceModel("license.issuer.${issuerAvailable}", this, new Model(licenseModel))));
+        licenseDetailsContainer.add(new Label("licenseIssuer", new StringResourceModel("license.issuer.${issuerAvailable}", this, new Model<LicenseModel>(licenseModel))));
         licenseDetailsContainer.add(new Label("licensee", new PropertyModel(licenseModel, "licensee")));
         licenseDetailsContainer.add(new Label("licenseContact", new PropertyModel(licenseModel, "contact")));
         licenseDetailsContainer.add(new Label("licenseStartDate", new PropertyModel(licenseModel, "startDate")));
@@ -344,7 +343,7 @@ public class SystemSettings extends EsmStandardWebPage {
         }
 
         // text area
-        licenseDetailsContainer.add(new TextArea("licenseGrants", new PropertyModel(licenseModel, "grants")));
+        licenseDetailsContainer.add(new TextArea<String>("licenseGrants", new PropertyModel<String>(licenseModel, "grants")));
 
         final Component[] refreshComponents = new Component[]{licenseDetailsContainer};
         Form licenseDeleteForm = new Form("licenseDeleteForm");
@@ -387,8 +386,8 @@ public class SystemSettings extends EsmStandardWebPage {
     private void initComponentsForGlobalSettings() {
         String timeUnit = config.getProperty("em.server.session.timeout", "30m");
         final GlobalSettings settingsModel = new GlobalSettings( (int)(TimeUnit.parse(timeUnit, TimeUnit.MINUTES) / (1000L*60L)) );
-        RequiredTextField sessionTimeout = new RequiredTextField("timeout", new PropertyModel( settingsModel, "sessionTimeout" ) );
-        sessionTimeout.add( new RangeValidator(1, 1440) );
+        RequiredTextField<Integer> sessionTimeout = new RequiredTextField<Integer>("timeout", new PropertyModel<Integer>( settingsModel, "sessionTimeout" ) );
+        sessionTimeout.add( new RangeValidator<Integer>(1, 1440) );
 
         final FeedbackPanel feedback = new FeedbackPanel("globalFeedback");
 
@@ -663,7 +662,7 @@ public class SystemSettings extends EsmStandardWebPage {
                     }
 
                     final String license = XmlUtil.nodeToString(XmlUtil.parse(upload.getInputStream(), false));
-                    EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model(new License(license, null, null)) );
+                    EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model<License>(new License(license, null, null)) );
 
                     YuiDialog dialog = new YuiDialog("dynamic.holder.content", "License Agreement", YuiDialog.Style.OK_CANCEL, eula, new YuiDialog.OkCancelCallback(){
                         @Override

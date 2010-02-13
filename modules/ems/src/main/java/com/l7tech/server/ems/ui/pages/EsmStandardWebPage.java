@@ -7,9 +7,9 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
+import org.apache.wicket.markup.html.CSSPackageResource;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.authorization.UnauthorizedActionException;
-import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.model.Model;
@@ -29,18 +29,18 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
 
     public EsmStandardWebPage() {
         final EsmSecurityManager.LoginInfo info = getLoginInfo();
-        final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
+        final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model<String>(){
             @Override
             public String getObject() {
                 return getSession().buildDateFormat().format(info.getDate());
             }
         }} );
 
-        Model infoModel = new Model(info);
-        add( new UnlicensedLabel("titleLabel", new StringResourceModel( "page.title", this, null, new Object[]{ new StringResourceModel( "page.${pageName}.title", this, new Model(this))} )) );
+        Model<EsmSecurityManager.LoginInfo> infoModel = new Model<EsmSecurityManager.LoginInfo>(info);
+        add( new UnlicensedLabel("titleLabel", new StringResourceModel( "page.title", this, null, new Object[]{ new StringResourceModel( "page.${pageName}.title", this, new Model<EsmStandardWebPage>(this))} )) );
         add( new UnlicensedLabel("userLabel", new StringResourceModel( "page.user", this, infoModel )) );
         add( new UnlicensedLabel("sinceLabel", sinceResourceModel ));
-        add( new NavigationPanel("navigation", new Model(this), securityManager) );
+        add( new NavigationPanel("navigation", new Model<EsmStandardWebPage>(this), securityManager) );
 
         saveLastVisitedPage();
     }
@@ -78,12 +78,12 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
         // this means that the CSS overrides any styles in any other components in the page
         if ( get("timeZoneLabel") == null ) {
             add( new UnlicensedLabel("timeZoneLabel", new StringResourceModel( "page.timeZone", this, null, new Object[]{getSession().getTimeZoneId()}) ).add(
-                HeaderContributor.forCss( RES_CSS_SKIN )
+                CSSPackageResource.getHeaderContribution( RES_CSS_SKIN )
             ) );
         }
 
         // disable any secured component that the user is not permitted to access
-        this.visitChildren( null, new IVisitor(){
+        this.visitChildren( null, new IVisitor<Component>(){
             @Override
             public Object component(Component component) {
                 if ( !securityManager.isAuthorized( component ) ) {

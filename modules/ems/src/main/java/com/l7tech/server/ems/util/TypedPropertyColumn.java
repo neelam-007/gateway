@@ -6,20 +6,20 @@ import org.apache.wicket.model.IModel;
 /**
  * Typed extension of property column.
  */
-public class TypedPropertyColumn extends PropertyColumn {
+public class TypedPropertyColumn<T> extends PropertyColumn<T> {
 
     //- PUBLIC
 
-    public TypedPropertyColumn( final IModel displayModel,
+    public TypedPropertyColumn( final IModel<String> displayModel,
                                 final String propertyExpression,
-                                final Class columnClass,
+                                final Class<T> columnClass,
                                 final boolean escapePropertyValue ) {
         this( displayModel, propertyExpression, columnClass, escapePropertyValue, false );
     }
 
-    public TypedPropertyColumn( final IModel displayModel,
+    public TypedPropertyColumn( final IModel<String> displayModel,
                                 final String propertyExpression,
-                                final Class columnClass,
+                                final Class<T> columnClass,
                                 final boolean escapePropertyValue,
                                 final boolean multiline ) {
         super( displayModel, propertyExpression );
@@ -28,7 +28,7 @@ public class TypedPropertyColumn extends PropertyColumn {
         this.multiline = multiline;
     }
 
-    public TypedPropertyColumn( final IModel displayModel,
+    public TypedPropertyColumn( final IModel<String> displayModel,
                                 final String sortProperty,
                                 final String propertyExpression,
                                 final Class columnClass,
@@ -36,7 +36,7 @@ public class TypedPropertyColumn extends PropertyColumn {
         this( displayModel, sortProperty, propertyExpression, columnClass, escapePropertyValue, false );
     }
 
-    public TypedPropertyColumn( final IModel displayModel,
+    public TypedPropertyColumn( final IModel<String> displayModel,
                                 final String sortProperty,
                                 final String propertyExpression,
                                 final Class columnClass,

@@ -317,6 +317,11 @@
     <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="serverConfig" ref="serverConfig"/>
+        <!--
+          This is not a configuration error, server config listens for cluster property events
+          so it can dispatch them to other beans.
+        -->
+        <property name="clusterPropertyListener" ref="serverConfig"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.ems.EsmLicenseManager">

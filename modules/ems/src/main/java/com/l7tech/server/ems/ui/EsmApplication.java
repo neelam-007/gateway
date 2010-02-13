@@ -23,6 +23,7 @@ import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.authorization.IUnauthorizedComponentInstantiationListener;
 import org.apache.wicket.markup.html.PackageResourceGuard;
+import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -63,8 +64,8 @@ public class EsmApplication extends WebApplication {
      *
      */
     @Override
-    public Class getHomePage() {
-        Class homePage = SystemSettings.class;
+    public Class<? extends WebPage> getHomePage() {
+        Class<? extends WebPage> homePage = SystemSettings.class;
 
         RequestCycle cycle = RequestCycle.get();
         if ( cycle != null ) {
@@ -81,7 +82,7 @@ public class EsmApplication extends WebApplication {
                 if ( emsSession.getPreferredPage() != null &&
                      !emsSession.getPreferredPage().isEmpty() ) {
                     NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.ui.pages");
-                    Class userHomePage = navigationModel.getPageClassForPage( emsSession.getPreferredPage() );
+                    Class<WebPage> userHomePage = navigationModel.getPageClassForPage( emsSession.getPreferredPage() );
                     if ( userHomePage != null ) {
                         homePage = userHomePage;    
                     } else {
@@ -110,24 +111,24 @@ public class EsmApplication extends WebApplication {
         HttpServletRequest servletRequest = servletWebRequest.getHttpServletRequest();
         EsmSecurityManager.LoginInfo info = getEsmSecurityManager().getLoginInfo( servletRequest.getSession(true) );
 
-        boolean isAdmin = false;
-        try {
-            for (Role role: getRoleManager().getAssignedRoles(info.getUser())) {
-                if (Role.Tag.ADMIN == role.getTag()) {
-                    isAdmin = true;
-                    break;
-                }
-            }
-        } catch (FindException e) {
-        }
-        // Set the status of the license or ssl certificate about to expire.
-        // Note: non-admin users will not check expirty status.
-        if (isAdmin) {
-            CertLicExpiryStatus expiryStatus = getCertLicExpiryStatus();
-            session.setCertLicExpiryStatus(expiryStatus);
-        }
-
         if ( info != null ) {
+            boolean isAdmin = false;
+            try {
+                for (Role role: getRoleManager().getAssignedRoles(info.getUser())) {
+                    if (Role.Tag.ADMIN == role.getTag()) {
+                        isAdmin = true;
+                        break;
+                    }
+                }
+            } catch (FindException e) {
+            }
+            // Set the status of the license or ssl certificate about to expire.
+            // Note: non-admin users will not check expirty status.
+            if (isAdmin) {
+                CertLicExpiryStatus expiryStatus = getCertLicExpiryStatus();
+                session.setCertLicExpiryStatus(expiryStatus);
+            }
+
             setUserPreferences( info.getUser(), session );
         }
 
@@ -264,7 +265,7 @@ public class EsmApplication extends WebApplication {
         mountTemplate("/SubmissionReceived.html");
     }
 
-    public void mountPage( final String url, final Class pageClass ) {
+    public void mountPage( final String url, final Class<? extends WebPage> pageClass ) {
         super.mount( new HybridUrlCodingStrategy( url, pageClass, false ) );
     }
 
@@ -330,7 +331,6 @@ public class EsmApplication extends WebApplication {
     private ServerConfig config;
     private UpdatableLicenseManager licenseManager;
     private DefaultKey defaultKey;
-    private CertLicExpiryStatus expiryStatus;
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();

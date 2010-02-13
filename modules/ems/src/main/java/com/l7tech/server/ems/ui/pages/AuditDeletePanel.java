@@ -27,17 +27,17 @@ public class AuditDeletePanel extends Panel {
         setOutputMarkupId(true);
 
         final Integer[] intHolder = new Integer[]{7};
-        TextField minAgeTextField = new TextField("audit.minage", new IObjectClassAwareModel(){
+        TextField<Integer> minAgeTextField = new TextField<Integer>("audit.minage", new IObjectClassAwareModel<Integer>(){
             @Override
-            public Class getObjectClass() { return Integer.class; }
+            public Class<Integer> getObjectClass() { return Integer.class; }
             @Override
-            public Object getObject() { return intHolder[0]; }
+            public Integer getObject() { return intHolder[0]; }
             @Override
-            public void setObject(Object object) { intHolder[0] = (Integer) object; }
+            public void setObject(Integer object) { intHolder[0] = object; }
             @Override
             public void detach() { }
         });
-        minAgeTextField.add( new RangeValidator(7, 365) );
+        minAgeTextField.add( new RangeValidator<Integer>(7, 365) );
         minAgeTextField.setRequired(true);
 
         SecureForm form = new SecureForm("audit.form",  new AttemptedDeleteAll(EntityType.AUDIT_RECORD) ){

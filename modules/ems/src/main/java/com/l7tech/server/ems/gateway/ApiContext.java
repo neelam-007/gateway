@@ -157,6 +157,7 @@ public abstract class ApiContext {
         }
     }
 
+    @SuppressWarnings({ "unchecked" })
     private <T> T initApi(Class<T> apiClass, String url) {
         JaxWsClientFactoryBean cfb = new JaxWsClientFactoryBean();
         cfb.setServiceClass( apiClass );
@@ -200,7 +201,6 @@ public abstract class ApiContext {
         });
 
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(cfb);
-        //noinspection unchecked
         return (T) factory.create();
     }
 }

@@ -10,12 +10,13 @@ import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.*;
 import org.apache.wicket.ajax.calldecorator.AjaxCallDecorator;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDataProvider;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.CSSPackageResource;
 import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.JavascriptPackageResource;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.markup.html.basic.Label;
@@ -43,9 +44,9 @@ public class YuiDataTable extends Panel {
     //- PUBLIC
 
     public static void contributeHeaders( final Component component ) {
-        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
-        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_MENU ) );
-        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
+        component.add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_BUTTON ) );
+        component.add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_MENU ) );
+        component.add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_DATATABLE ) );
     }
 
     /**
@@ -58,7 +59,7 @@ public class YuiDataTable extends Panel {
      * @param sortableDataProvider The data provider for the table data
      */
     public YuiDataTable( final String id,
-                         final List<PropertyColumn> columns,
+                         final List<PropertyColumn<?>> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider ) {
@@ -79,7 +80,7 @@ public class YuiDataTable extends Panel {
      * @param selectionSensitiveComponents Buttons that are sensitive to row selection
      */
     public YuiDataTable( final String id,
-                         final List<PropertyColumn> columns,
+                         final List<PropertyColumn<?>> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider,
@@ -106,7 +107,7 @@ public class YuiDataTable extends Panel {
      * @param selectionSensitiveComponents Buttons that are sensitive to row selection
      */
     public YuiDataTable( final String id,
-                         final List<PropertyColumn> columns,
+                         final List<PropertyColumn<?>> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider,
@@ -129,7 +130,7 @@ public class YuiDataTable extends Panel {
      * @param data The table data
      */
     public YuiDataTable( final String id,
-                         final List<PropertyColumn> columns,
+                         final List<PropertyColumn<?>> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final Collection<?> data ) {
@@ -151,7 +152,7 @@ public class YuiDataTable extends Panel {
      * @param selectionSensitiveComponents Buttons that are sensitive to row selection
      */
     public YuiDataTable( final String id,
-                         final List<PropertyColumn> columns,
+                         final List<PropertyColumn<?>> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final Collection<?> data,
@@ -187,7 +188,7 @@ public class YuiDataTable extends Panel {
      * Internal constructor.
      */
     private YuiDataTable( final String id,
-                          final List<PropertyColumn> columns,
+                          final List<PropertyColumn<?>> columns,
                           final String sortProperty,
                           final boolean sortAscending,
                           final ISortableDataProvider sortableDataProvider,
@@ -206,17 +207,17 @@ public class YuiDataTable extends Panel {
 
         contributeHeaders( this );
 
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_PAGINATOR ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONNECTION ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_JSON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DOM_EVENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_ELEMENT ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_BUTTON ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DRAGDROP ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_PAGINATOR ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_CONNECTION ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_JSON ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DATASOURCE ) );
+        add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DATATABLE ) );
 
-        add( HeaderContributor.forJavaScript( "js/dataTable.js" ) );
+        add( JavascriptPackageResource.getHeaderContribution( "js/dataTable.js" ) );
 
         JSON json = new JSON();
         json.addConvertor( PropertyColumn.class, new PropertyColumnConvertor( hideIdColumn ? idProperty : null ) );
@@ -275,6 +276,7 @@ public class YuiDataTable extends Panel {
                 // No action here.
             }
 
+            @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
                 return new AjaxCallDecorator(){
                     @Override
@@ -395,7 +397,7 @@ public class YuiDataTable extends Panel {
             }
         };
 
-        Label jsContainer = new Label("script", new Model(scriptHolder));
+        Label jsContainer = new Label("script", new Model<Serializable>(scriptHolder));
         add( jsContainer.setEscapeModelStrings(false) );
     }
 
@@ -407,7 +409,7 @@ public class YuiDataTable extends Panel {
         List<Model> data = new ArrayList<Model>(results);
         Iterator iter = provider.iterator( startIndex, results );
         while ( iter.hasNext() ) {
-            data.add(new Model((Serializable)iter.next()));
+            data.add(new Model<Serializable>((Serializable)iter.next()));
         }
 
         JSONPage page = new JSONPage( data, provider.size(), startIndex, sortRaw, dir );
@@ -455,7 +457,7 @@ public class YuiDataTable extends Panel {
 
     //- PRIVATE
 
-    private final List<PropertyColumn> columns;
+    private final List<PropertyColumn<?>> columns;
     private final ISortableDataProvider provider;
 
     @SuppressWarnings({"unchecked"})
@@ -585,7 +587,7 @@ public class YuiDataTable extends Panel {
         }
     }
 
-    private List<String> fieldsList( final List<PropertyColumn> columns ) {
+    private List<String> fieldsList( final List<PropertyColumn<?>> columns ) {
         List<String> fieldsList = new ArrayList<String>();
 
         for ( PropertyColumn column : columns ) {
@@ -604,7 +606,7 @@ public class YuiDataTable extends Panel {
 
         Iterator iter = provider.iterator( startIndex, results );
         while ( iter.hasNext() ) {
-            dataList.add(new Model((Serializable)iter.next()));
+            dataList.add(new Model<Serializable>((Serializable)iter.next()));
         }
 
         return dataList;

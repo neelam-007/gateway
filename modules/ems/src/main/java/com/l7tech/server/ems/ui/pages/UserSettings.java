@@ -174,16 +174,16 @@ public class UserSettings extends EsmStandardWebPage {
     /**
      * Change password form
      */
-    private final class PasswordForm extends Form {
+    private final class PasswordForm extends Form<PasswordModel> {
 
         private final PasswordModel model = new PasswordModel();
 
         public PasswordForm(final String componentName) {
             super(componentName);
 
-            PasswordTextField pass1 = new PasswordTextField("password", new PropertyModel(model, "password"));
-            PasswordTextField pass2 = new PasswordTextField("newPassword", new PropertyModel(model, "newPassword"));
-            PasswordTextField pass3 = new PasswordTextField("newPasswordConfirm", new PropertyModel(model, "newPasswordConfirm"));
+            PasswordTextField pass1 = new PasswordTextField("password", new PropertyModel<String>(model, "password"));
+            PasswordTextField pass2 = new PasswordTextField("newPassword", new PropertyModel<String>(model, "newPassword"));
+            PasswordTextField pass3 = new PasswordTextField("newPasswordConfirm", new PropertyModel<String>(model, "newPasswordConfirm"));
 
             pass2.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32) ));
 
@@ -207,7 +207,7 @@ public class UserSettings extends EsmStandardWebPage {
         }
     }
 
-    private static final class DateChoiceRenderer implements IChoiceRenderer {
+    private static final class DateChoiceRenderer implements IChoiceRenderer<String> {
         private final boolean isDate;
 
         private DateChoiceRenderer( boolean isDate ) {
@@ -215,23 +215,23 @@ public class UserSettings extends EsmStandardWebPage {
         }
 
         @Override
-        public String getIdValue(Object o, int i) {
-            return o.toString();
+        public String getIdValue(String o, int i) {
+            return o;
         }
 
         @Override
-        public Object getDisplayValue(Object o) {
-            return isDate ? EsmApplication.getDateFormatExample(o.toString()) : EsmApplication.getTimeFormatExample(o.toString());
+        public Object getDisplayValue(String o) {
+            return isDate ? EsmApplication.getDateFormatExample(o) : EsmApplication.getTimeFormatExample(o);
         }
     }
 
     /**
      * Change user interface preference form
      */
-    private final class PreferencesForm extends Form {
+    private final class PreferencesForm extends Form<Map<String,String>> {
 
         public PreferencesForm(final String componentName, final Map<String,String> preferences) {
-            super(componentName, new CompoundPropertyModel(preferences));
+            super(componentName, new CompoundPropertyModel<Map<String,String>>(preferences));
 
             List<String> zoneIds = new ArrayList<String>(Arrays.asList(TimeZone.getAvailableIDs()));
             Collections.sort( zoneIds );
@@ -246,10 +246,10 @@ public class UserSettings extends EsmStandardWebPage {
             List<String> homePages = new ArrayList<String>(navigationModel.getNavigationPages());
             homePages.add(EsmApplication.LAST_VISITED_PAGE);
 
-            add( new DropDownChoice( "timezone", zoneIds ) );
-            add( new DropDownChoice( "dateformat", EsmApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
-            add( new DropDownChoice( "timeformat", EsmApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
-            add( new GroupingDropDownChoice( "homepage", homePages ) {
+            add( new DropDownChoice<String>( "timezone", zoneIds ) );
+            add( new DropDownChoice<String>( "dateformat", EsmApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
+            add( new DropDownChoice<String>( "timeformat", EsmApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
+            add( new GroupingDropDownChoice<String>( "homepage", homePages ) {
                 @Override
                 protected String getOptionGroupForChoice(final Object object) {
                     if (EsmApplication.LAST_VISITED_PAGE.equals(object)) {
@@ -260,7 +260,7 @@ public class UserSettings extends EsmStandardWebPage {
                 }
 
                 @Override
-                protected Object getOptionDisplayValue(final Object object) {
+                protected Object getOptionDisplayValue(final String object) {
                     if (EsmApplication.LAST_VISITED_PAGE.equals(object)) {
                         return object;
                     } else {
@@ -273,7 +273,7 @@ public class UserSettings extends EsmStandardWebPage {
         @Override
         @SuppressWarnings({"unchecked"})
         public final void onSubmit() {
-            if ( storePreferences( (Map<String,String>) this.getModelObject() ) ) {
+            if ( storePreferences( this.getModelObject() ) ) {
                 this.info( new StringResourceModel("preferences.message.updated", this, null).getString() );
             } else {
                 this.error( new StringResourceModel("preferences.message.error", this, null).getString() );
@@ -313,7 +313,7 @@ public class UserSettings extends EsmStandardWebPage {
         }
 
         @Override
-        public void validate(Form form) {
+        public void validate(Form<?> form) {
             String oldPassword = formComponents[0].getInput();
             String newPassword = formComponents[1].getInput();
             String retypeNewPassword = formComponents[2].getInput();
@@ -335,9 +335,8 @@ public class UserSettings extends EsmStandardWebPage {
             return "DifferentPasswordInputValidator.message";
         }
 
-        @SuppressWarnings({"unchecked"})
         @Override
-        protected Map variablesMap() {
+        protected Map<String, Object> variablesMap() {
             Map<String, Object> map = super.variablesMap();
             map.put("OldPasswordFieldName", new StringResourceModel("passwordForm.password", UserSettings.this, null).getString());
             map.put("NewPasswordFieldName", new StringResourceModel("passwordForm.newPassword", UserSettings.this, null).getString());

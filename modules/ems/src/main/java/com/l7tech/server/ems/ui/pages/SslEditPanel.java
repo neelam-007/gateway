@@ -56,14 +56,14 @@ public class SslEditPanel extends Panel {
 
         final SslFormModel sslFormModel = new SslFormModel();
 
-        Radio sslGenerate = new Radio("sslRadioGen", new Model("gen"));
-        Radio sslLoad = new Radio("sslRadioLoad", new Model("load"));
-        final RadioGroup group = new RadioGroup("sslGroup", new Model("gen"));
+        Radio sslGenerate = new Radio<String>("sslRadioGen", new Model<String>("gen"));
+        Radio sslLoad = new Radio<String>("sslRadioLoad", new Model<String>("load"));
+        final RadioGroup group = new RadioGroup<String>("sslGroup", new Model<String>("gen"));
 
-        final TextField hostname = new TextField("hostname");
+        final TextField<String> hostname = new TextField<String>("hostname");
         hostname.add( new PatternValidator("^[a-zA-Z0-9][a-zA-Z0-9\\-\\_.]{1,1024}$") );
 
-        final FileUploadField keystore = new FileUploadField("keystore");
+        final FileUploadField keystore = new FileUploadField("keystore", new Model<FileUpload>());
 
         PasswordTextField password = new PasswordTextField("password");
         password.setResetPassword(false);
@@ -71,7 +71,7 @@ public class SslEditPanel extends Panel {
         TextField alias = new TextField("alias");
 
         List<String> rsaKeys = SetupManager.RsaKeySize.getAllKeySizes();
-        final DropDownChoice rsaKeySizeChoice = new DropDownChoice("rsaKeySize",rsaKeys);
+        final DropDownChoice<String> rsaKeySizeChoice = new DropDownChoice<String>("rsaKeySize",rsaKeys);
         
         final Component[] generateComponents = new Component[]{ hostname, rsaKeySizeChoice };
         final Component[] keystoreComponents = new Component[]{ keystore, password, alias };
@@ -92,7 +92,7 @@ public class SslEditPanel extends Panel {
             }
         });
 
-        Form sslForm = new YuiFileUploadForm("sslForm", new CompoundPropertyModel(sslFormModel)){
+        Form sslForm = new YuiFileUploadForm<Object>("sslForm", new CompoundPropertyModel<Object>(sslFormModel)){
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
              protected void onError( final AjaxRequestTarget target ) {

@@ -31,13 +31,13 @@ public class EnterpriseSearchUsersPanel extends Panel {
             new StringResourceModel("search.manner.contains", this, null).getString(),
             new StringResourceModel("search.manner.startswith", this, null).getString()};
         
-        form.add(new DropDownChoice("list.searchManners", new PropertyModel(searchUsersModel, "searchManner"), Arrays.asList(searchManners)) {
+        form.add(new DropDownChoice<String>("list.searchManners", new PropertyModel<String>(searchUsersModel, "searchManner"), Arrays.asList(searchManners)) {
             @Override
             protected CharSequence getDefaultChoice(Object o) {
                 return new StringResourceModel("search.manner.contains", this, null).getString();
             }
         });
-        form.add(new TextField("textfield.searchValues", new PropertyModel(searchUsersModel, "searchValue")));
+        form.add(new TextField<String>("textfield.searchValues", new PropertyModel<String>(searchUsersModel, "searchValue")));
         form.add(new YuiAjaxButton("button.searchUsers") {
             @Override
             protected void onSubmit(final AjaxRequestTarget target, final Form form) {
