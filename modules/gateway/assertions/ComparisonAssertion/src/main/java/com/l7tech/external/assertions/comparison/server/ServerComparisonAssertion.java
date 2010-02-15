@@ -78,7 +78,7 @@ public class ServerComparisonAssertion extends AbstractServerAssertion<Compariso
             return AssertionStatus.NONE;
         } else {
             auditor.logAndAudit(AssertionMessages.COMPARISON_NOT,
-                    failedPredicate == null ? "<unknown reason>" : failedPredicate.toString());
+                    failedPredicate == null ? "<unknown reason>" : assertion.getExpression1() + " " + failedPredicate.toString());
             return AssertionStatus.FALSIFIED;
         }
     }
