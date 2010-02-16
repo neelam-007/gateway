@@ -30,7 +30,7 @@
 	<dependencies>
 		<dependency org="javax.persistence" name="persistence-api" rev="1.0.2.GA" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.hibernate" name="hibernate-core" rev="3.3.1.GA" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.hibernate" name="hibernate-core" rev="3.3.2.GA" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.4.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="dom4j" name="dom4j" rev="1.6.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>

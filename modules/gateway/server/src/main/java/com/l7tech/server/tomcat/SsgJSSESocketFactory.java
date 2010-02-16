@@ -85,7 +85,7 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
         return htm == null ? null : htm.getSsgKeyStoreManager();
     }
 
-    protected KeyManager[] getKeyManagers(String keystoreType, String algorithm, String keyAlias) throws Exception {
+    protected KeyManager[] getKeyManagers(String keystoreType, String keystoreProvider, String algorithm, String keyAlias) throws Exception {
         // If we have a keystore OID and an ssgKeyStoreManager,
         // get the key from the ssgKeyStoreManager instead of using the usual procedure
         Long keystoreOid = getKeystoreOid();
@@ -98,7 +98,7 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
             PrivateKey privateKey = keyEntry.getPrivateKey();
             return new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };
         }
-        return super.getKeyManagers(keystoreType, algorithm, keyAlias);
+        return super.getKeyManagers(keystoreType, keystoreProvider, algorithm, keyAlias);
     }
 
 

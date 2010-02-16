@@ -33,13 +33,35 @@
             <!--
               Java.net has JAX-*, etc    "
             <ibiblio name="java.net"
-                     root="http://download.java.net/maven/1/"
+                     root="http://download.java.net/maven/2/"
                      pattern="[organisation]/[type]s/[artifact]-[revision].[ext]"
                     />
             -->
 
             <!--
-              JBoss repository 
+              Jasper reports
+            <ibiblio name="jasper" root="http://jasperreports.sourceforge.net/maven2/" m2compatible="true" checksums="md5,sha1"/>
+            -->
+
+            <!--
+            <ibiblio name="ibiblio" root="http://mirrors.ibiblio.org/pub/mirrors/maven2/" m2compatible="true" checksums="md5,sha1"/>
+            -->
+
+            <!--<ibiblio name="maven" root="http://repo2.maven.org/maven2/" m2compatible="true" checksums="md5,sha1"/>-->
+
+            <!--<ibiblio name="spring-EBR-release"  root="http://repository.springsource.com/maven/bundles/release" m2compatible="true" checksums="md5,sha1"/>-->
+            <!--<ibiblio name="spring-EBR-external" root="http://repository.springsource.com/maven/bundles/external" m2compatible="true" checksums="md5,sha1"/>-->
+
+            <!--<ibiblio name="tomcat" root="http://tomcat.apache.org/dev/dist/m2-repository/org/apache/tomcat/" m2compatible="true" checksums="md5,sha1"/>-->
+
+<!--
+            <url name="jasper" m2compatible="true" checksums="md5,sha1">
+                <artifact pattern="http://jasperreports.sourceforge.net/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            </url>
+-->
+
+            <!--
+              JBoss repository
             <url name="jboss" m2compatible="true" checksums="md5,sha1">
                 <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
             </url>
