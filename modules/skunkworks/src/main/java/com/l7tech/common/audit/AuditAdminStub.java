@@ -94,6 +94,11 @@ public class AuditAdminStub implements AuditAdmin {
         return 168;
     }
 
+    @Override
+    public boolean isSigningEnabled() throws FindException {
+        return false;
+    }
+
     public void auditViewGatewayAuditsAction() {
     }
 
