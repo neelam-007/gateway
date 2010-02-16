@@ -146,12 +146,12 @@ public class InputValidator implements FocusListener {
                 if (minimum == null && maximum != null) {
                     long max = (maximum instanceof Integer)? (Integer)maximum : (Long)maximum;
                     if (currentValue > max) {
-                        return "'" + valueText + "' is greater than the maximum limit " + maximum + ".";
+                        return "'" + numberTextFieldName + "' is greater than the maximum limit, " + maximum + ".";
                     }
                 } else if (minimum != null && maximum == null) {
                     long min = (minimum instanceof Integer)? (Integer)minimum : (Long)minimum;
                     if (currentValue < min) {
-                        return "'" + valueText + "' is less than the minimum limit " + minimum + ".";
+                        return "'" + numberTextFieldName + "' is less than the minimum limit, " + minimum + ".";
                     }
                 } else if (minimum != null && maximum != null) {
                     long min = (minimum instanceof Integer)? (Integer)minimum : (Long)minimum;

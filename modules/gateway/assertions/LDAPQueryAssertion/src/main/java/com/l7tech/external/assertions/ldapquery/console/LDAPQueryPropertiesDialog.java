@@ -128,7 +128,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         enableButtons();
 
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
-
+        cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
+        validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache LDAP attribute values"));
+        
         validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
             @Override
