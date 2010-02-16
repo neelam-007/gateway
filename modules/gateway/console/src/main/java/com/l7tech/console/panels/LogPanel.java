@@ -23,7 +23,6 @@ import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.console.util.AuditLogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -1939,16 +1938,8 @@ public class LogPanel extends JPanel {
     private boolean isSignAudits(final boolean refresh) {
         if (refresh) {
             boolean result = signAudits;
-            final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
             try {
-                final ClusterProperty prop = clusterStatusAdmin.findPropertyByName("audit.signing");
-                if (prop == null) {
-                    result = false;
-                } else {
-                    result = Boolean.valueOf(prop.getValue());
-                }
-            } catch (PermissionDeniedException e) {
-                result = false;
+                result = Registry.getDefault().getAuditAdmin().isSigningEnabled();
             } catch (FindException e) {
                 // keep old value
             }

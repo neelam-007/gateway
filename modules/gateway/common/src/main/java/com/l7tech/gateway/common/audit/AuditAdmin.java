@@ -195,4 +195,14 @@ public interface AuditAdmin extends GenericLogAdmin {
     @Transactional(propagation=SUPPORTS)
     @Administrative(licensed=false)
     int serverMinimumPurgeAge();
+
+    /**
+     * Check if the cluster property, "audit.signing" is enabled or not.
+     * 
+     * @return true if "audit.signing" is set as true.
+     * @throws FindException thrown when the property cannot be found.
+     */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    boolean isSigningEnabled() throws FindException;
 }

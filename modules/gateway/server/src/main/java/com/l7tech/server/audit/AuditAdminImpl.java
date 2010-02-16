@@ -385,7 +385,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                                       "' is not a valid number. Using " + age + " (one week) by default" );
         }
     }
-        
+
+    @Override
+    public boolean isSigningEnabled() throws FindException {
+        final String prop = clusterPropertyManager.getProperty("audit.signing");
+        return Boolean.valueOf(prop);
+    }
 
     /**
      * A daemon thread which will persist audit view events.
