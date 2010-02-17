@@ -39,6 +39,7 @@ class XslTransformationSpecifyUrlPanel extends JPanel {
             if ( !ValidationUtils.isValidUrl(url.trim()) ) {
                 return xslTransformationPropertiesDialog.getResources().getString("error.badurl");
             }
+            return null;
         }
         return xslTransformationPropertiesDialog.getResources().getString("error.nourl");
     }
