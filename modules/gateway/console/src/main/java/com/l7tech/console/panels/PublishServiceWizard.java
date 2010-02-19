@@ -123,7 +123,16 @@ public class PublishServiceWizard extends Wizard {
                     wsdlPortInfo.isWasWsdlPortSelected();
         }
 
+        public String getRoutingUrl() {
+            return routingUrl;
+        }
+
+        public void setRoutingUrl(String routingUrl) {
+            this.routingUrl = routingUrl;
+        }
+
         private boolean sharedPolicy = false;
+        private String routingUrl;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
         private Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
@@ -142,10 +151,12 @@ public class PublishServiceWizard extends Wizard {
     public static PublishServiceWizard getInstance(Frame parent) {
         ServicePanel panel1 = new ServicePanel();
         if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
-            IdentityProviderWizardPanel panel2 = new IdentityProviderWizardPanel(true);
-            ProtectedServiceWizardPanel panel3 = new ProtectedServiceWizardPanel();
+            ServiceResolutionPanel panel2 = new ServiceResolutionPanel();
+            IdentityProviderWizardPanel panel3 = new IdentityProviderWizardPanel(true);
+            ProtectedServiceWizardPanel panel4 = new ProtectedServiceWizardPanel();
             panel1.setNextPanel(panel2);
             panel2.setNextPanel(panel3);
+            panel3.setNextPanel(panel4);
         }
         return new PublishServiceWizard(parent, panel1);
     }
@@ -221,6 +232,7 @@ public class PublishServiceWizard extends Wizard {
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
             final PublishedService newService = saBundle.getService();
             newService.setDefaultRoutingUrl( saBundle.isServiceControlRequired() ? wsdlPortInfo.getAccessPointURL() : null);
+            newService.setRoutingUri(saBundle.getRoutingUrl());
 
             long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, saBundle.getServiceDocuments());
             saBundle.service.setOid(oid);
