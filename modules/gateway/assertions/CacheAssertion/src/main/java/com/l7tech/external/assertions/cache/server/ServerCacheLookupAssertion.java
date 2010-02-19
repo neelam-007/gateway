@@ -1,12 +1,13 @@
 package com.l7tech.external.assertions.cache.server;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -32,7 +33,6 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
     private final Auditor auditor;
     private final String[] variablesUsed;
     private final SsgCacheManager cacheManager;
-    private final StashManagerFactory stashManagerFactory;
 
     public ServerCacheLookupAssertion(CacheLookupAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
         super(assertion);
@@ -42,41 +42,52 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
                        : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
-        this.stashManagerFactory = (StashManagerFactory)beanFactory.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Map<String,Object> vars = context.getVariableMap(variablesUsed, auditor);
         final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, auditor, true);
         final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, auditor, true);
         SsgCache cache = cacheManager.getCache(cacheName);
 
-        InputStream body = cache.lookup(key);
-        if (body == null)
+        SsgCache.Entry cachedEntry = cache.lookup(key);
+        if (cachedEntry == null || cachedEntry.getTimeStamp() < System.currentTimeMillis() - assertion.getMaxEntryAgeMillis())
             return AssertionStatus.FALSIFIED;
 
-        try {
-            String varname = assertion.getTargetVariableName();
-            Message message;
-            ContentTypeHeader ctype;
-            if (varname == null) {
-                message = assertion.isUseRequest() ? context.getRequest() : context.getResponse();
-                //ctype = message.getMimeKnob().getOuterContentType(); // TODO use cached mime type
-                ctype = ContentTypeHeader.XML_DEFAULT;
-            } else {
-                message = new Message();
-                //ctype = context.getRequest().getMimeKnob().getOuterContentType(); // TODO use cached mime type
-                ctype = ContentTypeHeader.XML_DEFAULT;
-            }
+        logger.log(Level.FINE, "Retrieved from cache: " + key);
 
+        // todo: set variable?
+        Message message = assertion.getTargetVariableName() != null ? new Message() :
+            assertion.isUseRequest() ? context.getRequest() :
+            context.getResponse();
+
+        String cachedContentType = cachedEntry.getContentType();
+        String contentTypeOverride = assertion.getContentTypeOverride();
+        ContentTypeHeader contentType = contentTypeOverride != null && ! contentTypeOverride.isEmpty() ? ContentTypeHeader.parseValue(contentTypeOverride) :
+                cachedContentType != null ? ContentTypeHeader.parseValue(cachedContentType) :
+                ContentTypeHeader.XML_DEFAULT;
+
+
+        InputStream bodyInputStream = null;
+        try {
+            byte[] bodyBytes;
+            try {
+                bodyInputStream = cachedEntry.getStashManager().recall(0);
+                bodyBytes = IOUtils.slurpStream(bodyInputStream);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e);
+                return AssertionStatus.FALSIFIED;
+            } catch (NoSuchPartException e) {
+                logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e); // can't happen
+                return AssertionStatus.FALSIFIED;
+            }
             // TODO use proper hybrid stash manager, making arrangements to have it closed when context is closed,
             // instead of just using two-arg initialize() which just uses ByteArrayStashManager
-            if (ctype == null) ctype = ContentTypeHeader.OCTET_STREAM_DEFAULT;
-            message.initialize(ctype, IOUtils.slurpStream(body));
-
+            message.initialize(contentType, bodyBytes);
             return AssertionStatus.NONE;
         } finally {
-            body.close();
+            if (bodyInputStream != null) bodyInputStream.close();
         }
     }
 
@@ -84,6 +95,7 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
      * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
      * that would otherwise keep our instances from getting collected.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void onModuleUnloaded() {
         // This assertion doesn't have anything to do in response to this, but it implements this anyway
         // since it will be used as an example by future modular assertion authors

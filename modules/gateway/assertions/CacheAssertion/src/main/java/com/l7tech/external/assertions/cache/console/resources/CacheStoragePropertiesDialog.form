@@ -110,7 +110,7 @@
             </constraints>
             <properties>
               <labelFor value="c4f53"/>
-              <text value="Maximum entry &amp;age:"/>
+              <text value="Maximum entry &amp;age (seconds):"/>
             </properties>
           </component>
           <component id="fc7d4" class="javax.swing.JLabel">
@@ -119,7 +119,7 @@
             </constraints>
             <properties>
               <labelFor value="c94a9"/>
-              <text value="Maximum entry si&amp;ze:"/>
+              <text value="Maximum entry si&amp;ze (bytes):"/>
             </properties>
           </component>
           <component id="98f60" class="com.l7tech.gui.widgets.SquigglyTextField" binding="cacheIdField">

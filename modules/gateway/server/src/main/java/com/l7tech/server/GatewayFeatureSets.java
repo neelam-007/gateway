@@ -199,9 +199,7 @@ public class GatewayFeatureSets {
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
-            ass(WssDigest.class),
-            mass("assertion:CacheLookup"),
-            mass("assertion:CacheStorage"));
+            ass(WssDigest.class));
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",
@@ -412,6 +410,8 @@ public class GatewayFeatureSets {
             "Time/Day and IP range",
             ass(TimeRange.class),
             ass(RemoteIpRange.class),
+            mass("assertion:CacheLookup"),
+            mass("assertion:CacheStorage"),
             mass("assertion:RateLimit"));
 
         GatewayFeatureSet availabilityFw =

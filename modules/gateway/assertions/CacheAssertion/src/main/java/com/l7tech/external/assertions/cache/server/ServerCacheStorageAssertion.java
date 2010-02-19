@@ -48,6 +48,7 @@ public class ServerCacheStorageAssertion extends AbstractServerAssertion<CacheSt
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Pair<ContentTypeHeader, InputStream> source;
         try {
@@ -63,9 +64,13 @@ public class ServerCacheStorageAssertion extends AbstractServerAssertion<CacheSt
             final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, auditor, true);
             final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, auditor, true);
 
-            SsgCache cache = cacheManager.getCache(cacheName);
-            // TODO store mime type
-            cache.store(key, source.right);
+            SsgCache.Config cacheConfig = new SsgCache.Config(cacheName)
+                .maxEntries(assertion.getMaxEntries())
+                .maxAgeMillis(assertion.getMaxEntryAgeMillis())
+                .maxSizeBytes(assertion.getMaxEntrySizeBytes());
+            SsgCache cache = cacheManager.getCache(cacheConfig);
+            cache.store(key, source.right, source.left.getFullValue());
+            logger.log(Level.FINE, "Stored to cache: " + key);
 
             return AssertionStatus.NONE;
 
@@ -107,6 +112,7 @@ public class ServerCacheStorageAssertion extends AbstractServerAssertion<CacheSt
      * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
      * that would otherwise keep our instances from getting collected.
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static void onModuleUnloaded() {
         // This assertion doesn't have anything to do in response to this, but it implements this anyway
         // since it will be used as an example by future modular assertion authors

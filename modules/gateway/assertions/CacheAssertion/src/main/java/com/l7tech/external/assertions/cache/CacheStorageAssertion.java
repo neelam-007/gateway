@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.cache;
 
+import com.l7tech.external.assertions.cache.server.SsgCache;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -13,20 +14,18 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * 
  */
 public class CacheStorageAssertion extends Assertion implements UsesVariables {
-    protected static final Logger logger = Logger.getLogger(CacheLookupAssertion.class.getName());
 
     private String sourceVariableName = null;
     private boolean useRequest = false;
     private String cacheId = "defaultCache";
-    private int maxEntries;
-    private long maxEntryAgeMillis;
-    private long maxEntrySizeBytes;
+    private int maxEntries = SsgCache.Config.DEFAULT_MAX_ENTRIES;
+    private long maxEntryAgeMillis = SsgCache.Config.DEFAULT_MAX_AGE_MILLIS;
+    private long maxEntrySizeBytes = SsgCache.Config.DEFAULT_MAX_SIZE_BYTES;
     private String cacheEntryKey = "${request.url}";
 
 
@@ -165,8 +164,7 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
-//        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

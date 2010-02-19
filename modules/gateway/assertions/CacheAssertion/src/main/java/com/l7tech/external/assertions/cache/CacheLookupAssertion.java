@@ -11,20 +11,18 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * 
  */
 public class CacheLookupAssertion extends Assertion implements UsesVariables, SetsVariables {
-    protected static final Logger logger = Logger.getLogger(CacheLookupAssertion.class.getName());
 
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";
     private long maxEntryAgeMillis = Long.MAX_VALUE;
     private String targetVariableName = null;
     private boolean useRequest = false;
-
+    private String contentTypeOverride = null;
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
@@ -128,6 +126,21 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
         this.targetVariableName = targetVariableName;
     }
 
+    /**
+     * Gets the value that will be used to override the content-type of the retrieved response.
+     */
+    public String getContentTypeOverride() {
+        return contentTypeOverride;
+    }
+
+    /**
+     * Sets the value that will be used to override the content-type of the retrieved response.
+     *  
+     * @param contentTypeOverride the content-type override value
+     */
+    public void setContentTypeOverride(String contentTypeOverride) {
+        this.contentTypeOverride = contentTypeOverride;
+    }
 
     //
     // Metadata
@@ -146,8 +159,7 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
-//        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
