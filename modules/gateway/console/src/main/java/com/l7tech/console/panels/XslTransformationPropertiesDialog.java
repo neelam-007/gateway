@@ -206,6 +206,17 @@ public class XslTransformationPropertiesDialog extends JDialog {
             tb.setTitle(BORDER_TITLE_PREFIX + " " + mode);
         }
         innerPanel.revalidate();
+
+        refreshDialog();
+    }
+
+    /**
+     * Resize the dialog due to some components getting extended.
+     */
+    private void refreshDialog() {
+        if (getSize().width < mainPanel.getMinimumSize().width) {
+            setSize(mainPanel.getMinimumSize().width + 10, getSize().height);
+        }
     }
 
     private void ok() {
