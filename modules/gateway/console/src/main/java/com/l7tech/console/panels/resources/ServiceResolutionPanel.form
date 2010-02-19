@@ -15,7 +15,6 @@
         </constraints>
         <properties/>
         <border type="etched" title="Choose Service Resolution Path:">
-          <font/>
         </border>
         <children>
           <component id="4bafb" class="javax.swing.JRadioButton" binding="noURIRadio">
