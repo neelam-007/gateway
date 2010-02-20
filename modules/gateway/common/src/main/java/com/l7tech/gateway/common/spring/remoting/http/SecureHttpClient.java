@@ -101,7 +101,7 @@ public class SecureHttpClient extends HttpClient {
 
     private SSLSocketFactory getSSLSocketFactory() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyManager[] keyManagers = getKeyManagers();
             TrustManager[] trustManagers = getTrustManagers();
             sslContext.init(keyManagers, trustManagers, null);
