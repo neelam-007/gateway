@@ -6,7 +6,6 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSession;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 /**
  * SSL implementation that wraps the default SSL factory in an SsgServerSocketFactory.
@@ -32,7 +31,7 @@ public class SsgSSLImplementation extends SSLImplementation {
               delegate = getInstance();
         }
         catch(Exception e) {
-            throw (IllegalStateException) new IllegalStateException("Cannot create default SSLImplementation").initCause(e);
+            throw new IllegalStateException("Cannot create default SSLImplementation", e);
         }
     }
 
@@ -64,13 +63,12 @@ public class SsgSSLImplementation extends SSLImplementation {
         return delegate.getSSLSupport(socket);
     }
 
+    @SuppressWarnings({"deprecation"})
     public SSLSupport getSSLSupport(SSLSession session) {
         return delegate.getSSLSupport(session);
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(SsgSSLImplementation.class.getName());
 
     private final SSLImplementation delegate;
 }
