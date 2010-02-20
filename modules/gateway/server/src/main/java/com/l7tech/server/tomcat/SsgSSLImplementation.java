@@ -6,9 +6,6 @@ import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLSession;
 import java.net.Socket;
-import java.security.Provider;
-import java.security.Security;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,14 +28,6 @@ public class SsgSSLImplementation extends SSLImplementation {
      * @see SSLImplementation#getInstance()
      */
     public SsgSSLImplementation() {
-        try {
-            String providerClass = "com.l7tech.server.tomcat.ClientTrustingProvider";
-            Security.addProvider((Provider) Class.forName(providerClass).newInstance());
-        }
-        catch(Exception e) {
-            // log as fine since the provider is optional.
-            logger.log(Level.FINE, "Could not configured ClientTrustingProvider", e);
-        }
         try {
               delegate = getInstance();
         }

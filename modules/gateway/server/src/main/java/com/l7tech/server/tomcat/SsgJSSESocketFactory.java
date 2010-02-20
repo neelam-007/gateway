@@ -2,21 +2,19 @@ package com.l7tech.server.tomcat;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.tomcat.util.net.jsse.JSSESocketFactory;
 
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,15 +29,10 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
     public static final String ATTR_KEYSTOREOID = "keystoreOid"; // identifies a keystore available from SsgKeyStoreManager instead of one from disk
     public static final String ATTR_KEYALIAS = "keyAlias"; // alias of private key within the keystore
 
-    private static final String TRUSTSTORE_PASS = "changeit";
-    private static KeyStore emptyKeyStore = null;
     private long transportModuleId = -1;
     private long connectorOid = -1;
 
     public SsgJSSESocketFactory() {
-        setAttribute("truststorePass", TRUSTSTORE_PASS);
-        setAttribute("truststoreType", "JKS");
-        setAttribute("truststoreAlgorithm", "AXPK");
     }
 
     private Long getKeystoreOid() {
@@ -78,45 +71,36 @@ public class SsgJSSESocketFactory extends JSSESocketFactory {
         }
     }
 
-    private SsgKeyStoreManager getSsgKeyStoreManager() {
+    private HttpTransportModule getHttpTransportModule() {
         Object instanceId = attributes.get(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
         if (instanceId == null) return null;
-        HttpTransportModule htm = HttpTransportModule.getInstance(Long.parseLong(instanceId.toString()));
+        return HttpTransportModule.getInstance(Long.parseLong(instanceId.toString()));
+    }
+
+    private SsgKeyStoreManager getSsgKeyStoreManager() {
+        HttpTransportModule htm = getHttpTransportModule();
         return htm == null ? null : htm.getSsgKeyStoreManager();
     }
 
     protected KeyManager[] getKeyManagers(String keystoreType, String keystoreProvider, String algorithm, String keyAlias) throws Exception {
-        // If we have a keystore OID and an ssgKeyStoreManager,
-        // get the key from the ssgKeyStoreManager instead of using the usual procedure
         Long keystoreOid = getKeystoreOid();
-        if (keystoreOid != null) {
-            SsgKeyStoreManager ksm = getSsgKeyStoreManager();
-            if (ksm == null)
-                throw new IOException("Unable to create SSL socket -- a keystoreOid was specified, but no SsgKeyStoreManager instance was provided");
-            SsgKeyEntry keyEntry = ksm.lookupKeyByKeyAlias(keyAlias, keystoreOid);
-            X509Certificate[] certChain = keyEntry.getCertificateChain();
-            PrivateKey privateKey = keyEntry.getPrivateKey();
-            return new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };
-        }
-        return super.getKeyManagers(keystoreType, keystoreProvider, algorithm, keyAlias);
+        if (keystoreOid == null)
+            throw new IllegalStateException("No keystoreOid configured on SsgJSSESocketFactory");
+
+        SsgKeyStoreManager ksm = getSsgKeyStoreManager();
+        if (ksm == null)
+            throw new IOException("Unable to create SSL socket -- a keystoreOid was specified, but no SsgKeyStoreManager instance was provided");
+        SsgKeyEntry keyEntry = ksm.lookupKeyByKeyAlias(keyAlias, keystoreOid);
+        X509Certificate[] certChain = keyEntry.getCertificateChain();
+        PrivateKey privateKey = keyEntry.getPrivateKey();
+        return new KeyManager[]{new SingleCertX509KeyManager(certChain, privateKey)};
     }
 
-
-    protected synchronized KeyStore getTrustStore(String keystoreType) throws IOException {
-        if (emptyKeyStore != null)
-            return emptyKeyStore;
-
-        try {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(null, TRUSTSTORE_PASS.toCharArray());
-            return emptyKeyStore = ks;
-        } catch (KeyStoreException e) {
-            throw new IOException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(e);
-        } catch (CertificateException e) {
-            throw new IOException(e);
-        }
+    @Override
+    protected TrustManager[] getTrustManagers(String keystoreType, String keystoreProvider, String algorithm) throws Exception {
+        HttpTransportModule htm = getHttpTransportModule();        
+        ServerConfig serverConfig = htm == null ? ServerConfig.getInstance() : htm.getServerConfig();
+        return new TrustManager[] {new ClientTrustingTrustManager(serverConfig) };
     }
 
     public Socket acceptSocket(ServerSocket socket) throws IOException {

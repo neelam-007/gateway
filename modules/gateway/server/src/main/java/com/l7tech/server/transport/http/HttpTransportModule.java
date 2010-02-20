@@ -992,4 +992,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
         }
     }
+
+    /**
+     * Provide access to serverConfig for modules.
+     *
+     * @return the serverConfig
+     */
+    public ServerConfig getServerConfig() {
+        return serverConfig;
+    }
 }
