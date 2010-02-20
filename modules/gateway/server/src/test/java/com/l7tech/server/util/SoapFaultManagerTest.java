@@ -45,49 +45,57 @@ public class SoapFaultManagerTest {
     @Test
     public void testSoap12ExceptionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(false) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap12PEC(false) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
         assertFalse( "Policy version fault", fault.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testSoap11ExceptionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(false) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap11PEC(false) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
         assertFalse( "Policy version fault", fault.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testSoap12PolicyVersionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
         assertTrue( "Policy version fault", fault.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testSoap11PolicyVersionFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
         assertTrue( "Policy version fault", fault.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.left );
     }
 
     @Test
@@ -102,6 +110,7 @@ public class SoapFaultManagerTest {
         assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, fault.left );
     }
 
     @Test
@@ -116,12 +125,74 @@ public class SoapFaultManagerTest {
         assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
         assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
         assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
+    }
+
+    @Test
+    public void testSoap12MediumFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.MEDIUM_DETAIL_FAULT);
+        Pair<ContentTypeHeader,String> fault = sfm.constructReturningFault( level, getSoap12PEC(false) );
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault.right );
+        assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
+        assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, fault.left );
+    }
+
+    @Test
+    public void testSoap11MediumFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.MEDIUM_DETAIL_FAULT);
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault.right );
+        assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
+        assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
+    }
+    
+    @Test
+    public void testSoap12DetailFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+        Pair<ContentTypeHeader,String> fault = sfm.constructReturningFault( level, getSoap12PEC(false) );
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault.right );
+        assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
+        assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, fault.left );
+    }
+
+    @Test
+    public void testSoap11DetailFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault.right );
+        assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse( "Policy version fault", fault.right.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.right.contains( SERVICE_URL ));
+        assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
     }
 
     @Test
     public void testDefaultSignedSoapFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, null);
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -129,12 +200,14 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElementForL7(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testDefaultSignedSoap12Fault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, null);
-        String fault = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap12PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
@@ -142,28 +215,33 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElementForL7(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testDefaultSignedSoapFaultWithPrivateKey() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, "alice");
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElementForL7(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getAliceKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.left );
     }
 
     @Test
     public void testDefaultSignedSoapFaultWithInvalidPrivateKey() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager(true, "123111alice");
-        String fault = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        Pair<ContentTypeHeader,String> faultInfo = sfm.constructExceptionFault( constructException(), getSoap11PEC(true) );
+        String fault = faultInfo.right;
         System.out.println(fault);
         Document doc = XmlUtil.parse( fault );
         assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
         assertNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.left );
     }
 
     @Test
@@ -179,6 +257,7 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElementForL7(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
    }
 
     @Test
@@ -197,6 +276,7 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElementForL7(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getAliceKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
     }
 
     @Test
@@ -226,6 +306,7 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElement(doc, TEST_ACTOR) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
     }
 
     @Test
@@ -255,6 +336,7 @@ public class SoapFaultManagerTest {
         assertNotNull( "SOAP header", SoapUtil.getHeaderElement(doc) );
         assertNotNull( "Security header", SoapUtil.getSecurityElement(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.left );
     }
 
     private SoapFaultManager buildSoapFaultManager() throws Exception {

@@ -185,7 +185,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
-                    boolean useSoap12 = pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2;
+                    boolean useSoap12 = isSoap12(pec);
                     Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
                     NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
                     // populate @status element
@@ -194,6 +194,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     // populate the faultactor value
                     String actor = getRequestUrlVariable(pec);
                     if(useSoap12) {
+                        ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
                         res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
                     } else {
                         res = tmp.getElementsByTagName("faultactor");
@@ -207,10 +208,18 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
-                output = buildDetailedFault(pec, globalstatus, false);
+                {
+                    Pair<ContentTypeHeader, String> faultInfo = buildDetailedFault(pec, globalstatus, false);
+                    output = faultInfo.right;
+                    ctype = faultInfo.left;
+                }
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
-                output = buildDetailedFault(pec, globalstatus, true);
+                {
+                    Pair<ContentTypeHeader, String> faultInfo = buildDetailedFault(pec, globalstatus, true);
+                    output = faultInfo.right;
+                    ctype = faultInfo.left;
+                }
                 break;
         }
 
@@ -336,11 +345,13 @@ public class SoapFaultManager implements ApplicationContextAware {
      * SOAP faults resulting from an exception that occurs in the processing of the policy.
      * Receiving such a fault sould be considered a bug.
      */
-    public String constructExceptionFault(Throwable e, PolicyEnforcementContext pec) {
+    public Pair<ContentTypeHeader,String> constructExceptionFault(Throwable e, PolicyEnforcementContext pec) {
+        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
         String output = null;
         try {
             boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
             if(isSoap12(pec)) {
+                ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
                 Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
                         POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 : EXCEPTION_FAULT_SOAP_1_2);
 
@@ -388,7 +399,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
         }
 
-        return output;
+        return new Pair<ContentTypeHeader,String>(ctype,output);
     }
 
     /**
@@ -410,10 +421,11 @@ public class SoapFaultManager implements ApplicationContextAware {
      *      </soapenv:Body>
      *  </soapenv:Envelope>
      */
-    private String buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
+    private Pair<ContentTypeHeader, String> buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
         String output = null;
+        boolean useSoap12 = false;
         try {
-            boolean useSoap12 = isSoap12(pec);
+            useSoap12 = isSoap12(pec);
             Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
             NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
             // populate @status element
@@ -460,7 +472,8 @@ public class SoapFaultManager implements ApplicationContextAware {
         } catch (Exception e) {
             logger.log(Level.WARNING, "could not construct generic fault", e);
         }
-        return output;
+
+        return new Pair<ContentTypeHeader,String>( useSoap12 ? ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT, output);
     }
 
     /**

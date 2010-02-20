@@ -63,7 +63,7 @@ import java.security.cert.CertificateException;
  * serviceoid : the internal object identifier of the PublishedService. if specified, this parameter is sufficient to
  * retrieve the policy
  * <br/>
- * urn : the urn of the service. if more than one service have the same urn, at least one more paramater will be
+ * urn : the urn of the service. if more than one service have the same urn, at least one more parameter will be
  * necessary
  * <br/>
  * soapaction : the soapaction of the PublishedService
@@ -77,7 +77,6 @@ import java.security.cert.CertificateException;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
-    private static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
 
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
@@ -542,14 +541,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml;
         try {
+            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context);
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setContentType(faultInfo.left.getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
-            //context.setVariable("request.url", hreq.getRequestURL().toString());
-            faultXml = soapFaultManager.constructExceptionFault(e, context);
-            responseStream.write(faultXml.getBytes());
+            responseStream.write(faultInfo.right.getBytes(faultInfo.left.getEncoding()));
         } finally {
             if (responseStream != null) responseStream.close();
         }

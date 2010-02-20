@@ -273,10 +273,10 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
                 } catch ( PolicyVersionException pve ) {
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
-                    faultXml = soapFaultManager.constructExceptionFault(pve, context);
+                    faultXml = soapFaultManager.constructExceptionFault(pve, context).right;
                 } catch ( Throwable t ) {
                     logger.log( Level.WARNING, "Exception while processing FTP message", t );
-                    faultXml = soapFaultManager.constructExceptionFault(t, context);
+                    faultXml = soapFaultManager.constructExceptionFault(t, context).right;
                 }
 
                 if ( status != AssertionStatus.NONE ) {

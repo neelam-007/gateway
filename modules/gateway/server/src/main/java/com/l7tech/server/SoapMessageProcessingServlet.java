@@ -348,7 +348,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                            e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
                     logger.warning("Client closed connection.");
                 } else if (e instanceof MessageResponseIOException) {
-                    sendExceptionFault(context, e.getMessage(), hrequest, hresponse, status);
+                    sendExceptionFault(context, e.getMessage(), null, hrequest, hresponse, status);
                 } else if (e instanceof IOException) {
                     logger.log(Level.WARNING, "I/O error while processing message: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                     sendExceptionFault(context, e, hrequest, hresponse, status);
@@ -462,15 +462,18 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
-        sendExceptionFault(context, soapFaultManager.constructExceptionFault(e, context), hreq, hresp, status);
+        Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context);
+        sendExceptionFault(context, faultInfo.right, faultInfo.left.getFullValue(), hreq, hresp, status);
     }
 
-    private void sendExceptionFault(PolicyEnforcementContext context, String faultXml,
+    private void sendExceptionFault(PolicyEnforcementContext context, String faultXml, String contentType,
                                     HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = hresp.getOutputStream();
-            if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+            if ( contentType != null ) {
+                hresp.setContentType(contentType);
+            } else if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
                 hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);

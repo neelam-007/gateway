@@ -64,6 +64,7 @@ public class TokenServiceServlet extends HttpServlet {
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
@@ -81,10 +82,12 @@ public class TokenServiceServlet extends HttpServlet {
         }
     }
 
+    @Override
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         throw new ServletException("Method not supported; context requests must use POST");
     }
 
+    @Override
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         final Message response = new Message();
         final Message request = new Message();
@@ -162,7 +165,7 @@ public class TokenServiceServlet extends HttpServlet {
                 return;
             }
 
-            // dont let this ioexception fall through, this is a debugging nightmare!
+            // don't let this IOException fall through, this is a debugging nightmare!
             try {
                 outputRequestSecurityTokenResponse(output, res);
                 logger.finest("Sent back SecurityToken:" + XmlUtil.nodeToFormattedString(output));
@@ -190,6 +193,7 @@ public class TokenServiceServlet extends HttpServlet {
 
     private TokenServiceImpl.CredentialsAuthenticator authenticator(final PolicyEnforcementContext context) {
         return new TokenServiceImpl.CredentialsAuthenticator() {
+            @Override
             public User authenticate(LoginCredentials creds) {
                 User authenticatedUser = null;
                 Collection<IdentityProvider> providers;
@@ -205,7 +209,7 @@ public class TokenServiceServlet extends HttpServlet {
                                 if (authenticatedUser != null) {
                                     throw new AuthenticationException("The cert used to sign this request is valid " +
                                                                       "on more than one provider. Secure conversation " +
-                                                                      "contexts must be associated unambigously to one " +
+                                                                      "contexts must be associated unambiguously to one " +
                                                                       "user.");
                                 } else {
                                     authenticatedUser = authResult.getUser();
@@ -276,14 +280,12 @@ public class TokenServiceServlet extends HttpServlet {
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml;
         try {
+            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context);
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setContentType(faultInfo.left.getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
-
-            faultXml = soapFaultManager.constructExceptionFault(e, context);
-            responseStream.write(faultXml.getBytes());
+            responseStream.write(faultInfo.right.getBytes(faultInfo.left.getEncoding()));
         } finally {
             if (responseStream != null) responseStream.close();
         }
