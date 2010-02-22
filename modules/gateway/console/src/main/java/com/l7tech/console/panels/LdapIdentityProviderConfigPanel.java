@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
@@ -852,6 +853,18 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     @Override
     public boolean canTest() {
         return advanceAllowed;
+    }
+
+    @Override
+    public boolean onNextButton() {
+        if(providerNameTextField.getText().length() < 1 || providerNameTextField.getText().length() > 128) {
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), resources.getString("providerNameTextField.length.error"),
+                            resources.getString("providerNameTextField.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+
+            return false;
+        }
+        return true;
     }
 
     private KeyListener keyListener = new KeyListener() {

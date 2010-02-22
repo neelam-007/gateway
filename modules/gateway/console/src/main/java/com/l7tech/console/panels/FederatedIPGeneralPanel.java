@@ -125,8 +125,8 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
     public boolean onNextButton() {
 
-        if(providerNameTextField.getText().length() < 3 || providerNameTextField.getText().length() > 24) {
-            JOptionPane.showMessageDialog(mainPanel, resources.getString("providerNameTextField.error.empty"),
+        if(providerNameTextField.getText().length() < 1 || providerNameTextField.getText().length() > 128) {
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("providerNameTextField.length.error"),
                             resources.getString("providerNameTextField.error.title"),
                             JOptionPane.ERROR_MESSAGE);
 
