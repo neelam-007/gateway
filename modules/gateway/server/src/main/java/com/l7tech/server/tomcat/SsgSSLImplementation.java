@@ -8,14 +8,9 @@ import javax.net.ssl.SSLSession;
 import java.net.Socket;
 
 /**
- * SSL implementation that wraps the default SSL factory in an SsgServerSocketFactory.
+ * SSL implementation that uses the {@code SsgJSSESocketFactory}.
  *
- * <p>If the conf directory contains a properties file (SsgSSLImplementation.properties)
- * with any attributes then these are set on any created socket factories.</p>
- *
- * <p>This will also register our crypto provider if it is available.</p>
- *
- * @version $Revision$
+ * @see SsgJSSESocketFactory
  */
 public class SsgSSLImplementation extends SSLImplementation {
 
@@ -40,6 +35,7 @@ public class SsgSSLImplementation extends SSLImplementation {
      *
      * @return The name
      */
+    @Override
     public String getImplementationName() {
         return "SecureSpanGatewayWrapperFor-" + delegate.getImplementationName();
     }
@@ -47,11 +43,12 @@ public class SsgSSLImplementation extends SSLImplementation {
     /**
      * Get the ServerSocketFactory for this SSLImplementation.
      *
-     * <p>This will wrap the delegates ServerSocketFactory in an
-     * SsgServerSocketFactory.</p>
+     * <p>This will create a new {@code SsgJSSESocketFactory}.</p>
      *
      * @return The wrapped SSL ServerSocketFactory
+     * @see SsgJSSESocketFactory
      */
+    @Override
     public ServerSocketFactory getServerSocketFactory() {
         return new SsgJSSESocketFactory();
     }
@@ -59,11 +56,14 @@ public class SsgSSLImplementation extends SSLImplementation {
     /**
      * Invokes delegate
      */
+    @Override
     public SSLSupport getSSLSupport(Socket socket) {
         return delegate.getSSLSupport(socket);
     }
 
     @SuppressWarnings({"deprecation"})
+    @Deprecated
+    @Override
     public SSLSupport getSSLSupport(SSLSession session) {
         return delegate.getSSLSupport(session);
     }
