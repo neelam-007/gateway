@@ -77,7 +77,7 @@ public class TransportAdminImpl implements TransportAdmin {
         try {
             final KeyManager[] keyManagers;
             keyManagers = defaultKeystore.getSslKeyManagers();
-            testSslContext = SSLContext.getInstance("SSL");
+            testSslContext = SSLContext.getInstance("TLS");
             testSslContext.init(keyManagers, null, null);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
