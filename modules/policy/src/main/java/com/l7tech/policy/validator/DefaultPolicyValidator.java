@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * 
  * @author Emil Marceta
  */
-public class DefaultPolicyValidator extends PolicyValidator {
+public class DefaultPolicyValidator extends AbstractPolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
     public DefaultPolicyValidator(GuidBasedEntityManager<Policy> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
@@ -75,7 +75,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
     {
         Assertion[] path = ap.getPath();
 
-        // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
+        // paths that have the pattern "OR, Comment" should be ignored completely (Bugzilla #2449)
         for (Assertion assertion: path) {
             if (assertion instanceof CommentAssertion || !assertion.isEnabled()) {
                 if (assertion.getParent() instanceof OneOrMoreAssertion) {
@@ -153,7 +153,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
     /**
      * The implementations are invoked after the regular (sequential)
      * validate of the assertion path. This is useful for unordered validations,
-     * that is, where some asseriton must be present but not necessarily
+     * that is, where some assertion must be present but not necessarily
      * before the assertion currently examined.
      */
     static interface DeferredValidate {

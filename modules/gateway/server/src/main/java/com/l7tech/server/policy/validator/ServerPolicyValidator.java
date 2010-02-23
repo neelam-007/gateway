@@ -24,7 +24,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.validator.ValidatorFlag;
+import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -33,7 +33,6 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -65,7 +64,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Sep 1, 2004<br/>
  */
-public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
+public class ServerPolicyValidator extends AbstractPolicyValidator implements InitializingBean {
 
     private static final String WARNING_NOCERT = "This identity requires a certificate for authentication (authentication will always fail).";
 

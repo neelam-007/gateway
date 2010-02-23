@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.certificateattributes;
 
+import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
@@ -26,7 +26,7 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
             Assertion ass = path.getPath()[i];
             if (!ass.isEnabled()) continue;
             if (ass.isCredentialSource()) {
-                if (PolicyValidator.isX509CredentialSource(ass)) {
+                if (AbstractPolicyValidator.isX509CredentialSource(ass)) {
                     firstCertCred = i;
                 }
             } else if (ass instanceof IdentityAssertion) {
