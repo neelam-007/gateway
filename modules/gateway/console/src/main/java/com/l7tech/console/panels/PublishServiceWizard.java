@@ -123,16 +123,7 @@ public class PublishServiceWizard extends Wizard {
                     wsdlPortInfo.isWasWsdlPortSelected();
         }
 
-        public String getRoutingUrl() {
-            return routingUrl;
-        }
-
-        public void setRoutingUrl(String routingUrl) {
-            this.routingUrl = routingUrl;
-        }
-
         private boolean sharedPolicy = false;
-        private String routingUrl;
         private RoutingAssertion routingAssertion;
         private PublishedService service = new PublishedService();
         private Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
@@ -232,7 +223,7 @@ public class PublishServiceWizard extends Wizard {
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
             final PublishedService newService = saBundle.getService();
             newService.setDefaultRoutingUrl( saBundle.isServiceControlRequired() ? wsdlPortInfo.getAccessPointURL() : null);
-            newService.setRoutingUri(saBundle.getRoutingUrl());
+            newService.setRoutingUri(saBundle.service.getRoutingUri());
 
             long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, saBundle.getServiceDocuments());
             saBundle.service.setOid(oid);

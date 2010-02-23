@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.FilterDocument;
 
 import javax.swing.*;
@@ -44,11 +45,13 @@ public class ServiceResolutionPanel extends WizardStepPanel {
     @Override
     public boolean onNextButton() {
         if (subject != null) {
-            subject.setRoutingUrl(null);
+            PublishedService service = subject.getService();
+            service.setRoutingUri(null);
+
             if (customURIRadio.isSelected()) {
-                String routingUrl = uriField.getText().trim();
-                if (! routingUrl.isEmpty()) {
-                    subject.setRoutingUrl(routingUrl);
+                String routingUri = uriField.getText().trim();
+                if (! routingUri.isEmpty()) {
+                    service.setRoutingUri(routingUri);
                 }
             }
         }
