@@ -86,6 +86,9 @@
                      matcher="exact"/>
         </dependency>
 
+        <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="5.1" force="true" conf="core"/>
+
         <!-- Optional dependencies -->
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
@@ -94,8 +97,8 @@
         <dependency org="fiorano" name="fiorano-framework" rev="1.0-4507" force="true" conf="optional"/>
 
         <!-- Alternative dependencies -->
-        <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.0" force="true" conf="alternative"/>
         <dependency org="com.rsa" name="jsafe-jce" rev="4.1.0.1" force="true" conf="alternative"/>
+        <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.0" force="true" conf="alternative"/>
 
         <!-- Test dependencies -->
         <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
