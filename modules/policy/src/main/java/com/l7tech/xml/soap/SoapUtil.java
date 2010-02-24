@@ -1611,7 +1611,6 @@ public class SoapUtil extends SoapConstants {
                     return null;
                 } else if (tq != null) {
                     operationQNames.add(new QName(null, part.getName()));
-                    if (listener != null) listener.notifyPartName(inputMessage.getQName().getLocalPart());
                 } else if (eq != null) {
                     operationQNames.add(eq);
                 }
