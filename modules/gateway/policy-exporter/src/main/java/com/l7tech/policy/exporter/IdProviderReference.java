@@ -1,10 +1,8 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderType;
@@ -21,7 +19,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -36,27 +33,27 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 16, 2004<br/>
- * $Id$<br/>
  */
 public class IdProviderReference extends ExternalReference {
     /**
      * Constructor meant to be used by the export process.
-     * This will actually retreive the id provider and remember its
+     * This will actually retrieve the id provider and remember its
      * settings.
      */
-    public IdProviderReference(long providerId) {
+    public IdProviderReference( final ExternalReferenceFinder finder,
+                                final long providerId) {
+        this( finder );
+
         // try to retrieve this id provider to remember its settings
-        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         IdentityProviderConfig config = null;
-        if (idAdmin != null) {
-            try {
-                config = idAdmin.findIdentityProviderConfigByID(providerId);
-            } catch (RuntimeException e) {
-                logger.log(Level.WARNING, "error finding id provider config", e);
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "error finding id provider config", e);
-            }
+        try {
+            config = finder.findIdentityProviderConfigByID(providerId);
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "error finding id provider config", e);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "error finding id provider config", e);
         }
+
         if (config == null) {
             logger.severe("This policy is referring to an Id provider that cannot be retrieved.");
         } else {
@@ -71,12 +68,12 @@ public class IdProviderReference extends ExternalReference {
         setProviderId(providerId);
     }
 
-    public static IdProviderReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+    public static IdProviderReference parseFromElement(final ExternalReferenceFinder context, final Element el) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
         if (!el.getNodeName().equals(REF_EL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
-        IdProviderReference output = new IdProviderReference();
+        IdProviderReference output = new IdProviderReference(context);
         String val = getParamFromEl(el, OID_EL_NAME);
         if (val != null) {
             output.providerId = Long.parseLong(val);
@@ -97,13 +94,25 @@ public class IdProviderReference extends ExternalReference {
         return output;
     }
 
-    protected IdProviderReference() {
-        super();
+    protected IdProviderReference( final ExternalReferenceFinder finder ) {
+        super( finder );
     }
 
+    @Override
+    public String getRefId() {
+        String id = null;
+
+        if ( providerId > 0 ) {
+            id = Long.toString( providerId );   
+        }
+
+        return id;
+    }
+
+    @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
+        setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
         Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
         Text txt = DomUtils.createTextNode(referencesParentElement, Long.toString(providerId));
@@ -140,17 +149,12 @@ public class IdProviderReference extends ExternalReference {
      * 2. Look for same properties. If that exists, => record corresponding match.
      * 3. Otherwise => this reference if 'not verified'.
      */
+    @Override
     boolean verifyReference() {
         // 1. Look for same oid and name. If that exists, => record perfect match.
-        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
-        // We can't do anything without the id provider config manager.
-        if (idAdmin == null) {
-            logger.severe("Cannot get an IdentityAdmin");
-            return false;
-        }
         IdentityProviderConfig configOnThisSystem = null;
         try {
-            configOnThisSystem = idAdmin.findIdentityProviderConfigByID(getProviderId());
+            configOnThisSystem = getFinder().findIdentityProviderConfigByID(getProviderId());
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
         } catch (RuntimeException e) {
@@ -165,7 +169,7 @@ public class IdProviderReference extends ExternalReference {
         // 2. Look for same properties. If that exists, => record corresponding match.
         EntityHeader[] allConfigHeaders;
         try {
-            allConfigHeaders = idAdmin.findAllIdentityProviderConfig();
+            allConfigHeaders = getFinder().findAllIdentityProviderConfig();
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting all id provider config", e);
             return false;
@@ -176,7 +180,7 @@ public class IdProviderReference extends ExternalReference {
         if (allConfigHeaders != null) {
             for (EntityHeader header : allConfigHeaders) {
                 try {
-                    configOnThisSystem = idAdmin.findIdentityProviderConfigByID(header.getOid());
+                    configOnThisSystem = getFinder().findIdentityProviderConfigByID(header.getOid());
                 } catch (RuntimeException e) {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
@@ -195,7 +199,7 @@ public class IdProviderReference extends ExternalReference {
                     logger.log(Level.WARNING, "Cannot get serialized properties");
                     return false;
                 }
-                if (equalsProps(localProps, getIdProviderConfProps())) {
+                if (equalsProps(localProps, getIdProviderConfProps()) && permitMapping( providerId, configOnThisSystem.getOid() )) {
                     // WE GOT A MATCH!
                     setLocalizeReplace( configOnThisSystem.getOid() );
                     logger.fine("the provider was matched using the config's properties.");
@@ -225,7 +229,7 @@ public class IdProviderReference extends ExternalReference {
                             // check that at least one url is common
                             for (String s1 : urls1) {
                                 for (String s2 : urls2) {
-                                   if (s1.equalsIgnoreCase(s2)) {
+                                   if (s1.equalsIgnoreCase(s2) && permitMapping( providerId, configOnThisSystem.getOid() )) {
                                        setLocalizeReplace( configOnThisSystem.getOid() );
                                        logger.fine("LDAP URL common to both id providers (" + s1 + ")");
                                        return true;
@@ -262,19 +266,20 @@ public class IdProviderReference extends ExternalReference {
     /**
      * return false if the localized assertion should be deleted from the tree
      */
+    @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (localizeType != LocaliseAction.IGNORE) {
+        if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof IdentityAssertion) {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
                 if (idass.getIdentityProviderOid() == providerId) {
-                    if (localizeType == LocaliseAction.REPLACE) {
+                    if (localizeType == LocalizeAction.REPLACE) {
                         if ( locallyMatchingProviderId != providerId ) {
                             idass.setIdentityProviderOid(locallyMatchingProviderId);
                             logger.info("The provider id of the imported id assertion has been changed " +
                                         "from " + providerId + " to " + locallyMatchingProviderId);
                         }
                         localizeLoginOrId(idass);
-                    } else if (localizeType == LocaliseAction.DELETE) {
+                    } else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertin from the tree.");
                         return false;
                     }
@@ -283,7 +288,7 @@ public class IdProviderReference extends ExternalReference {
                 UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
                 for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
                     if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && entityHeader.getOid() == providerId) {
-                        if(localizeType == LocaliseAction.REPLACE) {
+                        if(localizeType == LocalizeAction.REPLACE) {
                             if(locallyMatchingProviderId != providerId) {
                                 EntityHeader newEntityHeader = new EntityHeader(locallyMatchingProviderId, EntityType.ID_PROVIDER_CONFIG, null, null);
                                 entitiesUser.replaceEntity(entityHeader, newEntityHeader);
@@ -293,7 +298,7 @@ public class IdProviderReference extends ExternalReference {
                                 
                                 break;
                             }
-                        } else if(localizeType == LocaliseAction.DELETE) {
+                        } else if(localizeType == LocalizeAction.DELETE) {
                             logger.info("Deleted this assertion from the tree.");
                             return false;
                         }
@@ -312,14 +317,13 @@ public class IdProviderReference extends ExternalReference {
      * 3. if found by id, make sure the login fits the assertion's login
      */
     protected void localizeLoginOrId(IdentityAssertion a) {
-        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         try {
             if (a instanceof SpecificUser) {
                 SpecificUser su = (SpecificUser)a;
-                localizeLoginOrIdForSpecificUser(idAdmin, su);
+                localizeLoginOrIdForSpecificUser(su);
             } else if (a instanceof MemberOfGroup) {
                 MemberOfGroup mog = (MemberOfGroup) a;
-                localizeLoginOrIdForSpecificGroup(idAdmin, mog);
+                localizeLoginOrIdForSpecificGroup(mog);
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
@@ -328,9 +332,9 @@ public class IdProviderReference extends ExternalReference {
         }
     }
 
-    protected void localizeLoginOrIdForSpecificUser(IdentityAdmin idAdmin, SpecificUser su) throws FindException {
+    protected void localizeLoginOrIdForSpecificUser(SpecificUser su) throws FindException {
         long providerId = su.getIdentityProviderOid();
-        User userFromId = idAdmin.findUserByID(providerId, su.getUserUid());
+        User userFromId = getFinder().findUserByID(providerId, su.getUserUid());
         if (userFromId != null) {
             if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
                 String oldLogin = su.getUserLogin();
@@ -338,7 +342,7 @@ public class IdProviderReference extends ExternalReference {
                 logger.info("The login was changed from " + oldLogin + " to " + userFromId.getLogin());
             }
         } else {
-            User userFromLogin = idAdmin.findUserByLogin(providerId, su.getUserLogin());
+            User userFromLogin = getFinder().findUserByLogin(providerId, su.getUserLogin());
             if (userFromLogin != null) {
                 logger.info("Changing " + su.getUserLogin() + "'s id from " +
                         su.getUserUid() + " to " + userFromLogin.getId());
@@ -353,14 +357,14 @@ public class IdProviderReference extends ExternalReference {
                         "the target SecureSpan Gateway. You should remove\n" +
                         "or replace the identity assertion from the policy.";
                 logger.warning(msg);
-                JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
+                warning( "Unresolved identity", msg );
             }
         }
     }
 
-    protected void localizeLoginOrIdForSpecificGroup(IdentityAdmin idAdmin, MemberOfGroup mog) throws FindException {
+    protected void localizeLoginOrIdForSpecificGroup(MemberOfGroup mog) throws FindException {
         long providerId = mog.getIdentityProviderOid();
-        Group groupFromId = idAdmin.findGroupByID(providerId, mog.getGroupId());
+        Group groupFromId = getFinder().findGroupByID(providerId, mog.getGroupId());
         if ( groupFromId != null ) {
             if (groupFromId.getName() != null && !groupFromId.getName().equals(mog.getGroupName())) {
                 String oldName = mog.getGroupName();
@@ -368,7 +372,7 @@ public class IdProviderReference extends ExternalReference {
                 logger.info("The group name was changed from " + oldName + " to " + groupFromId.getName());
             }
         } else {
-            Group groupFromName = idAdmin.findGroupByName(providerId, mog.getGroupName());
+            Group groupFromName = getFinder().findGroupByName(providerId, mog.getGroupName());
             if (groupFromName != null) {
                 logger.info("Changing " + mog.getGroupName() + "'s id from " +
                         mog.getGroupId() + " to " + groupFromName.getId());
@@ -383,7 +387,7 @@ public class IdProviderReference extends ExternalReference {
                         "the target SecureSpan Gateway. You should remove\n" +
                         "or replace the identity assertion from the policy.";
                 logger.warning(msg);
-                JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
+                warning( "Unresolved identity", msg );
             }
         }
     }
@@ -440,9 +444,11 @@ public class IdProviderReference extends ExternalReference {
      * id provider of concerned assertions with another id provider.
      * @param alternateIdprovider the local provider value
      */
-    public void setLocalizeReplace(long alternateIdprovider) {
-        localizeType = LocaliseAction.REPLACE;
+    @Override
+    public boolean setLocalizeReplace(long alternateIdprovider) {
+        localizeType = LocalizeAction.REPLACE;
         locallyMatchingProviderId = alternateIdprovider;
+        return true;
     }
 
     /**
@@ -450,45 +456,22 @@ public class IdProviderReference extends ExternalReference {
      * assertions that refer to the remote id provider (let the
      * assertions as is).
      */
+    @Override
     public void setLocalizeIgnore() {
-        localizeType = LocaliseAction.IGNORE;
+        localizeType = LocalizeAction.IGNORE;
     }
 
     /**
      * Tell the reference that the localization process should remove
      * any assertions that refer to the remote id provider.
      */
-    public void setLocalizeDelete() {
-        localizeType = LocaliseAction.DELETE;
+    @Override
+    public boolean setLocalizeDelete() {
+        localizeType = LocalizeAction.DELETE;
+        return true;
     }
 
-    /**
-     * Enum-type class for the type of localization to use.
-     */
-    public static class LocaliseAction {
-        public static final LocaliseAction IGNORE = new LocaliseAction(1);
-        public static final LocaliseAction DELETE = new LocaliseAction(2);
-        public static final LocaliseAction REPLACE = new LocaliseAction(3);
-        private LocaliseAction(int val) {
-            this.val = val;
-        }
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof LocaliseAction)) return false;
-
-            final LocaliseAction localiseAction = (LocaliseAction) o;
-
-            return val == localiseAction.val;
-        }
-
-        public int hashCode() {
-            return val;
-        }
-
-        private int val = 0;
-    }
-
-    private LocaliseAction localizeType = null;
+    private LocalizeAction localizeType = null;
     protected long providerId;
     private long locallyMatchingProviderId;
     protected int idProviderTypeVal;

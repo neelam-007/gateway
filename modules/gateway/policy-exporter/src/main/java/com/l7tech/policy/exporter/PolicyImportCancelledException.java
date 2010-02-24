@@ -1,4 +1,4 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 /**
  * This exception is supposed to be thrown when a policy import is cancelled. The caller

@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.JdbcConnectionReference;
+import com.l7tech.policy.exporter.JdbcConnectionReference;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
@@ -65,6 +65,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         add(mainPanel);
 
         manageConnectionsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 doManageJdbcConnections();
             }

@@ -1,0 +1,316 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
+package com.l7tech.policy.exporter;
+
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.ExceptionUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.DomUtils;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * An external reference used by an exported policy.
+ */
+public abstract class ExternalReference {
+
+    //- PUBLIC
+
+    /**
+     * Get the (possibly composite) identifier for the reference.
+     *
+     * <p>If a reference does not support identifiers then null is returned.</p>
+     *
+     * @return An identifier for the referenced dependency or null
+     */
+    public String getRefId() {
+        return null;
+    }
+
+    /**
+     * Get a synthetic identifier for the reference.
+     *
+     * <p>When a natural identifier is not available the synthetic identifier
+     * can be used to identify the reference target.</p>
+     *
+     * <p>The synthetic identifier is a (prefixed) GUID generated from the
+     * serialized form of the reference. Two references with the same content
+     * will therefore have the same identifier.</p>
+     *
+     * @return The synthetic identifier
+     */
+    public final String getSyntheticRefId() {
+        try {
+            Document doc = XmlUtil.createEmptyDocument( "reference", null, null );
+            serializeToRefElement( doc.getDocumentElement() );
+            return "syn:" + UUID.nameUUIDFromBytes( XmlUtil.toByteArray(doc) ).toString();
+        } catch ( IOException ioe ) {
+            throw ExceptionUtils.wrap( ioe ); // should not occur since writing to byte array
+        }
+    }
+
+    /**
+     * Get the type for this reference.
+     *
+     * @return The reference type.
+     */
+    public String getRefType() {
+        return getReferenceType(getClass());
+    }
+
+    /**
+     * Configure this reference to rename on import.
+     *
+     * <p>This applies when a dependency that will be created as the result of
+     * an import conflict with the name of an existing entity.</p>
+     *
+     * <p>References that do not support this behaviour will always return
+     * false.</p>
+     *
+     * @return true if successful
+     * @see #localizeAssertion(Assertion)
+     */
+    public boolean setLocalizeRename( final String name ) {
+        return false;
+    }
+
+    /**
+     * Configure this reference to be replaced on import.
+     *
+     * <p>This applies when a dependency of the imported policy should be
+     * mapped to an existing dependency.</p>
+     *
+     * <p>References that use <code>long</code> identifier should override
+     * {@code localizeReplace(long)} rather than this method.</p>
+     *
+     * <p>References that do not support this behaviour will always return
+     * false.</p>
+     *
+     * @param identifier The identifier for the existing dependency
+     * @return true if successful
+     * @see #localizeAssertion(Assertion)
+     * @see #setLocalizeReplace(long)
+     */
+    public boolean setLocalizeReplace( final String identifier ) {
+        boolean localized = false;
+        try {
+            localized = setLocalizeReplace( Long.parseLong( identifier ) );
+        } catch ( NumberFormatException nfe ) {
+            // not localized
+        }
+        return localized;
+    }
+
+    /**
+     * Configure this reference to be removed on import.
+     *
+     * <p>This applies when any assertion with this dependency should be
+     * deleted from the policy.</p>
+     *
+     * <p>References that do not support this behaviour will always return
+     * false.</p>
+     *
+     * @return true if successful
+     * @see #localizeAssertion(Assertion)
+     */
+    public boolean setLocalizeDelete() {
+        return false;
+    }
+
+    /**
+     * Configure this reference to be unchanged on import.
+     *
+     * <p>This applies when any assertion with this dependency should be
+     * left as-is, possibly resulting in an invalid policy.</p>
+     *
+     * <p>All references must support this behaviour.</p>
+     *
+     * @see #localizeAssertion(Assertion)
+     */
+    public abstract void setLocalizeIgnore();
+
+    //- PACKAGE
+
+    ExternalReference( final ExternalReferenceFinder finder ) {
+        this.finder = finder;
+    }
+
+    ExternalReferenceFinder getFinder() {
+        return finder;
+    }
+
+    /**
+     * Configure this reference to be replaced on import.
+     *
+     * <p>This applies when a dependency of the imported policy should be
+     * mapped to an existing dependency.</p>
+     *
+     * <p>References that do not support this behaviour will always return
+     * false.</p>
+     *
+     * @param identifier The identifier for the existing dependency
+     * @return true if successful
+     * @see #localizeAssertion(Assertion)
+     */
+    boolean setLocalizeReplace( long identifier ) {
+        return false;
+    }
+
+    /**
+     * Adds a child element to the passed references element that contains the xml
+     * form of this reference object. Used by the policy exporter when serializing
+     * references to xml format.
+     * @param referencesParentElement
+     */
+    abstract void serializeToRefElement(Element referencesParentElement);
+
+    /**
+     * Checks whether or not an external reference can be mapped on this local
+     * system without administrator interaction.
+     */
+    abstract boolean verifyReference() throws InvalidPolicyStreamException;
+
+    /**
+     * Once an exported policy is loaded with it's references and the references are
+     * verified, this method will apply the necessary changes to the assertion. If
+     * the assertion type passed does not relate to the reference, it will be left
+     * untouched.
+     * Returns false if the assertion should be deleted from the tree.
+     * @param assertionToLocalize will be fixed once this method returns.
+     */
+    abstract boolean localizeAssertion(Assertion assertionToLocalize);
+
+    /**
+     * Parse references from an exported policy's exp:References element.
+     * @param refElements an ExporterConstants.EXPORTED_REFERENCES_ELNAME element
+     */
+    static Collection<ExternalReference> parseReferences(final ExternalReferenceFinder finder,
+                                                         final Element refElements) throws InvalidDocumentFormatException {
+        // Verify that the passed element is what is expected
+        if (!refElements.getLocalName().equals(ExporterConstants.EXPORTED_REFERENCES_ELNAME)) {
+            throw new InvalidDocumentFormatException("The passed element must be " +
+                                                     ExporterConstants.EXPORTED_REFERENCES_ELNAME);
+        }
+        if (!refElements.getNamespaceURI().equals(ExporterConstants.EXPORTED_POL_NS)) {
+            throw new InvalidDocumentFormatException("The passed element must have namespace " +
+                                                     ExporterConstants.EXPORTED_POL_NS);
+        }
+        // Go through child elements and process them one by one
+        Collection<ExternalReference> references = new ArrayList<ExternalReference>();
+        NodeList children = refElements.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                Element refEl = (Element)child;
+                // Get the type of reference
+                String refType = refEl.getAttribute(ExporterConstants.REF_TYPE_ATTRNAME);
+                if (refType.equals(getReferenceType(FederatedIdProviderReference.class))) {
+                    references.add(FederatedIdProviderReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(IdProviderReference.class))) {
+                    references.add(IdProviderReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(JMSEndpointReference.class))) {
+                    references.add(JMSEndpointReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(CustomAssertionReference.class))) {
+                    references.add(CustomAssertionReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(ExternalSchemaReference.class))) {
+                    references.add(ExternalSchemaReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(IncludedPolicyReference.class))) {
+                    references.add(IncludedPolicyReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(TrustedCertReference.class))) {
+                    references.add(TrustedCertReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(PrivateKeyReference.class))) {
+                    references.add(PrivateKeyReference.parseFromElement(finder, refEl));
+                } else if (refType.equals(getReferenceType(JdbcConnectionReference.class))) {
+                    references.add(JdbcConnectionReference.parseFromElement(finder, refEl));
+                } 
+            }
+        }
+        return references;
+    }
+
+    static String getReferenceType( final Class<? extends ExternalReference> referenceClass ) {
+        String type = referenceClass.getName();
+
+        if ( repackagedReferences.contains( referenceClass )) {
+            type = type.replaceFirst( "com.l7tech.policy.exporter.", "com.l7tech.console.policy.exporter." );
+        }
+
+        return type;
+    }
+
+    static String getParamFromEl(Element parent, String param) {
+        NodeList nodeList = parent.getElementsByTagName(param);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Element node = (Element)nodeList.item(i);
+            String val = DomUtils.getTextValue(node);
+            if (val != null && val.length() > 0) return val;
+        }
+        return null;
+    }
+
+    void setTypeAttribute( final Element refEl ) {
+        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, getRefType());
+    }
+
+    void warning( final String title, final String message ) {
+        final ExternalReferenceErrorListener errorListener = this.errorListener;
+        if ( errorListener != null ) {
+            errorListener.warning( title, message );
+        }
+    }
+
+    void setExternalReferenceErrorListener( final ExternalReferenceErrorListener errorListener ) {
+        this.errorListener = errorListener;
+    }
+
+    void setPolicyImporterAdvisor( final PolicyImporter.PolicyImporterAdvisor advisor ) {
+        this.advisor = advisor;        
+    }
+
+    boolean permitMapping( final long importOid, final long targetOid ) {
+        return permitMapping( Long.toString( importOid ), Long.toString( targetOid ) );
+    }
+
+    boolean permitMapping( final String importId, final String targetId ) {
+        boolean proceed = true;
+        PolicyImporter.PolicyImporterAdvisor advisor = this.advisor;
+        if ( !importId.equals( targetId ) && advisor != null ) {
+            proceed = advisor.mapReference( getRefType(), importId, targetId );
+        }
+        return proceed;
+    }
+
+    enum LocalizeAction { DELETE, IGNORE, REPLACE }
+
+    //- PRIVATE
+
+    private final ExternalReferenceFinder finder;
+    private ExternalReferenceErrorListener errorListener;
+    private PolicyImporter.PolicyImporterAdvisor advisor;
+    private static final Set<Class<? extends ExternalReference>> repackagedReferences = Collections.unmodifiableSet( new HashSet<Class<? extends ExternalReference>>( Arrays.asList(
+        FederatedIdProviderReference.class,
+        IdProviderReference.class,
+        JMSEndpointReference.class,
+        CustomAssertionReference.class,
+        ExternalSchemaReference.class,
+        IncludedPolicyReference.class,
+        TrustedCertReference.class,
+        PrivateKeyReference.class,
+        JdbcConnectionReference.class
+    )) );
+
+}

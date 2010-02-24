@@ -1,7 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.*;
 import com.l7tech.console.action.Actions;
+import com.l7tech.policy.exporter.CustomAssertionReference;
+import com.l7tech.policy.exporter.ExternalReference;
+import com.l7tech.policy.exporter.ExternalSchemaReference;
+import com.l7tech.policy.exporter.IdProviderReference;
+import com.l7tech.policy.exporter.IncludedPolicyReference;
+import com.l7tech.policy.exporter.JMSEndpointReference;
+import com.l7tech.policy.exporter.JdbcConnectionReference;
+import com.l7tech.policy.exporter.PrivateKeyReference;
+import com.l7tech.policy.exporter.TrustedCertReference;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -16,7 +24,6 @@ import java.io.IOException;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 26, 2004<br/>
- * $Id$<br/>
  */
 public class ResolveExternalPolicyReferencesWizard extends Wizard {
 
@@ -72,6 +79,7 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
         setTitle("Resolve External Dependencies Wizard");
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(ResolveExternalPolicyReferencesWizard.this);
             }

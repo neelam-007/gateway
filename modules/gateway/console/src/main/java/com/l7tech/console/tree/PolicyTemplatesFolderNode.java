@@ -2,7 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.policy.exporter.PolicyExporter;
+import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.console.util.TopComponents;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -20,8 +20,7 @@ import java.beans.PropertyChangeEvent;
 /**
  * This class represents the folder in the assertion palette tree containing exported policies (aka Policy Templates)
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * @author Emil Marceta
  */
 public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     public static final String NAME = "Policy Templates";

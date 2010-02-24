@@ -1,23 +1,19 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
-import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.UsesResourceInfo;
-import com.l7tech.util.ExceptionUtils;
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -35,12 +31,16 @@ import java.util.List;
 public class ExternalSchemaReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(ExternalSchemaReference.class.getName());
 
-    public ExternalSchemaReference(String name, String tns) {
+    public ExternalSchemaReference( final ExternalReferenceFinder finder,
+                                    final String name,
+                                    final String tns ) {
+        super(finder);
         this.name = name;
         this.tns = tns;
     }
 
-    public static ExternalSchemaReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+    public static ExternalSchemaReference parseFromElement( final ExternalReferenceFinder finder,
+                                                            final Element el ) throws InvalidDocumentFormatException {
         if (!el.getNodeName().equals(TOPEL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + TOPEL_NAME);
         }
@@ -52,7 +52,7 @@ public class ExternalSchemaReference extends ExternalReference {
         if (el.hasAttribute(TNS_ATTR_NAME)) {
             tns = el.getAttribute(TNS_ATTR_NAME);
         }
-        return new ExternalSchemaReference(name, tns);
+        return new ExternalSchemaReference(finder, name, tns);
     }
 
     public String getName() {
@@ -66,7 +66,7 @@ public class ExternalSchemaReference extends ExternalReference {
     @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(TOPEL_NAME);
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, ExternalSchemaReference.class.getName());
+        setTypeAttribute( refEl );
         if (name != null) {
             refEl.setAttribute(LOC_ATTR_NAME, name);
         }
@@ -79,13 +79,9 @@ public class ExternalSchemaReference extends ExternalReference {
     @Override
     boolean verifyReference() {
         // check that the schema is present on this target system
-        Registry reg = Registry.getDefault();
-        if (reg == null || reg.getSchemaAdmin() == null) {
-            throw new RuntimeException("No access to registry. Cannot check for external reference.");
-        }
         try {
-            if (name == null || reg.getSchemaAdmin().findByName(name).isEmpty()) {
-                return tns != null && reg.getSchemaAdmin().findByTNS(tns).size() == 1;
+            if (name == null || getFinder().findSchemaByName(name).isEmpty()) {
+                return tns != null && getFinder().findSchemaByTNS(tns).size() == 1;
             }
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
@@ -175,6 +171,17 @@ public class ExternalSchemaReference extends ExternalReference {
         result = (name != null ? name.hashCode() : 0);
         result = 29 * result + (tns != null ? tns.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public boolean setLocalizeDelete() {
+        setRemoveRefferees( true );
+        return true;
+    }
+
+    @Override
+    public void setLocalizeIgnore() {
+        setRemoveRefferees( false );
     }
 
     public void setRemoveRefferees(boolean removeRefferees) {

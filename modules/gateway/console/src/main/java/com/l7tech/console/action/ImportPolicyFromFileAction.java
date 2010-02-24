@@ -3,12 +3,14 @@
  */
 package com.l7tech.console.action;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.policy.exporter.PolicyImporter;
-import com.l7tech.console.policy.exporter.PolicyImportCancelledException;
+import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.TopComponents;
@@ -16,13 +18,19 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wsp.PolicyConflictException;
+import com.l7tech.util.ResourceUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,13 +55,15 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Import Policy";
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Import a policy from a file along with external references.";
     }
@@ -61,13 +71,14 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/saveTemplate.gif";
     }
 
     /**
      * Actually perform the action.
-     * This is the method which should be called programmatically.
+     * This is the method which should be called programatically.
      */
     protected boolean importPolicy( Policy policy) {
         try {
@@ -108,9 +119,11 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
         chooser.setDialogTitle("Import Policy");
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML") || f.isDirectory();
             }
+            @Override
             public String getDescription() {
                 return "XML Files";
             }
@@ -119,7 +132,21 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
         if (JFileChooser.APPROVE_OPTION != ret) return false;
 
         try {
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, chooser.getSelectedFile());
+            final File input = chooser.getSelectedFile();
+            Document readDoc;
+            InputStream in = null;
+            try {
+                in = new FileInputStream(input);
+                readDoc = XmlUtil.parse(in);
+            } catch ( SAXException e) {
+                throw new IOException(e);
+            } finally {
+                ResourceUtils.closeQuietly(in);
+            }
+
+            WspReader wspReader = (WspReader) TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+            ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder );
             Assertion newRoot = (result != null) ? result.assertion : null;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML

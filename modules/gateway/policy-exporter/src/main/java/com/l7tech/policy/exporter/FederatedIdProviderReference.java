@@ -1,4 +1,4 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -7,19 +7,17 @@ import org.w3c.dom.Text;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.VirtualGroup;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -50,12 +48,12 @@ public class FederatedIdProviderReference extends IdProviderReference {
     private HashMap<String, String> userUpdateMap = new HashMap<String, String>();
     private HashMap<String, String> groupUpdateMap = new HashMap<String, String>();
 
-    public FederatedIdProviderReference(long providerId) {
-        super(providerId);
+    public FederatedIdProviderReference(final ExternalReferenceFinder finder, long providerId) {
+        super(finder, providerId);
     }
 
-    private FederatedIdProviderReference() {
-        super();
+    private FederatedIdProviderReference(final ExternalReferenceFinder finder) {
+        super(finder);
     }
 
     public HashMap<String, FederatedGroup> getImportedGroups() {
@@ -78,12 +76,12 @@ public class FederatedIdProviderReference extends IdProviderReference {
         return groupUpdateMap;
     }
     
-    public static FederatedIdProviderReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+    public static FederatedIdProviderReference parseFromElement(final ExternalReferenceFinder context, final Element el) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
         if (!el.getNodeName().equals(REF_EL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
-        FederatedIdProviderReference output = new FederatedIdProviderReference();
+        FederatedIdProviderReference output = new FederatedIdProviderReference(context);
         String val = getParamFromEl(el, OID_EL_NAME);
         if (val != null) {
             output.providerId = Long.parseLong(val);
@@ -244,7 +242,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
     @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, FederatedIdProviderReference.class.getName());
+        setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
         Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
         Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(providerId));
@@ -272,12 +270,11 @@ public class FederatedIdProviderReference extends IdProviderReference {
         }
         
         try {
-            IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
-            EntityHeaderSet<IdentityHeader> groupHeaders = idAdmin.findAllGroups(providerId);
+            Collection<IdentityHeader> groupHeaders = getFinder().findAllGroups(providerId);
 
             Element groupsEl = referencesParentElement.getOwnerDocument().createElement(GROUPS_EL_NAME);
             for(EntityHeader groupHeader : groupHeaders) {
-                FederatedGroup group = (FederatedGroup)idAdmin.findGroupByID(providerId, groupHeader.getStrId());
+                FederatedGroup group = (FederatedGroup) getFinder().findGroupByID(providerId, groupHeader.getStrId());
                 boolean isVirtual = group instanceof VirtualGroup;
 
                 Element groupEl = referencesParentElement.getOwnerDocument().createElement(isVirtual ? VIRTUAL_GROUP_EL_NAME : GROUP_EL_NAME);
@@ -293,7 +290,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 }
 
                 if(!isVirtual) {
-                    Set<IdentityHeader> groupMembers = Registry.getDefault().getIdentityAdmin().getUserHeaders(providerId, group.getId());
+                    Collection<IdentityHeader> groupMembers = getFinder().getUserHeaders(providerId, group.getId());
                     for(IdentityHeader groupMember : groupMembers) {
                         appendStringValueElement(GROUP_MEMBER_EL_NAME, groupMember.getStrId(), referencesParentElement, groupEl);
                     }
@@ -306,11 +303,11 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 refEl.appendChild(groupsEl);
             }
 
-            EntityHeaderSet<IdentityHeader> userHeaders = idAdmin.findAllUsers(providerId);
+            Collection<IdentityHeader> userHeaders = getFinder().findAllUsers(providerId);
 
             Element usersEl = referencesParentElement.getOwnerDocument().createElement(USERS_EL_NAME);
             for(EntityHeader userHeader : userHeaders) {
-                FederatedUser user = (FederatedUser)idAdmin.findUserByID(providerId, userHeader.getStrId());
+                FederatedUser user = (FederatedUser) getFinder().findUserByID(providerId, userHeader.getStrId());
                 Element userEl = referencesParentElement.getOwnerDocument().createElement(USER_EL_NAME);
 
                 appendStringValueElement(OID_EL_NAME, user.getId(), referencesParentElement, userEl);
@@ -328,25 +325,24 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 refEl.appendChild(usersEl);
             }
         } catch(FindException e) {
-            return;
         }
     }
 
     @Override
-    protected void localizeLoginOrIdForSpecificUser(IdentityAdmin idAdmin, SpecificUser su) throws FindException {
+    protected void localizeLoginOrIdForSpecificUser(SpecificUser su) throws FindException {
         if(userUpdateMap.containsKey(su.getUserUid())) {
             su.setUserUid(userUpdateMap.get(su.getUserUid()));
         } else {
-            super.localizeLoginOrIdForSpecificUser(idAdmin, su);
+            super.localizeLoginOrIdForSpecificUser(su);
         }
     }
 
     @Override
-    protected void localizeLoginOrIdForSpecificGroup(IdentityAdmin idAdmin, MemberOfGroup mog) throws FindException {
+    protected void localizeLoginOrIdForSpecificGroup(MemberOfGroup mog) throws FindException {
         if(groupUpdateMap.containsKey(mog.getGroupId())) {
             mog.setGroupId(groupUpdateMap.get(mog.getGroupId()));
         } else {
-            super.localizeLoginOrIdForSpecificGroup(idAdmin, mog);
+            super.localizeLoginOrIdForSpecificGroup(mog);
         }
     }
 }

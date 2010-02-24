@@ -14,6 +14,7 @@
         <jar-include name="layer7-gateway-common"/>
         <jar-include name="layer7-kerberos"/>
         <jar-include name="layer7-policy"/>
+        <jar-include name="layer7-policy-exporter"/>
         <jar-include name="layer7-identity"/>
         <jar-include name="layer7-common"/>
         <jar-include name="layer7-gui"/>

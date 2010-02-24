@@ -2,6 +2,8 @@ package com.l7tech.console.policy.exporter;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
+import com.l7tech.policy.exporter.ExternalReference;
+import com.l7tech.policy.exporter.IdProviderReference;
 import org.junit.Ignore;
 
 /**
@@ -16,11 +18,11 @@ import org.junit.Ignore;
 public class ResolveForeignIdentityProviderPanelTest {
     public static void main(String[] args) throws Exception {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
-        IdProviderReference ref = new IdProviderReference(-1);
+        IdProviderReference ref = new IdProviderReference(new ConsoleExternalReferenceFinder(), -1);
         ref.setProviderName("MS International Directory");
         ref.setIdProviderTypeVal(2);
 
-        IdProviderReference ref2 = new IdProviderReference(5);
+        IdProviderReference ref2 = new IdProviderReference(new ConsoleExternalReferenceFinder(), 5);
         ref2.setProviderName("IBM dir");
         ref2.setIdProviderTypeVal(2);
 

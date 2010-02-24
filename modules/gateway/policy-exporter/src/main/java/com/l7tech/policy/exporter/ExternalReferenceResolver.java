@@ -1,9 +1,6 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -17,14 +14,12 @@ import com.l7tech.objectmodel.EntityHeader;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
-import java.awt.*;
 
 /**
- * This class takes a set of remote references that were exported with a policy
+ * This class takes a set of external references that were exported with a policy
  * and find corresponding match with local entities. When the resolution cannot
  * be made automatically, it prompts the administrator for manual resolution.
  *
@@ -34,15 +29,14 @@ import java.awt.*;
  * User: flascell<br/>
  * Date: Jul 22, 2004<br/>
  */
-public class RemoteReferenceResolver {
+class ExternalReferenceResolver {
 
-    private WspReader wspReader = null;
+    //- PACKAGE
 
-    private WspReader getWspReader() {
-        if (wspReader == null) {
-            wspReader = (WspReader)TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
-        }
-        return wspReader;
+    ExternalReferenceResolver( final WspReader wspReader,
+                               final PolicyImporter.PolicyImporterAdvisor advisor ) {
+        this.wspReader = wspReader;
+        this.advisor = advisor;
     }
 
     /**
@@ -52,7 +46,7 @@ public class RemoteReferenceResolver {
      * @param references references parsed from a policy document.
      * @return false if the process cannot continue because the administrator canceled an operation for example.
      */
-    public boolean resolveReferences(Collection<ExternalReference> references) throws InvalidPolicyStreamException, PolicyImportCancelledException {
+    boolean resolveReferences(Collection<ExternalReference> references) throws InvalidPolicyStreamException, PolicyImportCancelledException {
         Set<ExternalReference> unresolved = new LinkedHashSet<ExternalReference>();
 
         // Verify policy fragment references first.  If a policy fragment was imported before, ask the user to substitute the fragment with an already import fragment.
@@ -61,6 +55,7 @@ public class RemoteReferenceResolver {
         // Verify other non-fragment references
         references.removeAll(topParentFragmtRefs);
         for (ExternalReference reference : references) {
+            reference.setPolicyImporterAdvisor( advisor );
             if (!reference.verifyReference()) {
                 // for all references not resolved automatically add a page in a wizard
                 unresolved.add(reference);
@@ -71,34 +66,19 @@ public class RemoteReferenceResolver {
 
         if (!unresolved.isEmpty()) {
             ExternalReference[] unresolvedRefsArray = unresolved.toArray(new ExternalReference[unresolved.size()]);
-            final Frame mw = TopComponents.getInstance().getTopParent();
-            boolean wasCancelled = false;
-            try {
-                ResolveExternalPolicyReferencesWizard wiz =
-                        ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
-                wiz.pack();
-                Utilities.centerOnScreen(wiz);
-                wiz.setModal(true);
-                wiz.setVisible(true);
-                // if the wizard returns false, we must return
-                if (wiz.wasCanceled()) wasCancelled = true;
-            } catch(Exception e) {
+            if ( !advisor.resolveReferences( unresolvedRefsArray ) ) {
                 return false;
-            }
-
-            if(wasCancelled) {
-                throw new PolicyImportCancelledException();
             }
         }
         resolvedReferences = references;
         return true;
     }
 
-    public Assertion localizePolicy(Element policyXML) throws InvalidPolicyStreamException {
+    Assertion localizePolicy(Element policyXML) throws InvalidPolicyStreamException {
         // Go through each assertion and fix the changed references.
         Assertion root;
         try {
-            root = getWspReader().parsePermissively( XmlUtil.nodeToString(policyXML), WspReader.INCLUDE_DISABLED);
+            root = wspReader.parsePermissively( XmlUtil.nodeToString(policyXML), WspReader.INCLUDE_DISABLED);
         } catch (IOException e) {
             throw new InvalidPolicyStreamException(e);
         }
@@ -106,10 +86,16 @@ public class RemoteReferenceResolver {
         return root;
     }
 
-    public Assertion localizePolicy(Assertion rootAssertion) {
+    Assertion localizePolicy(Assertion rootAssertion) {
         traverseAssertionTreeForLocalization(rootAssertion);
         return rootAssertion;
     }
+
+    //- PRIVATE
+
+    private final WspReader wspReader;
+    private final PolicyImporter.PolicyImporterAdvisor advisor;
+    private Collection<ExternalReference> resolvedReferences = new ArrayList<ExternalReference>();
 
     private boolean traverseAssertionTreeForLocalization(Assertion rootAssertion) {
         if (rootAssertion instanceof CompositeAssertion) {
@@ -171,12 +157,10 @@ public class RemoteReferenceResolver {
                     }
                 }
             } catch (PolicyConflictException pce) {
-                // Prompt an optional dialog to resolve policy fragment conflicts..
-                int result = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
-                    "<html><center>The imported policy contains an embedded fragment with name '" + pce.getImportedPolicyName() + "' that already exists in the system.</center>" +
-                        "<center>This policy importer will use the already existing policy fragment in place of the embedded fragment.</center></html>",
-                    "Resolving Policy Fragment Conflict", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
-                if (result == JOptionPane.OK_OPTION) {
+                final String policyName = pce.getImportedPolicyName();
+                final String existingPolicyName = pce.getExistingPolicyName();
+                final String guid = pce.getPolicyGuid();
+                if ( advisor.acceptPolicyConflict( policyName, existingPolicyName, guid ) ) {
                     // Use the top parent policy fragment reference to remove all redundant references.
                     Policy policy = new Policy(fragmtRef.getType(), fragmtRef.getName(), fragmtRef.getXml(), fragmtRef.isSoap());
                     // Remove all redundant references if a policy fragment will be substituted by an existing policy fragment.
@@ -279,7 +263,7 @@ public class RemoteReferenceResolver {
     }
 
     /**
-     * Find and remove redundant references assoicated with an assertion, which 
+     * Find and remove redundant references associated with an assertion, which
      *
      * @param assertion: a non-composite assertion
      * @param references: the list of all references.
@@ -427,6 +411,4 @@ public class RemoteReferenceResolver {
             }
         }
     }
-
-    private Collection<ExternalReference> resolvedReferences = new ArrayList<ExternalReference>();
 }

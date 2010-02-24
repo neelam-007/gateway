@@ -7,7 +7,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.console.policy.exporter.JMSEndpointReference;
+import com.l7tech.policy.exporter.JMSEndpointReference;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,7 +24,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 27, 2004<br/>
- * $Id$<br/>
  */
 public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     public ResolveForeignJMSEndpointPanel(WizardStepPanel next, JMSEndpointReference foreignRef) {
@@ -55,22 +54,26 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
 
         // enable/disable provider selector as per action type selected
         changeRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 queueSelector.setEnabled(true);
             }
         });
         deleteRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 queueSelector.setEnabled(false);
             }
         });
         ignoreRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 queueSelector.setEnabled(false);
             }
         });
 
         createJMSEndpoint.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 createJMSPressed();
             }
@@ -94,6 +97,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         jqpd.pack();
         Utilities.centerOnScreen(jqpd);
         DialogDisplayer.display(jqpd, new Runnable() {
+            @Override
             public void run() {
                 populateQueueSelector();
 
@@ -106,6 +110,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         });
     }
 
+    @Override
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (changeRadio.isSelected()) {
@@ -136,7 +141,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                 if (tuples[i].getEndpoint().getName().equals(name)) {
                     long newOid = tuples[i].getEndpoint().getOid();
                     logger.info("the oid of the chosen jms endpoint is " + newOid);
-                    return new Long(newOid);
+                    return newOid;
                 }
             }
         } catch (FindException e) {
@@ -179,14 +184,17 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         }
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public String getStepLabel() {
         return "Unresolved JMS endpoint " + foreignRef.getEndpointName();
     }
 
+    @Override
     public boolean canFinish() {
         if (hasNextPanel()) return false;
         return true;

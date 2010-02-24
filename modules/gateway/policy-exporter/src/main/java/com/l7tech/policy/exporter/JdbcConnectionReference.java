@@ -1,11 +1,9 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JdbcConnectionable;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
@@ -35,23 +33,22 @@ public class JdbcConnectionReference extends ExternalReference {
     private String localConnectionName;
     private LocalizeAction localizeType;
 
-    public JdbcConnectionReference() {
+    public JdbcConnectionReference( final ExternalReferenceFinder finder ) {
+        super( finder );
     }
 
-    public JdbcConnectionReference(JdbcConnectionable connable) {
+    public JdbcConnectionReference( final ExternalReferenceFinder context, final JdbcConnectionable connable) {
+        this( context );
         if (connable == null) throw new IllegalStateException("JdbcConnectionable must not be null.");
 
         connectionName = connable.getConnectionName();
-        JdbcAdmin admin = getJdbcConnectionAdmin();
-        if (admin != null) {
-            try {
-                JdbcConnection connection = admin.getJdbcConnection(connectionName);
-                driverClass = connection.getDriverClass();
-                jdbcUrl = connection.getJdbcUrl();
-                userName = connection.getUserName();
-            } catch (FindException e) {
-                logger.warning("Cannot find the JDBC connection entity (ConnectionName = " + connable.getConnectionName() + ").");
-            }
+        try {
+            JdbcConnection connection = getFinder().getJdbcConnection(connectionName);
+            driverClass = connection.getDriverClass();
+            jdbcUrl = connection.getJdbcUrl();
+            userName = connection.getUserName();
+        } catch (FindException e) {
+            logger.warning("Cannot find the JDBC connection entity (ConnectionName = " + connable.getConnectionName() + ").");
         }
         localizeType = LocalizeAction.IGNORE;
     }
@@ -88,18 +85,29 @@ public class JdbcConnectionReference extends ExternalReference {
         this.userName = userName;
     }
 
-    public void setLocalizeReplace(String connectionName) {
+    @Override
+    public boolean setLocalizeDelete() {
+        localizeType = LocalizeAction.DELETE;
+        return true;
+    }
+
+    @Override
+    public void setLocalizeIgnore() {
+        localizeType = LocalizeAction.IGNORE;
+    }
+
+    public void setLocalizeReplaceByName(String connectionName) {
         localizeType = LocalizeAction.REPLACE;
         localConnectionName = connectionName;
     }
 
-    public static JdbcConnectionReference parseFromElement(Element elmt) throws InvalidDocumentFormatException {
+    public static JdbcConnectionReference parseFromElement( final ExternalReferenceFinder context, final Element elmt) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
         if (!elmt.getNodeName().equals(ELMT_NAME_REF)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + ELMT_NAME_REF);
         }
 
-        JdbcConnectionReference output = new JdbcConnectionReference();
+        JdbcConnectionReference output = new JdbcConnectionReference( context );
         output.connectionName = getParamFromEl(elmt, ELMT_NAME_CONN_NAME);
         output.driverClass = getParamFromEl(elmt, ELMT_NAME_DRV_CLASS);
         output.jdbcUrl = getParamFromEl(elmt, ELMT_NAME_JDBC_URL);
@@ -111,7 +119,7 @@ public class JdbcConnectionReference extends ExternalReference {
     @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_REF);
-        refElmt.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, JdbcConnectionReference.class.getName());
+        setTypeAttribute( refElmt );
         referencesParentElement.appendChild(refElmt);
 
         Element connNameElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_CONN_NAME);
@@ -137,11 +145,8 @@ public class JdbcConnectionReference extends ExternalReference {
 
     @Override
     boolean verifyReference() throws InvalidPolicyStreamException {
-        JdbcAdmin admin = getJdbcConnectionAdmin();
-        if (admin == null) return false;
-
         try {
-            JdbcConnection connection = admin.getJdbcConnection(connectionName);
+            JdbcConnection connection = getFinder().getJdbcConnection(connectionName);
             return
                 connection != null && 
                 connection.getName().equals(connectionName) &&
@@ -156,14 +161,14 @@ public class JdbcConnectionReference extends ExternalReference {
 
     @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (localizeType == LocalizeAction.REPLACE) {
+        if ( localizeType == LocalizeAction.REPLACE) {
             if (assertionToLocalize instanceof JdbcConnectionable) {
                 JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;
                 if (connable.getConnectionName().equals(connectionName)) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     connable.setConnectionName(localConnectionName);
                 }
             }
-        }  else if (localizeType == LocalizeAction.DELETE) {
+        }  else if ( localizeType == LocalizeAction.DELETE) {
             logger.info("Deleted this assertion from the tree.");
             return false;
         }
@@ -171,40 +176,4 @@ public class JdbcConnectionReference extends ExternalReference {
         return true;
     }
 
-    /**
-     * Enum-type class for the type of localization to use.
-     */
-    private static class LocalizeAction {
-        private static final LocalizeAction IGNORE = new LocalizeAction(1);
-        private static final LocalizeAction DELETE = new LocalizeAction(2);
-        private static final LocalizeAction REPLACE = new LocalizeAction(3);
-
-        private int val = 0;
-
-        public LocalizeAction(int val) {
-            this.val = val;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof LocalizeAction)) return false;
-
-            final LocalizeAction localizeAction = (LocalizeAction) o;
-
-            return val == localizeAction.val;
-        }
-
-        public int hashCode() {
-            return val;
-        }
-    }
-
-    private JdbcAdmin getJdbcConnectionAdmin() {
-        Registry reg = Registry.getDefault();
-        if (!reg.isAdminContextPresent()) {
-            logger.warning("Cannot get JDBC Connection Admin due to no Admin Context present.");
-            return null;
-        }
-        return reg.getJdbcConnectionAdmin();
-    }
 }

@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.PrivateKeyReference;
+import com.l7tech.policy.exporter.PrivateKeyReference;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -40,18 +40,22 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         initialize();
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public boolean canFinish() {
         return !hasNextPanel();
     }
 
+    @Override
     public String getStepLabel() {
         return "Unresolved Private Key " + keyReference.getKeyAlias();
     }
 
+    @Override
     public boolean onNextButton() {
         if (useDefaultKeypairRadioButton.isSelected()) {
             keyReference.setLocalizeReplace(true, null, 0);
@@ -71,6 +75,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         add(mainPanel);
 
         ActionListener modecheck = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableValueFieldAsAppropriate();
             }
@@ -79,6 +84,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         useCustomKeyPairRadioButton.addActionListener(modecheck);
 
         manageCustomKeysButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 manageCustomKeys();
             }
@@ -101,6 +107,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         pkmw.pack();
         Utilities.centerOnScreen(pkmw);
         DialogDisplayer.display(pkmw, new Runnable() {
+            @Override
             public void run() {
                 populateCombobox();
             }

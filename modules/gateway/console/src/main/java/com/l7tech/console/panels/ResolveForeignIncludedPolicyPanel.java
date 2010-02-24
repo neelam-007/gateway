@@ -1,25 +1,18 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.IncludedPolicyReference;
+import com.l7tech.policy.exporter.IncludedPolicyReference;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.util.logging.Logger;
 import java.io.IOException;
 
 /**
  * This wizard panel allows the administrator to take action on a conflicting policy fragment
- * refered to in the imported policy.
+ * referred to in the imported policy.
  *
  * <p/>
  * <p/>
@@ -66,6 +59,7 @@ public class ResolveForeignIncludedPolicyPanel extends WizardStepPanel {
         newPolicyName.setText(importedPolicy.getName());
     }
 
+    @Override
     public boolean onNextButton() {
         String newName = newPolicyName.getText().trim();
 
@@ -87,21 +81,22 @@ public class ResolveForeignIncludedPolicyPanel extends WizardStepPanel {
             }
         }
 
-        foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.RENAME);
-        foreignIncludedPolicyReference.setOldName(foreignIncludedPolicyReference.getName());
-        foreignIncludedPolicyReference.setName(newName);
+        foreignIncludedPolicyReference.setLocalizeRename( newName );
 
         return true;
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public String getStepLabel() {
         return "Conflicting policy fragment " + foreignIncludedPolicyReference.getName();
     }
 
+    @Override
     public boolean canFinish() {
         return !hasNextPanel();
     }

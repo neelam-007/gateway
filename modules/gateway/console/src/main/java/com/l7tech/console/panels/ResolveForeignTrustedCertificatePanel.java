@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertListenerAdapter;
-import com.l7tech.console.policy.exporter.TrustedCertReference;
+import com.l7tech.policy.exporter.TrustedCertReference;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;

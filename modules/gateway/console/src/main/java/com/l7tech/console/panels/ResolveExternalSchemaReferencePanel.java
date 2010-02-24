@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.ExternalSchemaReference;
+import com.l7tech.policy.exporter.ExternalSchemaReference;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * This wizard panel allows to adminsitrator to take action on an unresolved external schema
- * refered to in the imported policy.
+ * This wizard panel allows to administrator to take action on an unresolved external schema
+ * referred to in the imported policy.
  *
  * <p/>
  * <p/>
@@ -49,6 +49,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         actionRadios.add(asIsRadio);
         actionRadios.add(removeRadio);
         addSchemaButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCreateSchema();
             }
@@ -56,6 +57,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         removeRadio.setSelected(true);
     }
 
+    @Override
     public boolean onNextButton() {
         if (removeRadio.isSelected()) {
             foreignRef.setRemoveRefferees(true);
@@ -75,6 +77,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 // see if resolution is now fixed
                 Registry reg = Registry.getDefault();
@@ -82,7 +85,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
                     logger.warning("No access to registry. Cannot check fix.");
                     return;
                 }
-                boolean fixed = false;
+                boolean fixed;
                 try {
                     fixed = !reg.getSchemaAdmin().findByName(foreignRef.getName()).isEmpty();
                     if (!fixed) {
@@ -104,10 +107,12 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         });
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public String getStepLabel() {
         String ref = foreignRef.getName();
         if (ref == null) {
@@ -116,6 +121,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         return "Unresolved external schema " + ref;
     }
 
+    @Override
     public boolean canFinish() {
         return !hasNextPanel();
     }

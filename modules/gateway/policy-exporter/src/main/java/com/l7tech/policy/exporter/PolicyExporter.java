@@ -1,15 +1,12 @@
 /**
  * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
@@ -40,6 +37,11 @@ import java.util.logging.Logger;
  */
 public class PolicyExporter {
     private final Logger logger = Logger.getLogger(PolicyExporter.class.getName());
+    private final ExternalReferenceFinder finder;
+
+    public PolicyExporter( final ExternalReferenceFinder finder ) {
+        this.finder = finder;
+    }
 
     public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
         // do policy to xml
@@ -90,7 +92,7 @@ public class PolicyExporter {
     }
 
     /**
-     * Adds ExternalReference instances to refs collestion in relation to the assertion
+     * Adds ExternalReference instances to refs collection in relation to the assertion
      * if applicable
      */
     private void appendRelatedReferences(Assertion assertion, Collection<ExternalReference> refs) {
@@ -98,21 +100,21 @@ public class PolicyExporter {
         // create the appropriate reference if applicable
         if (assertion instanceof IdentityAssertion) {
             IdentityAssertion idassertion = (IdentityAssertion)assertion;
-            IdProviderReference idProviderRef = new IdProviderReference(idassertion.getIdentityProviderOid());
+            IdProviderReference idProviderRef = new IdProviderReference( finder, idassertion.getIdentityProviderOid());
 
             if(idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal()) {
-                ref = new FederatedIdProviderReference(idassertion.getIdentityProviderOid());
+                ref = new FederatedIdProviderReference( finder, idassertion.getIdentityProviderOid());
             } else {
                 ref = idProviderRef;
             }
         } else if (assertion instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
             if(jmsidass.getEndpointOid() != null) {
-                ref = new JMSEndpointReference(jmsidass.getEndpointOid());
+                ref = new JMSEndpointReference( finder, jmsidass.getEndpointOid());
             }
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
-            ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
+            ref = new CustomAssertionReference( finder, cahAss.getCustomAssertion().getName());
         } else if (assertion instanceof SchemaValidation) {
             Document schema = null;
             SchemaValidation sva = (SchemaValidation) assertion;
@@ -127,14 +129,14 @@ public class PolicyExporter {
                 }
             } else if (schemaResource instanceof GlobalResourceInfo) {
                 String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
-                ref = new ExternalSchemaReference(globalSchemaName, null);
+                ref = new ExternalSchemaReference( finder, globalSchemaName, null);
             }
 
             // process external schema imports, if any
             if (schema != null) {
                 ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
                 for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                    ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name, unresolvedImport.tns);
+                    ExternalSchemaReference esref = new ExternalSchemaReference( finder, unresolvedImport.name, unresolvedImport.tns);
                     if (!refs.contains(esref)) {
                         refs.add(esref);
                     }
@@ -145,7 +147,7 @@ public class PolicyExporter {
                 return;
             }
             
-            ref = new IncludedPolicyReference((PolicyReference) assertion);
+            ref = new IncludedPolicyReference( finder, (PolicyReference) assertion);
 
             if(!refs.contains(ref)) {
                 IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
@@ -179,17 +181,17 @@ public class PolicyExporter {
                     if (connRef.getConnectionName().equals(connectionable.getConnectionName())) return;
                 }
             }
-            ref = new JdbcConnectionReference(connectionable);
+            ref = new JdbcConnectionReference( finder, connectionable);
         } else if(assertion instanceof UsesEntities) {
             UsesEntities entitiesUser = (UsesEntities)assertion;
             for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
                 ref = null;
                 if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                    ref = new IdProviderReference(entityHeader.getOid());
+                    ref = new IdProviderReference( finder, entityHeader.getOid());
                 } else if(entityHeader.getType().equals(EntityType.JMS_ENDPOINT)) {
-                    ref = new JMSEndpointReference(entityHeader.getOid());
+                    ref = new JMSEndpointReference( finder, entityHeader.getOid());
                 } else if(entityHeader.getType().equals(EntityType.TRUSTED_CERT)) {
-                    ref = new TrustedCertReference(entityHeader.getOid());
+                    ref = new TrustedCertReference( finder, entityHeader.getOid());
                 }
 
                 if(ref != null && !refs.contains(ref)) {
@@ -216,7 +218,7 @@ public class PolicyExporter {
                 }
             }
             if (! keyable.isUsesDefaultKeyStore()) {
-                ref = new PrivateKeyReference(keyable);
+                ref = new PrivateKeyReference( finder, keyable);
             }
         }
 

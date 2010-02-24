@@ -4,8 +4,8 @@ import com.l7tech.console.action.NewFederatedIdentityProviderAction;
 import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.policy.exporter.IdProviderReference;
-import com.l7tech.console.policy.exporter.FederatedIdProviderReference;
+import com.l7tech.policy.exporter.IdProviderReference;
+import com.l7tech.policy.exporter.FederatedIdProviderReference;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 /**
  * This wizard panel allows an administrator to resolve a missing identity provider
- * refered to in an exported policy during import. This is only invoked when the
+ * referred to in an exported policy during import. This is only invoked when the
  * missing identity provider cannot be resolved automatically based on the exported
  * properties.
  * 
@@ -39,7 +39,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 23, 2004<br/>
- * $Id$
  */
 public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     public ResolveForeignIdentityProviderPanel(WizardStepPanel next, IdProviderReference unresolvedRef) {
@@ -48,18 +47,22 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         initialize();
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public String getStepLabel() {
         return "Unresolved provider " + getProviderNameForDisplay();
     }
 
+    @Override
     public boolean canFinish() {
         return !hasNextPanel();
     }
 
+    @Override
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (manualResolvRadio.isSelected()) {
@@ -110,22 +113,26 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
 
         // enable/disable provider selector as per action type selected
         manualResolvRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 providerSelector.setEnabled(true);
             }
         });
         removeRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 providerSelector.setEnabled(false);
             }
         });
         ignoreRadio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 providerSelector.setEnabled(false);
             }
         });
 
         createProviderButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCreateIdProvider();
             }
@@ -152,6 +159,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private void onCreateIdProvider() {
         // update the list once the provide is created
         final EntityListener updateProviderListCallback = new EntityListener() {
+            @Override
             public void entityAdded(EntityEvent ev) {
                 populateIdProviders(unresolvedRef.getIdProviderTypeVal());
                 resetProvList();
@@ -161,7 +169,9 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
                     providerSelector.setSelectedItem(((EntityHeader)ev.getEntity()).getName());
                 }
             }
+            @Override
             public void entityUpdated(EntityEvent ev) {}
+            @Override
             public void entityRemoved(EntityEvent ev) {}
         };
         // start the process to create the type of id provider based on the saved info
@@ -199,6 +209,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
                     new Object[] { IdentityProviderType.FEDERATED.description(), IdentityProviderType.LDAP.description() },
                     "",
                     new DialogDisplayer.InputListener(){
+                        @Override
                         public void reportResult(Object option) {
                             if ( option != null ) {
                                 if ( IdentityProviderType.FEDERATED.description().equals(option) ) {
@@ -274,7 +285,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private Long getProviderIdFromName(String name) {
         for (EntityHeader entityHeader : providerHeaders) {
             if (entityHeader.getName().equals(name)) {
-                return new Long(entityHeader.getOid());
+                return entityHeader.getOid();
             }
         }
         return null;

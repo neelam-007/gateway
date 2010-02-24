@@ -1,7 +1,6 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.policy.Policy;
 import com.l7tech.common.io.XmlUtil;
@@ -15,12 +14,8 @@ import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.*;
@@ -40,7 +35,7 @@ public class PolicyImporter {
      * This is a container for the results of importing a policy. It contains the root assertion and a map
      * of the included policy fragments.
      */
-    public static class PolicyImporterResult {
+    public static final class PolicyImporterResult {
         public Assertion assertion;
         public HashMap<String, Policy> policyFragments;
 
@@ -50,44 +45,42 @@ public class PolicyImporter {
         }
     }
 
+    public interface PolicyImporterAdvisor {
+        boolean mapReference( final String referenceType, final String referenceId, final String targetId );
+        boolean resolveReferences( ExternalReference[] unresolvedRefsArray ) throws PolicyImportCancelledException;
+        boolean acceptPolicyConflict( String policyName, String existingPolicyName, String guid );
+    }
+
     /**
      * Import a policy from file.
      * @param receiverPolicy the policy that is receiving the imported policy
-     * @param input the file containing the exported policy document
+     * @param policyExport the exported policy document
      * @return the imported policy or null if the document did not contain a policy or if the policy could
      *         not be resolved.
-     * @throws InvalidPolicyStreamException somehing unexpected in the passed file.
+     * @throws InvalidPolicyStreamException something unexpected in the passed file.
      */
-    public static PolicyImporterResult importPolicy(Policy receiverPolicy, File input) throws InvalidPolicyStreamException, PolicyImportCancelledException {
-        String name = input.getPath();
-        // Read XML document from this
-        Document readDoc = null;
-        InputStream in = null;
-        try {
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            in = new FileInputStream(input);
-            readDoc = XmlUtil.parse(in);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not read xml document from " + name, e);
-            throw new InvalidPolicyStreamException(e);
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "Could not read xml document from " + name, e);
-            throw new InvalidPolicyStreamException(e);
-        } finally {
-            ResourceUtils.closeQuietly(in);
-        }
+    public static PolicyImporterResult importPolicy( final Policy receiverPolicy,
+                                                     final Document policyExport,
+                                                     final WspReader wspReader,
+                                                     final ExternalReferenceFinder finder,
+                                                     final ExternalReferenceErrorListener errorListener,
+                                                     final PolicyImporterAdvisor advisor ) throws InvalidPolicyStreamException, PolicyImportCancelledException {
         // Import policy references first
-        Element referencesEl = DomUtils.findFirstChildElementByName(readDoc.getDocumentElement(),
+        Element referencesEl = DomUtils.findFirstChildElementByName(policyExport.getDocumentElement(),
                                                                  ExporterConstants.EXPORTED_POL_NS,
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
 
-        RemoteReferenceResolver resolver = new RemoteReferenceResolver();
+        ExternalReferenceResolver resolver = new ExternalReferenceResolver( wspReader, advisor );
         Collection<ExternalReference> references = new ArrayList<ExternalReference>();
         HashMap<String, Policy> fragments = new HashMap<String, Policy>();
         HashMap<Long, String> fragmentOidToNameMap = new HashMap<Long, String>();
         if (referencesEl != null) {
             try {
-                references = ExternalReference.parseReferences(referencesEl);
+                references = ExternalReference.parseReferences(finder, referencesEl);
+
+                for(ExternalReference reference : references) {
+                    reference.setExternalReferenceErrorListener(errorListener);
+                }
 
                 for(ExternalReference reference : references) {
                     if(reference instanceof IncludedPolicyReference) {
@@ -102,15 +95,15 @@ public class PolicyImporter {
                     }
                 }
             } catch ( InvalidDocumentFormatException e) {
-                logger.log(Level.WARNING, "cannot parse references from document " + name, e);
+                logger.log(Level.WARNING, "Cannot parse policy export references", e);
             }
 
-            Element policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+            Element policy = XmlUtil.findFirstChildElementByName(policyExport.getDocumentElement(),
                                                                  WspConstants.L7_POLICY_NS,
                                                                  WspConstants.POLICY_ELNAME);
             // try alternative
             if (policy == null) {
-                policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+                policy = XmlUtil.findFirstChildElementByName(policyExport.getDocumentElement(),
                                                              WspConstants.WSP_POLICY_NS,
                                                              WspConstants.POLICY_ELNAME);
             }
@@ -143,21 +136,21 @@ public class PolicyImporter {
                 return null;
             }
         } else {
-            logger.warning("The policy document " + name + " did not contain exported references. Maybe this is " +
+            logger.warning("The policy export did not contain exported references. Maybe this is " +
                         "an old-school style policy export.");
         }
-        Element policy = DomUtils.findFirstChildElementByName(readDoc.getDocumentElement(),
+        Element policy = DomUtils.findFirstChildElementByName(policyExport.getDocumentElement(),
                                                              WspConstants.L7_POLICY_NS,
                                                              WspConstants.POLICY_ELNAME);
         // try alternative
         if (policy == null) {
-            policy = DomUtils.findFirstChildElementByName(readDoc.getDocumentElement(),
+            policy = DomUtils.findFirstChildElementByName(policyExport.getDocumentElement(),
                                                          WspConstants.WSP_POLICY_NS,
                                                          WspConstants.POLICY_ELNAME);
         }
 
         if (policy == null) {
-            Element re = readDoc.getDocumentElement();
+            Element re = policyExport.getDocumentElement();
             if (WspConstants.POLICY_ELNAME.equals(re.getLocalName()) &&
                     (WspConstants.L7_POLICY_NS.equals(re.getNamespaceURI()) ||
                      WspConstants.WSP_POLICY_NS.equals(re.getNamespaceURI())))
@@ -184,12 +177,12 @@ public class PolicyImporter {
                         }
                     }
                 } catch(IOException e) {
-                    logger.log(Level.WARNING, "cannot parse references from document " + name, e);
+                    logger.log(Level.WARNING, "Cannot parse references from policy export.", e);
                 }
             }
             return new PolicyImporterResult(rootAssertion, fragments);
         } else {
-            logger.warning("The document " + name + " did not contain a policy at all.");
+            logger.warning("The policy export did not contain a policy.");
         }
         throw new InvalidPolicyStreamException("Document does not seem to include a policy.");
     }

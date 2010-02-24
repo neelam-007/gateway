@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.exporter.CustomAssertionReference;
+import com.l7tech.policy.exporter.CustomAssertionReference;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,7 +18,6 @@ import java.awt.*;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 28, 2004<br/>
- * $Id$<br/>
  */
 public class ResolveForeignCustomAssertionPanel extends WizardStepPanel {
     private CustomAssertionReference foreignRef;
@@ -33,14 +32,17 @@ public class ResolveForeignCustomAssertionPanel extends WizardStepPanel {
         initialize();
     }
 
+    @Override
     public String getDescription() {
         return getStepLabel();
     }
 
+    @Override
     public String getStepLabel() {
         return "Unknown assertion type " + foreignRef.getCustomAssertionName();
     }
 
+    @Override
     public boolean canFinish() {
         if (hasNextPanel()) return false;
         return true;
@@ -60,6 +62,7 @@ public class ResolveForeignCustomAssertionPanel extends WizardStepPanel {
         removeRadio.setSelected(true);
     }
 
+    @Override
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (removeRadio.isSelected()) {

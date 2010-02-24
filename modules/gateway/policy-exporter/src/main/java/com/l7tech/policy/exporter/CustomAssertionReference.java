@@ -1,22 +1,16 @@
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.console.util.Registry;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * A reference to a CustomAssertion type. This reference is exported alongside
@@ -27,20 +21,22 @@ import java.util.logging.Level;
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
- * Date: Jul 20, 2004<br/>
- * $Id$<br/>
+ * Date: Jul 20, 2004<br/>   
  */
 public class CustomAssertionReference extends ExternalReference {
-    public CustomAssertionReference(String customAssertionName) {
+    public CustomAssertionReference( final ExternalReferenceFinder finder,
+                                     final String customAssertionName ) {
+        this(finder);
         this.customAssertionName = customAssertionName;
     }
 
-    public static CustomAssertionReference parseFromElement(Element el) throws InvalidDocumentFormatException {
+    public static CustomAssertionReference parseFromElement(final ExternalReferenceFinder finder,
+                                                            final Element el) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
         if (!el.getNodeName().equals(REF_EL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
-        CustomAssertionReference output = new CustomAssertionReference();
+        CustomAssertionReference output = new CustomAssertionReference(finder);
         output.customAssertionName = fixWhitespace(getParamFromEl(el, ASSNAME_EL_NAME));
         return output;
     }
@@ -62,43 +58,25 @@ public class CustomAssertionReference extends ExternalReference {
         return customAssertionName;
     }
 
-    public void setLocalizeDelete() {
-        localizeType = LocaliseAction.DELETE;
+    @Override
+    public boolean setLocalizeDelete() {
+        localizeType = LocalizeAction.DELETE;
+        return true;
     }
 
+    @Override
     public void setLocalizeIgnore() {
-        localizeType = LocaliseAction.IGNORE;
+        localizeType = LocalizeAction.IGNORE;
     }
 
-    private CustomAssertionReference() {
-        super();
+    private CustomAssertionReference(final ExternalReferenceFinder finder) {
+        super(finder);
     }
 
-    public static class LocaliseAction {
-        public static final LocaliseAction IGNORE = new LocaliseAction(1);
-        public static final LocaliseAction DELETE = new LocaliseAction(2);
-        private LocaliseAction(int val) {
-            this.val = val;
-        }
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof LocaliseAction)) return false;
-
-            final LocaliseAction localiseAction = (LocaliseAction) o;
-
-            if (val != localiseAction.val) return false;
-
-            return true;
-        }
-        public int hashCode() {
-            return val;
-        }
-        private int val = 0;
-    }
-
+    @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(REF_EL_NAME);
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, CustomAssertionReference.class.getName());
+        setTypeAttribute( refEl );
         referencesParentElement.appendChild(refEl);
         Element nameEl = referencesParentElement.getOwnerDocument().createElement(ASSNAME_EL_NAME);
         if (customAssertionName != null) {
@@ -108,6 +86,7 @@ public class CustomAssertionReference extends ExternalReference {
         refEl.appendChild(nameEl);
     }
 
+    @SuppressWarnings({ "RedundantIfStatement" })
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CustomAssertionReference)) return false;
@@ -131,33 +110,28 @@ public class CustomAssertionReference extends ExternalReference {
      * Load all registered remote assertion through CustomAssertionsRegistrar
      * and look for one with same name as the one from this reference.
      */
+    @Override
     boolean verifyReference() {
-        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
-        Collection assertins = null;
-        try {
-            assertins = cr.getAssertions();
-            for (Iterator iterator = assertins.iterator(); iterator.hasNext();) {
-                CustomAssertionHolder cah = (CustomAssertionHolder)iterator.next();
-                String thisname = cah.getCustomAssertion().getName();
-                if (thisname != null && thisname.equals(customAssertionName)) {
+        final Collection assertions = getFinder().getAssertions();
+        for ( final Object assertion : assertions ) {
+            if ( assertion instanceof CustomAssertionHolder ) {
+                final CustomAssertionHolder cah = (CustomAssertionHolder) assertion;
+                final String name = cah.getCustomAssertion().getName();
+                if ( name != null && name.equals( customAssertionName ) ) {
                     // WE HAVE A MATCH!
-                    logger.fine("Custom assertion " + customAssertionName + " found on local system.");
-                    localizeType = LocaliseAction.IGNORE;
+                    logger.fine( "Custom assertion " + customAssertionName + " found on local system." );
+                    localizeType = LocalizeAction.IGNORE;
                     return true;
                 }
             }
-        } catch (RuntimeException e) {
-            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
-            } else
-                logger.log(Level.WARNING, "Cannot get remote assertions", e);
         }
         logger.warning("the custom assertion " + customAssertionName + " does not seem to exist on this system.");
         return false;
     }
 
+    @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (localizeType == LocaliseAction.IGNORE) return true;
+        if (localizeType == LocalizeAction.IGNORE) return true;
         // we need to instruct deletion for assertions that refer to this
         if (assertionToLocalize instanceof CustomAssertionHolder) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertionToLocalize;
@@ -176,5 +150,5 @@ public class CustomAssertionReference extends ExternalReference {
     public static final String REF_EL_NAME = "CustomAssertionReference";
     public static final String ASSNAME_EL_NAME = "CustomAssertionName";
 
-    private LocaliseAction localizeType = null;
+    private LocalizeAction localizeType = null;
 }

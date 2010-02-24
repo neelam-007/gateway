@@ -1,7 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.policy.exporter.PolicyExporter;
+import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
+import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -53,13 +54,15 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Export Policy";
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Exports the policy to a file along with external references.";
     }
@@ -67,6 +70,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/saveTemplate.gif";
     }
@@ -76,13 +80,14 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     }
 
     /** Actually perform the action.
-     * This is the method which should be called programmatically.
+     * This is the method which should be called programatically.
 
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
     protected File exportPolicy(final String title, final Assertion rootAssertion) {
         return (File) AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
             public Object run() {
                 try {
                     return doFileExport(title, rootAssertion);
@@ -124,9 +129,11 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML") || f.isDirectory();
             }
+            @Override
             public String getDescription() {
                 return "XML Files";
             }
@@ -178,7 +185,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     }
 
     protected void serializeToFile(Assertion rootAssertion, File policyFile) throws IOException, SAXException {
-        PolicyExporter exporter = new PolicyExporter();
+        PolicyExporter exporter = new PolicyExporter( new ConsoleExternalReferenceFinder() );
         exporter.exportToFile(rootAssertion, policyFile);
     }
 

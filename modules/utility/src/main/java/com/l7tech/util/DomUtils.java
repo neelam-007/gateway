@@ -135,6 +135,34 @@ public class DomUtils {
     }
 
     /**
+     * Finds one and only one child {@link Element} of a parent {@link Element}
+     * with the specified name that is in the default namespace, and throws
+     * {@link com.l7tech.util.MissingRequiredElementException} if such an element cannot be found.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param name the name of the element to find. Must be non-null.
+     * @return First matching child {@link Element}
+     * @throws TooManyChildElementsException if multiple matching child nodes are found
+     * @throws MissingRequiredElementException if no matching child node is found
+     */
+    public static Element findExactlyOneChildElementByName( final Element parent, final String name ) throws TooManyChildElementsException, MissingRequiredElementException {
+        if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
+        NodeList children = parent.getChildNodes();
+        Element result = null;
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE &&
+                 name.equals( n.getNodeName()) &&
+                 n.getNamespaceURI() == null) {
+                if ( result != null ) throw new TooManyChildElementsException( "#default", name );
+                result = (Element)n;
+            }
+        }
+        if (result == null) throw new MissingRequiredElementException(MessageFormat.format("Required element {0} not found",  name));
+        return result;
+    }
+
+    /**
      * Finds zero or one child {@link Element}s of a parent {@link Element}
      * with the specified name that is in the specified namespace.
      *

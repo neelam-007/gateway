@@ -1,13 +1,12 @@
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.policy.exporter;
+package com.l7tech.policy.exporter;
 
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.DomUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
@@ -60,7 +59,8 @@ public class IncludedPolicyReference extends ExternalReference {
 
     private UseType useType;
 
-    public IncludedPolicyReference(PolicyReference policyReference) {
+    public IncludedPolicyReference(final ExternalReferenceFinder finder, final PolicyReference policyReference) {
+        super(finder);
         this.guid = policyReference.retrievePolicyGuid();
 
         if(policyReference instanceof Include) {
@@ -68,8 +68,8 @@ public class IncludedPolicyReference extends ExternalReference {
         }
         
         try {
-            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(policyReference.retrievePolicyGuid());
-            //bug 5316: if we arent able to find the policy from the database, and the assertion is an Include instance
+            Policy policy = getFinder().findPolicyByGuid(policyReference.retrievePolicyGuid());
+            //bug 5316: if we aren't able to find the policy from the database, and the assertion is an Include instance
             //then we could almost guarantee that the fragment policy exists in the assertion (policyReference), so we'll
             //grab the policy from there
             if (policy == null) {
@@ -85,10 +85,16 @@ public class IncludedPolicyReference extends ExternalReference {
         }
     }
 
+    @Override
+    public String getRefId() {
+        return guid;
+    }
+
+    @Override
     void serializeToRefElement(Element referencesParentElement) {
         Element includeEl = referencesParentElement.getOwnerDocument().createElement(getClass().getSimpleName());
         includeEl.setAttribute(ATTR_GUID, guid);
-        includeEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, getClass().getName());
+        setTypeAttribute( includeEl );
         if (name != null) includeEl.setAttribute(ATTR_NAME, name);
         if (type != null) includeEl.setAttribute(ATTR_TYPE, type.name());
         if (soap != null) includeEl.setAttribute(ATTR_SOAP, soap.toString());
@@ -106,9 +112,10 @@ public class IncludedPolicyReference extends ExternalReference {
         referencesParentElement.appendChild(includeEl);
     }
 
+    @Override
     boolean verifyReference() throws InvalidPolicyStreamException {
         try {
-            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(guid);
+            Policy policy = getFinder().findPolicyByGuid(guid);
             
             if (policy == null) {
                 logger.log(Level.INFO, MessageFormat.format("Policy #{0} ({1}) does not exist on this system; importing", guid, name));
@@ -116,7 +123,7 @@ public class IncludedPolicyReference extends ExternalReference {
 
                 // Check to see there is a policy with the same name already
                 try {
-                    policy = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(name);
+                    policy = getFinder().findPolicyByUniqueName(name);
                     if(policy != null) {
                         return false;
                     }
@@ -181,6 +188,7 @@ public class IncludedPolicyReference extends ExternalReference {
         }
     }
 
+    @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
         if (assertionToLocalize instanceof Include) {
             Include include = (Include) assertionToLocalize;
@@ -194,7 +202,7 @@ public class IncludedPolicyReference extends ExternalReference {
         return true;
     }
 
-    public static IncludedPolicyReference parseFromElement(Element el) {
+    public static IncludedPolicyReference parseFromElement(final ExternalReferenceFinder context, final Element el) {
         String guid = el.getAttribute(ATTR_GUID);
         Long oid = null;
         if (guid == null || guid.length() <= 0) {
@@ -210,7 +218,7 @@ public class IncludedPolicyReference extends ExternalReference {
         }
 
         String name = el.getAttribute(ATTR_NAME);
-        IncludedPolicyReference ipr = new IncludedPolicyReference(new Include(guid, name));
+        IncludedPolicyReference ipr = new IncludedPolicyReference(context, new Include(guid, name));
         if(ipr.getName() == null) {
             ipr.setName(name);
         }
@@ -298,6 +306,18 @@ public class IncludedPolicyReference extends ExternalReference {
         if(useType == UseType.RENAME) {
             this.oldName = oldName;
         }
+    }
+
+    @Override
+    public void setLocalizeIgnore() {
+    }
+
+    @Override
+    public boolean setLocalizeRename( final String name ) {
+        setUseType( UseType.RENAME );
+        setOldName( getName() );
+        setName( name );
+        return true;
     }
 
     @Override

@@ -3,13 +3,15 @@
  */
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
-import com.l7tech.console.policy.exporter.PolicyImporter;
-import com.l7tech.console.policy.exporter.PolicyImportCancelledException;
+import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
@@ -22,13 +24,20 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.ResourceUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -36,7 +45,7 @@ import java.util.logging.Logger;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
- * asserttion tree policy nodes.
+ * assertion tree policy nodes.
  */
 public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode {
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
@@ -48,7 +57,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     protected AT assertion;
 
     /**
-     * package private constructor accepting the asseriton
+     * package private constructor accepting the assertion
      * this node represents.
      *
      * @param assertion that this node represents
@@ -68,6 +77,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return assertion;
     }
 
+    @SuppressWarnings({ "unchecked" })
+    @Override
     public void setUserObject(Object userObject) {
         // TODO we don't do a proper type check here because SAML assertion may try to replace
         // a RequestWssSaml2 with a RequestWssSaml
@@ -76,7 +87,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
-     * Get the assertion index path for this treen node.
+     * Get the assertion index path for this tree node.
      *
      * <p>This is the index of the child assertion at each level
      * of the tree.</p>
@@ -100,7 +111,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
-     * Get a descendent tree node by index path.
+     * Get a descendant tree node by index path.
      *
      * @param indexPath the list of child indexes
      * @return the tree node or null if not found
@@ -163,7 +174,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     /**
      * Get the validator messages for this node. Returns the messages
      * depending on the view. For the identity view only the messages
-     * that rlate to the set of paths that are associated with the view
+     * that relate to the set of paths that are associated with the view
      * will be returned.
      *
      * @return the list of validator messages
@@ -393,6 +404,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         model.moveNodeInto(target, parent, indexThis);
 
         Runnable runnable = new Runnable() {
+            @Override
             public void run() {
                 TreeNode[] path = AssertionTreeNode.this.getPath();
                 if (path != null) {
@@ -426,8 +438,14 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         EntityWithPolicyNode policyNode = getPolicyNodeCookie();
         if (policyNode == null)
             throw new IllegalArgumentException("No edited policy specified");
+        InputStream in = null;
         try {
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policyNode.getPolicy(), templateNode.getFile());
+            in = new FileInputStream(templateNode.getFile());
+            final Document readDoc = XmlUtil.parse(in);
+
+            WspReader wspReader = (WspReader) TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+            ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policyNode.getPolicy(), readDoc, wspReader, finder, finder, finder);
             Assertion newRoot = result.assertion;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
@@ -440,8 +458,14 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             logger.log(Level.WARNING, "Could not import the policy", e);
         } catch (InvalidPolicyStreamException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
+        } catch ( SAXException e ) {
+            logger.log(Level.WARNING, "Could not import the policy", e);
+        } catch ( IOException e ) {
+            logger.log(Level.WARNING, "Could not import the policy", e);
         } catch (PolicyImportCancelledException e) {
             logger.log(Level.INFO, "import was cancelled", e);
+        } finally {
+            ResourceUtils.closeQuietly(in);
         }
     }
 
