@@ -10,9 +10,9 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ExceptionUtils;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
@@ -29,15 +29,9 @@ import javax.wsdl.Operation;
  * User: flascell<br/>
  * Date: Mar 23, 2006<br/>
  */
-public class SoapUtilTest extends TestCase {
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
+public class SoapUtilTest  {
 
-    public static Test suite() {
-        return new TestSuite(SoapUtilTest.class);
-    }
-
+    @Test
     public void testGetOperationRPC() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
         Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "AxisWarehouse.wsdl");
@@ -53,6 +47,7 @@ public class SoapUtilTest extends TestCase {
         assertTrue(op == null);
     }
 
+    @Test
     public void testGetOperationDOC() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "dotNetSignedSoapRequest.xml");
         Document wsdldoc = TestDocuments.getTestDocument( "com/l7tech/policy/resources/warehouse.wsdl" );
@@ -68,6 +63,7 @@ public class SoapUtilTest extends TestCase {
         assertTrue(op.getName().equals("listProducts"));
     }
 
+    @Test
     public void testBugzilla2304() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "facadeAddService.xml");
         Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "bugzilla2304.wsdl");
@@ -87,6 +83,8 @@ public class SoapUtilTest extends TestCase {
         assertTrue(op == null);
     }
 
+    @SuppressWarnings({ "deprecation" })
+    @Test
     public void testBug3250_QA_Wsdl() throws Exception {
         Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "bug3250.wsdl"));
         for (Object o : w.getBindingOperations()) {
@@ -95,6 +93,8 @@ public class SoapUtilTest extends TestCase {
         }
     }
 
+    @SuppressWarnings({ "deprecation" })
+    @Test
     public void testBug3250_BofA_Wsdl() throws Exception {
         Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "AuthenticateServiceV001.wsdl"));
         for (Object o : w.getBindingOperations()) {
@@ -103,6 +103,7 @@ public class SoapUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testBug3888_IsSoapRejectsProcessingInstructions() throws Exception {
         Document doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT);
         assertFalse(SoapUtil.isSoapMessage(doc));
@@ -112,6 +113,7 @@ public class SoapUtilTest extends TestCase {
         assertTrue(SoapUtil.isSoapMessage(doc));
     }
 
+    @Test
     public void testIsSoapBody() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
         DomUtils.visitNodes(soapdoc.getDocumentElement(), new Functions.UnaryVoid<Node>(){
@@ -135,6 +137,7 @@ public class SoapUtilTest extends TestCase {
         });
     }
 
+    @Test
     public void testIsSoapHeader() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
         DomUtils.visitNodes(soapdoc.getDocumentElement(), new Functions.UnaryVoid<Node>(){
@@ -158,6 +161,7 @@ public class SoapUtilTest extends TestCase {
         });
     }
 
+    @Test
     public void testUuidFormat() throws Exception {
         String id = SoapUtil.generateUniqueUri("prefix:", true);
         assertTrue(id.startsWith("prefix:"));
