@@ -2966,6 +2966,7 @@
             <mkdir dir="@{dir}/${install.src.ssg.applet}"/>
             <mkdir dir="@{dir}/${install.src.ssg.appletlib}"/>
             <mkdir dir="@{dir}/${install.src.ssg.attachment}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.responsecache}"/>
             <mkdir dir="@{dir}/${install.src.ssg.base}"/>
             <mkdir dir="@{dir}/${install.src.ssg.bin}"/>
             <mkdir dir="@{dir}/${install.src.ssg.conf}"/>

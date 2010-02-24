@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.cache;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -38,8 +40,9 @@ public class CacheAssertionTest extends TestCase {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
-        beanFactory.addBean( "stashManagerFactory", TestStashManagerFactory.getInstance() );
+        beanFactory.addBean( "responseCacheStashManagerFactory", TestStashManagerFactory.getInstance() );
         beanFactory.addBean( "applicationEventProxy", eventProxy );
+        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("responseCache.resetGeneration", "0")));
     }
 
     public CacheAssertionTest( String name ) {
@@ -238,6 +241,7 @@ public class CacheAssertionTest extends TestCase {
          *
          * @return a new StashManager instance.  Never null.
          */
+        @Override
         public StashManager createStashManager() {
             StashManager stashManager = new HybridStashManager( ConfigHolder.DISK_THRESHOLD,
                     ConfigHolder.ATTACHMENT_DIR,

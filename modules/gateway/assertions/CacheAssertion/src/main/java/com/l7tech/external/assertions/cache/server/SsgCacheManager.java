@@ -1,13 +1,20 @@
 package com.l7tech.external.assertions.cache.server;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,23 +31,43 @@ public class SsgCacheManager {
     private static final AtomicReference<SsgCacheManager> INSTANCE = new AtomicReference<SsgCacheManager>();
 
     private final StashManagerFactory stashManagerFactory;
+    private final ClusterPropertyManager cpManager;
     private final ConcurrentHashMap<String, SsgCache> cachesByName = new ConcurrentHashMap<String, SsgCache>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private SsgCacheManager(StashManagerFactory stashManagerFactory, ApplicationEventProxy appEventProxy) {
+    private SsgCacheManager(StashManagerFactory stashManagerFactory, ApplicationEventProxy appEventProxy, ClusterPropertyManager cpManager) {
         this.stashManagerFactory = stashManagerFactory;
-        appEventProxy.addApplicationListener(makeCloseListener());
+        this.cpManager = cpManager;
+        appEventProxy.addApplicationListener(makeListener());
     }
 
-    private ApplicationListener makeCloseListener() {
+    private ApplicationListener makeListener() {
         return new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof Stopping) {
                     close();
+                } else if (event instanceof EntityInvalidationEvent) {
+                    EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
+                    if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
+                        handleClusterPropertyChange(eiEvent);
+                    }
                 }
             }
         };
+    }
+
+    private void handleClusterPropertyChange(EntityInvalidationEvent eiEvent) {
+        for (long oid : eiEvent.getEntityIds()) {
+            try {
+                ClusterProperty cp = cpManager.findByPrimaryKey(oid);
+                if (cp != null && ServerConfig.getInstance().getClusterPropertyName(ServerConfig.PARAM_RESPONSECACHE_RESETGENERATION).equals(cp.getName())) {
+                    clearAllCaches();
+                }
+            } catch (FindException e) {
+                logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
     }
 
     /**
@@ -60,9 +87,10 @@ public class SsgCacheManager {
             if (ret != null)
                 return ret;
 
-            StashManagerFactory smf = (StashManagerFactory)beanFactory.getBean("stashManagerFactory", StashManagerFactory.class);
+            StashManagerFactory smf = (StashManagerFactory)beanFactory.getBean("responseCacheStashManagerFactory", StashManagerFactory.class);
             ApplicationEventProxy aep = (ApplicationEventProxy)beanFactory.getBean("applicationEventProxy", ApplicationEventProxy.class);
-            ret = new SsgCacheManager(smf, aep);
+            ClusterPropertyManager cpm = (ClusterPropertyManager) beanFactory.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+            ret = new SsgCacheManager(smf, aep, cpm);
             INSTANCE.set(ret);
             return ret;
         }
@@ -116,6 +144,20 @@ public class SsgCacheManager {
         List<SsgCache> caches = new ArrayList<SsgCache>(cachesByName.values());
         for (SsgCache cache : caches)
             if (cache != null) cache.close();
+    }
+
+    /**
+     * Clears all caches.
+     */
+    private void clearAllCaches() {
+        Collection<SsgCache> caches = cachesByName.values();
+        for(SsgCache cache : caches) {
+            cachesByName.remove(cache.getName(), cache);
+        }
+        for(SsgCache cache : caches) {
+            cache.close();
+        }
+        logger.log(Level.FINE, "SSG response caches cleared.");
     }
 
     /**

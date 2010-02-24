@@ -33,6 +33,10 @@ public class SsgCache {
         this.config = config;
     }
 
+    public String getName() {
+        return config.getName();
+    }
+
     public void updateConfig(Config newConfig) {
         this.config = newConfig;
         logger.log(Level.FINE, "Cache config update for " + toString());
@@ -147,9 +151,9 @@ public class SsgCache {
 
     public static class Config {
 
-        public static final int DEFAULT_MAX_ENTRIES = 1000;
-        public static final long DEFAULT_MAX_SIZE_BYTES = 1000000; // one meg
-        public static final long DEFAULT_MAX_AGE_MILLIS = 86400000; // one day
+        public static final int DEFAULT_MAX_ENTRIES = 10;
+        public static final long DEFAULT_MAX_SIZE_BYTES = 10000; // 10k
+        public static final long DEFAULT_MAX_AGE_MILLIS = 300000; // 5min
 
         private final String name;
         private int maxEntries = DEFAULT_MAX_ENTRIES;

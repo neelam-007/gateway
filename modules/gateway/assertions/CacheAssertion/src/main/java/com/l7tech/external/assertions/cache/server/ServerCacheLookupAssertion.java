@@ -57,10 +57,14 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
 
         logger.log(Level.FINE, "Retrieved from cache: " + key);
 
-        // todo: set variable?
-        Message message = assertion.getTargetVariableName() != null ? new Message() :
+        String targetVar = assertion.getTargetVariableName();
+        Message message = targetVar != null ? new Message() :
             assertion.isUseRequest() ? context.getRequest() :
             context.getResponse();
+
+        if (targetVar != null) {
+            context.setVariable(targetVar, message);
+        }
 
         String cachedContentType = cachedEntry.getContentType();
         String contentTypeOverride = assertion.getContentTypeOverride();

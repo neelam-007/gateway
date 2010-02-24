@@ -270,6 +270,11 @@
                                 <value>logBuffer.messageSize</value>
                             </list>
                         </entry>
+                        <entry key="responseCacheStashManagerFactory">
+                            <list>
+                                <value>responseCacheDiskThreshold</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1206,6 +1211,8 @@
     <bean id="exceptionLogger" class="com.l7tech.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
 
     <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
+
+    <bean id="responseCacheStashManagerFactory" class="com.l7tech.server.ResponseCacheStashManagerFactory" factory-method="getInstance"/>
 
     <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry" depends-on="ssgBoot">
         <constructor-arg ref="serverConfig"/>
