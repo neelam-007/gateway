@@ -21,6 +21,8 @@
             xalan:indent-amount="2"
             method="xml"/>
 
+    <xsl:key name="elementsKey" match="element" use="." />                                            
+
     <xsl:template match="resourceFactories">
         <definitions targetNamespace="{@namespace}">
             <!-- XSL 1.0 hack to add a dynamic NS declaration for tns (value is the targetNamespace)-->
@@ -76,7 +78,7 @@
             FragmentTransfer
             -->            
             <xsl:comment> Resource Messages </xsl:comment>
-            <xsl:apply-templates mode="messages" select="resourceFactory/resource">
+            <xsl:apply-templates mode="messages" select="(resourceFactory/resource | resourceFactory/resourceMethod/request | resourceFactory/resourceMethod/response)[generate-id(element) = generate-id(key('elementsKey',element)[1])]">
                 <xsl:sort select="element"/>
             </xsl:apply-templates>
 
@@ -299,7 +301,7 @@
         </definitions>
     </xsl:template>
     
-    <xsl:template match="resource" mode="messages">
+    <xsl:template match="resource | request | response" mode="messages">
         <message name="{element}Message">
             <part name="{element}Part" element="tns:{element}"/>
         </message>
@@ -308,8 +310,8 @@
     <xsl:template match="resourceMethod" mode="portTypes">
         <operation name="{../name}{name}">
             <xsl:choose>
-                <xsl:when test="requestType">
-                    <input message="{requestType}"
+                <xsl:when test="request/element">
+                    <input message="tns:{request/element}Message"
                            wsa:Action="{../../@namespace}/{../name}/{name}" />
                 </xsl:when>
                 <xsl:otherwise>
@@ -317,7 +319,7 @@
                            wsa:Action="{../../@namespace}/{../name}/{name}" />
                 </xsl:otherwise>
             </xsl:choose>
-            <output message="{responseType}"
+            <output message="tns:{response/element}Message"
                    wsa:Action="{../../@namespace}/{../name}/{name}Response" />
        </operation>
     </xsl:template>

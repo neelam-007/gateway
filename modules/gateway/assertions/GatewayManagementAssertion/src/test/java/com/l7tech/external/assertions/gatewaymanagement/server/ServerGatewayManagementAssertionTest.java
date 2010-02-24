@@ -487,6 +487,8 @@ public class ServerGatewayManagementAssertionTest {
 
     private Document processRequest( final String action,
                                      final String message ) throws Exception {
+        System.out.println( XmlUtil.nodeToFormattedString(XmlUtil.parse( message )) );
+
         final String contentType = ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action=\""+action+"\"";
         final Message request = new Message();
         request.initialize( ContentTypeHeader.parseValue(contentType) , message.getBytes( "utf-8" ));

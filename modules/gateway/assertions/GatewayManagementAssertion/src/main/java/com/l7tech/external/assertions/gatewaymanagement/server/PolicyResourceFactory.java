@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  *
@@ -40,6 +41,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
                                   final PolicyManager policyManager,
                                   final PolicyHelper policyHelper ) {
         super( false, true, services, securityFilter, transactionManager, policyManager );
+        this.policyManager = policyManager;
         this.policyHelper = policyHelper;
     }
 
@@ -50,9 +52,11 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             @Override
             public PolicyImportResult execute() throws ObjectModelException, ResourceFactoryException {
                 final Policy policy = selectEntity( selectorMap );
-                return policyHelper.importPolicy( policy, resource );
+                PolicyImportResult result = policyHelper.importPolicy( policy, resource );
+                policyManager.update( policy );
+                return result;
             }
-        }, true, ResourceNotFoundException.class, InvalidResourceException.class );
+        }, false, ResourceNotFoundException.class, InvalidResourceException.class );
     }
 
     @ResourceMethod(name="ExportPolicy", selectors=true)
@@ -168,11 +172,17 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             default:
                 throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy type");
         }
-        final String policyXml = policyResource.getContent();
+        final String policyXml = policyHelper.validatePolicySyntax(policyResource.getContent()); 
         final Policy policy = new Policy( policyType, policyName, policyXml, false );
         setProperties( policy, policyDetail.getProperties(), Policy.class );
 
         return policy;
+    }
+
+    @Override
+    protected void beforeCreateEntity( final EntityBag<Policy> policyEntityBag ) throws ObjectModelException {
+        UUID guid = UUID.randomUUID();
+        policyEntityBag.getEntity().setGuid(guid.toString());
     }
 
     @Override
@@ -216,6 +226,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
 
     //- PRIVATE
 
+    private final PolicyManager policyManager;
     private final PolicyHelper policyHelper;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 

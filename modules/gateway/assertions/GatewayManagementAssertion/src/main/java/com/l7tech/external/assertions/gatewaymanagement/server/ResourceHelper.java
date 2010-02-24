@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.DocumentReferenceProcessor;
@@ -35,6 +36,7 @@ class ResourceHelper {
     //- PACKAGE
 
     static final String POLICY_TYPE = "policy";
+    static final String POLICY_EXPORT_TYPE = "policyexport";
     static final String WSDL_TYPE = "wsdl";
     static final String SCHEMA_TYPE = "xmlschema";    
 
@@ -79,6 +81,17 @@ class ResourceHelper {
         return resource;
     }
 
+    /**
+     * Get the resources with a particular tag, with the root resource first.
+     *
+     * @param resourceSetMap The resource sets
+     * @param tag The tag for the containing resource set
+     * @param required True to fail if no resources are found
+     * @param resourceResolver Resolver to use to access external resources by URL
+     * @return The collection of resources (may be empty but not null)
+     * @throws ResourceFactory.InvalidResourceException If an error occurs
+     * @see #getResourceSetMap
+     */
     Collection<Resource> getResources( final Map<String, ResourceSet> resourceSetMap,
                                        final String tag,
                                        final boolean required,
@@ -90,7 +103,9 @@ class ResourceHelper {
             final String rootUrl = resourceSet.getRootUrl();
             if ( resourceSet.getResources() != null ) {
                 for ( final Resource resource : resourceSet.getResources() ) {
-                    if ( rootUrl != null && rootUrl.equals(resource.getSourceUrl()) ) {
+                    if ( rootUrl != null && !rootUrl.startsWith("#") && rootUrl.equals(resource.getSourceUrl()) ) {
+                        resources.add( 0, resource );
+                    } else if ( rootUrl != null && rootUrl.startsWith("#") && rootUrl.substring(1).equals(resource.getId()) ) {
                         resources.add( 0, resource );
                     } else {
                         resources.add( resource );
@@ -140,8 +155,9 @@ class ResourceHelper {
             final XMLInputFactory xif = XMLInputFactory.newInstance();
             xif.setXMLReporter( SILENT_REPORTER );
             xif.setXMLResolver( FAILING_RESOLVER );
+            XMLStreamReader reader = null;
             try {
-                XMLStreamReader reader = xif.createXMLStreamReader( new StringReader(contents) );
+                reader = xif.createXMLStreamReader( new StringReader(contents) );
                 while( reader.hasNext() ) {
                     int eventType = reader.next();
                     if ( eventType == XMLStreamReader.START_ELEMENT ) {
@@ -154,6 +170,8 @@ class ResourceHelper {
                     throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
                             "resource error '"+e.getMessage()+"' when processing '"+uri+"'");
                 }
+            } finally {
+                ResourceUtils.closeQuietly( reader );
             }
 
             if ( namespace != null ) {

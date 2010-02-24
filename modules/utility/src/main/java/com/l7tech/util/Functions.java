@@ -27,6 +27,13 @@ public final class Functions {
     }
 
     /**
+     * A function that takes no arguments, returns a value, and may throw an exception  
+     */
+    public interface NullaryThrows<R, E extends Throwable> {
+        R call() throws E;
+    }
+
+    /**
      * A function that takes no arguments and returns no value, like Runnable, but with an Exception.
      */
     public interface NullaryVoidThrows<E extends Throwable> {

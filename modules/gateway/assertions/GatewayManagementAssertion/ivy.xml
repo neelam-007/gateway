@@ -21,6 +21,7 @@
 	<dependencies>
 
         <dependency name="layer7-gateway-api" rev="latest.integration" force="true" conf="core->master"/>
+        <dependency name="layer7-policy-exporter" rev="latest.integration" force="true" conf="core"/>
         <dependency org="javax.validation" name="validation-api" rev="1.0.0.GA" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-validator" rev="4.0.2.GA" force="true" conf="core"/>
         <dependency name="wiseman" org="net.java.wiseman" rev="1.0" force="true" conf="core"/>

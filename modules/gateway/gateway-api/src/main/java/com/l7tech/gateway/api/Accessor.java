@@ -1,7 +1,15 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.util.ExceptionUtils;
+import com.sun.ws.management.client.exceptions.FaultException;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The Accessor interface provides access to managed objects.
@@ -13,6 +21,13 @@ import java.util.Map;
  */
 @SuppressWarnings( { "serial" } )
 public interface Accessor<MO extends ManagedObject> {
+
+    /**
+     * Get the type managed by this accessor.
+     *
+     * @return The type class.
+     */
+    Class<MO> getType();
 
     /**
      * Get a managed object by identifier.
@@ -57,7 +72,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @param item The item with updated values.
      * @throws AccessorException If an error occurs
      */
-    void put( ManagedObject item ) throws AccessorException;
+    void put( MO item ) throws AccessorException;
 
     /**
      * Create a new managed object.
@@ -69,7 +84,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @return The identifier for the new item
      * @throws AccessorException If an error occurs
      */
-    String create( ManagedObject item ) throws AccessorException;
+    String create( MO item ) throws AccessorException;
 
     /**
      * Delete a managed object by identifier.
@@ -80,11 +95,33 @@ public interface Accessor<MO extends ManagedObject> {
     void delete( String identifier ) throws AccessorException;
 
     /**
+     * Delete a managed object by the given property.
+     *
+     * <p>All managed objects will support {@code id} access, managed objects with
+     * unique names may also support {@code name} access}. Other object specific
+     * properties may also be supported.</p>
+     *
+     * @param property The property to select by.
+     * @param value The value to use for selection.
+     * @throws AccessorException If an error occurs
+     */
+    void delete( String property, Object value ) throws AccessorException;
+
+    /**
+     * Delete a managed object by the given properties.
+     *
+     * @param propertyMap The map of properties.
+     * @throws AccessorException If an error occurs
+     */
+    void delete( Map<String,Object> propertyMap ) throws AccessorException;
+
+
+    /**
      * Enumerate all items of this type.
      *
      * @return An iterator allowing access to all items.
      */
-    Iterator<MO> enumerate();
+    Iterator<MO> enumerate() throws AccessorException;
 
     /**
      *
@@ -130,11 +167,85 @@ public interface Accessor<MO extends ManagedObject> {
     }
 
     /**
+     * TODO [steve] SOAP fault code and subcodes should be QNames but we can't get those from a FaultException (hide or patch wsman)
+     */
+    class AccessorSOAPFaultException extends AccessorRuntimeException {
+        static final Pattern SOAP_FAULT_PATTERN = Pattern.compile( "SOAP Fault: (.*)[\\r\\n]{1,2}     Actor: (.*)[\\r\\n]{1,2}      Code: (.*)[\\r\\n]{1,2}(?:  Subcodes:[ ]{0,1}(.*)[\\r\\n]{1,2}|)(?:    Detail: ((?:.|[\\r\\n])*)|)", Pattern.MULTILINE );
+                                                         
+        private final String fault;
+        private final String role;
+        private final String code;
+        private final List<String> subcodes;
+        private final List<String> details;
+
+        public AccessorSOAPFaultException( final FaultException fe ) {
+            super( ExceptionUtils.getMessage(fe ), fe );
+
+            Matcher matcher = SOAP_FAULT_PATTERN.matcher( ExceptionUtils.getMessage(fe ) );
+            if ( matcher.matches() ) {
+                fault = matcher.group( 1 );
+                role = matcher.group( 2 );
+                code = matcher.group( 3 );
+                subcodes = list(matcher.group( 4 ), true);
+                details = list(matcher.group( 5 ), false);
+            } else {
+                fault = ExceptionUtils.getMessage(fe );
+                role = "Unknown";
+                code = "Unknown";
+                subcodes = Collections.emptyList();
+                details = Collections.emptyList();
+            }
+        }
+
+        public String getFault() {
+            return fault;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public List<String> getSubcodes() {
+            return subcodes;
+        }
+
+        public List<String> getDetails() {
+            return details;
+        }
+
+        private List<String> list( final String listSeparatedList, final boolean spaceSeparated ) {
+            final List<String> list;
+            final String splitPattern = spaceSeparated ?
+                    "[\r\n ]{1,2}" :
+                    "[\r\n]{1,2}";
+
+            if ( listSeparatedList == null ) {
+                list = Collections.emptyList();
+            } else {
+                final List<String> arrayList = new ArrayList<String>();
+                final String[] listItems = listSeparatedList.split( splitPattern );
+                for ( final String item : listItems ) {
+                    if ( !item.trim().isEmpty() ) {
+                        arrayList.add( item.trim() );
+                    }
+                }
+                list = Collections.unmodifiableList(arrayList );
+            }
+
+            return list;
+        }
+    }
+
+    /**
      *
      */
     class AccessorNetworkException extends AccessorRuntimeException {
         public AccessorNetworkException( final Throwable cause ) {
-            super( cause );
+            super( ExceptionUtils.getMessage( cause ), cause );
         }
     }
 }

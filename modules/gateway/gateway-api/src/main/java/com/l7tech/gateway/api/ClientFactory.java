@@ -25,34 +25,97 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 
+ * Factory for the Gateway management Client.
  */
 public class ClientFactory {
 
     //- PUBLIC
 
+    /**
+     * Feature for validation of TLS/SSL server hostname. Default {@code true}.
+     */
     public static final String FEATURE_HOSTNAME_VALIDATION = "http://www.layer7tech.com/com.l7tech.gateway.api/hostname-validation";
+
+    /**
+     * Feature for validation of TLS/SSL server certificates. Default {@code true}.
+     */
     public static final String FEATURE_CERTIFICATE_VALIDATION = "http://www.layer7tech.com/com.l7tech.gateway.api/certificate-validation";
 
+    /**
+     * Attribute for service username.
+     */
     public static final String ATTRIBUTE_USERNAME = "http://www.layer7tech.com/com.l7tech.gateway.api/username";
+
+    /**
+     * Attribute for service password.
+     */
     public static final String ATTRIBUTE_PASSWORD = "http://www.layer7tech.com/com.l7tech.gateway.api/password";
+
+    /**
+     * Attribute for a credential callback handler. This will be used to access
+     * credentials when the corresponding username attribute is not set.
+     *
+     * @see CallbackHandler
+     */
     public static final String ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER = "http://www.layer7tech.com/com.l7tech.gateway.api/credential-callback-handler";
+
+    /**
+     * Attribute for a custom hostname verifier, ignored if hostname validation is not enabled.
+     *
+     * @see HostnameVerifier
+     */
     public static final String ATTRIBUTE_HOSTNAME_VERIFIER = "http://www.layer7tech.com/com.l7tech.gateway.api/hostname-verifier";
 
+    /**
+     * Attribute for HTTP proxy username.
+     */
+    public static final String ATTRIBUTE_PROXY_USERNAME = "http://www.layer7tech.com/com.l7tech.gateway.api/proxy-username";
+
+    /**
+     * Attribute for HTTP proxy password.
+     */
+    public static final String ATTRIBUTE_PROXY_PASSWORD = "http://www.layer7tech.com/com.l7tech.gateway.api/proxy-password";
+
+    /**
+     * Create a new ClientFactory.
+     *
+     * @return a ClientFactory with default settings.
+     */
     public static ClientFactory newInstance() {
         return new ClientFactory();
     }
 
+    /**
+     * Get the current value for an attribute.
+     *
+     * @param name The attribute name
+     * @return The attribute value (may be null)
+     * @throws InvalidOptionException If the attribute name is not recognised
+     */
     public Object getAttribute( final String name ) throws InvalidOptionException {
         if (!ATTRIBUTE_NAMES.contains( name ) ) throw new InvalidOptionException( name );
         return attributes.get( name );
     }
 
+    /**
+     * Set the value for an attribute.
+     *
+     * @param name The attribute name
+     * @param value The value for the attribute.
+     * @throws InvalidOptionException If the attribute name is not recognised
+     */
     public void setAttribute( final String name, final Object value ) throws InvalidOptionException {
         if (!ATTRIBUTE_NAMES.contains( name ) ) throw new InvalidOptionException( name );
         attributes.put( name, value );
     }
 
+    /**
+     * Get the current state for a feature.
+     *
+     * @param name The feature name
+     * @return True if the feature is enabled
+     * @throws InvalidOptionException If the feature name is not recognised
+     */
     public boolean getFeature( final String name ) throws InvalidOptionException {
         if ( features.containsKey( name )) {
             return features.get( name );
@@ -61,6 +124,13 @@ public class ClientFactory {
         }
     }
 
+    /**
+     * Set the enabled state for a feature.
+     *
+     * @param name The feature name
+     * @param value The value for the enabled state
+     * @throws InvalidOptionException If the feature name is not recognised
+     */
     public void setFeature( final String name, final boolean value ) throws InvalidOptionException {
         if ( features.containsKey( name )) {
             features.put( name, value );
@@ -69,9 +139,17 @@ public class ClientFactory {
         }
     }
 
+    /**
+     * Create a Client with the current features and attributes.
+     *
+     * @param url The URL for the management service
+     * @return The Client
+     */
     public Client createClient( final String url ) {
         final String username = getAttribute( ATTRIBUTE_USERNAME, String.class );
         final String password = getAttribute( ATTRIBUTE_PASSWORD, String.class );
+        final String proxyUsername = getAttribute( ATTRIBUTE_PROXY_USERNAME, String.class );
+        final String proxyPassword = getAttribute( ATTRIBUTE_PROXY_PASSWORD, String.class );
         final CallbackHandler callbackHandler = getAttribute( ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER, CallbackHandler.class );
         final Authenticator authenticator = new Authenticator() {
             @Override
@@ -79,21 +157,14 @@ public class ClientFactory {
                 String name = null;
                 char[] pass = null;
 
-                //TODO [steve] use getRequestorType to handle HTTP proxy auth also
                 try {
-                    final URL serviceUrl = new URL(url);
-
-                    // Verify requesting host:port or URL matches the URL for the service
-                    if ( getRequestingURL().equals( serviceUrl ) ||
-                         (getRequestingHost().equalsIgnoreCase(serviceUrl.getHost()) &&
-                         ((getRequestingPort() == serviceUrl.getPort()) ||
-                          (getRequestingPort() == serviceUrl.getDefaultPort() && serviceUrl.getPort() == -1))) ) {
-                        name = username;
-                        pass = password==null ? null : password.toCharArray();
+                    if ( getRequestorType() == RequestorType.PROXY ) {
+                        name = proxyUsername;
+                        pass = proxyPassword==null ? null : proxyPassword.toCharArray();
 
                         if ( name == null && callbackHandler != null ) {
-                            NameCallback nameCallback = new NameCallback("User");
-                            PasswordCallback passwordCallback = new PasswordCallback("Password", false);
+                            final NameCallback nameCallback = new NameCallback("Proxy Username");
+                            final PasswordCallback passwordCallback = new PasswordCallback("Proxy Password", false);
 
                             try {
                                 callbackHandler.handle( new Callback[]{ nameCallback, passwordCallback } );
@@ -105,6 +176,32 @@ public class ClientFactory {
 
                             name = nameCallback.getName();
                             pass = passwordCallback.getPassword();
+                        }
+                    } else {
+                        // Verify requesting host:port or URL matches the URL for the service
+                        final URL serviceUrl = new URL(url);
+                        if ( getRequestingURL().equals( serviceUrl ) ||
+                             (getRequestingHost().equalsIgnoreCase(serviceUrl.getHost()) &&
+                             ((getRequestingPort() == serviceUrl.getPort()) ||
+                              (getRequestingPort() == serviceUrl.getDefaultPort() && serviceUrl.getPort() == -1))) ) {
+                            name = username;
+                            pass = password==null ? null : password.toCharArray();
+
+                            if ( name == null && callbackHandler != null ) {
+                                final NameCallback nameCallback = new NameCallback("Username");
+                                final PasswordCallback passwordCallback = new PasswordCallback("Password", false);
+
+                                try {
+                                    callbackHandler.handle( new Callback[]{ nameCallback, passwordCallback } );
+                                } catch ( IOException e ) {
+                                    logger.log( Level.WARNING, "Error in authentication callback handler.", e );
+                                } catch ( UnsupportedCallbackException e ) {
+                                    logger.log( Level.WARNING, "Error in authentication callback handler.", e );
+                                }
+
+                                name = nameCallback.getName();
+                                pass = passwordCallback.getPassword();
+                            }
                         }
                     }
                 } catch ( MalformedURLException e ) {
@@ -147,10 +244,20 @@ public class ClientFactory {
                            trustManager );
     }
 
+    /**
+     * Exception for invalid features and attributes.
+     */
     @SuppressWarnings( { "serial" } )
     public static class InvalidOptionException extends Exception {
-        public InvalidOptionException( final String optionName ) {
-            super( "Invalid option '" + optionName + "'" );
+        private final String option;
+
+        public InvalidOptionException( final String option ) {
+            super( "Invalid option '" + option + "'" );
+            this.option = option;
+        }
+
+        public String getOption() {
+            return option;
         }
     }
 
@@ -166,7 +273,9 @@ public class ClientFactory {
         ATTRIBUTE_USERNAME,
         ATTRIBUTE_PASSWORD,
         ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER,
-        ATTRIBUTE_HOSTNAME_VERIFIER
+        ATTRIBUTE_HOSTNAME_VERIFIER,
+        ATTRIBUTE_PROXY_USERNAME,
+        ATTRIBUTE_PROXY_PASSWORD
     )) );
 
     private final Map<String,Object> attributes;

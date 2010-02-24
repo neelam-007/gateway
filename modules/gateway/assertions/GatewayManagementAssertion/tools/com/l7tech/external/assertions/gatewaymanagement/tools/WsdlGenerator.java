@@ -97,9 +97,16 @@ public class WsdlGenerator {
                         out.println( "<selectors>" + resourceMethod.selectors() + "</selectors>" );
                         out.println( "<resource>" + resourceMethod.resource() + "</resource>" );
                         if ( resourceMethod.resource() ) {
-                            out.println( "<requestType>" + asSchemaType(method.getParameterTypes()[ resourceMethod.selectors() ? 1 : 0 ]) + "</requestType>");
+                            out.println("<request>");
+                            Class<?> parameterType = method.getParameterTypes()[ resourceMethod.selectors() ? 1 : 0 ];
+                            out.println( "<element>" + asElement(parameterType) +  "</element>" );
+                            out.println( "<type>" + asSchemaType(parameterType) + "</type>");
+                            out.println("</request>");
                         }
-                        out.println( "<responseType>" + asSchemaType(method.getReturnType()) + "</responseType>");
+                        out.println("<response>");
+                        out.println( "<element>" + asElement(method.getReturnType()) +  "</element>" );
+                        out.println( "<type>" + asSchemaType(method.getReturnType()) + "</type>");
+                        out.println("</response>");
                         out.println( "</resourceMethod>" );
                     }
                 }
@@ -126,6 +133,20 @@ public class WsdlGenerator {
         }
 
         return schemaType;
+    }
+
+    /**
+     *
+     */
+    private static String asElement( final Class<?> type ) {
+        String element = "";
+
+        XmlRootElement xmlRootElement = type.getAnnotation(XmlRootElement.class);
+        if ( xmlRootElement != null ) {
+            element = xmlRootElement.name();
+        }
+
+        return element;
     }
 
     /**

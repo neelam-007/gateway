@@ -44,6 +44,11 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     //- PUBLIC
 
     @Override
+    public Class<MO> getType() {
+        return typeClass;
+    }
+
+    @Override
     public MO get( final String identifier ) throws AccessorException {
         require( "identifier", identifier );
         return get( Collections.<String,Object>singletonMap(ID_SELECTOR, identifier) );
@@ -102,11 +107,24 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     @Override
     public void delete( final String identifier ) throws AccessorException {
         require( "identifier", identifier );
-        invoke(new AccessorMethod<Void>(){
+        delete( Collections.<String,Object>singletonMap(ID_SELECTOR, identifier) );
+    }
+
+    @Override
+    public void delete( final String property, final Object value ) throws AccessorException {
+        require( "property", property );
+        require( "value", value );
+        delete( Collections.singletonMap( property, value ));
+    }
+
+    @Override
+    public void delete( final Map<String, Object> propertyMap ) throws AccessorException {
+        require( "propertyMap", propertyMap );
+        invoke(new AccessorMethod<MO>(){
             @Override
-            public Void invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
+            public MO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, Collections.singletonMap(ID_SELECTOR, identifier))[0];
+                        ResourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
 
                 ResourceFactory.delete( resource );
                 return null;
@@ -115,7 +133,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     }
 
     @Override
-    public Iterator<MO> enumerate() {
+    public Iterator<MO> enumerate() throws AccessorException {
         return new EnumeratingIterator<MO>( url, resourceUri, timeout, typeClass, resourceTracker );
     }
 
@@ -159,6 +177,10 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
         return AccessorImpl.class.getPackage().getAnnotation(XmlSchema.class).namespace() + "/" + name;        
     }
 
+    String buildResourceScopedActionUri( final String name ) {
+        return resourceUri + "/" + name;
+    }
+
     Document newDocument() {
         try {
             return DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -177,7 +199,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
                  e.getMessage().contains("http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidValue")) {
                 throw new AccessorNotFoundException("Item not found");
             }
-            throw new AccessorRuntimeException(e);
+            throw new AccessorSOAPFaultException(e);
         } catch ( JAXBException e ) {
             throw new AccessorRuntimeException(e);
         } catch ( SOAPException e ) {
@@ -268,10 +290,11 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
         return document;
     }
 
-    private boolean isNetworkException( final IOException exception ) {
+    private static boolean isNetworkException( final IOException exception ) {
         return ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
                ExceptionUtils.causedBy( exception, SocketException.class ) ||
-               ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
+               ExceptionUtils.causedBy( exception, SocketTimeoutException.class ) ||
+               (ExceptionUtils.causedBy( exception, IOException.class ) && ExceptionUtils.getMessage( exception ).startsWith( "Content-Type of response is not acceptable" ));
     }
 
     /**
@@ -380,15 +403,18 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
                         resourceTracker.unregisterCloseable(this);
                     }
                 } catch ( DatatypeConfigurationException e ) {
-                    throw ExceptionUtils.wrap( e );
+                    throw new AccessorRuntimeException( e );
                 } catch ( FaultException e ) {
-                    throw ExceptionUtils.wrap( e );
+                    throw new AccessorSOAPFaultException( e );
                 } catch ( JAXBException e ) {
-                    throw ExceptionUtils.wrap( e );
+                    throw new AccessorRuntimeException( e );
                 } catch ( SOAPException e ) {
-                    throw ExceptionUtils.wrap( e );
+                    throw new AccessorRuntimeException( e );
                 } catch ( IOException e ) {
-                    throw ExceptionUtils.wrap( e );
+                    if ( isNetworkException(e) ) {
+                        throw new AccessorNetworkException(e);
+                    }
+                    throw new AccessorRuntimeException( e );
                 }
             }
         }

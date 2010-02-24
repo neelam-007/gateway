@@ -3,6 +3,8 @@ package com.l7tech.util;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.*;
 import java.nio.channels.FileLock;
 import java.sql.Connection;
@@ -78,7 +80,7 @@ public final class ResourceUtils {
     }
 
     /**
-     * Close a SQL connection withouth throwing any exceptions.
+     * Close a SQL connection without throwing any exceptions.
      *
      * <p>Note that the exception may still be logged.</p>
      *
@@ -183,6 +185,17 @@ public final class ResourceUtils {
             logger.log(Level.INFO, "IOException when closing ZipFile", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing ZipFile", e);
+        }
+    }
+
+    public static void closeQuietly( final XMLStreamReader reader ) {
+        if (reader == null) return;
+        try {
+            reader.close();
+        } catch ( XMLStreamException e) {
+            logger.log(Level.INFO, "XMLStreamException when closing XMLStreamReader", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when closing XMLStreamReader", e);
         }
     }
 

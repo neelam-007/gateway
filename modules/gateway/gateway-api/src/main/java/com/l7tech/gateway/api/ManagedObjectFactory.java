@@ -22,6 +22,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
@@ -165,6 +166,11 @@ public class ManagedObjectFactory {
 
     public static ResourceDocumentMO createResourceDocument() {
         return new ResourceDocumentMO();
+    }
+
+    public static <MO extends ManagedObject> MO read( final String in, final Class<MO> objectClass ) throws IOException {
+        final StreamSource source = new StreamSource( new StringReader(in) );
+        return unmarshal( objectClass, source );
     }
 
     public static <MO extends ManagedObject> MO read( final Document document, final Class<MO> objectClass ) throws IOException {

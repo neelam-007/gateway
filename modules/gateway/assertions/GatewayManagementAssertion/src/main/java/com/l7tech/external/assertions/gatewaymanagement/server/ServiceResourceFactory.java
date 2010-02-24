@@ -61,6 +61,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                                    final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
                                    final PolicyHelper policyHelper ) {
         super( false, false, services, securityFilter, transactionManager, serviceManager );
+        this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
@@ -74,9 +75,11 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
             @Override
             public PolicyImportResult execute() throws ObjectModelException, ResourceFactoryException {
                 final PublishedService service = selectEntity( selectorMap );
-                return policyHelper.importPolicy( service.getPolicy(), resource );
+                PolicyImportResult result = policyHelper.importPolicy( service.getPolicy(), resource );
+                serviceManager.update( service );
+                return result;
             }
-        }, true, ResourceNotFoundException.class, InvalidResourceException.class );
+        }, false, ResourceNotFoundException.class, InvalidResourceException.class );
     }
 
     @ResourceMethod(name="ExportPolicy", selectors=true)
@@ -190,7 +193,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         service.setRoutingUri( getRoutingUri( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.HttpMapping.class) ) );
         service.setHttpMethods( getHttpMethods( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.HttpMapping.class) ) );
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
-        service.getPolicy().setXml( policyResource.getContent() );
+        service.getPolicy().setXml( policyHelper.validatePolicySyntax(policyResource.getContent()) );
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
         addWsdl( service, serviceDocuments, wsdlResources );
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
@@ -327,6 +330,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
 
     private static final String WSDL_IMPORT = "WSDL-IMPORT";
 
+    private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
     private final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker;

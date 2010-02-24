@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.util.Functions;
 
