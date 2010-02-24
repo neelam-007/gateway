@@ -9,8 +9,8 @@
     <resolvers>
         <chain name="idea">
             <filesystem name="ideatemp" checksums="">
-                <artifact pattern="${src.root}/build/idearepo/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="${src.root}/build/idearepo/[organisation]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/build/ivyidea/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/build/ivyidea/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
             <filesystem name="localfile" checksums="">
                 <artifact pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>

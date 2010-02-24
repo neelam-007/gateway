@@ -511,8 +511,8 @@
         <!-- Clean cache -->
         <delete dir="${build.dir}/ivycache"/>
         <mkdir dir="${build.dir}/ivycache"/>
-        <delete dir="${build.dir}/idearepo"/>
-        <mkdir dir="${build.dir}/idearepo"/>
+        <delete dir="${build.dir}/ivyidea"/>
+        <mkdir dir="${build.dir}/ivyidea"/>
 
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea"/>
@@ -555,8 +555,8 @@
         <!-- Clean cache -->
         <delete dir="${build.dir}/ivycache"/>
         <mkdir dir="${build.dir}/ivycache"/>
-        <delete dir="${build.dir}/idearepo"/>
-        <mkdir dir="${build.dir}/idearepo"/>
+        <delete dir="${build.dir}/ivyidea"/>
+        <mkdir dir="${build.dir}/ivyidea"/>
 
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
@@ -1239,8 +1239,9 @@
             description="Create the SSG JAR file and SSB/SSM installers."
             depends="package.gateway.all, package.manager, package.patchverifier, package.client, package.installclients, package.installgateway.work"/>
 
+    <target name="package.extras" depends="zip.api, package.gatewaymanagementclient"/>
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config, package.ssgbackup.zip"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.em, package.em.config, package.ssgbackup.zip"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1354,6 +1355,22 @@
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
         <modules target="publish" buildpathref="module-build-path-single"/>
+    </target>
+
+    <!--
+      Run the specified target on a single module
+    -->
+    <target name="modulet" description="Run a target on a single module (use with -Dmodule=... -Dtarget=...)" depends="prepare.base">
+        <fail unless="module">module is a required property (the module to package)</fail>
+        <fail unless="target">target is a required property (the target to run)</fail>
+
+        <!-- Create build list for required 1.5 modules -->
+        <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip" restartFrom="${module}">
+            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
+        </ivy:buildlist>
+
+        <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
+        <modules target="${target}" buildpathref="module-build-path-single"/>
     </target>
 
     <!--
@@ -2411,7 +2428,7 @@
     </target>
 
     <!--
-      Package the signed Layer 7 API (JAR)
+      Package the Layer 7 API (Custom Assertion API)
     -->
     <target name="package.api" depends="package.jars">
         <!--
@@ -2444,6 +2461,49 @@
                 <exclude name="com/l7tech/policy/assertion/ext/Category.java"/>
                 <exclude name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
             </fileset>
+        </javadoc>
+    </target>
+
+    <!--
+      Package the Layer 7 Gateway Management API
+    -->
+    <target name="package.management.api" depends="package.jars">
+        <mkdir dir="${build.dir}/layer7-gateway-api/docs"/>
+        <mkdir dir="${build.dir}/layer7-gateway-api/lib"/>
+
+        <!--
+          API Jar and dependencies  
+        -->
+        <copy todir="${build.dir}/layer7-gateway-api/lib">
+            <fileset dir="modules/gateway/gateway-api/build/dependency">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+        <copy file="modules/gateway/gateway-api/build/layer7-gateway-api.jar" todir="${build.dir}/layer7-gateway-api"/>
+
+
+        <!--
+          Accompanying javadoc for layer7-gateway-api
+        -->
+        <javadoc
+                destdir="${build.dir}/docs/layer7-gateway-api"
+                version="true"
+                author="false"
+                use="true"
+                windowtitle="Layer 7 Gateway Management API">
+
+            <!--links to j2se & j2ee javadocs provided so they can be linked to from within the layer7-api javadoc -->
+            <link href="http://java.sun.com/javase/6/docs/api/"/>
+            <link href="http://java.sun.com/javaee/6/docs/api/"/>
+
+            <fileset dir="modules/gateway/gateway-api/src/main/java">
+                <include name="com/l7tech/gateway/api/*.java"/>
+            </fileset>
+
+            <!-- There are annotations that need to be in the classpath -->
+            <classpath>
+                <pathelement location="modules/gateway/gateway-api/build/classes"/>
+            </classpath>
         </javadoc>
     </target>
 
@@ -2573,7 +2633,57 @@
         </zip>
     </target>
 
-    <target name="zip.api" depends="package.clientapi,package.managerapi,zip.api.customassertion"/>
+    <!--
+      Package gateway management API Jar / Javadoc for distribution
+    -->
+    <target name="zip.api.gatewaymanagement" depends="package.management.api">
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api"/>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/">
+            <fileset dir="${build.dir}/layer7-gateway-api"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api">
+          <fileset dir="${build.dir}/docs/layer7-gateway-api"/>
+        </copy>
+
+        <zip destfile="${build.dir}/GatewayManagement_dev_kit-${build.version}.zip">
+            <zipfileset dir="${build.dir}">
+                <include name="GatewayManagementAPI-${build.version}/**/*"/>
+            </zipfileset>
+        </zip>
+    </target>
+
+    <!--
+      Package the gateway management client for distribution
+    -->
+    <target name="package.gatewaymanagementclient" depends="package.jars">
+        <mkdir dir="${build.dir}/GatewayManagementClient-${build.version}/lib"/>
+
+        <copy file="etc/gatewaymanagement/gatewayManagementClient.sh"
+              tofile="${build.dir}/GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+
+        <copy file="modules/gateway/gateway-management-client/build/layer7-gateway-management-client.jar"
+              tofile="${build.dir}/GatewayManagementClient-${build.version}/GatewayManagementClient.jar"/>
+
+        <copy todir="${build.dir}/GatewayManagementClient-${build.version}/lib">
+            <fileset dir="modules/gateway/gateway-management-client/build/dependency">
+                <include name="**/*.jar"/>
+            </fileset>
+        </copy>
+
+        <zip destfile="${build.dir}/GatewayManagementClient-${build.version}.zip">
+            <zipfileset dir="${build.dir}" filemode="555">
+                <include name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+            </zipfileset>
+            <zipfileset dir="${build.dir}" filemode="444">
+                <include name="GatewayManagementClient-${build.version}/**/*"/>
+                <exclude name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+            </zipfileset>
+        </zip>
+    </target>
+
+    <target name="zip.api" depends="package.clientapi,package.managerapi,zip.api.customassertion,zip.api.gatewaymanagement"/>
 
     <macrodef name="checkdeps">
         <attribute name="libfilesetref"/>
@@ -2691,7 +2801,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,zip.api,distribute">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute">
     </target>
 
     <!--
@@ -2706,9 +2816,8 @@
     -->
     <target name="dist"
             description="Build distributable software packages [optionally use with obfuscate]"
-            depends="init-dist, makensis, makerpm, pack200, clean, package, distribute">
+            depends="init-dist, makensis, makerpm, pack200, clean, package, package.extras, distribute">
     </target>
-
 
     <target name="distribute" depends="prepare">
         <echo level="info">Moving packaged software to distribution directory.</echo>
@@ -2727,6 +2836,8 @@
             </fileset>
             <fileset dir="${build.dir}">
                 <include name="CustomAssertion_dev_kit-*.zip"/>
+                <include name="GatewayManagement_dev_kit-*.zip"/>
+                <include name="GatewayManagementClient*.zip"/>
                 <include name="BridgeAPI-*.zip"/>
                 <include name="ManagerAPI-*.zip"/>
             </fileset>
