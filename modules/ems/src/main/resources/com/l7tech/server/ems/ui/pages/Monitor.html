@@ -834,6 +834,8 @@
                 dropDowns[i].selectedIndex = 0;
             }
 
+            document.getElementById('addOrEditNotificationRuleDialog').style.display = '';
+
             if (isAdd) {
                 notifDlg_id.value = '';
                 notifDlg_eMail_passwordChoiceConfig.style.display = 'none';
@@ -908,6 +910,7 @@
         function onClickDeleteNotificationRuleButton() {
             var tr = notificationRulesDataTable.getSelectedTrEls()[0];
             var record = notificationRulesDataTable.getRecord(tr);
+            document.getElementById('deleteNotificationRuleDialog').style.display = '';
             document.getElementById('deleteNotificationRuleDialog_id').value = record.getData('id');
             document.getElementById('deleteNotificationRuleDialog_name').innerHTML = l7.Util.escapeHtmlText(record.getData('name'));
             deleteNotificationRuleDialog.center();
@@ -959,6 +962,8 @@
                 l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MONITORING_PROPERTY_SETTING + '<br/><br/>' + xhr.statusText + ' (' + xhr.status + ')', localizedStrings.OK);
                 return;
             }
+
+            document.getElementById('monDlg').style.display = '';
 
             monDlg_readOnly = settings.readOnly;
             monDlg_entityId.value = entity.id;
@@ -1652,7 +1657,7 @@
                 <wicket:extend>
                 <div class="panel">
                     <div class="panelTitle tippy"><img id="setupPanelTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'setupPanel'); notificationRulesDataTable.render();" /><span class="clickable" onclick="l7.Tippy.toggleTippy('setupPanelTippy', 'setupPanel'); notificationRulesDataTable.render();">Monitoring Setup</span></div>
-                    <div id="setupPanel">
+                    <div id="setupPanel" style="display:none">
                         <div class="panelContent">
                             <table id="monitoringSetup" class="spaced">
                                 <tr>
@@ -1875,7 +1880,7 @@
                 </div>
 
 <!-- Dialog for adding/editing one notification rule. -->
-<div id="addOrEditNotificationRuleDialog">
+<div id="addOrEditNotificationRuleDialog" style="display:none">
     <div class="hd"><span id="notifDlg_titleLabel"></span></div>
     <div class="bd">
         <form>
@@ -2077,7 +2082,7 @@
 </div>
 
 <!-- Dialog for confirming deletion of a notification rule. -->
-<div id="deleteNotificationRuleDialog">
+<div id="deleteNotificationRuleDialog" style="display:none">
     <div class="hd">Delete Notification Rule</div>
     <div class="bd">
         <form name="deleteNotificationRuleForm" wicket:id="deleteNotificationRuleForm" method="POST">
@@ -2088,7 +2093,7 @@
 </div>
 
 <!-- Dialog for settings of one monitoring property. -->
-<div id="monDlg">
+<div id="monDlg" style="display:none">
     <div class="hd">Monitoring Property Settings</div>
     <div class="bd">
         <form>
