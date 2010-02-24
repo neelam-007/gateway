@@ -192,9 +192,6 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
     /**
      * Find the EmsServletContainer corresponding to the specified instance ID.
-     * <p/>
-     * This is normally used by the SsgJSSESocketFactory to locate a Connector's owner HttpTransportModule
-     * so it can get at the SsgKeyStoreManager.
      *
      * @see #getInstanceId
      * @param id the instance ID to search for.  Required.
