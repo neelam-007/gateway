@@ -125,7 +125,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey");
                 keyManagers = ku.getSslKeyManagers();
             }
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
 
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
