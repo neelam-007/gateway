@@ -513,11 +513,28 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param identifier The resource identifier
      * @throws InvalidResourceException If the given identifier is not valid
      */
-    protected final void setIdentifier( final PersistentEntity entity, final String identifier ) throws InvalidResourceException {
-        try {
-            entity.setOid( toInternalId( identifier ) );
-        } catch (InvalidResourceSelectors invalidResourceSelectors) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identifier");
+    protected final void setIdentifier( final PersistentEntity entity,
+                                        final String identifier ) throws InvalidResourceException {
+        setIdentifier( entity, identifier, true );
+    }
+
+    /**
+     * Set the identifier for the entity from the given resource identifier.
+     *
+     * @param entity The target entity
+     * @param identifier The resource identifier
+     * @param required Is the identifier required
+     * @throws InvalidResourceException If the given identifier is not valid
+     */
+    protected final void setIdentifier( final PersistentEntity entity,
+                                        final String identifier,
+                                        final boolean required ) throws InvalidResourceException {
+        if ( identifier!=null || required ) {
+            try {
+                entity.setOid( toInternalId( identifier ) );
+            } catch (InvalidResourceSelectors invalidResourceSelectors) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identifier");
+            }
         }
     }
 
@@ -528,10 +545,27 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @param version The resource identifier
      * @throws InvalidResourceException If the given identifier is not valid
      */
-    protected final void setVersion( final PersistentEntity entity, final Integer version ) throws InvalidResourceException {
-        if ( version == null )
+    protected final void setVersion( final PersistentEntity entity,
+                                     final Integer version ) throws InvalidResourceException {
+        setVersion( entity, version, true );
+    }
+
+    /**
+     * Set the version for then entity from the given resource version.
+     *
+     * @param entity The target entity
+     * @param version The resource identifier
+     * @param required Is the identifier required
+     * @throws InvalidResourceException If the given identifier is not valid
+     */
+    protected final void setVersion( final PersistentEntity entity,
+                                     final Integer version,
+                                     final boolean required ) throws InvalidResourceException {
+        if ( version != null ) {
+            entity.setVersion( version );
+        } else if ( required ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing version");
-        entity.setVersion( version );
+        }
     }
 
     /**

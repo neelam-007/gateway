@@ -30,11 +30,11 @@ public class JMSDestinationDetails {
     }
 
     @XmlAttribute(name="version")
-    public int getVersion() {
+    public Integer getVersion() {
         return version;
     }
 
-    public void setVersion( final int version ) {
+    public void setVersion( final Integer version ) {
         this.version = version;
     }
 
@@ -103,7 +103,7 @@ public class JMSDestinationDetails {
     //- PRIVATE
 
     private String id;
-    private int version;
+    private Integer version;
     private String destinationName;
     private boolean inbound;
     private boolean enabled;

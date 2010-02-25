@@ -104,8 +104,8 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         setProperties( jmsEndpoint, jmsDestinationDetails.getProperties(), JmsEndpoint.class );
 
         final JmsConnection jmsConnection = new JmsConnection();
-        setIdentifier( jmsConnection, jmsConnectionMO.getId() );
-        setVersion( jmsConnection, jmsConnectionMO.getVersion() );
+        setIdentifier( jmsConnection, jmsConnectionMO.getId(), false );
+        setVersion( jmsConnection, jmsConnectionMO.getVersion(), false );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
         setProperties( jmsConnection, jmsConnectionMO.getProperties(), JmsConnection.class );
 
