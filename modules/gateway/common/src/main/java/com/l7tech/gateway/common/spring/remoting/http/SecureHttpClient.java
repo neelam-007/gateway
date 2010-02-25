@@ -2,24 +2,26 @@ package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.util.SyspropUtil;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -36,7 +38,10 @@ public class SecureHttpClient extends HttpClient {
     public static final String PROP_MAX_CONNECTIONS = "com.l7tech.gateway.remoting.maxConnections";
     public static final String PROP_MAX_HOSTCONNECTIONS = "com.l7tech.gateway.remoting.maxConnectionsPerHost";
     public static final String PROP_CONNECTION_TIMEOUT = "com.l7tech.gateway.remoting.connectionTimeout";
-    public static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";    
+    public static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";
+    public static final String PROP_PROTOCOLS = "https.protocols";
+
+    public static final String DEFAULT_PROTOCOLS = null; // "TLSv1";
 
     public SecureHttpClient() {
         this( getDefaultKeyManagers() );
@@ -72,17 +77,8 @@ public class SecureHttpClient extends HttpClient {
     }
 
     /**
-     * Check if a trust failure handler is currently installed.
-     *
-     * @return true if there is a trust failure handler
-     */
-    public static boolean hasTrustFailureHandler() {
-        return currentTrustFailureHandler != null;
-    }
-
-    /**
      * Sets the key manager to be used in the secure http client.
-     * @param keyManager
+     * @param keyManager the key manager to use.  required.
      */
     public static void setKeyManager(X509KeyManager keyManager) {
         SecureHttpClient.keyManager = keyManager;
@@ -217,22 +213,29 @@ public class SecureHttpClient extends HttpClient {
         return new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
             @Override
             public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
-                return sockFac.createSocket(socket, host, port, autoClose);
+                Socket sock = sockFac.createSocket(socket, host, port, autoClose);
+                configureSslClientSocket(sock);
+                return sock;
             }
 
             @Override
             public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
-                return sockFac.createSocket(host, port, clientAddress, clientPort);
+                Socket sock = sockFac.createSocket(host, port, clientAddress, clientPort);
+                configureSslClientSocket(sock);
+                return sock;
             }
 
             @Override
             public Socket createSocket(String host, int port) throws IOException {
-                return sockFac.createSocket(host, port);
+                Socket sock = sockFac.createSocket(host, port);
+                configureSslClientSocket(sock);
+                return sock;
             }
 
             @Override
             public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                 Socket socket = sockFac.createSocket();
+                configureSslClientSocket(socket);
                 int connectTimeout = httpConnectionParams.getConnectionTimeout();
 
                 socket.bind(new InetSocketAddress(clientAddress, clientPort));
@@ -247,6 +250,15 @@ public class SecureHttpClient extends HttpClient {
                 return socket;
             }
         }, 443);
+    }
+
+    private static void configureSslClientSocket(Socket s) {
+        SSLSocket sslSocket = (SSLSocket) s;
+        String protoString = SyspropUtil.getStringCached(PROP_PROTOCOLS, DEFAULT_PROTOCOLS);
+        if (protoString != null) {
+            String[] protos = protoString.trim().split("\\s*,\\s*");
+            sslSocket.setEnabledProtocols(protos);
+        }
     }
 
     /**
