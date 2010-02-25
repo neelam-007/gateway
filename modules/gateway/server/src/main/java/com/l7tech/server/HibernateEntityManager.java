@@ -425,7 +425,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @Override
     @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
-        return EntityType.ANY;
+        EntityType type = this.entityType;
+        if ( type == null ) {
+            this.entityType = type = EntityType.findTypeByEntity( getInterfaceClass() );           
+        }
+        if ( type == null ) {
+            this.entityType = type = EntityType.ANY;
+        }
+        return type;
     }
 
     @Override
@@ -995,6 +1002,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();
     private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
     private String tableName;
+    private EntityType entityType;
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
