@@ -1180,7 +1180,12 @@
                 <constructor-arg value="com.l7tech.server.security.keystore.SsgKeyStoreManager"/>
             </bean>
         </property>
-
+         <property name="schemaEntryManager">
+             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                 <constructor-arg value="schemaEntryManager"/>
+                 <constructor-arg value="com.l7tech.server.communityschemas.SchemaEntryManager"/>
+             </bean>
+         </property>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>

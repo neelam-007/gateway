@@ -5,6 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.policy.PolicyManager;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.logging.Logger;
 import java.security.KeyStoreException;
@@ -34,6 +36,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private IdentityProviderFactory identityProviderFactory;
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
+    private SchemaEntryManager schemaEntryManager; // since not all entities are persistent
     private static final int MAX_RESULTS = 100;
 
     public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
@@ -48,6 +51,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         this.keyStoreManager = keyStoreManager;
     }
 
+    public void setSchemaEntryManager( final SchemaEntryManager schemaEntryManager ) {
+        this.schemaEntryManager = schemaEntryManager;
+    }
+
     @Transactional(readOnly=true)
     public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
@@ -55,6 +62,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         try {
             if (EntityType.SSG_KEY_ENTRY == type)
                 return findAllKeyHeaders();
+            else if (EntityType.SCHEMA_ENTRY == type)
+                return findAllSchemaEntryHeaders();
             //noinspection unchecked
             else return (EntityHeaderSet<EntityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
@@ -108,6 +117,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         }
     }
 
+    private EntityHeaderSet<EntityHeader> findAllSchemaEntryHeaders() throws FindException  {
+        return new EntityHeaderSet<EntityHeader>(new LinkedHashSet<EntityHeader>(schemaEntryManager.findAllHeaders()));
+    }
+
     @Transactional(readOnly=true)
     public Entity find(EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
@@ -137,6 +150,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } catch (NumberFormatException e) {
                 return policyManager.findByGuid(id);
             }
+        } else if (EntityType.SCHEMA_ENTRY == header.getType()) {
+            return schemaEntryManager.findByPrimaryKey( header.getOid() );
         } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
@@ -161,6 +176,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 }
             } else {
                 tempPk = pk;
+            }
+
+            if ( tempPk instanceof Long && EntityType.SCHEMA_ENTRY == type) {
+                return (ET) schemaEntryManager.findByPrimaryKey( (Long) tempPk );
             }
 
             final Serializable finalPk = tempPk;
