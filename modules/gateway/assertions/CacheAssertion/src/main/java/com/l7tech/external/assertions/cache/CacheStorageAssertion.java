@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.external.assertions.cache.server.SsgCache;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -18,16 +15,17 @@ import java.util.List;
 /**
  * 
  */
-public class CacheStorageAssertion extends Assertion implements UsesVariables {
+public class CacheStorageAssertion extends MessageTargetableAssertion implements UsesVariables {
 
-    private String sourceVariableName = null;
-    private boolean useRequest = false;
     private String cacheId = "defaultCache";
     private int maxEntries = SsgCache.Config.DEFAULT_MAX_ENTRIES;
     private long maxEntryAgeMillis = SsgCache.Config.DEFAULT_MAX_AGE_MILLIS;
     private long maxEntrySizeBytes = SsgCache.Config.DEFAULT_MAX_SIZE_BYTES;
     private String cacheEntryKey = "${request.url}";
 
+    public CacheStorageAssertion() {
+        setTarget(TargetMessageType.RESPONSE);
+    }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
@@ -35,32 +33,8 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
         List<String> ret = new ArrayList<String>();
         if (cacheId != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheId)));
         if (cacheEntryKey != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheEntryKey)));
-        if (sourceVariableName != null) ret.add(sourceVariableName);
+        ret.addAll(Arrays.asList(super.getVariablesUsed()));
         return ret.toArray(new String[ret.size()]);
-    }
-
-
-    /** @return the name of the variable whose contents are to be stored in the cache, or null if storing the request or response */
-    public String getSourceVariableName() {
-        return sourceVariableName;
-    }
-
-    /**
-     * @param sourceVariableName the name of the variable whose contents are to be stored in the cache, or null if storing the request or response.
-     *                           If this is null, use {@link #setUseRequest(boolean)} to control whether the Request or Response is stored.
-     */
-    public void setSourceVariableName(String sourceVariableName) {
-        this.sourceVariableName = sourceVariableName;
-    }
-
-    /** @return true if the request is to be stored; false if the response.  Ignored unless sourceVariableName is null. */
-    public boolean isUseRequest() {
-        return useRequest;
-    }
-
-    /** @param useRequest true if the request is to be stored; false if the response.  Ignored unless sourceVariableName is null. */
-    public void setUseRequest(boolean useRequest) {
-        this.useRequest = useRequest;
     }
 
     /** @return the name of the cache in which to store the item.  May contain variables that need interpolation. */
@@ -154,17 +128,25 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = super.defaultMeta();
+        final DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Cache Storage");
+        meta.put(AssertionMetadata.SHORT_NAME, "Store to Cache");
         meta.put(AssertionMetadata.DESCRIPTION, "Store value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<CacheStorageAssertion>() {
+            @Override
+            public String getAssertionName(final CacheStorageAssertion assertion, final boolean decorate) {
+                final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
+                return decorate ? displayName + " [" + cacheId + "]" : displayName;
+            }
+        });
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.cache.CacheAssertionAdvice");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

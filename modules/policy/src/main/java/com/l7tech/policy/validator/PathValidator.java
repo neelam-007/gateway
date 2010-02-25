@@ -199,8 +199,8 @@ public class PathValidator {
             }
         }
 
-        //process other assertions, ie modular assertions
-        processOtherRemainingAssertion(a);
+        if (isRoutingMetadata(a))
+            seenResponse = true;
 
         setSeen(targetName, a.getClass());
     }
@@ -303,22 +303,14 @@ public class PathValidator {
     }
 
     /**
-     * This method will be able to process other assertions that cannot be differentiated by their instance by using
-     * "instanceof" because of modular dependencies.  And because of that, one way is to use the meta data within
-     * the assertion to assist in the processing.
+     * Checks if the assertion is declared as a routing assertion in its metadata.
      *
-     * @param assertion The assertion that will be processed.
+     * @param assertion the assertion to be checked
+     * @return true if the assertion is enabled and its metadata declares that it is a routing assertion,
+     *         false otherwise
      */
-    private void processOtherRemainingAssertion(Assertion assertion) {
-        //check if assertion is considered to be enabled
-        if (assertion != null && assertion.isEnabled() ){
-            if (assertion.meta().get(AssertionMetadata.IS_ROUTING_ASSERTION) != null) {
-                boolean isRoutingAssertion = (Boolean) assertion.meta().get(AssertionMetadata.IS_ROUTING_ASSERTION);
-                if (isRoutingAssertion) {
-                    seenResponse = true;
-                }
-            }
-        }
+    private boolean isRoutingMetadata(Assertion assertion) {
+        return assertion != null && assertion.isEnabled() && Boolean.TRUE.equals(assertion.meta().get(AssertionMetadata.IS_ROUTING_ASSERTION));
     }
 
     List<DeferredValidate> getDeferredValidators() {
@@ -459,8 +451,8 @@ public class PathValidator {
             }
         }
 
-        if (Assertion.isResponse(a)  && !seenResponse) {
-            // If the asserion is ResponseXpathAssertion and uses a context variable as XML message source, ignore the below error.
+        if (!seenResponse && Assertion.isResponse(a) && ! isRoutingMetadata(a)) {
+            // If the assertion is ResponseXpathAssertion and uses a context variable as XML message source, ignore the below error.
             if (!(a instanceof ResponseXpathAssertion) || ((ResponseXpathAssertion)a).getXmlMsgSrc() == null) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                     bundle.getString("assertion.response.usebeforeavailable"), null));

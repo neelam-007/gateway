@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -72,8 +73,14 @@ public class CacheAssertionTest extends TestCase {
     }
 
     public void testDefaultCache() throws Exception {
-        ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion( new CacheStorageAssertion(), beanFactory );
-        ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( new CacheLookupAssertion(), beanFactory );
+        ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion(
+            new CacheStorageAssertion() {{ setTarget(TargetMessageType.RESPONSE); }},
+            beanFactory
+        );
+        ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion(
+            new CacheLookupAssertion() {{ setTarget(TargetMessageType.RESPONSE); }},
+            beanFactory
+        );
 
         PolicyEnforcementContext ctx = makeContext();
         ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
@@ -150,12 +157,14 @@ public class CacheAssertionTest extends TestCase {
 
     private static ServerCacheLookupAssertion makeLookAss( String cacheKey ) throws PolicyAssertionException {
         final CacheLookupAssertion lookbean1 = new CacheLookupAssertion();
+        lookbean1.setTarget(TargetMessageType.RESPONSE);
         lookbean1.setCacheEntryKey( cacheKey );
         return new ServerCacheLookupAssertion( lookbean1, beanFactory );
     }
 
     private static ServerCacheStorageAssertion makeStorAss( String cacheKey ) throws PolicyAssertionException {
         final CacheStorageAssertion storbean1 = new CacheStorageAssertion();
+        storbean1.setTarget(TargetMessageType.RESPONSE);
         storbean1.setCacheEntryKey( cacheKey );
         return new ServerCacheStorageAssertion( storbean1, beanFactory );
     }

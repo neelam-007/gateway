@@ -1,7 +1,9 @@
 package com.l7tech.external.assertions.cache.server;
 
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -11,7 +13,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  *
  * @see com.l7tech.external.assertions.cache.CacheLookupAssertion
  */
-public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLookupAssertion> {
+public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerAssertion<CacheLookupAssertion> {
     private static final Logger logger = Logger.getLogger(ServerCacheLookupAssertion.class.getName());
 
     private final Auditor auditor;
@@ -35,7 +36,7 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
     private final SsgCacheManager cacheManager;
 
     public ServerCacheLookupAssertion(CacheLookupAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
-        super(assertion);
+        super(assertion, assertion);
 
         this.auditor = beanFactory instanceof ApplicationContext
                        ? new Auditor(this, (ApplicationContext)beanFactory, logger) 
@@ -57,15 +58,23 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
 
         logger.log(Level.FINE, "Retrieved from cache: " + key);
 
-        String targetVar = assertion.getTargetVariableName();
-        Message message = targetVar != null ? new Message() :
-            assertion.isUseRequest() ? context.getRequest() :
-            context.getResponse();
-
-        if (targetVar != null) {
-            context.setVariable(targetVar, message);
+        Message message = null;
+        switch (assertion.getTarget()) {
+            case REQUEST:
+                message = context.getRequest();
+                break;
+            case RESPONSE:
+                message = context.getResponse();
+                break;
+            case OTHER:
+                message = new Message();
+                context.setVariable(assertion.getOtherTargetMessageVariable(), message);
         }
 
+        if (message == null) {
+            logger.log(Level.WARNING, "Null message target: " + assertion.getTarget() );
+            return AssertionStatus.FALSIFIED;
+        }
         String cachedContentType = cachedEntry.getContentType();
         String contentTypeOverride = assertion.getContentTypeOverride();
         ContentTypeHeader contentType = contentTypeOverride != null && ! contentTypeOverride.isEmpty() ? ContentTypeHeader.parseValue(contentTypeOverride) :
@@ -93,6 +102,11 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
         } finally {
             if (bodyInputStream != null) bodyInputStream.close();
         }
+    }
+
+    @Override
+    protected Audit getAuditor() {
+        return auditor;
     }
 
     /*

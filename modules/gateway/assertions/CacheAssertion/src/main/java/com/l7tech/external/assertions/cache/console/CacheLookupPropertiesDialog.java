@@ -22,13 +22,9 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JRadioButton useResponseRadioButton;
-    private JRadioButton useRequestRadioButton;
-    private JRadioButton useVariableRadioButton;
     private SquigglyTextField cacheIdField;
     private SquigglyTextField cacheKeyField;
     private SquigglyTextField maxAgeField;
-    private SquigglyTextField variableNameField;
     private JTextField contentTypeOverride;
 
     /** @noinspection ThisEscapedInObjectConstruction*/
@@ -69,7 +65,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
 
         validator.constrainTextFieldToBeNonEmpty("Cache ID", cacheIdField, null);
         validator.constrainTextFieldToBeNonEmpty("Cache Entry Key", cacheKeyField, null);
-        validator.constrainTextFieldToBeNonEmpty("Context Variable Name", variableNameField, null);
         validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, 1000000L);
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
@@ -87,25 +82,7 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         });
         maxAgeField.setText("86400");
 
-        ActionListener updateAction = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                updateEnableState();
-            }
-        };
-        useRequestRadioButton.addActionListener(updateAction);
-        useResponseRadioButton.addActionListener(updateAction);
-        useVariableRadioButton.addActionListener(updateAction);
-
-        Utilities.enableGrayOnDisabled(variableNameField);
-
         Utilities.setEscKeyStrokeDisposes(this);
-        
-        updateEnableState();
-    }
-
-    private void updateEnableState() {
-        variableNameField.setEnabled(useVariableRadioButton.isSelected());
     }
 
     private void onOk() {
@@ -136,16 +113,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         cacheKeyField.setText(ass.getCacheEntryKey());
         maxAgeField.setText(Long.toString(ass.getMaxEntryAgeMillis() / 1000L));
         contentTypeOverride.setText(ass.getContentTypeOverride());
-
-        String vn = ass.getTargetVariableName();
-        variableNameField.setEnabled(vn != null);
-        if (vn == null) {
-            useRequestRadioButton.setSelected(ass.isUseRequest());
-            useResponseRadioButton.setSelected(!ass.isUseRequest());
-        } else {
-            variableNameField.setText(vn);
-            useVariableRadioButton.setSelected(true);
-        }
     }
 
     @Override
@@ -153,8 +120,6 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         ass.setCacheId(cacheIdField.getText());
         ass.setCacheEntryKey(cacheKeyField.getText());
         ass.setMaxEntryAgeMillis(Long.parseLong(maxAgeField.getText()) * 1000L);
-        ass.setTargetVariableName(useVariableRadioButton.isSelected() ? variableNameField.getText() : null);
-        ass.setUseRequest(useRequestRadioButton.isSelected());
         ass.setContentTypeOverride(contentTypeOverride.getText());
         return ass;
     }

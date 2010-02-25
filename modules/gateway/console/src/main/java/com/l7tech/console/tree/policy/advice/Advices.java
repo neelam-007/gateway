@@ -4,13 +4,10 @@ import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 
 import java.util.*;
 

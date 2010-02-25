@@ -15,14 +15,16 @@ import java.util.List;
 /**
  * 
  */
-public class CacheLookupAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class CacheLookupAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";
     private long maxEntryAgeMillis = Long.MAX_VALUE;
-    private String targetVariableName = null;
-    private boolean useRequest = false;
     private String contentTypeOverride = null;
+
+    public CacheLookupAssertion() {
+        setTarget(TargetMessageType.RESPONSE);
+    }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
@@ -35,7 +37,7 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return targetVariableName != null ? new VariableMetadata[] { new VariableMetadata(targetVariableName) } : new VariableMetadata[0];
+        return TargetMessageType.OTHER == getTarget() ? new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable()) } : new VariableMetadata[0];
     }
 
     /** @return the name of the cache in which the item is to be looked up.  May contain variables that need interpolation. */
@@ -98,34 +100,6 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
         this.maxEntryAgeMillis = maxEntryAgeMillis;
     }
 
-    /** @return true if should load into request; otherwise should load into resposne */
-    public boolean isUseRequest() {
-        return useRequest;
-    }
-
-    /**
-     * Control whether to load the cached value into the request or the response.
-     * Ignored unless {@link #targetVariableName} is null.
-     * @param useRequest if true, will load into request; otherwise will load into response
-     */
-    public void setUseRequest(boolean useRequest) {
-        this.useRequest = useRequest;
-    }
-
-    /** @return name of target variable, or null to load into request/response */
-    public String getTargetVariableName() {
-        return targetVariableName;
-    }
-
-    /**
-     * Specify a variable into which the cached value should be copied, or null to copy to either the Request or Response.
-     * @param targetVariableName name of target variable, or null to load into request/response instead.
-     * @see #setUseRequest(boolean) to control whether the request or response is used when this is null
-     */
-    public void setTargetVariableName(String targetVariableName) {
-        this.targetVariableName = targetVariableName;
-    }
-
     /**
      * Gets the value that will be used to override the content-type of the retrieved response.
      */
@@ -149,17 +123,26 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = super.defaultMeta();
+        final DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Cache Lookup");
-        meta.put(AssertionMetadata.DESCRIPTION, "Look up value in cache");
+        meta.put(AssertionMetadata.SHORT_NAME, "Look Up in Cache");
+        meta.put(AssertionMetadata.DESCRIPTION, "Look Up value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.IS_ROUTING_ASSERTION, Boolean.TRUE);
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<CacheLookupAssertion>() {
+            @Override
+            public String getAssertionName(final CacheLookupAssertion assertion, final boolean decorate) {
+                final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
+                return decorate ? displayName + " [" + cacheId + "]" : displayName;
+            }
+        });
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.cache.CacheAssertionAdvice");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
