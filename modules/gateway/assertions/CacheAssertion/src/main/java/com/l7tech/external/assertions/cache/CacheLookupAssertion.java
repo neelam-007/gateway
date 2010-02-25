@@ -139,7 +139,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
             @Override
             public String getAssertionName(final CacheLookupAssertion assertion, final boolean decorate) {
                 final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
-                return decorate ? displayName + " [" + cacheId + "]" : displayName;
+                return decorate ? assertion.getTargetName() +": " + displayName + " [" + cacheId + "]" : displayName;
             }
         });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.cache.CacheAssertionAdvice");
