@@ -38,6 +38,7 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -266,8 +267,21 @@ public class PolicyHelper {
                 final PolicyValidationResult.AssertionDetail detail = ManagedObjectFactory.createAssertionDetail();
                 detail.setPosition( position );
 
-                current = ((CompositeAssertion)current).getChildren().get( position );
-                detail.setDescription( current.meta().<String>get( AssertionMetadata.WSP_EXTERNAL_NAME ) + " (" + current.meta().<String>get( AssertionMetadata.PALETTE_NODE_NAME ) + ")" );
+                Assertion child = null;
+                if ( current instanceof CompositeAssertion ) {
+                    child = ((CompositeAssertion)current).getChildren().get( position );
+                } else if ( current instanceof Include ) {
+                    final Include include = (Include) current;
+                    Policy policy = getIncludePolicy( include );
+                    child = getPolicyAssertionChild( policy, position );
+                }
+                current = child;
+
+                if ( current != null ) {
+                    detail.setDescription( current.meta().<String>get( AssertionMetadata.WSP_EXTERNAL_NAME ) + " (" + current.meta().<String>get( AssertionMetadata.PALETTE_NODE_NAME ) + ")" );
+                } else {
+                    detail.setDescription( "" );
+                }
 
                 details.add( detail );
             }
@@ -627,6 +641,42 @@ public class PolicyHelper {
         }
 
         return assertion;
+    }
+
+    private Policy getIncludePolicy( final Include include ) {
+        Policy policy = include.retrieveFragmentPolicy();
+
+        if ( policy == null ) {
+            try {
+                policy = referenceFinder.findPolicyByGuid( include.getPolicyGuid() );
+            } catch ( FindException e ) {
+                throw new ResourceFactory.ResourceAccessException(e);
+            }
+            include.replaceFragmentPolicy( policy );
+        }
+
+        return policy;
+    }
+
+    private Assertion getPolicyAssertionChild( final Policy policy,
+                                               final int position ) {
+        Assertion child = null;
+
+        if ( policy != null ) {
+            try {
+                final Assertion assertion = policy.getAssertion();
+                final CompositeAssertion compositeAssertion = assertion instanceof CompositeAssertion ?
+                        (CompositeAssertion) assertion :
+                        null;
+                if ( compositeAssertion != null && compositeAssertion.getChildren().size() > position ) {
+                    child = compositeAssertion.getChildren().get( position );
+                }
+            } catch ( IOException e ) {
+                // continue but don't include details
+            }
+        }
+
+        return child;
     }
 
     private void addPoliciesToPolicyReferenceAssertions( final Assertion rootAssertion,
