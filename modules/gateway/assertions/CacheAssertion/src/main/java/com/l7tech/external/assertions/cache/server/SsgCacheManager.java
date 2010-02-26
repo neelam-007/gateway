@@ -61,7 +61,7 @@ public class SsgCacheManager {
         for (long oid : eiEvent.getEntityIds()) {
             try {
                 ClusterProperty cp = cpManager.findByPrimaryKey(oid);
-                if (cp != null && ServerConfig.getInstance().getClusterPropertyName(ServerConfig.PARAM_RESPONSECACHE_RESETGENERATION).equals(cp.getName())) {
+                if (cp != null && ServerConfig.getInstance().getClusterPropertyName(ServerConfig.PARAM_messageCache_RESETGENERATION).equals(cp.getName())) {
                     clearAllCaches();
                 }
             } catch (FindException e) {
@@ -87,7 +87,7 @@ public class SsgCacheManager {
             if (ret != null)
                 return ret;
 
-            StashManagerFactory smf = (StashManagerFactory)beanFactory.getBean("responseCacheStashManagerFactory", StashManagerFactory.class);
+            StashManagerFactory smf = (StashManagerFactory)beanFactory.getBean("messageCacheStashManagerFactory", StashManagerFactory.class);
             ApplicationEventProxy aep = (ApplicationEventProxy)beanFactory.getBean("applicationEventProxy", ApplicationEventProxy.class);
             ClusterPropertyManager cpm = (ClusterPropertyManager) beanFactory.getBean("clusterPropertyManager", ClusterPropertyManager.class);
             ret = new SsgCacheManager(smf, aep, cpm);

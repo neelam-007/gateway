@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * @author jbufu
  */
-public class ResponseCacheStashManagerFactory implements StashManagerFactory, PropertyChangeListener {
+public class MessageCacheStashManagerFactory implements StashManagerFactory, PropertyChangeListener {
 
     // - PUBLIC
 
@@ -27,7 +27,7 @@ public class ResponseCacheStashManagerFactory implements StashManagerFactory, Pr
 
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-        if ( event.getPropertyName().equals(ServerConfig.PARAM_RESPONSECACHE_DISK_THRESHOLD) && event.getNewValue() != null ) {
+        if ( event.getPropertyName().equals(ServerConfig.PARAM_messageCache_DISK_THRESHOLD) && event.getNewValue() != null ) {
             reloadConfig();
         }
     }
@@ -35,11 +35,11 @@ public class ResponseCacheStashManagerFactory implements StashManagerFactory, Pr
     // - PRIVATE
 
     private static class ConfigHolder {
-        private static final File RESPONSE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_RESPONSECACHE_DIRECTORY, true);
+        private static final File RESPONSE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_messageCache_DIRECTORY, true);
     }
 
-    private static final ResponseCacheStashManagerFactory INSTANCE = new ResponseCacheStashManagerFactory();
-    private static final Logger logger = Logger.getLogger(ResponseCacheStashManagerFactory.class.getName());
+    private static final MessageCacheStashManagerFactory INSTANCE = new MessageCacheStashManagerFactory();
+    private static final Logger logger = Logger.getLogger(MessageCacheStashManagerFactory.class.getName());
     private static final String CACHED_ENTRY_PREFIX = "respCache";
     private static AtomicLong stashFileUnique = new AtomicLong(0);
     private static volatile int diskThreshold;
@@ -48,7 +48,7 @@ public class ResponseCacheStashManagerFactory implements StashManagerFactory, Pr
     }
 
     private static void reloadConfig() {
-        diskThreshold = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_RESPONSECACHE_DISK_THRESHOLD, 8096);
+        diskThreshold = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_messageCache_DISK_THRESHOLD, 8096);
         logger.config("Response cache disk threshold set to " + diskThreshold + " bytes.");
     }
 
@@ -56,5 +56,5 @@ public class ResponseCacheStashManagerFactory implements StashManagerFactory, Pr
         return stashFileUnique.getAndIncrement();
     }
 
-    private ResponseCacheStashManagerFactory() {}
+    private MessageCacheStashManagerFactory() {}
 }

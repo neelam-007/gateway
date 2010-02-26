@@ -41,9 +41,9 @@ public class CacheAssertionTest extends TestCase {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
-        beanFactory.addBean( "responseCacheStashManagerFactory", TestStashManagerFactory.getInstance() );
+        beanFactory.addBean( "messageCacheStashManagerFactory", TestStashManagerFactory.getInstance() );
         beanFactory.addBean( "applicationEventProxy", eventProxy );
-        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("responseCache.resetGeneration", "0")));
+        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("messageCache.resetGeneration", "0")));
     }
 
     public CacheAssertionTest( String name ) {

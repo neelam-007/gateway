@@ -67,9 +67,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE = "logFileTemplate";
     public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
     public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
-    public static final String PARAM_RESPONSECACHE_DIRECTORY = "responseCacheDirectory";
-    public static final String PARAM_RESPONSECACHE_RESETGENERATION = "responseCacheResetGeneration";
-    public static final String PARAM_RESPONSECACHE_DISK_THRESHOLD = "responseCacheDiskThreshold";
+    public static final String PARAM_messageCache_DIRECTORY = "messageCacheDirectory";
+    public static final String PARAM_messageCache_RESETGENERATION = "messageCacheResetGeneration";
+    public static final String PARAM_messageCache_DISK_THRESHOLD = "messageCacheDiskThreshold";
     public static final String PARAM_MODULAR_ASSERTIONS_DIRECTORY = "modularAssertionsDirectory";
     public static final String PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS = "modularAssertionsRescanMillis";
     public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
