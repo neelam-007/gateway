@@ -79,7 +79,7 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
-        meta.put(FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mtom.console.MtomDecodeAssertionPropertiesDialog");
         
         meta.put(META_INITIALIZED, Boolean.TRUE);

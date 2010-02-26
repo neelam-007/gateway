@@ -513,6 +513,18 @@ public class GatewayFeatureSets {
         fsr("set:UDDINotification:Assertions", "The necessary assertions to enable UDDI Notification functionality",
             mass("assertion:UDDINotification"));
 
+        GatewayFeatureSet mtomDecodeAssertions =
+        fsr("set:MtomDecode:Assertions", "The necessary assertions to enable Mtom Decode functionality",
+            mass("assertion:MtomDecode"));
+
+        GatewayFeatureSet mtomEncodeAssertions =
+        fsr("set:MtomEncode:Assertions", "The necessary assertions to enable Mtom Encode functionality",
+            mass("assertion:MtomEncode"));
+
+        GatewayFeatureSet mtomValidateAssertions =
+        fsr("set:MtomValidate:Assertions", "The necessary assertions to enable Mtom Validate functionality",
+            mass("assertion:MtomValidate"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -553,6 +565,9 @@ public class GatewayFeatureSets {
             fs(uiDs),
             fs(customDs),
             fs(uddiNotificationAssertions),
+            fs(mtomDecodeAssertions),
+            fs(mtomEncodeAssertions),
+            fs(mtomValidateAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -570,6 +585,9 @@ public class GatewayFeatureSets {
             fs(uiAccel),
             fs(moduleLoader),
             fs(uddiNotificationAssertions),
+            fs(mtomDecodeAssertions),
+            fs(mtomEncodeAssertions),
+            fs(mtomValidateAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -589,6 +607,9 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
+            fs(mtomDecodeAssertions),
+            fs(mtomEncodeAssertions),
+            fs(mtomValidateAssertions),
             fs(customFw));
 
         GatewayFeatureSet profileGateway =
@@ -612,6 +633,9 @@ public class GatewayFeatureSets {
             fs(xacmlAssertions),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
+            fs(mtomDecodeAssertions),
+            fs(mtomEncodeAssertions),
+            fs(mtomValidateAssertions),
             fs(uiFw),
             fs(wssp));
 
@@ -644,6 +668,9 @@ public class GatewayFeatureSets {
             fs(wssp),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
+            fs(mtomDecodeAssertions),
+            fs(mtomEncodeAssertions),
+            fs(mtomValidateAssertions),
             fs(uiFw));
 
         PROFILE_ALL =
