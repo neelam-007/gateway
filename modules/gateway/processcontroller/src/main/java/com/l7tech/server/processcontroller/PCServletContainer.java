@@ -69,7 +69,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
     private void initializeServletEngine() throws Exception {
         Server server = new Server();
         Pair<X509Certificate[],PrivateKey> keypair = configService.getSslKeypair();
-        final SSLContext ctx = SSLContext.getInstance("SSL");
+        final SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, new TrustManager[]{ new X509TrustManager(){
             @Override
             public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
