@@ -44,7 +44,7 @@ public class SslCertificateSniffer {
 
         SSLContext sslContext;
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null,
               new X509TrustManager[]{new X509TrustManager() {
                   public X509Certificate[] getAcceptedIssuers() {

@@ -87,7 +87,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
         synchronized(initLock) {
             // no harm done if multiple threads try to create it the very first time.  s'all good.
             if (sslContext != null) return sslContext;
-            SSLContext sc = SSLContext.getInstance("SSL");
+            SSLContext sc = SSLContext.getInstance("TLS");
             KeyManager[] keyman = keystore.getSslKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,

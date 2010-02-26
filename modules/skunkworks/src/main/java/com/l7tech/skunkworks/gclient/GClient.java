@@ -763,7 +763,7 @@ public class GClient {
 
     private SSLSocketFactory getSSLSocketFactory() throws Exception {
         if (sslSocketFactory == null) {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyManager[] keyManagers = null;
             if (clientPrivateKey != null) {
                 keyManagers = new KeyManager[] {

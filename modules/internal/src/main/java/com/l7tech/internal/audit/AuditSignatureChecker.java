@@ -102,7 +102,7 @@ public class AuditSignatureChecker extends JFrame {
 
         SSLContext sslContext;
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null,
               new X509TrustManager[]{new X509TrustManager() {
                   public java.security.cert.X509Certificate[] getAcceptedIssuers() {

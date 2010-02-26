@@ -180,7 +180,7 @@ public class ClientCertSslClient {
         // Set up SSL trust store
         MyKeyManager keyManager = new MyKeyManager();
         MyTrustManager trustManager = new MyTrustManager();
-        SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
+        SSLContext sslContext = SSLContext.getInstance("TLS", "SunJSSE");
         sslContext.init(new X509KeyManager[]{keyManager},
           new X509TrustManager[]{trustManager},
           null);

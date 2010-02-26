@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -16,8 +15,8 @@ import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.HtmlConstants;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
@@ -69,7 +68,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         httpClient = new CommonsHttpClient(CommonsHttpClient.newConnectionManager());
 
         try {
-           sslContext = SSLContext.getInstance("SSL");
+           sslContext = SSLContext.getInstance("TLS");
            final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
            hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);
            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,

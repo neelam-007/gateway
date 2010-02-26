@@ -37,7 +37,7 @@ public class JsseDetectorVan {
         System.out.println("Certificate factory algorithm: " + certFactoryName);
         TrustManagerFactory.getInstance(certFactoryName);
         System.out.println("JSSE Name: " + jsseName);
-        SSLContext.getInstance("SSL", jsseName);
+        SSLContext.getInstance("TLS", jsseName);
 
         System.out.println("JCE Name: " + jceName);
     }

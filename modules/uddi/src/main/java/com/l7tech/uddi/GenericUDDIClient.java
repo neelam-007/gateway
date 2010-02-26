@@ -2824,7 +2824,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     // SSL socket factory
                     int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
                     try {
-                        final SSLContext ctx = SSLContext.getInstance("SSL");
+                        final SSLContext ctx = SSLContext.getInstance("TLS");
                         ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );
                         ctx.getClientSessionContext().setSessionTimeout(timeout);
                         SocketFactory factory = ctx.getSocketFactory();

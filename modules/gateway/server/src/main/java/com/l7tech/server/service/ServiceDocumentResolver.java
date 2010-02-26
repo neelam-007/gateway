@@ -151,7 +151,7 @@ public class ServiceDocumentResolver {
     private synchronized SSLContext getSSLContext() {
         if (sslContext == null) {
             try {
-                sslContext = SSLContext.getInstance("SSL");
+                sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, new TrustManager[]{trustManager}, null);
             } catch ( NoSuchAlgorithmException e) {
                 logger.log( Level.SEVERE, "Unable to get sslcontext", e);

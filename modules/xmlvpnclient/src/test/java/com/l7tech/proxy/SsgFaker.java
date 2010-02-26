@@ -85,7 +85,7 @@ public class SsgFaker implements Closeable {
                 X509Certificate cert = TestDocuments.getDotNetServerCertificate();
                 PrivateKey key = TestDocuments.getDotNetServerPrivateKey();
                 SingleCertX509KeyManager km = new SingleCertX509KeyManager(new X509Certificate[]{cert}, key);
-                ctx = SSLContext.getInstance("SSL");
+                ctx = SSLContext.getInstance("TLS");
                 ctx.init(new KeyManager[] { km }, null, null);
             }
 

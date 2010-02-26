@@ -105,7 +105,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
             }
 
             // Create the SSLContext
-            SSLContext ctx = SSLContext.getInstance("SSL");
+            SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init(km, new TrustManager[] { tm }, null);
             return ctx;
 

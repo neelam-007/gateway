@@ -472,7 +472,7 @@ public class SsgRuntime {
             X509TrustManager trustManager = getTrustManager();
             SSLContext sslContext;
             try {
-                sslContext = SSLContext.getInstance("SSL", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
+                sslContext = SSLContext.getInstance("TLS", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
                                                                               SslPeer.DEFAULT_SSL_PROVIDER));
                 sslContext.init(new X509KeyManager[] {keyManager},
                                 new X509TrustManager[] {trustManager},

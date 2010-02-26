@@ -49,7 +49,7 @@ public class SslPost {
         final PrivateKey clientKey = loadClientKey(clientKeyPath, clientKeyPass.toCharArray());
         byte[] postBytes = slurpStream(new FileInputStream(postFilePath));
 
-        final SSLContext sslContext = SSLContext.getInstance("SSL");
+        final SSLContext sslContext = SSLContext.getInstance("TLS");
         X509KeyManager keyManager = new SimpleX509KeyManager(clientCert, clientKey);
         X509TrustManager trustManager = new PermissiveX509TrustManager();
 

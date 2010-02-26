@@ -114,7 +114,7 @@ public class JmsSslCustomizerSupport {
                     keyManagers = new KeyManager[] { keyManager };
                 }
 
-                final SSLContext context = SSLContext.getInstance("SSL");
+                final SSLContext context = SSLContext.getInstance("TLS");
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
