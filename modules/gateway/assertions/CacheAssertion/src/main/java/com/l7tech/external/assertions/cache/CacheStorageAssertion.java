@@ -134,6 +134,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
 
         meta.put(AssertionMetadata.SHORT_NAME, "Store to Cache");
         meta.put(AssertionMetadata.DESCRIPTION, "Store value in cache");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Cache Storage Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

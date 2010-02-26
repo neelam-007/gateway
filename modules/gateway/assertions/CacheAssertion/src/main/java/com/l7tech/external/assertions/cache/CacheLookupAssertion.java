@@ -129,6 +129,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
         meta.put(AssertionMetadata.SHORT_NAME, "Look Up in Cache");
         meta.put(AssertionMetadata.DESCRIPTION, "Look Up value in cache");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Cache Lookup Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

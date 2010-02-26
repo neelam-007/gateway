@@ -22,7 +22,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
 
     @Override
     public StashManager createStashManager() {
-        return new HybridStashManager(diskThreshold, ConfigHolder.RESPONSE_CACHE_DIR, CACHED_ENTRY_PREFIX + getStashFileUnique());
+        return new HybridStashManager(diskThreshold, ConfigHolder.MESSAGE_CACHE_DIR, CACHED_ENTRY_PREFIX + getStashFileUnique());
     }
 
     @Override
@@ -35,12 +35,12 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
     // - PRIVATE
 
     private static class ConfigHolder {
-        private static final File RESPONSE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_messageCache_DIRECTORY, true);
+        private static final File MESSAGE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_messageCache_DIRECTORY, true);
     }
 
     private static final MessageCacheStashManagerFactory INSTANCE = new MessageCacheStashManagerFactory();
     private static final Logger logger = Logger.getLogger(MessageCacheStashManagerFactory.class.getName());
-    private static final String CACHED_ENTRY_PREFIX = "respCache";
+    private static final String CACHED_ENTRY_PREFIX = "messageCache";
     private static AtomicLong stashFileUnique = new AtomicLong(0);
     private static volatile int diskThreshold;
     static {
@@ -49,7 +49,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
 
     private static void reloadConfig() {
         diskThreshold = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_messageCache_DISK_THRESHOLD, 8096);
-        logger.config("Response cache disk threshold set to " + diskThreshold + " bytes.");
+        logger.config("Message cache disk threshold set to " + diskThreshold + " bytes.");
     }
 
     private static long getStashFileUnique() {
