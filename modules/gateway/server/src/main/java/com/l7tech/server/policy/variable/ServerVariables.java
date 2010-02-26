@@ -376,7 +376,7 @@ public class ServerVariables {
                         logger.warning("variable name " + name + " cannot be resolved to a cluster property");
                         return null;
                     }
-                    name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1).toLowerCase();
+                    name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
                     ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name, 30000);
                     if (cp != null && cp.isHiddenProperty()) return null;
                     return cp != null && cp.getValue() != null ? cp.getValue() :

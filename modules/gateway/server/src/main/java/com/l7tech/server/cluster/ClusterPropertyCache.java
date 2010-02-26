@@ -1,14 +1,6 @@
 package com.l7tech.server.cluster;
 
-import java.util.Map;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,7 +52,7 @@ public class ClusterPropertyCache implements ApplicationListener {
 
         try {
             Collection<ClusterProperty> props = clusterPropertyManager.findAll();
-            Map<String,ClusterProperty> clusterProperties = new HashMap<String,ClusterProperty>(props.size());
+            Map<String, ClusterProperty> clusterProperties = new TreeMap<String, ClusterProperty>(String.CASE_INSENSITIVE_ORDER);
             for(ClusterProperty prop : props) {
                 if (prop.getName() != null)
                     clusterProperties.put(prop.getName(), new ImmutableClusterProperty(prop));
@@ -132,12 +124,10 @@ public class ClusterPropertyCache implements ApplicationListener {
 
                 long[] updatedOids = eiEvent.getEntityIds();
                 if (updatedOids != null && updatedOids.length > 0) {
-                    Map<String,ClusterProperty> currentProps = clusterPropertyCacheRef.get();
-                    Map<String,ClusterProperty> updatedProps;
-                    if (currentProps == null) {
-                        updatedProps = new HashMap<String,ClusterProperty>();
-                    } else {
-                        updatedProps = new HashMap<String,ClusterProperty>(currentProps);
+                    Map<String, ClusterProperty> currentProps = clusterPropertyCacheRef.get();
+                    Map<String, ClusterProperty> updatedProps = new TreeMap<String, ClusterProperty>(String.CASE_INSENSITIVE_ORDER);
+                    if (currentProps != null) {
+                        updatedProps.putAll(currentProps);
                     }
 
                     List<ClusterProperty[]> updatedList = new ArrayList<ClusterProperty[]>();
