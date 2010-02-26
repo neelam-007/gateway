@@ -76,7 +76,7 @@ public abstract class JceProvider {
      * use a TrustManager that fully populates acceptedIssuers; or else will always use some other TLS provider for
      * their SSL contexts).
      */
-    public static final String COMPONENT_RSA_SSLJ_5_1 = "sslj-5.1";
+    public static final String COMPONENT_RSA_SSLJ_5_1_1 = "sslj-5.1.1";
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -199,9 +199,9 @@ public abstract class JceProvider {
      * This method currently always returns false.  Specific JceProvider subclasses may override this to claim
      * compatibility with some component.
      *
-     * @param componentName the name of a component to inquire about, ie "sslj-5.1".  Required.
+     * @param componentName the name of a component to inquire about, ie "sslj-5.1.1".  Required.
      * @return true if the specified component is known to be compatible with the current JceProvider in its current configuration.
-     * @see #COMPONENT_RSA_SSLJ_5_1
+     * @see #COMPONENT_RSA_SSLJ_5_1_1
      */
     public boolean isComponentCompatible(String componentName) {
         return false;

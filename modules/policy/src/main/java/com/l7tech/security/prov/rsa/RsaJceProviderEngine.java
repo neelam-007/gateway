@@ -151,7 +151,7 @@ public class RsaJceProviderEngine extends JceProvider {
 
     @Override
     public boolean isComponentCompatible(String componentName) {
-        return COMPONENT_RSA_SSLJ_5_1.equals(componentName) ? isCompatibleWithSslJ51(cryptojVersion) : super.isComponentCompatible(componentName);
+        return COMPONENT_RSA_SSLJ_5_1_1.equals(componentName) ? isCompatibleWithSslJ51(cryptojVersion) : super.isComponentCompatible(componentName);
     }
 
     private static boolean isCompatibleWithSslJ51(String ver) {

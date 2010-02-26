@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
 	<info organisation="com.rsa"
-		module="jsafe-jce"
-		revision="4.1"
+		module="sslj"
+		revision="5.1.1"
 		status="release"
-		publication="20100211161543"
+		publication="20100226134251"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="jsafe-jce" type="jar" ext="jar" conf="default"/>
+		<artifact name="sslj" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

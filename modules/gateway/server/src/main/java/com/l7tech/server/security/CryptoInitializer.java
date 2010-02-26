@@ -39,7 +39,7 @@ public class CryptoInitializer implements ApplicationListener {
             SyspropUtil.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");
         }
 
-        if (JceProvider.getInstance().isComponentCompatible(JceProvider.COMPONENT_RSA_SSLJ_5_1)) {
+        if (JceProvider.getInstance().isComponentCompatible(JceProvider.COMPONENT_RSA_SSLJ_5_1_1)) {
             changeDefaultTlsProvider();
         } else {
             logger.info("TLS 1.2 not enabled.  The TLS 1.2 provider is not compatible with the current cryptography provider.");
