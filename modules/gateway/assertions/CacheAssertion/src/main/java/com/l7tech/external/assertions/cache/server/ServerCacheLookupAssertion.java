@@ -47,7 +47,7 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Map<String,Object> vars = context.getVariableMap(variablesUsed, auditor);
+        Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
         final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, auditor, true);
         final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, auditor, true);
         SsgCache cache = cacheManager.getCache(cacheName);
@@ -71,36 +71,40 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
                 context.setVariable(assertion.getOtherTargetMessageVariable(), message);
         }
 
-        if (message == null) {
-            logger.log(Level.WARNING, "Null message target: " + assertion.getTarget() );
-            return AssertionStatus.FALSIFIED;
-        }
-        String cachedContentType = cachedEntry.getContentType();
-        String contentTypeOverride = assertion.getContentTypeOverride();
-        ContentTypeHeader contentType = contentTypeOverride != null && ! contentTypeOverride.isEmpty() ? ContentTypeHeader.parseValue(contentTypeOverride) :
-                cachedContentType != null ? ContentTypeHeader.parseValue(cachedContentType) :
-                ContentTypeHeader.XML_DEFAULT;
-
-
-        InputStream bodyInputStream = null;
         try {
-            byte[] bodyBytes;
-            try {
-                bodyInputStream = cachedEntry.getStashManager().recall(0);
-                bodyBytes = IOUtils.slurpStream(bodyInputStream);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e);
-                return AssertionStatus.FALSIFIED;
-            } catch (NoSuchPartException e) {
-                logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e); // can't happen
-                return AssertionStatus.FALSIFIED;
+            if (message == null) {
+                logger.log(Level.WARNING, "Null message target: " + assertion.getTarget());
+                return AssertionStatus.FAILED;
             }
-            // TODO use proper hybrid stash manager, making arrangements to have it closed when context is closed,
-            // instead of just using two-arg initialize() which just uses ByteArrayStashManager
-            message.initialize(contentType, bodyBytes);
-            return AssertionStatus.NONE;
-        } finally {
-            if (bodyInputStream != null) bodyInputStream.close();
+            String cachedContentType = cachedEntry.getContentType();
+            String contentTypeOverride = assertion.getContentTypeOverride();
+            ContentTypeHeader contentType = contentTypeOverride != null && !contentTypeOverride.isEmpty() ? ContentTypeHeader.parseValue(contentTypeOverride) :
+                cachedContentType != null ? ContentTypeHeader.parseValue(cachedContentType) :
+                    ContentTypeHeader.XML_DEFAULT;
+
+            InputStream bodyInputStream = null;
+            try {
+                byte[] bodyBytes;
+                try {
+                    bodyInputStream = cachedEntry.getStashManager().recall(0);
+                    bodyBytes = IOUtils.slurpStream(bodyInputStream);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e);
+                    return AssertionStatus.FAILED;
+                } catch (NoSuchPartException e) {
+                    logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e); // can't happen
+                    return AssertionStatus.FAILED;
+                }
+                // TODO use proper hybrid stash manager, making arrangements to have it closed when context is closed,
+                // instead of just using two-arg initialize() which just uses ByteArrayStashManager
+                message.initialize(contentType, bodyBytes);
+                return AssertionStatus.NONE;
+            } finally {
+                if (bodyInputStream != null) bodyInputStream.close();
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Message cache error: " + ExceptionUtils.getMessage(e), e);
+            return AssertionStatus.FAILED;
         }
     }
 

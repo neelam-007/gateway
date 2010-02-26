@@ -46,40 +46,31 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        ContentTypeHeader contentType;
-        InputStream messageBody;
         try {
-            Message messageToCache = context.getTargetMessage(assertion, true);
-            contentType = messageToCache.getMimeKnob().getOuterContentType();
-            messageBody = messageToCache.getMimeKnob().getEntireMessageBodyAsInputStream();
+            InputStream messageBody = null;
+            try {
+                Message messageToCache = context.getTargetMessage(assertion, true);
+                ContentTypeHeader contentType = messageToCache.getMimeKnob().getOuterContentType();
+                messageBody = messageToCache.getMimeKnob().getEntireMessageBodyAsInputStream();
+                Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+                final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, auditor, true);
+                final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, auditor, true);
+
+                SsgCache.Config cacheConfig = new SsgCache.Config(cacheName)
+                    .maxEntries(assertion.getMaxEntries())
+                    .maxAgeMillis(assertion.getMaxEntryAgeMillis())
+                    .maxSizeBytes(assertion.getMaxEntrySizeBytes());
+                SsgCache cache = cacheManager.getCache(cacheConfig);
+                cache.store(key, messageBody, contentType.getFullValue());
+                logger.log(Level.FINE, "Stored to cache: " + key);
+            } finally {
+                if (messageBody != null) messageBody.close();
+            }
         } catch (Exception e) {
-            auditor.logAndAudit( AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO,
-                                new String[] { "Unable to store cached value: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
-        }
-
-        try {
-            Map<String,Object> vars = context.getVariableMap(variablesUsed, auditor);
-            final String cacheName = ExpandVariables.process(assertion.getCacheId(), vars, auditor, true);
-            final String key = ExpandVariables.process(assertion.getCacheEntryKey(), vars, auditor, true);
-
-            SsgCache.Config cacheConfig = new SsgCache.Config(cacheName)
-                .maxEntries(assertion.getMaxEntries())
-                .maxAgeMillis(assertion.getMaxEntryAgeMillis())
-                .maxSizeBytes(assertion.getMaxEntrySizeBytes());
-            SsgCache cache = cacheManager.getCache(cacheConfig);
-            cache.store(key, messageBody, contentType.getFullValue());
-            logger.log(Level.FINE, "Stored to cache: " + key);
-
-            return AssertionStatus.NONE;
-
-        } catch (IllegalArgumentException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO,
-                                new String[] { "Unable to store cached value: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
-        } finally {
-            messageBody.close();
+                new String[]{"Unable to store cached value: " + ExceptionUtils.getMessage(e)}, e);
         }
+        return AssertionStatus.NONE;
     }
 
     @Override
