@@ -759,7 +759,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             boolean passthroughSoapFault = false;
             if (assertion.isPassThroughSoapFaults() && status == HttpConstants.STATUS_SERVER_ERROR &&
                 context.getService() != null && context.getService().isSoap() &&
-                outerContentType != null && outerContentType.isXml()) {
+                outerContentType != null && ( outerContentType.isXml() || outerContentType.isMultipart()) ) {
                 passthroughSoapFault = true;
             }
 
