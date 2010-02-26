@@ -438,4 +438,36 @@ public class ArrayUtils {
     public static char[] unbox(List<Character> cs) {
         return unbox(cs.toArray(new Character[cs.size()]));
     }
+
+    /**
+     * Compute the union of two String arrays.
+     * <p/>
+     * Elements of the output array will be in the same order they'd be in if the arrays were simply concatenated,
+     * but with all but the first duplicate of any given element omitted.
+     *
+     * @param left   one of the arrays to combine.  Required.
+     * @param right  another of the arrays to combine.  Required.
+     * @return an new array consisting of all strings that are present in either input arrays.  May be empty but never null.
+     */
+    public static String[] union(String[] left, String[] right) {
+        Set<String> set = new LinkedHashSet<String>(Arrays.asList(left));
+        set.addAll(Arrays.asList(right));
+        return set.toArray(new String[set.size()]);
+    }
+
+    /**
+     * Compute the intersection of two String arrays.
+     * <p/>
+     * Elements of the output array will be the order of the left array, but with any elements not also
+     * present in the right array omitted.
+     *
+     * @param left   one of the arrays to combine.  This array fully determines the output order.  Required.
+     * @param right  another of the arrays to combine.  Required.
+     * @return a new array consiting of all strings that are present in both input arrays.  May be empty but never null.
+     */
+    public static String[] intersection(String[] left, String[] right) {
+        Set<String> ret = new LinkedHashSet<String>(Arrays.asList(left));
+        ret.retainAll(Arrays.asList(right));
+        return ret.toArray(new String[ret.size()]);
+    }
 }
