@@ -68,14 +68,14 @@ public class RsaJceProviderEngine extends JceProvider {
         // First see if SunJSSE is available
         Provider prov = findSunJsseProvider();
         if (prov != null) {
-            logger.info("Using Sun PKCS#12 implementation");
+            logger.fine("Using Sun PKCS#12 implementation");
             return prov;
         }
 
         // Check for Crypto-J as fallback measure
         prov = findRsajcpProvider(cryptojClassLoader);
         if (prov != null) {
-            logger.info("Using RSA PKCS#12 implementation");
+            logger.fine("Using RSA PKCS#12 implementation");
             return prov;
         }
 
@@ -86,14 +86,14 @@ public class RsaJceProviderEngine extends JceProvider {
         // Prefer SunJSSE as TLS 1.0 provider since it currently has cleaner TrustManager behavior
         Provider prov = findSunJsseProvider();
         if (prov != null) {
-            logger.info("Using SunJSSE as TLS 1.0 provider");
+            logger.fine("Using SunJSSE as TLS 1.0 provider");
             return prov;
         }
 
         // If SunJSSE not available, try to use SSL-J (if available and compatible with current Crypto-J version)
         prov = findRsaJsseProvider(cryptojVersion);
         if (prov != null) {
-            logger.info("Using RsaJsse as TLS 1.0 provider");
+            logger.fine("Using RsaJsse as TLS 1.0 provider");
             return prov;
         }
 
@@ -104,7 +104,7 @@ public class RsaJceProviderEngine extends JceProvider {
         // We can only provide TLS 1.2 if SSL-J is availble in classpath and compatible with current Crypto-J version
         Provider prov = findRsaJsseProvider(cryptojVersion);
         if (prov != null) {
-            logger.info("Using RsaJsse as TLS 1.2 provider");
+            logger.fine("Using RsaJsse as TLS 1.2 provider");
             return prov;
         }
 

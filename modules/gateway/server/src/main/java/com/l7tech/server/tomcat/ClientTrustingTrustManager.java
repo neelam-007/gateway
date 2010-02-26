@@ -59,7 +59,7 @@ class ClientTrustingTrustManager implements X509TrustManager {
 
         String sslAcceptedClientCA = serverConfig.getProperty("ioHttpsAcceptedClientCa");
         if (sslAcceptedClientCA == null || sslAcceptedClientCA.length() <= 0) {
-            logger.info("io.httpsAcceptedClientCa not set or empty");
+            logger.fine("io.httpsAcceptedClientCa not set or empty");
             return null;
         }
 

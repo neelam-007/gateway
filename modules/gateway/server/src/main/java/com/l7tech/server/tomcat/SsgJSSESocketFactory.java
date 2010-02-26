@@ -141,13 +141,12 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
         String protocolProvider = getStringAttr("protocolProvider", null);
         String protocols = getStringAttr("protocols", null);
 
-        Level lvl = Level.INFO;
-        if (logger.isLoggable(lvl))
-            logger.log(lvl, "Connector " + connectorOid + " protocol list: " + protocols);
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Connector " + connectorOid + " protocol list: " + protocols);
 
         SSLContext context;
         if (protocolProvider != null) {
-            logger.log(lvl, "Attempting to create SSLContext using custom provider named " + protocolProvider);
+            logger.log(Level.FINE, "Attempting to create SSLContext using custom provider named " + protocolProvider);
             context = SSLContext.getInstance(protocol, protocolProvider);
         } else {
             String serv;
@@ -158,11 +157,11 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
             }
             Provider provider = JceProvider.getInstance().getProviderFor(serv);
             if (provider == null) {
-                logger.log(lvl, "Attempting to create SSLContext using default provider");
+                logger.log(Level.FINE, "Attempting to create SSLContext using default provider");
                 context = SSLContext.getInstance(protocol);
             } else {
-                if (logger.isLoggable(lvl))
-                    logger.log(lvl, "Attempting to create SSLContext using " + serv + " provider named " + provider.getName());
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Attempting to create SSLContext using " + serv + " provider named " + provider.getName());
                 context = SSLContext.getInstance(protocol, provider);
             }
         }
