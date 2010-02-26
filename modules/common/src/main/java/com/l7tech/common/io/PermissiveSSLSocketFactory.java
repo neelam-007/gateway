@@ -21,7 +21,7 @@ public class PermissiveSSLSocketFactory extends SSLSocketFactory implements Secu
 
     public PermissiveSSLSocketFactory() {
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            sslContext = SSLContext.getInstance("TLS");
             X509TrustManager trustManager = new PermissiveX509TrustManager();
             sslContext.init(null,
                             new X509TrustManager[] {trustManager},
