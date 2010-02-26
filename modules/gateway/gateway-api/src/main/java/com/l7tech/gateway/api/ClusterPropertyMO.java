@@ -13,6 +13,8 @@ import java.util.Map;
 
 /**
  * The ClusterPropertyMO managed object represents a cluster wide property.
+ *
+ * @see ManagedObjectFactory#createClusterProperty()
  */
 @XmlRootElement(name="ClusterProperty")
 @XmlType(name="ClusterPropertyType", propOrder={"name", "value", "extensions", "properties"})
@@ -22,7 +24,7 @@ public class ClusterPropertyMO extends ManagedObject {
     //- PUBLIC
 
     /**
-     * The name for the cluster property (case insensitive)
+     * The name for the cluster property (case insensitive, required)
      *
      * @return The name (may be null)
      */
@@ -41,7 +43,7 @@ public class ClusterPropertyMO extends ManagedObject {
     }
 
     /**
-     * Get the value for the cluster property.
+     * Get the value for the cluster property (required)
      *
      * @return The value (may be null)
      */
@@ -58,8 +60,6 @@ public class ClusterPropertyMO extends ManagedObject {
     public void setValue( final String value ) {
         this.value = value;
     }
-
-
 
     /**
      * Get the properties for this cluster property.

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JMSDestination xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="0" id="48037888">
+    <JMSDestinationDetails version="0" id="48037888">
+        <DestinationName>cn=VgateLoggingQ</DestinationName>
+        <Inbound>false</Inbound>
+        <Enabled>true</Enabled>
+        <Properties>
+            <Property key="replyType">
+                <StringValue>AUTOMATIC</StringValue>
+            </Property>
+            <Property key="outbound.MessageType">
+                <StringValue>AUTOMATIC</StringValue>
+            </Property>
+            <Property key="useRequestCorrelationId">
+                <BooleanValue>false</BooleanValue>
+            </Property>
+        </Properties>
+    </JMSDestinationDetails>
+    <JMSConnection version="0" id="48005120">
+        <Properties>
+            <Property key="jndi.initialContextFactoryClassname">
+                <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>
+            </Property>
+            <Property key="jndi.url">
+                <StringValue>ldap://127.0.0.1/cn=uat,cn=wmqjndi</StringValue>
+            </Property>
+            <Property key="queue.connectionFactoryName">
+                <StringValue>cn=VgateLoggingQCF</StringValue>
+            </Property>
+        </Properties>
+        <ContextPropertiesTemplate>
+            <Property key="com.l7tech.server.jms.prop.contentType.value">
+                <StringValue></StringValue>
+            </Property>
+            <Property key="com.l7tech.server.jms.prop.hardwired.service.bool">
+                <StringValue>false</StringValue>
+            </Property>
+            <Property key="com.l7tech.server.jms.prop.contentType.source">
+                <StringValue></StringValue>
+            </Property>
+        </ContextPropertiesTemplate>
+    </JMSConnection>
+</JMSDestination>

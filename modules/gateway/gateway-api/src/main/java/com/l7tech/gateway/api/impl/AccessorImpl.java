@@ -173,8 +173,12 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
         if ( value == null ) throw new AccessorException( description + " is required" );        
     }
 
+    String getNamespace() {
+        return AccessorImpl.class.getPackage().getAnnotation(XmlSchema.class).namespace();
+    }
+
     String buildActionUri( final String name ) {
-        return AccessorImpl.class.getPackage().getAnnotation(XmlSchema.class).namespace() + "/" + name;        
+        return getNamespace() + "/" + name;
     }
 
     String buildResourceScopedActionUri( final String name ) {

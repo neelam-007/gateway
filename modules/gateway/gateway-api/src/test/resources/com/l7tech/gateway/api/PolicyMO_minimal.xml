@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <PolicyDetail>
+        <Name>Log Request Message To Queue</Name>
+        <PolicyType>Include</PolicyType>
+    </PolicyDetail>
+    <Resources>
+        <ResourceSet tag="policy"/>
+    </Resources>
+</Policy>

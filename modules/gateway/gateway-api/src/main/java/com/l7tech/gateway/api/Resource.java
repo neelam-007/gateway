@@ -22,6 +22,15 @@ public class Resource {
         this.id = id;
     }
 
+    @XmlAttribute(name="version")
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion( final Integer version ) {
+        this.version = version;
+    }
+
     @XmlAttribute(name="type", required=true)
     public String getType() {
         return type;
@@ -68,6 +77,7 @@ public class Resource {
     //- PRIVATE
 
     private String id;
+    private Integer version;
     private String type; // not content type (wsdl, policy, policyexport, xmlschema, etc)
     private String sourceUrl;
     private String content;

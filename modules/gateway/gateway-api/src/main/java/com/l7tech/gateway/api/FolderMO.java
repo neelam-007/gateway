@@ -15,8 +15,10 @@ import java.util.Map;
 /**
  * The FolderMO managed object represents an organizational folder.
  *
- * <p>Folders are shown in the SecureSpan Manager and can be used to group
+ * <p>Folders are displayed in the SecureSpan Manager and can be used to group
  * services and policies.</p>
+ *
+ * @see ManagedObjectFactory#createFolder()
  */
 @XmlRootElement(name="Folder")
 @XmlType(name="FolderType", propOrder={"name", "extensions", "properties"})
@@ -26,7 +28,7 @@ public class FolderMO extends ManagedObject {
     //- PUBLIC
 
     /**
-     * Get the name for the folder (case insensitive)
+     * Get the name for the folder (case insensitive, required)
      *
      * <p>Folder names are unique within their containing folder.</p>
      *

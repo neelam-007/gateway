@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Service xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="5" id="17268736">
+    <ServiceDetail version="5" id="17268736" folderId="21312">
+        <Name>Warehouse</Name>
+        <Enabled>true</Enabled>
+    </ServiceDetail>
+    <Resources>
+        <ResourceSet tag="policy"/>
+    </Resources>
+</Service>

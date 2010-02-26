@@ -1,18 +1,26 @@
 package com.l7tech.gateway.api.impl;
 
+import javax.xml.bind.annotation.XmlAnyAttribute;
+import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementRefs;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
+import javax.xml.namespace.QName;
 import java.util.*;
 
 /**
- * TODO [steve] type extensiblity and value typing
+ * 
  */
-@XmlType(name="PropertiesMapType", propOrder={"entry"})
+@XmlType(name="PropertiesMapType", propOrder={"entry","extensions"})
 public class PropertiesMapType {
 
-    private List<PropertiesMapEntryType> entry = new ArrayList<PropertiesMapEntryType>();
+    //- PUBLIC
 
     public PropertiesMapType() {}
 
@@ -39,16 +47,18 @@ public class PropertiesMapType {
         this.entry = entry;
     }
 
-    @XmlType(name="PropertiesMapEntryType", propOrder={"value"})
+    @XmlType(name="PropertiesMapEntryType", propOrder={"propertyValue", "extensions"})
     public static class PropertiesMapEntryType {
         private String key;
-        private Object value;
+        private PropertyValue<?> propertyValue;
+        private List<Object> extensions;
+        private Map<QName,Object> attributeExtensions;
 
         public PropertiesMapEntryType() {}
 
         public PropertiesMapEntryType( final Map.Entry<String,Object> entry ) {
             key = entry.getKey();
-            value = entry.getValue();
+            propertyValue = newPropertyValue(entry.getValue());
         }
 
         @XmlAttribute
@@ -60,13 +70,193 @@ public class PropertiesMapType {
             this.key = key;
         }
 
-        @XmlElement(name="Value")
+        @XmlTransient
         public Object getValue() {
-            return value;
+            return propertyValue == null ? null : propertyValue.getValue();
         }
 
         public void setValue( final Object value ) {
+            this.propertyValue = newPropertyValue(value);
+        }
+
+        @XmlElementRefs({
+            @XmlElementRef(type=ObjectValue.class),       
+            @XmlElementRef(type=StringValue.class),
+            @XmlElementRef(type=BooleanValue.class),
+            @XmlElementRef(type=IntegerValue.class),
+            @XmlElementRef(type=LongValue.class)
+        })
+        public PropertyValue getPropertyValue() {
+            return propertyValue;
+        }
+
+        public void setPropertyValue( final PropertyValue propertyValue ) {
+            this.propertyValue = propertyValue;
+        }
+
+        @XmlAnyElement(lax=true)
+        protected List<Object> getExtensions() {
+            return extensions;
+        }
+
+        protected void setExtensions( final List<Object> extensions ) {
+            this.extensions = extensions;
+        }
+
+        @XmlAnyAttribute
+        protected Map<QName, Object> getAttributeExtensions() {
+            return attributeExtensions;
+        }
+
+        protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
+            this.attributeExtensions = attributeExtensions;
+        }
+    }
+
+
+    @XmlTransient
+    public static class PropertyValue<T> {
+        private T value;
+        private Map<QName,Object> attributeExtensions;
+
+        public PropertyValue() {
+        }
+
+        public PropertyValue( T value ) {
+            setValue( value );
+        }
+
+        @XmlElement(name="Item")
+        public T getValue(){
+            return value;
+        }
+
+        public void setValue( T value ) {
             this.value = value;
+        }
+
+        @XmlAnyAttribute
+        protected Map<QName, Object> getAttributeExtensions() {
+            return attributeExtensions;
+        }
+
+        protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
+            this.attributeExtensions = attributeExtensions;
+        }
+    }
+
+    @XmlRootElement(name="Value")
+    @XmlType(name="ValueType", propOrder={"value","extensions"})
+    public static class ObjectValue<T> extends PropertyValue<T> {
+        private List<Object> extensions;
+
+        public ObjectValue() {
+            super();
+        }
+
+        public ObjectValue( final T value ) {
+            super( value );
+        }
+
+        @XmlAnyElement(lax=true)
+        protected List<Object> getExtensions() {
+            return extensions;
+        }
+
+        protected void setExtensions( final List<Object> extensions ) {
+            this.extensions = extensions;
+        }
+    }
+
+    @XmlRootElement(name="StringValue")
+    @XmlType(name="StringValueType")
+    public static class StringValue extends PropertyValue<String>{
+        public StringValue() {
+            super();
+        }
+
+        public StringValue( final String value ) {
+            super( value );
+        }
+
+        @XmlValue
+        @Override
+        public String getValue() {
+            return super.getValue();
+        }
+
+        @Override
+        public void setValue( final String value ) {
+            super.setValue( value );
+        }
+    }
+
+    @XmlRootElement(name="BooleanValue")
+    @XmlType(name="BooleanValueType")
+    public static class BooleanValue extends PropertyValue<Boolean>{
+        public BooleanValue() {
+            super();
+        }
+
+        public BooleanValue( final Boolean value ) {
+            super( value );
+        }
+
+        @XmlValue
+        @Override
+        public Boolean getValue() {
+            return super.getValue();
+        }
+
+        @Override
+        public void setValue( final Boolean value ) {
+            super.setValue( value );
+        }
+    }
+
+    @XmlRootElement(name="IntegerValue")
+    @XmlType(name="IntegerValueType")
+    public static class IntegerValue extends PropertyValue<Integer>{
+        public IntegerValue() {
+            super();
+        }
+
+        public IntegerValue( final Integer value ) {
+            super( value );
+        }
+
+        @XmlValue
+        @Override
+        public Integer getValue() {
+            return super.getValue();
+        }
+
+        @Override
+        public void setValue( final Integer value ) {
+            super.setValue( value );
+        }
+    }
+
+    @XmlRootElement(name="LongValue")
+    @XmlType(name="LongValueType")
+    public static class LongValue extends PropertyValue<Long>{
+        public LongValue() {
+            super();
+        }
+
+        public LongValue( final Long value ) {
+            super( value );
+        }
+
+        @XmlValue
+        @Override
+        public Long getValue() {
+            return super.getValue();
+        }
+
+        @Override
+        public void setValue( final Long value ) {
+            super.setValue( value );    
         }
     }
 
@@ -82,4 +272,50 @@ public class PropertiesMapType {
         }
     }
 
+    //- PROTECTED
+
+    @XmlAnyElement(lax=true)
+    protected List<Object> getExtensions() {
+        return extensions;
+    }
+
+    protected void setExtensions( final List<Object> extensions ) {
+        this.extensions = extensions;
+    }
+
+    @XmlAnyAttribute
+    protected Map<QName, Object> getAttributeExtensions() {
+        return attributeExtensions;
+    }
+
+    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
+        this.attributeExtensions = attributeExtensions;
+    }
+
+    //- PRIVATE
+
+    private List<PropertiesMapEntryType> entry = new ArrayList<PropertiesMapEntryType>();
+    private List<Object> extensions;
+    private Map<QName,Object> attributeExtensions;
+
+    @SuppressWarnings({ "unchecked" })
+    private static <T> PropertyValue<T> newPropertyValue( final T value ) {
+        PropertyValue<T> propertyValue = null;
+
+        if ( value != null ) {
+            if ( value instanceof Boolean ) {
+                propertyValue = (PropertyValue<T>)new BooleanValue( (Boolean) value );
+            } else if ( value instanceof String ) {
+                propertyValue = (PropertyValue<T>)new StringValue( (String) value );
+            } else if ( value instanceof Integer ) {
+                propertyValue = (PropertyValue<T>)new IntegerValue( (Integer) value );
+            } else if ( value instanceof Long ) {
+                propertyValue = (PropertyValue<T>)new LongValue( (Long) value );
+            } else {
+                propertyValue = new ObjectValue<T>( value );
+            }
+        }
+
+        return propertyValue;
+    }
 }

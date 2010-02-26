@@ -10,7 +10,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * TODO [steve] expose any properties for providers?
+ * 
  */
 @ResourceFactory.ResourceType(type=IdentityProviderMO.class)
 public class IdentityProviderResourceFactory extends EntityManagerResourceFactory<IdentityProviderMO, IdentityProviderConfig, EntityHeader>{

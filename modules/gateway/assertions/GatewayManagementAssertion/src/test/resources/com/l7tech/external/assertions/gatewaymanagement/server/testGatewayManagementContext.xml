@@ -19,7 +19,11 @@
     <bean id="policyHelper" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper">
         <constructor-arg index="0"><null/></constructor-arg>
         <constructor-arg index="1"><null/></constructor-arg>
-        <constructor-arg index="2"><null/></constructor-arg>
+        <constructor-arg index="2">
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="staticMethod" value="com.l7tech.policy.wsp.WspReader.getDefault"/>
+            </bean>            
+        </constructor-arg>
         <constructor-arg index="3"><null/></constructor-arg>
     </bean>
 
@@ -32,15 +36,23 @@
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="clusterPropertyManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="jmsEndpointManager"/>
+                    <constructor-arg index="4" ref="jmsConnectionManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="policyManager"/>
+                    <constructor-arg index="4" ref="policyHelper"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="serviceManager"/>
                     <constructor-arg index="4" ref="serviceDocumentManager"/>
                     <constructor-arg index="5"><null/></constructor-arg>
                     <constructor-arg index="6"><null/></constructor-arg>
                     <constructor-arg index="7" ref="policyHelper"/>
-                </bean>
-                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="entityResourceFactoryParent">
-                    <constructor-arg index="3" ref="clusterPropertyManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.TestResourceFactory"/>
             </list>

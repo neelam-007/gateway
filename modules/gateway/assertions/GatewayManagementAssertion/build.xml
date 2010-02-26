@@ -1,5 +1,8 @@
 <project name="GatewayManagementAssertion" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
-    <property name="privateLibraries" value="AAR-INF/lib/wiseman.jar"/>
+    <property name="privateLibraries" value="AAR-INF/lib/hibernate-validator-4.0.2.GA.jar
+                                             AAR-INF/lib/layer7-gateway-api-5.3.jar
+                                             AAR-INF/lib/layer7-policy-exporter-5.3.jar
+                                             AAR-INF/lib/wiseman-1.0.jar"/>    
 
     <import file="../assertion-build.xml"/>
 

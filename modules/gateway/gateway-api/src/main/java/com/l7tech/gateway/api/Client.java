@@ -13,12 +13,22 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * 
+ * Client for access to managed objects for the target SecureSpan Gateway.
+ *
+ * <p>The client must be closed after use to free up any underlying resources.</p>
+ *
+ * @see ClientFactory#createClient(String)
  */
 public class Client implements Closeable {
 
     //- PUBLIC
 
+    /**
+     * Get the accessor for the given type.
+     *
+     * @param managedObjectClass The type of managed object
+     * @return The accessor for the type
+     */
     public <MO extends ManagedObject> Accessor<MO> getAccessor( final Class<MO> managedObjectClass ) {
         return AccessorFactory.createAccessor( 
                 managedObjectClass,
@@ -26,6 +36,13 @@ public class Client implements Closeable {
                 tracker );
     }
 
+    /**
+     * Close the client.
+     *
+     * <p>The client should not be used after it has been closed.</p>
+     *
+     * @throws IOException If an error occurs
+     */
     @Override
     public void close() throws IOException {
         tracker.close();

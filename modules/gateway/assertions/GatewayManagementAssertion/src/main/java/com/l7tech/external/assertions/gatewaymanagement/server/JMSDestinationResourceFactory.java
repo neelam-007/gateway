@@ -98,12 +98,14 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         }
 
         final JmsEndpoint jmsEndpoint = new JmsEndpoint();
+        jmsEndpoint.setName( jmsDestinationDetails.getDestinationName() );
         jmsEndpoint.setDestinationName( jmsDestinationDetails.getDestinationName() );
         jmsEndpoint.setDisabled( !jmsDestinationDetails.isEnabled() );
         jmsEndpoint.setMessageSource( jmsDestinationDetails.isInbound() );
         setProperties( jmsEndpoint, jmsDestinationDetails.getProperties(), JmsEndpoint.class );
 
         final JmsConnection jmsConnection = new JmsConnection();
+        jmsConnection.setName( jmsDestinationDetails.getDestinationName() );
         setIdentifier( jmsConnection, jmsConnectionMO.getId(), false );
         setVersion( jmsConnection, jmsConnectionMO.getVersion(), false );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );

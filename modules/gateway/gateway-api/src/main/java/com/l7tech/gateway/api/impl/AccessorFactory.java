@@ -7,6 +7,8 @@ import com.l7tech.gateway.api.ManagementRuntimeException;
 import javax.xml.bind.annotation.XmlSchema;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -18,11 +20,24 @@ public class AccessorFactory {
 
     //- PUBLIC
 
+    @SuppressWarnings({ "unchecked" })
     public static <MO extends ManagedObject> Accessor<MO> createAccessor( final Class<MO> managedObjectClass,
                                                                           final String url,
                                                                           final ResourceTracker resourceTracker ) {
-        if ( hasPolicy(managedObjectClass) ) {
-            return new PolicyAccessorImpl<MO>( url, getResourceUri(managedObjectClass), managedObjectClass, resourceTracker );
+        if ( hasAccessor(managedObjectClass) ) {
+            final Class<? extends Accessor> accessorClass = getAccessor( managedObjectClass );
+            try {
+                final Constructor constructor = accessorClass.getDeclaredConstructor( String.class, String.class, Class.class, ResourceTracker.class );
+                return (Accessor<MO>) constructor.newInstance( url, getResourceUri(managedObjectClass), managedObjectClass, resourceTracker );
+            } catch ( InstantiationException e ) {
+                throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
+            } catch ( IllegalAccessException e ) {
+                throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
+            } catch ( InvocationTargetException e ) {
+                throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
+            } catch ( NoSuchMethodException e ) {
+                throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
+            }
         } else {
             return new AccessorImpl<MO>( url, getResourceUri(managedObjectClass), managedObjectClass, resourceTracker );
         }
@@ -48,14 +63,17 @@ public class AccessorFactory {
     @Target(TYPE)
     public @interface ManagedResource {
         public abstract String name();
-        public abstract boolean hasPolicy() default false;
+        public abstract Class<? extends Accessor> accessorType() default Accessor.class;
     }
 
     //- PRIVATE
 
-    private static boolean hasPolicy( final Class<?> managedObjectClass ) {
-        final AccessorFactory.ManagedResource resource = managedObjectClass.getAnnotation( AccessorFactory.ManagedResource.class );
-        return resource != null && resource.hasPolicy();
+    private static boolean hasAccessor( final Class<?> managedObjectClass ) {
+        return !Accessor.class.equals( getAccessor( managedObjectClass ) );
     }
 
+    private static Class<? extends Accessor> getAccessor( final Class<?> managedObjectClass ) {
+        final AccessorFactory.ManagedResource resource = managedObjectClass.getAnnotation( AccessorFactory.ManagedResource.class );
+        return resource != null ? resource.accessorType() : Accessor.class;
+    }
 }

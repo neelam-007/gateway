@@ -14,7 +14,8 @@ import java.util.regex.Pattern;
 /**
  * The Accessor interface provides access to managed objects.
  *
- * <p>Managed objects that support additional methods extend this interface.</p>
+ * <p>Managed objects that support additional methods use extensions of this
+ * interface.</p>
  *
  * <p>Accessor methods will throw unchecked {@code AccessorRuntimeException}s
  * for non-business errors such as network issues.</p>
@@ -124,7 +125,7 @@ public interface Accessor<MO extends ManagedObject> {
     Iterator<MO> enumerate() throws AccessorException;
 
     /**
-     *
+     * General purpose accessor exception.
      */
     class AccessorException extends ManagementException {
         public AccessorException( final String message ) {
@@ -141,7 +142,7 @@ public interface Accessor<MO extends ManagedObject> {
     }
 
     /**
-     *
+     * Accessor exception for object not found.
      */
     class AccessorNotFoundException extends AccessorException {
         public AccessorNotFoundException( final String message ) {
@@ -150,7 +151,7 @@ public interface Accessor<MO extends ManagedObject> {
     }
 
     /**
-     *
+     * General purpose accessor runtime exception.
      */
     class AccessorRuntimeException extends ManagementRuntimeException {
         public AccessorRuntimeException( final String message ) {
@@ -167,14 +168,14 @@ public interface Accessor<MO extends ManagedObject> {
     }
 
     /**
-     * TODO [steve] SOAP fault code and subcodes should be QNames but we can't get those from a FaultException (hide or patch wsman)
+     * Accessor runtime exception for SOAP faults.
      */
     class AccessorSOAPFaultException extends AccessorRuntimeException {
-        static final Pattern SOAP_FAULT_PATTERN = Pattern.compile( "SOAP Fault: (.*)[\\r\\n]{1,2}     Actor: (.*)[\\r\\n]{1,2}      Code: (.*)[\\r\\n]{1,2}(?:  Subcodes:[ ]{0,1}(.*)[\\r\\n]{1,2}|)(?:    Detail: ((?:.|[\\r\\n])*)|)", Pattern.MULTILINE );
+        static final Pattern SOAP_FAULT_PATTERN = Pattern.compile( "SOAP Fault: (.*)[\\r\\n]{1,2}     Actor: (.*)[\\r\\n]{1,2}      Code: (.*)[\\r\\n]{1,2}(?:  Subcodes:[ ]{0,1}(.*)[\\r\\n]{1,2}|)(?:    Detail: ((?s:.*)))", Pattern.MULTILINE );
                                                          
         private final String fault;
         private final String role;
-        private final String code;
+        private final String code; //NOTE: wsman does not expose codes and subcodes as QNames so we don't make this part of the public API
         private final List<String> subcodes;
         private final List<String> details;
 
@@ -197,24 +198,39 @@ public interface Accessor<MO extends ManagedObject> {
             }
         }
 
+        /**
+         * Get the fault reason.
+         *
+         * @return The reason message.
+         */
         public String getFault() {
             return fault;
         }
 
+        /**
+         * Get the fault role.
+         *
+         * @return The role.
+         */
         public String getRole() {
             return role;
         }
 
-        public String getCode() {
+        /**
+         * Get the text values from the fault details.
+         *
+         * @return The detail text.
+         */
+        public List<String> getDetails() {
+            return details;
+        }
+
+        protected String getCode() {
             return code;
         }
 
-        public List<String> getSubcodes() {
+        protected List<String> getSubcodes() {
             return subcodes;
-        }
-
-        public List<String> getDetails() {
-            return details;
         }
 
         private List<String> list( final String listSeparatedList, final boolean spaceSeparated ) {
@@ -241,7 +257,7 @@ public interface Accessor<MO extends ManagedObject> {
     }
 
     /**
-     *
+     * Accessor runtime exception for network errors.
      */
     class AccessorNetworkException extends AccessorRuntimeException {
         public AccessorNetworkException( final Throwable cause ) {

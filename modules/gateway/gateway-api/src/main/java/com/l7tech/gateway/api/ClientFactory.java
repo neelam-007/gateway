@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 
 /**
  * Factory for the Gateway management Client.
+ * 
+ * @See Client
  */
 public class ClientFactory {
 
@@ -56,6 +58,10 @@ public class ClientFactory {
      * credentials when the corresponding username attribute is not set.
      *
      * @see CallbackHandler
+     * @see #CALLBACK_USERNAME
+     * @see #CALLBACK_PASSWORD
+     * @see #CALLBACK_PROXY_USERNAME
+     * @see #CALLBACK_PROXY_PASSWORD
      */
     public static final String ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER = "http://www.layer7tech.com/com.l7tech.gateway.api/credential-callback-handler";
 
@@ -75,6 +81,26 @@ public class ClientFactory {
      * Attribute for HTTP proxy password.
      */
     public static final String ATTRIBUTE_PROXY_PASSWORD = "http://www.layer7tech.com/com.l7tech.gateway.api/proxy-password";
+
+    /**
+     * Callback prompt for SecureSpan Gateway username.
+     */
+    public static final String CALLBACK_USERNAME = "Username";
+
+    /**
+     * Callback prompt for SecureSpan Gateway password.
+     */
+    public static final String CALLBACK_PASSWORD = "Password";
+
+    /**
+     * Callback prompt for HTTP proxy username.
+     */
+    public static final String CALLBACK_PROXY_USERNAME = "Proxy Username";
+
+    /**
+     * Callback prompt for HTTP proxy password. 
+     */
+    public static final String CALLBACK_PROXY_PASSWORD = "Proxy Password";
 
     /**
      * Create a new ClientFactory.
@@ -163,8 +189,8 @@ public class ClientFactory {
                         pass = proxyPassword==null ? null : proxyPassword.toCharArray();
 
                         if ( name == null && callbackHandler != null ) {
-                            final NameCallback nameCallback = new NameCallback("Proxy Username");
-                            final PasswordCallback passwordCallback = new PasswordCallback("Proxy Password", false);
+                            final NameCallback nameCallback = new NameCallback( CALLBACK_PROXY_USERNAME );
+                            final PasswordCallback passwordCallback = new PasswordCallback( CALLBACK_PROXY_PASSWORD, false );
 
                             try {
                                 callbackHandler.handle( new Callback[]{ nameCallback, passwordCallback } );
@@ -188,8 +214,8 @@ public class ClientFactory {
                             pass = password==null ? null : password.toCharArray();
 
                             if ( name == null && callbackHandler != null ) {
-                                final NameCallback nameCallback = new NameCallback("Username");
-                                final PasswordCallback passwordCallback = new PasswordCallback("Password", false);
+                                final NameCallback nameCallback = new NameCallback( CALLBACK_USERNAME );
+                                final PasswordCallback passwordCallback = new PasswordCallback( CALLBACK_PASSWORD, false );
 
                                 try {
                                     callbackHandler.handle( new Callback[]{ nameCallback, passwordCallback } );

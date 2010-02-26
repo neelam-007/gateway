@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ResourceDocument xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="0" id="216629248">
+    <Resource type="xmlschema" sourceUrl="books.xsd">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;xs:schema targetNamespace=&quot;urn:books&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+    &lt;xs:element name=&quot;book&quot;&gt;
+        &lt;xs:complexType&gt;
+            &lt;xs:sequence&gt;
+                &lt;xs:element name=&quot;title&quot; type=&quot;xs:string&quot;/&gt;
+                &lt;xs:element name=&quot;author&quot; type=&quot;xs:string&quot;/&gt;
+                &lt;xs:element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot; name=&quot;character&quot;&gt;
+                    &lt;xs:complexType&gt;
+                        &lt;xs:sequence&gt;
+                            &lt;xs:element name=&quot;name&quot; type=&quot;xs:string&quot;/&gt;
+                            &lt;xs:element maxOccurs=&quot;unbounded&quot;
+                                minOccurs=&quot;0&quot; name=&quot;friend-of&quot; type=&quot;xs:string&quot;/&gt;
+                            &lt;xs:element name=&quot;since&quot; type=&quot;xs:date&quot;/&gt;
+                            &lt;xs:element name=&quot;qualification&quot; type=&quot;xs:string&quot;/&gt;
+                        &lt;/xs:sequence&gt;
+                    &lt;/xs:complexType&gt;
+                &lt;/xs:element&gt;
+            &lt;/xs:sequence&gt;
+            &lt;xs:attribute name=&quot;isbn&quot; type=&quot;xs:string&quot;/&gt;
+        &lt;/xs:complexType&gt;
+    &lt;/xs:element&gt;
+&lt;/xs:schema&gt;
+</Resource>
+    <Properties>
+        <Property key="propertiesAreNotCurrentUsed">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+</ResourceDocument>

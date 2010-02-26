@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JDBCConnection xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="2" id="154992640">
+    <Name>My JDBC Connection</Name>
+    <Enabled>true</Enabled>
+    <Properties>
+        <Property key="propertiesAreNotCurrentUsed">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+</JDBCConnection>

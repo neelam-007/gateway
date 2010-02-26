@@ -12,12 +12,28 @@ import java.util.Map;
 
 /**
  * Extension of the base Accessor interface with Policy support.
- * 
- * TODO [steve] methods for partial updates (WSDL, Policy, Details)
  *
  * @see AccessorRuntimeException <code>AccessorRuntimeException</code> Which may be thrown by methods of this interface.
  */
 public interface PolicyAccessor<MO extends ManagedObject> extends Accessor<MO> {
+
+    /**
+     * Get the policy for the identified resource.
+     *
+     * @param identifier The identifier for the resource.
+     * @return The policy resource
+     * @throws AccessorException If an error occurs
+     */
+    Resource getPolicy( String identifier ) throws AccessorException;
+
+    /**
+     * Set the policy for the identified resource.
+     *
+     * @param identifier The identifier for the resource.
+     * @param resource The policy resource
+     * @throws AccessorException If an error occurs
+     */
+    void putPolicy( String identifier, Resource resource ) throws AccessorException;
 
     /**
      * Export the policy for the identified resource.

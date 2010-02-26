@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -84,10 +85,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return transactional( new TransactionalCallback<Collection<Map<String, String>>, ObjectModelException>(){
             @Override
             public Collection<Map<String, String>> execute() throws ObjectModelException {
-                return Functions.map( getExternalIdentifiers(), new Functions.Unary<Map<String,String>,String>(){
+                return Functions.map( getEntityHeaders(), new Functions.Unary<Map<String,String>,SsgKeyHeader>(){
                     @Override
-                    public Map<String, String> call( final String id ) {
-                        return Collections.singletonMap( IDENTITY_SELECTOR, id );
+                    public Map<String, String> call( final SsgKeyHeader header ) {
+                        return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
                     }
                 } );
             }
@@ -121,13 +122,13 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return keyStoreId + ":" + alias;
     }
 
-    private Collection<String> getExternalIdentifiers() {
-        final List<String> externalIds = new ArrayList<String>();
+    private Collection<SsgKeyHeader> getEntityHeaders() throws FindException {
+        final Collection<SsgKeyHeader> headers = new ArrayList<SsgKeyHeader>();
 
         try {
             for ( final SsgKeyFinder ssgKeyFinder : ssgKeyStoreManager.findAll() ) {
                 for ( final String alias : ssgKeyFinder.getAliases() ) {
-                    externalIds.add( toExternalId( ssgKeyFinder.getOid(), alias ) );
+                    headers.add( new SsgKeyHeader( toExternalId(ssgKeyFinder.getOid(), alias), ssgKeyFinder.getOid(), alias, alias ) );
                 }
             }
         } catch ( KeyStoreException e ) {
@@ -136,7 +137,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             throw new ResourceAccessException(e);
         }
 
-        return externalIds;
+        return accessFilter(headers, EntityType.SSG_KEY_ENTRY, OperationType.READ, null);
     }
 
     private PrivateKeyMO buildPrivateKeyResource( final long keyStoreId, final String alias ) throws ObjectModelException, ResourceNotFoundException {

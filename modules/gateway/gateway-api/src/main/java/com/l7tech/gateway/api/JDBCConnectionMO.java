@@ -13,6 +13,8 @@ import java.util.Map;
 
 /**
  * The JDBCConnectionMO managed object represents a JDBC connection.
+ *
+ * @see ManagedObjectFactory#createJDBCConnection()
  */
 @XmlRootElement(name="JDBCConnection")
 @XmlType(name="JDBCConnectionType", propOrder={"name","enabled","extensions","properties"})
@@ -22,7 +24,7 @@ public class JDBCConnectionMO extends ManagedObject {
     //- PUBLIC
 
     /**
-     * Get the name for the jdbc connection (case insensitive)
+     * Get the name for the jdbc connection (case insensitive, required)
      *
      * @return The name (may be null)
      */
@@ -41,7 +43,7 @@ public class JDBCConnectionMO extends ManagedObject {
     }
 
     /**
-     * Is the jdbc connection enabled?
+     * Is the jdbc connection enabled? (required)
      *
      * @return True if enabled.
      */

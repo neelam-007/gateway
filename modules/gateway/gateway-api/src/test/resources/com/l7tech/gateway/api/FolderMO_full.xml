@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Folder xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="0" id="256704512" folderId="12312233">
+    <Name>Folder</Name>
+    <Properties>
+        <Property key="propertiesAreNotCurrentUsed">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>    
+</Folder>

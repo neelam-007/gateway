@@ -34,6 +34,24 @@ import java.util.Set;
  */
 class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> implements PolicyAccessor<MO> {
 
+    //- PUBLIC
+
+    @Override
+    public com.l7tech.gateway.api.Resource getPolicy( final String identifier ) throws AccessorException {
+        require( "identifier", identifier );
+
+        return getFragment( com.l7tech.gateway.api.Resource.class, identifier, XPATH_RESOURCE );
+    }
+
+    @Override
+    public void putPolicy( final String identifier,
+                           final com.l7tech.gateway.api.Resource policyResource ) throws AccessorException {
+        require( "identifier", identifier );
+        require( "resource", policyResource );
+
+        putFragment( policyResource, identifier, XPATH_RESOURCE );
+    }
+
     @Override
     public String exportPolicy( final String identifier ) throws AccessorException {
         require( "identifier", identifier );
@@ -100,7 +118,8 @@ class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> impl
      * 
      */
     @Override
-    public PolicyValidationResult validatePolicy( final MO managedObject, final List<ResourceSet> resourceSets ) throws AccessorException {
+    public PolicyValidationResult validatePolicy( final MO managedObject,
+                                                  final List<ResourceSet> resourceSets ) throws AccessorException {
         require( "managedObject", managedObject );
 
         final PolicyValidationContext context = ManagedObjectFactory.createPolicyValidationContext();
@@ -139,7 +158,43 @@ class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> impl
         super( url, resourceUri, typeClass, resourceTracker );
     }
 
+    <FO> FO getFragment( final Class<FO> fragmentClass,
+                         final String identifier,
+                         final String xpathExpression ) throws AccessorException {
+        return invoke(new AccessorMethod<FO>(){
+            @Override
+            public FO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
+                final Resource resource =
+                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+
+                final ResourceState resourceState =
+                        resource.get( xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
+
+                return MarshallingUtils.unmarshalFragment( fragmentClass, resourceState.getDocument() );
+            }
+        });
+    }
+
+    <FO> void putFragment( final FO fragment,
+                           final String identifier,
+                           final String xpathExpression ) throws AccessorException {
+        invoke(new AccessorMethod<Void>(){
+            @Override
+            public Void invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
+                final Resource resource =
+                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+
+                resource.put( fragment, xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
+
+                return null;
+            }
+        });
+    }
+
     //- PRIVATE
+
+    private static final String XPATH_RESOURCE = "l7:Resources/l7:ResourceSet[@tag='policy']/l7:Resource";
+    private static final String XPATH_NS_PREFIX = "l7";
 
     private boolean isSoap( final Map<String,Object> properties ) {
         boolean soap = false;

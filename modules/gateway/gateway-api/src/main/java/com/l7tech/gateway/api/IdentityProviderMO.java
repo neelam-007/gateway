@@ -15,6 +15,8 @@ import java.util.Map;
 
 /**
  * The IdentityProviderMO managed object represents an identity provider.
+ *
+ * @see ManagedObjectFactory#createIdentityProvider()
  */
 @XmlRootElement(name="IdentityProvider")
 @XmlType(name="IdentityProviderType", propOrder={"name","identityProviderType","extensions","properties"})

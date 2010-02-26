@@ -14,10 +14,14 @@ import com.l7tech.server.MockClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManagerStub;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
+import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.mock.web.MockServletContext;
@@ -164,22 +168,74 @@ public class ServerGatewayManagementAssertionTest {
 
     @Test
     public void testCreate() throws Exception {
-        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/01/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body><n1:ClusterProperty id=\"218955776\" version=\"1\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty></s:Body></s:Envelope>";
+        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/clusterProperties";
+        String payload = "<n1:ClusterProperty xmlns:n1=\"http://ns.l7tech.com/2010/01/gateway-management\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty>";
+        String expectedId = "4";
+        doCreate( resourceUri, payload, expectedId );
+    }
 
-        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", message );
+// TODO [steve] Create testing entity manager for services and re-enable    
+//    @Test
+//    public void testCreateService() throws Exception {
+//        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/services";
+//        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><ServiceDetail><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+//                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+//                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+//                "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
+//                "    &lt;/wsp:All&gt;\n" +
+//                "&lt;/wsp:Policy&gt;\n" +
+//                "</Resource></ResourceSet></Resources></Service>";
+//        String expectedId = "";
+//        doCreate( resourceUri, payload, expectedId );
+//    }
 
-        final Element soapBody = SoapUtil.getBodyElement(result);
-        final Element transferResponse = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_WS_TRANSFER, "ResourceCreated");
-        final Element refParams = XmlUtil.findExactlyOneChildElementByName(transferResponse, NS_WS_ADDRESSING, "ReferenceParameters");
-        final Element selectorSet = XmlUtil.findExactlyOneChildElementByName(refParams, NS_WS_MANAGEMENT, "SelectorSet");
-        final Element selector = XmlUtil.findExactlyOneChildElementByName(selectorSet, NS_WS_MANAGEMENT, "Selector");
+    @Test
+    public void testCreateJMSDestination() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/jmsDestinations";
+        String payload =
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
+                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <DestinationName>QueueName</DestinationName>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "    </JMSDestinationDetails>\n" +
+                "    <JMSConnection>\n" +
+                "        <Properties>\n" +
+                "            <Property key=\"jndi.initialContextFactoryClassname\">\n" +
+                "                <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>\n" +
+                "            </Property>\n" +
+                "            <Property key=\"jndi.providerUrl\">\n" +
+                "                <StringValue>ldap://127.0.0.1/</StringValue>\n" +
+                "            </Property>\n" +
+                "            <Property key=\"queue.connectionFactoryName\">\n" +
+                "                <StringValue>cn=QueueConnectionFactory</StringValue>\n" +
+                "            </Property>\n" +
+                "        </Properties>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        String expectedId = "1";
+        doCreate( resourceUri, payload, expectedId );
+    }
 
-        assertEquals("Identifier ", "4", XmlUtil.getTextValue(selector));
+    @Test
+    public void testCreatePolicy() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/policies";
+        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><PolicyDetail><Name>Policy Name</Name><PolicyType>Include</PolicyType><Properties><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+                "        &lt;L7p:CommentAssertion&gt;\n" +
+                "            &lt;L7p:Comment stringValue=&quot;Comment&quot;/&gt;\n" +
+                "        &lt;/L7p:CommentAssertion&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;\n" +
+                "</Resource></ResourceSet></Resources></Policy>";
+        String expectedId = "1";
+        doCreate( resourceUri, payload, expectedId );
     }
 
     @Test
     public void testPut() throws Exception {
-        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/01/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></s:Header><s:Body> <n1:ClusterProperty id=\"1\" version=\"0\"><n1:Name>test</n1:Name><n1:Value>value2</n1:Value></n1:ClusterProperty>  </s:Body></s:Envelope>";
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/01/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:ClusterProperty id=\"1\" version=\"0\"><n1:Name>test</n1:Name><n1:Value>value2</n1:Value></n1:ClusterProperty>  </s:Body></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
 
@@ -459,15 +515,7 @@ public class ServerGatewayManagementAssertionTest {
 
     @SuppressWarnings({"serial"})
     private static void init() {
-        beanFactory.addBean( "serviceManager", new ServiceManagerStub( null, new PublishedService(){
-            {
-                setOid(1);
-                setName( "Test Service" );
-                setDisabled( false );
-                setSoap( false );
-            }
-        }) );
-        beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
+        PolicyManager policyManager = new PolicyManagerStub();
         beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("testProp1", "testValue1"){
             {
                 setOid(1);
@@ -481,8 +529,37 @@ public class ServerGatewayManagementAssertionTest {
                 setOid(3);
             }
         }));
+        beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub());
+        beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub());
+        beanFactory.addBean( "policyManager",  policyManager);
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
+        beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
+        beanFactory.addBean( "serviceManager", new ServiceManagerStub( policyManager, new PublishedService(){
+            {
+                setOid(1);
+                setName( "Test Service" );
+                setDisabled( false );
+                setSoap( false );
+            }
+        }) );
+    }
+
+    private void doCreate( final String resourceUri,
+                           final String payload,
+                           final String expectedId ) throws Exception {
+
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", MessageFormat.format( message, resourceUri, payload ));
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element transferResponse = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_WS_TRANSFER, "ResourceCreated");
+        final Element refParameters = XmlUtil.findExactlyOneChildElementByName(transferResponse, NS_WS_ADDRESSING, "ReferenceParameters");
+        final Element selectorSet = XmlUtil.findExactlyOneChildElementByName(refParameters, NS_WS_MANAGEMENT, "SelectorSet");
+        final Element selector = XmlUtil.findExactlyOneChildElementByName(selectorSet, NS_WS_MANAGEMENT, "Selector");
+
+        assertEquals("Identifier ", expectedId, XmlUtil.getTextValue(selector));
     }
 
     private Document processRequest( final String action,

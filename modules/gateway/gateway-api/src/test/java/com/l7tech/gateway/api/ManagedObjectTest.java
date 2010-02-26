@@ -1,22 +1,26 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ClassUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
+import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.w3c.dom.Document;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Result;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.validation.SchemaFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -25,51 +29,342 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.URL;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
- * TODO [steve] marshalling tests
+ * 
  */
 public class ManagedObjectTest {
 
-    @Test
-    public void testCertificateDataSerialization() throws Exception {
-        JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.api");
+    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/01/gateway-management";
+    private JAXBContext context;
+    private boolean debug = true;
 
-        CertificateData certificateData = ManagedObjectFactory.createCertificateData();
-        certificateData.setEncoded( new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1} );
-        certificateData.setIssuerName("cn=Test Issuer");
-        certificateData.setSerialNumber( BigInteger.valueOf( 123456789 ) );
-        certificateData.setSubjectName("cn=Test Issuer");
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.unmodifiableCollection( Arrays.asList(
+        ClusterPropertyMO.class,
+        FolderMO.class,
+        IdentityProviderMO.class,
+        JDBCConnectionMO.class,
+        JMSDestinationMO.class,
+        PolicyMO.class,
+        PrivateKeyMO.class,
+        ResourceDocumentMO.class,
+        ServiceMO.class,
+        TrustedCertificateMO.class
+    ));
 
+    private static final String CERT_BOB_PEM =
+                "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
+                "MQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENB\n" +
+                "MB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FT\n" +
+                "SVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANC\n" +
+                "b2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8Ck\n" +
+                "SU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNU\n" +
+                "JCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVN\n" +
+                "BR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAq\n" +
+                "MCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1Ud\n" +
+                "DwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0j\n" +
+                "BBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiV\n" +
+                "Gv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVts\n" +
+                "ucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuW\n" +
+                "EIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7\n" +
+                "TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS\n" +
+                "4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9\n" +
+                "OHw6fC+3hkqolFd5CVI=";
+
+    @Before
+    public void init() throws Exception {
+        context = JAXBContext.newInstance("com.l7tech.gateway.api");
+    }
+
+    private X509Certificate cert( final String base64Encoded ) throws CertificateException {
+        return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate( new ByteArrayInputStream(HexUtils.decodeBase64( base64Encoded, true )) );
+    }
+
+    private <MO> MO roundTrip( final MO managedObject ) throws JAXBException {
+        return roundTrip( managedObject, null );
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private <MO> MO roundTrip( final MO managedObject, final Functions.UnaryVoid<Document> callback ) throws JAXBException {
         final Marshaller marshaller = context.createMarshaller();
         marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
 
-        StringWriter out = new StringWriter();
-        marshaller.marshal(certificateData, out );
+        final StringWriter out = new StringWriter();
+        marshaller.marshal( managedObject, out );
 
-        String xmlString = out.toString();
-        System.out.println(xmlString);
+        final String xmlString = out.toString();
+        if (debug)
+            System.out.println(xmlString);
+
+        if ( callback != null ) {
+            final DOMResult domResult = new DOMResult();
+            marshaller.marshal( managedObject, domResult );
+            callback.call( (Document) domResult.getNode() );
+        }
 
         final Unmarshaller unmarshaller = context.createUnmarshaller();
-        CertificateData roundTripped = (CertificateData) unmarshaller.unmarshal(new StringReader(xmlString));
+        MO mo = (MO) unmarshaller.unmarshal(new StringReader(xmlString));
 
-        marshaller.marshal( roundTripped, System.out );
+        if (debug)
+            marshaller.marshal( mo, System.out );
+
+        return mo;
+    }
+
+    @Test
+    public void testCertificateDataSerialization() throws Exception {
+        final CertificateData certificateData = ManagedObjectFactory.createCertificateData();
+        final byte[] bytes = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+        certificateData.setEncoded( bytes );
+        certificateData.setIssuerName("cn=Test Issuer");
+        certificateData.setSerialNumber( BigInteger.valueOf( 123456789 ) );
+        certificateData.setSubjectName("cn=Test Subject");
+
+        final CertificateData roundTripped = roundTrip( certificateData );
+
+        assertArrayEquals("encoded", bytes, roundTripped.getEncoded());
+        assertEquals("issuer name", "cn=Test Issuer", roundTripped.getIssuerName());
+        assertEquals("serial number", BigInteger.valueOf( 123456789 ), roundTripped.getSerialNumber());
+        assertEquals("subject name", "cn=Test Subject", roundTripped.getSubjectName());
+    }
+
+    @Test
+    public void testClusterPropertySerialization() throws Exception {
+        final ClusterPropertyMO clusterProperty = ManagedObjectFactory.createClusterProperty();
+        clusterProperty.setId( "1" );
+        clusterProperty.setVersion( 33333 );
+        clusterProperty.setName( "property" );
+        clusterProperty.setValue( "   value with spaces      and \n newlines" );
+        clusterProperty.setProperties( Collections.<String,Object>singletonMap( "prop", 4.4 ) );
+
+        final ClusterPropertyMO roundTripped = roundTrip( clusterProperty );
+        assertEquals("id", "1", roundTripped.getId());
+        assertEquals("version", (Integer)33333, roundTripped.getVersion());
+        assertEquals("name", "property", roundTripped.getName());
+        assertEquals("value", "   value with spaces      and \n newlines", roundTripped.getValue());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 4.4 ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testFolderSerialization() throws Exception {
+        final FolderMO folder = ManagedObjectFactory.createFolder();
+        folder.setId( "2342" );
+        folder.setFolderId( "12321" );
+        folder.setVersion( 1231211 );
+        folder.setName( "folder 1" );
+        folder.setProperties( Collections.<String,Object>singletonMap( "prop", 4.432f ) );
+
+        final FolderMO roundTripped = roundTrip( folder );
+        assertEquals("id", "2342", roundTripped.getId());
+        assertEquals("folder id", "12321", roundTripped.getFolderId());
+        assertEquals("version", (Integer)1231211, roundTripped.getVersion());
+        assertEquals("name", "folder 1", roundTripped.getName());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 4.432f ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testIdentityProviderSerialization() throws Exception {
+        final IdentityProviderMO identityProvider = ManagedObjectFactory.createIdentityProvider();
+        identityProvider.setId( "identifier" );
+        identityProvider.setVersion( -555 );
+        identityProvider.setName( "my provider" );
+        identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.LDAP );
+        identityProvider.setProperties( Collections.<String,Object>singletonMap( "prop", 123 ) );
+
+        final IdentityProviderMO roundTripped = roundTrip( identityProvider );
+        assertEquals("id", "identifier", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(-555), roundTripped.getVersion());
+        assertEquals("name", "my provider", roundTripped.getName());
+        assertEquals("type", IdentityProviderMO.IdentityProviderType.LDAP, roundTripped.getIdentityProviderType());
+        System.out.println(roundTripped.getProperties().get( "prop" ).getClass());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 123 ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testJDBCConnectionSerialization() throws Exception {
+        final JDBCConnectionMO jdbcConnection = ManagedObjectFactory.createJDBCConnection();
+        jdbcConnection.setId( "identifier" );
+        jdbcConnection.setVersion( -555 );
+        jdbcConnection.setEnabled( false );
+        jdbcConnection.setName( "my provider" );
+        jdbcConnection.setProperties( Collections.<String,Object>singletonMap( "prop", 0L ) );
+
+        final JDBCConnectionMO roundTripped = roundTrip( jdbcConnection );
+        assertEquals("id", "identifier", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(-555), roundTripped.getVersion());
+        assertEquals("enabled", false, roundTripped.isEnabled());
+        assertEquals("name", "my provider", roundTripped.getName());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 0L ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testJMSDestinationSerialization() throws Exception {
+        final JMSDestinationDetails jmsDestinationDetails = ManagedObjectFactory.createJMSDestinationDetails();
+        jmsDestinationDetails.setId( "1" );
+        jmsDestinationDetails.setVersion( 0 );
+        jmsDestinationDetails.setEnabled( true );
+        jmsDestinationDetails.setDestinationName( "queue" );
+        jmsDestinationDetails.setInbound( false );
+        jmsDestinationDetails.setProperties( Collections.<String,Object>singletonMap( "p1", "" ) );
+
+        final JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
+        jmsConnection.setId( "1" );
+        jmsConnection.setVersion( 0 );
+        jmsConnection.setContextPropertiesTemplate( Collections.<String,Object>singletonMap( "p2", "v2" ) );
+        jmsConnection.setProperties( Collections.<String,Object>singletonMap( "p3", "v3" ) );
+
+        final JMSDestinationMO jmsDestination = ManagedObjectFactory.createJMSDestination();
+        jmsDestination.setId( "1" );
+        jmsDestination.setVersion( 0 );
+        jmsDestination.setJmsDestinationDetails( jmsDestinationDetails );
+        jmsDestination.setJmsConnection( jmsConnection );
+
+        final JMSDestinationMO roundTripped = roundTrip( jmsDestination );
+        assertEquals("id", "1", roundTripped.getId());
+        assertEquals("version", Integer.valueOf( 0 ), roundTripped.getVersion());
+        assertNotNull("details", roundTripped.getJmsDestinationDetails());
+        assertNotNull("connection", roundTripped.getJmsConnection());
+        
+        assertEquals("details id", "1", roundTripped.getJmsDestinationDetails().getId());
+        assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsDestinationDetails().getVersion());
+        assertEquals("details enabled", true, roundTripped.getJmsDestinationDetails().isEnabled());
+        assertEquals("details destination name", "queue", roundTripped.getJmsDestinationDetails().getDestinationName());
+        assertEquals("details inbound", false, roundTripped.getJmsDestinationDetails().isInbound());
+        assertEquals("details properties",Collections.<String,Object>singletonMap( "p1", "" ), roundTripped.getJmsDestinationDetails().getProperties());
+
+        assertEquals("details id", "1", roundTripped.getJmsConnection().getId());
+        assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsConnection().getVersion());
+        assertEquals("details context properties",Collections.<String,Object>singletonMap( "p2", "v2" ), roundTripped.getJmsConnection().getContextPropertiesTemplate());
+        assertEquals("details properties",Collections.<String,Object>singletonMap( "p3", "v3" ), roundTripped.getJmsConnection().getProperties());
+
+    }
+
+    @Test
+    public void testPolicySerialization() throws Exception {
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <test>test</test>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setId( "pol1" );
+        policyDetail.setGuid( "e0913198-afbc-44f4-84e4-699ab38256c4" );
+        policyDetail.setVersion( 17 );
+        policyDetail.setName( "policy name" );
+        policyDetail.setFolderId( "policy folder" );
+        policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
+        policyDetail.setProperties( Collections.<String,Object>singletonMap( "", "value" ) );
+
+        final Resource resource = ManagedObjectFactory.createResource();
+        resource.setType( "policy" );
+        resource.setContent( policyXml );
+
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag( "policy" );
+        resourceSet.setResources( Collections.singletonList(resource) );
+        
+        final PolicyMO policy = ManagedObjectFactory.createPolicy();
+        policy.setId( "pol1" );
+        policy.setGuid( "e0913198-afbc-44f4-84e4-699ab38256c4" );
+        policy.setVersion( 17 );
+        policy.setPolicyDetail( policyDetail );
+        policy.setResourceSets( Collections.singletonList( resourceSet ) );
+
+        final PolicyMO roundTripped = roundTrip( policy );
+        assertEquals("id", "pol1", roundTripped.getId());
+        assertEquals("guid", "e0913198-afbc-44f4-84e4-699ab38256c4", roundTripped.getGuid());
+        assertEquals("version", (Integer)17, roundTripped.getVersion());
+        assertNotNull( "details", roundTripped.getPolicyDetail() );
+        assertNotNull( "resource sets", roundTripped.getResourceSets() );
+
+        assertEquals("details id", "pol1", roundTripped.getPolicyDetail().getId());
+        assertEquals("details guid", "e0913198-afbc-44f4-84e4-699ab38256c4", roundTripped.getPolicyDetail().getGuid());
+        assertEquals("details version", (Integer)17, roundTripped.getPolicyDetail().getVersion());
+        assertEquals("details name", "policy name", roundTripped.getPolicyDetail().getName());
+        assertEquals("details folder id", "policy folder", roundTripped.getPolicyDetail().getFolderId());
+        assertEquals("details policy type", PolicyDetail.PolicyType.INCLUDE, roundTripped.getPolicyDetail().getPolicyType());
+        assertEquals("details properties", Collections.<String,Object>singletonMap( "", "value" ), roundTripped.getPolicyDetail().getProperties());
+
+        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
+        assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
+        assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
+        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
+        assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
+        assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
+        assertNull( "resource set[0] resources[0] source url", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getSourceUrl() );
+    }
+
+    @Test
+    public void testPrivateKeySerialization() throws Exception {
+        final PrivateKeyMO privateKey = ManagedObjectFactory.createPrivateKey();
+        privateKey.setId( "1234:alias" );
+        privateKey.setVersion( 13 );
+        privateKey.setAlias( "alias" );
+        privateKey.setKeystoreId( "1234" );
+        privateKey.setCertificateChain( Arrays.asList( ManagedObjectFactory.createCertificateData( CERT_BOB_PEM )));
+        privateKey.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyMO roundTripped = roundTrip( privateKey );
+        assertEquals("id", "1234:alias", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertEquals("alias", "alias", roundTripped.getAlias());
+        assertEquals("keystore id", "1234", roundTripped.getKeystoreId());
+        assertNotNull("certificate chain", roundTripped.getCertificateChain());
+        assertEquals("certificate chain length", 1, roundTripped.getCertificateChain().size());
+        assertArrayEquals("certificate chain[0] encoded", HexUtils.decodeBase64( CERT_BOB_PEM, true ), roundTripped.getCertificateChain().get( 0 ).getEncoded());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testResourceDocumentSerialization() throws Exception {
+        final Resource resource = ManagedObjectFactory.createResource();
+        resource.setId( "r1" );
+        resource.setType( "xmlschema" );
+        resource.setSourceUrl( "http://www.example.org/example.xsd" );
+        resource.setContent( "<?xml version=\"1.0\"?><!-- \n -->\n<xs:schema targetNamespace=\"http://www.example.org/example.xsd\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" elementFormDefault=\"qualified\" blockDefault=\"#all\"/>" );
+
+        final ResourceDocumentMO resourceDocument = ManagedObjectFactory.createResourceDocument();
+        resourceDocument.setId( "001" );
+        resourceDocument.setVersion( Integer.MAX_VALUE );
+        resourceDocument.setResource( resource );
+        resourceDocument.setProperties( Collections.<String,Object>singletonMap( "prop", "value" ) );
+
+        final ResourceDocumentMO roundTripped = roundTrip( resourceDocument );
+        assertEquals("id", "001", roundTripped.getId());
+        assertEquals("version", (Integer)Integer.MAX_VALUE, roundTripped.getVersion());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", "value" ), roundTripped.getProperties());
+        assertNotNull("resource", roundTripped.getResource());
+
+        assertEquals("resource id", "r1", roundTripped.getResource().getId());
+        assertEquals("resource type", "xmlschema", roundTripped.getResource().getType());
+        assertEquals("resource sourceUrl", "http://www.example.org/example.xsd", roundTripped.getResource().getSourceUrl());
+        assertEquals("resource content", "<?xml version=\"1.0\"?><!-- \n -->\n<xs:schema targetNamespace=\"http://www.example.org/example.xsd\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" elementFormDefault=\"qualified\" blockDefault=\"#all\"/>", roundTripped.getResource().getContent());
     }
 
     @Test
     public void testServiceSerialization() throws Exception {
-        JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.api");
+        final String policyXml = "<Policy><PolicyContent/>                                                                                                         </Policy>";
 
-        ServiceMO service = ManagedObjectFactory.createService();
-        service.setId( "1" );
-        service.setVersion( 1 );
-
-        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+        final ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
         serviceDetail.setId( "1" );
         serviceDetail.setVersion( 3 );
         serviceDetail.setEnabled(true);
@@ -80,233 +375,139 @@ public class ManagedObjectTest {
         ));
         serviceDetail.setProperties(new HashMap<String,Object>(){{
             put("wss.enabled", Boolean.TRUE);
-            put("soap", Boolean.TRUE);
+            put("soap", Boolean.FALSE);
         }});
         ((ServiceDetail.HttpMapping)serviceDetail.getServiceMappings().get( 0 )).setUrlPattern( "/test" );
         ((ServiceDetail.HttpMapping)serviceDetail.getServiceMappings().get( 0 )).setVerbs( Arrays.asList("POST") );
 
-        service.setServiceDetail( serviceDetail );
-
-        Resource policyResource = ManagedObjectFactory.createResource();
-        policyResource.setId("1");
+        final Resource policyResource = ManagedObjectFactory.createResource();
         policyResource.setType("policy");
-        policyResource.setContent( "<Policy><PolicyContent/>                                                                                                         </Policy>" );
+        policyResource.setContent( policyXml );
 
-        List<ResourceSet> resourceSets = new ArrayList<ResourceSet>();
-        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        final List<ResourceSet> resourceSets = new ArrayList<ResourceSet>();
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSets.add( resourceSet );
-        List<Resource> resources = new ArrayList<Resource>();
+        final List<Resource> resources = new ArrayList<Resource>();
         resources.add( policyResource );
+        resourceSet.setTag( "policy" );
         resourceSet.setResources( resources );
+
+        final ServiceMO service = ManagedObjectFactory.createService();
+        service.setId( "1" );
+        service.setVersion( 1 );
+        service.setServiceDetail( serviceDetail );
         service.setResourceSets( resourceSets );
 
-        final Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
+        final ServiceMO roundTripped = roundTrip( service );
 
-        StringWriter out = new StringWriter();
-        XMLOutputFactory xof = XMLOutputFactory.newInstance();
-        XMLStreamWriter xsw = xof.createXMLStreamWriter( out );
-        marshaller.marshal(service, wrap(xsw) );
+        assertEquals("id", "1", roundTripped.getId());
+        assertEquals("version", (Integer)3, roundTripped.getVersion());
+        assertNotNull("service detail", roundTripped.getServiceDetail());
+        assertNotNull("resource sets", roundTripped.getResourceSets());
 
-        String xmlString = out.toString();
-        System.out.println(xmlString);
+        assertEquals("detail id", "1", roundTripped.getServiceDetail().getId());
+        assertEquals("detail version", (Integer)3, roundTripped.getServiceDetail().getVersion());
+        assertEquals("detail enabled", true, roundTripped.getServiceDetail().getEnabled());
+        assertEquals("detail name", "TestService", roundTripped.getServiceDetail().getName());
+        assertNotNull("detail service mapping", roundTripped.getServiceDetail().getServiceMappings());
+        assertEquals("detail service mapping size", 2, roundTripped.getServiceDetail().getServiceMappings().size());
 
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        ServiceMO roundTripped = (ServiceMO) unmarshaller.unmarshal(new StringReader(xmlString));
+        assertEquals("detail service mapping[0] url pattern", "/test", ((ServiceDetail.HttpMapping)roundTripped.getServiceDetail().getServiceMappings().get(0)).getUrlPattern());
+        assertEquals("detail service mapping[0] url verbs", Arrays.asList("POST"), ((ServiceDetail.HttpMapping)roundTripped.getServiceDetail().getServiceMappings().get(0)).getVerbs());
+        assertEquals("detail service mapping[1] lax", false, ((ServiceDetail.SoapMapping)roundTripped.getServiceDetail().getServiceMappings().get( 1 )).isLax());
 
-        //System.out.println( roundTripped.getResources().get(0) );
+        assertEquals("detail props", new HashMap<String,Object>(){{
+            put("wss.enabled", Boolean.TRUE);
+            put("soap", Boolean.FALSE);
+        }}, roundTripped.getServiceDetail().getProperties());
 
-        marshaller.marshal( roundTripped, System.out );
+        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
+        assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
+        assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
+        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
+        assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
+        assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
+        assertNull( "resource set[0] resources[0] source url", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getSourceUrl() );
     }
 
-    //TODO [steve] formatting CDATA aware XMLStreamWriter
-    private XMLStreamWriter wrap( final XMLStreamWriter xmlStreamWriter ) {
-        return new XMLStreamWriter(){
-            @Override
-            public void writeStartElement( final String localName ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeStartElement( localName );
-            }
+    @Test
+    public void testTrustedCertificateSerialization() throws Exception {
+        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createCertificate();
+        trustedCertificate.setId( "0" );
+        trustedCertificate.setVersion( Integer.MIN_VALUE );
+        trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData( cert(CERT_BOB_PEM) ) );
+        trustedCertificate.setProperties( Collections.<String,Object>singletonMap( "prop", null ) );
 
-            @Override
-            public void writeStartElement( final String namespaceURI, final String localName ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeStartElement( namespaceURI, localName );
-            }
+        final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate );
+        assertEquals("id", "0", roundTripped.getId());
+        assertEquals("version", (Integer)Integer.MIN_VALUE, roundTripped.getVersion());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", null ), roundTripped.getProperties());
+        assertNotNull("certificate data", roundTripped.getCertificateData());
 
-            @Override
-            public void writeStartElement( final String prefix, final String localName, final String namespaceURI ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeStartElement( prefix, localName, namespaceURI );
-            }
+        assertEquals("certificate issuer name", "CN=OASIS Interop Test CA,O=OASIS", roundTripped.getCertificateData().getIssuerName());
+        assertEquals("certificate serial number", new BigInteger( "127901500862700997089151460209364726264" ), roundTripped.getCertificateData().getSerialNumber());
+        assertEquals("certificate subject name", "CN=Bob,OU=OASIS Interop Test Cert,O=OASIS", roundTripped.getCertificateData().getSubjectName());
+        assertArrayEquals("certificate encoded", HexUtils.decodeBase64( CERT_BOB_PEM, true ), roundTripped.getCertificateData().getEncoded());
+    }
 
-            @Override
-            public void writeEmptyElement( final String namespaceURI, final String localName ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeEmptyElement( namespaceURI, localName );
-            }
+    @Test
+    public void testMapSerialization() throws Exception {
+        final Map<String,Object> properties = new HashMap<String,Object>();
+        properties.put( "1", "string value" );
+        properties.put( "2", true );
+        properties.put( "3", 1 );
+        properties.put( "4", 1L );
+        properties.put( "5", 4.4 );
 
+        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createCertificate();
+        trustedCertificate.setProperties( properties );
+        
+        final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate, new Functions.UnaryVoid<Document>(){
             @Override
-            public void writeEmptyElement( final String prefix, final String localName, final String namespaceURI ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeEmptyElement( prefix, localName, namespaceURI );
+            public void call( final Document document ) {
+                assertEquals("String values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "StringValue" ).getLength());
+                assertEquals("Boolean values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "BooleanValue" ).getLength());
+                assertEquals("Integer values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "IntegerValue" ).getLength());
+                assertEquals("Long values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "LongValue" ).getLength());
+                assertEquals("Object values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "Value" ).getLength());
             }
+        } );
+        final Map<String,Object> rtp = roundTripped.getProperties();
+        assertEquals( "1", "string value", rtp.get("1"));
+        assertEquals( "2", true, rtp.get("2"));
+        assertEquals( "3", 1, rtp.get("3"));
+        assertEquals( "4", 1L, rtp.get("4"));
+        assertEquals( "5", 4.4, rtp.get("5"));
+    }
 
-            @Override
-            public void writeEmptyElement( final String localName ) throws XMLStreamException {
-                xmlStreamWriter.writeCharacters( "\n" );
-                xmlStreamWriter.writeEmptyElement( localName );
-            }
+    @Test
+    public void testUnmarshalFull() throws Exception {
+        testUnmarshal("full");
+    }
 
-            @Override
-            public void writeEndElement() throws XMLStreamException {
-                xmlStreamWriter.writeEndElement();
-            }
+    @Test
+    public void testUnmarshalMinimal() throws Exception {
+        testUnmarshal("minimal");
+    }
 
-            @Override
-            public void writeEndDocument() throws XMLStreamException {
-                xmlStreamWriter.writeEndDocument();
-            }
+    private void testUnmarshal( final String suffix ) throws Exception {
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema( ValidationUtils.getSchema() );
 
-            @Override
-            public void close() throws XMLStreamException {
-                xmlStreamWriter.close();
-            }
-
-            @Override
-            public void flush() throws XMLStreamException {
-                xmlStreamWriter.flush();
-            }
-
-            @Override
-            public void writeAttribute( final String localName, final String value ) throws XMLStreamException {
-                xmlStreamWriter.writeAttribute( localName, value );
-            }
-
-            @Override
-            public void writeAttribute( final String prefix, final String namespaceURI, final String localName, final String value ) throws XMLStreamException {
-                xmlStreamWriter.writeAttribute( prefix, namespaceURI, localName, value );
-            }
-
-            @Override
-            public void writeAttribute( final String namespaceURI, final String localName, final String value ) throws XMLStreamException {
-                xmlStreamWriter.writeAttribute( namespaceURI, localName, value );
-            }
-
-            @Override
-            public void writeNamespace( final String prefix, final String namespaceURI ) throws XMLStreamException {
-                xmlStreamWriter.writeNamespace( prefix, namespaceURI );
-            }
-
-            @Override
-            public void writeDefaultNamespace( final String namespaceURI ) throws XMLStreamException {
-                xmlStreamWriter.writeDefaultNamespace( namespaceURI );
-            }
-
-            @Override
-            public void writeComment( final String data ) throws XMLStreamException {
-                xmlStreamWriter.writeComment( data );
-            }
-
-            @Override
-            public void writeProcessingInstruction( final String target ) throws XMLStreamException {
-                xmlStreamWriter.writeProcessingInstruction( target );
-            }
-
-            @Override
-            public void writeProcessingInstruction( final String target, final String data ) throws XMLStreamException {
-                xmlStreamWriter.writeProcessingInstruction( target, data );
-            }
-
-            @Override
-            public void writeCData( final String data ) throws XMLStreamException {
-                xmlStreamWriter.writeCData( data );
-            }
-
-            @Override
-            public void writeDTD( final String dtd ) throws XMLStreamException {
-                xmlStreamWriter.writeDTD( dtd );
-            }
-
-            @Override
-            public void writeEntityRef( final String name ) throws XMLStreamException {
-                xmlStreamWriter.writeEntityRef( name );
-            }
-
-            @Override
-            public void writeStartDocument() throws XMLStreamException {
-                xmlStreamWriter.writeStartDocument();
-            }
-
-            @Override
-            public void writeStartDocument( final String version ) throws XMLStreamException {
-                xmlStreamWriter.writeStartDocument( version );
-            }
-
-            @Override
-            public void writeStartDocument( final String encoding, final String version ) throws XMLStreamException {
-                xmlStreamWriter.writeStartDocument( encoding, version );
-            }
-
-            @Override
-            public void writeCharacters( final String text ) throws XMLStreamException {
-                if ( text.length() > 128 ) {
-                    xmlStreamWriter.writeCData( text );
-                } else {
-                    xmlStreamWriter.writeCharacters( text );
-                }
-            }
-
-            @Override
-            public void writeCharacters( final char[] text, final int start, final int len ) throws XMLStreamException {
-                if ( text.length > 128 ) {
-                    xmlStreamWriter.writeCData( new String(text, start, len) );
-                } else {
-                    xmlStreamWriter.writeCharacters( text, start, len );
-                }
-            }
-
-            @Override
-            public String getPrefix( final String uri ) throws XMLStreamException {
-                return xmlStreamWriter.getPrefix( uri );
-            }
-
-            @Override
-            public void setPrefix( final String prefix, final String uri ) throws XMLStreamException {
-                xmlStreamWriter.setPrefix( prefix, uri );
-            }
-
-            @Override
-            public void setDefaultNamespace( final String uri ) throws XMLStreamException {
-                xmlStreamWriter.setDefaultNamespace( uri );
-            }
-
-            @Override
-            public void setNamespaceContext( final NamespaceContext context ) throws XMLStreamException {
-                xmlStreamWriter.setNamespaceContext( context );
-            }
-
-            @Override
-            public NamespaceContext getNamespaceContext() {
-                return xmlStreamWriter.getNamespaceContext();
-            }
-
-            @Override
-            public Object getProperty( final String name ) throws IllegalArgumentException {
-                return xmlStreamWriter.getProperty( name );
-            }
-        };
+        for ( Class<?> managedObjectClass : MANAGED_OBJECTS ) {
+            final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
+            System.out.println( "Processing resource '" + resourceName + "'" );
+            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( ManagedObjectTest.class.getResource( resourceName ));
+            assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+        }
     }
 
     @Test
     public void testSchemaGeneration() throws Exception {
-        JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.api");
-
         final Marshaller marshaller = context.createMarshaller();
         marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
-
-//        StringWriter out = new StringWriter();
-//        marshaller.marshal( service, out );
 
         final StringWriter schemaWriter = new StringWriter();
         context.generateSchema( new SchemaOutputResolver(){
@@ -318,17 +519,8 @@ public class ManagedObjectTest {
                 return result;
             }
         } );
+
         System.out.println( schemaWriter.toString() );
-
-//        String xmlString = out.toString();
-//        System.out.println(xmlString);
-
-//        final Unmarshaller unmarshaller = context.createUnmarshaller();
-//        ServiceDetail roundTripped = (ServiceDetail) unmarshaller.unmarshal(new StringReader(xmlString));
-
-        //System.out.println( roundTripped.getResources().get(0) );
-
-//        marshaller.marshal( roundTripped, System.out );
     }
 
     @Test

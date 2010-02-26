@@ -193,9 +193,14 @@ public class PolicyHelper {
                         references.add( reference );
                     }
                 }
+                
+                if ( !warnings.isEmpty() ) {
+                    pir.setWarnings( warnings );
+                }
 
-                pir.setWarnings( warnings );
-                pir.setImportedPolicyReferences(references  );
+                if ( !references.isEmpty() ) {
+                    pir.setImportedPolicyReferences(references  );
+                }
             }
 
             return pir;

@@ -1,21 +1,19 @@
 /**
  * This package contains the Layer 7 SecureSpan Gateway Management API.
  *
- * <p>The {@code ClientFactory} class is used to create instances of the
- * management client. The {@code Client} provides access to resources on a
- * SecureSpan Gateway via {@code Accessor}'s.</p>
+ * <p>The {@link ClientFactory} class is used to create instances of the
+ * management client. The {@link Client} provides access to managed objects on
+ * a SecureSpan Gateway via {@link Accessor}'s.</p>
  *
- * <p>Some resources support additional operations using {@code Accessor} 
- * subclasses.</p>
+ * <p>Some types of managed object support additional operations using
+ * {@link Accessor} subclasses.</p>
  *
- * <p>The {@code ManagedObjectFactory} class is used to create resource objects
- * for use with {@code Accessor}s.</p>
+ * <p>The {@link ManagedObjectFactory} class is used to create objects
+ * for use with {@link Accessor}s and for persistence of managed objects.</p>
  *
- * @see ClientFactory#createClient
- * @see Client#getAccessor
+ * @see ClientFactory#createClient(String)
+ * @see Client#getAccessor(Class)
  * @see ManagedObjectFactory
- *
- * TODO [steve] javadoc for package
  */
 @XmlSchema(
         namespace = "http://ns.l7tech.com/2010/01/gateway-management",

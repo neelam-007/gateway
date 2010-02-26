@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="33" id="147226624">
+    <Name>QAAD4</Name>
+    <IdentityProviderType>LDAP</IdentityProviderType>
+    <Properties>
+        <Property key="propertiesAreNotCurrentUsed">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+</IdentityProvider>

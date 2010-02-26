@@ -5,12 +5,13 @@ import com.l7tech.gateway.api.impl.AccessorFactory;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
- * 
+ * The JMSDestinationMO managed object represents a JMS Queue.
+ *
+ * @see ManagedObjectFactory#createJMSDestination()
  */
 @XmlRootElement(name="JMSDestination")
 @XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extensions"})
@@ -19,7 +20,6 @@ public class JMSDestinationMO extends ManagedObject {
 
     //- PUBLIC
 
-    @XmlTransient
     @Override
     public Integer getVersion() {
         Integer version = null;
@@ -38,20 +38,40 @@ public class JMSDestinationMO extends ManagedObject {
         }
     }
 
+    /**
+     * Get the destination details (required)
+     *
+     * @return The details or null
+     */
     @XmlElement(name="JMSDestinationDetails", required=true)
     public JMSDestinationDetails getJmsDestinationDetails() {
         return jmsDestinationDetails;
     }
 
+    /**
+     * Set the destination details
+     *
+     * @param jmsDestinationDetails The details to use.
+     */
     public void setJmsDestinationDetails( final JMSDestinationDetails jmsDestinationDetails ) {
         this.jmsDestinationDetails = jmsDestinationDetails;
     }
 
+    /**
+     * Get the connection information for this destination.
+     *
+     * @return The connection or null
+     */
     @XmlElement(name="JMSConnection")
     public JMSConnection getJmsConnection() {
         return jmsConnection;
     }
 
+    /**
+     * Set the connection information for this destination.
+     *
+     * @param jmsConnection The connection to use.
+     */
     public void setJmsConnection( final JMSConnection jmsConnection ) {
         this.jmsConnection = jmsConnection;
     }

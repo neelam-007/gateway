@@ -458,7 +458,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             }
             final Filter filter = BaseSupport.createFilter(transferRequest.getFragmentDialect(), nodeList, nsMap);
 
-            // Get resource as DOM TODO [steve] Optimize to allow resource fetch with only relevant details populated?
+            // Get resource as DOM
             final Object resource = factory.getResource( selectorMap );
             final Document doc = XmlUtil.createEmptyDocument();
             transferRequest.getXmlBinding().marshal(resource, doc);
@@ -599,7 +599,8 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             setOperationInfo( context, null, null, null, ExceptionUtils.getMessage(e) );
             throw (FaultException) e;
         } else {
-            setOperationInfo( context, null, null, null, ExceptionUtils.getMessage(e) );
+            logger.log( Level.WARNING, "Error processing management request", e );
+            setOperationInfo( context, null, null, null, "Error processing request '" + ExceptionUtils.getMessage(e) + "'" );
             throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
         }
     }

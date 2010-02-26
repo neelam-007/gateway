@@ -375,7 +375,7 @@ public class GatewayManagementClient {
             printError("message.networkerror", ExceptionUtils.getMessage( mre ));
         } else if ( mre instanceof Accessor.AccessorSOAPFaultException ) {
             Accessor.AccessorSOAPFaultException soapFault = (Accessor.AccessorSOAPFaultException) mre;
-            printError("message.soapfault", soapFault.getFault(), soapFault.getCode(), soapFault.getRole(), soapFault.getDetails());
+            printError("message.soapfault", soapFault.getFault(), soapFault.getRole(), soapFault.getDetails());
         } else if ( ExceptionUtils.causedBy( mre, IOException.class )) {
             final IOException ioe = ExceptionUtils.getCauseIfCausedBy( mre, IOException.class );
             if ( ExceptionUtils.getMessage(ioe).equals( "Unauthorized" ) ) {
@@ -425,11 +425,11 @@ public class GatewayManagementClient {
     }
 
     private static class CommandException extends Exception {
-        public CommandException( final String message ) {
+        CommandException( final String message ) {
             super( message );
         }
 
-        public CommandException( final String message, final Throwable cause ) {
+        CommandException( final String message, final Throwable cause ) {
             super( message, cause );
         }
     }
@@ -703,31 +703,51 @@ public class GatewayManagementClient {
             final Client client = buildClient();
             final Accessor<?> accessor = client.getAccessor( getManagedObjectType() );
 
-            writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
-                @Override
-                public Void call( final OutputStream out ) throws CommandException {
-                    try {
-                        boolean first = true;
-                        final Iterator<? extends ManagedObject> iterator = accessor.enumerate();
-                        while ( iterator.hasNext() ) {
-                            ManagedObject mo = iterator.next();
-                            if ( first ) {
-                                out.write( "<enumeration>".getBytes( "UTF-8" ));
-                                first = false;
+            try {
+                final Iterator<? extends ManagedObject> iterator = accessor.enumerate();
+                writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
+                    @Override
+                    public Void call( final OutputStream out ) throws CommandException {
+                        try {
+                            boolean first = true;
+                            while ( iterator.hasNext() ) {
+                                ManagedObject mo;
+                                try {
+                                    mo = iterator.next();
+                                } catch ( RuntimeException re ) {
+                                    endOutput( out, first, true );
+                                    throw re;
+                                }
+                                if ( first ) {
+                                    out.write( "<enumeration>".getBytes( "UTF-8" ));
+                                    first = false;
+                                }
+                                ManagedObjectFactory.write( mo, out );
                             }
-                            ManagedObjectFactory.write( mo, out );
+                            endOutput( out, first, false );
+                        } catch ( IOException ioe ) {
+                            handleIOError( "output", ioe );
                         }
-                        out.write( "</enumeration>".getBytes( "UTF-8" ));
-                    } catch ( IOException ioe ) {
-                        handleIOError( "output", ioe );
-                    } catch ( Accessor.AccessorException e ) {
-                        throw new CommandException( "Accessor error", e );
-                    } catch ( RuntimeException e ) {
-                        throw e;
+                        return null;
                     }
-                    return null;
+                } );
+            } catch ( Accessor.AccessorException e ) {
+                throw new CommandException( "Accessor error", e );
+            }
+        }
+
+        private void endOutput( final OutputStream out,
+                                final boolean first,
+                                final boolean suppressError ) throws IOException {
+            try {
+                if ( first ) {
+                    out.write( "<enumeration/>".getBytes( "UTF-8" ));
+                } else {
+                    out.write( "</enumeration>".getBytes( "UTF-8" ));
                 }
-            } );
+            } catch ( IOException ioe ) {
+                if ( !suppressError ) throw ioe;
+            }
         }
     }
 

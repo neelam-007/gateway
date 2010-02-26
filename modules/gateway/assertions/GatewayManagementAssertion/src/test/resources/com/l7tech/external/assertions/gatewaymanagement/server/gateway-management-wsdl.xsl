@@ -72,11 +72,9 @@
             <message name="TotalItemsCountEstimateMessage">
                <part name="TotalItemsCountEstimatePart" element="wsman:TotalItemsCountEstimate"/>
             </message>
-            <!-- TODO [steve] add these messages if used
-            RequestEPR
-            RequestedEPR
-            FragmentTransfer
-            -->            
+            <message name="FragmentTransferMessage">
+               <part name="FragmentTransferPart" element="wsman:FragmentTransfer"/>
+            </message>
             <xsl:comment> Resource Messages </xsl:comment>
             <xsl:apply-templates mode="messages" select="(resourceFactory/resource | resourceFactory/resourceMethod/request | resourceFactory/resourceMethod/response)[generate-id(element) = generate-id(key('elementsKey',element)[1])]">
                 <xsl:sort select="element"/>
@@ -160,6 +158,7 @@
                         <wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal" />
                         <wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal" />
                         <wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal" />
+                        <wsoap12:header message="tns:FragmentTransferMessage" part="FragmentTransferPart" use="literal" />
                         <wsoap12:body use="literal"/>
                     </input>
                     <output>
@@ -173,6 +172,7 @@
                         <wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal" />
                         <wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal" />
                         <wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal" />
+                        <wsoap12:header message="tns:FragmentTransferMessage" part="FragmentTransferPart" use="literal" />
                         <wsoap12:body use="literal"/>
                     </input>
                     <output>

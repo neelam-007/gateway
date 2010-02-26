@@ -107,7 +107,7 @@ public class ServiceDetail {
         }
 
         @XmlElementWrapper(name="Verbs")
-        @XmlElement(name="Verb")
+        @XmlElement(name="Verb", required=true)
         public List<String> getVerbs() {
             return verbs;
         }

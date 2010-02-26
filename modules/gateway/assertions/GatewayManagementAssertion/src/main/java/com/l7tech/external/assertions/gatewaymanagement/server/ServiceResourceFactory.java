@@ -233,6 +233,10 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         }
 
         if ( wsdlUpdated ) {
+            if ( oldPublishedService.isSoap() && newPublishedService.getWsdlXml()==null ) {
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.MISSING_VALUES, "WSDL is required for SOAP services." );
+            }
+            
             try {
                 oldPublishedService.setWsdlUrl( newPublishedService.getWsdlUrl() );
             } catch ( MalformedURLException e ) {

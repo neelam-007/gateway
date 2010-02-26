@@ -10,8 +10,8 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * TODO [steve] expose any properties for jdbc connections?
-  */
+ * 
+ */
 @ResourceFactory.ResourceType(type=JDBCConnectionMO.class)
 public class JDBCConnectionResourceFactory extends EntityManagerResourceFactory<JDBCConnectionMO, JdbcConnection, EntityHeader> {
 

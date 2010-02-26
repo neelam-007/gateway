@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 
+ * Encapsulates the result of policy validation.
  */
 @XmlRootElement(name="PolicyValidationResult")
 @XmlType(name="PolicyValidationResultType", propOrder={"policyValidationMessages", "extensions"})
@@ -21,16 +21,32 @@ public class PolicyValidationResult extends ManagedObject {
 
     //- PUBLIC
 
+    /**
+     * Get the policy validation messages.
+     *
+     * @return The validation messages or null.
+     */
     @XmlElementWrapper(name="ValidationMessages")
-    @XmlElement(name="ValidationMessage")
+    @XmlElement(name="ValidationMessage", required=true)
     public List<PolicyValidationMessage> getPolicyValidationMessages() {
         return policyValidationMessages;
     }
 
+    /**
+     * Set the policy validation messages.
+     *
+     * @param policyValidationMessages The policy validation messages to use.
+     */
     public void setPolicyValidationMessages( final List<PolicyValidationMessage> policyValidationMessages ) {
         this.policyValidationMessages = policyValidationMessages;
     }
 
+    /**
+     * Represents a policy validation message.
+     *
+     * <p>A validation message consists of a level, message and information to
+     * identify the policy assertion to which the message relates.</p>
+     */
     @XmlType(name="PolicyValidationMessageType", propOrder={"assertionDetails", "message", "extensions"})
     public static class PolicyValidationMessage {
         private String level;
@@ -43,39 +59,79 @@ public class PolicyValidationResult extends ManagedObject {
         PolicyValidationMessage() {
         }
 
+        /**
+         * Get the level for the message (required)
+         *
+         * @return The level or null.
+         */
         @XmlAttribute(name="level", required=true)
         public String getLevel() {
             return level;
         }
 
+        /**
+         * Set the level for the message.
+         *
+         * @param level The level to use.
+         */
         public void setLevel( final String level ) {
             this.level = level;
         }
 
+        /**
+         * Get the ordinal for the assertion (required)
+         *
+         * @return The assertion ordinal.
+         */
         @XmlAttribute(name="assertionOrdinal", required=true)
         public int getAssertionOrdinal() {
             return assertionOrdinal;
         }
 
+        /**
+         * Set the ordinal for the assertion.
+         *
+         * @param assertionOrdinal The ordinal to use.
+         */
         public void setAssertionOrdinal( final int assertionOrdinal ) {
             this.assertionOrdinal = assertionOrdinal;
         }
 
-        @XmlElementWrapper(name="AssertionPath")
+        /**
+         * Get the path for the assertion (required)
+         *
+         * @return The path or null.
+         */
+        @XmlElementWrapper(name="AssertionPath", required=true)
         @XmlElement(name="Assertion", required=true)
         public List<AssertionDetail> getAssertionDetails() {
             return assertionDetails;
         }
 
+        /**
+         * Set the path for the assertion.
+         *
+         * @param assertionDetails The path to use.
+         */
         public void setAssertionDetails( final List<AssertionDetail> assertionDetails ) {
             this.assertionDetails = assertionDetails;
         }
 
+        /**
+         * Get the message (required)
+         *
+         * @return The message or null.
+         */
         @XmlElement(name="Message", required=true)
         public String getMessage() {
             return message;
         }
 
+        /**
+         * Set the message.
+         *
+         * @param message The message to use.
+         */
         public void setMessage( final String message ) {
             this.message = message;
         }
@@ -122,6 +178,9 @@ public class PolicyValidationResult extends ManagedObject {
         }
     }
 
+    /**
+     * Details for an assertions location relative to it's parent.
+     */
     @XmlType(name="AssertionDetailType")
     public static class AssertionDetail {
         private int position;
@@ -131,26 +190,46 @@ public class PolicyValidationResult extends ManagedObject {
         AssertionDetail() {            
         }
 
-        @XmlAttribute(name="position")
+        /**
+         * Get the position for the assertion (required)
+         *
+         * @return The position.
+         */
+        @XmlAttribute(name="position", required=true)
         public int getPosition() {
             return position;
         }
 
+        /**
+         * Set the position for the assertion.
+         *
+         * @param position The position to use.
+         */
         public void setPosition( final int position ) {
             this.position = position;
         }
 
+        /**
+         * Get the description for the assertion.
+         *
+         * @return The assertion description or null.
+         */
         @XmlValue
         public String getDescription() {
             return description;
         }
 
+        /**
+         * Set the description for the assertion.
+         *
+         * @param description The description to use.
+         */
         public void setDescription( final String description ) {
             this.description = description;
         }
 
         /**
-         * TODO [steve] this does not work (due to jaxb bug with XmlValue annotation?) 
+         * NOTE this does not work (related JAXB bug https://jaxb.dev.java.net/issues/show_bug.cgi?id=738) 
          */
         @XmlAnyAttribute
         protected Map<QName, Object> getAttributeExtensions() {

@@ -16,6 +16,6 @@ PrivateKeyMO
 Resource
 ResourceDocumentMO
 ResourceSet
-ServiceMO
 ServiceDetail
+ServiceMO
 TrustedCertificateMO
