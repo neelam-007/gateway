@@ -28,6 +28,11 @@ public class TrustedCertCacheImpl implements TrustedCertCache {
     }
 
     @Override
+    public Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException {
+        return immutable( trustedCertManager.findByTrustFlag(trustFlag) );
+    }
+
+    @Override
     public Collection<TrustedCert> findBySubjectDn( final String dn ) throws FindException {
         return immutable( trustedCertManager.findBySubjectDn( dn ) );
     }

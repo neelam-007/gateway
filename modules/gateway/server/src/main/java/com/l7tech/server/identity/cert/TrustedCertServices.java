@@ -41,4 +41,15 @@ public interface TrustedCertServices {
      * @throws com.l7tech.objectmodel.FindException if there is a problem reading TrustedCert instances from the database.
      */
     Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Long> requiredOids) throws FindException;
+
+    /**
+     * Perform a cached lookup of all trusted certs that are trusted for the specified activities.
+     *
+     * @param requiredTrustFlags  a Set of TrustedFor flags to filter by flag.  Required.
+     *                            If a Set is specified, only TrustedCert instances that have all the specified flags enabled
+     *                            will be returned.  If an empty Set is specified, no TrustedCert instances will be returned.
+     * @return a Collection of read-only TrustedCert instances that match the specified criteria.  May be empty, but never null.
+     * @throws com.l7tech.objectmodel.FindException if there is a problem reading TrustedCert instances from the database.
+     */
+    Collection<TrustedCert> getAllCertsByTrustFlags(Set<TrustedCert.TrustedFor> requiredTrustFlags) throws FindException;
 }

@@ -4,22 +4,16 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.util.Functions;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Transient;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
-import javax.persistence.Version;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * An certificate that is trusted by the SSG for a variety of purposes.
@@ -82,6 +76,20 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
 
         public String getUsageDescription() {
             return usageDescription;
+        }
+
+        /**
+         * Return a predicate that returns true for a TrustedCert instance if and only if it is trusted for the specified purpose.
+         * @param trustFlag trust flag to use as a predicate.
+         * @return a predicate that will return true only for a TrustedCert with the specified flag.
+         */
+        public static Functions.Unary<Boolean, TrustedCert> predicate(final TrustedFor trustFlag) {
+            return new Functions.Unary<Boolean, TrustedCert>() {
+                @Override
+                public Boolean call(TrustedCert trustedCert) {
+                    return trustedCert.isTrustedFor(trustFlag);
+                }
+            };
         }
     }
 

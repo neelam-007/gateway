@@ -57,6 +57,17 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
     Collection<TrustedCert> findByName(String name) throws FindException;
 
     /**
+     * Find all TrustedCert entities that are trusted for the specified behavior.
+     * <p/>
+     * Note that this method currently performs a full table scan.
+     *
+     * @param trustFlag the trust flag to query.  Required.
+     * @return all matching TrustedCert entities.  May be empty but never null.
+     * @throws FindException if the retrieval fails for any reason other than nonexistence
+     */
+    Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException;
+
+    /**
      * Subclass of certificate exception thrown when a certificate is not known.
      */
     public static final class UnknownCertificateException extends CertificateException {

@@ -20,6 +20,7 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -110,6 +111,13 @@ public class TrustedCertManagerImp
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
         }
+    }
+
+    @Override
+    @Transactional(readOnly=true)
+    public Collection<TrustedCert> findByTrustFlag(final TrustedCert.TrustedFor trustFlag) throws FindException {
+        // TODO optimize this query so it does the filtering inside the database rather than here, then update the javadoc
+        return Functions.grep(findAll(), TrustedCert.TrustedFor.predicate(trustFlag));
     }
 
     @SuppressWarnings({"unchecked"})

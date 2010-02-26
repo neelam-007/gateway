@@ -47,7 +47,7 @@ public class SslClientTrustManager implements X509TrustManager {
     }
 
     public X509Certificate[] getAcceptedIssuers() {
-        throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
+        return new X509Certificate[0];
     }
 
     public void checkClientTrusted(final X509Certificate[] x509Certificates, final String authType) throws CertificateException {

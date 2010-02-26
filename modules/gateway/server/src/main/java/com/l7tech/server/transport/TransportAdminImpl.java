@@ -6,8 +6,10 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.tomcat.ConnectionIdValve;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.KeyManager;
@@ -17,10 +19,13 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Server-side implementation of the TransportAdmin API.
@@ -28,7 +33,7 @@ import java.util.List;
 public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
     private final DefaultKey defaultKeystore;
-    private SSLContext testSslContext;
+    private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
 
     public TransportAdminImpl(SsgConnectorManager connectorManager, DefaultKey defaultKeystore) {
         this.connectorManager = connectorManager;
@@ -71,28 +76,39 @@ public class TransportAdminImpl implements TransportAdmin {
         connectorManager.delete(oid);
     }
 
-    private synchronized SSLContext getTestSslContext(){
-        if (testSslContext != null)
-            return testSslContext;
+    private SSLContext getTestSslContext(Provider provider) {
+        String providerName = provider == null ? "" : provider.getName();
+        SSLContext sslContext = testSslContextByProviderName.get(providerName);
+        if (sslContext != null)
+            return sslContext;
         try {
             final KeyManager[] keyManagers;
             keyManagers = defaultKeystore.getSslKeyManagers();
-            testSslContext = SSLContext.getInstance("TLS");
-            testSslContext.init(keyManagers, null, null);
+            sslContext = provider == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", provider);
+            sslContext.init(keyManagers, null, null);
+            SSLContext ret = testSslContextByProviderName.putIfAbsent(providerName, sslContext);
+            return ret != null ? ret : sslContext;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (KeyManagementException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         }
-        return testSslContext;
     }
 
     public String[] getAllCipherSuiteNames() {
-        return getTestSslContext().getSupportedSSLParameters().getCipherSuites();
+        return ArrayUtils.union(
+                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getSupportedSSLParameters().getCipherSuites(),
+                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getSupportedSSLParameters().getCipherSuites()
+        );
     }
 
     public String[] getDefaultCipherSuiteNames() {
-        return getTestSslContext().getDefaultSSLParameters().getCipherSuites();
+        // intersection would result in defaults with better security, but union is more likely to result in defaults
+        // that can actually complete a handshake, given the widest possible variety of enabled TLS versions
+        return ArrayUtils.union(
+                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getDefaultSSLParameters().getCipherSuites(),
+                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getDefaultSSLParameters().getCipherSuites()                
+        );
     }
 
     public InetAddress[] getAvailableBindAddresses() {

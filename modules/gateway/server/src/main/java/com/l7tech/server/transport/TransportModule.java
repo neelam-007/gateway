@@ -11,9 +11,7 @@ import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,8 +24,6 @@ import java.util.logging.Logger;
 public abstract class TransportModule extends LifecycleBean {
     protected final Logger logger;
     protected final SsgConnectorManager ssgConnectorManager;
-
-    protected final Map<Long, Throwable> connectorErrors = new ConcurrentHashMap<Long, Throwable>();
 
     protected TransportModule(String name, Logger logger, String licenseFeature, LicenseManager licenseManager, SsgConnectorManager ssgConnectorManager)
     {
@@ -148,7 +144,6 @@ public abstract class TransportModule extends LifecycleBean {
             }
         } catch (Throwable t) {
             logger.log(Level.WARNING, "Error processing change for connector oid " + connectorId + ": " + ExceptionUtils.getMessage(t), t);
-            connectorErrors.put(connectorId, t);
         }
     }
 

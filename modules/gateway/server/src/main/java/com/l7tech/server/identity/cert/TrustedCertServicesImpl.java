@@ -67,6 +67,15 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         return ret;
     }
 
+    @Override
+    public Collection<TrustedCert> getAllCertsByTrustFlags(Set<TrustedCert.TrustedFor> requiredTrustFlags) throws FindException {
+        Set<TrustedCert> ret = new HashSet<TrustedCert>();
+        for (TrustedCert.TrustedFor trustFlag : requiredTrustFlags) {
+            ret.addAll(trustedCertCache.findByTrustFlag(trustFlag));
+        }
+        return Collections.unmodifiableCollection(ret);
+    }
+
     private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), null);
 

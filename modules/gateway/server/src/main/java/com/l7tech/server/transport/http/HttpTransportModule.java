@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
@@ -13,6 +14,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.ListenerException;
@@ -46,6 +48,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -89,8 +92,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final DefaultKey defaultKeyManager;
     private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
-    private final ConcurrentHashMap<Long, Boolean> reportedAsMisconfigured = new ConcurrentHashMap<Long, Boolean>();
     private final Set<SsgConnectorActivationListener> endpointListeners;
+
+    private TrustedCertServices trustedCertServices;
+
     private Embedded embedded;
     private Engine engine;
     private Host host;
@@ -281,7 +286,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 throw new MissingResourceException("Missing resource: " + fullname, getClass().getName(), fullname);
             return new VirtualDirEntryImpl(name, IOUtils.slurpStream(is));
         } catch (IOException e) {
-            throw (MissingResourceException)new MissingResourceException("Error reading resource: " + name, getClass().getName(), name).initCause(e);
+            MissingResourceException mre = new MissingResourceException("Error reading resource: " + name, getClass().getName(), name);
+            mre.initCause(e);
+            throw mre;
         } finally {
             ResourceUtils.closeQuietly(is);
         }
@@ -475,6 +482,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     /**
      * Add any required connectors to the DB.
      *
+     * @param currentConnectors connectors currently in the database
      * @param actuallyStartThem if true, start each connector immediately after saving it.
      * @return zero or more connectors that have already been saved to the database.  Never null or empty.
      */
@@ -525,9 +533,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         notifyEndpointActivation( connector );
     }
 
-    /**
-     *
-     */
     private boolean isCurrent( long oid, int version ) {
         boolean current;
 
@@ -563,6 +568,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             m.put("sslProtocol", "TLS");
             m.put("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
             m.put("secure", Boolean.toString(c.isSecure()));
+            m.put("protocols", getEnabledProtocols(c));
 
             final int clientAuth = c.getClientAuth();
             if (clientAuth == SsgConnector.CLIENT_AUTH_ALWAYS)
@@ -601,7 +607,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             if (name.equals(SsgConnector.PROP_BIND_ADDRESS) ||
                 name.equals(SsgConnector.PROP_PORT_RANGE_START) ||
                 name.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
-                name.equals(SsgConnector.PROP_CIPHERLIST))
+                name.equals(SsgConnector.PROP_CIPHERLIST) ||
+                name.equals(SsgConnector.PROP_PROTOCOLS))
                 continue;
             String value = c.getProperty(name);
             if (value != null) m.put(name, value);
@@ -610,28 +617,24 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return m;
     }
 
-    /**
-     * Get the last error that occurred while starting a specified connector.
-     * <p/>
-     * This does not clear the error status for the specified connector.  To clear the error, call
-     * clearConnectorError().
-     *
-     * @param oid  the connector to check.
-     * @return  the last error encountered while starting (or stopping) this connector, or null if none recorded.
-     */
-    public Throwable getConnectorError(long oid) {
-        return connectorErrors.get(oid);
-    }
+    private String getEnabledProtocols(SsgConnector c) {
+        // Allow the admin to micro-manage the protocols directly, bypassing the somewhat-inflexible GUI
+        String overrideProtocols = c.getProperty("overrideProtocols");
+        if (overrideProtocols != null && overrideProtocols.trim().length() > 0)
+            return overrideProtocols;
 
-    /**
-     * Clear the last error status for the specified connector.  If any error status is cleared,
-     * it will be returned.
-     *
-     * @param oid the connector whose error status to clear.
-     * @return the error status that was cleared, or null.
-     */
-    public Throwable clearConnectorError(long oid) {
-        return connectorErrors.remove(oid);
+        String protocols = c.getProperty(SsgConnector.PROP_PROTOCOLS);
+        if (protocols == null) protocols = "TLSv1";
+
+        Set<String> protos = new HashSet<String>(Arrays.asList(protocols.trim().split("\\s*,\\s*")));
+        if ((protos.contains("SSLv3") || protos.contains("TLSv1")) && !protos.contains("SSLv2Hello")) {
+            // Always allow clients to use SSL 2.0 Client Hello encapsulation with SSL 3.0 and TLS 1.0,
+            // unless it is explicitly disabled using an advanced setting
+            if (!Boolean.valueOf(c.getProperty("noSSLv2Hello")))
+                protocols = "SSLv2Hello," + protocols;
+        }
+
+        return protocols;
     }
 
     @Override
@@ -661,32 +664,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
 
         notifyEndpointDeactivation( entry.left );
-    }
-
-    protected void pauseConnector(long oid) {
-        synchronized (connectorCrudLuck) {
-            Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
-            if (entry == null) return;
-            Connector connector = entry.right;
-            logger.info("Pausing " + connector.getScheme() + " connector on port " + connector.getPort());
-            embedded.removeConnector(connector);
-            try {
-                connector.destroy();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
-            }
-
-            org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
-            if ( connectorExecutor != null ) {
-                embedded.removeExecutor( connectorExecutor );
-                try {
-                    connectorExecutor.stop();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-
-        }
     }
 
     private final Set<String> schemes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS)));
@@ -790,7 +767,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     /**
      * Create a name for an executor associated with this connector.
      *
-     * We'll use this name as a prefix for threads also, so make sure it is unique. 
+     * We'll use this name as a prefix for threads also, so make sure it is unique.
+     * @param connector  the connector to base the name on.  Required.
+     * @return a name to use for an executor for this connector.  Never null.
      */
     private String executorName( final SsgConnector connector ) {
         StringBuilder builder = new StringBuilder();
@@ -829,7 +808,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
-        reportedAsMisconfigured.remove(connector.getOid());
         embedded.addConnector(c);
         try {
             logger.info("Starting " + c.getScheme() + " connector on port " + c.getPort());
@@ -846,14 +824,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private static void setConnectorAttributes(Connector c, Map<String, Object> attrs) {
         for (Map.Entry<String, Object> entry : attrs.entrySet())
             c.setAttribute(entry.getKey(), entry.getValue());
-    }
-
-    Engine getEngine() {
-        return engine;
-    }
-
-    Host getHost() {
-        return host;
     }
 
     /**
@@ -924,10 +894,60 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     /**
      * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
      *
-     * @return an SsgKeyStoreManager instance.  Should never be null.
+     * @return an SsgKeyStoreManager instance.  Never null.
      */
     public SsgKeyStoreManager getSsgKeyStoreManager() {
+        if (ssgKeyStoreManager == null)
+            throw new IllegalStateException("No SsgKeyStoreManager is set");
         return ssgKeyStoreManager;
+    }
+
+    public void setTrustedCertServices(TrustedCertServices trustedCertServices) {
+        this.trustedCertServices = trustedCertServices;
+    }
+
+    /**
+     * Look up the accepted issuer certificates that should be advertised by an X509TrustManager acting
+     * on behalf of the specified SsgConnector OID.
+     * <p/>
+     * This represents the certificates that this TransportModule wishes to be included in the certificate_authorities
+     * field of any Certificate Request message sent by TLS server sockets bound to this listen port.   
+     *
+     * @param oid the OID of the SsgConnector whose trusted certs we wish to look up.  Required.
+     * @return an array of X509Certificate instances that should be accepted as issuers at TLS handshake time for this connector.
+     *         Never null or empty.
+     * @throws FindException if there is an error while attempting to look up the required information.
+     */
+    public X509Certificate[] getAcceptedIssuersForConnector(long oid) throws FindException {
+        Pair<SsgConnector, Connector> connector = activeConnectors.get(oid);
+        if (connector != null) {
+            // Suppress inclusion of accepted issuers list of so configured for this connector
+            if (Boolean.valueOf(connector.left.getProperty("noAcceptedIssuers")))
+                return new X509Certificate[0];
+
+            // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
+            if (connector.left.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
+                return new X509Certificate[0];
+        }
+
+        Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
+        List<X509Certificate> certs = new ArrayList<X509Certificate>();
+        for (TrustedCert trustedCert : trustedCerts) {
+            certs.add(trustedCert.getCertificate());
+        }
+
+        // If the issuers list is completely empty, include our own server cert in the list just to keep SSL-J happy.
+        if (certs.isEmpty()) {
+            try {
+                certs.add( defaultKeyManager.getSslInfo().getCertificate() );
+            } catch (IOException e) {
+                // This is non-fatal, at least for this purpose, since many TLS handshakes will succeed even with
+                // an empty issuers list -- the purpose of this hack was just to work around an SSL-J issue.
+                logger.log(Level.WARNING, "Unable to get default certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        return certs.toArray(new X509Certificate[certs.size()]);
     }
 
     /**
@@ -947,28 +967,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return instance == null ? null : instance.get();
     }
 
-    private void reportMisconfiguredConnector(final long connectorOid) {
-        if (null != reportedAsMisconfigured.putIfAbsent(connectorOid, true))
-            return;
-        logger.warning("Disabling misconfigured connector OID " + connectorOid + " until it is reconfigured");
-        removeConnector(connectorOid);
-    }
-
     /**
-     * Report that a particular connector is failing immediately during Accept due to a configuration problem,
-     * and that it should be disabled (until reconfigured) to prevent an acceptor thread from spinning on it forever.
-     *
-     * @param transportModuleId  the transport module that owns the connector in question.  Required.
-     * @param connectorOid  the OID of the connector that can't initialize.  Required.
-     */
-    public static void reportMisconfiguredConnector(long transportModuleId, long connectorOid) {
-        final HttpTransportModule module = getInstance(transportModuleId);
-        if (module != null)
-            module.reportMisconfiguredConnector(connectorOid);
-    }
-
-    /**
-     * Dispatch notifications for endpoint activation. 
+     * Dispatch notifications for endpoint activation.
+     * @param connector the connector that was just activated. required.
      */
     private void notifyEndpointActivation( final SsgConnector connector ) {      
         for ( SsgConnectorActivationListener listener : endpointListeners ) {
@@ -982,6 +983,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     /**
      * Dispatch notifications for endpoint deactivation.
+     * @param connector the connector that was just deactivated. required.
      */
     private void notifyEndpointDeactivation( final SsgConnector connector ) {
         for ( SsgConnectorActivationListener listener : endpointListeners ) {

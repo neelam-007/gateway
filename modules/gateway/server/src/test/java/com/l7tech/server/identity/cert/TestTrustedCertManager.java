@@ -68,6 +68,11 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
     }
 
     @Override
+    public Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }

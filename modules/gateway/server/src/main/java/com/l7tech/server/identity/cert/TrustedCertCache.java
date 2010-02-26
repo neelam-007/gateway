@@ -1,10 +1,10 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Cacheable;
 
-import java.util.*;
+import java.util.Collection;
 
 /**
  * Provides cached TrustedCert access.
@@ -41,4 +41,13 @@ public interface TrustedCertCache {
     @Cacheable(relevantArg=0,maxAge=5000)
     Collection<TrustedCert> findByName(String name) throws FindException;
 
+    /**
+     * Retrieves immutable {@link TrustedCert}s with the given trust flags.
+     *
+     * @param trustFlag trust flag to look up.  Required.
+     * @return a Collection of matching TrustedCert instances.  May be empty but never null.
+     * @throws com.l7tech.objectmodel.FindException if an error occurs.
+     */
+    @Cacheable(relevantArg=0,maxAge=120000)
+    Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException;
 }

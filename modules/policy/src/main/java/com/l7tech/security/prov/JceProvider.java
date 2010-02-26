@@ -61,6 +61,22 @@ public abstract class JceProvider {
     public static final String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
     public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
     public static final String SERVICE_CSR_SIGNING = "Signature.BouncyCastleCsrSigner";
+    public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
+    public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
+    public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
+
+    /* Recognized component names to pass to {@link #isComponentCompatible(String)}. */
+
+    /**
+     * A component that can be queried to check whether it is safe to use RSA SSL-J 5.1 with the current
+     * JceProvider in its current configuration.
+     * <P/>
+     * If the provider claims compatibility with this component, it is safe to use SSL-J 5.1 as the TLS provider for
+     * outbound TLS, and as the default TLS provider (as long as TLS server sockets for incoming TLS will either always
+     * use a TrustManager that fully populates acceptedIssuers; or else will always use some other TLS provider for
+     * their SSL contexts).
+     */
+    public static final String COMPONENT_RSA_SSLJ_5_1 = "sslj-5.1";
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -173,6 +189,21 @@ public abstract class JceProvider {
      *         false if it is either not capable of a FIPS 140 compliant mode or is not operating in it.
      */
     public boolean isFips140ModeEnabled() {
+        return false;
+    }
+
+    /**
+     * Check whether the specified named component is compatible with the current JceProvider in its current
+     * configuration.
+     * <P/>
+     * This method currently always returns false.  Specific JceProvider subclasses may override this to claim
+     * compatibility with some component.
+     *
+     * @param componentName the name of a component to inquire about, ie "sslj-5.1".  Required.
+     * @return true if the specified component is known to be compatible with the current JceProvider in its current configuration.
+     * @see #COMPONENT_RSA_SSLJ_5_1
+     */
+    public boolean isComponentCompatible(String componentName) {
         return false;
     }
 
@@ -361,7 +392,7 @@ public abstract class JceProvider {
      *
      * @param kstype the keystore type, ie "PKCS12".  Required.
      * @return an implementation of the requested keystore.  Never null.
-     * @thorws KeyStoreException if the specified keystore type is not available.
+     * @throws KeyStoreException if the specified keystore type is not available.
      */
     public KeyStore getKeyStore(String kstype) throws KeyStoreException {
         return getKeyStore(kstype, getProviderFor("KeyStore." + kstype));

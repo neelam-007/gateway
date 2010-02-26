@@ -1336,6 +1336,7 @@
                 <ref bean="uddiHelper"/>
             </set>
         </constructor-arg>
+        <property name="trustedCertServices" ref="trustedCertServices"/>
     </bean>
     <!--
       Top level bean since we want to get application events.

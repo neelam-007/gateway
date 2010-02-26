@@ -84,6 +84,10 @@ class CryptoJWrapper {
         cryptoj.getMethod("setMode", int.class).invoke(null, mode);
     }
 
+    Object getVersion() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        return cryptoj.getField("CRYPTO_J_VERSION").get(null);
+    }
+
     private void configureProvider( final Provider provider ) {
         try {
             final Method method = Provider.class.getDeclaredMethod( "removeService", Provider.Service.class );

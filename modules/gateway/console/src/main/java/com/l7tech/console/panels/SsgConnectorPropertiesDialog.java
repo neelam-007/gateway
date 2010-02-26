@@ -2,30 +2,34 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.InterfaceTag;
-import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
-import com.l7tech.util.*;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.*;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.net.InetAddress;
+import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.text.ParseException;
+import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
@@ -92,6 +96,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox usePrivateThreadPoolCheckBox;
     private JLabel threadPoolSizeLabel;
     private JButton interfacesButton;
+    private JCheckBox tls10CheckBox;
+    private JCheckBox tls11CheckBox;
+    private JCheckBox tls12CheckBox;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -321,6 +328,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     return "At least one cipher suite must be enabled for an SSL listener.";
                 if (isEccCertButHasRsaCiphersEnabled())
                     return "The server private key uses elliptic curve crypto, but at least one RSA cipher suite is enabled.";
+                if (!tls10CheckBox.isSelected() &&
+                    !tls11CheckBox.isSelected() &&
+                    !tls12CheckBox.isSelected())
+                {
+                    return "At least one version of TLS must be enabled to use HTTPS or FTPS.";
+                }
                 return null;
             }
         });
@@ -822,6 +835,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // Don't show properties that are already exposed via specialized controls
         propNames.remove(SsgConnector.PROP_BIND_ADDRESS);
         propNames.remove(SsgConnector.PROP_CIPHERLIST);
+        propNames.remove(SsgConnector.PROP_PROTOCOLS);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
@@ -829,6 +843,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         for (String propName : propNames) {
             final String value = connector.getProperty(propName);
             if (value != null) propertyListModel.addElement(new Pair<String,String>(propName, value));
+        }
+
+        String protocols = connector.getProperty(SsgConnector.PROP_PROTOCOLS);
+        if (protocols == null) {
+            tls10CheckBox.setSelected(true);
+            tls11CheckBox.setSelected(false);
+            tls12CheckBox.setSelected(false);
+        } else {
+            Set<String> protos = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            protos.addAll(Arrays.asList(protocols.split("\\s*,\\s*")));
+            tls10CheckBox.setSelected(protos.contains("TLSv1"));
+            tls11CheckBox.setSelected(protos.contains("TLSv1.1"));
+            tls12CheckBox.setSelected(protos.contains("TLSv1.2"));
         }
 
         enableOrDisableComponents();
@@ -888,6 +915,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
 
+        Set<String> protos = new LinkedHashSet<String>();
+        if (tls10CheckBox.isSelected()) protos.add("TLSv1");
+        if (tls11CheckBox.isSelected()) protos.add("TLSv1.1");
+        if (tls12CheckBox.isSelected()) protos.add("TLSv1.2");
+        String protoString = TextUtils.join(",", protos).toString();
+        if ("TLSv1".equals(protoString)) {
+            // We will avoid specifying a protocol string if it would match the default one anyway
+            protoString = null;
+        }
+        connector.putProperty(SsgConnector.PROP_PROTOCOLS, protoString);
+
         // Delete those removed properties
         // Note: make sure the step (removeProperty) is prior to the next step (putProperty), since there
         // is a case - some property is removed first and then added back again.
@@ -905,10 +943,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
         super.setVisible(b);
-    }
-
-    public SsgConnector getConnector() {
-        return connector;
     }
 
     private void onOk() {

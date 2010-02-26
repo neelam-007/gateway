@@ -46,6 +46,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
     public static final String PROP_CIPHERLIST = "cipherList";
 
+    /** Custom protocols list.  If set, should be a comma-separated list of JSSE protocol names, ie "TLSv1,TLSv1.1,TLSv1.2".  Default is to enable only "TLSv1". */
+    public static final String PROP_PROTOCOLS = "protocols";
+
     /** If a port range is required, this property holds the first port in the range. */
     public static final String PROP_PORT_RANGE_START = "portRangeStart";
 

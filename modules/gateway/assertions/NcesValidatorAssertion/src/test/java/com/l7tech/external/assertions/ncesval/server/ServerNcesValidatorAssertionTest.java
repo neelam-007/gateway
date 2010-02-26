@@ -102,6 +102,10 @@ public class ServerNcesValidatorAssertionTest {
                                                                        Set<Long> requiredOids) throws FindException {
                 return Collections.emptyList();
             }
+            @Override
+            public Collection<TrustedCert> getAllCertsByTrustFlags(Set<TrustedCert.TrustedFor> requiredTrustFlags) throws FindException {
+                return Collections.emptyList();
+            }
         };
     }
 
