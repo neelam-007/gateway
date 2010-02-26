@@ -319,7 +319,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         //
         Collection<SocketConnector> connectors = new ArrayList<SocketConnector>();
         try {
-            final SSLContext ctx = SSLContext.getInstance("SSL");
+            final SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init( defaultKey.getSslKeyManagers(), null, null );
 
             SslSocketConnector sslConnector = new SslSocketConnector(){
