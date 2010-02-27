@@ -16,12 +16,15 @@ import java.util.Map;
 /**
  * The IdentityProviderMO managed object represents an identity provider.
  *
+ * <p>The Accessor for identity providers is read only. Identity providers can
+ * be accessed by name or identifier.</p>
+ *
  * @see ManagedObjectFactory#createIdentityProvider()
  */
 @XmlRootElement(name="IdentityProvider")
 @XmlType(name="IdentityProviderType", propOrder={"name","identityProviderType","extensions","properties"})
-@AccessorFactory.ManagedResource(name ="identityProviders")
-public class IdentityProviderMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="identityProviders")
+public class IdentityProviderMO extends AccessibleObject {
 
     //- PUBLIC
 
@@ -83,10 +86,24 @@ public class IdentityProviderMO extends ManagedObject {
         this.properties = properties;
     }
 
+    /**
+     * Type for identity providers
+     */
     @XmlEnum(String.class)
     public enum IdentityProviderType {
+        /**
+         * Gateway internal identity provider.
+         */
         @XmlEnumValue("Internal") INTERNAL,
+
+        /**
+         * LDAP identity provider.
+         */
         @XmlEnumValue("LDAP") LDAP,
+
+        /**
+         * Federated identity provider.
+         */
         @XmlEnumValue("Federated") FEDERATED
     }
 

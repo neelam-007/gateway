@@ -1,5 +1,6 @@
 package com.l7tech.gateway.client;
 
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.Accessor;
 import com.l7tech.gateway.api.Client;
 import com.l7tech.gateway.api.ClientFactory;
@@ -461,15 +462,15 @@ public class GatewayManagementClient {
         }
 
         @SuppressWarnings( { "unchecked" } )
-        protected final Class<? extends ManagedObject> getManagedObjectType() throws CommandException {
-            Class<? extends ManagedObject> typeClass = null;
+        protected final Class<? extends AccessibleObject> getAccessibleObjectType() throws CommandException {
+            Class<? extends AccessibleObject> typeClass = null;
             final String type = arguments.type;
             if ( type == null ) {
                 throw new CommandException( "Invalid options: type is required.");
             }
 
-            final Collection<Class<? extends ManagedObject>> typeClasses = getManagedObjectTypes();
-            for ( Class<? extends ManagedObject> moClass : typeClasses ) {
+            final Collection<Class<? extends AccessibleObject>> typeClasses = getAccessibleObjectTypes();
+            for ( Class<? extends AccessibleObject> moClass : typeClasses ) {
                 XmlRootElement element = moClass.getAnnotation( XmlRootElement.class );
                 if ( element != null && element.name().equalsIgnoreCase( type ) ) {
                     typeClass = moClass;
@@ -638,18 +639,18 @@ public class GatewayManagementClient {
         }
 
         @SuppressWarnings( { "unchecked" } )
-        private Collection<Class<? extends ManagedObject>> getManagedObjectTypes() {
-            final Collection<Class<? extends ManagedObject>> typeClasses = new ArrayList<Class<? extends ManagedObject>>();
+        private Collection<Class<? extends AccessibleObject>> getAccessibleObjectTypes() {
+            final Collection<Class<? extends AccessibleObject>> typeClasses = new ArrayList<Class<? extends AccessibleObject>>();
             try {
-                String packageResource = ManagedObject.class.getPackage().getName().replace( '.', '/' );
-                for ( URL url : ClassUtils.listResources( ManagedObject.class, "jaxb.index" ) ) {
+                String packageResource = AccessibleObject.class.getPackage().getName().replace( '.', '/' );
+                for ( URL url : ClassUtils.listResources( AccessibleObject.class, "jaxb.index" ) ) {
                     final String path = url.getPath();
                     final int index = path.indexOf( packageResource );
                     if ( index > 0 ) {
                         final String className = path.substring( index + packageResource.length() + 1 );
-                        final Class<?> moClass = Class.forName( ManagedObject.class.getPackage().getName() + "." + className );
-                        if ( ManagedObject.class.isAssignableFrom( moClass ) ) {
-                            typeClasses.add( (Class<? extends ManagedObject>) moClass );
+                        final Class<?> aoClass = Class.forName( AccessibleObject.class.getPackage().getName() + "." + className );
+                        if ( AccessibleObject.class.isAssignableFrom( aoClass ) ) {
+                            typeClasses.add( (Class<? extends AccessibleObject>) aoClass );
                         }
                     }
                 }
@@ -701,7 +702,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final Accessor<?> accessor = client.getAccessor( getManagedObjectType() );
+            final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
                 final Iterator<? extends ManagedObject> iterator = accessor.enumerate();
@@ -755,7 +756,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final Accessor<?> accessor = client.getAccessor( getManagedObjectType() );
+            final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
                 ManagedObject mo = accessor.get( getSelectors() );
@@ -769,12 +770,12 @@ public class GatewayManagementClient {
     private static final class PutCommand extends Command {
         @Override
         public void run() throws CommandException {
-            doPut( getManagedObjectType() );
+            doPut( getAccessibleObjectType() );
         }
 
-        private <MO extends ManagedObject> void doPut( final Class<MO> type ) throws CommandException {
+        private <AO extends AccessibleObject> void doPut( final Class<AO> type ) throws CommandException {
             final Client client = buildClient();
-            final Accessor<MO> accessor = client.getAccessor( type );
+            final Accessor<AO> accessor = client.getAccessor( type );
 
             try {
                 accessor.put( cast( readInput(), type) );
@@ -787,15 +788,15 @@ public class GatewayManagementClient {
     private static final class CreateCommand extends Command {
         @Override
         public void run() throws CommandException {
-            doCreate( getManagedObjectType() );
+            doCreate( getAccessibleObjectType() );
         }
 
-        private <MO extends ManagedObject> void doCreate( final Class<MO> type ) throws CommandException {
+        private <AO extends AccessibleObject> void doCreate( final Class<AO> type ) throws CommandException {
             final Client client = buildClient();
-            final Accessor<MO> accessor = client.getAccessor( type );
+            final Accessor<AO> accessor = client.getAccessor( type );
 
             try {
-                MO mo = cast( readInput(), type );
+                AO mo = cast( readInput(), type );
                 String id = accessor.create( mo );
                 mo.setId( id );
                 writeOutput( mo );
@@ -809,7 +810,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final Accessor<?> accessor = client.getAccessor( getManagedObjectType() );
+            final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
                 accessor.delete( getSelectors() );
@@ -823,7 +824,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getManagedObjectType() );
+            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getAccessibleObjectType() );
 
             try {
                 final String policy = accessor.exportPolicy( getId() );
@@ -848,7 +849,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getManagedObjectType() );
+            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getAccessibleObjectType() );
 
             final List<PolicyAccessor.PolicyReferenceInstruction> instructions = new ArrayList<PolicyAccessor.PolicyReferenceInstruction>();
 
@@ -927,15 +928,15 @@ public class GatewayManagementClient {
     private static final class ValidateCommand extends Command {
         @Override
         public void run() throws CommandException {
-            doValidate( getManagedObjectType() );
+            doValidate( getAccessibleObjectType() );
         }
 
-        private <MO extends ManagedObject> void doValidate( final Class<MO> type ) throws CommandException {
+        private <AO extends AccessibleObject> void doValidate( final Class<AO> type ) throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<MO> accessor = (PolicyAccessor<MO>) client.getAccessor( type );
+            final PolicyAccessor<AO> accessor = (PolicyAccessor<AO>) client.getAccessor( type );
 
             try {
-                PolicyValidationResult result = hasInput() ?
+                final PolicyValidationResult result = hasInput() ?
                         accessor.validatePolicy( cast(readInput(), accessor.getType()), null ) :
                         accessor.validatePolicy( getId() );
                 writeOutput( result );

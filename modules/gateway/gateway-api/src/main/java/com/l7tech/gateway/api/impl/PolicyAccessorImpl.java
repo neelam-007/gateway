@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api.impl;
 
-import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyAccessor;
 import com.l7tech.gateway.api.PolicyExportResult;
@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  *
  */
-class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> implements PolicyAccessor<MO> {
+class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> implements PolicyAccessor<AO> {
 
     //- PUBLIC
 
@@ -118,7 +118,7 @@ class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> impl
      * 
      */
     @Override
-    public PolicyValidationResult validatePolicy( final MO managedObject,
+    public PolicyValidationResult validatePolicy( final AO managedObject,
                                                   final List<ResourceSet> resourceSets ) throws AccessorException {
         require( "managedObject", managedObject );
 
@@ -153,7 +153,7 @@ class PolicyAccessorImpl<MO extends ManagedObject> extends AccessorImpl<MO> impl
 
     PolicyAccessorImpl( final String url,
                         final String resourceUri,
-                        final Class<MO> typeClass,
+                        final Class<AO> typeClass,
                         final ResourceTracker resourceTracker ) {
         super( url, resourceUri, typeClass, resourceTracker );
     }

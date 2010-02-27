@@ -11,12 +11,15 @@ import java.util.List;
 /**
  * The JMSDestinationMO managed object represents a JMS Queue.
  *
+ * <p>The Accessor for JMS destinations is read only. JMS destinations can be
+ * accessed by identifier only.</p>
+ *
  * @see ManagedObjectFactory#createJMSDestination()
  */
 @XmlRootElement(name="JMSDestination")
 @XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extensions"})
-@AccessorFactory.ManagedResource(name ="jmsDestinations")
-public class JMSDestinationMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="jmsDestinations")
+public class JMSDestinationMO extends AccessibleObject {
 
     //- PUBLIC
 

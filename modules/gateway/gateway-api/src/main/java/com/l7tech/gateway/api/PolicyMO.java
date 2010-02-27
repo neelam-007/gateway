@@ -14,12 +14,15 @@ import java.util.List;
 /**
  * The PolicyMO managed object represents a policy.
  *
+ * <p>The Accessor for policies supports read and write. Policies can be
+ * accessed by name or identifier.</p>
+ *
  * @see ManagedObjectFactory#createPolicy()
  */
 @XmlRootElement(name="Policy")
 @XmlType(name="PolicyType", propOrder={"policyDetail", "extensions", "resourceSets"})
-@AccessorFactory.ManagedResource(name ="policies", accessorType=PolicyMOAccessorImpl.class)
-public class PolicyMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="policies", accessorType=PolicyMOAccessorImpl.class)
+public class PolicyMO extends AccessibleObject {
 
     //- PUBLIC
 
@@ -85,7 +88,7 @@ public class PolicyMO extends ManagedObject {
      * <p>The policy document for a policy is a ResourceSet with tag 'policy'
      * containing a Resource of type 'policy'.</p>
      *
-     * @return The resources or null.
+     * @return The resource sets or null.
      */
     @XmlElementWrapper(name="Resources", required=true)
     @XmlElement(name="ResourceSet", required=true)

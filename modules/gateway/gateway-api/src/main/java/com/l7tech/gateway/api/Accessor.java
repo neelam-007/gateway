@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The Accessor interface provides access to managed objects.
+ * The Accessor interface provides access to accessible managed objects.
  *
  * <p>Managed objects that support additional methods use extensions of this
  * interface.</p>
@@ -21,14 +21,14 @@ import java.util.regex.Pattern;
  * for non-business errors such as network issues.</p>
  */
 @SuppressWarnings( { "serial" } )
-public interface Accessor<MO extends ManagedObject> {
+public interface Accessor<AO extends AccessibleObject> {
 
     /**
      * Get the type managed by this accessor.
      *
      * @return The type class.
      */
-    Class<MO> getType();
+    Class<AO> getType();
 
     /**
      * Get a managed object by identifier.
@@ -39,7 +39,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @return The managed object (never null)
      * @throws AccessorException If an error occurs
      */
-    MO get( String identifier ) throws AccessorException;
+    AO get( String identifier ) throws AccessorException;
 
     /**
      * Get a managed object by the given property.
@@ -53,7 +53,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @return The managed object (never null)
      * @throws AccessorException If an error occurs
      */
-    MO get( String property, Object value ) throws AccessorException;
+    AO get( String property, Object value ) throws AccessorException;
 
     /**
      * Get a managed object by the given properties.
@@ -62,7 +62,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @return The managed object (never null)
      * @throws AccessorException If an error occurs
      */
-    MO get( Map<String,Object> propertyMap ) throws AccessorException;
+    AO get( Map<String,Object> propertyMap ) throws AccessorException;
 
     /**
      * Set values for a managed object.
@@ -73,7 +73,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @param item The item with updated values.
      * @throws AccessorException If an error occurs
      */
-    void put( MO item ) throws AccessorException;
+    void put( AO item ) throws AccessorException;
 
     /**
      * Create a new managed object.
@@ -85,7 +85,7 @@ public interface Accessor<MO extends ManagedObject> {
      * @return The identifier for the new item
      * @throws AccessorException If an error occurs
      */
-    String create( MO item ) throws AccessorException;
+    String create( AO item ) throws AccessorException;
 
     /**
      * Delete a managed object by identifier.
@@ -122,7 +122,7 @@ public interface Accessor<MO extends ManagedObject> {
      *
      * @return An iterator allowing access to all items.
      */
-    Iterator<MO> enumerate() throws AccessorException;
+    Iterator<AO> enumerate() throws AccessorException;
 
     /**
      * General purpose accessor exception.
@@ -171,11 +171,11 @@ public interface Accessor<MO extends ManagedObject> {
      * Accessor runtime exception for SOAP faults.
      */
     class AccessorSOAPFaultException extends AccessorRuntimeException {
-        static final Pattern SOAP_FAULT_PATTERN = Pattern.compile( "SOAP Fault: (.*)[\\r\\n]{1,2}     Actor: (.*)[\\r\\n]{1,2}      Code: (.*)[\\r\\n]{1,2}(?:  Subcodes:[ ]{0,1}(.*)[\\r\\n]{1,2}|)(?:    Detail: ((?s:.*)))", Pattern.MULTILINE );
+        static final Pattern SOAP_FAULT_PATTERN = Pattern.compile( "SOAP Fault: (.*)[\\r\\n]{1,2}     Actor: (.*)[\\r\\n]{1,2}      Code: (.*)[\\r\\n]{1,2}(?:  Subcodes:[ ]?(.*)[\\r\\n]{1,2}|)(?:    Detail: ((?s:.*)))", Pattern.MULTILINE );
                                                          
         private final String fault;
         private final String role;
-        private final String code; //NOTE: wsman does not expose codes and subcodes as QNames so we don't make this part of the public API
+        private final String code; //NOTE: Wiseman does not expose codes and subcodes as QNames so we don't make this part of the public API
         private final List<String> subcodes;
         private final List<String> details;
 

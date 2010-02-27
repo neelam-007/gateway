@@ -14,12 +14,15 @@ import java.util.Map;
 /**
  * The ClusterPropertyMO managed object represents a cluster wide property.
  *
+ * <p>The Accessor for cluster properties supports read and write. Cluster
+ * properties can be accessed by name or identifier.</p>
+ *
  * @see ManagedObjectFactory#createClusterProperty()
  */
 @XmlRootElement(name="ClusterProperty")
 @XmlType(name="ClusterPropertyType", propOrder={"name", "value", "extensions", "properties"})
-@AccessorFactory.ManagedResource(name ="clusterProperties")
-public class ClusterPropertyMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="clusterProperties")
+public class ClusterPropertyMO extends AccessibleObject {
 
     //- PUBLIC
 

@@ -36,7 +36,7 @@ public class ValidationUtils {
         if ( schemaSources == null ) {
             try {
                 final Map<String,String> sources = schemaSources = new LinkedHashMap<String,String>();
-                final JAXBContext context = JAXBContext.newInstance( "com.l7tech.gateway.api" );
+                final JAXBContext context = MarshallingUtils.getJAXBContext();
                 context.generateSchema( new SchemaOutputResolver(){
                     @Override
                     public Result createOutput( final String namespaceUri, final String suggestedFileName ) throws IOException {

@@ -28,7 +28,7 @@ public class CertificateResourceFactory extends EntityManagerResourceFactory<Tru
 
     @Override
     protected TrustedCertificateMO asResource( final TrustedCert trustedCert ) {
-        TrustedCertificateMO certificate = ManagedObjectFactory.createCertificate();
+        TrustedCertificateMO certificate = ManagedObjectFactory.createTrustedCertificate();
 
         certificate.setName( trustedCert.getName() );
         if (  trustedCert.getCertificate() != null ) {

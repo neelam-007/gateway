@@ -18,16 +18,20 @@ import java.util.Map;
  *
  * <p>The following properties are used:
  * <ul>
- *   <li><code>keyAlgorithm></code> (read only): The algorithm for the private key (e.g. "RSA")</li>
+ *   <li><code>keyAlgorithm</code> (read only): The algorithm for the private
+ *       key (e.g. "RSA")</li>
  * </ul>
  * </p>
+ *
+ * <p>The Accessor for private keys is read only. Private keys can be accessed
+ * by identifier only.</p>
  *
  * @see ManagedObjectFactory#createPrivateKey()
  */
 @XmlRootElement(name="PrivateKey")
 @XmlType(name="PrivateKeyType",propOrder={"certificateChain","extensions","properties"})
-@AccessorFactory.ManagedResource(name ="privateKeys")
-public class PrivateKeyMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="privateKeys")
+public class PrivateKeyMO extends AccessibleObject {
 
     //- PUBLIC
 

@@ -140,7 +140,7 @@ public class ManagedObjectFactory {
      *
      * @return The new instance.
      */
-    public static TrustedCertificateMO createCertificate() {
+    public static TrustedCertificateMO createTrustedCertificate() {
         return new TrustedCertificateMO();
     }
 

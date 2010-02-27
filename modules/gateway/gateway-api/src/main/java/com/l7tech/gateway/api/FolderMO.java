@@ -18,12 +18,15 @@ import java.util.Map;
  * <p>Folders are displayed in the SecureSpan Manager and can be used to group
  * services and policies.</p>
  *
+ * <p>The Accessor for folders is read only. Folders can be accessed by
+ * identifier only.</p>
+ *
  * @see ManagedObjectFactory#createFolder()
  */
 @XmlRootElement(name="Folder")
 @XmlType(name="FolderType", propOrder={"name", "extensions", "properties"})
-@AccessorFactory.ManagedResource(name ="folders")
-public class FolderMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="folders")
+public class FolderMO extends AccessibleObject {
 
     //- PUBLIC
 

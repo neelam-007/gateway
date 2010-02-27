@@ -24,9 +24,9 @@ import java.util.Map;
  *   <li><code>jndi.providerUrl</code> (required): URL to identify the JNDI service provider
  *       (see {@link javax.naming.Context#PROVIDER_URL PROVIDER_URL})</li>
  *   <li><code>username</code>: The connection username (see
- *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection}</li>
+ *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection})</li>
  *   <li><code>password</code>: The connection password (see
- *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection}</li>
+ *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection})</li>
  *   <li><code>queue.connectionFactoryName</code> (required): The name to lookup the queue connection
  *       factory in the initial JNDI context.</li>
  * </ul>

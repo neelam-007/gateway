@@ -14,12 +14,15 @@ import java.util.Map;
 /**
  * The JDBCConnectionMO managed object represents a JDBC connection.
  *
+ * <p>The Accessor for JDBC connections is read only. JDBC connections can be
+ * accessed by name or identifier.</p>
+ *
  * @see ManagedObjectFactory#createJDBCConnection()
  */
 @XmlRootElement(name="JDBCConnection")
 @XmlType(name="JDBCConnectionType", propOrder={"name","enabled","extensions","properties"})
-@AccessorFactory.ManagedResource(name ="jdbcConnections")
-public class JDBCConnectionMO extends ManagedObject {
+@AccessorFactory.AccessibleResource(name ="jdbcConnections")
+public class JDBCConnectionMO extends AccessibleObject {
 
     //- PUBLIC
 

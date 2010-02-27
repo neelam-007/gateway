@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.impl.AccessorFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
@@ -20,8 +21,8 @@ public class TestResourceFactory implements ResourceFactory<Object> {
 
     //- PUBLIC
 
-    @AccessorFactory.ManagedResource(name="testResources")
-    public static class TestResource {
+    @AccessorFactory.AccessibleResource(name="testResources")
+    public static class TestResource extends AccessibleObject {
     }
 
     @Override

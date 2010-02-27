@@ -26,7 +26,7 @@ public class MarshallingUtils {
 
     public static void marshal( final Object mo, final Result result ) throws IOException {
         try {
-            final JAXBContext context = createJAXBContext();
+            final JAXBContext context = getJAXBContext();
             final Marshaller marshaller = context.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
 
@@ -49,7 +49,7 @@ public class MarshallingUtils {
     @SuppressWarnings( { "unchecked" } )
     public static <MO> MO unmarshal( final Class<MO> objectClass, final Source source, final boolean validate ) throws IOException {
         try {
-            final JAXBContext context = createJAXBContext();
+            final JAXBContext context = getJAXBContext();
             final Unmarshaller unmarshaller = context.createUnmarshaller();
 
             if ( validate ) {
@@ -92,13 +92,36 @@ public class MarshallingUtils {
         return domSource.getNode()==null ? null : unmarshal( objectClass, domSource, false );
     }
 
+    static JAXBContext getJAXBContext() throws JAXBException {
+        JAXBContext context = MarshallingUtils.context;
+
+        if ( context == null ) {
+            context = JAXBContext.newInstance("com.l7tech.gateway.api");
+
+            if ( USE_STATIC_CONTEXT ) {
+                MarshallingUtils.context = context;
+            }
+        }
+
+        return context;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(MarshallingUtils.class.getName());
 
     private static final String WSMAN_XMLFRAGMENT = "XmlFragment";
 
-    private static JAXBContext createJAXBContext() throws JAXBException {
-        return JAXBContext.newInstance("com.l7tech.gateway.api");
+    private static final boolean USE_STATIC_CONTEXT;
+    static {
+        boolean staticContext = false;
+        try {
+            staticContext = Boolean.valueOf( System.getProperty( "com.l7tech.gateway.api.useStaticJAXBContext", "true" ) );
+        } catch ( SecurityException se ) {
+            // use safe default (non static)            
+        }
+        USE_STATIC_CONTEXT = staticContext;
     }
+
+    private static JAXBContext context;
 }

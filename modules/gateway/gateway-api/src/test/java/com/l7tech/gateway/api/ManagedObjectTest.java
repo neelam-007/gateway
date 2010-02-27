@@ -5,6 +5,8 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -19,9 +21,11 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.transform.Result;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
@@ -45,84 +49,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * 
+ * Serialization tests for managed objects.
  */
 public class ManagedObjectTest {
 
-    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/01/gateway-management";
-    private JAXBContext context;
-    private boolean debug = true;
-
-    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.unmodifiableCollection( Arrays.asList(
-        ClusterPropertyMO.class,
-        FolderMO.class,
-        IdentityProviderMO.class,
-        JDBCConnectionMO.class,
-        JMSDestinationMO.class,
-        PolicyMO.class,
-        PrivateKeyMO.class,
-        ResourceDocumentMO.class,
-        ServiceMO.class,
-        TrustedCertificateMO.class
-    ));
-
-    private static final String CERT_BOB_PEM =
-                "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
-                "MQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENB\n" +
-                "MB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FT\n" +
-                "SVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANC\n" +
-                "b2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8Ck\n" +
-                "SU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNU\n" +
-                "JCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVN\n" +
-                "BR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAq\n" +
-                "MCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1Ud\n" +
-                "DwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0j\n" +
-                "BBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiV\n" +
-                "Gv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVts\n" +
-                "ucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuW\n" +
-                "EIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7\n" +
-                "TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS\n" +
-                "4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9\n" +
-                "OHw6fC+3hkqolFd5CVI=";
+    //- PUBLIC
 
     @Before
     public void init() throws Exception {
         context = JAXBContext.newInstance("com.l7tech.gateway.api");
-    }
-
-    private X509Certificate cert( final String base64Encoded ) throws CertificateException {
-        return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate( new ByteArrayInputStream(HexUtils.decodeBase64( base64Encoded, true )) );
-    }
-
-    private <MO> MO roundTrip( final MO managedObject ) throws JAXBException {
-        return roundTrip( managedObject, null );
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    private <MO> MO roundTrip( final MO managedObject, final Functions.UnaryVoid<Document> callback ) throws JAXBException {
-        final Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
-
-        final StringWriter out = new StringWriter();
-        marshaller.marshal( managedObject, out );
-
-        final String xmlString = out.toString();
-        if (debug)
-            System.out.println(xmlString);
-
-        if ( callback != null ) {
-            final DOMResult domResult = new DOMResult();
-            marshaller.marshal( managedObject, domResult );
-            callback.call( (Document) domResult.getNode() );
-        }
-
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        MO mo = (MO) unmarshaller.unmarshal(new StringReader(xmlString));
-
-        if (debug)
-            marshaller.marshal( mo, System.out );
-
-        return mo;
     }
 
     @Test
@@ -434,7 +369,7 @@ public class ManagedObjectTest {
 
     @Test
     public void testTrustedCertificateSerialization() throws Exception {
-        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createCertificate();
+        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createTrustedCertificate();
         trustedCertificate.setId( "0" );
         trustedCertificate.setVersion( Integer.MIN_VALUE );
         trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData( cert(CERT_BOB_PEM) ) );
@@ -461,7 +396,7 @@ public class ManagedObjectTest {
         properties.put( "4", 1L );
         properties.put( "5", 4.4 );
 
-        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createCertificate();
+        final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createTrustedCertificate();
         trustedCertificate.setProperties( properties );
         
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate, new Functions.UnaryVoid<Document>(){
@@ -492,15 +427,41 @@ public class ManagedObjectTest {
         testUnmarshal("minimal");
     }
 
-    private void testUnmarshal( final String suffix ) throws Exception {
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        unmarshaller.setSchema( ValidationUtils.getSchema() );
-
-        for ( Class<?> managedObjectClass : MANAGED_OBJECTS ) {
-            final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
+    @Test
+    public void testManagedObjectFactoryReadWrite() throws Exception {
+        for ( Class<? extends ManagedObject> managedObjectClass : MANAGED_OBJECTS ) {
+            final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_full.xml";
             System.out.println( "Processing resource '" + resourceName + "'" );
-            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( ManagedObjectTest.class.getResource( resourceName ));
-            assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+
+            // Read / write using stream
+            {
+                InputStream in = null;
+                OutputStream out = null;
+                try {
+                    in = ManagedObject.class.getResourceAsStream( resourceName );
+                    ManagedObject mo = ManagedObjectFactory.read( in, managedObjectClass );
+
+                    assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+
+                    out = new ByteArrayOutputStream(2048);
+                    ManagedObjectFactory.write( mo, out );
+
+                } finally {
+                    ResourceUtils.closeQuietly( in );
+                    ResourceUtils.closeQuietly( out );
+                }
+            }
+
+            // Read using string, write as doc
+            {
+                ManagedObject mo = ManagedObjectFactory.read(
+                        new String( IOUtils.slurpUrl( ManagedObject.class.getResource( resourceName ) ) ),
+                        managedObjectClass );
+
+                assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+
+                assertNotNull( "Resource document null", ManagedObjectFactory.write( mo ) );
+            }
         }
     }
 
@@ -559,6 +520,45 @@ public class ManagedObjectTest {
         }
     }
 
+    //- PRIVATE
+
+    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/01/gateway-management";
+
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.<Class<? extends ManagedObject>>unmodifiableCollection( Arrays.asList(
+        ClusterPropertyMO.class,
+        FolderMO.class,
+        IdentityProviderMO.class,
+        JDBCConnectionMO.class,
+        JMSDestinationMO.class,
+        PolicyMO.class,
+        PrivateKeyMO.class,
+        ResourceDocumentMO.class,
+        ServiceMO.class,
+        TrustedCertificateMO.class
+    ));
+
+    private static final String CERT_BOB_PEM =
+                "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
+                "MQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENB\n" +
+                "MB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FT\n" +
+                "SVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANC\n" +
+                "b2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8Ck\n" +
+                "SU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNU\n" +
+                "JCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVN\n" +
+                "BR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAq\n" +
+                "MCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1Ud\n" +
+                "DwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0j\n" +
+                "BBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiV\n" +
+                "Gv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVts\n" +
+                "ucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuW\n" +
+                "EIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7\n" +
+                "TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS\n" +
+                "4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9\n" +
+                "OHw6fC+3hkqolFd5CVI=";
+
+    private JAXBContext context;
+    private boolean debug = true;
+
     private Collection<Class<?>> getJAXBTypes() throws Exception {
         final Collection<Class<?>> typeClasses = new ArrayList<Class<?>>();
         final String packageResource = ManagedObject.class.getPackage().getName().replace( '.', '/' );
@@ -574,4 +574,50 @@ public class ManagedObjectTest {
         return typeClasses;
     }
 
+    private void testUnmarshal( final String suffix ) throws Exception {
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema( ValidationUtils.getSchema() );
+
+        for ( Class<?> managedObjectClass : MANAGED_OBJECTS ) {
+            final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
+            System.out.println( "Processing resource '" + resourceName + "'" );
+            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( ManagedObjectTest.class.getResource( resourceName ));
+            assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+        }
+    }
+
+    private X509Certificate cert( final String base64Encoded ) throws CertificateException {
+        return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate( new ByteArrayInputStream(HexUtils.decodeBase64( base64Encoded, true )) );
+    }
+
+    private <MO> MO roundTrip( final MO managedObject ) throws JAXBException {
+        return roundTrip( managedObject, null );
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private <MO> MO roundTrip( final MO managedObject, final Functions.UnaryVoid<Document> callback ) throws JAXBException {
+        final Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
+
+        final StringWriter out = new StringWriter();
+        marshaller.marshal( managedObject, out );
+
+        final String xmlString = out.toString();
+        if (debug)
+            System.out.println(xmlString);
+
+        if ( callback != null ) {
+            final DOMResult domResult = new DOMResult();
+            marshaller.marshal( managedObject, domResult );
+            callback.call( (Document) domResult.getNode() );
+        }
+
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        MO mo = (MO) unmarshaller.unmarshal(new StringReader(xmlString));
+
+        if (debug)
+            marshaller.marshal( mo, System.out );
+
+        return mo;
+    }
 }

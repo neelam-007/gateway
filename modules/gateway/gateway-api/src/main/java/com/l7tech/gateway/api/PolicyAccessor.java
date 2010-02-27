@@ -15,7 +15,7 @@ import java.util.Map;
  *
  * @see AccessorRuntimeException <code>AccessorRuntimeException</code> Which may be thrown by methods of this interface.
  */
-public interface PolicyAccessor<MO extends ManagedObject> extends Accessor<MO> {
+public interface PolicyAccessor<AO extends AccessibleObject> extends Accessor<AO> {
 
     /**
      * Get the policy for the identified resource.
@@ -67,7 +67,7 @@ public interface PolicyAccessor<MO extends ManagedObject> extends Accessor<MO> {
      * @return The result of the policy validation
      * @throws AccessorException If an error occurs
      */
-    PolicyValidationResult validatePolicy( MO item,
+    PolicyValidationResult validatePolicy( AO item,
                                            List<ResourceSet> resourceSets ) throws AccessorException;
 
     /**

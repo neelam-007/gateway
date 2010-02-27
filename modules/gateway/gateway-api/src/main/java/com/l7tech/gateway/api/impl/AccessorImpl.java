@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api.impl;
 
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.Accessor;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -39,34 +40,34 @@ import java.util.NoSuchElementException;
 /**
  * 
  */
-class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
+class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
     //- PUBLIC
 
     @Override
-    public Class<MO> getType() {
+    public Class<AO> getType() {
         return typeClass;
     }
 
     @Override
-    public MO get( final String identifier ) throws AccessorException {
+    public AO get( final String identifier ) throws AccessorException {
         require( "identifier", identifier );
         return get( Collections.<String,Object>singletonMap(ID_SELECTOR, identifier) );
     }
 
     @Override
-    public MO get( final String property, final Object value ) throws AccessorException {
+    public AO get( final String property, final Object value ) throws AccessorException {
         require( "property", property );
         require( "value", value );
         return get( Collections.singletonMap( property, value ));
     }
 
     @Override
-    public MO get( final Map<String, Object> propertyMap ) throws AccessorException {
+    public AO get( final Map<String, Object> propertyMap ) throws AccessorException {
         require( "propertyMap", propertyMap );
-        return invoke(new AccessorMethod<MO>(){
+        return invoke(new AccessorMethod<AO>(){
             @Override
-            public MO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
+            public AO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
                         ResourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
 
@@ -76,7 +77,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     }
 
     @Override
-    public void put( final ManagedObject item ) throws AccessorException {
+    public void put( final AO item ) throws AccessorException {
         require( "item", item );
         invoke(new AccessorMethod<Void>(){
             @Override
@@ -91,7 +92,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     }
 
     @Override
-    public String create( final ManagedObject item ) throws AccessorException {
+    public String create( final AO item ) throws AccessorException {
         require( "item", item );
         return invoke(new AccessorMethod<String>(){
             @Override
@@ -120,9 +121,9 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     @Override
     public void delete( final Map<String, Object> propertyMap ) throws AccessorException {
         require( "propertyMap", propertyMap );
-        invoke(new AccessorMethod<MO>(){
+        invoke(new AccessorMethod<AO>(){
             @Override
-            public MO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
+            public AO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
                         ResourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
 
@@ -133,8 +134,8 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
     }
 
     @Override
-    public Iterator<MO> enumerate() throws AccessorException {
-        return new EnumeratingIterator<MO>( url, resourceUri, timeout, typeClass, resourceTracker );
+    public Iterator<AO> enumerate() throws AccessorException {
+        return new EnumeratingIterator<AO>( url, resourceUri, timeout, typeClass, resourceTracker );
     }
 
     //- PACKAGE
@@ -144,7 +145,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
 
     AccessorImpl( final String url,
                   final String resourceUri,
-                  final Class<MO> typeClass,
+                  final Class<AO> typeClass,
                   final ResourceTracker resourceTracker ) {
         this.url = url;
         this.resourceUri = resourceUri;
@@ -165,7 +166,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
         return timeout;
     }
 
-    Class<MO> getTypeClass() {
+    Class<AO> getTypeClass() {
         return typeClass;
     }
 
@@ -224,7 +225,7 @@ class AccessorImpl<MO extends ManagedObject> implements Accessor<MO> {
 
     private final String url;
     private final String resourceUri;
-    private final Class<MO> typeClass;
+    private final Class<AO> typeClass;
     private final long timeout;
     private final ResourceTracker resourceTracker;
 

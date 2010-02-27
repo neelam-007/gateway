@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.objectmodel.EntityType;
 
 import java.lang.annotation.Documented;
@@ -103,7 +104,7 @@ public interface ResourceFactory<R> {
     @Retention(value = RUNTIME)
     @Target(TYPE)
     @interface ResourceType {
-        Class<?> type();
+        Class<? extends AccessibleObject> type();
     }
 
     /**

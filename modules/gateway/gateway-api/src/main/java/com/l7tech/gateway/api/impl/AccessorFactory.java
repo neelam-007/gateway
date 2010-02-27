@@ -1,7 +1,7 @@
 package com.l7tech.gateway.api.impl;
 
+import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.Accessor;
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagementRuntimeException;
 
 import javax.xml.bind.annotation.XmlSchema;
@@ -21,9 +21,9 @@ public class AccessorFactory {
     //- PUBLIC
 
     @SuppressWarnings({ "unchecked" })
-    public static <MO extends ManagedObject> Accessor<MO> createAccessor( final Class<MO> managedObjectClass,
-                                                                          final String url,
-                                                                          final ResourceTracker resourceTracker ) {
+    public static <MO extends AccessibleObject> Accessor<MO> createAccessor( final Class<MO> managedObjectClass,
+                                                                             final String url,
+                                                                             final ResourceTracker resourceTracker ) {
         if ( hasAccessor(managedObjectClass) ) {
             final Class<? extends Accessor> accessorClass = getAccessor( managedObjectClass );
             try {
@@ -43,15 +43,15 @@ public class AccessorFactory {
         }
     }
 
-    public static String getResourceName( final Class<?> managedObjectClass ) {
-        final AccessorFactory.ManagedResource resource = managedObjectClass.getAnnotation( AccessorFactory.ManagedResource.class );
+    public static String getResourceName( final Class<? extends AccessibleObject> managedObjectClass ) {
+        final AccessibleResource resource = managedObjectClass.getAnnotation( AccessibleResource.class );
         if ( resource == null ) {
             throw new ManagementRuntimeException("Missing annotation for resource '"+managedObjectClass.getName()+"'.");
         }
         return resource.name();
     }
     
-    public static String getResourceUri( final Class<?> managedObjectClass ) {
+    public static String getResourceUri( final Class<? extends AccessibleObject> managedObjectClass ) {
         final XmlSchema schema = Accessor.class.getPackage().getAnnotation( XmlSchema.class );
         if ( schema == null ) {
             throw new ManagementRuntimeException("Missing annotation for API package.");
@@ -61,19 +61,19 @@ public class AccessorFactory {
 
     @Retention(value = RUNTIME)
     @Target(TYPE)
-    public @interface ManagedResource {
+    public @interface AccessibleResource {
         public abstract String name();
         public abstract Class<? extends Accessor> accessorType() default Accessor.class;
     }
 
     //- PRIVATE
 
-    private static boolean hasAccessor( final Class<?> managedObjectClass ) {
-        return !Accessor.class.equals( getAccessor( managedObjectClass ) );
+    private static boolean hasAccessor( final Class<?> accessibleObjectClass ) {
+        return !Accessor.class.equals( getAccessor( accessibleObjectClass ) );
     }
 
-    private static Class<? extends Accessor> getAccessor( final Class<?> managedObjectClass ) {
-        final AccessorFactory.ManagedResource resource = managedObjectClass.getAnnotation( AccessorFactory.ManagedResource.class );
+    private static Class<? extends Accessor> getAccessor( final Class<?> accessibleObjectClass ) {
+        final AccessibleResource resource = accessibleObjectClass.getAnnotation( AccessibleResource.class );
         return resource != null ? resource.accessorType() : Accessor.class;
     }
 }

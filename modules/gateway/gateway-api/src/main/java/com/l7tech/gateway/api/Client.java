@@ -26,12 +26,12 @@ public class Client implements Closeable {
     /**
      * Get the accessor for the given type.
      *
-     * @param managedObjectClass The type of managed object
+     * @param accessibleObjectClass The type of accessible object
      * @return The accessor for the type
      */
-    public <MO extends ManagedObject> Accessor<MO> getAccessor( final Class<MO> managedObjectClass ) {
+    public <AO extends AccessibleObject> Accessor<AO> getAccessor( final Class<AO> accessibleObjectClass ) {
         return AccessorFactory.createAccessor( 
-                managedObjectClass,
+                accessibleObjectClass,
                 url,
                 tracker );
     }
