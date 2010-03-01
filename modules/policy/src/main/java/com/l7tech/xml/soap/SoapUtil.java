@@ -1559,7 +1559,10 @@ public class SoapUtil extends SoapConstants {
             }
         }
 
-        if (use == null) return null;
+        if (use == null) {
+            if (listener != null) listener.notifyNoNames(bindingOperation.getName());
+            return null;
+        }
 
         List<QName> operationQNames = new ArrayList<QName>();
 
@@ -1573,7 +1576,10 @@ public class SoapUtil extends SoapConstants {
             operationQNames.add(new QName(namespace, bindingOperation.getName()));
         } else if (Wsdl.STYLE_DOCUMENT.equalsIgnoreCase(operationStyle.trim())) {
             javax.wsdl.Message inputMessage = bindingOperation.getOperation().getInput().getMessage();
-            if (inputMessage == null) return null;
+            if (inputMessage == null) {
+                if (listener != null) listener.notifyNoNames(bindingOperation.getName());
+                return null;
+            }
 
             //noinspection unchecked
             List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
@@ -1618,10 +1624,6 @@ public class SoapUtil extends SoapConstants {
         } else {
             if (listener != null) listener.notifyBadStyle(operationStyle, bindingOperation.getName());
             return null;
-        }
-
-        if (operationQNames.isEmpty()) {
-            if (listener != null) listener.notifyNoNames(bindingOperation.getName());
         }
 
         return operationQNames;
