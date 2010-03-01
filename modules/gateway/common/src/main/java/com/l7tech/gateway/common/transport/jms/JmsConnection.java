@@ -101,6 +101,12 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
     }
 
+    @Size(min=1,max=128)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     @Size(max=32)
     @Column(name="username", length=32)
     public String getUsername() {

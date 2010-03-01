@@ -20,6 +20,7 @@ import com.l7tech.xml.soap.SoapVersion;
 
 import javax.persistence.Transient;
 import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
@@ -429,6 +430,12 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @return the HTTP URI (the part of a URL after the hostname) for this service.
      */
     @Size(max=128)
+    @Pattern.List( {
+            @Pattern(regexp="(?!/ssg).*", message="must not start with '/ssg'"),
+            @Pattern(regexp="(?!.*?/service/\\d+$).*"),
+            @Pattern(regexp="(?!.*?[\\?&]serviceoid=\\d+(?:\\&|$)).*"),
+            @Pattern(regexp="/.+")
+    } )
     public String getRoutingUri() {
         return routingUri;
     }
@@ -473,6 +480,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
      * @deprecated only meant for serialization (by Hibernate and JAXB)
      */
+    @Deprecated
     public Set<HttpMethod>getHttpMethods() {
         return httpMethods;
     }

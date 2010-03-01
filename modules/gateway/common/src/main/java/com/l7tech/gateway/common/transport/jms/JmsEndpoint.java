@@ -78,6 +78,12 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
                : null;
     }
 
+    @Size(min=1,max=128)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     @Size(max=32)
     @Column(name="username",length=32)
     public String getUsername() {

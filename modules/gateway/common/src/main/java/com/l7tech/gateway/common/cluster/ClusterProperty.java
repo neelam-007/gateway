@@ -70,7 +70,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
     }
 
     @NotNull
-    @Size(min=1,max=131072) // limit to 128k
+    @Size(min=0,max=131072) // limit to 128k
     @Column(name="propValue", nullable=false, length=Integer.MAX_VALUE)
     @Lob
     public String getValue() {
@@ -101,11 +101,18 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         return hiddenInGui.contains(_name);
     }
 
-    public boolean equals(Object other) {
-        if (! (other instanceof ClusterProperty) )
-            return false;
-        ClusterProperty cp = (ClusterProperty)other;
-        return _oid == cp._oid && _name.equals(cp._name) && value.equals(cp.value);
+    @SuppressWarnings({ "RedundantIfStatement" })
+    @Override
+    public boolean equals( final Object o ) {
+        if ( this == o ) return true;
+        if ( o == null || getClass() != o.getClass() ) return false;
+        if ( !super.equals( o ) ) return false;
+
+        final ClusterProperty that = (ClusterProperty) o;
+
+        if ( value != null ? !value.equals( that.value ) : that.value != null ) return false;
+
+        return true;
     }
 
     public int hashCode() {
