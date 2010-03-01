@@ -2490,6 +2490,7 @@
                 version="true"
                 author="false"
                 use="true"
+                public="true"
                 windowtitle="Layer 7 Gateway Management API">
 
             <!--links to j2se & j2ee javadocs provided so they can be linked to from within the layer7-api javadoc -->

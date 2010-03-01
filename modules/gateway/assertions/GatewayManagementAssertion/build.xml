@@ -46,7 +46,7 @@
             <classpath refid="gatewaymanagementassertion.generate.wsdl.path"/>
         </javac>
 
-        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true">
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true" fork="true">
             <arg value="${basedir}/build/etc/wsdl"/>
         </java>
 
