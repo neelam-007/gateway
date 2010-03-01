@@ -30,8 +30,8 @@ public class ServerMtomValidateAssertionTest {
 
         final MtomValidateAssertion.ValidationRule rule = new MtomValidateAssertion.ValidationRule();
         rule.setSize( 1024 );
-        rule.setXpathExpression( new XpathExpression( "/s12:Envelope/s12:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
-                    put("s12","http://www.w3.org/2003/05/soap-envelope");
+        rule.setXpathExpression( new XpathExpression( "/s:Envelope/s:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
+                    put("s","http://schemas.xmlsoap.org/soap/envelope/");
                     put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
                 }} ) );
 

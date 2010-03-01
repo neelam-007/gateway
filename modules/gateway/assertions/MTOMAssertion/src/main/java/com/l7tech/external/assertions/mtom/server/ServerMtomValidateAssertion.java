@@ -181,7 +181,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
                                 }
                             }
 
-                            if ( elementCount > rule.getCount() ) {
+                            if ( rule.getCount() != 0 && elementCount > rule.getCount() ) {
                                 status = getBadMessageStatus();
                                 auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Count exceeded" );
                                 break;
