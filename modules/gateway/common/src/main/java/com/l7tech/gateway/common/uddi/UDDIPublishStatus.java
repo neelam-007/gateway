@@ -93,6 +93,12 @@ public class UDDIPublishStatus extends PersistentEntityImp {
 
     public void setPublishStatus(PublishStatus publishStatus) {
         this.publishStatus = publishStatus;
+
+        //if the status is published, then reset the fail count, as the status may be reset to publish, in which case
+        //we want to follow through with the same fail count logic
+        if(publishStatus == PublishStatus.PUBLISHED){
+            setFailCount(0);
+        }
     }
 
     /**
