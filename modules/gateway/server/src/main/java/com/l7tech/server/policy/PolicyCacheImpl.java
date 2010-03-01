@@ -1115,6 +1115,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         Iterator i = rootAssertion.preorderIterator();
         while( i.hasNext() ) {
             Assertion ass = (Assertion) i.next();
+            if ( !ass.isEnabled() ) continue;
+
             if( Assertion.isHardwareAccelerated( ass ) ) {
                 tarariWanted = true;
             } else if( Assertion.isRequest( ass ) && Assertion.isWSSecurity( ass ) ) {
