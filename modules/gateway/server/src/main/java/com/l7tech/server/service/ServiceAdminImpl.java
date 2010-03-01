@@ -334,7 +334,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
         if ( !uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service ) ) {
-            throw new UpdateException("Cannot change the WSDL for a Published Service when it's WSDL is under UDDI control");
+            throw new UpdateException("Cannot change the WSDL for a Published Service when its WSDL is under UDDI control");
         }
         oid = doSavePublishedService(service, false);
 
