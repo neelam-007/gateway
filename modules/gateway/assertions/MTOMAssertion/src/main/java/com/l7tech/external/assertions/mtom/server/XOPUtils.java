@@ -119,6 +119,7 @@ public class XOPUtils {
      * <li>All referenced attachments are present</li>
      * <li>Each attachment is referenced only once</li>
      * <li>There are no extra attachments (unreferenced attachments, this is not a spec item)</li>
+     * <li>There are no duplicated Content-IDs</li>
      * </ul>
      *
      * @param message The message to check.
@@ -170,7 +171,9 @@ public class XOPUtils {
             if ( !contentIds.contains( cid ) && !mainPartId.equals("<" + cid + ">") ) {
                 throw new XOPException( "Unreferenced MIME part: " + cid );
             }
-            partCids.add( cid );
+            if (!partCids.add( cid )) {
+                throw new XOPException( "MIME part Content-IDs are not unique: " + cid );
+            }
         }
 
         contentIds.removeAll( partCids );
