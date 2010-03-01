@@ -6,6 +6,7 @@ package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -102,6 +103,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     @Size(min=1,max=128)
+    @Transient
     @Override
     public String getName() {
         return super.getName();

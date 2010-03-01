@@ -79,6 +79,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     @Size(min=1,max=128)
+    @Transient
     @Override
     public String getName() {
         return super.getName();
