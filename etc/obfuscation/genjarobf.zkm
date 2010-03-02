@@ -47,7 +47,8 @@ exclude     public *.^* and
             *.* @javax.annotation.Resource * and
             @com.l7tech.util.NonObfuscatable *.* and
             *.* @com.l7tech.util.NonObfuscatable * and
-            *.* @com.l7tech.util.NonObfuscatable *(*);
+            *.* @com.l7tech.util.NonObfuscatable *(*) and
+            com.l7tech.policy.assertion.ext.ServiceInvocation setCustomAuditor(*);
 
 existingSerializedClasses *.* implements java.io.Serializable;
 
