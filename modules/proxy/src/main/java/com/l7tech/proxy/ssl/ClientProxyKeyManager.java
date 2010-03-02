@@ -63,7 +63,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String[] getServerAliases(String s, Principal[] principals) {
-        throw new ClientProxySslException("SSL server sockets are not supported by the ClientProxyKeyManager");
+        return new String[0];
     }
 
     public String chooseServerAlias(String s, Principal[] principals, Socket socket) {

@@ -239,7 +239,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[]{path, file});
-        
+
         // Create request message
         Message request;
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;

@@ -16,6 +16,7 @@ public class RsaJceProviderEngine extends JceProvider {
 
     private static final String PROP_FIPS = "com.l7tech.security.fips.enabled";
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
+    private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
 
     private static final boolean FIPS = SyspropUtil.getBoolean(PROP_FIPS, false);
 
@@ -53,11 +54,41 @@ public class RsaJceProviderEngine extends JceProvider {
             PKCS12_PROVIDER = findPkcs12Provider(cryptoj.provider.getClass().getClassLoader());
             TLS10_PROVIDER = findTls10Provider(cryptojVersion);
             TLS12_PROVIDER = findTls12Provider(cryptojVersion);
+            maybeChangeDefaultTlsProvider(cryptojVersion);
         } catch (NoSuchFieldException e) {
             throw new RuntimeException("Unable to set FIPS 140 mode (with SSL and ECC): " + ExceptionUtils.getMessage(e), e);
         } catch (Exception e) {
             throw new RuntimeException("Unable to initialize software cryptography provider: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    private static void maybeChangeDefaultTlsProvider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
+        if (null != SyspropUtil.getProperty(PROP_TLS_PROV)) {
+            logger.fine("Leaving default TLS provider unchanged");
+            return;
+        }
+
+        // See if SSL-J is available
+        if (!isCompatibleWithSslJ51(cryptojVersion)) {
+            logger.info("TLS 1.2 not enabled.  The TLS 1.2 provider is not compatible with the current cryptography provider.");
+            return;
+        }
+
+        Provider jsseProvider = findRsaJsseProvider(cryptojVersion);
+        if (jsseProvider == null) {
+            logger.fine("TLS 1.2 not enabled.  The TLS 1.2 provider is not available.");
+            return;
+        }
+
+        Provider sunjsse = Security.getProvider("SunJSSE");
+        Security.insertProviderAt(jsseProvider, 1);
+        if (sunjsse != null) {
+            // Move SunJSSE to the end.  We can't unregister it completely because we still need to use it
+            // and, because of how it is implemented, it is non-functional unless registered as a security provider.
+            Security.removeProvider("SunJSSE");
+            Security.addProvider(sunjsse);
+        }
+        logger.info("Registered " + jsseProvider.getName() + " " + jsseProvider.getVersion() + " as default JSSE provider");
     }
 
     /*
@@ -83,6 +114,15 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static Provider findTls10Provider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
+        String provName = SyspropUtil.getProperty(PROP_TLS_PROV);
+        if (provName != null && provName.trim().length() > 0) {
+            Provider prov = Security.getProvider(provName);
+            if (prov != null) {
+                logger.info("Using specified TLS 1.0 provider: " + provName);
+                return prov;
+            }
+        }
+
         // Prefer SunJSSE as TLS 1.0 provider since it currently has cleaner TrustManager behavior
         Provider prov = findSunJsseProvider();
         if (prov != null) {
@@ -101,6 +141,15 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static Provider findTls12Provider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
+        String provName = SyspropUtil.getProperty(PROP_TLS_PROV);
+        if (provName != null && provName.trim().length() > 0) {
+            Provider prov = Security.getProvider(provName);
+            if (prov != null) {
+                logger.info("Using specified TLS 1.2 provider: " + provName);
+                return prov;
+            }
+        }
+
         // We can only provide TLS 1.2 if SSL-J is availble in classpath and compatible with current Crypto-J version
         Provider prov = findRsaJsseProvider(cryptojVersion);
         if (prov != null) {

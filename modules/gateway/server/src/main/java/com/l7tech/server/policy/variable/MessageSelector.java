@@ -20,6 +20,7 @@ import com.l7tech.util.Functions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -58,6 +59,10 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String TCP_LOCAL_PORT = "tcp.localport";
 
     // NOTE: Variable names must be lower case
+    private static final String SSL_CIPHER_SUITE = "ssl.ciphersuite";
+    private static final String SSL_KEY_SIZE = "ssl.keysize";
+
+    // NOTE: Variable names must be lower case
     private static final String AUTH_USER_PASSWORD = "password";
     private static final String AUTH_USER_USERNAME = "username";
     private static final String AUTH_USER_USER = "authenticateduser";
@@ -74,6 +79,11 @@ class MessageSelector implements ExpandVariables.Selector {
         put(TCP_LOCAL_IP, Functions.propertyTransform(TcpKnob.class, "localAddress"));
         put(TCP_LOCAL_HOST, Functions.propertyTransform(TcpKnob.class, "localHost"));
         put(TCP_LOCAL_PORT, Functions.propertyTransform(TcpKnob.class, "localPort"));
+    }});
+
+    private static final Map<String, String> SERVLET_ATTRIBUTE_FIELDS = Collections.unmodifiableMap(new HashMap<String, String>() {{
+        put(SSL_CIPHER_SUITE, "javax.servlet.request.cipher_suite");
+        put(SSL_KEY_SIZE, "javax.servlet.request.key_size");
     }});
 
     @Override
@@ -133,9 +143,14 @@ class MessageSelector implements ExpandVariables.Selector {
             if (tcpFieldGetter != null) {
                 selector = new TcpKnobMessageAttributeSelector(tcpFieldGetter);
             } else {
-                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                if (strict) throw new IllegalArgumentException(msg);
-                return null;
+                String servletAttrName = SERVLET_ATTRIBUTE_FIELDS.get(lname);
+                if (servletAttrName != null) {
+                    selector = new HttpServletAttributeSelector(servletAttrName);
+                } else {
+                    String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                    if (strict) throw new IllegalArgumentException(msg);
+                    return null;
+                }
             }
         }
 
@@ -150,6 +165,7 @@ class MessageSelector implements ExpandVariables.Selector {
                 "originalmainpart",
                 "wss",
                 "tcp",
+                "ssl",
                 SIZE_NAME,
                 CONTENT_TYPE,
                 AUTH_USER_PASSWORD,
@@ -472,6 +488,27 @@ class MessageSelector implements ExpandVariables.Selector {
             if (tcpknob == null)
                 return null;
             return new Selection(tcpFieldGetter.call(tcpknob));
+        }
+    }
+
+    private static class HttpServletAttributeSelector implements MessageAttributeSelector {
+        private final String attributeName;
+
+        private HttpServletAttributeSelector(String attributeName) {
+            this.attributeName = attributeName;
+        }
+
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            HttpServletRequestKnob hsRequestKnob = context.getKnob(HttpServletRequestKnob.class);
+            if (hsRequestKnob == null) {
+                // TODO support protocols other than HTTPS
+                // although getting this information out of Apache FtpServer doesn't look straightforward at the moment
+                return null;
+            }
+            final HttpServletRequest httpServletRequest = hsRequestKnob.getHttpServletRequest();
+            Object value = httpServletRequest.getAttribute(attributeName);
+            return new Selection(value == null ? null : value.toString());
         }
     }
 }
