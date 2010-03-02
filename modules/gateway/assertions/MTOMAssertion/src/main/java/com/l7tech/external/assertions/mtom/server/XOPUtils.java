@@ -444,7 +444,7 @@ public class XOPUtils {
                         true );
             } catch (IOException ioe) {
                 if ( ExceptionUtils.getMessage(ioe).equals("Unable to read stream: the specified maximum data size limit would be exceeded") ) {
-                    throw new XOPException( "Attachment size lmiit exceeded for '" + attachment.getContentId(true ) + "'.");
+                    throw new XOPException( "Attachment size limit exceeded for '" + attachment.getContentId(true ) + "'.");
                 } else {
                     throw ioe;
                 }

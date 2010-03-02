@@ -125,7 +125,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 auditor.logAndAudit(
                         MTOM_DECODE_ERROR,
                         new String[]{"Error decoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                        e );
+                        e instanceof XOPUtils.XOPException ? e.getCause() : e );
             }
         }
         
