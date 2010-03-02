@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mtom.server;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -259,7 +260,7 @@ public class ServerMtomDecodeAssertionTest {
                         return new ByteArrayStashManager();
                     }
                 },
-                new MockConfig( new Properties() )
+                new MockConfig( new Properties(){{ setProperty( ClusterProperty.asServerConfigPropertyName(MtomDecodeAssertion.PROP_DECODE_SECURED), "true"); }} )
         );
     }
 

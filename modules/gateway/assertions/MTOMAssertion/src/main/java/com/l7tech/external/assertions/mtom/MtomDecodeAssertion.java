@@ -12,6 +12,8 @@ import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 
+import java.util.Collections;
+
 /**
  *
  */
@@ -19,6 +21,8 @@ import com.l7tech.policy.variable.DataType;
 public class MtomDecodeAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
     //- PUBLIC
+
+    public static final String PROP_DECODE_SECURED = "mtom.decodeSecuredMessages";
 
     public boolean isRequireEncoded() {
         return requireEncoded;
@@ -81,6 +85,9 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mtom.console.MtomDecodeAssertionPropertiesDialog");
+        meta.put(CLUSTER_PROPERTIES, Collections.singletonMap( PROP_DECODE_SECURED, new String[]{
+                "Should MTOM messages containing WS-Security for processing by this gateway be automatically decoded (true/false)",
+                "true" } ));
         
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

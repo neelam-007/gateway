@@ -14,7 +14,6 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -119,9 +118,6 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
 
         // These are really module metadata rather than for this assertion
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mtom.server.MtomModuleLifecycle");
-        meta.put(CLUSTER_PROPERTIES, Collections.singletonMap( "mtom.decodeSecuredMessages", new String[]{
-                "Should MTOM messages containing WS-Security for processing by this gateway be automatically decoded (true/false)", 
-                "true" } ));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

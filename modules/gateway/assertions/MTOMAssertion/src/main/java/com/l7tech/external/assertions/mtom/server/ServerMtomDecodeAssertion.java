@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mtom.server;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -67,7 +68,11 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
 
         if ( XOPUtils.isXop( header ) ) {
             if ( assertion.isProcessSecuredOnly() ) {
-                status = reconstituteIfSecured( context, message );
+                if ( config.getBooleanProperty( ClusterProperty.asServerConfigPropertyName(MtomDecodeAssertion.PROP_DECODE_SECURED), false ) ) {
+                    status = reconstituteIfSecured( context, message );
+                } else {
+                    status = AssertionStatus.NONE;
+                }
             } else {
                 status = reconstitute( context, message );
             }
