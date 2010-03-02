@@ -254,8 +254,7 @@ public class DomCompiledXpath extends CompiledXpath {
 
         // No other result but node should be possible, but we'll check just in case
         if (!(o instanceof Node)) {
-            logger.warning("Jaxen xpath evaluation returned unsupported type " + o.getClass().getName());
-            return null;
+            throw new XPathExpressionException("XPath evaluation returned unsupported type " + o.getClass().getName());
         }
 
         return new XpathResult.XpathResultAdapter() {

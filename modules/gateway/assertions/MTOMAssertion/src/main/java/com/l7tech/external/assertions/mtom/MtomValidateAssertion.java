@@ -11,8 +11,11 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -36,6 +39,26 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
 
     public void setValidationRules( final ValidationRule[] validationRules ) {
         this.validationRules = validationRules;
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        final Set<String> variables = new LinkedHashSet<String>(Arrays.asList(super.getVariablesUsed()));
+
+        if ( validationRules != null ) {
+            for ( final ValidationRule validationRule : validationRules ) {
+                if ( validationRule == null || validationRule.getXpathExpression() == null ) {
+                    continue;
+                }
+
+                final String expression = validationRule.getXpathExpression().getExpression();
+                if ( expression != null ) {
+                    variables.addAll( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                }
+            }
+        }
+
+        return variables.toArray(new String[variables.size()]);
     }
 
     @Override

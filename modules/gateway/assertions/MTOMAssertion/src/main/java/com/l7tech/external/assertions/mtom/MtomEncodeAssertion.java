@@ -11,8 +11,12 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * 
@@ -63,6 +67,24 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
 
     public void setOutputTarget( final MessageTargetableSupport outputTarget ) {
         this.outputTarget = outputTarget;
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        final Set<String> variables = new LinkedHashSet<String>(Arrays.asList(super.getVariablesUsed()));
+
+        if ( xpathExpressions != null ) {
+            for ( final XpathExpression xpathExpression : xpathExpressions ) {
+                if ( xpathExpression == null ) continue;
+
+                final String expression = xpathExpression.getExpression();
+                if ( expression != null ) {
+                    variables.addAll( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                }
+            }
+        }
+
+        return variables.toArray(new String[variables.size()]);
     }
 
     @Override

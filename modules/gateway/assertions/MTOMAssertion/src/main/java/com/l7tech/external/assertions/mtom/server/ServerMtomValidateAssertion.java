@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -18,6 +19,7 @@ import com.l7tech.xml.xpath.XpathResultNodeSet;
 import com.l7tech.xml.xpath.XpathResultIterator;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -81,7 +83,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
                 } else {
                     try {
                         final ElementCursor cursor = message.getXmlKnob().getElementCursor();
-                        status = processRules( message, cursor );
+                        status = processRules( context, message, cursor );
                     } catch (SAXException e) {
                         status = getBadMessageStatus();
                         auditor.logAndAudit(
@@ -148,12 +150,15 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
         return xpaths;
     }
 
-    private AssertionStatus processRules( final Message message,
+    private AssertionStatus processRules( final PolicyEnforcementContext context,
+                                          final Message message,
                                           final ElementCursor cursor ) throws IOException{
         AssertionStatus status = AssertionStatus.NONE;
 
         final MtomValidateAssertion.ValidationRule[] rules = assertion.getValidationRules();
         if ( rules != null ) {
+            final XpathVariableFinder xpathVariableFinder = new PolicyEnforcementContextXpathVariableFinder(context);
+
             outer:
             for ( int i=0 ; i<rules.length; i++ ) {
                 final MtomValidateAssertion.ValidationRule rule = rules[i];
@@ -161,7 +166,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
 
                 try {
                     cursor.moveToRoot();
-                    final XpathResult result = cursor.getXpathResult( compiledXpath );
+                    final XpathResult result = cursor.getXpathResult( compiledXpath, xpathVariableFinder, true );
                     if ( result.matches() ) {
                         final XpathResultNodeSet nodeSet = result.getNodeSet();
                         if ( nodeSet != null ) {

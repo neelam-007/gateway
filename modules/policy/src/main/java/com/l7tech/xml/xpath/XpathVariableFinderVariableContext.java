@@ -2,6 +2,9 @@ package com.l7tech.xml.xpath;
 
 import org.jaxen.VariableContext;
 import org.jaxen.UnresolvableException;
+import org.w3c.dom.Element;
+
+import java.util.Arrays;
 
 /**
  * A Jaxen VariableContext backed by a {@link com.l7tech.xml.xpath.XpathVariableFinder} instance;
@@ -21,6 +24,8 @@ public class XpathVariableFinderVariableContext implements VariableContext {
         this.variableFinder = finder;
     }
 
+    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
+    @Override
     public Object getVariableValue(String ns, String prefix, String localName) throws UnresolvableException {
         if (ns != null && ns.length() > 0)
             throw new UnresolvableException("Unsupported XPath variable namespace URI: " + ns);
@@ -30,9 +35,26 @@ public class XpathVariableFinderVariableContext implements VariableContext {
         if (finder == null)
             throw new UnresolvableException("No XPath variable context is available to resolve XPath variable: " + localName);
         try {
-            return finder.getVariableValue(ns, localName);
+            return asXPathType(finder.getVariableValue(ns, localName));
         } catch (NoSuchXpathVariableException e) {
             throw (UnresolvableException)new UnresolvableException("No such XPath variable: " + localName).initCause(e);
         }
+    }
+
+    /**
+     * Convert context variable types to Jaxen types.
+     *
+     * @param variable The variable to convert.
+     * @return The (possibly converted) variable.
+     */
+    private Object asXPathType( final Object variable ) {
+        Object result = variable;
+
+        if ( result instanceof Element[] ) {
+            // Jaxen uses Lists for node sets and does not handle arrays
+            result = Arrays.asList( (Element[]) result );                
+        }
+
+        return result;
     }
 }

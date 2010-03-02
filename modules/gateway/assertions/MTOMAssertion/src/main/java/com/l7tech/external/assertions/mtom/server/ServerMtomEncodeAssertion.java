@@ -11,6 +11,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.message.Message;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -21,6 +22,7 @@ import com.l7tech.xml.xpath.XpathResultIterator;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -73,9 +75,10 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
             if ( compiledXpaths != null ) {
                 try {
                     final ElementCursor cursor = new DomElementCursor( message.getXmlKnob().getDocumentReadOnly() );
-
+                    final XpathVariableFinder xpathVariableFinder = new PolicyEnforcementContextXpathVariableFinder(context);
+                    
                     for ( CompiledXpath compiledXpath : compiledXpaths ) {
-                        XpathResult result = cursor.getXpathResult( compiledXpath );
+                        XpathResult result = cursor.getXpathResult( compiledXpath, xpathVariableFinder, true );
                         if ( result.matches() ) {
                             XpathResultNodeSet nodeSet = result.getNodeSet();
                             if ( nodeSet != null ) {

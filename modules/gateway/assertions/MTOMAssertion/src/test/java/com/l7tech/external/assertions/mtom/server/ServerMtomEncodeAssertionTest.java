@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.mtom.server;
 
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -18,6 +21,8 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
@@ -58,6 +63,46 @@ public class ServerMtomEncodeAssertionTest {
         PolicyEnforcementContext context = null;
         try {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            AssertionStatus status = smea.checkRequest( context );
+            assertEquals( "status ok", AssertionStatus.NONE, status );
+
+            final String output = XmlUtil.nodeToString( context.getRequest().getXmlKnob().getDocumentReadOnly() );
+            assertTrue( "Message raw", message.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+            assertFalse( "Message encoded", output.contains("QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZ"));
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    @Test
+    public void testEncodeWithXPathVariable() throws Exception {
+        final RequestXpathAssertion rxa = new RequestXpathAssertion();
+        rxa.setVariablePrefix( "MTOM" );
+        rxa.setXpathExpression(
+                new XpathExpression( "/s12:Envelope/s12:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
+                    put("s12","http://www.w3.org/2003/05/soap-envelope");
+                    put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
+                }} ) );
+
+        final MtomEncodeAssertion mea = new MtomEncodeAssertion();
+        mea.setAlwaysEncode( true );
+        mea.setFailIfNotFound( true );
+        mea.setOptimizationThreshold( 0 );
+        mea.setXpathExpressions( new XpathExpression[]{
+                new XpathExpression( "$MTOM.elements", Collections.<String, String>emptyMap() )
+        } );
+
+        new AllAssertion( Arrays.asList(rxa, mea) ); // So variable usage can be discovered
+
+        final ServerRequestXpathAssertion srxa = new ServerRequestXpathAssertion(rxa, null);
+        final ServerMtomEncodeAssertion smea = buildServerAssertion( mea );
+        final Document requestDoc = XmlUtil.parse( message );
+        PolicyEnforcementContext context = null;
+        try {
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            AssertionStatus xpathStatus = srxa.checkRequest( context );
+            assertEquals( "status ok", AssertionStatus.NONE, xpathStatus );
+
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
 
