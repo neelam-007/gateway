@@ -150,7 +150,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                         auditor.logAndAudit(
                                 MTOM_ENCODE_ERROR,
                                 new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                                e );
+                                e instanceof XOPUtils.XOPException ? e.getCause() : e );
 
                         status = AssertionStatus.FAILED;
                     }
