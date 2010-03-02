@@ -6,6 +6,7 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
+import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.util.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -64,6 +65,14 @@ public class NonSoapXmlSecurityTestUtils {
      */
     public static SsgKeyStoreManager makeSsgKeyStoreManager() throws IOException, GeneralSecurityException {
         return new SsgKeyStoreManagerStub(new SsgKeyFinderStub(Arrays.asList(getAllKeys())));
+    }
+
+    /**
+     * @return 
+     */
+    public static TrustedCertCache makeTrustedCertCache() throws IOException, GeneralSecurityException {
+        return null;
+//        return new TrustedCertCache() {};
     }
 
     /**

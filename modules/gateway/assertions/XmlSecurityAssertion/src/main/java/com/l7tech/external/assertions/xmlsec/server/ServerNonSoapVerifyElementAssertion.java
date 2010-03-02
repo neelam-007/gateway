@@ -13,15 +13,20 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.objectmodel.FindException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
@@ -59,10 +64,12 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
     private static final int COL_SIGNATURE_ELEMENT = 5;
 
     private final SecurityTokenResolver securityTokenResolver;
+    private final TrustedCertCache trustedCertCache;
 
     public ServerNonSoapVerifyElementAssertion(NonSoapVerifyElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
         super(assertion, logger, beanFactory, eventPub);
         this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.trustedCertCache = (TrustedCertCache) beanFactory.getBean( "trustedCertCache", TrustedCertCache.class );
     }
 
     private static <T> Collection<T> getColumn(List<Object[]> table, int column, Class<T> clazz) {
@@ -83,8 +90,10 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
 
         Map<String, Element> elementsById = getElementByIdMap(doc);
 
+        final X509Certificate selectedCert = getSelectedCertificate();
+
         for (Element sigElement : affectedElements) {
-            List<Object[]> results = verifySignature(sigElement, elementsById);
+            List<Object[]> results = verifySignature(sigElement, elementsById, selectedCert);
             infos.addAll(results);
         }
 
@@ -134,14 +143,23 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         }
     }
 
-    private List<Object[]> verifySignature(Element sigElement, final Map<String, Element> elementsById) throws Exception {
-
+    private List<Object[]> verifySignature(Element sigElement, final Map<String, Element> elementsById, final X509Certificate selectedCert)
+        throws Exception
+    {
         final Document doc = sigElement.getOwnerDocument();
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
-        if (keyInfoElement == null)
-            throw new InvalidDocumentFormatException("KeyInfo element not found in Signature Element");
 
-        X509Certificate signingCert = resolveKeyInfoByX509Data(keyInfoElement, securityTokenResolver);
+        X509Certificate signingCert;
+        if (selectedCert != null && (assertion.isIgnoreKeyInfo() || keyInfoElement == null)) {
+            signingCert = selectedCert;
+        } else {
+            // then expect to use the keyInfo element as before
+            if (keyInfoElement == null)
+                throw new InvalidDocumentFormatException("KeyInfo element not found in Signature Element");
+
+            signingCert = resolveKeyInfoByX509Data(keyInfoElement, securityTokenResolver);
+        }
+
         if (signingCert == null)
             throw new SignatureException("Unable to determine signing certificate");
 
@@ -219,6 +237,77 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         }
 
         return outRows;
+    }
+
+    /**
+     * Returns the specified signature verification certificate in the assertion.  This method only returns a
+     * cert when the assertion is configured with a pre-defined certificate (either by certificate Oid or by Name).
+     *
+     * @return the X509Certificate that was selected in assertion and null if a pre-configured cert was not specified
+     * @throws CertificateException when an error is encountered while retrieving a certificate
+     */
+    private X509Certificate getSelectedCertificate() throws CertificateException {
+
+        X509Certificate selectedCert = null;
+        String description = "";
+        try {
+            final long certOid = assertion.getVerifyCertificateOid();
+            final String certName = assertion.getVerifyCertificateName();
+
+            if ( certOid > 0L ) {
+                description = "id #" + certOid;
+                TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey( certOid );
+                if ( trustedCertificate != null ) {
+                    selectedCert = trustedCertificate.getCertificate();
+                } else {
+                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                }
+            } else if ( certName != null ) {
+                description = "name " + certName;
+                Collection<TrustedCert> trustedCertificates = trustedCertCache.findByName( certName );
+                X509Certificate certificate = null;
+                X509Certificate expiredCertificate = null;
+                for ( TrustedCert trustedCert : trustedCertificates ) {
+                    if ( !isExpiredCert(trustedCert) ) {
+                        certificate = trustedCert.getCertificate();
+                        break;
+                    } else if ( expiredCertificate == null ) {
+                        expiredCertificate = trustedCert.getCertificate();
+                    }
+                }
+
+                if ( certificate != null || expiredCertificate != null ) {
+                    selectedCert = certificate!=null ? certificate : expiredCertificate;
+                } else {
+                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                }
+            }
+        } catch ( FindException e ) {
+            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        return selectedCert;
+    }
+
+    /**
+     * Checks whether the certificate in the argument is expired.
+     *
+     * @param trustedCert the TrustedCert to check
+     * @return true if the certificate is expired, false otherwise
+     */
+    private boolean isExpiredCert( final TrustedCert trustedCert ) {
+        boolean expired = true;
+
+        try {
+            expired = trustedCert.isExpiredCert();
+        } catch (CertificateException e) {
+            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
+        }
+
+        return expired;
     }
 
     private X509Certificate resolveKeyInfoByX509Data(Element keyInfo, SecurityTokenResolver securityTokenResolver) throws CertificateException {

@@ -21,10 +21,21 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     public static final String VAR_SIGNATURE_ELEMENTS = "signatureElements";
 
     protected String variablePrefix = "";
+    protected String verifyCertificateName;
+    protected long verifyCertificateOid;
+    protected boolean ignoreKeyInfo;
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST);
         setXpathExpression(getDefaultXpathExpression());
+    }
+
+    public boolean isIgnoreKeyInfo() {
+        return ignoreKeyInfo;
+    }
+
+    public void setIgnoreKeyInfo(boolean ignoreKeyInfo) {
+        this.ignoreKeyInfo = ignoreKeyInfo;
     }
 
     public String getVariablePrefix() {
@@ -33,6 +44,22 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = variablePrefix;
+    }
+
+    public String getVerifyCertificateName() {
+        return verifyCertificateName;
+    }
+
+    public void setVerifyCertificateName(String verifyCertificateName) {
+        this.verifyCertificateName = verifyCertificateName;
+    }
+
+    public long getVerifyCertificateOid() {
+        return verifyCertificateOid;
+    }
+
+    public void setVerifyCertificateOid(long verifyCertificateOid) {
+        this.verifyCertificateOid = verifyCertificateOid;
     }
 
     @Override
