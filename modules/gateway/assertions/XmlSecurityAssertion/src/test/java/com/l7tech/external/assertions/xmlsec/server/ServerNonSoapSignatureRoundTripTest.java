@@ -43,6 +43,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
+            put("trustedCertCache", NonSoapXmlSecurityTestUtils.makeTrustedCertCache());
         }});
     }
 
