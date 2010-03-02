@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 /**
  * Factory for the Gateway management Client.
  * 
- * @See Client
+ * @see Client
  */
 public class ClientFactory {
 

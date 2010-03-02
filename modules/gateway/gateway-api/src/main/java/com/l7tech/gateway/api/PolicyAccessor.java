@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Extension of the base Accessor interface with Policy support.
  *
- * @see AccessorRuntimeException <code>AccessorRuntimeException</code> Which may be thrown by methods of this interface.
+ * @see Accessor.AccessorRuntimeException <code>AccessorRuntimeException</code> Which may be thrown by methods of this interface.
  */
 public interface PolicyAccessor<AO extends AccessibleObject> extends Accessor<AO> {
 

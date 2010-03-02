@@ -33,7 +33,7 @@ import java.util.Map;
  * </p>
  *
  * <p>Context template properties are used when creating the initial JNDI context
- * (see {@link InitialContext#InitialContext(java.util.Hashtable<?,?>) InitialContext}).
+ * (see {@link InitialContext#InitialContext(java.util.Hashtable) InitialContext}).
  * This can be used for settings such as:
  * <ul>
  *   <li>{@link javax.naming.Context#SECURITY_PRINCIPAL SECURITY_PRINCIPAL}</li>
