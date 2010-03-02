@@ -29,6 +29,10 @@
             <pathelement location="${classes.main.dir}"/>
             <pathelement location="${basedir}/build/tools"/>
             <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
+            <!--
+              For a coverage build EMMA classes need to be available at runtime.
+            -->
+            <pathelement location="/opt/TeamCity/buildAgent/plugins/idea/plugins/emma/lib/emma.jar"/>
         </path>
 
         <pathconvert property="gatewaymanagementassertion.generate.wsdl.path.text" targetos="unix" pathsep="${line.separator}"
@@ -46,7 +50,7 @@
             <classpath refid="gatewaymanagementassertion.generate.wsdl.path"/>
         </javac>
 
-        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true" fork="true">
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.WsdlGenerator" classpathref="gatewaymanagementassertion.generate.wsdl.path" failonerror="true">
             <arg value="${basedir}/build/etc/wsdl"/>
         </java>
 
