@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.xmlsec.server;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.server.TestDefaultKey;
+import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -68,11 +70,10 @@ public class NonSoapXmlSecurityTestUtils {
     }
 
     /**
-     * @return 
+     * @return a Trusted Cert Cache object containing all cached certificates.
      */
-    public static TrustedCertCache makeTrustedCertCache() throws IOException, GeneralSecurityException {
-        return null;
-//        return new TrustedCertCache() {};
+    public static TrustedCertCache makeTrustedCertCache() throws Exception {
+        return new TestTrustedCertManager(new TestDefaultKey());
     }
 
     /**

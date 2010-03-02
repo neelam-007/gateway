@@ -38,10 +38,12 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         this.ignoreKeyInfo = ignoreKeyInfo;
     }
 
+    @Override
     public String getVariablePrefix() {
         return variablePrefix;
     }
 
+    @Override
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = variablePrefix;
     }

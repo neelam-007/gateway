@@ -34,6 +34,7 @@ public class ServerNonSoapSignElementAssertionTest {
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", NonSoapXmlSecurityTestUtils.makeSecurityTokenResolver());
             put("ssgKeyStoreManager", NonSoapXmlSecurityTestUtils.makeSsgKeyStoreManager());
+            put("trustedCertCache", NonSoapXmlSecurityTestUtils.makeTrustedCertCache());
         }});
     }
 
