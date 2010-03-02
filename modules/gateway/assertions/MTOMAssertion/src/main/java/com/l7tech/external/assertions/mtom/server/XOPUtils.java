@@ -192,11 +192,12 @@ public class XOPUtils {
     public static long getSize( final Message message, final ElementCursor elementCursor ) throws IOException, XOPException {
         long size;
 
-        if ( elementCursor.moveToFirstChildElement() ) {
+        if ( isIncludeElement( elementCursor ) ) {
+            throw new XOPException("Element is an XOP Include (the parent element is required)");
+        } else if ( elementCursor.moveToFirstChildElement() ) {
             // Then it is either XOP or invalid
             final String href = elementCursor.getAttributeValue( XOP_ATTRIBUTE_HREF );
-            if ( NS_XOP.equals( elementCursor.getNamespaceUri() ) &&
-                 XOP_ELEMENT_INCLUDE.equals( elementCursor.getLocalName() ) &&
+            if ( isIncludeElement( elementCursor ) &&
                  href != null && !href.isEmpty() ) {
                 MimeKnob mimeKnob = message.getMimeKnob();
                 try {
@@ -215,6 +216,17 @@ public class XOPUtils {
         }
 
         return size;
+    }
+
+    /**
+     * Is the current element an XOP include?
+     *
+     * @param elementCursor The cursor for the element to check.
+     * @return True if the current element is an XOP include
+     */
+    public static boolean isIncludeElement( final ElementCursor elementCursor ) {
+        return NS_XOP.equals( elementCursor.getNamespaceUri() ) &&
+               XOP_ELEMENT_INCLUDE.equals( elementCursor.getLocalName() );
     }
 
     /**
