@@ -283,8 +283,11 @@ public class XOPUtils {
         for ( Element sourceDomElement : base64BinaryElements ) {
             if ( DomUtils.hasChildNodesOfType( sourceDomElement, Node.ELEMENT_NODE ) ) continue;
             
-            String base64Text = DomUtils.getTextValue( sourceDomElement );
-            if ( getBase64DataLength(base64Text) > threshold && isCanonicalBase64(base64Text) ) {
+            String base64Text = getTextValue( sourceDomElement );
+            if ( getBase64DataLength(base64Text) > threshold ) {
+                if ( !isCanonicalBase64(base64Text) ) {
+                    throw new XOPException("Base64 element content must not include whitespace.");
+                }
                 Element element = getTargetElement( document, sourceDomElement );
                 if ( element == null ) continue;
                 DomUtils.removeAllChildren( element );
@@ -722,6 +725,24 @@ public class XOPUtils {
         }
 
         return valid;
+    }
+
+    private static String getTextValue( final Element node ) {
+        final StringBuilder text = new StringBuilder();
+
+        Node child = node.getFirstChild();
+        while( child != null ) {
+            if ( child.getNodeType() == Node.TEXT_NODE || child.getNodeType() == Node.CDATA_SECTION_NODE ) {
+                final String value = child.getNodeValue();
+                if ( value != null ) {
+                    text.append( value );
+                }
+            }
+
+            child = child.getNextSibling();
+        }
+
+        return text.toString();
     }
 
     /**
