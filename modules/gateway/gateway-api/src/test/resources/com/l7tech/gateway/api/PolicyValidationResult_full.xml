@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PolicyValidationResult version="0" id="asf" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <ValidationStatus>Warning</ValidationStatus>
+    <ValidationMessages>
+        <ValidationMessage level="Warning" assertionOrdinal="7">
+            <AssertionPath>
+                <Assertion position="3">Some assertion</Assertion>
+            </AssertionPath>
+            <Message>Something wrong</Message>
+        </ValidationMessage>
+        <ValidationMessage level="Warning" assertionOrdinal="9">
+            <AssertionPath>
+                <Assertion position="4">Some other assertion</Assertion>
+                <Assertion position="0">An assertion</Assertion>
+            </AssertionPath>
+            <Message>Something wrong</Message>
+        </ValidationMessage>
+    </ValidationMessages>
+</PolicyValidationResult>

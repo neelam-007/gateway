@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PolicyExportResult xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <Resource type="policyexport">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;exp:Export Version="3.0"
+    xmlns:L7p="http://www.layer7tech.com/ws/policy"
+    xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+        &lt;wsp:All wsp:Usage="Required"&gt;
+            &lt;test&gt;test&lt;/test&gt;
+        &lt;/wsp:All&gt;
+    &lt;/wsp:Policy&gt;
+&lt;/exp:Export&gt;</Resource>
+</PolicyExportResult>

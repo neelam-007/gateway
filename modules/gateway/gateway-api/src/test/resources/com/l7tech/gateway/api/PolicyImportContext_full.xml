@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PolicyImportContext version="2" id="1" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <Properties>
+        <Property key="force">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+    <Resource id="b" version="4" type="policyexport" sourceUrl="urn:test:url">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;exp:Export Version="3.0"
+    xmlns:L7p="http://www.layer7tech.com/ws/policy"
+    xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+        &lt;wsp:All wsp:Usage="Required"&gt;
+            &lt;test&gt;test&lt;/test&gt;
+        &lt;/wsp:All&gt;
+    &lt;/wsp:Policy&gt;
+&lt;/exp:Export&gt;</Resource>
+    <PolicyReferenceInstructions>
+        <PolicyReferenceInstruction referenceType="com.l7tech.console.policy.exporter.IdProviderReference" referenceId="1" type="Delete"/>
+        <PolicyReferenceInstruction referenceType="com.l7tech.console.policy.exporter.PrivateKeyReference" referenceId="2:alias" type="Ignore"/>
+    </PolicyReferenceInstructions>
+</PolicyImportContext>

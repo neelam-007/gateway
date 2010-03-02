@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PolicyImportResult version="20" id="a1" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <Warnings>
+        <Warning>Unable to do X</Warning>
+        <Warning>Error with Y</Warning>
+    </Warnings>
+    <ImportedPolicyReferences>
+        <ImportedPolicyReference type="Created" referenceType="com.l7tech.console.policy.exporter.IncludedPolicyReference" referenceId="123" id="1" guid="guidhere"/>
+        <ImportedPolicyReference type="Mapped" referenceType="com.l7tech.console.policy.exporter.IdProviderReference" referenceId="12" id="2"/>
+    </ImportedPolicyReferences>
+</PolicyImportResult>

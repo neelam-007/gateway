@@ -126,7 +126,7 @@ public class PropertiesMapType {
             setValue( value );
         }
 
-        @XmlElement(name="Item")
+        @XmlElement(name="Item", nillable=true)
         public T getValue(){
             return value;
         }
@@ -300,20 +300,18 @@ public class PropertiesMapType {
 
     @SuppressWarnings({ "unchecked" })
     private static <T> PropertyValue<T> newPropertyValue( final T value ) {
-        PropertyValue<T> propertyValue = null;
+        PropertyValue<T> propertyValue;
 
-        if ( value != null ) {
-            if ( value instanceof Boolean ) {
-                propertyValue = (PropertyValue<T>)new BooleanValue( (Boolean) value );
-            } else if ( value instanceof String ) {
-                propertyValue = (PropertyValue<T>)new StringValue( (String) value );
-            } else if ( value instanceof Integer ) {
-                propertyValue = (PropertyValue<T>)new IntegerValue( (Integer) value );
-            } else if ( value instanceof Long ) {
-                propertyValue = (PropertyValue<T>)new LongValue( (Long) value );
-            } else {
-                propertyValue = new ObjectValue<T>( value );
-            }
+        if ( value instanceof Boolean ) {
+            propertyValue = (PropertyValue<T>)new BooleanValue( (Boolean) value );
+        } else if ( value instanceof String ) {
+            propertyValue = (PropertyValue<T>)new StringValue( (String) value );
+        } else if ( value instanceof Integer ) {
+            propertyValue = (PropertyValue<T>)new IntegerValue( (Integer) value );
+        } else if ( value instanceof Long ) {
+            propertyValue = (PropertyValue<T>)new LongValue( (Long) value );
+        } else {
+            propertyValue = new ObjectValue<T>( value );
         }
 
         return propertyValue;

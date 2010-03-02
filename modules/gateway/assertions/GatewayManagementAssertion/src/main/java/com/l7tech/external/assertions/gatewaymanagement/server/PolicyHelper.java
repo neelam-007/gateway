@@ -260,10 +260,19 @@ public class PolicyHelper {
 
         // Process the results, ensure duplicates are removed
         final Set<PolicyValidationResult.PolicyValidationMessage> messages = new LinkedHashSet<PolicyValidationResult.PolicyValidationMessage>();
+        PolicyValidationResult.ValidationStatus status = PolicyValidationResult.ValidationStatus.OK;
         for ( final PolicyValidatorResult.Message message : result.getMessages() ) {
             final PolicyValidationResult.PolicyValidationMessage pvm = ManagedObjectFactory.createPolicyValidationMessage();
             pvm.setAssertionOrdinal( message.getAssertionOrdinal() );
-            pvm.setLevel( message instanceof PolicyValidatorResult.Error ? "Error" : "Warning" );
+            if ( message instanceof PolicyValidatorResult.Error ) {
+                status = PolicyValidationResult.ValidationStatus.ERROR;
+                pvm.setLevel( "Error" );
+            } else {
+                if ( status == PolicyValidationResult.ValidationStatus.OK ) {
+                    status = PolicyValidationResult.ValidationStatus.WARNING;
+                }
+                pvm.setLevel( "Warning" );
+            }
             pvm.setMessage( message.getMessage() );
 
             final List<PolicyValidationResult.AssertionDetail> details = new ArrayList<PolicyValidationResult.AssertionDetail>();
@@ -296,6 +305,7 @@ public class PolicyHelper {
         }
 
         final PolicyValidationResult pvr = ManagedObjectFactory.createPolicyValidationResult();
+        pvr.setStatus( status );
         pvr.setPolicyValidationMessages( new ArrayList<PolicyValidationResult.PolicyValidationMessage>(messages) );
 
         return pvr;

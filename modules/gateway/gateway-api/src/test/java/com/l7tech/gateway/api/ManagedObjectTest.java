@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ClassUtils;
@@ -372,12 +373,14 @@ public class ManagedObjectTest {
         final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createTrustedCertificate();
         trustedCertificate.setId( "0" );
         trustedCertificate.setVersion( Integer.MIN_VALUE );
+        trustedCertificate.setName( "Cert" );
         trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData( cert(CERT_BOB_PEM) ) );
         trustedCertificate.setProperties( Collections.<String,Object>singletonMap( "prop", null ) );
 
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate );
         assertEquals("id", "0", roundTripped.getId());
         assertEquals("version", (Integer)Integer.MIN_VALUE, roundTripped.getVersion());
+        assertEquals("name", "Cert", roundTripped.getName());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", null ), roundTripped.getProperties());
         assertNotNull("certificate data", roundTripped.getCertificateData());
 
@@ -385,6 +388,246 @@ public class ManagedObjectTest {
         assertEquals("certificate serial number", new BigInteger( "127901500862700997089151460209364726264" ), roundTripped.getCertificateData().getSerialNumber());
         assertEquals("certificate subject name", "CN=Bob,OU=OASIS Interop Test Cert,O=OASIS", roundTripped.getCertificateData().getSubjectName());
         assertArrayEquals("certificate encoded", HexUtils.decodeBase64( CERT_BOB_PEM, true ), roundTripped.getCertificateData().getEncoded());
+    }
+
+    @Test
+    public void testPolicyExportResultSerialization() throws Exception {
+        final String policyExport =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <test>test</test>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>";
+
+        final Resource resource = ManagedObjectFactory.createResource();
+        resource.setId( "a" );
+        resource.setVersion( 4 );
+        resource.setSourceUrl( "urn:test:url" );
+        resource.setType( "policyexport" );
+        resource.setContent( policyExport );
+
+        final PolicyExportResult policyExportResult = ManagedObjectFactory.createPolicyExportResult();
+        policyExportResult.setId( "1" );
+        policyExportResult.setVersion( 2 );
+        policyExportResult.setResource( resource );
+
+        final PolicyExportResult roundTripped = roundTrip( policyExportResult );
+        assertEquals("id", "1", roundTripped.getId());
+        assertEquals("version", (Integer)2, roundTripped.getVersion());
+        assertNotNull("resource", roundTripped.getResource());
+        assertEquals("resource id", "a", roundTripped.getResource().getId());
+        assertEquals("resource version", (Integer)4, roundTripped.getResource().getVersion());
+        assertEquals("resource source url", "urn:test:url", roundTripped.getResource().getSourceUrl());
+        assertEquals("resource type", "policyexport", roundTripped.getResource().getType());
+        assertEquals("resource content", policyExport, roundTripped.getResource().getContent());
+    }
+
+    @Test
+    public void testPolicyImportContextSerialization() throws Exception {
+        final String policyExport =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <test>test</test>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>";
+
+        final Resource resource = ManagedObjectFactory.createResource();
+        resource.setId( "b" );
+        resource.setVersion( 4 );
+        resource.setSourceUrl( "urn:test:url" );
+        resource.setType( "policyexport" );
+        resource.setContent( policyExport );
+
+        final List<PolicyAccessor.PolicyReferenceInstruction> instructions =
+                new ArrayList<PolicyAccessor.PolicyReferenceInstruction>();
+        final PolicyAccessor.PolicyReferenceInstruction instruction1 = ManagedObjectFactory.createPolicyReferenceInstruction();
+        instruction1.setReferenceId( "1" );
+        instruction1.setReferenceType( "com.l7tech.console.policy.exporter.IdProviderReference" );
+        instruction1.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.DELETE );
+        instructions.add( instruction1 );
+        final PolicyAccessor.PolicyReferenceInstruction instruction2 = ManagedObjectFactory.createPolicyReferenceInstruction();
+        instruction2.setReferenceId( "2:alias" );
+        instruction2.setReferenceType( "com.l7tech.console.policy.exporter.PrivateKeyReference" );
+        instruction2.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.IGNORE );
+        instructions.add( instruction2 );
+
+        final PolicyImportContext policyImportContext = new PolicyImportContext();
+        policyImportContext.setId( "1" );
+        policyImportContext.setVersion( 2 );
+        policyImportContext.setProperties( Collections.<String,Object>singletonMap("force", true) );
+        policyImportContext.setResource( resource );
+        policyImportContext.setPolicyReferenceInstructions( instructions );
+
+        final PolicyImportContext roundTripped = roundTrip( policyImportContext );
+        assertEquals("id", "1", roundTripped.getId());
+        assertEquals("version", (Integer)2, roundTripped.getVersion());
+        assertEquals("properties", Collections.<String,Object>singletonMap("force", true), roundTripped.getProperties());
+        assertNotNull("resource", roundTripped.getResource());
+        assertEquals("resource id", "b", roundTripped.getResource().getId());
+        assertEquals("resource version", (Integer)4, roundTripped.getResource().getVersion());
+        assertEquals("resource source url", "urn:test:url", roundTripped.getResource().getSourceUrl());
+        assertEquals("resource type", "policyexport", roundTripped.getResource().getType());
+        assertEquals("resource content", policyExport, roundTripped.getResource().getContent());
+        assertNotNull("instructions", roundTripped.getPolicyReferenceInstructions());
+        assertEquals("instructions", 2, roundTripped.getPolicyReferenceInstructions().size());
+        assertNotNull("instructions[0]", roundTripped.getPolicyReferenceInstructions().get( 0 ));
+        assertEquals("instructions[0] reference id", "1", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceId());
+        assertEquals("instructions[0] reference type", "com.l7tech.console.policy.exporter.IdProviderReference", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceType());
+        assertEquals("instructions[0] instruction type", PolicyAccessor.PolicyReferenceInstructionType.DELETE, roundTripped.getPolicyReferenceInstructions().get( 0 ).getPolicyReferenceInstructionType());
+        assertNotNull("instructions[1]", roundTripped.getPolicyReferenceInstructions().get( 0 ));
+        assertEquals("instructions[1] reference id", "2:alias", roundTripped.getPolicyReferenceInstructions().get( 1 ).getReferenceId());
+        assertEquals("instructions[1] reference type", "com.l7tech.console.policy.exporter.PrivateKeyReference", roundTripped.getPolicyReferenceInstructions().get( 1 ).getReferenceType());
+        assertEquals("instructions[1] instruction type", PolicyAccessor.PolicyReferenceInstructionType.IGNORE, roundTripped.getPolicyReferenceInstructions().get( 1 ).getPolicyReferenceInstructionType());
+    }
+
+    @Test
+    public void testPolicyImportResultSerialization() throws Exception {
+        final List<PolicyImportResult.ImportedPolicyReference> references = new ArrayList<PolicyImportResult.ImportedPolicyReference>();
+        final PolicyImportResult.ImportedPolicyReference reference1 = ManagedObjectFactory.createImportedPolicyReference();
+        reference1.setId( "1" );
+        reference1.setReferenceType( "com.l7tech.console.policy.exporter.IncludedPolicyReference" );
+        reference1.setReferenceId( "123" );
+        reference1.setType( PolicyImportResult.ImportedPolicyReferenceType.CREATED );
+        reference1.setGuid( "guidhere" );
+        references.add( reference1 );
+        final PolicyImportResult.ImportedPolicyReference reference2 = ManagedObjectFactory.createImportedPolicyReference();
+        reference2.setId( "2" );
+        reference2.setReferenceType( "com.l7tech.console.policy.exporter.IdProviderReference" );
+        reference2.setReferenceId( "12" );
+        reference2.setType( PolicyImportResult.ImportedPolicyReferenceType.MAPPED );
+        references.add( reference2 );
+
+        final PolicyImportResult policyImportResult = ManagedObjectFactory.createPolicyImportResult();
+        policyImportResult.setId( "a1" );
+        policyImportResult.setVersion( 20 );
+        policyImportResult.setWarnings( Arrays.asList( "Unable to do X", "Error with Y" ));
+        policyImportResult.setImportedPolicyReferences( references );
+
+        final PolicyImportResult roundTripped = roundTrip( policyImportResult );
+        assertEquals("id", "a1", roundTripped.getId());
+        assertEquals("version", (Integer)20, roundTripped.getVersion());
+        assertEquals("warnings", Arrays.asList( "Unable to do X", "Error with Y" ), roundTripped.getWarnings());
+        assertNotNull("references", roundTripped.getImportedPolicyReferences());
+        assertEquals("references", 2, roundTripped.getImportedPolicyReferences().size());
+        assertNotNull("references[0]", roundTripped.getImportedPolicyReferences().get( 0 ));
+        assertEquals("references[0] id", "1", roundTripped.getImportedPolicyReferences().get( 0 ).getId());
+        assertEquals("references[0] reference id", "123", roundTripped.getImportedPolicyReferences().get( 0 ).getReferenceId());
+        assertEquals("references[0] reference type", "com.l7tech.console.policy.exporter.IncludedPolicyReference", roundTripped.getImportedPolicyReferences().get( 0 ).getReferenceType());
+        assertEquals("references[0] type", PolicyImportResult.ImportedPolicyReferenceType.CREATED, roundTripped.getImportedPolicyReferences().get( 0 ).getType());
+        assertEquals("references[0] guid", "guidhere", roundTripped.getImportedPolicyReferences().get( 0 ).getGuid());
+        assertNotNull("references[1]", roundTripped.getImportedPolicyReferences().get( 1 ));
+        assertEquals("references[1] id", "2", roundTripped.getImportedPolicyReferences().get( 1 ).getId());
+        assertEquals("references[1] reference id", "12", roundTripped.getImportedPolicyReferences().get( 1 ).getReferenceId());
+        assertEquals("references[1] reference type", "com.l7tech.console.policy.exporter.IdProviderReference", roundTripped.getImportedPolicyReferences().get( 1 ).getReferenceType());
+        assertEquals("references[1] type", PolicyImportResult.ImportedPolicyReferenceType.MAPPED, roundTripped.getImportedPolicyReferences().get( 1 ).getType());
+        assertNull("references[1] guid", roundTripped.getImportedPolicyReferences().get( 1 ).getGuid());
+    }
+
+    @Test
+    public void testPolicyValidationContextSerialization() throws Exception {
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <test>test</test>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        final Resource policyResource = ManagedObjectFactory.createResource();
+        policyResource.setType("policy");
+        policyResource.setContent( policyXml );
+
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag( "policy" );
+        resourceSet.setResources( Arrays.asList( policyResource ) );
+
+        final PolicyValidationContext policyValidationContext = ManagedObjectFactory.createPolicyValidationContext();
+        policyValidationContext.setId( "123" );
+        policyValidationContext.setVersion( 3331 );
+        policyValidationContext.setProperties( Collections.<String,Object>singletonMap( "soap", true ) );
+        policyValidationContext.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
+        policyValidationContext.setResourceSets( Arrays.asList( resourceSet ));
+
+        final PolicyValidationContext roundTripped = roundTrip( policyValidationContext );
+        assertEquals("id", "123", roundTripped.getId());
+        assertEquals("version", (Integer)3331, roundTripped.getVersion());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "soap", true ), roundTripped.getProperties());
+        assertEquals("policy type", PolicyDetail.PolicyType.INCLUDE, roundTripped.getPolicyType());
+        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
+        assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
+        assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
+        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
+        assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
+        assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
+        assertNull( "resource set[0] resources[0] source url", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getSourceUrl() );
+    }
+    
+    @Test
+    public void testPolicyValidationResultSerialization() throws Exception {
+        final List<PolicyValidationResult.PolicyValidationMessage> messages = new ArrayList<PolicyValidationResult.PolicyValidationMessage>();
+        final PolicyValidationResult.AssertionDetail detail1 = ManagedObjectFactory.createAssertionDetail();
+        detail1.setDescription( "Some assertion" );
+        detail1.setPosition( 3 );
+        final PolicyValidationResult.PolicyValidationMessage message1 = ManagedObjectFactory.createPolicyValidationMessage();
+        message1.setMessage( "Something wrong" );
+        message1.setAssertionOrdinal( 7 );
+        message1.setLevel( "Warning" );
+        message1.setAssertionDetails( Arrays.asList( detail1 ) );
+        messages.add( message1 );
+
+        final PolicyValidationResult.AssertionDetail detail2 = ManagedObjectFactory.createAssertionDetail();
+        detail2.setDescription( "Some other assertion" );
+        detail2.setPosition( 4 );
+        final PolicyValidationResult.AssertionDetail detail3 = ManagedObjectFactory.createAssertionDetail();
+        detail3.setDescription( "An assertion" );
+        detail3.setPosition( 0 );
+        final PolicyValidationResult.PolicyValidationMessage message2 = ManagedObjectFactory.createPolicyValidationMessage();
+        message2.setMessage( "Something else wrong" );
+        message2.setAssertionOrdinal( 9 );
+        message2.setLevel( "Warning" );
+        message2.setAssertionDetails( Arrays.asList( detail2, detail3 ) );
+        messages.add( message2 );
+
+        final PolicyValidationResult policyValidationResult = ManagedObjectFactory.createPolicyValidationResult();
+        policyValidationResult.setId( "asf" );
+        policyValidationResult.setVersion( 0 );
+        policyValidationResult.setStatus( PolicyValidationResult.ValidationStatus.WARNING );
+        policyValidationResult.setPolicyValidationMessages( messages );
+
+        final PolicyValidationResult roundTripped = roundTrip( policyValidationResult );
+        assertEquals("id", "asf", roundTripped.getId());
+        assertEquals("version", (Integer)0, roundTripped.getVersion());
+        assertEquals("status", PolicyValidationResult.ValidationStatus.WARNING , roundTripped.getStatus());
+        assertNotNull("messages", policyValidationResult.getPolicyValidationMessages());
+        assertEquals("messages size", 2, policyValidationResult.getPolicyValidationMessages().size());
+        assertEquals("messages[0] message", "Something wrong", policyValidationResult.getPolicyValidationMessages().get( 0 ).getMessage());
+        assertEquals("messages[0] ordinal", 7, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionOrdinal());
+        assertEquals("messages[0] level", "Warning", policyValidationResult.getPolicyValidationMessages().get( 0 ).getLevel());
+        assertNotNull("messages[0] details", policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails());
+        assertEquals("messages[0] details size", 1, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().size());
+        assertEquals("messages[0] details[0] description", "Some assertion", policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().get( 0 ).getDescription());
+        assertEquals("messages[0] details[0] position", 3, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().get( 0 ).getPosition());
+        assertEquals("messages[1] message", "Something else wrong", policyValidationResult.getPolicyValidationMessages().get( 1 ).getMessage());
+        assertEquals("messages[1] ordinal", 9, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionOrdinal());
+        assertEquals("messages[1] level", "Warning", policyValidationResult.getPolicyValidationMessages().get( 1 ).getLevel());
+        assertNotNull("messages[1] details", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails());
+        assertEquals("messages[1] details size", 2, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().size());
+        assertEquals("messages[1] details[0] description", "Some other assertion", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getDescription());
+        assertEquals("messages[1] details[0] position", 4, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getPosition());
+        assertEquals("messages[1] details[1] description", "An assertion", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getDescription());
+        assertEquals("messages[1] details[1] position", 0, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getPosition());
     }
 
     @Test
@@ -397,6 +640,9 @@ public class ManagedObjectTest {
         properties.put( "5", 4.4 );
 
         final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificate.setName( "Name" );
+        trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData() );
+        trustedCertificate.getCertificateData().setEncoded( new byte[]{0} );
         trustedCertificate.setProperties( properties );
         
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate, new Functions.UnaryVoid<Document>(){
@@ -524,13 +770,18 @@ public class ManagedObjectTest {
 
     private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/01/gateway-management";
 
-    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.<Class<? extends ManagedObject>>unmodifiableCollection( Arrays.asList(
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.unmodifiableCollection( Arrays.asList(
         ClusterPropertyMO.class,
         FolderMO.class,
         IdentityProviderMO.class,
         JDBCConnectionMO.class,
         JMSDestinationMO.class,
+        PolicyExportResult.class,
+        PolicyImportContext.class,
+        PolicyImportResult.class,
         PolicyMO.class,
+        PolicyValidationContext.class,
+        PolicyValidationResult.class,
         PrivateKeyMO.class,
         ResourceDocumentMO.class,
         ServiceMO.class,
@@ -613,6 +864,7 @@ public class ManagedObjectTest {
         }
 
         final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema( ValidationUtils.getSchema() );
         MO mo = (MO) unmarshaller.unmarshal(new StringReader(xmlString));
 
         if (debug)

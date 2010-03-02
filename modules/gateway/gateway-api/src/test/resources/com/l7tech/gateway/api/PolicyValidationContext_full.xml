@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PolicyValidationContext version="3331" id="123" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+    <PolicyType>Include</PolicyType>
+    <Properties>
+        <Property key="soap">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+    <Resources>
+        <ResourceSet tag="policy" rootUrl="#1">
+            <Resource id="_" version="2" sourceUrl="urn:uuid:1fcf9fcb-d13a-38bd-bccb-0f2b460aa8f1" type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;wsp:All wsp:Usage="Required"&gt;
+        &lt;test&gt;test&lt;/test&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;</Resource>
+        </ResourceSet>
+    </Resources>
+</PolicyValidationContext>

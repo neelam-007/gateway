@@ -5,6 +5,7 @@ import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
@@ -16,10 +17,29 @@ import java.util.Map;
  * Encapsulates the result of policy validation.
  */
 @XmlRootElement(name="PolicyValidationResult")
-@XmlType(name="PolicyValidationResultType", propOrder={"policyValidationMessages", "extensions"})
+@XmlType(name="PolicyValidationResultType", propOrder={"status", "policyValidationMessages", "extensions"})
 public class PolicyValidationResult extends ManagedObject {
 
     //- PUBLIC
+
+    /**
+     * Get the policy validation status (required)
+     *
+     * @return The validation status or null
+     */
+    @XmlElement(name="ValidationStatus", required=true)
+    public ValidationStatus getStatus() {
+        return status;
+    }
+
+    /**
+     * Set the policy validation status.
+     *
+     * @param status The status to use.
+     */
+    public void setStatus( final ValidationStatus status ) {
+        this.status = status;
+    }
 
     /**
      * Get the policy validation messages.
@@ -39,6 +59,26 @@ public class PolicyValidationResult extends ManagedObject {
      */
     public void setPolicyValidationMessages( final List<PolicyValidationMessage> policyValidationMessages ) {
         this.policyValidationMessages = policyValidationMessages;
+    }
+
+    /**
+     * Status for policy validation.
+     */
+    public enum ValidationStatus {
+        /**
+         * Policy validated without issue.
+         */
+        @XmlEnumValue("OK") OK,
+
+        /**
+         * Policy validated with warnings.
+         */
+        @XmlEnumValue("Warning") WARNING,
+
+        /**
+         * Policy validated with errors.
+         */
+        @XmlEnumValue("Error") ERROR
     }
 
     /**
@@ -261,5 +301,6 @@ public class PolicyValidationResult extends ManagedObject {
 
     //- PRIVATE
 
+    private ValidationStatus status;
     private List<PolicyValidationMessage> policyValidationMessages;
 }
