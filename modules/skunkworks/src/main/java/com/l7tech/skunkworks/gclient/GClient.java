@@ -28,13 +28,18 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.PrettyGoodWSDLLocator;
+import com.l7tech.wsdl.WsdlEntityResolver;
+import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -83,7 +88,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.1");
+        frame = new JFrame("GClient v0.9.2");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -310,6 +315,12 @@ public class GClient {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openLocation(frame);
+            }
+        });
+        fileMenu.add(new AbstractAction("Save Location ..."){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveLocation(frame);
             }
         });
         fileMenu.add(new AbstractAction("Open File ..."){
@@ -631,6 +642,75 @@ public class GClient {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void saveLocation(Component parent) {
+        GClientLocationDialog locationChooser = new GClientLocationDialog((Frame)SwingUtilities.windowForComponent(parent));
+        locationChooser.pack();
+        Utilities.centerOnScreen(locationChooser);
+
+        if (locationChooser.getOwner() == null)
+            Utilities.setAlwaysOnTop(locationChooser, true);
+        locationChooser.setVisible(true);
+
+        if(locationChooser.wasOk()) {
+            String baseUri = locationChooser.getOpenLocation();
+
+            try {
+                DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+                EntityResolver entityResolver = new WsdlEntityResolver(true);
+                Map<String,String> urisToResources =
+                        processor.processDocument( baseUri, new GClientResourceResolver(entityResolver) );
+
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
+                int returnVal = fileChooser.showSaveDialog(frame);
+                if(returnVal == JFileChooser.APPROVE_OPTION) {
+                    File selected = fileChooser.getSelectedFile();
+
+                    for ( final String uri : urisToResources.keySet() ) {
+                        System.out.println( filename(uri, ".wsdl") + " :- " + uri );
+                        Document document = XmlUtil.parse( new InputSource( new StringReader(urisToResources.get( uri )) ){{setSystemId(uri);}}, false );
+                        processor.processDocumentReferences( document, new DocumentReferenceProcessor.ReferenceCustomizer(){
+                            @Override
+                            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+                                return filename( referenceUrl, ".wsdl" );
+                            }
+                        } );
+                        File file = new File( selected, filename(uri, ".wsdl") );
+                        FileOutputStream out = null;
+                        try {
+                            out = new FileOutputStream(file);
+                            XmlUtil.nodeToOutputStream( document, out );
+                        } finally {
+                            ResourceUtils.closeQuietly( out );
+                        }
+                    }
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String filename( final String uri, final String extension ) {
+        String filename = uri;
+
+        int queryIndex = filename.indexOf( '?' );
+        if ( queryIndex > 0 ) {
+            filename = filename.substring( 0, queryIndex );
+        }
+
+        int dirIndex = filename.lastIndexOf( '/' );
+        if ( dirIndex > 0 ) {
+            filename = filename.substring( dirIndex+1 );
+        }
+
+        if ( filename.indexOf('.') < 0 ) {
+            filename = filename + extension;    
+        }
+
+        return filename;
     }
 
     private void saveConfiguration(JFrame frame) {
@@ -1557,4 +1637,32 @@ public class GClient {
             }
         }
     }
+
+    private final class GClientResourceResolver implements DocumentReferenceProcessor.ResourceResolver {
+        private final EntityResolver entityResolver;
+
+        private GClientResourceResolver( final EntityResolver entityResolver ) {
+            this.entityResolver = entityResolver;
+        }
+
+        @Override
+        public String resolve( final String importLocation ) throws IOException {
+            String resource = null;
+
+            final InputSource source = permissiveUrlGetter.call(new URL(importLocation));
+            final String resolvedResource = source!=null && source.getByteStream()!=null ?
+                    new String(IOUtils.slurpStream(source.getByteStream())): // encoding issues here ...
+                    null;
+            if ( resolvedResource != null ) {
+                resource = ResourceTrackingWSDLLocator.processResource(importLocation, resolvedResource, entityResolver, false, true);
+            }
+
+            if ( resource == null) {
+                throw new IOException("Resource not found '"+importLocation+"'.");
+            }
+
+            return resource;
+        }
+    }
+
 }
