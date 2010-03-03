@@ -26,7 +26,4 @@
 	<publications>
 		<artifact name="xmlbeans" type="jar" ext="jar" conf="master"/>
 	</publications>
-	<dependencies>
-		<dependency org="stax" name="stax-api" rev="1.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-	</dependencies>
 </ivy-module>

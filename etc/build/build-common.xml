@@ -532,7 +532,7 @@
         <mkdir dir="${build.etc.dir}"/>
 
         <ivy-resolve conf="default,test" haltonfailure="false"/>
-        <!--<ivy:deliver deliverpattern="build/idearepo/[organisation]/[module]-ivy-[revision].xml"-->
+        <!--<ivy:deliver deliverpattern="build/ivyidea/[organisation]/[module]-ivy-[revision].xml"-->
                      <!--pubrevision="${module.version.target}"-->
                      <!--status="integration"-->
                 <!--/>-->
