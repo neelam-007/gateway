@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.validator.XpathBasedAssertionValidator;
@@ -11,7 +13,7 @@ import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
  */
-public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables, HasVariablePrefix {
+public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase implements SetsVariables, HasVariablePrefix, UsesEntities {
     private static final String META_INITIALIZED = NonSoapVerifyElementAssertion.class.getName() + ".metadataInitialized";
     public static final String VAR_ELEMENTS_VERIFIED = "elementsVerified";
     public static final String VAR_SIGNATURE_METHOD_URIS = "signatureMethodUris";
@@ -21,9 +23,9 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     public static final String VAR_SIGNATURE_ELEMENTS = "signatureElements";
 
     protected String variablePrefix = "";
-    protected String verifyCertificateName;
-    protected long verifyCertificateOid;
-    protected boolean ignoreKeyInfo;
+    private String verifyCertificateName;
+    private long verifyCertificateOid;
+    private boolean ignoreKeyInfo;
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST);
@@ -125,5 +127,26 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        EntityHeader[] headers = new EntityHeader[0];
+
+        if (verifyCertificateOid > 0) {
+            headers = new EntityHeader[] {new EntityHeader(verifyCertificateOid, EntityType.TRUSTED_CERT, null, null)};
+        }
+
+        return headers;
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+            newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+            verifyCertificateOid == oldEntityHeader.getOid()) {
+            verifyCertificateOid = newEntityHeader.getOid();
+        }
     }
 }

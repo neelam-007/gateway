@@ -5,7 +5,6 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.CertSearchPanel;
-import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.util.Registry;

@@ -17,7 +17,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -143,9 +142,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         }
     }
 
-    private List<Object[]> verifySignature(Element sigElement, final Map<String, Element> elementsById, final X509Certificate selectedCert)
-        throws Exception
-    {
+    private List<Object[]> verifySignature(Element sigElement, final Map<String, Element> elementsById, final X509Certificate selectedCert) throws Exception {
         final Document doc = sigElement.getOwnerDocument();
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
 
@@ -254,7 +251,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
             final long certOid = assertion.getVerifyCertificateOid();
             final String certName = assertion.getVerifyCertificateName();
 
-            if ( certOid > 0L ) {
+            if ( certOid > 0 ) {
                 description = "id #" + certOid;
                 TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey( certOid );
                 if ( trustedCertificate != null ) {
@@ -310,6 +307,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         return expired;
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     private X509Certificate resolveKeyInfoByX509Data(Element keyInfo, SecurityTokenResolver securityTokenResolver) throws CertificateException {
         try {
             Element x509Data = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
