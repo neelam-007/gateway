@@ -1,21 +1,19 @@
 package com.l7tech.security.prov.rsa;
 
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URLClassLoader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.Provider;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Arrays;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wrapper for Crypto-J classes that uses reflection to load them to avoid compile-time dependencies on a particular
@@ -30,10 +28,14 @@ class CryptoJWrapper {
 
     public static final String PROP_FIPS_LIB_PATH = "com.l7tech.security.prov.rsa.libpath.fips";
     public static final String PROP_NON_FIPS_LIB_PATH = "com.l7tech.security.prov.rsa.libpath.nonfips";
+    public static final String PROP_CERTJ_PATH = "com.l7tech.security.prov.rsa.libpath.certj";
+    public static final String PROP_SSLJ_PATH = "com.l7tech.security.prov.rsa.libpath.sslj";
     public static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.rsa.disableServices";
 
     static final String FIPS_LIB_PATH = SyspropUtil.getString(PROP_FIPS_LIB_PATH, null);
     static final String NON_FIPS_LIB_PATH = SyspropUtil.getString(PROP_NON_FIPS_LIB_PATH, null);
+    static final String SSLJ_LIB_PATH = SyspropUtil.getString(PROP_SSLJ_PATH, replaceFilename(NON_FIPS_LIB_PATH, "sslj-5.1.1.jar"));
+    static final String CERTJ_LIB_PATH = SyspropUtil.getString(PROP_CERTJ_PATH, replaceFilename(NON_FIPS_LIB_PATH, "certj-3.1.jar"));
     static final boolean DISABLE_BLACKLISTED_SERVICES = SyspropUtil.getBoolean(PROP_DISABLE_BLACKLISTED_SERVICES, true);
 
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
@@ -65,11 +67,22 @@ class CryptoJWrapper {
         NON_FIPS140_MODE = cryptoj.getField("NON_FIPS140_MODE").getInt(null);
     }
 
+    // Replace the filename at the end of a path with a new filename, ie changing "/foo/bar/jsafe.jar" into "/foo/bar/sslj.jar".
+    private static String replaceFilename(String path, String filename) {
+        if (path == null) return null;
+        File parentFile = new File(path).getParentFile();
+        return parentFile == null ? filename : new File(parentFile, filename).getPath();
+    }
+
     URLClassLoader makeJarClassLoader(String libPath) throws MalformedURLException {
         final File file = new File(libPath);
         if (!file.exists() || !file.canRead())
             throw new IllegalArgumentException("Crypto library path not found: " + file.getAbsolutePath());
-        return new URLClassLoader(new URL[]{file.toURI().toURL()});
+        List<URL> jarUrls = new ArrayList<URL>();
+        jarUrls.add(file.toURI().toURL());
+        if (SSLJ_LIB_PATH != null) jarUrls.add(new File(SSLJ_LIB_PATH).toURI().toURL());
+        if (CERTJ_LIB_PATH != null) jarUrls.add(new File(CERTJ_LIB_PATH).toURI().toURL());
+        return new URLClassLoader(jarUrls.toArray(new URL[jarUrls.size()]));
     }
 
     boolean isFIPS140Compliant() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -86,6 +99,24 @@ class CryptoJWrapper {
 
     Object getVersion() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         return cryptoj.getField("CRYPTO_J_VERSION").get(null);
+    }
+
+    Provider getPkcs12Provider() throws  IllegalAccessException, InstantiationException {
+        try {
+            return (Provider) cryptoj.getClassLoader().loadClass("com.rsa.jcp.RSAJCP").newInstance();
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.FINE, "Unable to find RSAJCP for PKCS#12; attempting to do without: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
+    }
+
+    Provider getJsseProvider() throws IllegalAccessException, InstantiationException {
+        try {
+            return (Provider) cryptoj.getClassLoader().loadClass("com.rsa.jsse.JsseProvider").newInstance();
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.FINE, "Unable to find SSL-J for TLS 1.2; attempting to do without: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     private void configureProvider( final Provider provider ) {

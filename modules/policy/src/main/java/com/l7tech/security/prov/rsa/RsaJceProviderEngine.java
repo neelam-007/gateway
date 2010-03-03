@@ -52,7 +52,7 @@ public class RsaJceProviderEngine extends JceProvider {
             cryptojVersion = String.valueOf(cryptoj.getVersion());
             logger.info("RSA Crypto-J version: " + cryptojVersion);
             PKCS12_PROVIDER = findPkcs12Provider(cryptoj.provider.getClass().getClassLoader());
-            TLS10_PROVIDER = findTls10Provider(cryptojVersion);
+            TLS10_PROVIDER = findTls10Provider(cryptojVersion, cryptoj.getClass().getClassLoader());
             TLS12_PROVIDER = findTls12Provider(cryptojVersion);
             maybeChangeDefaultTlsProvider(cryptojVersion);
         } catch (NoSuchFieldException e) {
@@ -97,14 +97,14 @@ public class RsaJceProviderEngine extends JceProvider {
      */
     private static Provider findPkcs12Provider(ClassLoader cryptojClassLoader) throws IllegalAccessException, InstantiationException {
         // First see if SunJSSE is available
-        Provider prov = findSunJsseProvider();
+        Provider prov = findSunJsseProvider(cryptojClassLoader);
         if (prov != null) {
             logger.fine("Using Sun PKCS#12 implementation");
             return prov;
         }
 
         // Check for Crypto-J as fallback measure
-        prov = findRsajcpProvider(cryptojClassLoader);
+        prov = cryptoj.getPkcs12Provider();
         if (prov != null) {
             logger.fine("Using RSA PKCS#12 implementation");
             return prov;
@@ -113,7 +113,7 @@ public class RsaJceProviderEngine extends JceProvider {
         return null;
     }
 
-    private static Provider findTls10Provider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
+    private static Provider findTls10Provider(String cryptojVersion, ClassLoader cryptojClassLoader) throws InstantiationException, IllegalAccessException {
         String provName = SyspropUtil.getProperty(PROP_TLS_PROV);
         if (provName != null && provName.trim().length() > 0) {
             Provider prov = Security.getProvider(provName);
@@ -124,7 +124,7 @@ public class RsaJceProviderEngine extends JceProvider {
         }
 
         // Prefer SunJSSE as TLS 1.0 provider since it currently has cleaner TrustManager behavior
-        Provider prov = findSunJsseProvider();
+        Provider prov = findSunJsseProvider(cryptojClassLoader);
         if (prov != null) {
             logger.fine("Using SunJSSE as TLS 1.0 provider");
             return prov;
@@ -160,19 +160,9 @@ public class RsaJceProviderEngine extends JceProvider {
         return null;
     }
 
-    private static Provider findSunJsseProvider() throws  IllegalAccessException, InstantiationException {
+    private static Provider findSunJsseProvider(ClassLoader cryptojClassLoader) throws  IllegalAccessException, InstantiationException {
         try {
-            return (Provider) Class.forName("com.sun.net.ssl.internal.ssl.Provider").newInstance();
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-    }
-
-    private static Provider findRsajcpProvider(ClassLoader cryptojClassLoader) throws  IllegalAccessException, InstantiationException {
-        if (cryptojClassLoader == null) cryptojClassLoader = Thread.currentThread().getContextClassLoader();
-        if (cryptojClassLoader == null) cryptojClassLoader = RsaJceProviderEngine.class.getClassLoader();
-        try {
-            return (Provider) cryptojClassLoader.loadClass("com.rsa.jcp.RSAJCP").newInstance();
+            return (Provider) cryptojClassLoader.loadClass("com.sun.net.ssl.internal.ssl.Provider").newInstance();
         } catch (ClassNotFoundException e) {
             return null;
         }
@@ -181,11 +171,7 @@ public class RsaJceProviderEngine extends JceProvider {
     private static Provider findRsaJsseProvider(String cryptojVersion) throws  IllegalAccessException, InstantiationException {
         if (!isCompatibleWithSslJ51(cryptojVersion))
             return null;
-        try {
-            return (Provider) Class.forName("com.rsa.jsse.JsseProvider").newInstance();
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
+        return cryptoj.getJsseProvider();
     }
 
 
