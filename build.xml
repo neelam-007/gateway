@@ -3036,9 +3036,10 @@
             <mkdir dir="@{dir}/${install.src.pc.controletc}"/>
             <mkdir dir="@{dir}/${install.src.pc.controletc}/conf"/>
             <mkdir dir="@{dir}/${install.src.pc.controllib}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controllogs}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
             <mkdir dir="@{dir}/${install.src.pc.controlvar}"/>
+            <mkdir dir="@{dir}/${install.src.pc.controllogs}"/>
+            <mkdir dir="@{dir}/${install.src.pc.controlrun}"/>
+            <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
 
             <copy file="${src.root}/etc/processcontroller/pc.sh" tofile="@{dir}/${install.src.pc.controlbin}/pc.sh"/>
             <chmod file="@{dir}/${install.src.pc.controlbin}/pc.sh" perm="755"/>
@@ -3299,12 +3300,14 @@
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" mode="644" prefix="${install.target.pc}">
                 <include name="**/*"/>
                 <exclude name="bin/*.sh"/>
-                <exclude name="etc"/>
-                <exclude name="etc/*"/>
-                <exclude name="var/logs"/>
-                <exclude name="var/logs/*"/>
-                <exclude name="var/patches"/>
-                <exclude name="var/patches/*"/>
+                <exclude name="${install.src.pc.controletc}"/>
+                <exclude name="${install.src.pc.controletc}/*"/>
+                <exclude name="${install.src.pc.controllogs}"/>
+                <exclude name="${install.src.pc.controllogs}/*"/>
+                <exclude name="${install.src.pc.controlrun}"/>
+                <exclude name="${install.src.pc.controlrun}/*"/>
+                <exclude name="${install.src.pc.controlpatches}"/>
+                <exclude name="${install.src.pc.controlpatches}/*"/>
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
@@ -3314,10 +3317,12 @@
                 <include name="etc/*"/>
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="664" dirmode="775" prefix="${install.target.pc}">
-                <include name="var/logs"/>
-                <include name="var/logs/*"/>
-                <include name="var/patches"/>
-                <include name="var/patches/*"/>
+                <include name="${install.src.pc.controllogs}"/>
+                <include name="${install.src.pc.controllogs}/*"/>
+                <include name="${install.src.pc.controlrun}"/>
+                <include name="${install.src.pc.controlrun}/*"/>
+                <include name="${install.src.pc.controlpatches}"/>
+                <include name="${install.src.pc.controlpatches}/*"/>
             </tarfileset>
         </tar>
 

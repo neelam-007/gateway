@@ -43,7 +43,7 @@ if [ "$(id -u)" != "$(id -u ${PC_USER})" ] ; then
         echo "Please run as the user: ${PC_USER}"
         exit 13
     else
-        RUNASUSER="su "${PC_USER}""
+        RUNASUSER="su ${PC_USER} -c "
     fi
 fi
 
@@ -68,12 +68,14 @@ fi
 
 export PC_JAVAOPT
 
+BOOTSTRAP_CONFIG_LAUNCH="${JAVA_HOME}/bin/java ${PC_JAVAOPT} -classpath ${PC_JAR} com.l7tech.server.processcontroller.BootstrapConfig"
+
 # Run the config bootstrapper if it looks like this is the first time we've run
-if [ -z "${PC_USER}" ] ; then
-    "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig
+if [ -z "${PC_USER}" -o -z "${RUNASUSER}" ] ; then
+    ${BOOTSTRAP_CONFIG_LAUNCH}
 else
     export JAVA_HOME SSPC_HOME PC_JAR
-    ${RUNASUSER} -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -classpath "${PC_JAR}" com.l7tech.server.processcontroller.BootstrapConfig'
+    ${RUNASUSER} "${BOOTSTRAP_CONFIG_LAUNCH}"
 fi
 
 if [ ${?} -ne 0 ]; then
@@ -82,12 +84,14 @@ fi
 
 
 #
-if [ -z "${PC_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- &
+PC_LAUNCH="${JAVA_HOME}/bin/java ${PC_JAVAOPT} -jar ${PC_JAR}"
+if [ -z "${PC_USER}" -o -z "${RUNASUSER}" ] ; then
+  ${PC_LAUNCH} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"
 else
   export JAVA_HOME SSPC_HOME PC_JAR PC_PIDTEMP
-  ${RUNASUSER} -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+  ${RUNASUSER} "${PC_LAUNCH}" &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"
 fi
+
 
 if [ ${?} -eq 0 ] ; then
   [ -z "${PC_PIDFILE}" ] || mv -f "${PC_PIDTEMP}" "${PC_PIDFILE}"

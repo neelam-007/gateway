@@ -3,7 +3,7 @@
 # Script for the starting/stopping the SecureSpan Process Controller in software mode
 
 # Config
-PID_FILE="sspcd"
+PID_FILE="/opt/SecureSpan/Controller/var/run/sspcd.pid"
 PC_USER="gateway"
 PC_SCRIPT="/opt/SecureSpan/Controller/bin/processcontroller.sh"
 
@@ -14,7 +14,7 @@ start() {
         fi
 
         echo -n $"Starting Gateway Services: "
-        "${PC_SCRIPT}" "${PC_USER}" "/var/run/${PID_FILE}.pid"
+        "${PC_SCRIPT}" "${PC_USER}" "${PID_FILE}"
         RETVAL=$?
         if [ $RETVAL -eq 0 ] ; then
           echo done.
@@ -26,7 +26,7 @@ start() {
 
 stop() {
         echo -n $"Shutting down Gateway Services: "
-        [ -f "/var/run/${PID_FILE}.pid" ] && pid=$(<"/var/run/${PID_FILE}.pid") 
+        [ -f "${PID_FILE}" ] && pid=$(<"${PID_FILE}")
         if [ -n "${pid}" -a -d /proc/${pid} ] ; then
             kill -TERM "${pid}" 2>&1 >/dev/null
             sleep 3
@@ -57,8 +57,8 @@ stop() {
 }
 
 status() {
-        if [ -f "/var/run/${PID_FILE}.pid" ] ; then
-            PID=$(<"/var/run/${PID_FILE}.pid")
+        if [ -f "${PID_FILE}" ] ; then
+            PID=$(<"${PID_FILE}")
             if [ ! -z "${PID}" ] && [ -d "/proc/${PID}" ] ; then
                 echo "process controller pid $PID is running..."
                 return 0
