@@ -8,6 +8,7 @@ import org.jaxen.saxpath.base.XPathReader;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.lang.reflect.InvocationHandler;
@@ -188,6 +189,24 @@ public class XpathVariableTest {
         List got = (List) dx.evaluate(testdoc);
         assertEquals(1, got.size());
         assertTrue(got.get(0) == foreign.getDocumentElement());
+    }
+
+    @Test
+    public void testElementsFromVariable() throws Exception {
+        final Element[] elements = new Element[]{ testdoc.getDocumentElement(), (Element)testdoc.getDocumentElement().getFirstChild() };
+        final DOMXPath dx = newDx("$elements");
+        dx.setVariableContext( new XpathVariableFinderVariableContext( new XpathVariableFinder(){
+            @Override
+            public Object getVariableValue( final String namespaceUri, final String variableName ) throws NoSuchXpathVariableException {
+                assertNull( "Variable ns", namespaceUri );
+                assertEquals( "Variable name", "elements", variableName );
+                return elements;
+            }
+        } ) );
+        final List got = (List) dx.evaluate(testdoc);
+        assertEquals(2, got.size());
+        assertTrue(got.get(0) == elements[0]);
+        assertTrue(got.get(1) == elements[1]);
     }
 
     @Test
