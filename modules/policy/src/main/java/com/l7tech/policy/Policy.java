@@ -115,6 +115,12 @@ public class Policy extends NamedEntityImp implements HasFolder {
         assertion = null;
     }
 
+    @Size(max = 255)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     @NotNull
     @Size(min=1,max=5242880)
     @Migration(resolver = PropertyResolver.Type.POLICY)

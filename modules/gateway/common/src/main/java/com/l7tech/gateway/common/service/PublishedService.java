@@ -93,6 +93,12 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         return super.getId();
     }
 
+    @Size(max = 255)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     /**
      * Attempts to open a connection to the protected service
      *

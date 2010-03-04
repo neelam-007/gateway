@@ -8,41 +8,67 @@ package com.l7tech.gateway.common.schema;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Lob;
 
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import org.hibernate.annotations.Proxy;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
  * elements that are potentially common to more than one services such as envelope schemas
  * and schemas for stuff that end up in soap headers.
+ * <p/>
+ * All imports from a schema, which are successfully imported, are also added to the community_schemas table
+ * (includes are not)
+ * <p/>
+ * The name is unqiue, however this is enforced by the name_hash property
  *
  * @author flascelles@layer7-tech.com
+ * @author darmstrong
  */
 @Entity
-@Proxy(lazy=false)
-@Table(name="community_schemas")
+@Proxy(lazy = false)
+@Table(name = "community_schemas")
 @XmlRootElement
 public class SchemaEntry extends NamedEntityImp {
+    public final static int MAX_NAME_LENGTH = 4096;
 
-    @Size(max=128)
+    public interface UrlLengthNameGroup {}
+
+    @Size(max = MAX_NAME_LENGTH)
     @Transient
     @Override
     public String getName() {
         return super.getName();
     }
 
-    /** @return the schema text, which may be empty or null. */
+    /**
+     * Set the name of the schema. This is known as a 'system id' in the SSM, and can often be a URL value, from where
+     * an imported schema originated
+     *  
+     * @param name required. Cannot be null, but can be the emtpy String
+     */
+    @Override
+    public void setName(String name) {
+        if(name == null) throw new NullPointerException("name cannot be null");
+        
+        super.setName(name);
+        String newHash = createNameHash(name);
+        setNameHash(newHash);
+    }
+
+    /**
+     * @return the schema text, which may be empty or null.
+     */
     @NotNull
-    @Size(min=0,max=5242880)
-    @Column(name="schema_xml", length=Integer.MAX_VALUE)
+    @Size(min = 0, max = 5242880)
+    @Column(name = "schema_xml", length = Integer.MAX_VALUE)
     @Lob
     public String getSchema() {
         // Protect legacy code now that this field is nullable
@@ -53,8 +79,8 @@ public class SchemaEntry extends NamedEntityImp {
         this.schema = schema;
     }
 
-    @Size(min=0,max=128)
-    @Column(name="tns", length=128)
+    @Size(min = 0, max = 128)
+    @Column(name = "tns", length = 128)
     public String getTns() {
         return tns;
     }
@@ -63,9 +89,27 @@ public class SchemaEntry extends NamedEntityImp {
         this.tns = tns;
     }
 
-    @Column(name="system")
+    @Column(name = "system")
     public boolean isSystem() {
         return system;
+    }
+
+    @Size(max = 128)
+    @Column(name = "name_hash", length = 128, nullable = false)
+    String getNameHash() {
+        return nameHash;
+    }
+
+    void setNameHash(String nameHash) {
+        String calculatedHash = createNameHash(getName());
+        //being defensive, validate the hash being set
+        //On upgrade nameHash equals getName, in which case allow the value to be set
+        //this property is package private, so no callers should set it directly, if it is set directly to a value
+        //which matches the name, then the schema will never be found
+        if (!calculatedHash.equals(nameHash) && !nameHash.equals(getName()))
+            throw new IllegalArgumentException("Hash value must match the generated hash of name property");
+
+        this.nameHash = nameHash;
     }
 
     public void setSystem(boolean system) {
@@ -85,7 +129,18 @@ public class SchemaEntry extends NamedEntityImp {
         return copy;
     }
 
+    public static String createNameHash(String name) {
+        try {
+            return HexUtils.encodeBase64(HexUtils.getSha512Digest(name.getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Cannot compute hash of name: " + ExceptionUtils.getMessage(e));
+        }
+    }
+
+    // - PRIVATE
+
     private String schema;
     private String tns;
     private boolean system;
+    private String nameHash;
 }

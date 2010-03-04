@@ -7,6 +7,7 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.validation.groups.Default;
 import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
@@ -28,10 +29,18 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
         return super.getVersion();
     }
 
+    /**
+     * Get the name of the entity
+     * <p/>
+     * Subclasses should override this getter to set the Size annotation to match the size of the database field
+     *
+     * @return String name of the entity
+     */
+    @Override
     @NotNull
-    @Size(min=1,max=255) // some names are length 255 and constraints are inherited
-    @Column(name="name", nullable=false, length=128)
-    @XmlElement(namespace="http://ns.l7tech.com/secureSpan/1.0/core")
+    //@NotNull annotation is not enforced outside of management api module. Many named entities allow null and set null as default
+    @Column(name = "name")
+    @XmlElement(namespace = "http://ns.l7tech.com/secureSpan/1.0/core")
     public String getName() {
         return _name;
     }

@@ -62,6 +62,21 @@ INSERT INTO cluster_properties
     values (-500200, 0, "upgrade.task.500200", "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs");
 
 --
+-- bug 8417
+--
+ALTER TABLE community_schemas DROP INDEX csnm_idx;
+ALTER TABLE community_schemas MODIFY COLUMN name varchar(4096) NOT NULL;
+ALTER TABLE community_schemas ADD COLUMN name_hash varchar(128) NOT NULL;
+--to support upgrade task and the creation of the csnmh_idx index
+UPDATE community_schemas SET name_hash = name;
+ALTER TABLE community_schemas ADD UNIQUE KEY csnmh_idx (name_hash);
+
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500302, 0, "upgrade.task.500302", "com.l7tech.server.upgrade.Upgrade52to53UpdateCommunitySchemas");
+
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

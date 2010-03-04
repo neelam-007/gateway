@@ -400,17 +400,19 @@ public class EntityValidationTest {
         schemaEntry.setTns( "urn:tns" );
         valid( schemaEntry, "basic schema entry" );
 
+        //uncomment following test when validation annotations are used outside of management api module
+        //@NotNull cannot be used to verify no null values are supplied so the method now has an explicit null check
         // Test name not null
-        schemaEntry.setName( null );
-        invalid( schemaEntry, "null name" );
+//        schemaEntry.setName( null );
+//        invalid( schemaEntry, "null name" );
 
         schemaEntry.setName( "name" );
 
         // Test name length
-        schemaEntry.setName( string(128, 'a') );
+        schemaEntry.setName( string(4096, 'a') );
         valid( schemaEntry, "longest name" );
 
-        schemaEntry.setName( string(129, 'a') );
+        schemaEntry.setName( string(4097, 'a') );
         invalid( schemaEntry, "long name" );
 
         schemaEntry.setName( "name" );

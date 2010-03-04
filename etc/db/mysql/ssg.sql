@@ -692,12 +692,13 @@ DROP TABLE IF EXISTS community_schemas;
 CREATE TABLE community_schemas (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
-  name varchar(128) default '',
+  name varchar(4096) NOT NULL,
   tns varchar(128) default '',
   schema_xml mediumtext,
   system tinyint(1) NOT NULL default 0,
+  name_hash varchar(128) NOT NULL,
   PRIMARY KEY (objectid),
-  UNIQUE KEY csnm_idx (name)
+  UNIQUE KEY csnmh_idx (name_hash)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

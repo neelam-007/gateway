@@ -47,6 +47,7 @@ public class SchemaEntryManagerImpl
     public SchemaEntryManagerImpl(ApplicationEventProxy applicationEventProxy) {
         if (applicationEventProxy == null) throw new NullPointerException("missing applicationEventProxy");
         applicationEventProxy.addApplicationListener(new ApplicationListener() {
+            @Override
             public void onApplicationEvent(ApplicationEvent applicationEvent) {
                 doOnApplicationEvent(applicationEvent);
             }
@@ -127,16 +128,21 @@ public class SchemaEntryManagerImpl
     /**
      * Find a schema from it's name (name column in community schema table)
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByName(final String schemaName) throws FindException {
+        if(schemaName == null || schemaName.trim().isEmpty()) throw new IllegalArgumentException("schemaName cannot be null or empty");
+
+        final String nameHash = SchemaEntry.createNameHash(schemaName);
+
         final String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
-                          " where " + TABLE_NAME + ".name = ?";
-        Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                          " where " + TABLE_NAME + ".nameHash = ?";
+        Collection<SchemaEntry> output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Query q = session.createQuery(queryname);
-                q.setString(0, schemaName);
+                q.setString(0, nameHash);
                 return q.list();
             }});
 
@@ -148,6 +154,7 @@ public class SchemaEntryManagerImpl
     /**
      * Find a schema from it's target namespace (tns column in community schema table)
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByTNS(final String tns) throws FindException {
@@ -332,6 +339,7 @@ public class SchemaEntryManagerImpl
         return SchemaEntry.class;
     }
 
+    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
