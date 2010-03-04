@@ -8,8 +8,7 @@ package com.l7tech.common.io;
 import static org.junit.Assert.*;
 import org.junit.*;
 
-import java.security.cert.Certificate;
-import java.util.Iterator;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class CertUtilsTest {
                 "XdS5Vqkkzo1HNJ01WGCvkbk=\n" +
                 "-----END CERTIFICATE-----";
 
-        Certificate cert = CertUtils.decodeCert(serverCertB64.getBytes());
+        CertUtils.decodeCert(serverCertB64.getBytes());
 
         String clientCertB64 = "-----BEGIN CERTIFICATE-----\n" +
                 "MIIEjTCCA/agAwIBAgIQFE6oIpUaQDfJ0xCp9MFuMDANBgkqhkiG9w0BAQUFADCB\n" +
@@ -81,7 +80,7 @@ public class CertUtilsTest {
                 "0RTm3chJ4nLEWA2Sd67fGUM=\n" +
                 "-----END CERTIFICATE-----";
 
-        cert = CertUtils.decodeCert(clientCertB64.getBytes());
+        CertUtils.decodeCert(clientCertB64.getBytes());
 
 
         String otherCertB64 = "-----BEGIN CERTIFICATE-----\n" +
@@ -117,8 +116,7 @@ public class CertUtilsTest {
                 "RklDQVRFLS0tLS0NCg==\n" +
                 "-----END CERTIFICATE-----";
 
-        cert = CertUtils.decodeCert(otherCertB64.getBytes());
-
+        CertUtils.decodeCert(otherCertB64.getBytes());
     }
 
     @Test
@@ -128,16 +126,14 @@ public class CertUtilsTest {
     }
 
     private void doTestDnParse() throws Exception {
-        Map map = CertUtils.dnToAttributeMap("cn=Mike Lyons, ou=Research, o=Layer 7 Technologies");
+        final Map<String,List<String>> map = CertUtils.dnToAttributeMap("cn=Mike Lyons, ou=Research, o=Layer 7 Technologies");
 
-        Set entries = map.entrySet();
-        for (Iterator i = entries.iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry)i.next();
-            String key = (String)entry.getKey();
-            List values = (List)entry.getValue();
-            for (Iterator j = values.iterator(); j.hasNext();) {
-                String value = (String)j.next();
-                log.info("    key<" + key +">  value<" + value +">");
+        final Set<Map.Entry<String,List<String>>> entries = map.entrySet();
+        for ( final Map.Entry<String,List<String>> entry : entries ) {
+            final String key = entry.getKey();
+            final List<String> values = entry.getValue();
+            for ( final String value : values ) {
+                log.info( "    key<" + key + ">  value<" + value + ">" );
             }
         }
 
@@ -161,37 +157,102 @@ public class CertUtilsTest {
 
     @Test
     public void testWildcardDomainMatch() {
-        Assert.assertTrue( "Wildcard only match", CertUtils.domainNameMatchesPattern( "host", "*", false ) );
-        Assert.assertTrue( "Wildcards only match", CertUtils.domainNameMatchesPattern( "host", "******", false ) );
-        Assert.assertTrue( "Wildcard hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*.domain.com", false ) );
-        Assert.assertTrue( "Wildcard trailing hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*.domain.com", false ) );
-        Assert.assertTrue( "Wildcard leading hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*t.domain.com", false ) );
-        Assert.assertTrue( "Wildcard embedded hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*t.domain.com", false ) );
-        Assert.assertTrue( "Wildcard multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h**t.domain.com", false ) );
-        Assert.assertTrue( "Wildcard multi outer hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*os*.domain.com", false ) );
-        Assert.assertTrue( "Wildcard multi outer2 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*ost*.domain.com", false ) );
-        Assert.assertTrue( "Wildcard multi outer3 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*host*.domain.com", false ) );
-        Assert.assertTrue( "Wildcard lots multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*****t.domain.com", false ) );
-        Assert.assertTrue( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", false ) );
-        Assert.assertFalse( "Wildcard mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "e*.domain.com", false ) );
-        Assert.assertFalse( "Wildcard tailing mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*e.domain.com", false ) );
-        Assert.assertFalse( "Wildcard multi-domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*.domain.com", false ) );
-        Assert.assertFalse( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", true ) );
-        Assert.assertFalse( "Wildcard multi mismatch", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*eer*st.domain.com", false ) );
+        assertTrue( "Wildcard only match", CertUtils.domainNameMatchesPattern( "host", "*", false ) );
+        assertTrue( "Wildcards only match", CertUtils.domainNameMatchesPattern( "host", "******", false ) );
+        assertTrue( "Wildcard hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*.domain.com", false ) );
+        assertTrue( "Wildcard trailing hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*.domain.com", false ) );
+        assertTrue( "Wildcard leading hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*t.domain.com", false ) );
+        assertTrue( "Wildcard embedded hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*t.domain.com", false ) );
+        assertTrue( "Wildcard multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h**t.domain.com", false ) );
+        assertTrue( "Wildcard multi outer hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*os*.domain.com", false ) );
+        assertTrue( "Wildcard multi outer2 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*ost*.domain.com", false ) );
+        assertTrue( "Wildcard multi outer3 hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "*host*.domain.com", false ) );
+        assertTrue( "Wildcard lots multi hostname match", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*****t.domain.com", false ) );
+        assertTrue( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", false ) );
+        assertFalse( "Wildcard mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "e*.domain.com", false ) );
+        assertFalse( "Wildcard tailing mismatch", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*e.domain.com", false ) );
+        assertFalse( "Wildcard multi-domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "*.domain.com", false ) );
+        assertFalse( "Wildcard domain match", CertUtils.domainNameMatchesPattern( "host.sub.domain.com", "host.*.domain.com", true ) );
+        assertFalse( "Wildcard multi mismatch", CertUtils.domainNameMatchesPattern( "host.domain.com", "h*eer*st.domain.com", false ) );
     }
 
     @Test
     public void testDNComparison() {
-        Assert.assertTrue( "Canonical match", CertUtils.isEqualDNCanonical( "ou=blah+cn=abc", "cn=ABC+OU=Blah" ) );
-        Assert.assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical( "email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com" ) );
-        Assert.assertFalse( "Basic mismatch", CertUtils.isEqualDNCanonical( "cn=a", "cn=b" ) );
+        assertTrue( "Canonical match", CertUtils.isEqualDNCanonical( "ou=blah+cn=abc", "cn=ABC+OU=Blah" ) );
+        assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical( "email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com" ) );
+        assertFalse( "Basic mismatch", CertUtils.isEqualDNCanonical( "cn=a", "cn=b" ) );
     }
 
     @Test
     public void testValidDN() {
-        Assert.assertTrue( "Valid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, ST=NJ, DNQ=org, EMAILADDRESS=support@simpson.org") );
-        Assert.assertFalse( "Invalid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, S=NJ, DNQUALIFIER=org, EMAIL=support@simpson.org") );
-        Assert.assertTrue( "Valid DN with explicit known OIDs", CertUtils.isValidDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
-        Assert.assertTrue( "Valid DN with explicit unknown OIDs", CertUtils.isValidDN("cn=bug5722_child,2.5.4.46342342=#1613737570706f72744073696d70736f6e2e6f7267") );
+        assertTrue( "Valid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, ST=NJ, DNQ=org, EMAILADDRESS=support@simpson.org") );
+        assertFalse( "Invalid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, S=NJ, DNQUALIFIER=org, EMAIL=support@simpson.org") );
+        assertTrue( "Valid DN with explicit known OIDs", CertUtils.isValidDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
+        assertTrue( "Valid DN with explicit unknown OIDs", CertUtils.isValidDN("cn=bug5722_child,2.5.4.46342342=#1613737570706f72744073696d70736f6e2e6f7267") );
     }
+
+    @Test
+    public void testDNString() throws Exception {
+        X509Certificate cert = CertUtils.decodeFromPEM(
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIDQjCCAiqgAwIBAgIBBzANBgkqhkiG9w0BAQUFADBfMQswCQYDVQQGEwJVUzEL\n" +
+                "MAkGA1UECBMCTUQxEDAOBgNVBAoTB0pIVS1BUEwxGDAWBgNVBAsUD0FQTF9HSUdf\n" +
+                "VEVTVEJFRDEXMBUGA1UEAxQOR0lHX1RFU1RCRURfQ0EwHhcNMTAwMTE1MTk1OTA0\n" +
+                "WhcNMTMwMTE0MTk1OTA0WjBmMQswCQYDVQQGEwJVUzELMAkGA1UECBMCTUQxEDAO\n" +
+                "BgNVBAoTB0pIVS1BUEwxGDAWBgNVBAsUD0FQTF9HSUdfVEVTVEJFRDEeMBwGA1UE\n" +
+                "AxMVVVJOOkJBRTpURVNUOjM6TEFZRVI3MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCB\n" +
+                "iQKBgQC22D6MhBOL6izNYF3rNZfvyb+6z4BkrT5udlJs34TmCNENbFOSupnJRUKN\n" +
+                "HMMNa3ewdvxzhIJo3B+oHPDCMTM4fQ9t5EsWxVdQEVRZGMiJqk5d/0IoWD9V36yU\n" +
+                "OsuG+lXIczrnWL9AojKovps0TKcIZFYg75QpffIs6u4IR9SQkwIDAQABo4GFMIGC\n" +
+                "MAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMCgGCWCGSAGG+EIBDQQbFhlHSUcgVEVT\n" +
+                "VEJFRCBDQSBhdCBKSFUtQVBMMB0GA1UdDgQWBBSQI/FA/QQ2IjLz4htwzmK/Hd7R\n" +
+                "+DAfBgNVHSMEGDAWgBQK4j02q3H4XDwG2ke7rZlfp5P6EjANBgkqhkiG9w0BAQUF\n" +
+                "AAOCAQEAoBCEEoZUq1s7w5wFG1DQ2q/trJIqdmJN8XNzzNvFZ/vKmStHYZlgsVK8\n" +
+                "aAcFproDmJDWa+U1L+0ICxYQzGMzFza/UN2K//Y/KU5qaAdOaUwC0ByGCY0uWYKU\n" +
+                "iombk5qTMvs//sHKqCbu/SbOpi5PH9U7I/SGFAUD6HPYERRO9f6MH5cl4Ur2uN70\n" +
+                "JOH5tmNIBAl6FgB5EL981jIVFiNno6GNcijVdIis/h60jJVwO5WCWCewZZ8nmKg8\n" +
+                "D5IH7rEtrJFxBcWgSn44AUbObonUP8iQLKMfsx2eO0PKZE2Ov7NbFvBFpUqrUdQD\n" +
+                "zElRwKBQRxA8wDn+DkLbkHsOA1q2CQ==\n" +
+                "-----END CERTIFICATE-----",
+                true
+        );
+
+        X509Certificate cert2 = CertUtils.decodeFromPEM(
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIEpTCCA42gAwIBAgIQF3YFiJVY7rsA2hDl8POc8DANBgkqhkiG9w0BAQUFADCB\n" +
+                "izELMAkGA1UEBhMCVVMxFTATBgNVBAoTDHRoYXd0ZSwgSW5jLjE5MDcGA1UECxMw\n" +
+                "VGVybXMgb2YgdXNlIGF0IGh0dHBzOi8vd3d3LnRoYXd0ZS5jb20vY3BzIChjKTA2\n" +
+                "MSowKAYDVQQDEyF0aGF3dGUgRXh0ZW5kZWQgVmFsaWRhdGlvbiBTU0wgQ0EwHhcN\n" +
+                "MDgxMTE5MDAwMDAwWhcNMTAwMTE3MjM1OTU5WjCBxzETMBEGCysGAQQBgjc8AgED\n" +
+                "EwJVUzEZMBcGCysGAQQBgjc8AgECFAhEZWxhd2FyZTEbMBkGA1UEDxMSVjEuMCwg\n" +
+                "Q2xhdXNlIDUuKGIpMRMwEQYDVQQKFApUaGF3dGUgSW5jMRAwDgYDVQQFEwczODk4\n" +
+                "MjYxMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxQN\n" +
+                "TW91bnRhaW4gVmlldzEXMBUGA1UEAxQOd3d3LnRoYXd0ZS5jb20wgZ8wDQYJKoZI\n" +
+                "hvcNAQEBBQADgY0AMIGJAoGBAOeJaLVuHTgZ9i1hwgC6bqtmktaFhy3VqFipenUn\n" +
+                "ne2e/gZxcC0hcEw+nLbVXUSStODufApQTA1nmKoBDjejKu/m4BF77rCitDJkpw3a\n" +
+                "bBX4xaVaLPzJpjyIiL/fpzjweO2BkykMrserUSFeypXlSFJBthhgBBlvPYAU068j\n" +
+                "AxCVAgMBAAGjggFJMIIBRTAMBgNVHRMBAf8EAjAAMDkGA1UdHwQyMDAwLqAsoCqG\n" +
+                "KGh0dHA6Ly9jcmwudGhhd3RlLmNvbS9UaGF3dGVFVkNBMjAwNi5jcmwwQgYDVR0g\n" +
+                "BDswOTA3BgtghkgBhvhFAQcwATAoMCYGCCsGAQUFBwIBFhpodHRwczovL3d3dy50\n" +
+                "aGF3dGUuY29tL2NwczAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYD\n" +
+                "VR0jBBgwFoAUzTLi8l0lRwKqj3lLMu4Dmf0wSdEwdgYIKwYBBQUHAQEEajBoMCIG\n" +
+                "CCsGAQUFBzABhhZodHRwOi8vb2NzcC50aGF3dGUuY29tMEIGCCsGAQUFBzAChjZo\n" +
+                "dHRwOi8vd3d3LnRoYXd0ZS5jb20vcmVwb3NpdG9yeS9UaGF3dGVfRVZfQ0FfMjAw\n" +
+                "Ni5jcnQwDQYJKoZIhvcNAQEFBQADggEBALKglt3sBDhrw3qtI0SR5WKMsfacAyEf\n" +
+                "7wPZymOy+Ntak8LM8Xxv6w9Re0vntfy8m4dIzFv5yGakQKzpQl3t81MT571uf1BT\n" +
+                "ZLOV8UJPNlS0Hn8YNzk7BlvlE9lXvNVo43FfXyv1psKPZ4E6RGOMNvqo7f3XXqKf\n" +
+                "sJ1HhvtxYI7I00UZt9rNnupwEIc3EN0sEd/uAiGmdebWn1RyYeZcHm4W9o64/EeA\n" +
+                "BUv3LQLuUCbRSAFg3Dyn2+vKi6b/nkddh0D40oLXE2QO1LMpIqfgyM2MTfURISYC\n" +
+                "QzOOqT+R1AWXydNCawWZ9hZxZ2XHlt8q11RjJcAo9xzuzYvknTKjgVU=\n" +
+                "-----END CERTIFICATE-----",
+                true
+        );
+
+        assertEquals( "DNQ DN", "cn=bug5722_child,o=oasis,st=nj,2.5.4.46=org,1.2.840.113549.1.9.1=support@simpson.org", CertUtils.formatDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
+        assertEquals( "Formatted Subject DN 1", CertUtils.formatDN( "CN=URN:BAE:TEST:3:LAYER7, OU=APL_GIG_TESTBED, O=JHU-APL, ST=MD, C=US" ), CertUtils.getSubjectDN(cert) );
+        assertEquals( "Formatted Subject DN 2", CertUtils.formatDN( "CN=www.thawte.com, L=Mountain View, ST=California, C=US, SERIALNUMBER=3898261, O=Thawte Inc, OID.2.5.4.15=\"V1.0, Clause 5.(b)\", OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US" ), CertUtils.getSubjectDN(cert2) );
+        // The following test is not generally applicable, but is true for this test data
+        assertEquals( "Subject DN 1", cert.getSubjectDN().getName().toLowerCase().replaceAll(" ", ""), CertUtils.getSubjectDN( cert ));
+    }
+
 }

@@ -24,6 +24,7 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -111,6 +112,8 @@ public class CertUtils {
     private static final Pattern PATTERN_BASE64 = Pattern.compile(REGEX_BASE64);
     private static final Pattern PATTERN_CRL = Pattern.compile(PEM_CSR_BEGIN_MARKER + REGEX_BASE64 + PEM_CSR_END_MARKER);
     private static final Pattern PATTERN_NEW_CRL = Pattern.compile(PEM_CSR_BEGIN_NEW_MARKER + REGEX_BASE64 + PEM_CSR_END_NEW_MARKER);
+    private static final Pattern PATTERN_DN_ENCODED_AVA = Pattern.compile( "(?<=(?:[,+]|^)([a-zA-Z0-9\\. ]{1,256})=)#((?:[0-9a-f][0-9a-f])+)(?=(?:[,+]|$))" );
+
     private static final Pattern SUN_X509KEY_EC_CURVENAME_GUESSER = Pattern.compile("^algorithm = EC([a-zA-Z0-9]+)(?:\\s|,|$)");
     private static final Pattern SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER = Pattern.compile("  parameters: ([a-zA-Z0-9]+)(?:\\s|,|$)");
     /** Use static Charset to avoid JDK blocking (google "FastCharsetProvider synchronization" ) */
@@ -519,7 +522,7 @@ public class CertUtils {
      * @return The Subject DN in canonical format
      */
     public static String getSubjectDN( final X509Certificate cert ) {
-        return cert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
+        return getDN(cert.getSubjectX500Principal());
     }
 
     /**
@@ -529,7 +532,17 @@ public class CertUtils {
      * @return The Issuer DN in canonical format
      */
     public static String getIssuerDN( final X509Certificate cert ) {
-        return cert.getIssuerX500Principal().getName(X500Principal.CANONICAL);
+        return getDN(cert.getIssuerX500Principal());
+    }
+
+    /**
+     * Get the DN in standard format for the principal.
+     *
+     * @param principal The principal
+     * @return The principal DN in canonical format
+     */
+    public static String getDN( final X500Principal principal ) {
+        return decodeDNStringValues( principal.getName(X500Principal.CANONICAL) );
     }
 
     /**
@@ -545,7 +558,7 @@ public class CertUtils {
 
         if ( dn != null ) {
             try {
-                formattedDN = new X500Principal(dn).getName(X500Principal.CANONICAL);
+                formattedDN = decodeDNStringValues( new X500Principal(dn).getName(X500Principal.CANONICAL) );
             } catch ( IllegalArgumentException iae ) {
                 // don't format
             }
@@ -1518,6 +1531,69 @@ public class CertUtils {
         BigInteger exponent = new BigInteger((byte[])sequence[3]);
 
         return new BigInteger[]{modulus, exponent};
+    }
+
+    /**
+     * Decode text hex attribute values in a DN string.
+     *
+     * <p>Canonical format DNs can have "unnecessarily" hex encoded values. The
+     * hex values preserve the precise string type but make it impossible to
+     * match against a plain text version of the DN.</p>
+     *
+     * <p>This method replaces the hex encoded values with human readable ones
+     * where possible.</p>
+     *
+     * @param inputDN The DN to process
+     * @return The DN with hex values decoded where possible
+     */
+    private static String decodeDNStringValues( final String inputDN ) {
+        String dn = inputDN;
+
+        if ( dn.contains( "=#" ) ) {
+            // Check for and decode any HEX attribute values that
+            // are teletexString, universalString or bmpString.
+            // Any decoded strings are escaped as per section 2.4
+            // of RFC 2253, converted to upper case, converted to
+            // lower case and then normalized (as per the behaviour
+            // of X500Principal for canonical names)
+            try {
+                final StringBuffer nameBuilder = new StringBuffer( dn.length() );
+                final Matcher matcher = PATTERN_DN_ENCODED_AVA.matcher( dn );
+                boolean found = false;
+                while ( matcher.find() ) {
+                    found = true;
+                    final byte[] der = HexUtils.unHexDump( matcher.group(2) );
+                    String value = new X500DirectoryString(der).getContents();
+                    if ( value != null ) {
+                        // Process decoded string
+                        final StringBuilder escapedValue = new StringBuilder( value.length()*2 );
+                        char[] valueCharacters = value.toCharArray();
+                        for ( int i=0; i<valueCharacters.length; i++ ) {
+                            char character = valueCharacters[i];
+                            if ( ",+\"\\<>;".indexOf(character) > -1 || '#' == character && i==0 ) {
+                                escapedValue.append( '\\' );
+                            }
+                            escapedValue.append( character );
+                        }
+                        value = escapedValue.toString();
+                        value = value.toUpperCase(Locale.US).toLowerCase(Locale.US);
+                        value = Normalizer.normalize(value, java.text.Normalizer.Form.NFKD);
+                        matcher.appendReplacement( nameBuilder, Matcher.quoteReplacement( value ) );
+                    } else {
+                        // Keep existing encoded value for this attribute
+                        matcher.appendReplacement( nameBuilder, Matcher.quoteReplacement( "#" + matcher.group(2) ) );
+                    }
+                }
+                if ( found ) {
+                    matcher.appendTail( nameBuilder );
+                    dn = nameBuilder.toString();
+                }
+            } catch ( IOException ioe ) {
+                // use existing DN
+            }
+        }
+
+        return dn;
     }
 
     /**

@@ -589,7 +589,7 @@ public class RevocationCheckerFactory {
                     return onNetworkFailure;
                 }
 
-                final String crlIssuerDn = crl.getIssuerX500Principal().getName(X500Principal.CANONICAL);
+                final String crlIssuerDn = CertUtils.getDN( crl.getIssuerX500Principal() );
 
                 // Check certificate scope
                 // Extend this check if we want to add support for the Issuing Distribution Point extension.

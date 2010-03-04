@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.identity.cert;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -169,7 +170,7 @@ public class TrustedCertManagerImp
             @Override
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 final Criteria crit = session.createCriteria(getImpClass());
-                crit.add(Restrictions.eq("issuerDn", issuer.getName(X500Principal.CANONICAL)));
+                crit.add(Restrictions.eq("issuerDn", CertUtils.getDN( issuer )));
                 crit.add(Restrictions.eq("serial", serial));
                 return crit.list();
             }

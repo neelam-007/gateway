@@ -54,6 +54,14 @@ INSERT INTO cluster_properties
     values (-500301, 0, "upgrade.task.500301", "com.l7tech.server.upgrade.Upgrade52To53UpdateRoles");
 
 --
+-- Upgrade task for DN canonicalization (This is a repeat of a 5.2 upgrade task as the format has changed)
+--
+DELETE FROM cluster_properties where objectid = -500200;
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500200, 0, "upgrade.task.500200", "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs");
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

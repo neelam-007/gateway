@@ -303,7 +303,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     @Transactional(readOnly=true)
     public List<CertEntryRow> findByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException {
         if (issuer == null || serial == null) throw new NullPointerException();
-        return simpleQuery(new Pair<String, Object>("issuerDn", issuer.getName(X500Principal.CANONICAL)),
+        return simpleQuery(new Pair<String, Object>("issuerDn", CertUtils.getDN( issuer )),
                            new Pair<String, Object>("serial", serial));
     }
 
