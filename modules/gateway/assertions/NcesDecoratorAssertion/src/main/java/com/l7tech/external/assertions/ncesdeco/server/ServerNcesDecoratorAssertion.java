@@ -26,6 +26,7 @@ import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import org.safehaus.uuid.EthernetAddress;
@@ -153,6 +154,9 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         try {
             martha.decorateMessage(msg, decoReq);
             return AssertionStatus.NONE;
+        } catch (TooManyChildElementsException e) {
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)});
+            return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
