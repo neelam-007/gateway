@@ -1,16 +1,17 @@
 package com.l7tech.server.config.systemconfig;
 
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
-import com.l7tech.server.config.OSSpecificFunctions;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -93,7 +94,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
                 timezonesToDisplay = new File[TIMEZONES_PER_PAGE];
                 System.arraycopy(allTimeZones, 0, timezonesToDisplay, 0, TIMEZONES_PER_PAGE);
-                boolean hasMoreEntries = true;
+                boolean hasMoreEntries;
                 while (displayedCount < howManyTimeZones && selectedTimeZone == null) {
                     hasMoreEntries = (displayedCount + TIMEZONES_PER_PAGE) < allTimeZones.length;
                     whichIndex = showTimeZones(timezonesToDisplay, dir.equals(new File(osFunctions.getTimeZonesDir()))?null:dir, displayedCount + 1, allowedEntries, hasMoreEntries);
@@ -137,7 +138,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         List<File> allOfThem = new ArrayList<File>(Arrays.asList(subdirs));
         allOfThem.addAll(Arrays.asList(filesonly));
 
-        return allOfThem.toArray(new File[0]);
+        return allOfThem.toArray(new File[allOfThem.size()]);
     }
 
     private int showTimeZones(File[] timezones, File baseDir, int startingIndex, List<String> allowedEntries, boolean hasMoreEntries) throws IOException, WizardNavigationException {
@@ -157,17 +158,17 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         String[] acceptedEntries;
         String defaultValue = "";
         if (!hasMoreEntries) {
-            acceptedEntries = allowedEntries.toArray(new String[0]);
+            acceptedEntries = allowedEntries.toArray(new String[allowedEntries.size()]);
             prompts.add("Please make a selection : ");
         } else {
             List<String> tempList = new ArrayList<String>();
             tempList.addAll(allowedEntries);
             tempList.add(defaultValue);
-            acceptedEntries = tempList.toArray(new String[0]);
+            acceptedEntries = tempList.toArray(new String[tempList.size()]);
             prompts.add("Please make a selection (press [Enter] for next page): ");
         }
 
-        String tzSelection = getData(prompts.toArray(new String[0]), defaultValue, acceptedEntries,null);
+        String tzSelection = getData(prompts.toArray(new String[prompts.size()]), defaultValue, acceptedEntries,null);
         if (tzSelection.equals(defaultValue)) {
             return -1;
         }
@@ -183,7 +184,6 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
     }
 
     private void doNtpConfigurationPrompts(String existingNtpServer) throws IOException, WizardNavigationException {
-        ntpBean.reset();
         String prompt = "Enter a comma separated list of time servers to use for synchronization (ex. host1,host2) ";
         if (StringUtils.isNotEmpty(existingNtpServer))
             prompt += "[" + existingNtpServer + "]";
