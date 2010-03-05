@@ -2,13 +2,12 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -48,23 +47,22 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     //- PUBLIC
 
     public FtpServerManager(final AuditContext auditContext,
+                            final ServerConfig serverConfig,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
                             final LicenseManager licenseManager,
-                            final SsgKeyStoreManager ssgKeyStoreManager,
                             final DefaultKey defaultKeystore,
+                            final TrustedCertServices trustedCertServices,
                             final SsgConnectorManager ssgConnectorManager,
                             final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
-        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
+        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, serverConfig);
 
         this.auditContext = auditContext;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
-        this.ssgKeyStoreManager = ssgKeyStoreManager;
-        this.defaultKeystore = defaultKeystore;
         this.ssgConnectorManager = ssgConnectorManager;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.timer = timer;
@@ -166,8 +164,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
-    private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final DefaultKey defaultKeystore;
     private final SsgConnectorManager ssgConnectorManager;
     private final Timer timer;
     private final Map<Long, FtpServer> ftpServers = new ConcurrentHashMap<Long, FtpServer>();
@@ -217,29 +213,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         return props;
     }
 
-    private SsgKeyEntry findPrivateKey(SsgConnector connector) throws ListenerException {
-        if (!connector.getScheme().equals(SsgConnector.SCHEME_FTPS))
-            return null; // doesn't need one
-
-        String alias = connector.getKeyAlias();
-        if (alias == null) {
-            // Use SSL key
-            try {
-                return defaultKeystore.getSslInfo();
-            } catch (IOException e) {
-                throw new ListenerException("Unable to find private key for connector id " + connector.getOid() + ": " + ExceptionUtils.getMessage(e), e);
-            }
-        }
-        Long keystore = connector.getKeystoreOid();
-        if (keystore == null) keystore = -1L;
-
-        try {
-            return ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystore);
-        } catch (Exception e) {
-            throw new ListenerException("Unable to find private key for connector id " + connector.getOid() + ": " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
     /**
      * Create a new FtpServer instance using settings from the specified connector.
      *
@@ -261,7 +234,6 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                 messageProcessingEventChannel);
 
         Properties props = asFtpProperties(connector);
-        SsgKeyEntry privateKey = findPrivateKey(connector);
 
         PropertiesConfiguration configuration = new PropertiesConfiguration(props);
 
@@ -290,8 +262,8 @@ public class FtpServerManager extends TransportModule implements ApplicationList
             };
 
             for(Listener listener : context.getListeners()) {
-                configure(listener.getSsl(), privateKey);
-                configure(listener.getDataConnectionConfig().getSSL(), privateKey);
+                configure(listener.getSsl(), connector);
+                configure(listener.getDataConnectionConfig().getSSL(), connector);
             }
 
             return new FtpServer(context);
@@ -329,11 +301,13 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
     }
 
-    private void configure(Ssl ssl, SsgKeyEntry privateKey) {
+    private void configure(Ssl ssl, SsgConnector ssgConnector) {
         if (ssl instanceof FtpSsl) {
             FtpSsl ftpSsl = (FtpSsl) ssl;
-            ftpSsl.setPrivateKey(privateKey);
-        }
+            ftpSsl.setTransportModule(this);
+            ftpSsl.setSsgConnector(ssgConnector);
+        } else if (ssl != null)
+            throw new IllegalStateException("Unexpected Ssl implementation of class: " + ssl.getClass());
     }
 
     private void auditStart(SsgConnector connector) {

@@ -17,8 +17,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class <code>SignerInfo</code> is the simple holder for a public
- * private key and the certificate.
+ * Class <code>SignerInfo</code> is the simple holder for a
+ * private key and its certificate chain.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */

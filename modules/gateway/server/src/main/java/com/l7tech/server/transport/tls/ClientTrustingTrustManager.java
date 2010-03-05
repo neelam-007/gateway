@@ -1,19 +1,15 @@
-package com.l7tech.server.tomcat;
+package com.l7tech.server.transport.tls;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -25,12 +21,12 @@ import java.util.logging.Logger;
  * <p/>
  * This trust manager always accepts all client certificates.  They will be checked later on, in policy.
  */
-class ClientTrustingTrustManager implements X509TrustManager {
+public class ClientTrustingTrustManager implements X509TrustManager {
     private static final Logger logger = Logger.getLogger(ClientTrustingTrustManager.class.getName());
 
     private final Callable<X509Certificate[]> issuersFinder;
 
-    ClientTrustingTrustManager(final X509Certificate[] outputTrustedCAs) {
+    public ClientTrustingTrustManager(final X509Certificate[] outputTrustedCAs) {
         logger.info("Set listener with " + outputTrustedCAs.length + " trusted ca certs");
         this.issuersFinder = new Callable<X509Certificate[]>() {
             @Override
@@ -40,7 +36,7 @@ class ClientTrustingTrustManager implements X509TrustManager {
         };
     }
 
-    ClientTrustingTrustManager(Callable<X509Certificate[]> issuersFinder) {
+    public ClientTrustingTrustManager(Callable<X509Certificate[]> issuersFinder) {
         this.issuersFinder = issuersFinder;
     }
 
@@ -50,7 +46,7 @@ class ClientTrustingTrustManager implements X509TrustManager {
      * @param serverConfig severConfig instance to query.  If null, this method logs a warning and immediately returns null.
      * @return the configured issuer certs PEM, or null if not configured.
      */
-    static String getConfiguredIssuerCerts(ServerConfig serverConfig) {
+    public static String getConfiguredIssuerCerts(ServerConfig serverConfig) {
         // try to get setting in cluster properties
         if (serverConfig == null) {
             logger.warning("cannot get server config");
@@ -76,8 +72,8 @@ class ClientTrustingTrustManager implements X509TrustManager {
      * @param sslAcceptedClientCA issuer certs PEMs to parse, comma-delimited.  Must not be null, but may be empty.
      * @return an array of zero or more X509Certificate entries.
      */
-    static X509Certificate[] parseIssuerCerts(String sslAcceptedClientCA) {
-        Set<X509Certificate> outputCertsInList = new TreeSet<X509Certificate>(new EncodedCertificateComparator());
+    public static X509Certificate[] parseIssuerCerts(String sslAcceptedClientCA) {
+        Set<X509Certificate> outputCertsInList = new TreeSet<X509Certificate>(new CertUtils.EncodedCertificateComparator());
 
         String[] acceptedCAsItems = sslAcceptedClientCA.split(",");
         for (String item: acceptedCAsItems) {
@@ -105,18 +101,6 @@ class ClientTrustingTrustManager implements X509TrustManager {
         return outputCertsInList.toArray(new X509Certificate[outputCertsInList.size()]);
     }
 
-    /**
-     * Collapse multiple instances of certificates with identical encoding.
-     *
-     * @param certs certs to collapse.  Required.
-     * @return certs with all duplicates removed.  Never null.
-     */
-    static X509Certificate[] deduplicate(X509Certificate[] certs) {
-        Set<X509Certificate> outputCertsInList = new TreeSet<X509Certificate>(new EncodedCertificateComparator());
-        outputCertsInList.addAll(Arrays.asList(certs));
-        return outputCertsInList.toArray(new X509Certificate[outputCertsInList.size()]);
-    }
-
     @Override
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
         try {
@@ -139,20 +123,6 @@ class ClientTrustingTrustManager implements X509TrustManager {
             return issuersFinder.call();
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * An X509Certificate comparator that compares by the certificate encoded form.
-     */
-    static class EncodedCertificateComparator implements Comparator<X509Certificate> {
-        @Override
-            public int compare(X509Certificate a, X509Certificate b) {
-            try {
-                return ArrayUtils.compareArrays(a.getEncoded(), b.getEncoded());
-            } catch (CertificateEncodingException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }

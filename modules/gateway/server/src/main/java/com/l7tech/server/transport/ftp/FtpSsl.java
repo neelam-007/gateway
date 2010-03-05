@@ -1,7 +1,10 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.server.transport.ListenerException;
+import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.ftpserver.interfaces.Ssl;
 
 import javax.net.ssl.*;
@@ -15,7 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Ssl implementation for the SSG.
  * <p/>
- * Users must remember to call {@link #setPrivateKey} before attempting to make use of this.
+ * Users must remember to call {@link #setTransportModule(com.l7tech.server.transport.TransportModule)} and
+ * {@link #setSsgConnector(com.l7tech.gateway.common.transport.SsgConnector)} before attempting to make use of this.
  *
  * @author Steve Jones
  */
@@ -26,7 +30,7 @@ public class FtpSsl implements Ssl {
     public FtpSsl() {
         // create ssl context map - the key is the
         // SSL protocol and the value is SSLContext.
-        this.sslContextMap = new ConcurrentHashMap<String, SSLContext>();
+        this.sslContextMap = new ConcurrentHashMap<String, SsgConnectorSslHelper>();
     }
 
     public boolean getClientAuthenticationRequired() {
@@ -34,45 +38,53 @@ public class FtpSsl implements Ssl {
     }
 
     public SSLContext getSSLContext() throws GeneralSecurityException {
-        return getSSLContext(sslProtocol);
+        return getSSLContext(null);
     }
 
-    public void setPrivateKey(SsgKeyEntry privateKey) {
-        this.privateKey = privateKey;
+    public void setTransportModule(TransportModule transportModule) {
+        this.transportModule = transportModule;
+    }
+
+    public void setSsgConnector(SsgConnector ssgConnector) {
+        this.ssgConnector = ssgConnector;
     }
 
     /**
      * Get SSL Context.
      */
     public SSLContext getSSLContext(String protocol) throws GeneralSecurityException {
+        return getSslHelper(protocol).getSslContext();
+    }
+
+    private SsgConnectorSslHelper getSslHelper(String protocol) throws GeneralSecurityException {
+        if (transportModule == null)
+            throw new IllegalStateException("Unable to create SSL context: No transport module has been set on this FtpSsl instance");
+        if (ssgConnector == null)
+            throw new IllegalStateException("Unable to create SSL context: No connector has been set on this FtpSsl instance");
+
         // null value check
         if(protocol == null) {
-            protocol = sslProtocol;
+            protocol = SsgConnectorSslHelper.getTlsProtocol(ssgConnector);
         }
 
         // if already stored - return it
-        SSLContext ctx = sslContextMap.get(protocol);
-        if(ctx != null) {
-            return ctx;
+        SsgConnectorSslHelper helper = sslContextMap.get(protocol);
+        if(helper != null) {
+            return helper;
         }
 
-        if (privateKey == null)
-            throw new IllegalStateException("Unable to create SSL context: No private key has been set on this FtpSsl instance");
+        try {
+            helper = new SsgConnectorSslHelper(transportModule, ssgConnector);
+        } catch (ListenerException e) {
+            throw new GeneralSecurityException("Unable to create SSL context: " + ExceptionUtils.getMessage(e), e);
+        }
 
-        // note that extended key manager is required for engine use
-        X509ExtendedKeyManager keyManager = new SingleCertX509KeyManager(privateKey.getCertificateChain(),
-                                                                         privateKey.getPrivateKey(),
-                                                                         "ftpssl-" + privateKey.getKeystoreId() + "-" + privateKey.getAlias());
-
-        // create SSLContext
-        ctx = SSLContext.getInstance(protocol);
-        ctx.init(new KeyManager[]{keyManager},
-                 null,
-                 null);
+        // TODO update to more recent version of Apache FtpServer that properly distinguishes WANT from NEED clientauth
+        clientAuthentication = ssgConnector.getClientAuth() == SsgConnector.CLIENT_AUTH_ALWAYS;
 
         // store it in map
-        sslContextMap.put(protocol, ctx);
-        return ctx;
+        sslContextMap.put(protocol, helper);
+        return helper;
     }
 
     /**
@@ -80,10 +92,12 @@ public class FtpSsl implements Ssl {
      */
     public ServerSocket createServerSocket(String protocol,
                                            InetAddress addr,
-                                           int port) throws Exception {
+                                           int port) throws Exception
+    {
+        SsgConnectorSslHelper sslHelper = getSslHelper(protocol);
+
         // get server socket factory
-        SSLContext ctx = getSSLContext(protocol);
-        SSLServerSocketFactory ssocketFactory = ctx.getServerSocketFactory();
+        SSLServerSocketFactory ssocketFactory = sslHelper.getSslServerSocketFactory();
 
         // create server socket
         final SSLServerSocket serverSocket;
@@ -94,9 +108,7 @@ public class FtpSsl implements Ssl {
             serverSocket = (SSLServerSocket) ssocketFactory.createServerSocket(port, 100, addr);
         }
 
-        // initialize server socket
-        serverSocket.setNeedClientAuth(false);
-        serverSocket.setWantClientAuth(clientAuthentication);
+        sslHelper.configureServerSocket(serverSocket);
 
         return serverSocket;
     }
@@ -106,24 +118,24 @@ public class FtpSsl implements Ssl {
      */
     public Socket createSocket(String protocol,
                                Socket soc,
-                               boolean clientMode) throws Exception {
+                               boolean clientMode) throws Exception
+    {
         // already wrapped - no need to do anything
         if(soc instanceof SSLSocket) {
             return soc;
         }
 
+        SsgConnectorSslHelper sslHelper = getSslHelper(protocol);
+
         // get socket factory
-        SSLContext ctx = getSSLContext(protocol);
-        SSLSocketFactory socFactory = ctx.getSocketFactory();
+        SSLSocketFactory socFactory = sslHelper.getSocketFactory();
 
         // create socket
         String host = soc.getInetAddress().getHostAddress();
         int port = soc.getLocalPort();
         SSLSocket ssoc = (SSLSocket)socFactory.createSocket(soc, host, port, true);
-        ssoc.setUseClientMode(clientMode);
 
-        // initialize socket
-        ssoc.setNeedClientAuth(clientAuthentication);
+        sslHelper.configureSocket(ssoc, clientMode);
 
         return ssoc;
     }
@@ -136,12 +148,12 @@ public class FtpSsl implements Ssl {
                                int port,
                                boolean clientMode) throws Exception {
         // get socket factory
-        SSLContext ctx = getSSLContext(protocol);
-        SSLSocketFactory socFactory = ctx.getSocketFactory();
+        SsgConnectorSslHelper sslHelper = getSslHelper(protocol);
+        SSLSocketFactory socFactory = sslHelper.getSocketFactory();
 
         // create socket
         SSLSocket ssoc = (SSLSocket)socFactory.createSocket(addr, port);
-        ssoc.setUseClientMode(clientMode);
+        sslHelper.configureSocket(ssoc, clientMode);
 
         return ssoc;
     }
@@ -156,20 +168,20 @@ public class FtpSsl implements Ssl {
                                int localport,
                                boolean clientMode) throws Exception {
         // get socket factory
-        SSLContext ctx = getSSLContext(protocol);
-        SSLSocketFactory socFactory = ctx.getSocketFactory();
+        SsgConnectorSslHelper sslHelper = getSslHelper(protocol);
+        SSLSocketFactory socFactory = sslHelper.getSocketFactory();
 
         // create socket
         SSLSocket ssoc = (SSLSocket)socFactory.createSocket(host, port, localhost, localport);
-        ssoc.setUseClientMode(clientMode);
+        sslHelper.configureSocket(ssoc, clientMode);
 
         return ssoc;
     }
 
     //- PRIVATE
 
-    private final Map<String, SSLContext> sslContextMap;
-    private SsgKeyEntry privateKey;
-    private String sslProtocol = "TLS";
+    private final Map<String, SsgConnectorSslHelper> sslContextMap;
+    private TransportModule transportModule;
+    private SsgConnector ssgConnector;
     private boolean clientAuthentication = false;
 }

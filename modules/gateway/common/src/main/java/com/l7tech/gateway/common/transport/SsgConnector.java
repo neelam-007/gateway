@@ -44,10 +44,37 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     public static final String SCHEME_FTPS = "FTPS";
 
     /** Custom cipher list.  If set, should be a comma-separated ordered list, ie "TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA". */
-    public static final String PROP_CIPHERLIST = "cipherList";
+    public static final String PROP_TLS_CIPHERLIST = "cipherList";
 
-    /** Custom protocols list.  If set, should be a comma-separated list of JSSE protocol names, ie "TLSv1,TLSv1.1,TLSv1.2".  Default is to enable only "TLSv1". */
-    public static final String PROP_PROTOCOLS = "protocols";
+    /** GUI-managed TLS versions list.  If set, should be a comma-separated list of JSSE protocol names to enable, ie "TLSv1,TLSv1.1,TLSv1.2".  Default is to enable only "TLSv1". */
+    public static final String PROP_TLS_PROTOCOLS = "protocols";
+
+    /** Custom TLS versions list, overridding those from the GUI.  If set, should be a comma-separated list of JSSE protocol names. */
+    public static final String PROP_TLS_OVERRIDE_PROTOCOLS = "overrideProtocols";
+
+    /** Custom SSL/TLS protocol name.  If set, should be the first argument to pass to {@link javax.net.ssl.SSLContext#getInstance(String, String)}, ie "TLS".  Defaults to "TLS". */
+    public static final String PROP_TLS_PROTOCOL = "protocol";
+
+    /**
+     * Name of specific SSLContext provider to use.  Can be used to force the Gateway to use a specific registered JSSE provider instead of selecting one automatically.
+     * If set, this should be the second argument to pass to {@link javax.net.ssl.SSLContext#getInstance(String, String)}, ie "SunJSSE" or "RsaJsse".
+     */
+    public static final String PROP_TLS_PROTOCOL_PROVIDER = "protocolProvider";
+
+    /** If set to true, we will NOT automatically prepend "SSLv2Hello" to the list of enabled protocols whenever SSL 3.0 or TLS 1.0 are enabled. */
+    public static final String PROP_TLS_NO_SSLV2_HELLO = "noSSLv2Hello";
+
+    /** Can be used to override the session cache size.  If not set, defaults to 0, which means no limit. */
+    public static final String PROP_TLS_SESSION_CACHE_SIZE = "sessionCacheSize";
+
+    /** Can be used to override the session cache timeout.  Note that this is in seconds, not milliseconds.  If not set, defaults to 86400 seconds. */
+    public static final String PROP_TLS_SESSION_CACHE_TIMEOUT = "sessionCacheTimeout";
+
+    /**
+     * Can be set to "true" to disable the crude work around for CVE-2009-3555 (removing all cipher suites after handshake to prevent re-handshakes).
+     * Currently only has an effect for HTTPS listeners.  Not necessary when using RSA SSL-J 5.1.1 or later as the TLS provider. 
+     */
+    public static final String PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = "allowUnsafeLegacyRenegotiation";
 
     /** If a port range is required, this property holds the first port in the range. */
     public static final String PROP_PORT_RANGE_START = "portRangeStart";

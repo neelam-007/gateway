@@ -2,11 +2,9 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
@@ -15,7 +13,6 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
@@ -48,7 +45,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,33 +84,25 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
-    private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final DefaultKey defaultKeyManager;
     private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
     private final Set<SsgConnectorActivationListener> endpointListeners;
 
-    private TrustedCertServices trustedCertServices;
-
     private Embedded embedded;
-    private Engine engine;
-    private Host host;
     private StandardContext context;
     private StandardThreadExecutor executor;
 
     public HttpTransportModule( final ServerConfig serverConfig,
                                 final MasterPasswordManager masterPasswordManager,
-                                final DefaultKey defaultKeyManager,
-                                final SsgKeyStoreManager ssgKeyStoreManager,
+                                final DefaultKey defaultKey,
                                 final LicenseManager licenseManager,
                                 final SsgConnectorManager ssgConnectorManager,
+                                final TrustedCertServices trustedCertServices,
                                 final Set<SsgConnectorActivationListener> endpointListeners )
     {
-        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
+        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
-        this.defaultKeyManager = defaultKeyManager;
-        this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.instanceId = nextInstanceId.getAndIncrement();
         this.endpointListeners = endpointListeners;
         //noinspection ThisEscapedInObjectConstruction
@@ -142,7 +130,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             throw new LifecycleException(msg, e);
         }
 
-        engine = embedded.createEngine();
+        Engine engine = embedded.createEngine();
         engine.setName("ssg");
         engine.setDefaultHost(getListenAddress());
         embedded.addEngine(engine);
@@ -152,7 +140,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
 
         final String s = inf.getAbsolutePath();
-        host = embedded.createHost(getListenAddress(), s);
+        Host host = embedded.createHost(getListenAddress(), s);
         host.getPipeline().addValve(new ConnectionIdValve(this));
         host.getPipeline().addValve(new ResponseKillerValve());
         engine.addChild(host);
@@ -565,10 +553,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         if (SsgConnector.SCHEME_HTTPS.equals(c.getScheme())) {
             // SSL
-            m.put("sslProtocol", "TLS");
             m.put("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
             m.put("secure", Boolean.toString(c.isSecure()));
-            m.put("protocols", getEnabledProtocols(c));
 
             final int clientAuth = c.getClientAuth();
             if (clientAuth == SsgConnector.CLIENT_AUTH_ALWAYS)
@@ -577,23 +563,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 m.put("clientAuth", "want");
             else if (clientAuth == SsgConnector.CLIENT_AUTH_NEVER)
                 m.put("clientAuth", "false");
-
-            if (c.getKeystoreOid() == null) {
-                try {
-                    SsgKeyEntry defaultKey = defaultKeyManager.getSslInfo();
-                    m.put(SsgJSSESocketFactory.ATTR_KEYALIAS, defaultKey.getAlias());
-                    m.put(SsgJSSESocketFactory.ATTR_KEYSTOREOID, String.valueOf(defaultKey.getKeystoreId()));
-                } catch (IOException e) {
-                    throw new ListenerException("No default SSL key is currently available: " + ExceptionUtils.getMessage(e), e);
-                }
-            } else {
-                m.put(SsgJSSESocketFactory.ATTR_KEYALIAS, c.getKeyAlias());
-                m.put(SsgJSSESocketFactory.ATTR_KEYSTOREOID, c.getKeystoreOid().toString());
-            }
-
-            String cipherList = c.getProperty(SsgConnector.PROP_CIPHERLIST);
-            if (cipherList != null)
-                m.put(SsgJSSESocketFactory.ATTR_CIPHERNAMES, cipherList);
 
         } else {
             // Not SSL
@@ -607,34 +576,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             if (name.equals(SsgConnector.PROP_BIND_ADDRESS) ||
                 name.equals(SsgConnector.PROP_PORT_RANGE_START) ||
                 name.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
-                name.equals(SsgConnector.PROP_CIPHERLIST) ||
-                name.equals(SsgConnector.PROP_PROTOCOLS))
+                name.equals(SsgConnector.PROP_TLS_CIPHERLIST) ||
+                name.equals(SsgConnector.PROP_TLS_PROTOCOLS))
                 continue;
             String value = c.getProperty(name);
             if (value != null) m.put(name, value);
         }
 
         return m;
-    }
-
-    private String getEnabledProtocols(SsgConnector c) {
-        // Allow the admin to micro-manage the protocols directly, bypassing the somewhat-inflexible GUI
-        String overrideProtocols = c.getProperty("overrideProtocols");
-        if (overrideProtocols != null && overrideProtocols.trim().length() > 0)
-            return overrideProtocols;
-
-        String protocols = c.getProperty(SsgConnector.PROP_PROTOCOLS);
-        if (protocols == null) protocols = "TLSv1";
-
-        Set<String> protos = new HashSet<String>(Arrays.asList(protocols.trim().split("\\s*,\\s*")));
-        if ((protos.contains("SSLv3") || protos.contains("TLSv1")) && !protos.contains("SSLv2Hello")) {
-            // Always allow clients to use SSL 2.0 Client Hello encapsulation with SSL 3.0 and TLS 1.0,
-            // unless it is explicitly disabled using an advanced setting
-            if (!Boolean.valueOf(c.getProperty("noSSLv2Hello")))
-                protocols = "SSLv2Hello," + protocols;
-        }
-
-        return protocols;
     }
 
     @Override
@@ -808,11 +757,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
+        activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         embedded.addConnector(c);
         try {
             logger.info("Starting " + c.getScheme() + " connector on port " + c.getPort());
             c.start();
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         } catch (org.apache.catalina.LifecycleException e) {
             embedded.removeConnector(c);
             final String msg = "Unable to start " + c.getScheme() + " listener on port " + c.getPort() + ": " + ExceptionUtils.getMessage(e);
@@ -892,69 +841,27 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     /**
-     * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
-     *
-     * @return an SsgKeyStoreManager instance.  Never null.
-     */
-    public SsgKeyStoreManager getSsgKeyStoreManager() {
-        if (ssgKeyStoreManager == null)
-            throw new IllegalStateException("No SsgKeyStoreManager is set");
-        return ssgKeyStoreManager;
-    }
-
-    public void setTrustedCertServices(TrustedCertServices trustedCertServices) {
-        this.trustedCertServices = trustedCertServices;
-    }
-
-    /**
-     * Look up the accepted issuer certificates that should be advertised by an X509TrustManager acting
-     * on behalf of the specified SsgConnector OID.
+     * Look up an active SsgConnector instance by its OID.
      * <p/>
-     * This represents the certificates that this TransportModule wishes to be included in the certificate_authorities
-     * field of any Certificate Request message sent by TLS server sockets bound to this listen port.   
+     * This can be used by transport drivers instantiated by reflection by third-party code to
+     * find their way back to their owning SsgConnector instance.
      *
-     * @param oid the OID of the SsgConnector whose trusted certs we wish to look up.  Required.
-     * @return an array of X509Certificate instances that should be accepted as issuers at TLS handshake time for this connector.
-     *         Never null or empty.
-     * @throws FindException if there is an error while attempting to look up the required information.
+     * @param oid the OID of the SsgConnector to locate.
+     * @return the specified SsgConnector instance.   Never null.
+     * @throws ListenerException if there is no active connector with this OID.
      */
-    public X509Certificate[] getAcceptedIssuersForConnector(long oid) throws FindException {
-        Pair<SsgConnector, Connector> connector = activeConnectors.get(oid);
-        if (connector != null) {
-            // Suppress inclusion of accepted issuers list of so configured for this connector
-            if (Boolean.valueOf(connector.left.getProperty("noAcceptedIssuers")))
-                return new X509Certificate[0];
-
-            // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
-            if (connector.left.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
-                return new X509Certificate[0];
-        }
-
-        Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
-        List<X509Certificate> certs = new ArrayList<X509Certificate>();
-        for (TrustedCert trustedCert : trustedCerts) {
-            certs.add(trustedCert.getCertificate());
-        }
-
-        // If the issuers list is completely empty, include our own server cert in the list just to keep SSL-J happy.
-        if (certs.isEmpty()) {
-            try {
-                certs.add( defaultKeyManager.getSslInfo().getCertificate() );
-            } catch (IOException e) {
-                // This is non-fatal, at least for this purpose, since many TLS handshakes will succeed even with
-                // an empty issuers list -- the purpose of this hack was just to work around an SSL-J issue.
-                logger.log(Level.WARNING, "Unable to get default certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-        }
-
-        return certs.toArray(new X509Certificate[certs.size()]);
+    public SsgConnector getActiveConnectorByOid(long oid) throws ListenerException {
+        Pair<SsgConnector, Connector> got = activeConnectors.get(oid);
+        if (got == null)
+            throw new ListenerException("No active connector exists with oid " + oid);
+        return got.left;
     }
 
     /**
      * Find the HttpTransportModule corresponding to the specified instance ID.
      * <p/>
      * This is normally used by the SsgJSSESocketFactory to locate a Connector's owner HttpTransportModule
-     * so it can get at the SsgKeyStoreManager.
+     * so it can look up its SsgConnector.
      *
      * @see #getInstanceId
      * @param id the instance ID to search for.  Required.

@@ -34,6 +34,7 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
     private static final boolean INCLUDE_ALL_CIPHERS = SyspropUtil.getBoolean("com.l7tech.console.connector.includeAllCiphers");
+    private static final boolean ENABLE_FTPS_TLS12 = SyspropUtil.getBoolean("com.l7tech.console.connector.allowFtpsTls12");
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
@@ -107,6 +108,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private DefaultListModel propertyListModel = new DefaultListModel();
     private List<String> toBeRemovedProperties = new ArrayList<String>();
     private boolean isCluster = false;
+    private JCheckBox[] savedStateCheckBoxes = {
+            cbEnableBuiltinServices,
+            cbEnableMessageInput,
+            cbEnableSsmApplet,
+            cbEnableSsmRemote,
+            cbEnableNode,
+            cbEnablePCAPI,
+            tls10CheckBox,
+            tls11CheckBox,
+            tls12CheckBox
+    };
 
     public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE, SsgConnectorPropertiesDialog.DEFAULT_MODALITY_TYPE);
@@ -168,6 +180,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableTabs();
                 enableOrDisableEndpoints();
+                enableOrDisableTlsVersions();
             }
         });
 
@@ -192,12 +205,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 saveCheckBoxState(source);
             }
         };
-        cbEnableBuiltinServices.addActionListener(stateSaver);
-        cbEnableMessageInput.addActionListener(stateSaver);
-        cbEnableSsmApplet.addActionListener(stateSaver);
-        cbEnableSsmRemote.addActionListener(stateSaver);
-        cbEnableNode.addActionListener(stateSaver);
-        cbEnablePCAPI.addActionListener(stateSaver);
+        for (JCheckBox cb : savedStateCheckBoxes) {
+            cb.addActionListener(stateSaver);
+        }
 
         usePrivateThreadPoolCheckBox.addActionListener( new ActionListener(){
             @Override
@@ -633,6 +643,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void enableOrDisableComponents() {
         enableOrDisableTabs();
         enableOrDisableEndpoints();
+        enableOrDisableTlsVersions();
         enableOrDisableCipherSuiteButtons();
         enableOrDisablePropertyButtons();
     }
@@ -690,6 +701,16 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             } else {
                 setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
             }
+        }
+    }
+
+    private void enableOrDisableTlsVersions() {
+        // TODO remove this hack once a way has been found to resolve the compatibility problem between RSA SSL-J and Apache FtpServer MINA's use of the SSL socket (Bug #8493)
+        if (isFtpProto(getSelectedProtocol()) && !ENABLE_FTPS_TLS12) {
+            setEnableAndSelect(false, false, "Disabled because it is not currently supported with FTPS", tls11CheckBox, tls12CheckBox);
+            setEnableAndSelect(false, true, "Enabled because it is currently the only supported TLS version for FTPS", tls10CheckBox);
+        } else {
+            enableAndRestore(tls10CheckBox, tls11CheckBox, tls12CheckBox);
         }
     }
 
@@ -825,17 +846,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         portRangeCountField.setText(prc == null ? "" : prc);
 
         // SSL-specific properties
-        cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_CIPHERLIST));
+        cipherSuiteListModel.setCipherListString(connector.getProperty(SsgConnector.PROP_TLS_CIPHERLIST));
         clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
         selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
-
-        saveCheckBoxState(cbEnableBuiltinServices, cbEnableMessageInput, cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode, cbEnablePCAPI);
 
         List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
         // Don't show properties that are already exposed via specialized controls
         propNames.remove(SsgConnector.PROP_BIND_ADDRESS);
-        propNames.remove(SsgConnector.PROP_CIPHERLIST);
-        propNames.remove(SsgConnector.PROP_PROTOCOLS);
+        propNames.remove(SsgConnector.PROP_TLS_CIPHERLIST);
+        propNames.remove(SsgConnector.PROP_TLS_PROTOCOLS);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
@@ -845,7 +864,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             if (value != null) propertyListModel.addElement(new Pair<String,String>(propName, value));
         }
 
-        String protocols = connector.getProperty(SsgConnector.PROP_PROTOCOLS);
+        String protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
         if (protocols == null) {
             tls10CheckBox.setSelected(true);
             tls11CheckBox.setSelected(false);
@@ -858,6 +877,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             tls12CheckBox.setSelected(protos.contains("TLSv1.2"));
         }
 
+        saveCheckBoxState(savedStateCheckBoxes);
         enableOrDisableComponents();
     }
 
@@ -913,7 +933,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         }
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
-        connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
+        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherSuiteListModel.asCipherListString());
 
         Set<String> protos = new LinkedHashSet<String>();
         if (tls10CheckBox.isSelected()) protos.add("TLSv1");
@@ -924,7 +944,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             // We will avoid specifying a protocol string if it would match the default one anyway
             protoString = null;
         }
-        connector.putProperty(SsgConnector.PROP_PROTOCOLS, protoString);
+        connector.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, protoString);
 
         // Delete those removed properties
         // Note: make sure the step (removeProperty) is prior to the next step (putProperty), since there

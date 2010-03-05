@@ -128,7 +128,7 @@ public class DefaultHttpConnectors {
 
     private static void setListenerCiphers(SsgConnector https) {
         if (defaultListenerStrongCiphers != null && defaultListenerStrongCiphers.trim().length() > 0)
-            https.putProperty(SsgConnector.PROP_CIPHERLIST, defaultListenerStrongCiphers);
+            https.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, defaultListenerStrongCiphers);
     }
 
     public static Collection<SsgConnector> getRequiredConnectors( final Collection<SsgConnector> existingConnectors ) {
@@ -158,7 +158,7 @@ public class DefaultHttpConnectors {
         nodeHttps.setKeystoreOid(null);
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-        nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultInternodeStrongCiphers);
+        nodeHttps.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, defaultInternodeStrongCiphers);
         if ( !"0".equals(defaultInternodePoolSize) )
             nodeHttps.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, defaultInternodePoolSize);
         return nodeHttps;

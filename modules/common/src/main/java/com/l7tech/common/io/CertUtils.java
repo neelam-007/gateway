@@ -818,6 +818,18 @@ public class CertUtils {
     }
 
     /**
+     * Collapse multiple instances of certificates with identical encoding.
+     *
+     * @param certs certs to collapse.  Required.
+     * @return certs with all duplicates removed.  Never null.
+     */
+    public static X509Certificate[] deduplicate(X509Certificate[] certs) {
+        Set<X509Certificate> outputCertsInList = new TreeSet<X509Certificate>(new EncodedCertificateComparator());
+        outputCertsInList.addAll(Arrays.asList(certs));
+        return outputCertsInList.toArray(new X509Certificate[outputCertsInList.size()]);
+    }
+
+    /**
      * Tests whether the provided DN matches the provided pattern.
      * <p>
      * If the pattern has "*" for any
@@ -1735,4 +1747,18 @@ public class CertUtils {
     }
 
     private static final String FACTORY_ALGORITHM = "X.509";
+
+    /**
+     * An X509Certificate comparator that compares by the certificate encoded form.
+     */
+    public static class EncodedCertificateComparator implements Comparator<X509Certificate> {
+        @Override
+            public int compare(X509Certificate a, X509Certificate b) {
+            try {
+                return ArrayUtils.compareArrays(a.getEncoded(), b.getEncoded());
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

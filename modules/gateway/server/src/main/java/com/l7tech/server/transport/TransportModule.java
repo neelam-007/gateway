@@ -2,16 +2,24 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 
-import java.util.Set;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,12 +32,27 @@ import java.util.logging.Logger;
 public abstract class TransportModule extends LifecycleBean {
     protected final Logger logger;
     protected final SsgConnectorManager ssgConnectorManager;
+    private final TrustedCertServices trustedCertServices;
+    private final DefaultKey defaultKey;
+    private final ServerConfig serverConfig;
 
-    protected TransportModule(String name, Logger logger, String licenseFeature, LicenseManager licenseManager, SsgConnectorManager ssgConnectorManager)
+    protected TransportModule(String name,
+                              Logger logger,
+                              String licenseFeature,
+                              LicenseManager licenseManager,
+                              SsgConnectorManager ssgConnectorManager,
+                              TrustedCertServices trustedCertServices,
+                              DefaultKey defaultKey,
+                              ServerConfig serverConfig)
     {
         super(name, logger, licenseFeature, licenseManager);
         this.logger = logger;
         this.ssgConnectorManager = ssgConnectorManager;
+        this.trustedCertServices = trustedCertServices;
+        this.defaultKey = defaultKey;
+        this.serverConfig = serverConfig;
+        if (serverConfig == null || defaultKey == null || trustedCertServices == null || ssgConnectorManager == null || logger == null)
+            throw new NullPointerException("A required bean was not provided to the TransportModule");
     }
 
     /**
@@ -157,5 +180,75 @@ public abstract class TransportModule extends LifecycleBean {
             addConnector(c);
         else
             removeConnector(connectorId);
+    }
+
+    /**
+     * Get access to ServerConfig.  Provided for the benefit of transport drivers that may be created
+     * via reflection by third-party code.
+     *
+     * @return the serverConfig instance.  Never null.
+     */
+    public ServerConfig getServerConfig() {
+        return serverConfig;
+    }
+
+    /**
+     * Get the private key entry that should be used for the specified connector, assuming that a TLS listen port
+     * were to be created for it.
+     *
+     * @param c  the connector whose SSL server private key to locate.  Required.
+     * @return an SsgKeyEntry for the specified connector.  Never null; will use the default SSL key if no other key is configured.
+     * @throws ListenerException if no default SSL key is available.  This normally can't happen.
+     */
+    public SsgKeyEntry getKeyEntry(SsgConnector c) throws ListenerException {
+        try {
+            return c.getKeystoreOid() == null ? defaultKey.getSslInfo() : defaultKey.lookupKeyByKeyAlias(c.getKeyAlias(), c.getKeystoreOid());
+        } catch (IOException e) {
+            throw new ListenerException("No default SSL key is currently available: " + ExceptionUtils.getMessage(e), e);
+        } catch (KeyStoreException e) {
+            throw new ListenerException("Unable to access private key for connector: " + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            throw new ListenerException("Unable to access private key for connector: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /**
+     * Utility method that looks up accepted issuer certificates that should be advertised by an X509TrustManager
+     * acting on behalf of the specified SsgConnector for this TransportModule.
+     *
+     * @param connector the connector to inquire about, or null if not known or not relevant.
+     * @return an array of X509Certificate instances that should be accepted as issuers at TLS handshake time for this connector.
+     *         Never null or empty.
+     * @throws com.l7tech.objectmodel.FindException if there is an error while attempting to look up the required information.
+     */
+    public X509Certificate[] getAcceptedIssuersForConnector(SsgConnector connector) throws FindException {
+        if (connector != null) {
+            // Suppress inclusion of accepted issuers list of so configured for this connector
+            if (Boolean.valueOf(connector.getProperty("noAcceptedIssuers")))
+                return new X509Certificate[0];
+
+            // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
+            if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
+                return new X509Certificate[0];
+        }
+
+        Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
+        List<X509Certificate> certs = new ArrayList<X509Certificate>();
+        for (TrustedCert trustedCert : trustedCerts) {
+            certs.add(trustedCert.getCertificate());
+        }
+
+        // If the issuers list is completely empty, include our own server cert in the list just to keep SSL-J happy.
+        if (certs.isEmpty()) {
+            try {
+                certs.add( defaultKey.getSslInfo().getCertificate() );
+            } catch (IOException e) {
+                // This is non-fatal, at least for this purpose, since many TLS handshakes will succeed even with
+                // an empty issuers list -- the purpose of this hack was just to work around an SSL-J issue.
+                logger.log(Level.WARNING, "Unable to get default certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        return certs.toArray(new X509Certificate[certs.size()]);
     }
 }

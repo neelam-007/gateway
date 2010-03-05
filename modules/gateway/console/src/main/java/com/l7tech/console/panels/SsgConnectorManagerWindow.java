@@ -178,7 +178,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                 first = false;
             }
         }
-        connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherlist.toString());
+        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherlist.toString());
 
         editAndSave(connector, connector.getReadOnlyCopy());
     }
