@@ -115,7 +115,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         assertion = null;
     }
 
-    @Size(max = 255)
+    @Size(min = 1, max = 255)
     @Override
     public String getName() {
         return super.getName();

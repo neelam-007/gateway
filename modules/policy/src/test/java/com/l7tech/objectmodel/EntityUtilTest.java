@@ -36,10 +36,10 @@ public class EntityUtilTest {
     }
 
     //Disabled as the field length of 128 is not the max length for all implementing classes
-//    @Test
-//    public void testGetLengthFromInheritedGetter() {
-//        assertEquals(128, EntityUtil.getMaxFieldLength(AnnotationTestEntity.class, "name", -1));
-//    }
+    @Test
+    public void testGetLengthFromInheritedGetter() {
+        assertEquals(128, EntityUtil.getMaxFieldLength(AnnotationTestEntity.class, "name", -1));
+    }
 
     @Test
     public void testGetLengthFromInheritedPublicField() {

@@ -39,9 +39,7 @@ import java.io.UnsupportedEncodingException;
 public class SchemaEntry extends NamedEntityImp {
     public final static int MAX_NAME_LENGTH = 4096;
 
-    public interface UrlLengthNameGroup {}
-
-    @Size(max = MAX_NAME_LENGTH)
+    @Size(min = 1, max = MAX_NAME_LENGTH)
     @Transient
     @Override
     public String getName() {
@@ -113,7 +111,7 @@ public class SchemaEntry extends NamedEntityImp {
 
     public static String createNameHash(String name) {
         try {
-            return HexUtils.encodeBase64(HexUtils.getSha512Digest(name.getBytes("UTF-8")));
+            return HexUtils.encodeBase64(HexUtils.getSha512Digest(name.getBytes("UTF-8")), true);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Cannot compute hash of name: " + ExceptionUtils.getMessage(e));
         }
@@ -121,6 +119,7 @@ public class SchemaEntry extends NamedEntityImp {
 
     // - PACKAGE
     
+    @NotNull
     @Size(max = 128)
     @Column(name = "name_hash", length = 128, nullable = false)
     String getNameHash() {

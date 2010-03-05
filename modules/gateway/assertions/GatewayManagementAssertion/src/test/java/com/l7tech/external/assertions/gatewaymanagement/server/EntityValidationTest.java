@@ -39,6 +39,12 @@ public class EntityValidationTest {
         invalid( clusterProperty, "null name" );
 
         // Test name length
+        clusterProperty.setName( "" );
+        invalid( clusterProperty, "empty name" );
+
+        clusterProperty.setName( "a" );
+        valid( clusterProperty, "short name" );
+
         clusterProperty.setName( string(128, 'a') );
         valid( clusterProperty, "longest name" );
 
@@ -66,6 +72,9 @@ public class EntityValidationTest {
         jmsEndpoint.setName( null );
         invalid( jmsEndpoint, "null name" );
 
+        jmsEndpoint.setName( "" );
+        invalid( jmsEndpoint, "empty name" );
+
         jmsEndpoint.setName( string(128, 'a') );
         valid( jmsEndpoint, "longest name" );
 
@@ -77,6 +86,9 @@ public class EntityValidationTest {
         // Test destination name
         jmsEndpoint.setDestinationName( null );
         invalid( jmsEndpoint, "null destination name" );
+
+        jmsEndpoint.setDestinationName( "" );
+        invalid( jmsEndpoint, "empty destination name" );
 
         jmsEndpoint.setDestinationName( "     " );
         invalid( jmsEndpoint, "all spaces destination name" );
@@ -90,6 +102,9 @@ public class EntityValidationTest {
         jmsEndpoint.setDestinationName( "name" );
 
         // Test username
+        jmsEndpoint.setUsername( "" );
+        valid( jmsEndpoint, "empty username" );
+
         jmsEndpoint.setUsername( string(32, 'a') );
         valid( jmsEndpoint, "longest username" );
 
@@ -99,6 +114,9 @@ public class EntityValidationTest {
         jmsEndpoint.setUsername( null );
 
         // Test password
+        jmsEndpoint.setPassword( "" );
+        valid( jmsEndpoint, "empty password" );
+
         jmsEndpoint.setPassword( string(32, 'a') );
         valid( jmsEndpoint, "longest password" );
 
@@ -111,6 +129,9 @@ public class EntityValidationTest {
         jmsEndpoint.setReplyToQueueName( "     " );
         invalid( jmsEndpoint, "all spaces reply to queue name" );
 
+        jmsEndpoint.setReplyToQueueName( "" );
+        invalid( jmsEndpoint, "empty reply to queue name" );
+
         jmsEndpoint.setReplyToQueueName( string(128, 'a') );
         valid( jmsEndpoint, "longest reply to queue name" );
 
@@ -122,6 +143,9 @@ public class EntityValidationTest {
         // Test failure queue name
         jmsEndpoint.setFailureDestinationName( "     " );
         invalid( jmsEndpoint, "all spaces failure queue name" );
+
+        jmsEndpoint.setFailureDestinationName( "" );
+        invalid( jmsEndpoint, "empty failure queue name" );
 
         jmsEndpoint.setFailureDestinationName( string(128, 'a') );
         valid( jmsEndpoint, "longest failure queue name" );
@@ -142,6 +166,9 @@ public class EntityValidationTest {
         jmsConnection.setName( null );
         invalid( jmsConnection, "null name" );
 
+        jmsConnection.setName( "" );
+        invalid( jmsConnection, "empty name" );
+
         jmsConnection.setName( string(128, 'a') );
         valid( jmsConnection, "longest name" );
 
@@ -153,6 +180,9 @@ public class EntityValidationTest {
         // Test JNDI url
         jmsConnection.setJndiUrl( null );
         invalid( jmsConnection, "null jndiUrl" );
+
+        jmsConnection.setJndiUrl( "" );
+        invalid( jmsConnection, "empty jndiUrl" );
 
         jmsConnection.setJndiUrl( string(255, 'a') );
         valid( jmsConnection, "longest jndiUrl" );
@@ -166,6 +196,9 @@ public class EntityValidationTest {
         jmsConnection.setInitialContextFactoryClassname( null );
         invalid( jmsConnection, "null initial context classname" );
 
+        jmsConnection.setInitialContextFactoryClassname( "" );
+        invalid( jmsConnection, "empty initial context classname" );
+
         jmsConnection.setInitialContextFactoryClassname( string(255, 'a') );
         valid( jmsConnection, "longest initial context classname" );
 
@@ -175,6 +208,9 @@ public class EntityValidationTest {
         jmsConnection.setInitialContextFactoryClassname(  "some.Class" );
 
         // Test username
+        jmsConnection.setUsername( "" );
+        valid( jmsConnection, "empty username" );
+
         jmsConnection.setUsername( string(32, 'a') );
         valid( jmsConnection, "longest username" );
 
@@ -184,6 +220,9 @@ public class EntityValidationTest {
         jmsConnection.setUsername( null );
 
         // Test password
+        jmsConnection.setPassword( "" );
+        valid( jmsConnection, "empty password" );
+
         jmsConnection.setPassword( string(32, 'a') );
         valid( jmsConnection, "longest password" );
 
@@ -246,6 +285,12 @@ public class EntityValidationTest {
         invalid( policy, "null name" );
 
         // Test name length
+        policy.setName( "" );
+        invalid( policy, "empty name" );
+
+        policy.setName( "a" );
+        valid( policy, "short name" );
+
         policy.setName( string(255,'a') );
         valid( policy, "longest name" );
 
@@ -259,6 +304,9 @@ public class EntityValidationTest {
         invalid( policy, "null guid" );
 
         // Test GUID size
+        policy.setGuid( "" );
+        invalid( policy, "empty guid" );
+
         policy.setGuid( "1" );
         invalid( policy, "short guid" );
         
@@ -276,6 +324,9 @@ public class EntityValidationTest {
         // Test XML null
         policy.setXml( null );
         invalid( policy, "null policy xml" );
+
+        policy.setXml( "" );
+        invalid( policy, "empty policy xml" );
 
         policy.setXml( "<policy/>" );
         
@@ -302,7 +353,16 @@ public class EntityValidationTest {
         service.setName( null );
         invalid( service, "null name" );
 
-        // Test name 255 chars
+        // Test name
+        service.setName( "" );
+        invalid( service, "empty name" );
+
+        service.setName( "a" );
+        valid( service, "short name" );
+
+        service.setName( string(256,'a') );
+        invalid( service, "service name 256" );
+
         service.setName( string(255,'a') );
         valid( service, "service name 255" );
 
@@ -395,20 +455,22 @@ public class EntityValidationTest {
     @Test
     public void testSchemaEntry() {
         SchemaEntry schemaEntry = new SchemaEntry();
-        schemaEntry.setName( "http://someurl" );
         schemaEntry.setSchema( "<schema/>" );
         schemaEntry.setTns( "urn:tns" );
+
+        // Test name not null
+        invalid( schemaEntry, "null name" );
+
+        schemaEntry.setName( "http://someurl" );
         valid( schemaEntry, "basic schema entry" );
 
-        //uncomment following test when validation annotations are used outside of management api module
-        //@NotNull cannot be used to verify no null values are supplied so the method now has an explicit null check
-        // Test name not null
-//        schemaEntry.setName( null );
-//        invalid( schemaEntry, "null name" );
-
-        schemaEntry.setName( "name" );
-
         // Test name length
+        schemaEntry.setName( "" );
+        invalid( schemaEntry, "empty name" );
+
+        schemaEntry.setName( "a" );
+        valid( schemaEntry, "short name" );
+
         schemaEntry.setName( string(4096, 'a') );
         valid( schemaEntry, "longest name" );
 

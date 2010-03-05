@@ -67,7 +67,7 @@ INSERT INTO cluster_properties
 ALTER TABLE community_schemas DROP INDEX csnm_idx;
 ALTER TABLE community_schemas MODIFY COLUMN name varchar(4096) NOT NULL;
 ALTER TABLE community_schemas ADD COLUMN name_hash varchar(128) NOT NULL;
---to support upgrade task and the creation of the csnmh_idx index
+-- to support upgrade task and the creation of the csnmh_idx index
 UPDATE community_schemas SET name_hash = name;
 ALTER TABLE community_schemas ADD UNIQUE KEY csnmh_idx (name_hash);
 

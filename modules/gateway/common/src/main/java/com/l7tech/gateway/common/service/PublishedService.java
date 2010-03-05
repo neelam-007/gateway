@@ -93,7 +93,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         return super.getId();
     }
 
-    @Size(max = 255)
+    @Size(min = 1, max = 255)
     @Override
     public String getName() {
         return super.getName();

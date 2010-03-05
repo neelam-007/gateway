@@ -6,8 +6,6 @@ import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import javax.validation.groups.Default;
 import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
@@ -39,7 +37,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
     @Override
     @NotNull
     //@NotNull annotation is not enforced outside of management api module. Many named entities allow null and set null as default
-    @Column(name = "name")
+    @Column(name = "name", nullable=false, length=128)
     @XmlElement(namespace = "http://ns.l7tech.com/secureSpan/1.0/core")
     public String getName() {
         return _name;

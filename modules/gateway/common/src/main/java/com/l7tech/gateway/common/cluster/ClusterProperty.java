@@ -62,7 +62,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         this.value = value;
     }
 
-    @Size(max=128)
+    @Size(min=1,max=128)
     @Transient
     @Override
     public String getName() {
