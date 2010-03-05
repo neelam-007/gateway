@@ -29,22 +29,27 @@ public class SchemaAdminImpl implements SchemaAdmin {
         this.schemaEntryManager = schemaEntryManager;
     }
 
+    @Override
     public Collection<SchemaEntry> findAllSchemas() throws FindException {
         return schemaEntryManager.findAll();
     }
 
+    @Override
     public void deleteSchemaEntry(SchemaEntry existingSchema) throws DeleteException {
         schemaEntryManager.delete(existingSchema);
     }
 
+    @Override
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         return schemaEntryManager.findByName(schemaName);
     }
 
+    @Override
     public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         return schemaEntryManager.findByTNS(tns);
     }
 
+    @Override
     public long saveSchemaEntry(SchemaEntry entry) throws SaveException {
         if (entry.getOid() != -1) {
             try {

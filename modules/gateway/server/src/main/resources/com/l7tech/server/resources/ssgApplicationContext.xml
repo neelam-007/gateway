@@ -1709,6 +1709,6 @@
     </bean>
     
     <bean id="serviceDocumentResolver" class="com.l7tech.server.service.ServiceDocumentResolver">
-        <constructor-arg index="0" ref="trustManager"/>
+        <constructor-arg index="0" ref="httpClientFactory"/>
     </bean>
 </beans>

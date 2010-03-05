@@ -64,14 +64,15 @@ public interface ServiceAdminPublic {
      * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager
      * can get at services that are 'hidden' behind the gateway.
      * This is meant to be used when a service is originally published.
+     * <p/>
+     * URL may be http or https with or without client auth
      *
      * @param url the url that the gateway will use to resolve the wsdl document. this may contain
-     * userinfo type credentials
+     *            userinfo type credentials
      * @return the contents resolved by this url
-     *
-     * @throws IOException thrown on I/O error accessing the WSDL url
+     * @throws IOException           thrown on I/O error accessing the WSDL url
      * @throws MalformedURLException thrown on malformed WSDL url
      */
-    @Transactional(propagation=SUPPORTS)
+    @Transactional(propagation = SUPPORTS)
     String resolveWsdlTarget(String url) throws IOException;
 }

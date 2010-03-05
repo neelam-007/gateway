@@ -18,6 +18,7 @@ import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdminPublic;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -969,36 +970,34 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             if (reportErrorEnabled) displayError(resources.getString("error.nourl"), null);
             return null;
         }
-        // compose input source
-        URL url;
+
+        // Get Schema Admin
+        ServiceAdminPublic serviceAdminPublic;
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getServiceManager() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        } else {
+            serviceAdminPublic = reg.getServiceManager();
+        }
+
+        final String schemaXml;
         try {
-            url = new URL(urlstr);
-        } catch (MalformedURLException e) {
+            schemaXml = serviceAdminPublic.resolveWsdlTarget(urlstr);
+        } catch (IOException e) {
             if (reportErrorEnabled) displayError(urlstr + " " + resources.getString("error.badurl"), null);
             log.log(Level.FINE, "malformed url", e);
-            return null;
-        }
-        // try to get document
-        InputStream is;
-        try {
-            is = url.openStream();
-        } catch (IOException e) {
-            if (reportErrorEnabled) displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return null;
         }
 
         Document doc;
         try {
-            doc = XmlUtil.parse(is);
+            doc = XmlUtil.parse(schemaXml);
         } catch (SAXException e) {
             if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return null;
-        } catch (IOException e) {
-            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
-            log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return null;
         }
+        
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
