@@ -68,7 +68,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         CacheConf(ServerConfig serverConfig) {
             maxCacheAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
-            maxCacheEntries = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
+            maxCacheEntries = Math.max( 1, serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100) );
             hardwareRecompileLatency = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
             hardwareRecompileMinAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
             hardwareRecompileMaxAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
