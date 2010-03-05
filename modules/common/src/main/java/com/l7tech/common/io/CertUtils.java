@@ -54,6 +54,7 @@ public class CertUtils {
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
     private static final String X509_PROVIDER = SyspropUtil.getProperty( "com.l7tech.common.x509Provider");
+    private static final DnFormatter dnFormatter = findDnFormatter();
 
     public static final String ALG_MD5 = "MD5";
     public static final String ALG_SHA1 = "SHA1";
@@ -542,7 +543,7 @@ public class CertUtils {
      * @return The principal DN in canonical format
      */
     public static String getDN( final X500Principal principal ) {
-        return decodeDNStringValues( principal.getName(X500Principal.CANONICAL) );
+        return dnFormatter.formatDN( principal );
     }
 
     /**
@@ -554,17 +555,7 @@ public class CertUtils {
      * @return The DN in canonical format
      */
     public static String formatDN( final String dn ) {
-        String formattedDN = dn;
-
-        if ( dn != null ) {
-            try {
-                formattedDN = decodeDNStringValues( new X500Principal(dn).getName(X500Principal.CANONICAL) );
-            } catch ( IllegalArgumentException iae ) {
-                // don't format
-            }
-        }
-
-        return formattedDN;
+        return dnFormatter.formatDN( dn );
     }
 
     /**
@@ -1759,6 +1750,75 @@ public class CertUtils {
             } catch (CertificateEncodingException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private static DnFormatter findDnFormatter() {
+        DnFormatter formatter = new DefaultDnFormatter();
+
+        try {
+            final ServiceLoader<DnFormatter> loader = ServiceLoader.load( DnFormatter.class );
+            final Iterator<DnFormatter> serviceIterator = loader.iterator();
+            if ( serviceIterator.hasNext() ) {
+                formatter = serviceIterator.next();
+            }
+        } catch ( ServiceConfigurationError sce ) {
+            logger.log( Level.SEVERE, "Error loading DnFormatter service.", sce );   
+        }
+
+        return formatter;
+    }
+
+    /**
+     * Interface for pluggable DN format services.
+     */
+    public static interface DnFormatter {
+
+        /**
+         * Format the given DN in standard format.
+         *
+         * <p>A best effort attempt will be made to reformat the given DN. If
+         * the given DN is not valid, it should be returned without changes.</p>
+         *
+         * @param dn The DN to reformat (may be null)
+         * @return The DN or null if given null
+         */
+        String formatDN( String dn );
+
+        /**
+         * Format the principal name in standard format.
+         *
+         * @param principal The principal to format (must not be null)
+         * @return The formatted DN (never null)
+         */
+        String formatDN( X500Principal principal );
+    }
+
+    private static final class DefaultDnFormatter implements DnFormatter {
+        private static final boolean DECODE_DN_VALUES = SyspropUtil.getBoolean( "com.l7tech.common.io.decodeStringDnValues", true );
+
+        @Override
+        public String formatDN( final String dn ) {
+            String formattedDN = dn;
+
+            if ( dn != null ) {
+                try {
+                    formattedDN = processDN( new X500Principal(dn).getName(X500Principal.CANONICAL) );
+                } catch ( IllegalArgumentException iae ) {
+                    // don't format
+                }
+            }
+
+            return formattedDN;
+        }
+
+        @Override
+        public String formatDN( final X500Principal principal ) {
+            return processDN( principal.getName(X500Principal.CANONICAL) );
+        }
+
+        private String processDN( final String dn ) {
+            return DECODE_DN_VALUES ? decodeDNStringValues( dn ) : dn;
         }
     }
 }
