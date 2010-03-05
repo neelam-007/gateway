@@ -94,24 +94,6 @@ public class SchemaEntry extends NamedEntityImp {
         return system;
     }
 
-    @Size(max = 128)
-    @Column(name = "name_hash", length = 128, nullable = false)
-    String getNameHash() {
-        return nameHash;
-    }
-
-    void setNameHash(String nameHash) {
-        String calculatedHash = createNameHash(getName());
-        //being defensive, validate the hash being set
-        //On upgrade nameHash equals getName, in which case allow the value to be set
-        //this property is package private, so no callers should set it directly, if it is set directly to a value
-        //which matches the name, then the schema will never be found
-        if (!calculatedHash.equals(nameHash) && !nameHash.equals(getName()))
-            throw new IllegalArgumentException("Hash value must match the generated hash of name property");
-
-        this.nameHash = nameHash;
-    }
-
     public void setSystem(boolean system) {
         this.system = system;
     }
@@ -135,6 +117,26 @@ public class SchemaEntry extends NamedEntityImp {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Cannot compute hash of name: " + ExceptionUtils.getMessage(e));
         }
+    }
+
+    // - PACKAGE
+    
+    @Size(max = 128)
+    @Column(name = "name_hash", length = 128, nullable = false)
+    String getNameHash() {
+        return nameHash;
+    }
+
+    void setNameHash(String nameHash) {
+        String calculatedHash = createNameHash(getName());
+        //being defensive, validate the hash being set
+        //On upgrade nameHash equals getName, in which case allow the value to be set
+        //this property is package private, so no callers should set it directly, if it is set directly to a value
+        //which matches the name, then the schema will never be found
+        if (!calculatedHash.equals(nameHash) && !nameHash.equals(getName()))
+            throw new IllegalArgumentException("Hash value must match the generated hash of name property");
+
+        this.nameHash = nameHash;
     }
 
     // - PRIVATE
