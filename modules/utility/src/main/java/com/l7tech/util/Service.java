@@ -1,7 +1,5 @@
 package com.l7tech.util;
 
-import com.l7tech.util.IOUtils;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,8 +17,10 @@ import java.util.logging.Logger;
  * <p>Commonly the provider instances would be factories that can create the objects
  * used by the application.</p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * <p>As of JDK 6 this class is largely redundant, consider using
+ * {@link java.util.ServiceLoader ServiceLoader} instead.</p>
+ *
+ * @author Steve Jones
  */
 public final class Service {
 
