@@ -462,7 +462,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
-        Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context);
+        Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context);
         sendExceptionFault(context, faultInfo.right, faultInfo.left.getFullValue(), hreq, hresp, status);
     }
 

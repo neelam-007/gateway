@@ -73,19 +73,8 @@ import java.security.KeyStoreException;
  * Date: May 8, 2006<br/>
  */
 public class SoapFaultManager implements ApplicationContextAware {
-    private final Config config;
-    private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
-    private long lastParsedFromSettings;
-    private SoapFaultLevel fromSettings;
-    private Auditor auditor;
-    private final AuditContext auditContext;
-    private ClusterPropertyManager clusterPropertiesManager;
-    private BeanFactory context;
-    private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
-    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
 
-    private final Timer checker;
+    //- PUBLIC
 
     public SoapFaultManager( final Config config,
                              final AuditContext auditContext,
@@ -97,7 +86,78 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     /**
-     * For tests only 
+     * Read settings from server configuration and assemble a SoapFaultLevel based on the default values.
+     */
+    public SoapFaultLevel getDefaultBehaviorSettings() {
+        // cache at least one minute
+        if (fromSettings == null || (System.currentTimeMillis() - lastParsedFromSettings) > 60000) {
+            return constructFaultLevelFromServerConfig();
+        }
+        return fromSettings;
+    }
+
+    /**
+     * Constructs a soap fault based on the pec and the level desired.
+     * 
+     * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
+     */
+    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
+                                                                    final PolicyEnforcementContext pec ) {
+        return constructFault( inFaultLevelInfo, pec, false, "Policy Falsified", null );
+    }
+
+    /**
+     * SOAP faults resulting from an exception that occurs in the processing of the policy.
+     *
+     * <p>Receiving such a fault may generally be considered a bug (though in some cases it is expected
+     * behaviour).</p>
+     */
+    public Pair<ContentTypeHeader,String> constructExceptionFault( final Throwable throwable,
+                                                                   final SoapFaultLevel inFaultLevelInfo,
+                                                                   final PolicyEnforcementContext pec) {
+        final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
+        final boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
+        if ( policyVersionFault ) {
+            SoapFaultLevel policyVersionFaultLevel = new SoapFaultLevel( faultLevelInfo );
+            policyVersionFaultLevel.setLevel( SoapFaultLevel.GENERIC_FAULT );
+            return constructFault(
+                    policyVersionFaultLevel,
+                    pec,
+                    true,
+                    "Incorrect policy version",
+                    "" );
+        } else {
+            return constructFault(
+                    inFaultLevelInfo,
+                    pec,
+                    false,
+                    "Error in assertion processing",
+                    ExceptionUtils.getMessage(throwable) );
+        }
+    }
+
+    @Override
+    public void setApplicationContext( ApplicationContext applicationContext ) {
+        setBeanFactory( applicationContext );
+        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        final SoapFaultManager soapFaultManager = this;
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    soapFaultManager.updateOverrides();
+                } catch(Exception e) {
+                    logger.log(Level.WARNING, "Error updating message overrides.", e);
+                }
+            }
+        };
+        checker.schedule(task, 10000, 56893);
+    }
+
+    //- PACKAGE
+
+    /**
+     * For tests only
      */
     SoapFaultManager( Config config, AuditContext auditContext ) {
         this.config = config;
@@ -105,15 +165,118 @@ public class SoapFaultManager implements ApplicationContextAware {
         this.auditContext = auditContext;
     }
 
-    /**
-     * Read settings from server configuration and assemble a SoapFaultLevel based on the default values.
-     */
-    public SoapFaultLevel getDefaultBehaviorSettings() {
-        // cache at least one minute. todo, review
-        if (fromSettings == null || (System.currentTimeMillis() - lastParsedFromSettings) > 60000) {
-            return constructFaultLevelFromServerConfig();
+    void setBeanFactory( BeanFactory context ) throws BeansException {
+        auditor = context instanceof ApplicationContext ?
+                new Auditor(this, (ApplicationContext)context, logger) :
+                new LogOnlyAuditor(logger);
+        this.context = context;
+    }
+
+    //- PRIVATE
+
+    public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
+
+    private static final String FAULT_TEMPLATE_SOAP_1_1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
+                        "            <faultstring/>\n" +
+                        "            <faultactor/>\n" +
+                        "            <detail>\n" +
+                        "                 <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </detail>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+
+    private static final String FAULT_TEMPLATE_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                         "    <soapenv:Body>\n" +
+                         "        <soapenv:Fault>\n" +
+                         "            <soapenv:Code>\n" +
+                         "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                         "            </soapenv:Code>\n" +
+                         "            <soapenv:Reason>\n" +
+                         "                <soapenv:Text xml:lang=\"en-US\"/>\n" +
+                         "            </soapenv:Reason>\n" +
+                         "            <soapenv:Role/>\n" +
+                         "            <soapenv:Detail>\n" +
+                         "                <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                         "            </soapenv:Detail>\n" +
+                         "        </soapenv:Fault>\n" +
+                         "    </soapenv:Body>\n" +
+                         "</soapenv:Envelope>";
+
+    private final Config config;
+    private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
+    private long lastParsedFromSettings;
+    private SoapFaultLevel fromSettings;
+    private Auditor auditor;
+    private final AuditContext auditContext;
+    private ClusterPropertyManager clusterPropertiesManager;
+    private BeanFactory context;
+    private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
+    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final Timer checker;
+
+    private Pair<ContentTypeHeader, String>  constructFault( final SoapFaultLevel inFaultLevelInfo,
+                                                             final PolicyEnforcementContext pec,
+                                                             final boolean isClientFault,
+                                                             final String faultString,
+                                                             final String statusTextOverride ) {
+        final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
+        String output = "";
+        AssertionStatus globalStatus = pec.getPolicyResult();
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.XML_DEFAULT;
+        if (globalStatus == null) {
+            // if this happens, it means a bug needs fixing where a path fails to set a value on the policy result
+            logger.severe("PolicyEnforcementContext.policyResult not set. Fallback on SERVER_ERROR");
+            globalStatus = AssertionStatus.SERVER_ERROR;
         }
-        return fromSettings;
+        int level = faultLevelInfo.getLevel();
+        switch ( level ) {
+            case SoapFaultLevel.DROP_CONNECTION:
+                break;
+            case SoapFaultLevel.TEMPLATE_FAULT:
+                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor), auditor);
+                if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
+                    contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
+                break;
+            case SoapFaultLevel.GENERIC_FAULT:
+                try {
+                    Pair<ContentTypeHeader,Document> faultInfo =
+                            buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, false );
+                    output = XmlUtil.nodeToFormattedString(faultInfo.right);
+                    contentTypeHeader = faultInfo.left;
+                } catch (Exception e) {
+                    // should not happen
+                    logger.log(Level.WARNING, "could not construct generic fault", e);
+                }
+                break;
+            case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
+                {
+                    Pair<ContentTypeHeader, String> faultInfo =
+                            buildDetailedFault(pec, globalStatus, isClientFault, faultString, statusTextOverride, false);
+                    output = faultInfo.right;
+                    contentTypeHeader = faultInfo.left;
+                }
+                break;
+            case SoapFaultLevel.FULL_TRACE_FAULT:
+                {
+                    Pair<ContentTypeHeader, String> faultInfo =
+                            buildDetailedFault(pec, globalStatus, isClientFault, faultString, statusTextOverride, true);
+                    output = faultInfo.right;
+                    contentTypeHeader = faultInfo.left;
+                }
+                break;
+        }
+
+        if ( faultLevelInfo.isSignSoapFault() ) {
+            output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
+        }
+
+        return new Pair<ContentTypeHeader, String>(contentTypeHeader, output);
     }
 
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
@@ -139,7 +302,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                             fromSettings.setNonDefaultKeystoreId( Long.parseLong( keyAlias.substring( 0, index )));
                             fromSettings.setKeyAlias( keyAlias.substring( index+1 ));
                         } catch ( NumberFormatException nfe ) {
-                            logger.fine( "Error processing key alias for SOAP fault signing." );                           
+                            logger.fine( "Error processing key alias for SOAP fault signing." );
                         }
                     }
                 }
@@ -160,108 +323,40 @@ public class SoapFaultManager implements ApplicationContextAware {
         input.setIncludePolicyDownloadURL(true);
     }
 
-    /**
-     * constructs a soap fault based on the pec and the level desired.
-     * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
-     */
-    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
-                                                                    final PolicyEnforcementContext pec ) {
-        final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
-        String output = "";
-        AssertionStatus globalstatus = pec.getPolicyResult();
-        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-        if (globalstatus == null) {
-            // if this happens, it means a bug needs fixing where a path fails to set a value on the policy result
-            logger.severe("PolicyEnforcementContext.policyResult not set. Fallback on SERVER_ERROR");
-            globalstatus = AssertionStatus.SERVER_ERROR;
-        }
-        switch (faultLevelInfo.getLevel()) {
-            case SoapFaultLevel.DROP_CONNECTION:
-                break;
-            case SoapFaultLevel.TEMPLATE_FAULT:
-                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor), auditor);
-                if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
-                    ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                break;
-            case SoapFaultLevel.GENERIC_FAULT:
-                try {
-                    boolean useSoap12 = isSoap12(pec);
-                    Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
-                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-                    // populate @status element
-                    Element policyResultEl = (Element)res.item(0);
-                    policyResultEl.setAttribute("status", globalstatus.getMessage());
-                    // populate the faultactor value
-                    String actor = getRequestUrlVariable(pec);
-                    if(useSoap12) {
-                        ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                        res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
-                    } else {
-                        res = tmp.getElementsByTagName("faultactor");
-                    }
-                    Element faultactor = (Element)res.item(0);
-                    faultactor.setTextContent(actor);
-                    output = XmlUtil.nodeToFormattedString(tmp);
-                } catch (Exception e) {
-                    // should not happen
-                    logger.log(Level.WARNING, "could not construct generic fault", e);
-                }
-                break;
-            case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
-                {
-                    Pair<ContentTypeHeader, String> faultInfo = buildDetailedFault(pec, globalstatus, false);
-                    output = faultInfo.right;
-                    ctype = faultInfo.left;
-                }
-                break;
-            case SoapFaultLevel.FULL_TRACE_FAULT:
-                {
-                    Pair<ContentTypeHeader, String> faultInfo = buildDetailedFault(pec, globalstatus, true);
-                    output = faultInfo.right;
-                    ctype = faultInfo.left;
-                }
-                break;
-        }
-
-        if ( faultLevelInfo.isSignSoapFault() ) {
-            output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
-        }
-
-        return new Pair<ContentTypeHeader, String>(ctype, output);
-    }
-
     private String signFault( final String soapMessage,
-                              final AuthenticationContext authContext,
+                              final AuthenticationContext authenticationContext,
                               final SecurityKnob reqSec,
                               final PrivateKeyable privateKeyable ) {
         String signedSoapMessage = soapMessage;
 
-        try {
-            Document soapDoc = XmlUtil.parse( soapMessage );
-            signFault( soapDoc, authContext, reqSec, privateKeyable );
-            signedSoapMessage = XmlUtil.nodeToString( soapDoc );
-        } catch (SAXException e) {
-            logger.log( Level.WARNING, "Error signing SOAP Fault '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
-        } catch (IOException e) {
-            logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+        if ( soapMessage != null && !soapMessage.isEmpty() ) { // don't sign if dropping connection
+            try {
+                Document soapDoc = XmlUtil.parse( soapMessage );
+                signFault( soapDoc, authenticationContext, reqSec, privateKeyable );
+                signedSoapMessage = XmlUtil.nodeToString( soapDoc );
+            } catch (SAXException e) {
+                logger.log( Level.WARNING, "Error signing SOAP Fault '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+            } catch (IOException e) {
+                logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
+            }
         }
 
         return signedSoapMessage;
     }
 
     private void signFault( final Document soapDoc,
-                            final AuthenticationContext authContext,
+                            final AuthenticationContext authenticationContext,
                             final SecurityKnob reqSec,
                             final PrivateKeyable privateKeyable ) {
         try {
             final WssDecoratorImpl decorator = new WssDecoratorImpl();
-            final DecorationRequirements reqmts = new DecorationRequirements();
+            final DecorationRequirements requirements = new DecorationRequirements();
             final SignerInfo signerInfo = ServerAssertionUtils.getSignerInfo(context, privateKeyable);
             final boolean isPreferred = ServerAssertionUtils.isPreferredSigner( privateKeyable );
             SigningSecurityToken signingToken = null;
 
             if ( !isPreferred ) {
-                SigningSecurityToken[] tokens = WSSecurityProcessorUtils.getSigningSecurityTokens( authContext.getCredentials() );
+                SigningSecurityToken[] tokens = WSSecurityProcessorUtils.getSigningSecurityTokens( authenticationContext.getCredentials() );
                 for ( SigningSecurityToken token : tokens ) {
                     if ( token instanceof KerberosSigningSecurityToken ||
                          token instanceof SecurityContextToken ||
@@ -278,10 +373,10 @@ public class SoapFaultManager implements ApplicationContextAware {
 
             // Configure signing token
             if ( signingToken == null ) {
-                reqmts.setSenderMessageSigningCertificate( signerInfo.getCertificate() );
-                reqmts.setSenderMessageSigningPrivateKey( signerInfo.getPrivate() );
+                requirements.setSenderMessageSigningCertificate( signerInfo.getCertificate() );
+                requirements.setSenderMessageSigningPrivateKey( signerInfo.getPrivate() );
             } else {
-                WSSecurityProcessorUtils.setToken( reqmts, signingToken );   
+                WSSecurityProcessorUtils.setToken( requirements, signingToken );
             }
 
             // If the request was processed on the noactor sec header instead of the l7 sec actor, then
@@ -292,13 +387,13 @@ public class SoapFaultManager implements ApplicationContextAware {
                         null :
                         reqSec.getProcessorResult().getProcessedActorUri();
 
-                reqmts.setSecurityHeaderActor( actorUri );
+                requirements.setSecurityHeaderActor( actorUri );
             }
 
-            reqmts.setSignTimestamp();
-            reqmts.getElementsToSign().add( SoapUtil.getBodyElement(soapDoc));
+            requirements.setSignTimestamp();
+            requirements.getElementsToSign().add( SoapUtil.getBodyElement(soapDoc));
 
-            decorator.decorateMessage(new Message(soapDoc), reqmts);
+            decorator.decorateMessage(new Message(soapDoc), requirements);
         } catch (InvalidDocumentFormatException e) {
             logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
         } catch (SAXException e) {
@@ -316,10 +411,10 @@ public class SoapFaultManager implements ApplicationContextAware {
             }
         } catch (GeneralSecurityException e) {
             logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
-        } 
+        }
     }
 
-    private boolean isSoap12(PolicyEnforcementContext pec) {
+    private boolean isSoap12( final PolicyEnforcementContext pec ) {
         // If we can see that the request has a SOAP version, use the version from the request
         try {
             final Message request = pec.getRequest();
@@ -330,76 +425,83 @@ public class SoapFaultManager implements ApplicationContextAware {
                 String docNs = cursor.getNamespaceUri();
                 return SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(docNs);
             }
-            // Fallthrough and guess based on service
+            // Fall through and guess based on service
         } catch (IOException e) {
-            // Fallthrough and guess based on service
+            // Fall through and guess based on service
         } catch (SAXException e) {
-            // Fallthrough and guess based on service
+            // Fall through and guess based on service
         }
 
         return pec.getService() != null && SoapVersion.SOAP_1_2.equals(pec.getService().getSoapVersion());
     }
 
-
     /**
-     * SOAP faults resulting from an exception that occurs in the processing of the policy.
-     * Receiving such a fault sould be considered a bug.
+     * Build a generic fault from a template.
+     *
+     * @param pec The related policy enforcement context
+     * @param globalStatus The policy status
+     * @param isClientFault True for client faults (for the faultcode)
+     * @param faultString The faultstring to use in the fault
+     * @param statusTextOverride The policyResult/@status value to use (from globalStatus if null)
+     * @return The fault document
+     * @throws SAXException If the template cannot be processed.
      */
-    public Pair<ContentTypeHeader,String> constructExceptionFault(Throwable e, PolicyEnforcementContext pec) {
-        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-        String output = null;
-        try {
-            boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
-            if(isSoap12(pec)) {
-                ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
-                        POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 : EXCEPTION_FAULT_SOAP_1_2);
+    private Pair<ContentTypeHeader,Document> buildGenericFault( final PolicyEnforcementContext pec,
+                                                                final AssertionStatus globalStatus,
+                                                                final boolean isClientFault,
+                                                                final String faultString,
+                                                                final String statusTextOverride,
+                                                                final boolean declarePolicyNS ) throws SAXException {
+        final boolean useSoap12 = isSoap12(pec);
+        final Document faultDocument = XmlUtil.stringToDocument(useSoap12 ? FAULT_TEMPLATE_SOAP_1_2 : FAULT_TEMPLATE_SOAP_1_1 );
 
-                if (!policyVersionFault) {
-                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-                    Element policyResultEl = (Element) res.item(0);
-
-                    // populate @status element
-                    policyResultEl.setAttribute("status", e.getMessage());
-                }
-                // populate the faultactor value
-                String role = getRequestUrlVariable(pec);
-
-                NodeList res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
-                Element faultrole = (Element) res.item(0);
-                faultrole.setTextContent(role);
-                output = XmlUtil.nodeToFormattedString(tmp);
-            } else {
-                Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
-                        POLICY_VERSION_EXCEPTION_FAULT : EXCEPTION_FAULT);
-
-                if (!policyVersionFault) {
-                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-                    Element policyResultEl = (Element) res.item(0);
-
-                    // populate @status element
-                    policyResultEl.setAttribute("status", e.getMessage());
-                }
-                // populate the faultactor value
-                String actor = getRequestUrlVariable(pec);
-
-                NodeList res = tmp.getElementsByTagName("faultactor");
-                Element faultactor = (Element) res.item(0);
-                faultactor.setTextContent(actor);
-                output = XmlUtil.nodeToFormattedString(tmp);
+        // populate @status element
+        NodeList res = faultDocument.getElementsByTagNameNS(FAULT_NS, "policyResult");
+        Element policyResultEl = (Element)res.item(0);
+        if ( "".equals(statusTextOverride) ) {
+            // remove details
+            policyResultEl.getParentNode().getParentNode().removeChild( policyResultEl.getParentNode() );
+        } else {
+            policyResultEl.setAttribute("status", statusTextOverride!=null ? statusTextOverride : globalStatus.getMessage());
+            if ( declarePolicyNS ) {
+                policyResultEl.setAttributeNS( DomUtils.XMLNS_NS, "xmlns:l7p", WspConstants.L7_POLICY_NS);
             }
-        } catch (Exception el) {
-            // should not happen
-            logger.log(Level.WARNING, "Unexpected exception", el);
         }
 
-        SoapFaultLevel faultLevelInfo = pec.getFaultlevel();
-        if ( faultLevelInfo==null ) faultLevelInfo = getDefaultBehaviorSettings();
-        if ( faultLevelInfo.isSignSoapFault() ) {
-            output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
+        // populate the faultcode
+        if ( isClientFault ) {
+            final String faultCode;
+            if(useSoap12) {
+                faultCode = "soapenv:Sender";
+                res = faultDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+            } else {
+                faultCode = "soapenv:Client";
+                res = faultDocument.getElementsByTagName("faultcode");
+            }
+            Element faultcode = (Element)res.item(0);
+            faultcode.setTextContent(faultCode);
         }
 
-        return new Pair<ContentTypeHeader,String>(ctype,output);
+        // populate the faultstring
+        if(useSoap12) {
+            res = faultDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Text");
+        } else {
+            res = faultDocument.getElementsByTagName("faultstring");
+        }
+        Element faultstring = (Element)res.item(0);
+        faultstring.setTextContent(faultString);
+
+        // populate the faultactor value
+        String actor = getRequestUrlVariable(pec);
+        if(useSoap12) {
+            res = faultDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
+        } else {
+            res = faultDocument.getElementsByTagName("faultactor");
+        }
+        Element faultactor = (Element)res.item(0);
+        faultactor.setTextContent(actor);
+
+        return new Pair<ContentTypeHeader,Document>( useSoap12 ? ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT, faultDocument);
     }
 
     /**
@@ -421,54 +523,50 @@ public class SoapFaultManager implements ApplicationContextAware {
      *      </soapenv:Body>
      *  </soapenv:Envelope>
      */
-    private Pair<ContentTypeHeader, String> buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
+    private Pair<ContentTypeHeader, String> buildDetailedFault( final PolicyEnforcementContext pec,
+                                                                final AssertionStatus globalStatus,
+                                                                final boolean isClientFault,
+                                                                final String faultString,
+                                                                final String statusTextOverride,
+                                                                final boolean includeSuccesses) {
         String output = null;
-        boolean useSoap12 = false;
+        final boolean useSoap12 = isSoap12(pec);
         try {
-            useSoap12 = isSoap12(pec);
-            Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
-            NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-            // populate @status element
-            Element policyResultEl = (Element)res.item(0);
-            policyResultEl.setAttribute("status", globalstatus.getMessage());
-            policyResultEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:l7p", WspConstants.L7_POLICY_NS);
-
-            // populate the faultactor value
-            String actor = getRequestUrlVariable(pec);
-
-            res = useSoap12 ? tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role") : tmp.getElementsByTagName("faultactor");
-            Element faultactor = (Element)res.item(0);
-            faultactor.setTextContent(actor);
+            final Document faultDocument =
+                    buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, true ).right;
 
             List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults();
             for (PolicyEnforcementContext.AssertionResult result : results) {
                 if (result.getStatus() == AssertionStatus.NONE && !includeSuccesses) {
                     continue;
                 }
-                Element assertionResultEl = tmp.createElementNS(FAULT_NS, "l7:assertionResult");
+                Element assertionResultEl = faultDocument.createElementNS(FAULT_NS, "l7:assertionResult");
                 assertionResultEl.setAttribute("status", result.getStatus().getMessage());
-                String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass(), null).getExternalName();
-                assertionResultEl.setAttribute("assertion", assertionattr);
+                String assertionAttribute = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass(), null).getExternalName();
+                assertionResultEl.setAttribute("assertion", assertionAttribute);
                 List<AuditDetail> details = auditContext.getDetails().get( result.getDetailsKey() );
                 if (details != null) {
                     for (AuditDetail detail : details) {
-                        int msgid = detail.getMessageId();
+                        int messageId = detail.getMessageId();
                         // only show details FINE and higher for medium details, show all details for full details
-                        if (includeSuccesses || (MessagesUtil.getAuditDetailMessageById(msgid).getLevel().intValue() >= Level.INFO.intValue())) {
-                            Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
+                        if (includeSuccesses || (MessagesUtil.getAuditDetailMessageById(messageId).getLevel().intValue() >= Level.INFO.intValue())) {
+                            Element detailMsgEl = faultDocument.createElementNS(FAULT_NS, "l7:detailMessage");
                             detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
-                            // add text node with actual message. see below for logpanel sample:
-                            StringBuffer msgbuf = new StringBuffer();
-                            MessageFormat mf = new MessageFormat(getMessageById(msgid));
-                            mf.format(detail.getParams(), msgbuf, new FieldPosition(0));
-                            detailMsgEl.setTextContent(msgbuf.toString());
-                            assertionResultEl.appendChild(tmp.importNode(detailMsgEl, true));
+                            // add text node with actual message.
+                            StringBuffer messageBuffer = new StringBuffer();
+                            MessageFormat mf = new MessageFormat(getMessageById(messageId));
+                            mf.format(detail.getParams(), messageBuffer, new FieldPosition(0));
+                            detailMsgEl.setTextContent(messageBuffer.toString());
+                            assertionResultEl.appendChild(faultDocument.importNode(detailMsgEl, true));
                         }
                     }
                 }
-                policyResultEl.appendChild(tmp.importNode(assertionResultEl, true));
+
+                NodeList res = faultDocument.getElementsByTagNameNS(FAULT_NS, "policyResult");
+                Element policyResultEl = (Element)res.item(0);
+                policyResultEl.appendChild( assertionResultEl );
             }
-            output = XmlUtil.nodeToFormattedString(tmp);
+            output = XmlUtil.nodeToFormattedString(faultDocument);
         } catch (Exception e) {
             logger.log(Level.WARNING, "could not construct generic fault", e);
         }
@@ -477,137 +575,22 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     /**
-     * gets the assertion detail message giving priority to overriden defaults in the cluster property table.
+     * gets the assertion detail message giving priority to overridden defaults in the cluster property table.
      * caches the cluster overrides so it does not have to look them up all the time.
      */
-    private String getMessageById(int msgid) {
+    private String getMessageById(int messageId) {
         ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
         lock.lock();
         try {
-            String cachedMessage = cachedOverrideAuditMessages.get(msgid);
+            String cachedMessage = cachedOverrideAuditMessages.get(messageId);
             if (cachedMessage != null) {
                 return cachedMessage;
             }
         } finally {
             lock.unlock();
         }
-        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(msgid);
+        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(messageId);
         return message==null ? null : message.getMessage();
-    }
-
-    private static final String GENERIC_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>soapenv:Server</faultcode>\n" +
-                        "            <faultstring>Policy Falsified</faultstring>\n" +
-                        "            <faultactor/>\n" +
-                        "            <detail>\n" +
-                        "                 <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
-                        "            </detail>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
-
-    private static final String GENERIC_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
-                         "    <soapenv:Body>\n" +
-                         "        <soapenv:Fault>\n" +
-                         "            <soapenv:Code>\n" +
-                         "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
-                         "            </soapenv:Code>\n" +
-                         "            <soapenv:Reason>\n" +
-                         "                <soapenv:Text xml:lang=\"en-US\">Policy Falsified</soapenv:Text>\n" +
-                         "            </soapenv:Reason>\n" +
-                         "            <soapenv:Role/>\n" +
-                         "            <soapenv:Detail>\n" +
-                         "                <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
-                         "            </soapenv:Detail>\n" +
-                         "        </soapenv:Fault>\n" +
-                         "    </soapenv:Body>\n" +
-                         "</soapenv:Envelope>";
-
-    private static final String EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>soapenv:Server</faultcode>\n" +
-                        "            <faultstring>Error in assertion processing</faultstring>\n" +
-                        "            <faultactor/>\n" +
-                        "            <detail>\n" +
-                        "                 <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
-                        "            </detail>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
-
-    private static final String EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <soapenv:Code>\n" +
-                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
-                        "            </soapenv:Code>\n" +
-                        "            <soapenv:Reason>\n" +
-                        "                <soapenv:Text xml:lang=\"en-US\">Error in assertion processing</soapenv:Text>\n" +
-                        "            </soapenv:Reason>\n" +
-                        "            <soapenv:Role/>\n" +
-                        "            <soapenv:Detail>\n" +
-                        "                <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
-                        "            </soapenv:Detail>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
-    
-    private static final String POLICY_VERSION_EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>soapenv:Client</faultcode>\n" +
-                        "            <faultstring>Incorrect policy version</faultstring>\n" +
-                        "            <faultactor/>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
-
-    private static final String POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <soapenv:Code>\n" +
-                        "                <soapenv:Value>soapenv:Sender</soapenv:Value>\n" +
-                        "            </soapenv:Code>\n" +
-                        "            <soapenv:Reason>\n" +
-                        "                <soapenv:Text xml:lang=\"en-US\">Incorrect policy version</soapenv:Text>\n" +
-                        "            </soapenv:Reason>\n" +
-                        "            <soapenv:Role/>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
-
-    @Override
-    public void setApplicationContext( ApplicationContext applicationContext ) {
-        setBeanFactory( applicationContext );
-        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
-        final SoapFaultManager tasker = this;
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    tasker.updateOverrides();
-                } catch(Exception e) {
-                    logger.log(Level.WARNING, "Error updating message overrides.", e);
-                }
-            }
-        };
-        checker.schedule(task, 10000, 56893);
-    }
-
-    void setBeanFactory( BeanFactory context ) throws BeansException {
-        auditor = context instanceof ApplicationContext ?
-                new Auditor(this, (ApplicationContext)context, logger) :
-                new LogOnlyAuditor(logger);
-        this.context = context;
     }
 
     private void updateOverrides() {
@@ -658,9 +641,9 @@ public class SoapFaultManager implements ApplicationContextAware {
         try {
             reqUrl = pec.getVariable("request.url").toString();
             // todo, catch cases when this throws and just fix it
-        } catch (NoSuchVariableException notfound) {
+        } catch (NoSuchVariableException e) {
             if (pec.getRequest().isHttpRequest())
-                logger.log(Level.WARNING, "this variable is not found but should always be set: {0}", ExceptionUtils.getMessage(notfound));
+                logger.log(Level.WARNING, "this variable is not found but should always be set: {0}", ExceptionUtils.getMessage(e));
             reqUrl = "ssg";
         }
         return reqUrl;

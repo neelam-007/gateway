@@ -281,7 +281,7 @@ public class TokenServiceServlet extends HttpServlet {
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
         try {
-            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context);
+            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
             responseStream = hresp.getOutputStream();
             hresp.setContentType(faultInfo.left.getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
