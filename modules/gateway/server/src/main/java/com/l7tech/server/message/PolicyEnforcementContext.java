@@ -1,35 +1,30 @@
 package com.l7tech.server.message;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.RoutingResultListener;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.gateway.common.RequestId;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.gateway.common.RequestId;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.http.HttpCookie;
+import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.policy.assertion.RoutingResultListener;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.message.Message;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.Set;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
 import java.net.URL;
-
-import org.xml.sax.SAXException;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
@@ -284,6 +279,21 @@ public interface PolicyEnforcementContext extends Closeable {
     void setMalformedRequest();
 
     boolean isMalformedRequest();
+
+    /**
+     * Use to save the L7a:MessageID from the request, if you know it will be needed for the response,
+     * to save its having to be looked up later.
+     *
+     * @param messageId  the L7a:MessageID from the request; or, empty string to record that it didn't contain one; or, null to clear any saved value.
+     */
+    void setSavedRequestL7aMessageId(String messageId);
+
+    /**
+     * Get the save L7a:MessageID from the request, if any.
+     *
+     * @return the L7a:MessageID from the request, or empty string if it didn't contain one, or null if none was recorded.
+     */
+    String getSavedRequestL7aMessageId();
 
     List<MessageContextMapping> getMappings();
 

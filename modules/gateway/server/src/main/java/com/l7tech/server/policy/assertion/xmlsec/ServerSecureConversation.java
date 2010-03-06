@@ -1,27 +1,30 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.security.token.SecurityContextToken;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
+import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.security.token.SecurityContextToken;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -107,6 +110,20 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 authContext.addCredentials(loginCreds);
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
+
+                final String messageId;
+                try {
+                    messageId = SoapUtil.getL7aMessageId(context.getRequest().getXmlKnob().getDocumentReadOnly());
+                    context.setSavedRequestL7aMessageId(messageId == null ? "" : messageId);
+                } catch (InvalidDocumentFormatException e) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request SOAP:" + ExceptionUtils.getMessage(e));
+                    return AssertionStatus.BAD_REQUEST;
+                } catch (SAXException e) {
+                    // Almost certainly can't happen
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request XML:" + ExceptionUtils.getMessage(e));
+                    return AssertionStatus.BAD_REQUEST;
+                }
+
                 return AssertionStatus.NONE;
             }
         }

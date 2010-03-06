@@ -1013,11 +1013,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         private void addL7aRelatesTo() throws InvalidDocumentFormatException {
             try {
-                if (context.getRequest().isSoap()) {
-                    final String messageId = SoapUtil.getL7aMessageId(context.getRequest().getXmlKnob().getDocumentReadOnly());
-                    if (messageId != null) {
-                        SoapUtil.setL7aRelatesTo(context.getResponse().getXmlKnob().getDocumentWritable(), messageId);
+                String messageId = context.getSavedRequestL7aMessageId();
+                if (messageId == null && context.getRequest().isSoap()) {
+                    try {
+                        messageId = SoapUtil.getL7aMessageId(context.getRequest().getXmlKnob().getDocumentReadOnly());
+                    } catch (InvalidDocumentFormatException e) {
+                        // Request was probably transformed.  Fallthrough and do without messageId
+                    } catch (SAXException e) {
+                        // Request was probably transformed.  Fallthrough and do without messageId
                     }
+                }
+                if (messageId != null && messageId.length() > 0) {
+                    SoapUtil.setL7aRelatesTo(context.getResponse().getXmlKnob().getDocumentWritable(), messageId);
                 }
             } catch(IOException e) {
                 logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

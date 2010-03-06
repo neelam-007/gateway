@@ -80,6 +80,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean responseWss11;
     private boolean malformedRequest;
     private boolean policyExecutionAttempted;
+    private String savedRequestL7aMessageId;
 
     protected PolicyEnforcementContextImpl(Message request, Message response) {
         super(request, response);
@@ -687,6 +688,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public boolean isMalformedRequest() {
         return malformedRequest;
+    }
+
+    @Override
+    public void setSavedRequestL7aMessageId(String messageId) {
+        savedRequestL7aMessageId = messageId;
+    }
+
+    @Override
+    public String getSavedRequestL7aMessageId() {
+        return savedRequestL7aMessageId;
     }
 
     /** @param policyTried true when the MessageProcessor gets as far as calling checkRequest() for this context. */

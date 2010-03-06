@@ -1,38 +1,31 @@
 package com.l7tech.server.message;
 
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.gateway.common.RequestId;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.gateway.common.RequestId;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.SoapFaultLevel;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
-import java.util.logging.Level;
-import java.util.Set;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.Collections;
 import java.io.IOException;
 import java.net.URL;
-
-import org.xml.sax.SAXException;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Provides an implementation of the PolicyEnforcementContext interface that can be subclassed for adaption.
@@ -393,6 +386,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public boolean isMalformedRequest() {
         return delegate.isMalformedRequest();
+    }
+
+    @Override
+    public void setSavedRequestL7aMessageId(String messageId) {
+        delegate.setSavedRequestL7aMessageId(messageId);
+    }
+
+    @Override
+    public String getSavedRequestL7aMessageId() {
+        return delegate.getSavedRequestL7aMessageId();
     }
 
     @Override
