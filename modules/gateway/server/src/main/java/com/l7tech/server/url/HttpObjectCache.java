@@ -131,15 +131,16 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             req = httpClientFactory.createHttpClient().createRequest(HttpMethod.GET, params);
             resp = req.getResponse();
 
+            // Get server-provided last-modified date
+            final HttpHeaders headers = resp.getHeaders();
+            final String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
+
             if (resp.getStatus() == HttpConstants.STATUS_NOT_MODIFIED) {
                 // Don't even bother doing another round-trip through the UserObjectFactory
                 if (logger.isLoggable(Level.FINER)) logger.finer("Server reports no change for URL '" + urlStr + "'");
-                return new DatedUserObject<UT>(null, lastModifiedStr);
+                return new DatedUserObject<UT>(null, modified!=null ? modified : lastModifiedStr);
             }
 
-            // Save server-provided last-modified date
-            HttpHeaders headers = resp.getHeaders();
-            String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
             final GenericHttpResponse sourceResponse = resp;
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
                 @Override

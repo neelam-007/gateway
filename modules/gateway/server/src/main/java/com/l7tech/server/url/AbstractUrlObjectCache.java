@@ -400,8 +400,8 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * @param urlStr     the URL to get.  Must be non-null.
      * @return the fetch result from doing the poll.  Never null.
      */
-    private FetchResult<UT> doPoll(AbstractCacheEntry<UT> entry,
-                                   String urlStr)
+    private FetchResult<UT> doPoll( final AbstractCacheEntry<UT> entry,
+                                    final String urlStr)
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
         // so readers will be guaranteed to pick them up.
@@ -419,9 +419,22 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         boolean reported = false;
         try {
             DatedUserObject<UT> dup = doGet(urlStr, entryLastModified, entryLastSuccessfulPollStarted);
+            long lastSuccessfulPollStarted = requestStart;
+            String userObjectModified = dup.getLastModified();
             UT userObject = dup.getUserObject();
-            if (userObject == null) userObject = entryObject;
-            FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, dup.getLastModified(), userObject);
+            if (userObject == null) {
+                userObject = entryObject;
+
+                // If the last modified time does not match the expected last modified time
+                // for the user object then it has changed but prior to the last modified
+                // time. In this case we reset our modified times so we'll download the
+                // user object next time we poll.
+                if ( entryLastModified != null && userObjectModified != null && !entryLastModified.equals(userObjectModified) ) {
+                    lastSuccessfulPollStarted = 0;
+                    userObjectModified = null;
+                }
+            }
+            FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, lastSuccessfulPollStarted, userObjectModified, userObject);
             reported = true;
             return ret;
         } catch (IOException e) {
@@ -499,13 +512,14 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
     private FetchResult<UT> doSuccessfulDownload(AbstractCacheEntry<UT> entry,
                                                  long requestStart,
+                                                 long lastSuccessfulPollStarted,
                                                  String modified,
                                                  UT userObject)
     {
         // Record the success, wake up other threads, and return the result.
         synchronized (entry) {
             entry.accessCount = 0;
-            entry.lastSuccessfulPollStarted = requestStart;
+            entry.lastSuccessfulPollStarted = lastSuccessfulPollStarted;
             entry.lastModified = modified;
             entry.exception = null;
             entry.exceptionCreated = 0;
