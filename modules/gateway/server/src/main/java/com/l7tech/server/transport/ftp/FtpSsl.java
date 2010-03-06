@@ -11,7 +11,9 @@ import javax.net.ssl.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.GeneralSecurityException;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,6 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Steve Jones
  */
 public class FtpSsl implements Ssl {
+
+    private static Provider proxySslContextProvider = new Provider("FtpSslWrapper", 1.0, "Provides SSLContext wrapper that can be used to preconfigure the socket factory used by FtpServer") {{
+        putService(new Service(this, "SSLContext", "L7Wrapped", FtpSslContextWrapper.class.getName(), new ArrayList<String>(), new HashMap<String, String>()));
+    }};
 
     //- PUBLIC
 
@@ -53,7 +59,9 @@ public class FtpSsl implements Ssl {
      * Get SSL Context.
      */
     public SSLContext getSSLContext(String protocol) throws GeneralSecurityException {
-        return getSslHelper(protocol).getSslContext();
+        SSLContext proxy = SSLContext.getInstance("L7Wrapped", proxySslContextProvider);
+        proxy.init(new KeyManager[] { new DelegateSmugglingKeyManager(getSslHelper(protocol)) }, null, null);
+        return proxy;
     }
 
     private SsgConnectorSslHelper getSslHelper(String protocol) throws GeneralSecurityException {

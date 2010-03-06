@@ -34,21 +34,21 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
 
     public ServerSocket createSocket(int port) throws IOException {
         if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslServerSocketFactory().createServerSocket(port);
+        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port);
         sslHelper.configureServerSocket((SSLServerSocket) socket);
         return socket;
     }
 
     public ServerSocket createSocket(int port, int backlog) throws IOException {
         if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslServerSocketFactory().createServerSocket(port, backlog);
+        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog);
         sslHelper.configureServerSocket((SSLServerSocket) socket);
         return socket;
     }
 
     public ServerSocket createSocket(int port, int backlog, InetAddress ifAddress) throws IOException {
         if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslServerSocketFactory().createServerSocket(port, backlog, ifAddress);
+        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog, ifAddress);
         sslHelper.configureServerSocket((SSLServerSocket) socket);
         return socket;
     }

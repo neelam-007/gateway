@@ -13,6 +13,10 @@ import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -104,21 +108,99 @@ public class SsgConnectorSslHelper {
     }
 
     /**
-     * Get access to the SSL server socket factory.
+     * Get access to the SSL server socket factory, wrapped to preconfigure the created sockets.
      *
      * @return the server socket factory.  Never null.
      */
     public SSLServerSocketFactory getSslServerSocketFactory() {
-        return sslServerSocketFactory;
+        return new SSLServerSocketFactory() {
+            @Override
+            public String[] getDefaultCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public String[] getSupportedCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int i) throws IOException {
+                SSLServerSocket sock = (SSLServerSocket) sslServerSocketFactory.createServerSocket(i);
+                configureServerSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int i, int i1) throws IOException {
+                SSLServerSocket sock = (SSLServerSocket) sslServerSocketFactory.createServerSocket(i, i1);
+                configureServerSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public ServerSocket createServerSocket(int i, int i1, InetAddress inetAddress) throws IOException {
+                SSLServerSocket sock = (SSLServerSocket) sslServerSocketFactory.createServerSocket(i, i1, inetAddress);
+                configureServerSocket(sock);
+                return sock;
+            }
+        };
     }
 
     /**
-     * Get access to the SSL socket factory.
+     * Get access to the SSL socket factory, wrapped to preconfigure the created sockets.
      *
      * @return the socket factory.
      */
     public SSLSocketFactory getSocketFactory() {
-        return sslContext.getSocketFactory();
+        final SSLSocketFactory ssf = sslContext.getSocketFactory();
+
+        return new SSLSocketFactory() {
+            @Override
+            public String[] getDefaultCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public String[] getSupportedCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public Socket createSocket(Socket socket, String s, int i, boolean b) throws IOException {
+                SSLSocket sock = (SSLSocket) ssf.createSocket(socket, s, i, b);
+                configureSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public Socket createSocket(String s, int i) throws IOException {
+                SSLSocket sock = (SSLSocket) ssf.createSocket(s, i);
+                configureSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public Socket createSocket(String s, int i, InetAddress inetAddress, int i1) throws IOException {
+                SSLSocket sock = (SSLSocket) ssf.createSocket(s, i, inetAddress, i1);
+                configureSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
+                SSLSocket sock = (SSLSocket) ssf.createSocket(inetAddress, i);
+                configureSocket(sock);
+                return sock;
+            }
+
+            @Override
+            public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
+                SSLSocket sock = (SSLSocket) ssf.createSocket(inetAddress, i, inetAddress1, i1);
+                configureSocket(sock);
+                return sock;
+            }
+        };
     }
 
     /**
@@ -153,6 +235,23 @@ public class SsgConnectorSslHelper {
     }
 
     /**
+     * Configure an SSLSocket created by our socket factory according to the current configuration without changing the default clientMode setting.
+     *
+     * @param socket the SSLSocket to configure.  Required.
+     */
+    public void configureSocket(SSLSocket socket) {
+        socket.setEnabledCipherSuites(enabledCiphers);
+        socket.setEnabledProtocols(enabledTlsVersions);
+
+        final int clientAuth = ssgConnector.getClientAuth();
+        if (SsgConnector.CLIENT_AUTH_OPTIONAL == clientAuth) {
+            socket.setWantClientAuth(true);
+        } else {
+            socket.setNeedClientAuth(SsgConnector.CLIENT_AUTH_NEVER != clientAuth);
+        }
+    }
+
+    /**
      * Start the SSL handshake on the specified SSLSocket.
      * <p/>
      * This will also implement the CVE-2009-3555 hack unless allowUnsafeLegacyRenegotiation is true.
@@ -181,6 +280,145 @@ public class SsgConnectorSslHelper {
         if (tlsProtocol == null || tlsProtocol.trim().length() < 1)
             tlsProtocol = "TLS";
         return tlsProtocol;
+    }
+
+    /**
+     * Create an SSLEngine, wrapped to preconfigure the enabled cipher suites and TLS versions.
+     *
+     * @param peerHost peer host, or null to create an unconnected engine.
+     * @param peerPort peer port, or 0 if peerHost is null.
+     * @return an SSLEngine.  Never null.
+     */
+    public SSLEngine createSSLEngine(String peerHost, int peerPort) {
+        final SSLEngine delegate = peerHost == null ? sslContext.createSSLEngine() : sslContext.createSSLEngine(peerHost, peerPort);
+        delegate.setEnabledCipherSuites(enabledCiphers);
+        delegate.setEnabledProtocols(enabledTlsVersions);
+        if (SsgConnector.CLIENT_AUTH_OPTIONAL == ssgConnector.getClientAuth()) {
+            delegate.setWantClientAuth(true);
+        } else {
+            delegate.setNeedClientAuth(SsgConnector.CLIENT_AUTH_NEVER != ssgConnector.getClientAuth());
+        }
+        return new SSLEngine() {
+            @Override
+            public SSLEngineResult wrap(ByteBuffer[] byteBuffers, int i, int i1, ByteBuffer byteBuffer) throws SSLException {
+                return delegate.wrap(byteBuffers, i, i1, byteBuffer);
+            }
+
+            @Override
+            public SSLEngineResult unwrap(ByteBuffer byteBuffer, ByteBuffer[] byteBuffers, int i, int i1) throws SSLException {
+                return delegate.unwrap(byteBuffer, byteBuffers, i, i1);
+            }
+
+            @Override
+            public Runnable getDelegatedTask() {
+                return delegate.getDelegatedTask();
+            }
+
+            @Override
+            public void closeInbound() throws SSLException {
+                delegate.closeInbound();
+            }
+
+            @Override
+            public boolean isInboundDone() {
+                return delegate.isInboundDone();
+            }
+
+            @Override
+            public void closeOutbound() {
+                delegate.closeOutbound();
+            }
+
+            @Override
+            public boolean isOutboundDone() {
+                return delegate.isOutboundDone();
+            }
+
+            @Override
+            public String[] getSupportedCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public String[] getEnabledCipherSuites() {
+                return enabledCiphers;
+            }
+
+            @Override
+            public void setEnabledCipherSuites(String[] strings) {
+                // Ignore
+            }
+
+            @Override
+            public String[] getSupportedProtocols() {
+                return enabledTlsVersions;
+            }
+
+            @Override
+            public String[] getEnabledProtocols() {
+                return enabledTlsVersions;
+            }
+
+            @Override
+            public void setEnabledProtocols(String[] strings) {
+                // Ignore
+            }
+
+            @Override
+            public SSLSession getSession() {
+                return delegate.getSession();
+            }
+
+            @Override
+            public void beginHandshake() throws SSLException {
+                delegate.beginHandshake();
+            }
+
+            @Override
+            public SSLEngineResult.HandshakeStatus getHandshakeStatus() {
+                return delegate.getHandshakeStatus();
+            }
+
+            @Override
+            public void setUseClientMode(boolean b) {
+                delegate.setUseClientMode(b);
+            }
+
+            @Override
+            public boolean getUseClientMode() {
+                return delegate.getUseClientMode();
+            }
+
+            @Override
+            public void setNeedClientAuth(boolean b) {
+                delegate.setNeedClientAuth(b);
+            }
+
+            @Override
+            public boolean getNeedClientAuth() {
+                return delegate.getNeedClientAuth();
+            }
+
+            @Override
+            public void setWantClientAuth(boolean b) {
+                // Ignore
+            }
+
+            @Override
+            public boolean getWantClientAuth() {
+                return delegate.getWantClientAuth();
+            }
+
+            @Override
+            public void setEnableSessionCreation(boolean b) {
+                delegate.setEnableSessionCreation(b);
+            }
+
+            @Override
+            public boolean getEnableSessionCreation() {
+                return delegate.getEnableSessionCreation();
+            }
+        };
     }
 
     //
