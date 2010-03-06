@@ -37,6 +37,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private boolean searchFilterInjectionProtected = false;
     private QueryAttributeMapping[] queryMappings = new QueryAttributeMapping[0];
     private long ldapProviderOid;
+    private int cacheSize = 0; // 0 for unlimited
     private long cachePeriod = 10; // minutes
     private boolean enableCache = true;
     private boolean failIfNoResults = false;
@@ -50,6 +51,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     public static LDAPQueryAssertion newInstance() {
         LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setSearchFilterInjectionProtected( true );
+        assertion.setCacheSize( 100 );
         return assertion;
     }
 
@@ -169,6 +171,14 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         return ret.toArray(new String[ret.size()]);
     }
 
+    public int getCacheSize() {
+        return cacheSize;
+    }
+
+    public void setCacheSize( final int cacheSize ) {
+        this.cacheSize = cacheSize;
+    }
+
     public long getCachePeriod() {
         return cachePeriod;
     }
@@ -194,16 +204,19 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     }
 
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    @Deprecated
     public void setAttrNames(String[] attrNames) {
         queryMappings = LDAPQueryCompatibilityAssertionMapping.populateAttrNames(queryMappings, attrNames);
     }
 
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    @Deprecated
     public void setMultivalued(Boolean[] multi) {
         queryMappings = LDAPQueryCompatibilityAssertionMapping.populateMultivalued(queryMappings, multi);
     }
 
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    @Deprecated
     public void setVarNames(String[] varNames) {
         queryMappings = LDAPQueryCompatibilityAssertionMapping.populateVarNames(queryMappings, varNames);
     }

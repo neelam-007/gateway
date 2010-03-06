@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ldapquery.console;
 
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -43,6 +44,8 @@ public class AttributeVariableMapDialog extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
+        Utilities.setEscKeyStrokeDisposes( this );
+
         validator = new InputValidator(this, "Attribute Variable Mapping");
         validator.disableButtonWhenInvalid(OKButton);
         validator.attachToButton(OKButton, new ActionListener(){

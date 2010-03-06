@@ -45,6 +45,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JButton newButton;
     private JButton editButton;
     private JCheckBox cacheLDAPAttributeValuesCheckBox;
+    private JSpinner cacheSizeSpinner;
     private JSpinner cachePeriodSpinner;
     private JCheckBox failIfNoResultsCheckBox;
     private JCheckBox protectAgainstLDAPInjectionCheckBox;
@@ -64,6 +65,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private void initialize() {
         setContentPane(mainPanel);
         mappingTable.setModel(tableModel);
+        Utilities.setEscKeyStrokeDisposes( this );
 
         final InputValidator validator = new InputValidator( this, getTitle() );
         validator.attachToButton(okBut, new ActionListener(){
@@ -100,10 +102,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         newButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                QueryAttributeMapping newitem = new QueryAttributeMapping("", "");
-
-                if (edit(newitem)) {
-                    localMappings.add(newitem);
+                final QueryAttributeMapping attributeMapping = new QueryAttributeMapping("", "");
+                if (edit(attributeMapping)) {
+                    localMappings.add(attributeMapping);
                     final int last = localMappings.size() - 1;
                     tableModel.fireTableRowsInserted(last, last);
                 }
@@ -128,9 +129,11 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         enableButtons();
 
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
+        cacheSizeSpinner.setModel(new SpinnerNumberModel(assertion.getCacheSize(), 0, 100000, 1));
+        validator.addRule(new InputValidator.NumberSpinnerValidationRule(cacheSizeSpinner, "Cache size"));
         cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
-        validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache LDAP attribute values"));
-        
+        validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache maximum age"));
+
         validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
             @Override
@@ -173,6 +176,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         searchField.setCaretPosition( 0 );
         protectAgainstLDAPInjectionCheckBox.setSelected(assertion.isSearchFilterInjectionProtected());
         cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
+        cacheSizeSpinner.setValue(assertion.getCacheSize());
         cachePeriodSpinner.setValue(assertion.getCachePeriod());
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
     }
@@ -210,25 +214,23 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void enableDisableCache() {
-        if (cacheLDAPAttributeValuesCheckBox.isSelected()) {
-            cachePeriodSpinner.setEnabled(true);
-        } else {
-            cachePeriodSpinner.setEnabled(false);
-        }
+        boolean enabled = cacheLDAPAttributeValuesCheckBox.isSelected();
+        cacheSizeSpinner.setEnabled( enabled );
+        cachePeriodSpinner.setEnabled( enabled );
     }
 
     private Object[] populateLdapProviders() {
-        IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
+        IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
         comboStuff.clear();
         try {
-            EntityHeader[] allproviders = idadmin.findAllIdentityProviderConfig();
-            if (allproviders == null || allproviders.length < 1) {
+            EntityHeader[] identityProviderConfigs = identityAdmin.findAllIdentityProviderConfig();
+            if (identityProviderConfigs == null || identityProviderConfigs.length < 1) {
                 // todo, error msg
                 okBut.setEnabled(false);
                 return new Object[0];
             }
-            for (EntityHeader header : allproviders) {
-                IdentityProviderConfig cfg = idadmin.findIdentityProviderConfigByID(header.getOid());
+            for (EntityHeader header : identityProviderConfigs) {
+                IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(header.getOid());
                 if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
                     ComboItem item = new ComboItem();
                     item.oid = header.getOid();
@@ -280,7 +282,8 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         assertion.setSearchFilter(searchField.getText());
         assertion.setSearchFilterInjectionProtected(protectAgainstLDAPInjectionCheckBox.isSelected());
         assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
-        assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
+        assertion.setCacheSize(((Number)cacheSizeSpinner.getValue()).intValue());
+        assertion.setCachePeriod(((Number)cachePeriodSpinner.getValue()).longValue());
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
         return assertion;
     }
@@ -288,7 +291,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private boolean edit(QueryAttributeMapping im) {
         AttributeVariableMapDialog dlg = new AttributeVariableMapDialog(this, im);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         dlg.setVisible(true);
         return dlg.isWasOKed();
     }
