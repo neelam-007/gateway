@@ -1134,7 +1134,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         SyspropUtil.clearCache();
     }
 
-    private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
+    private synchronized Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
         Map<String, String> keyValueToMappedValue = new TreeMap<String, String>();
         if(keySuffix!=null) {
             for (Map.Entry propEntry : _properties.entrySet()) {
