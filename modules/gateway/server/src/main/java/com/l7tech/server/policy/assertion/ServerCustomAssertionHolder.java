@@ -16,10 +16,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -173,7 +170,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     public Object run() throws Exception {
                         CustomService customService = null;
                         try {
-                            if (isPostRouting(context)) {
+                            if (isPostRouting(context) && context.getResponse().getKnob(MimeKnob.class) != null) {
                                 CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
                                 customService = customServiceResponse;
                                 serviceInvocation.onResponse(customServiceResponse);
