@@ -14,13 +14,15 @@ public final class AdminLoginResult implements Serializable {
     private final String sessionCookie;
     private final String version;
     private final String softwareVersion;
+    private final String logonWarningBanner;
 
-    public AdminLoginResult(User user, String secret, String version, String softwareVersion) {
+    public AdminLoginResult(User user, String secret, String version, String softwareVersion, String logonWarningBanner) {
         if (user == null || secret == null || secret.length() == 0 || version == null || softwareVersion == null) throw new IllegalArgumentException();
         this.user = user;
         this.sessionCookie = secret;
         this.version = version;
         this.softwareVersion = softwareVersion;
+        this.logonWarningBanner = logonWarningBanner;
     }
 
     public User getUser() {
@@ -47,5 +49,14 @@ public final class AdminLoginResult implements Serializable {
      */
     public String getSoftwareVersion() {
         return softwareVersion;
+    }
+
+    /**
+     * Get the warning banner defined by the cluster property logon.warningBanner.
+     *
+     * @return the warning banner
+     */
+    public String getLogonWarningBanner() {
+        return logonWarningBanner;
     }
 }

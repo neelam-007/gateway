@@ -11,12 +11,14 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -57,6 +59,7 @@ public class AdminLoginImpl
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private ServerConfig serverConfig;
+    private ClusterPropertyManager clusterPropertyManager;
 
     public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager) {
         this.defaultKey = defaultKey;
@@ -103,7 +106,7 @@ public class AdminLoginImpl
                 cookie = sessionManager.createSession(user, null);
             }
 
-            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
+            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
@@ -176,7 +179,7 @@ public class AdminLoginImpl
                 cookie = sessionManager.createSession(user, null);
             }
 
-            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
+            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
@@ -235,7 +238,7 @@ public class AdminLoginImpl
             throw new AuthenticationException("Authentication failed");
         }
 
-        return new AdminLoginResult(user, sessionId, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
+        return new AdminLoginResult(user, sessionId, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
     }
 
     @Override
@@ -357,6 +360,10 @@ public class AdminLoginImpl
         this.serverConfig = serverConfig;
     }
 
+    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
+        this.clusterPropertyManager = clusterPropertyManager;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();
@@ -385,4 +392,16 @@ public class AdminLoginImpl
         }
     }
 
+    private String getLogonWarningBanner() {
+        String prop;
+        try {
+            prop = clusterPropertyManager.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER);
+
+            // If the banner prop value just contains whitespace, then set the prop as null.
+            if (prop != null && prop.trim().isEmpty()) prop = null;
+        } catch (FindException e) {
+            prop = null;
+        }
+        return prop;
+    }
 }

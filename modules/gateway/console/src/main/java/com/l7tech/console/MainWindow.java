@@ -3133,27 +3133,22 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private void showWarningBanner() {
         //determine if the warning banner is configured to be displayed
-        ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
-        try {
-            ClusterProperty clusterProp = csa.findPropertyByName(WARNING_BANNER_PROP_NAME);
-            if (clusterProp != null && !clusterProp.getValue().equalsIgnoreCase("")) {
-                //warning banner is configured, need to display warning banner
-                final Frame parent = TopComponents.getInstance().getTopParent();
-                final WarningBanner warningBanner = new WarningBanner(parent, clusterProp.getValue());
-                warningBanner.pack();
-                Utilities.centerOnScreen(warningBanner);
-                DialogDisplayer.suppressSheetDisplay(warningBanner);
-                DialogDisplayer.display(warningBanner, parent, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!warningBanner.isOkClicked() && !warningBanner.isCancelClicked()) {
-                            TopComponents.getInstance().disconnectFromGateway();
-                        }
+        String warningBannerMessage = TopComponents.getInstance().getLogonWarningBanner();
+        if (warningBannerMessage != null && !warningBannerMessage.trim().isEmpty()) {
+            //warning banner is configured, need to display warning banner
+            final Frame parent = TopComponents.getInstance().getTopParent();
+            final WarningBanner warningBanner = new WarningBanner(parent, warningBannerMessage);
+            warningBanner.pack();
+            Utilities.centerOnScreen(warningBanner);
+            DialogDisplayer.suppressSheetDisplay(warningBanner);
+            DialogDisplayer.display(warningBanner, parent, new Runnable() {
+                @Override
+                public void run() {
+                    if (!warningBanner.isOkClicked() && !warningBanner.isCancelClicked()) {
+                        TopComponents.getInstance().disconnectFromGateway();
                     }
-                });
-            }
-        } catch (FindException fe) {
-            //no cluster property found, so we'll just ignore it
+                }
+            });
         }
     }
 

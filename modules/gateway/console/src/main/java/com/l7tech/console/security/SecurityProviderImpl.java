@@ -124,6 +124,7 @@ public class SecurityProviderImpl extends SecurityProvider
             User user = result.getUser();
             String sessionCookie = result.getSessionCookie();
             setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
+            TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
         }
         catch(RemoteAccessException e) {
             Throwable cause = ExceptionUtils.unnestToRoot(e);
@@ -184,9 +185,8 @@ public class SecurityProviderImpl extends SecurityProvider
 
             User user = result.getUser();
             String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
-
             setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
-
+            TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
         } catch (AuthenticationException e) {

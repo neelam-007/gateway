@@ -36,6 +36,7 @@ public class TopComponents {
     private static final TopComponents instance = new TopComponents();
     private boolean connectionLost = false;
     private URI ssgURL;
+    private String logonWarningBanner;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -67,6 +68,14 @@ public class TopComponents {
 
     public void setSsgURL(URI url) {
         ssgURL = url;
+    }
+
+    public String getLogonWarningBanner() {
+        return logonWarningBanner;
+    }
+
+    public void setLogonWarningBanner(String logonWarningBanner) {
+        this.logonWarningBanner = logonWarningBanner;
     }
 
     public void setServiceUrl(String url) {

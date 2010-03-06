@@ -173,6 +173,7 @@
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="adminSessionManager" ref="adminSessionManager"/>
         <property name="serverConfig" ref="serverConfig"/>
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
     </bean>
 
     <!-- identity admin servant -->
