@@ -6,6 +6,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
@@ -21,11 +22,7 @@ import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.*;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -488,10 +485,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
             // todo: check if we need to support HTTP 1.1.
 
-            final MimeKnob reqMime = requestMessage.getMimeKnob();
+            final MimeKnob reqMime = requestMessage.getKnob(MimeKnob.class);
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-            final long contentLength = reqMime.getContentLength();
+            final long contentLength = reqMime == null ? 0 : reqMime.getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 
@@ -522,7 +519,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // dont add content-type for get and deletes
             if (method == HttpMethod.PUT || method == HttpMethod.POST) {
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
+                final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
             }
             if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
                 routedRequestParams.setUseExpectContinue(true);
@@ -536,7 +534,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             GZipOutput resgz = null;
             if (assertion.isGzipEncodeDownstream()) {
-                InputStream out = reqMime.getEntireMessageBodyAsInputStream();
+                InputStream out = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
                 resgz = clearToGZipInputStream(out);
                 routedRequestParams.addExtraHeader(new GenericHttpHeader("content-encoding", "gzip"));
                 routedRequestParams.setContentLength(resgz.zippedContentLength);
@@ -562,7 +560,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                             @Override
                             public InputStream getInputStream() {
                                 try {
-                                    InputStream out = reqMime.getEntireMessageBodyAsInputStream();
+                                    InputStream out = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
                                     if (assertion.isGzipEncodeDownstream()) {
                                         out = zippedInputStream;
                                     }
@@ -578,7 +576,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                         if (assertion.isGzipEncodeDownstream()) {
                             routedRequest.setInputStream(zippedInputStream);
                         } else {
-                            InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                            InputStream bodyInputStream = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
                             routedRequest.setInputStream(bodyInputStream);
                         }
                     }
