@@ -52,9 +52,9 @@ public final class AdminLoginResult implements Serializable {
     }
 
     /**
-     * Get the warning banner defined by the cluster property logon.warningBanner.
+     * Get the warning banner to be displayed to the user.
      *
-     * @return the warning banner
+     * @return the warning banner or null if there is none
      */
     public String getLogonWarningBanner() {
         return logonWarningBanner;

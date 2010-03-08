@@ -11,14 +11,12 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -59,7 +57,6 @@ public class AdminLoginImpl
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private ServerConfig serverConfig;
-    private ClusterPropertyManager clusterPropertyManager;
 
     public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager) {
         this.defaultKey = defaultKey;
@@ -360,10 +357,6 @@ public class AdminLoginImpl
         this.serverConfig = serverConfig;
     }
 
-    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
-        this.clusterPropertyManager = clusterPropertyManager;
-    }
-
     @Override
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();
@@ -393,15 +386,11 @@ public class AdminLoginImpl
     }
 
     private String getLogonWarningBanner() {
-        String prop;
-        try {
-            prop = clusterPropertyManager.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER);
+        String prop = serverConfig.getProperty( ServerConfig.PARAM_LOGON_WARNING_BANNER );
 
-            // If the banner prop value just contains whitespace, then set the prop as null.
-            if (prop != null && prop.trim().isEmpty()) prop = null;
-        } catch (FindException e) {
-            prop = null;
-        }
+        // If the banner prop value just contains whitespace, then set the prop as null.
+        if (prop != null && prop.trim().isEmpty()) prop = null;
+
         return prop;
     }
 }
