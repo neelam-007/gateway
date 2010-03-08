@@ -5,12 +5,17 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
+import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 
 import java.util.Set;
 import java.util.EnumSet;
@@ -200,7 +205,33 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
+        meta.put(POLICY_VALIDATOR_CLASSNAME, OversizedTextAssertion.Validator.class.getName());
         return meta;
     }
 
+    public static class Validator implements AssertionValidator {
+        private final OversizedTextAssertion assertion;
+        private final String warningStr;
+
+        public Validator(final OversizedTextAssertion assertion) {
+            this.assertion = assertion;
+            if (assertion.isLimitTextChars() ||
+                assertion.isLimitAttrChars() ||
+                assertion.isLimitAttrNameChars() ||
+                assertion.isLimitNestingDepth() ||
+                assertion.isRequireValidSoapEnvelope() ||
+                assertion.getMaxPayloadElements() > 0) {
+                warningStr = null;
+            } else {
+                warningStr = "No Document Structure Threat Protections have been specified";
+            }
+        }
+
+        @Override
+        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+            if ( warningStr != null ) {
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningStr, null));
+            }
+        }
+    }
 }
