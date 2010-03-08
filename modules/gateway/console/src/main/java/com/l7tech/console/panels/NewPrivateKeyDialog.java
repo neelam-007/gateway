@@ -10,7 +10,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -229,6 +228,7 @@ public class  NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
+        // Some EC curve names commented out because they aren't supported by RSA BSAFE Crypto-J as of version 4.1.0.1
         final KeyType dfltk;
         Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
                 rsasize(512, 20, 1),
@@ -237,27 +237,27 @@ public class  NewPrivateKeyDialog extends JDialog {
                 rsasize(1280, 60 * 7, 10),
         dfltk = rsasize(2048, 60 * 20, 17),
                 curvename("sect163k1"),
-                curvename("sect163r1"),
+                //curvename("sect163r1"),
                 curvename("sect163r2"),
-                curvename("sect193r1"),
-                curvename("sect193r2"),
+                //curvename("sect193r1"),
+                //curvename("sect193r2"),
                 curvename("sect233k1"),
                 curvename("sect233r1"),
-                curvename("sect239k1"),
+                //curvename("sect239k1"),
                 curvename("sect283k1"),
                 curvename("sect283r1"),
                 curvename("sect409k1"),
                 curvename("sect409r1"),
                 curvename("sect571k1"),
                 curvename("sect571r1"),
-                curvename("secp160k1"),
-                curvename("secp160r1"),
-                curvename("secp160r2"),
-                curvename("secp192k1"),
+                //curvename("secp160k1"),
+                //curvename("secp160r1"),
+                //curvename("secp160r2"),
+                //curvename("secp192k1"),
                 curvename("secp192r1"),
-                curvename("secp224k1"),
+                //curvename("secp224k1"),
                 curvename("secp224r1"),
-                curvename("secp256k1"),
+                //curvename("secp256k1"),
                 curvename("secp256r1"),
                 curvename("secp384r1"),
                 curvename("secp521r1"),
