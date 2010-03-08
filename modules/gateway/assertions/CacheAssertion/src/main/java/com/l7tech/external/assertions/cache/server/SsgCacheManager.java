@@ -8,6 +8,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Stopping;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEvent;
@@ -16,6 +17,7 @@ import org.springframework.context.ApplicationListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +31,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SsgCacheManager {
     protected static final Logger logger = Logger.getLogger(SsgCacheManager.class.getName());
     private static final AtomicReference<SsgCacheManager> INSTANCE = new AtomicReference<SsgCacheManager>();
+    private static final int CLEANUP_DELAY = 30000; // 30s
+    private static final long CLEANUP_PERIOD = 900000; // 15min
+
 
     private final StashManagerFactory stashManagerFactory;
     private final ClusterPropertyManager cpManager;
@@ -39,6 +44,19 @@ public class SsgCacheManager {
         this.stashManagerFactory = stashManagerFactory;
         this.cpManager = cpManager;
         appEventProxy.addApplicationListener(makeListener());
+        Background.scheduleRepeated( new TimerTask() {
+            @Override
+            public void run() {
+                long cleanupStart = System.currentTimeMillis();
+                logger.log(Level.FINE, "Cache cleanup started.");
+                for(SsgCache cache : cachesByName.values()) {
+                    cache.removeExpired();
+                    cache.cleanup();
+
+                }
+                logger.log(Level.FINE, "Cache cleanup completed in " + (System.currentTimeMillis() - cleanupStart) / 1000 + " seconds");
+            }
+        }, CLEANUP_DELAY, CLEANUP_PERIOD);
     }
 
     private ApplicationListener makeListener() {
@@ -151,11 +169,9 @@ public class SsgCacheManager {
      */
     private void clearAllCaches() {
         Collection<SsgCache> caches = cachesByName.values();
+        cachesByName.clear();
         for(SsgCache cache : caches) {
-            cachesByName.remove(cache.getName(), cache);
-        }
-        for(SsgCache cache : caches) {
-            cache.close();
+            cache.clear();
         }
         logger.log(Level.FINE, "SSG response caches cleared.");
     }
