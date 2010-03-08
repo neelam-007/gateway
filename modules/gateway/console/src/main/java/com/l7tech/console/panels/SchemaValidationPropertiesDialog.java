@@ -971,9 +971,21 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return null;
         }
 
-        // Get Schema Admin
-        ServiceAdminPublic serviceAdminPublic;
-        Registry reg = Registry.getDefault();
+        //validate the URL
+        try {
+            new URL(urlstr);
+        } catch (MalformedURLException e) {
+            final String errorMsg = urlstr + " " + resources.getString("error.badurl");
+            if (reportErrorEnabled) {
+                displayError(errorMsg, null);
+            }
+            log.log(Level.FINE, errorMsg, e);
+            return null;
+
+        }
+
+        final ServiceAdminPublic serviceAdminPublic;
+        final Registry reg = Registry.getDefault();
         if (reg == null || reg.getServiceManager() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
         } else {
@@ -984,8 +996,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         try {
             schemaXml = serviceAdminPublic.resolveWsdlTarget(urlstr);
         } catch (IOException e) {
-            if (reportErrorEnabled) displayError(urlstr + " " + resources.getString("error.badurl"), null);
-            log.log(Level.FINE, "malformed url", e);
+            //this is likely to be a GenericHttpException
+            final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
+            if (reportErrorEnabled) {
+                displayError(errorMsg, "Errors downloading file");
+            }
+            log.log(Level.FINE, errorMsg, e);
             return null;
         }
 
