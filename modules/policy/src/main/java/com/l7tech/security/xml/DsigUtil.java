@@ -134,13 +134,13 @@ public class DsigUtil {
      * @param senderSigningKey  the private key that is to be used to create the signature.  Required.
      * @param messageDigestAlgorithm  the message digest algorithm, ie "SHA-1".  Required.
      * @param allowDigestFallback if true, and no signature method is available with the specified key type and digest, we will fall back to SHA-1 as the digest if possible.
-     *                            if false, we will fail and return null rather than falling back to SHA-1.
+     *                            if false, we will fail and throw SignatureException rather than falling back to SHA-1.
      * @return an instance of SupportedSignatureMethods encoding the signature method to use.  Never null.
      * @throws SignatureException if the combination of private key type and message digest is not supported.
      */
     public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm, boolean allowDigestFallback) throws SignatureException {
         if (messageDigestAlgorithm == null)
-            messageDigestAlgorithm = getDefaultMessageDigest("EC".equals(senderSigningKey.getAlgorithm()));
+            messageDigestAlgorithm = getDefaultMessageDigest(senderSigningKey.getAlgorithm());
 
         if (messageDigestAlgorithm != null) {
             // Use canonical name of digest algorithm (ie, "SHA-384" rather than "SHA384")
@@ -403,11 +403,12 @@ public class DsigUtil {
      * @throws SignatureException if no signature method is known for the supplied private key type.
      */
     public static SupportedSignatureMethods getSignatureMethod(final PrivateKey signingKey) throws SignatureException {
-        final boolean usingEcc = signingKey instanceof ECPrivateKey || "EC".equals(signingKey.getAlgorithm());
-        final String md = getDefaultMessageDigest(usingEcc);
+        final String keyAlg = signingKey.getAlgorithm();
+        final boolean usingEcc = signingKey instanceof ECPrivateKey || "EC".equals(keyAlg);
+        final String md = getDefaultMessageDigest(usingEcc ? "EC" : keyAlg);
 
         SupportedSignatureMethods signaturemethod;
-        if (signingKey instanceof RSAPrivateKey || "RSA".equals(signingKey.getAlgorithm())) {
+        if (signingKey instanceof RSAPrivateKey || "RSA".equals(keyAlg)) {
             if ("SHA-256".equals(md))
                 signaturemethod = SupportedSignatureMethods.RSA_SHA256;
             else
@@ -441,10 +442,12 @@ public class DsigUtil {
      * @return the default digest algorithm, defaulting to "SHA-1".  Never null.
      */
     public static String getDefaultMessageDigest() {
-        return getDefaultMessageDigest(false);
+        return getDefaultMessageDigest("RSA");
     }
 
-    static String getDefaultMessageDigest(boolean ellipticCurve) {
-        return SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", ellipticCurve ? "SHA-384" : "SHA-1");
+    static String getDefaultMessageDigest(String keyAlg) {
+        if ("DSA".equals(keyAlg))
+            return "SHA-1"; // Currently the only supported DSA signature method is SHA1withDSA, so it's always the default digest for this key type
+        return SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", "EC".equals(keyAlg) ? "SHA-384" : "SHA-1");
     }
 }

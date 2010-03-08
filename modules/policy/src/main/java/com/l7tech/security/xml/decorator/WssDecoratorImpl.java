@@ -1164,7 +1164,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         final SupportedSignatureMethods signaturemethod;
         try {
-            signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
+            signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, false);
         } catch (SignatureException e) {
             throw new DecoratorException("Private Key type not supported " + senderSigningKey.getClass().getName(), e);
         }

@@ -4,9 +4,8 @@
 package com.l7tech.security.xml.decorator;
 
 import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.xml.DsigUtil;
+import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
@@ -715,7 +714,7 @@ public class DecorationRequirements {
     /**
      * Gets the signature message digest string (i.e. SHA-1, SHA-256, etc).
      *
-     * @return message digest value
+     * @return message digest value, or null if the decorator is being allowed to select a default.
      */
     public String getSignatureMessageDigest() {
         return signatureMessageDigest;
@@ -737,7 +736,7 @@ public class DecorationRequirements {
     /**
      * Sets the message digest algorithm value intened for signing (i.e. SHA-1, SHA-256, etc).
      *
-     * @param signatureMessageDigest the message digest algorithm to set
+     * @param signatureMessageDigest the message digest algorithm to set, or null to allow the decorator to select a default.
      */
     public void setSignatureMessageDigest(String signatureMessageDigest) {
         this.signatureMessageDigest = signatureMessageDigest;
@@ -806,6 +805,6 @@ public class DecorationRequirements {
     private boolean useDerivedKeys = false;
     private boolean suppressSamlStrTransform = false;
     private boolean protectTokens = false;
-    private String signatureMessageDigest = DsigUtil.getDefaultMessageDigest();
+    private String signatureMessageDigest = null;
     private PreferredSigningTokenType preferredSigningTokenType = null;
 }
