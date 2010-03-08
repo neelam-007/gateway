@@ -58,6 +58,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final Message request = context.getRequest();
 
         final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
+        if (mimeKnob == null) {
+            // Uninitialized request
+            _auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+            return AssertionStatus.BAD_REQUEST;
+        }
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
         try {
