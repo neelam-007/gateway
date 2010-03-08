@@ -82,12 +82,28 @@ public class HexUtils {
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
+    /**
+     * Encode the binary data as base64. The encoded base64 String returned WILL be formatted with a CRLF every 76 bytes
+     * <p/>
+     * If this is not required, called encodeBase64(binaryData, true) instead.
+     *
+     * @param binaryData binary data to encode as base64
+     * @return String base64 encoding of the supplied binary data
+     */
     public static String encodeBase64(byte[] binaryData) {
         return encodeBase64(binaryData, false);
     }
 
-    public static String encodeBase64(byte[] binaryData, boolean stripWhitespace) {
-        return decodeUtf8(Base64.encodeBase64(binaryData, !stripWhitespace)).trim();
+    /**
+     * Encode the binary data as base64
+     *
+     * @param binaryData   binary data to encode as base64
+     * @param isDoNotChunk if false, the base64 encoded string will contain a CRLF every 76 bytes. If true, it will not
+     *                     contain this formatting.
+     * @return String base64 encoding of the supplied binary data
+     */
+    public static String encodeBase64(byte[] binaryData, boolean isDoNotChunk) {
+        return decodeUtf8(Base64.encodeBase64(binaryData, !isDoNotChunk)).trim();
     }
 
     public static byte[] decodeBase64(String s) {
