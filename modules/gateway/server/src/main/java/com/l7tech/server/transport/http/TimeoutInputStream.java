@@ -71,6 +71,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @return the byte, in the usual manner.
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public int read() throws IOException {
         enterBlocking();
         try {
@@ -88,6 +89,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @return the number of bytes, etc
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public int read(byte[] b) throws IOException {
         enterBlocking();
         try {
@@ -107,6 +109,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @return the number of bytes, etc
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         enterBlocking();
         try {
@@ -127,6 +130,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @throws IOException if an underlying error occurs or if there is a timeout
      * @throws UnsupportedOperationException if the wrapped stream is not a ServletInputStream
      */
+    @Override
     public int readLine(byte[] b, int off, int len) throws IOException {
         enterBlocking();
         try {
@@ -147,6 +151,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @return the number of bytes skipped
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public long skip(long n) throws IOException {
         enterBlocking();
         try {
@@ -163,6 +168,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @return the number of bytes
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public int available() throws IOException {
         checkTimeout();
         return in.available();
@@ -173,6 +179,7 @@ public class TimeoutInputStream extends ServletInputStream {
      *
      * @throws IOException if an underlying error occurs
      */
+    @Override
     public void close() throws IOException {
         if(!bin.isTimedOut()){
             in.close();
@@ -183,6 +190,7 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      *
      */
+    @Override
     public synchronized void mark(int readlimit) {
         in.mark(readlimit);
     }
@@ -192,6 +200,7 @@ public class TimeoutInputStream extends ServletInputStream {
      *
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
+    @Override
     public synchronized void reset() throws IOException {
         checkTimeout();
         in.reset();
@@ -200,6 +209,7 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      *
      */
+    @Override
     public boolean markSupported() {
         return in.markSupported();
     }
@@ -292,22 +302,24 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      * Set of currently in use TimeoutInputStream.BlockerInfos
      */
-    private static final Queue<BlockerInfo> newBlockerQueue = new ConcurrentLinkedQueue();
+    private static final Queue<BlockerInfo> newBlockerQueue = new ConcurrentLinkedQueue<BlockerInfo>();
 
     // Create and start the timer daemon
-    private static Object timerLock = new Object();
+    private static final Object timerLock = new Object();
     private static Exception diedWithException = null;
     private static Thread timer = null;
     static {
+        ThreadGroup group = getThreadGroup();
+
         synchronized(timerLock) {
-            timer = new Thread(new Interrupter());
+            timer = new Thread(group, new Interrupter());
             timer.setDaemon(true);
             timer.setName("InputTimeoutThread");
             timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
             timer.start();
         }
 
-        Thread timerWatcher = new Thread(new InterrupterWatcher());
+        Thread timerWatcher = new Thread(group, new InterrupterWatcher());
         timerWatcher.setDaemon(true);
         timerWatcher.setName("InputTimeoutThreadWatchdog");
         timerWatcher.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
@@ -325,7 +337,7 @@ public class TimeoutInputStream extends ServletInputStream {
     private BlockerInfo bin;
 
     /**
-     * reentrant to allow for read calling another read method
+     * re-entrant to allow for read calling another read method
      */
     private ReentrantLock lock;
 
@@ -358,11 +370,32 @@ public class TimeoutInputStream extends ServletInputStream {
     }
 
     /**
+     *
+     */
+    private static ThreadGroup getThreadGroup() {
+        ThreadGroup group = Thread.currentThread().getThreadGroup();
+
+        if ( group != null ) {
+            ThreadGroup currentGroup = group;
+            while ( currentGroup != null ) {
+                if ( "system".equals( currentGroup.getName() ) ) {
+                    group = currentGroup;
+                    break;
+                } else {
+                    currentGroup = currentGroup.getParent();
+                }
+            }
+        }
+
+        return group;
+    }
+
+    /**
      * Data for the blocker
      */
     private static class BlockerInfo {
         // lock for data sync
-        private Object lock = new Object();
+        private final Object lock = new Object();
 
         // thread shared data
         private boolean cleared;
@@ -424,7 +457,7 @@ public class TimeoutInputStream extends ServletInputStream {
         void enter() {
             long time = System.currentTimeMillis();
             synchronized (lock) {
-                if(cleared==false) throw new IllegalStateException("Reentrance or multi-threading problem!");
+                if(!cleared) throw new IllegalStateException("Reentrance or multi-threading problem!");
                 cleared = false;
                 operationStartTime = time;
             }
@@ -467,7 +500,7 @@ public class TimeoutInputStream extends ServletInputStream {
         }
 
         boolean readTimeout(long timeNow) {
-            boolean timeout = false;
+            boolean timeout;
             synchronized(lock) {
                 timeout = !cleared && (timeNow-operationStartTime)>readTimeout;
             }
@@ -504,13 +537,15 @@ public class TimeoutInputStream extends ServletInputStream {
      * Runnable that restarts the other runnable if it dies ...
      */
     private static class InterrupterWatcher implements Runnable {
+        @SuppressWarnings({ "InfiniteLoopStatement" })
+        @Override
         public void run() {
             try {
                 while (true) {
                     Thread.sleep(50);
 
-                    Thread timerThread = null;
-                    Exception exception = null;
+                    Thread timerThread;
+                    Exception exception;
                     synchronized(timerLock) {
                         timerThread = timer;
                         exception = diedWithException;
@@ -544,7 +579,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * Runnable for checking on currently blocked IO.
      */
     private static class Interrupter implements Runnable {
-        private Set currentBlockers = new HashSet(100);
+        private Set<BlockerInfo> currentBlockers = new HashSet<BlockerInfo>(100);
 
         private void interrupt(BlockerInfo bi, boolean justFlag) {
             if(!justFlag) {
@@ -554,11 +589,13 @@ public class TimeoutInputStream extends ServletInputStream {
             bi.markTimedOut(); // mark timeOut after closing
         }
 
+        @SuppressWarnings({ "InfiniteLoopStatement" })
+        @Override
         public void run() {
             logger.info("InputStream timeout thread starting.");
             try {
                 boolean processedBlockers = false;
-                for(;;) {
+                while(true) {
                     if (!processedBlockers)
                         Thread.sleep(100);
                     else
@@ -566,7 +603,7 @@ public class TimeoutInputStream extends ServletInputStream {
                     processedBlockers = false;
 
                     // process new arrivals
-                    BlockerInfo newBlocker = null;
+                    BlockerInfo newBlocker;
                     while ((newBlocker = newBlockerQueue.poll()) != null ) {
                         if (!newBlocker.isReadComplete()) {
                             currentBlockers.add(newBlocker);
