@@ -1,27 +1,23 @@
 package com.l7tech.external.assertions.wsaddressing.server;
 
-import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import javax.xml.namespace.QName;
-
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.DomElementCursor;
-import com.l7tech.common.io.XmlUtil;
-
+import com.l7tech.xml.soap.SoapUtil;
+import org.junit.Assert;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.junit.Test;
-import org.junit.Assert;
+
+import javax.xml.namespace.QName;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Test the WsAddressingAssertion.
@@ -194,7 +190,28 @@ public class ServerWsAddressingAssertionTest {
         Assert.assertEquals("ReplyTo", "l", varMap.get("PreFix.replyto"));
         Assert.assertEquals("From", "i", varMap.get("PreFix.from"));
         Assert.assertEquals("Namespace", ADDRESSING_NAMESPACE, varMap.get("PreFix.namespace"));
-   }
+    }
+
+    @Test
+    @BugNumber(8318)
+    public void testWsaFrom() throws Exception {
+        // init
+        WsAddressingAssertion wsaa = new WsAddressingAssertion();
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+
+        // build test signed elements
+        Document testDoc = XmlUtil.stringToDocument(BUG8318_MESSAGE);
+
+        // eval
+        Map<QName,String> properties = new HashMap<QName,String>();
+        List<Element> elements = new ArrayList<Element>();
+        swsaa.populateAddressingFromMessage(new DomElementCursor(testDoc), properties, elements);
+
+        // validate
+        Assert.assertEquals("Addressing:From", "http://JBoss-Client-From", properties.get(new QName(ADDRESSING_NAMESPACE,"From")));
+        Assert.assertEquals("Addressing:MessageID", "34197a35-581c-480e-8c64-beba09d5e493", properties.get(new QName(ADDRESSING_NAMESPACE,"MessageID")));
+        Assert.assertEquals("Addressing elements", 2, elements.size());
+    }
 
     private static final String MESSAGE =
             "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
@@ -219,4 +236,32 @@ public class ServerWsAddressingAssertionTest {
             "        </tns:listProducts>\n" +
             "    </soapenv:Body>\n" +
             "</soapenv:Envelope>";
+
+    private static final String BUG8318_MESSAGE =
+            "<soapenv:Envelope xmlns:arc=\"http://soa.wgrintra.net/ch/architecture\" xmlns:pin=\"http://soa.wgrintra.net/ch/architecture/PingWsTest_2_0\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                    "<soapenv:Header>\n" +
+                    "<wsa:MessageID xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">34197a35-581c-480e-8c64-beba09d5e493</wsa:MessageID>\n" +
+                    "<wsa:From xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">\n" +
+                    "<wsa:Address>http://JBoss-Client-From</wsa:Address>\n" +
+                    "</wsa:From>\n" +
+                    "<wsse:Security soapenv:mustUnderstand=\"1\" xmlns:soapenv=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:soapenv1=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+                    "<wsu:Timestamp wsu:Id=\"Timestamp-7720611\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">\n" +
+                    "<wsu:Created>2010-01-05T15:11:14.948Z</wsu:Created>\n" +
+                    "<wsu:Expires>2010-01-05T15:12:14.948Z</wsu:Expires>\n" +
+                    "</wsu:Timestamp>\n" +
+                    "<wsse:UsernameToken>\n" +
+                    "<wsse:Username>2467550</wsse:Username>\n" +
+                    "\n" +
+                    "</wsse:UsernameToken>\n" +
+                    "</wsse:Security>\n" +
+                    "</soapenv:Header>\n" +
+                    "<soapenv:Body>\n" +
+                    "<pin:test_ping>\n" +
+                    "<pin:uecpirp1>\n" +
+                    "<pin:gen_dt_char>11</pin:gen_dt_char>\n" +
+                    "<pin:gen_dt_decimal_11_2>12</pin:gen_dt_decimal_11_2>\n" +
+                    "</pin:uecpirp1>\n" +
+                    "</pin:test_ping>\n" +
+                    "</soapenv:Body>\n" +
+                    "</soapenv:Envelope>";
 }

@@ -160,10 +160,12 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                             QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
 
                             if ( !addressingProperties.containsKey(name) ) {
-                                if ( WSA_FAULTTO.equals(ec.getLocalName()) || WSA_REPLYTO.equals(ec.getLocalName()) ) {
+                                if ( WSA_FAULTTO.equals(ec.getLocalName()) || WSA_REPLYTO.equals(ec.getLocalName()) || WSA_FROM.equals(ec.getLocalName()) ) {
                                     // process the address child element
                                     ec.pushPosition();
                                     if (ec.moveToFirstChildElement(WSA_ADDRESS, ec.getNamespaceUri()) ) {
+                                        addressingProperties.put(name, ec.getTextValue());
+                                    } else if (WSA_FROM.equals(ec.getLocalName())) {
                                         addressingProperties.put(name, ec.getTextValue());
                                     }
                                     ec.popPosition();
