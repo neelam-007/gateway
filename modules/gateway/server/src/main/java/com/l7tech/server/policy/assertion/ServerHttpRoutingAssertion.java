@@ -525,7 +525,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
                 routedRequestParams.setUseExpectContinue(true);
             }
-            if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpNoKeepAlive")) || !assertion.isUseKeepAlives()) {
+            if ( !assertion.isUseKeepAlives()) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
             if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
