@@ -1,7 +1,7 @@
 package com.l7tech.gateway.api.impl;
 
 import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.gateway.api.PolicyAccessor;
+import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.Resource;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -43,11 +43,11 @@ public class PolicyImportContext extends ManagedObject {
 
     @XmlElementWrapper(name="PolicyReferenceInstructions")
     @XmlElement(name="PolicyReferenceInstruction")
-    public List<PolicyAccessor.PolicyReferenceInstruction> getPolicyReferenceInstructions() {
+    public List<PolicyReferenceInstruction> getPolicyReferenceInstructions() {
         return policyReferenceInstructions;
     }
 
-    public void setPolicyReferenceInstructions( final List<PolicyAccessor.PolicyReferenceInstruction> policyReferenceInstructions ) {
+    public void setPolicyReferenceInstructions( final List<PolicyReferenceInstruction> policyReferenceInstructions ) {
         this.policyReferenceInstructions = policyReferenceInstructions;
     }
 
@@ -68,6 +68,6 @@ public class PolicyImportContext extends ManagedObject {
 
     private Map<String,Object> properties;
     private Resource resource;
-    private List<PolicyAccessor.PolicyReferenceInstruction> policyReferenceInstructions;
+    private List<PolicyReferenceInstruction> policyReferenceInstructions;
 
 }

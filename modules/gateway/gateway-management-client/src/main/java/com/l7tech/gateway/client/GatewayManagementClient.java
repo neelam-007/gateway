@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ManagementRuntimeException;
 import com.l7tech.gateway.api.PolicyAccessor;
 import com.l7tech.gateway.api.PolicyImportResult;
+import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ClassUtils;
@@ -485,6 +486,17 @@ public class GatewayManagementClient {
             return typeClass;
         }
 
+        protected <AT extends AccessibleObject> PolicyAccessor<AT> getPolicyAccessor( final Client client,
+                                                                                      final Class<AT> objectType ) throws CommandException {
+            final Accessor<AT> accessor = client.getAccessor( objectType );
+
+            if ( !(accessor instanceof PolicyAccessor) ) {
+                throw new CommandException("Command not applicable for type '"+arguments.type+"'");
+            }
+
+            return (PolicyAccessor<AT>) accessor;
+        }
+
         protected final Map<String,Object> getSelectors() throws CommandException {
             final Map<String,Object> selectors = new HashMap<String,Object>();
 
@@ -824,7 +836,7 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getAccessibleObjectType() );
+            final PolicyAccessor<?> accessor = getPolicyAccessor( client, getAccessibleObjectType() );
 
             try {
                 final String policy = accessor.exportPolicy( getId() );
@@ -849,9 +861,9 @@ public class GatewayManagementClient {
         @Override
         public void run() throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<?> accessor = (PolicyAccessor<?>) client.getAccessor( getAccessibleObjectType() );
+            final PolicyAccessor<?> policyAccessor = getPolicyAccessor( client, getAccessibleObjectType() );
 
-            final List<PolicyAccessor.PolicyReferenceInstruction> instructions = new ArrayList<PolicyAccessor.PolicyReferenceInstruction>();
+            final List<PolicyReferenceInstruction> instructions = new ArrayList<PolicyReferenceInstruction>();
 
             // Build import instructions
             final List<String> instructionArguments = getExtraArguments();
@@ -865,22 +877,22 @@ public class GatewayManagementClient {
                 final String importType = getArg( instructionArguments, ++i );
                 final String importId = getArg( instructionArguments, ++i );
 
-                final PolicyAccessor.PolicyReferenceInstruction instruction = ManagedObjectFactory.createPolicyReferenceInstruction();
+                final PolicyReferenceInstruction instruction = ManagedObjectFactory.createPolicyReferenceInstruction();
                 instruction.setReferenceType( asExportType(importType) );
                 instruction.setReferenceId( importId );
 
                 if ( "accept".equals( importInstruction )) {
-                    instruction.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.IGNORE );
+                    instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.IGNORE );
                 } else if ( "remove".equals( importInstruction )) {
-                    instruction.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.DELETE );
+                    instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.DELETE );
                 } else if ( "rename".equals( importInstruction )) {
                     final String importName = getArg( instructionArguments, ++i );
-                    instruction.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.RENAME );
+                    instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.RENAME );
                     instruction.setMappedName( importName );
                     instructions.add( instruction );
                 } else if ( "replace".equals( importInstruction )) {
                     final String importReplaceId = getArg( instructionArguments, ++i );
-                    instruction.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.MAP );
+                    instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.MAP );
                     instruction.setMappedReferenceId( importReplaceId );
                     instructions.add( instruction );
                 } else {
@@ -894,7 +906,7 @@ public class GatewayManagementClient {
                     properties.put( "force", true );
                 }
 
-                final PolicyImportResult result = accessor.importPolicy( getId(), properties, readInputAsText(), instructions );
+                final PolicyImportResult result = policyAccessor.importPolicy( getId(), properties, readInputAsText(), instructions );
                 writeOutput( result );
             } catch ( Accessor.AccessorException ioe ) {
                 throw new CommandException( "Accessor error", ioe );
@@ -933,7 +945,7 @@ public class GatewayManagementClient {
 
         private <AO extends AccessibleObject> void doValidate( final Class<AO> type ) throws CommandException {
             final Client client = buildClient();
-            final PolicyAccessor<AO> accessor = (PolicyAccessor<AO>) client.getAccessor( type );
+            final PolicyAccessor<AO> accessor = getPolicyAccessor( client, type );
 
             try {
                 final PolicyValidationResult result = hasInput() ?

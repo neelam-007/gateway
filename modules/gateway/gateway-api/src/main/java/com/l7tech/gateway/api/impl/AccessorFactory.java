@@ -63,7 +63,9 @@ public class AccessorFactory {
     @Target(TYPE)
     public @interface AccessibleResource {
         public abstract String name();
-        public abstract Class<? extends Accessor> accessorType() default Accessor.class;
+        // avoids using class reference since in some deployments the client
+        // classes may not be available
+        public abstract String accessorClassname() default "com.l7tech.gateway.api.Accessor";
     }
 
     //- PRIVATE
@@ -72,8 +74,15 @@ public class AccessorFactory {
         return !Accessor.class.equals( getAccessor( accessibleObjectClass ) );
     }
 
+    @SuppressWarnings({ "unchecked" })
     private static Class<? extends Accessor> getAccessor( final Class<?> accessibleObjectClass ) {
         final AccessibleResource resource = accessibleObjectClass.getAnnotation( AccessibleResource.class );
-        return resource != null ? resource.accessorType() : Accessor.class;
+        try {
+            return resource != null ?
+                    (Class<? extends Accessor>) Class.forName( resource.accessorClassname() ) :
+                    Accessor.class;
+        } catch ( ClassNotFoundException e ) {
+            throw new ManagementRuntimeException("Error accessing accessor class '"+resource.accessorClassname()+"'.", e);
+        }
     }
 }

@@ -448,17 +448,17 @@ public class ManagedObjectTest {
         resource.setType( "policyexport" );
         resource.setContent( policyExport );
 
-        final List<PolicyAccessor.PolicyReferenceInstruction> instructions =
-                new ArrayList<PolicyAccessor.PolicyReferenceInstruction>();
-        final PolicyAccessor.PolicyReferenceInstruction instruction1 = ManagedObjectFactory.createPolicyReferenceInstruction();
+        final List<PolicyReferenceInstruction> instructions =
+                new ArrayList<PolicyReferenceInstruction>();
+        final PolicyReferenceInstruction instruction1 = ManagedObjectFactory.createPolicyReferenceInstruction();
         instruction1.setReferenceId( "1" );
         instruction1.setReferenceType( "com.l7tech.console.policy.exporter.IdProviderReference" );
-        instruction1.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.DELETE );
+        instruction1.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.DELETE );
         instructions.add( instruction1 );
-        final PolicyAccessor.PolicyReferenceInstruction instruction2 = ManagedObjectFactory.createPolicyReferenceInstruction();
+        final PolicyReferenceInstruction instruction2 = ManagedObjectFactory.createPolicyReferenceInstruction();
         instruction2.setReferenceId( "2:alias" );
         instruction2.setReferenceType( "com.l7tech.console.policy.exporter.PrivateKeyReference" );
-        instruction2.setPolicyReferenceInstructionType( PolicyAccessor.PolicyReferenceInstructionType.IGNORE );
+        instruction2.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.IGNORE );
         instructions.add( instruction2 );
 
         final PolicyImportContext policyImportContext = new PolicyImportContext();
@@ -483,11 +483,11 @@ public class ManagedObjectTest {
         assertNotNull("instructions[0]", roundTripped.getPolicyReferenceInstructions().get( 0 ));
         assertEquals("instructions[0] reference id", "1", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceId());
         assertEquals("instructions[0] reference type", "com.l7tech.console.policy.exporter.IdProviderReference", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceType());
-        assertEquals("instructions[0] instruction type", PolicyAccessor.PolicyReferenceInstructionType.DELETE, roundTripped.getPolicyReferenceInstructions().get( 0 ).getPolicyReferenceInstructionType());
+        assertEquals("instructions[0] instruction type", PolicyReferenceInstruction.PolicyReferenceInstructionType.DELETE, roundTripped.getPolicyReferenceInstructions().get( 0 ).getPolicyReferenceInstructionType());
         assertNotNull("instructions[1]", roundTripped.getPolicyReferenceInstructions().get( 0 ));
         assertEquals("instructions[1] reference id", "2:alias", roundTripped.getPolicyReferenceInstructions().get( 1 ).getReferenceId());
         assertEquals("instructions[1] reference type", "com.l7tech.console.policy.exporter.PrivateKeyReference", roundTripped.getPolicyReferenceInstructions().get( 1 ).getReferenceType());
-        assertEquals("instructions[1] instruction type", PolicyAccessor.PolicyReferenceInstructionType.IGNORE, roundTripped.getPolicyReferenceInstructions().get( 1 ).getPolicyReferenceInstructionType());
+        assertEquals("instructions[1] instruction type", PolicyReferenceInstruction.PolicyReferenceInstructionType.IGNORE, roundTripped.getPolicyReferenceInstructions().get( 1 ).getPolicyReferenceInstructionType());
     }
 
     @Test

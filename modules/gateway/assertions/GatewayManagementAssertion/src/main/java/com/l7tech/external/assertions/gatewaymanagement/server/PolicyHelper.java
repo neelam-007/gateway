@@ -2,10 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyAccessor;
 import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
+import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.Resource;
@@ -814,7 +814,7 @@ public class PolicyHelper {
 
             @Override
             public boolean resolveReferences( final ExternalReference[] unresolvedRefsArray ) {
-                final List<PolicyAccessor.PolicyReferenceInstruction> instructions = policyImportContext.getPolicyReferenceInstructions();
+                final List<PolicyReferenceInstruction> instructions = policyImportContext.getPolicyReferenceInstructions();
                 for ( final ExternalReference reference : unresolvedRefsArray ) {
                     final String type = reference.getRefType();
                     final String id = getId(reference);
@@ -825,7 +825,7 @@ public class PolicyHelper {
                     }
 
                     boolean handled = false;
-                    for ( final PolicyAccessor.PolicyReferenceInstruction instruction : instructions ) {
+                    for ( final PolicyReferenceInstruction instruction : instructions ) {
                         if ( type.equals( instruction.getReferenceType() ) && id.equals( instruction.getReferenceId() ) ) {
                             switch ( instruction.getPolicyReferenceInstructionType() ) {
                                 case DELETE:

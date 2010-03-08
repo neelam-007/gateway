@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.PolicyAccessor;
 import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
 import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.ResourceSet;

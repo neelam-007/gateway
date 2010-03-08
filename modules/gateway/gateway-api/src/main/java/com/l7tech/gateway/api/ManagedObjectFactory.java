@@ -239,8 +239,8 @@ public class ManagedObjectFactory {
      *
      * @return The new instance.
      */
-    public static PolicyAccessor.PolicyReferenceInstruction createPolicyReferenceInstruction() {
-        return new PolicyAccessor.PolicyReferenceInstruction();
+    public static PolicyReferenceInstruction createPolicyReferenceInstruction() {
+        return new PolicyReferenceInstruction();
     }
 
     /**
