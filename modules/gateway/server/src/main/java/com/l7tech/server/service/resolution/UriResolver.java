@@ -114,25 +114,21 @@ public class UriResolver extends ServiceResolver<String> {
         rwlock.readLock().lock();
         try {
             // since this only applies to http messages, we dont want to narrow down subset if msg is not http
-            boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
-            boolean notFtp = (request.getKnob(FtpRequestKnob.class) == null);
-            if (notHttp && notFtp) {
+            if (!appliesToMessage(request))
                 return Result.NOT_APPLICABLE;
-            } else {
-                String requestValue = getRequestValue(request);
-                // first look at repetitive failures
-                if (knownToFail.contains(requestValue)) { // why is this suspicious?
-                    auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
-                    return Result.NO_MATCH;
-                }
-                Result res = doResolve(requestValue, serviceSubset, uriToServiceMap, auditor);
-                if (res == Result.NO_MATCH) {
-                    // todo, this could be exploted as an attack. we should either not try to do this or
-                    // we should have a worker thread making sure this does not grow too big
-                    knownToFail.add(requestValue);
-                }
-                return res;
+            String requestValue = getRequestValue(request);
+            // first look at repetitive failures
+            if (knownToFail.contains(requestValue)) { // why is this suspicious?
+                auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
+                return Result.NO_MATCH;
             }
+            Result res = doResolve(requestValue, serviceSubset, uriToServiceMap, auditor);
+            if (res == Result.NO_MATCH) {
+                // todo, this could be exploted as an attack. we should either not try to do this or
+                // we should have a worker thread making sure this does not grow too big
+                knownToFail.add(requestValue);
+            }
+            return res;
         } finally {
             rwlock.readLock().unlock();
         }
@@ -252,9 +248,9 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     private String getRequestValue(Message request) throws ServiceResolutionException {
-        HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+        HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) {
-            FtpRequestKnob ftpReqKnob = (FtpRequestKnob)request.getKnob(FtpRequestKnob.class);
+            FtpRequestKnob ftpReqKnob = request.getKnob(FtpRequestKnob.class);
             if (ftpReqKnob == null) return null;
             String uri = ftpReqKnob.getRequestUri();
             if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
@@ -281,6 +277,18 @@ public class UriResolver extends ServiceResolver<String> {
                 throw new ServiceResolutionException( err );
             }
         }
+    }
+
+    /**
+     * Check whether the specified request is expected to provide a URI that can be resolved.
+     * <p/>
+     * This method returns true if the message has an HttpRequestKnob or an FtpRequestKnob.
+     *
+     * @param request the request to examine.  Required.
+     * @return true if the request arrived over a transport that provides a request URI.
+     */
+    public boolean appliesToMessage(Message request) {
+        return (request.getKnob(HttpRequestKnob.class) != null) || (request.getKnob(FtpRequestKnob.class) != null);
     }
 
     public static class URIResolutionParam {

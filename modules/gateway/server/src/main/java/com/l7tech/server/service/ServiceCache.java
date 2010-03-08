@@ -107,8 +107,9 @@ public class ServiceCache
     private boolean running = false;
 
     private Auditor auditor;
-    private boolean hasCatchAllService = false;
+    private Long nonSoapCatchAllServiceOid = null;
     private SoapOperationResolver soapOperationResolver;
+    private UriResolver uriResolver;
     private final PolicyCache policyCache;
     private final AtomicBoolean needXpathCompile = new AtomicBoolean(true);
 
@@ -140,7 +141,7 @@ public class ServiceCache
 
         activeResolvers = new ServiceResolver[] {
             new ServiceOidResolver(spring),
-            new UriResolver(spring),
+            uriResolver = new UriResolver(spring),
             new SoapActionResolver(spring),
             new UrnResolver(spring),
         };
@@ -414,37 +415,21 @@ public class ServiceCache
 
     /**
      * @param req the soap request to resolve the service from
-     * @param serviceOid the OID of the service to resolve to
+     * @param rl resolution listener to notify if a resolver is about to examine the Message contents, or null
      * @return the cached version of the service that this request resolve to. null if no match
-     * @throws ServiceResolutionException
-     */
-    public PublishedService resolve(Message req, ResolutionListener rl, Long serviceOid) throws ServiceResolutionException {
-        rwlock.readLock().lock();
-        try {
-            Collection<PublishedService> serviceSet;
-            PublishedService service = services.get( serviceOid );
-            if ( service == null ) {
-                serviceSet = Collections.emptySet();
-            } else {
-                serviceSet = Collections.singleton(service);
-            }
-
-            return resolve( req, rl, serviceSet );
-        } finally {
-            rwlock.readLock().unlock();
-        }
-    }
-
-    /**
-     * @param req the soap request to resolve the service from
-     * @return the cached version of the service that this request resolve to. null if no match
-     * @throws ServiceResolutionException
+     * @throws ServiceResolutionException on resolution error
      */
     public PublishedService resolve(Message req, ResolutionListener rl) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
             Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
-            return resolve( req, rl, serviceSet );
+            PublishedService result = resolve( req, rl, serviceSet );
+            if (result == null && nonSoapCatchAllServiceOid != null && uriResolver.appliesToMessage(req)) {
+                result = services.get(nonSoapCatchAllServiceOid);
+                if (result != null)
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_CATCHALL, result.getName(), result.getId());
+            }
+            return result;
         } finally {
             rwlock.readLock().unlock();
         }
@@ -895,15 +880,6 @@ public class ServiceCache
     }
 
 
-    public boolean hasCatchAllService() {
-        rwlock.readLock().lock();
-        try {
-            return hasCatchAllService;
-        } finally {
-            rwlock.readLock().unlock();
-        }
-    }
-
     /**
      * get all current per-node service stats.
      * @return a snapshot of the service statistics.
@@ -1073,13 +1049,13 @@ public class ServiceCache
     }
 
     private void updateCatchAll() {
-        hasCatchAllService = false;
         for (PublishedService p : services.values()) {
-            if ("/*".equals(p.getRoutingUri())) {
-                hasCatchAllService = true;
-                break;
+            if (!p.isDisabled() && !p.isSoap() && "/*".equals(p.getRoutingUri())) {
+                nonSoapCatchAllServiceOid = p.getOid();
+                return;
             }
         }
+        nonSoapCatchAllServiceOid = null;
     }
 
     /**

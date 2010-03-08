@@ -100,6 +100,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M SERVICE_CACHE_NOT_SOAP           = m(3211, Level.INFO, "Non-SOAP request resolved to SOAP service");
     public static final M SERVICE_CACHE_OPERATION_MISMATCH = m(3212, Level.INFO, "Resolved \"{0}\" service (#{1}) but request does not match any operation in the service''s WSDL");
     public static final M SERVICE_CACHE_ENABLING_SERVICE   = m(3213, Level.INFO, "Renable service after license or policy changed/module loaded: {0}: {1}");
+    public static final M SERVICE_CACHE_RESOLVED_CATCHALL  = m(3214, Level.FINER, "Resolved request for \"{0}\" catchall service (#{1})");
 
     public static final M POLICY_CACHE_MODULE_UNLOAD      = m(3250, Level.INFO, "Recompiling all policies due to module unload");
     public static final M POLICY_CACHE_RESETTING_POLICIES = m(3251, Level.INFO, "License changed/module loaded -- resetting {0} affected policies");
