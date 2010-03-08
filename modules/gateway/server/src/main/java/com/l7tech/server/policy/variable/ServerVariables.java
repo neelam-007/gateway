@@ -432,7 +432,8 @@ public class ServerVariables {
         new Variable("audit.policyExecutionAttempted", new AbstractAuditGetter() {
             @Override
             Object get(String name, PolicyEnforcementContext context) {
-                return ((AuditSinkPolicyEnforcementContext)context).getOriginalContext().isPolicyExecutionAttempted();
+                final PolicyEnforcementContext originalContext = ((AuditSinkPolicyEnforcementContext) context).getOriginalContext();
+                return originalContext == null ? null : originalContext.isPolicyExecutionAttempted();
             }
         }),
     };

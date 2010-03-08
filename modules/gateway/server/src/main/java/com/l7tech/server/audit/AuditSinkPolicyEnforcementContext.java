@@ -38,6 +38,7 @@ public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContextW
         return originalContext == null ? null : originalContext.getVariable(name);
     }
 
+    /** @return the original PolicyEnforcementContext if we are handling a message processing audit event, or null. */
     public PolicyEnforcementContext getOriginalContext() {
         return originalContext;
     }
