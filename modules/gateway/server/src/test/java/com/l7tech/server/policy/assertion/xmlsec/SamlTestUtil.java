@@ -41,6 +41,12 @@ public class SamlTestUtil {
         put("securityTokenResolver", securityTokenResolver);
         put("distributedMessageIdManager", new StubMessageIdManager());
     }});
+    static final String SOAPENV =
+            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                    "<soap:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">" +
+                    "</wsse:Security></soap:Header>" +
+                    "<soap:Body><blah xmlns=\"urn:blah\"/></soap:Body>\n" +
+                    "</soap:Envelope>";
 
     /**
      * Creates a request Message that includes a SAML assertion.

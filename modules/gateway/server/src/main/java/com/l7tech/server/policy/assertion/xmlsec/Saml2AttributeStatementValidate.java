@@ -5,20 +5,22 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML2.AttributeType;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 
 
@@ -87,12 +89,27 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
         }
     }
 
+    private static String canonicalize(Node node) throws IOException {
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        XmlUtil.canonicalize(node, baos);
+        return baos.toString();
+    }
+
     static String toString(XmlObject xo) {
         try {
             Node node = xo.getDomNode();
-            return Node.ELEMENT_NODE == node.getNodeType() && "AttributeValue".equals(node.getLocalName())
-                    ? XmlUtil.getTextValue((Element) node)
-                    : XmlUtil.nodeToString(node);
+            if (Node.ELEMENT_NODE != node.getNodeType() || !"AttributeValue".equals(node.getLocalName())) {
+                // Unexpected lack of an enclosing AttributeValue subelement.  Probably can't happen -- getAttributeValueArray() should have returned an empty array in this case.
+                return canonicalize(node);
+            }
+
+            // If there is a single child that's a text node, return it as a string
+            NodeList kids = node.getChildNodes();
+            if (kids.getLength() == 1 && kids.item(0).getNodeType() == Node.TEXT_NODE)
+                return XmlUtil.getTextValue((Element) node);
+
+            // It's something more complicated.  Return the entire AttributeValue subelement as an XML string.
+            return canonicalize(node);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }
