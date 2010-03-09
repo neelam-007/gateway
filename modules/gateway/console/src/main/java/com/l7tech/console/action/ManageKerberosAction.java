@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.KerberosDialog;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.gui.util.DialogDisplayer;
 
@@ -20,7 +22,7 @@ public class ManageKerberosAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageKerberosAction() {
-        super(null, RequestWssKerberos.class);
+        super(new AttemptedAnyOperation(EntityType.ANY), RequestWssKerberos.class);
     }
 
     /**
