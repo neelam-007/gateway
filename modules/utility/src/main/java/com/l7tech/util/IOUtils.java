@@ -1,9 +1,5 @@
 package com.l7tech.util;
 
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.BufferPool;
-import com.l7tech.util.ResourceUtils;
-
 import java.io.*;
 import java.net.URL;
 import java.util.zip.GZIPInputStream;
@@ -288,9 +284,22 @@ public class IOUtils {
      * @throws java.io.IOException if there is a problem compressing the bytes
      */
     public static byte[] compressGzip(byte[] bytes) throws IOException {
+        return compressGzip( new ByteArrayInputStream(bytes) );
+    }
+
+    /**
+     * Compress the given data using gzip, and return the compressed bytes.
+     *
+     * <p>This method will not close the given input stream.</p>
+     *
+     * @param in the stream to compress.  Must not be null.
+     * @return the gzip compressed representation of the input bytes.  Never null.
+     * @throws java.io.IOException if there is a problem compressing the bytes
+     */
+    public static byte[] compressGzip( final InputStream in ) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream gzos = new GZIPOutputStream(baos);
-        copyStream(new ByteArrayInputStream(bytes), gzos);
+        copyStream(in, gzos);
         gzos.flush();
         gzos.close();
         return baos.toByteArray();

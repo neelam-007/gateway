@@ -26,14 +26,18 @@ import java.util.List;
  * underlying client.
  */
 public class UrlConnectionHttpClient implements GenericHttpClient {
-    public static final HttpHeader[] HTTPHEADER_EMPTY_ARRAY = new HttpHeader[0];
 
     public UrlConnectionHttpClient() {
     }
 
+    @Override
     public GenericHttpRequest createRequest(final HttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
+        if ( params.isGzipEncode() ) {
+            throw new GenericHttpException("GZIP encoding not supported.");            
+        }
+
         try {
             final URLConnection conn = params.getTargetUrl().openConnection();
             if (!(conn instanceof HttpURLConnection))
@@ -83,6 +87,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 boolean completedRequest = false;
                 private InputStream requestInputStream = null;
 
+                @Override
                 public void setInputStream(InputStream bodyInputStream) {
                     if (!method.needsRequestBody())
                         throw new UnsupportedOperationException("bodyInputStream not needed for request method: " + method);
@@ -91,10 +96,12 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                     requestInputStream = bodyInputStream;
                 }
 
+                @Override
                 public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
                     throw new IllegalStateException("this implementation of the GenericHttpRequest does not support addParameter");
                 }
 
+                @Override
                 public GenericHttpResponse getResponse() throws GenericHttpException {
                     try {
                         if (requestInputStream != null)
@@ -104,7 +111,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                         String ctval = conn.getContentType();
                         final ContentTypeHeader contentTypeHeader =
                                 ctval != null ? ContentTypeHeader.parseValue(ctval) : null;
-                        final List headers = new ArrayList();
+                        final List<HttpHeader> headers = new ArrayList<HttpHeader>();
                         int n = 0;
                         String value;
                         do {
@@ -115,11 +122,12 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             n++;
                         } while (value != null);
                         final GenericHttpHeaders genericHttpHeaders =
-                                new GenericHttpHeaders((HttpHeader[])headers.toArray(HTTPHEADER_EMPTY_ARRAY));
+                                new GenericHttpHeaders(headers.toArray(new HttpHeader[headers.size()]));
 
                         completedRequest = true;
 
                         return new GenericHttpResponse() {
+                            @Override
                             public InputStream getInputStream() throws GenericHttpException {
                                 InputStream inputStream;
                                 try {
@@ -132,22 +140,27 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                                 return inputStream;
                             }
 
+                            @Override
                             public int getStatus() {
                                 return status;
                             }
 
+                            @Override
                             public HttpHeaders getHeaders() {
                                 return genericHttpHeaders;
                             }
 
+                            @Override
                             public ContentTypeHeader getContentType() {
                                 return contentTypeHeader;
                             }
 
+                            @Override
                             public Long getContentLength() {
-                                return new Long(conn.getContentLength());
+                                return (long)conn.getContentLength();
                             }
 
+                            @Override
                             public void close() {
                                 httpConn.disconnect();
                             }
@@ -158,6 +171,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                     }
                 }
 
+                @Override
                 public void close() {
                     if (!completedRequest) {
                         httpConn.disconnect();

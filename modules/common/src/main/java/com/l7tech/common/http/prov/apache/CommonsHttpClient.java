@@ -6,6 +6,7 @@ package com.l7tech.common.http.prov.apache;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
@@ -23,6 +24,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,6 +33,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
@@ -45,10 +48,12 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final String PROP_DEFAULT_CONNECT_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultConnectTimeout";
     public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
     public static final String PROP_CREDENTIAL_CHARSET = CommonsHttpClient.class.getName() + ".credentialCharset";
+    public static final String PROP_GZIP_STREAMING_THRESHOLD = CommonsHttpClient.class.getName() + ".gzipStreamThreshold";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000);
     public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000);
+    public static final int DEFAULT_GZIP_STREAMING_THRESHOLD = Integer.MAX_VALUE;
 
     private static HttpParams httpParams;
     private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
@@ -57,6 +62,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
      * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
      */
     private static final boolean encodePath = SyspropUtil.getBoolean(CommonsHttpClient.class.getName() + ".encodePath", false);
+    private static final int gzipThreshold = SyspropUtil.getInteger( PROP_GZIP_STREAMING_THRESHOLD, DEFAULT_GZIP_STREAMING_THRESHOLD );
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
@@ -192,7 +198,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     @Override
-    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest( final HttpMethod method,
+                                             final GenericHttpRequestParams params )
             throws GenericHttpException
     {
         stampBindingIdentity();
@@ -211,11 +218,11 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         final HttpClient client = new HttpClient(cman);
 
-        HttpClientParams clientParams = client.getParams();
+        final HttpClientParams clientParams = client.getParams();
         clientParams.setDefaults(getOrBuildCachingHttpParams(clientParams.getDefaults()));
         clientParams.setAuthenticationPreemptive(false);
 
-        boolean useHttp1_0 = params.getHttpVersion() == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
+        final boolean useHttp1_0 = params.getHttpVersion() == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
 
         // Note that we only set if there is a non-default value specified
         // this allows the system wide default to be used for the bridge
@@ -255,13 +262,13 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
-        HttpMethodParams methodParams = httpMethod.getParams();
+        final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setVersion(useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
         methodParams.setSoTimeout(timeout);
 
-        PasswordAuthentication pw = params.getPasswordAuthentication();
-        NtlmAuthentication ntlm = params.getNtlmAuthentication();
+        final PasswordAuthentication pw = params.getPasswordAuthentication();
+        final NtlmAuthentication ntlm = params.getNtlmAuthentication();
         if (ntlm != null) {
             httpMethod.setDoAuthentication(true);
             state.setCredentials(AuthScope.ANY,
@@ -283,15 +290,19 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
 
         final Long contentLen = params.getContentLength();
-        if (httpMethod instanceof PostMethod && contentLen != null) {
+        if ( (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod) && contentLen != null) {
             if (contentLen > Integer.MAX_VALUE)
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
         }
 
-        List<HttpHeader> headers = params.getExtraHeaders();
+        final List<HttpHeader> headers = params.getExtraHeaders();
         for (HttpHeader header : headers) {
             doBinding(header);
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
+        }
+
+        if ( params.isGzipEncode() ) {
+            httpMethod.addRequestHeader( HttpConstants.HEADER_CONTENT_ENCODING, "gzip" );       
         }
 
         final ContentTypeHeader rct = params.getContentType();
@@ -313,53 +324,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                if (method instanceof PostMethod) {
-                    PostMethod postMethod = (PostMethod)method;
-                    postMethod.setRequestEntity(new RequestEntity(){
-                        @Override
-                        public long getContentLength() {
-                            return contentLen != null ? contentLen : -1;
-                        }
-
-                        @Override
-                        public String getContentType() {
-                            return rct != null ? rct.getFullValue() : null;
-                        }
-
-                        @Override
-                        public boolean isRepeatable() {
-                            return false;
-                        }
-
-                        @Override
-                        public void writeRequest(OutputStream outputStream) throws IOException {
-                            IOUtils.copyStream(bodyInputStream, outputStream);
-                        }
-                    });
-                } else {
-                    PutMethod putMethod = (PutMethod)method;
-                    putMethod.setRequestEntity(new RequestEntity(){
-                        @Override
-                        public long getContentLength() {
-                            return contentLen != null ? contentLen : -1;
-                        }
-
-                        @Override
-                        public String getContentType() {
-                            return rct != null ? rct.getFullValue() : null;
-                        }
-
-                        @Override
-                        public boolean isRepeatable() {
-                            return false;
-                        }
-
-                        @Override
-                        public void writeRequest(OutputStream outputStream) throws IOException {
-                            IOUtils.copyStream(bodyInputStream, outputStream);
-                        }
-                    });
-                }
+                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod)method;
+                entityEnclosingMethod.setRequestEntity(
+                        new CompressableRequestEntity(rct, contentLen, params.isGzipEncode(), bodyInputStream) );
             }
 
             @Override
@@ -390,65 +357,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                if (method instanceof PostMethod) {
-                    PostMethod postMethod = (PostMethod)method;
-                    postMethod.setRequestEntity(new RequestEntity(){
-                        @Override
-                        public long getContentLength() {
-                            return contentLen != null ? contentLen : -1;
-                        }
-
-                        @Override
-                        public String getContentType() {
-                            return rct != null ? rct.getFullValue() : null;
-                        }
-
-                        @Override
-                        public boolean isRepeatable() {
-                            return true;
-                        }
-
-                        @Override
-                        public void writeRequest(OutputStream outputStream) throws IOException {
-                            InputStream inputStream = null;
-                            try {
-                                inputStream = inputStreamFactory.getInputStream();
-                                IOUtils.copyStream(inputStream, outputStream);
-                            } finally {
-                                if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
-                            }
-                        }
-                    });
-                } else {
-                    PutMethod putMethod = (PutMethod)method;
-                    putMethod.setRequestEntity(new RequestEntity(){
-                        @Override
-                        public long getContentLength() {
-                            return contentLen != null ? contentLen : -1;
-                        }
-
-                        @Override
-                        public String getContentType() {
-                            return rct != null ? rct.getFullValue() : null;
-                        }
-
-                        @Override
-                        public boolean isRepeatable() {
-                            return true;
-                        }
-
-                        @Override
-                        public void writeRequest(OutputStream outputStream) throws IOException {
-                            InputStream inputStream = null;
-                            try {
-                                inputStream = inputStreamFactory.getInputStream();
-                                IOUtils.copyStream(inputStream, outputStream);
-                            } finally {
-                                if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
-                            }
-                        }
-                    });
-                }
+                final EntityEnclosingMethod entityEnclosingMethod = (EntityEnclosingMethod)method;
+                entityEnclosingMethod.setRequestEntity(
+                        new CompressableRequestEntity(rct, contentLen, params.isGzipEncode(), inputStreamFactory) );
             }
 
             @Override
@@ -700,5 +611,141 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static String[] getCommaDelimitedSystemProperty(String propertyName) {
         String delimited = SyspropUtil.getStringCached(propertyName, null);
         return delimited == null || delimited.length() < 1 ? null : commasWithWhitespace.split(delimited);
+    }
+
+    /**
+     * HTTP Client RequestEntity that supports compression.
+     *
+     * <p>If the request entity is within the threshold it will be encoded
+     * before transmission and the content length set accordingly. If the
+     * entity exceeds the threshold then the GZIP encoding will be applied
+     * to the stream. In this case HTTP 1.1 will use a chunked transfer
+     * encoding and HTTP 1.0 will fail with an exception.</p>
+     */
+    private static final class CompressableRequestEntity implements RequestEntity {
+        private final ContentTypeHeader contentTypeHeader;
+        private final boolean gzipCompress;
+        private final Long uncompressedContentLength;
+        private final InputStream inputStream;
+        private final RerunnableHttpRequest.InputStreamFactory inputStreamFactory;
+        private long requestContentLength;
+        private byte[] compressedData;
+        private IOException compressionException;
+
+        CompressableRequestEntity( final ContentTypeHeader contentTypeHeader,
+                                   final Long contentLength,
+                                   final boolean gzipCompress,
+                                   final InputStream inputStream ) {
+            this.contentTypeHeader = contentTypeHeader;
+            this.uncompressedContentLength = contentLength;
+            this.gzipCompress = gzipCompress;
+            this.inputStream = inputStream;
+            this.inputStreamFactory = null;
+        }
+
+        CompressableRequestEntity( final ContentTypeHeader contentTypeHeader,
+                                   final Long contentLength,
+                                   final boolean gzipCompress,
+                                   final RerunnableHttpRequest.InputStreamFactory inputStreamFactory ) {
+            this.contentTypeHeader = contentTypeHeader;
+            this.uncompressedContentLength = contentLength;
+            this.gzipCompress = gzipCompress;
+            this.inputStream = null;
+            this.inputStreamFactory = inputStreamFactory;
+        }
+
+        @Override
+        public boolean isRepeatable() {
+            checkCompress();
+            return inputStreamFactory != null || compressedData != null;
+        }
+
+        @Override
+        public void writeRequest( final OutputStream outputStream ) throws IOException {
+            checkCompress();
+            if ( compressedData != null ) {
+                IOUtils.copyStream( new ByteArrayInputStream(getCompressedData()), outputStream );
+            } else if ( inputStreamFactory != null ) {
+                InputStream inputStream = null;
+                try {
+                    inputStream = inputStreamFactory.getInputStream();
+                    copyStream(inputStream, outputStream);
+                } finally {
+                    ResourceUtils.closeQuietly( inputStream );
+                }
+            } else {
+                copyStream(inputStream, outputStream);
+            }
+        }
+
+        @Override
+        public long getContentLength() {
+            checkCompress();
+            return requestContentLength;
+        }
+
+        @Override
+        public String getContentType() {
+            return contentTypeHeader != null ? contentTypeHeader.getFullValue() : null;
+        }
+
+        /**
+         * Compress on the fly if enabled.
+         */
+        private void copyStream( final InputStream inputStream,
+                                 final OutputStream outputStream ) throws IOException {
+            if ( gzipCompress ) {
+                OutputStream compressOutputStream = null;
+                try {
+                    compressOutputStream = new GZIPOutputStream(new NonCloseableOutputStream(outputStream));
+                    IOUtils.copyStream(inputStream, compressOutputStream);
+                    compressOutputStream.flush();
+                } finally {
+                    ResourceUtils.closeQuietly( compressOutputStream );
+                }
+            } else {
+                IOUtils.copyStream(inputStream, outputStream);
+            }
+        }
+
+        private byte[] getCompressedData() throws IOException {
+            if ( compressionException != null ) throw compressionException;
+            return compressedData;
+        }
+
+        /**
+         * Set compression related values and perform compression if the
+         * content is within the threshold.
+         */
+        private void checkCompress() {
+            if ( gzipCompress ) {
+                if ( compressedData == null &&
+                     uncompressedContentLength != null &&
+                      uncompressedContentLength <= gzipThreshold ) {
+                    try {
+                        if ( inputStreamFactory != null ) {
+                            InputStream inputStream = null;
+                            try {
+                                inputStream = inputStreamFactory.getInputStream();
+                                compressedData = IOUtils.compressGzip( inputStream );
+                            } finally {
+                                ResourceUtils.closeQuietly( inputStream );
+                            }
+                        } else {
+                            compressedData = IOUtils.compressGzip( inputStream );
+                        }
+                        requestContentLength = compressedData.length;
+                    } catch ( IOException ioe ) {
+                        compressedData = new byte[0];
+                        compressionException = ioe;
+                        requestContentLength = uncompressedContentLength;
+                    }
+                } else if ( compressedData == null ) {
+                    requestContentLength = -1; // Chunked
+                }
+            } else {
+                requestContentLength = uncompressedContentLength == null ? -1 : uncompressedContentLength;
+            }
+        }
     }
 }

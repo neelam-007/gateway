@@ -24,6 +24,7 @@ public class GenericHttpRequestParams {
         HTTP_VERSION_1_1,
     }
 
+    // NOTE: Add any new fields to the copy constructor
     private URL targetUrl;
     private GenericHttpState state;
     private PasswordAuthentication passwordAuthentication = null;
@@ -37,7 +38,9 @@ public class GenericHttpRequestParams {
     private boolean followRedirects = false;
     private boolean useKeepAlives = true;
     private boolean useExpectContinue = false;
+    private boolean gzipEncode = false;
     private HttpVersion httpVersion = HttpVersion.HTTP_VERSION_1_1;
+    // NOTE: Add any new fields to the copy constructor
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -50,12 +53,13 @@ public class GenericHttpRequestParams {
      *
      * @param targetUrl the target URL of this request
      */
-    public GenericHttpRequestParams(URL targetUrl) {
+    public GenericHttpRequestParams(final URL targetUrl) {
         this();
         this.targetUrl = targetUrl;
     }
 
-    public GenericHttpRequestParams(URL targetUrl, GenericHttpState state) {
+    public GenericHttpRequestParams( final URL targetUrl,
+                                     final GenericHttpState state) {
         this(targetUrl);
         this.state = state;
     }
@@ -66,11 +70,13 @@ public class GenericHttpRequestParams {
      *
      * @param template a template to copy from
      */
-    public GenericHttpRequestParams(GenericHttpRequestParams template) {
+    public GenericHttpRequestParams( final GenericHttpRequestParams template ) {
         targetUrl = template.targetUrl;
         state = template.state;
         passwordAuthentication = template.passwordAuthentication;
+        ntlmAuthentication = template.ntlmAuthentication;
         sslSocketFactory = template.sslSocketFactory;
+        hostnameVerifier = template.hostnameVerifier;
         contentType = template.contentType;
         contentLength = template.contentLength;
         extraHeaders = template.extraHeaders == null ? null : new ArrayList<HttpHeader>(template.extraHeaders);
@@ -78,6 +84,8 @@ public class GenericHttpRequestParams {
         followRedirects = template.followRedirects;
         useKeepAlives = template.useKeepAlives;
         useExpectContinue = template.useExpectContinue;
+        gzipEncode = template.gzipEncode;
+        httpVersion = template.httpVersion;
     }
 
     public GenericHttpState getState() {
@@ -98,7 +106,7 @@ public class GenericHttpRequestParams {
      *
      * @param targetUrl the target URL.  Should not be null.
      */
-    public void setTargetUrl(URL targetUrl) {
+    public void setTargetUrl(final URL targetUrl) {
         this.targetUrl = targetUrl;
     }
 
@@ -126,7 +134,7 @@ public class GenericHttpRequestParams {
      * @param passwordAuthentication the credentials to present if challenged, or null to allow challeges to fail.
      * @see #getPasswordAuthentication
      */
-    public void setPasswordAuthentication(PasswordAuthentication passwordAuthentication) {
+    public void setPasswordAuthentication(final PasswordAuthentication passwordAuthentication) {
         this.passwordAuthentication = passwordAuthentication;
     }
 
@@ -135,7 +143,7 @@ public class GenericHttpRequestParams {
         return ntlmAuthentication;
     }
 
-    public void setNtlmAuthentication(NtlmAuthentication ntlmAuthentication) {
+    public void setNtlmAuthentication(final NtlmAuthentication ntlmAuthentication) {
         this.ntlmAuthentication = ntlmAuthentication;
     }
 
@@ -159,7 +167,7 @@ public class GenericHttpRequestParams {
      * @see #isPreemptiveAuthentication()
      * @param preemptiveAuthentication true to enable preemptive authentication, or false to disable it
      */
-    public void setPreemptiveAuthentication(boolean preemptiveAuthentication) {
+    public void setPreemptiveAuthentication(final boolean preemptiveAuthentication) {
         this.preemptiveAuthentication = preemptiveAuthentication;
     }
 
@@ -177,7 +185,7 @@ public class GenericHttpRequestParams {
      *
      * @param sslSocketFactory the socket factory, or null if the default should be used.
      */
-    public void setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
+    public void setSslSocketFactory(final SSLSocketFactory sslSocketFactory) {
         this.sslSocketFactory = sslSocketFactory;
     }
 
@@ -195,7 +203,7 @@ public class GenericHttpRequestParams {
      *
      * @param hostnameVerifier The verifier (may be null)
      */
-    public void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+    public void setHostnameVerifier(final HostnameVerifier hostnameVerifier) {
         this.hostnameVerifier = hostnameVerifier;
     }
 
@@ -213,7 +221,7 @@ public class GenericHttpRequestParams {
      *
      * @param contentType the {@link com.l7tech.common.mime.ContentTypeHeader} that will be sent with the request, or null.
      */
-    public void setContentType(ContentTypeHeader contentType) {
+    public void setContentType(final ContentTypeHeader contentType) {
         this.contentType = contentType;
     }
 
@@ -236,7 +244,7 @@ public class GenericHttpRequestParams {
      * @param contentLength the value of the content-length header to send, or null to leave unspecified.
      * @see #getContentLength
      */
-    public void setContentLength(Long contentLength) {
+    public void setContentLength(final Long contentLength) {
         this.contentLength = contentLength;
     }
 
@@ -264,7 +272,7 @@ public class GenericHttpRequestParams {
      * @param followRedirects if true, redirects will be followed automatically.
      * @see #isFollowRedirects()
      */
-    public void setFollowRedirects(boolean followRedirects) {
+    public void setFollowRedirects(final boolean followRedirects) {
         this.followRedirects = followRedirects;
     }
 
@@ -282,7 +290,7 @@ public class GenericHttpRequestParams {
      *
      * @param useExpectContinue True for expect/continue
      */
-    public void setUseExpectContinue(boolean useExpectContinue) {
+    public void setUseExpectContinue(final boolean useExpectContinue) {
         this.useExpectContinue = useExpectContinue;
     }
 
@@ -300,8 +308,26 @@ public class GenericHttpRequestParams {
      *
      * @param useKeepAlives True for Keep-Alive
      */
-    public void setUseKeepAlives(boolean useKeepAlives) {
+    public void setUseKeepAlives(final boolean useKeepAlives) {
         this.useKeepAlives = useKeepAlives;
+    }
+
+    /**
+     * Should the body be GZIP compressed.
+     *
+     * @return True to use GZIP compression.
+     */
+    public boolean isGzipEncode() {
+        return gzipEncode;
+    }
+
+    /**
+     * Should the body be GZIP compressed.
+     *
+     * @param gzipEncode True to use GZIP compression.
+     */
+    public void setGzipEncode( final boolean gzipEncode ) {
+        this.gzipEncode = gzipEncode;
     }
 
     /**
@@ -318,7 +344,7 @@ public class GenericHttpRequestParams {
      *
      * @param httpVersion The HTTP version
      */
-    public void setHttpVersion(HttpVersion httpVersion) {
+    public void setHttpVersion(final HttpVersion httpVersion) {
         this.httpVersion = httpVersion;
     }
 
@@ -328,7 +354,7 @@ public class GenericHttpRequestParams {
      * @param extraHeaders the array of extra HTTP headers to include with this request, or null to set an empty array.
      * @see #getExtraHeaders
      */
-    public void setExtraHeaders(HttpHeader[] extraHeaders) {
+    public void setExtraHeaders(final HttpHeader[] extraHeaders) {
         this.extraHeaders = extraHeaders != null ? new ArrayList<HttpHeader>(Arrays.asList(extraHeaders)) : null;
     }
 
@@ -337,7 +363,7 @@ public class GenericHttpRequestParams {
      * Be warned that this may not be very fast.
      * @param extraHeader an extra header to include in the request
      */
-    public void addExtraHeader(HttpHeader extraHeader) {
+    public void addExtraHeader(final HttpHeader extraHeader) {
         if (extraHeaders == null) extraHeaders = new ArrayList<HttpHeader>();
         extraHeaders.add(extraHeader);
     }
@@ -348,7 +374,7 @@ public class GenericHttpRequestParams {
      *
      * @param extraHeader the header to add.  Must not be null.
      */
-    public void replaceExtraHeader(HttpHeader extraHeader) {
+    public void replaceExtraHeader(final HttpHeader extraHeader) {
         if (extraHeaders == null || extraHeaders.size() < 1) {
             addExtraHeader(extraHeader);
             return;
@@ -373,7 +399,7 @@ public class GenericHttpRequestParams {
      * @param headerName the name of the headers to remove.  Required.
      * @return true iff. any headers were removed.
      */
-    public boolean removeExtraHeader(String headerName) {
+    public boolean removeExtraHeader(final String headerName) {
         if (extraHeaders == null || extraHeaders.size() < 1)
             return false;
 

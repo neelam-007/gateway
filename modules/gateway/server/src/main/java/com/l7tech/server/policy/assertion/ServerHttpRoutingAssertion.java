@@ -51,7 +51,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -127,7 +126,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
+            final int timeout = SyspropUtil.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             socketFactory = sslContext.getSocketFactory();
             senderVouchesSignerInfo = signerInfo;
@@ -180,7 +179,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         varNames = assertion.getVariablesUsed();
     }
 
-    protected GenericHttpClientFactory makeHttpClientFactory() {
+    private GenericHttpClientFactory makeHttpClientFactory() {
         final String proxyHost = assertion.getProxyHost();
         if (proxyHost == null) {
             GenericHttpClientFactory factory;
@@ -312,7 +311,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             String domain = assertion.getRealm();
             String host = assertion.getNtlmHost();
 
-            Map vars = null;
+            Map<String,Object> vars = null;
             if (login != null && login.length() > 0 && password != null && password.length() > 0) {
                 if (vars == null) {
                     vars = context.getVariableMap(varNames, auditor);
@@ -442,49 +441,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    class GZipOutput {
-        public InputStream zippedIS;
-        public long zippedContentLength;
-    }
-
-    private GZipOutput clearToGZipInputStream(final InputStream in) {
-        //logger.info("Compression #1");
-        logger.fine("compressing input stream for downstream target");
-
-        try {
-            //byte[] originalBytes = HexUtils.slurpStream(in);
-            //in.close();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            GZIPOutputStream gzos = new GZIPOutputStream(baos);
-            IOUtils.copyStream(in, gzos);
-            //gzos.write(originalBytes);
-            in.close();
-            gzos.close();
-            baos.close();
-            byte[] zippedBytes = baos.toByteArray();
-            ByteArrayInputStream bais = new ByteArrayInputStream(zippedBytes);
-            logger.fine("Zipped output to " + zippedBytes.length + " bytes");
-            GZipOutput output = new GZipOutput();
-            output.zippedIS = bais;
-            output.zippedContentLength = zippedBytes.length;
-            return output;
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "error zipping payload", e);
-        }
-        GZipOutput output = new GZipOutput();
-        output.zippedIS = in;
-        return output;
-    }
-
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
                                          URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
         int status = -1;
         try {
-            // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
-            // todo: check if we need to support HTTP 1.1.
-
             final MimeKnob reqMime = requestMessage.getKnob(MimeKnob.class);
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
@@ -532,14 +494,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
             }
 
-            GZipOutput resgz = null;
-            if (assertion.isGzipEncodeDownstream()) {
-                InputStream out = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
-                resgz = clearToGZipInputStream(out);
-                routedRequestParams.addExtraHeader(new GenericHttpHeader("content-encoding", "gzip"));
-                routedRequestParams.setContentLength(resgz.zippedContentLength);
+            if ( assertion.isGzipEncodeDownstream() ) {
+                routedRequestParams.setGzipEncode( true );
             }
-            final InputStream zippedInputStream = resgz != null ? resgz.zippedIS : null;
 
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
@@ -560,11 +517,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                             @Override
                             public InputStream getInputStream() {
                                 try {
-                                    InputStream out = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
-                                    if (assertion.isGzipEncodeDownstream()) {
-                                        out = zippedInputStream;
-                                    }
-                                    return out;
+                                    return reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
                                 } catch (NoSuchPartException nspe) {
                                     return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
                                 } catch (IOException ioe) {
@@ -573,12 +526,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                             }
                         });
                     } else {
-                        if (assertion.isGzipEncodeDownstream()) {
-                            routedRequest.setInputStream(zippedInputStream);
-                        } else {
-                            InputStream bodyInputStream = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
-                            routedRequest.setInputStream(bodyInputStream);
-                        }
+                        InputStream bodyInputStream = reqMime == null ? new EmptyInputStream() : reqMime.getEntireMessageBodyAsInputStream();
+                        routedRequest.setInputStream(bodyInputStream);
                     }
                 }
             }
@@ -711,7 +660,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @param context   the PEC
      * @return a request message object as configured by this assertion
      */
-    protected Message getRequestMessage(final PolicyEnforcementContext context) {
+    private Message getRequestMessage(final PolicyEnforcementContext context) {
         if (assertion.getRequestMsgSrc() == null)
             return context.getRequest();
 
@@ -744,7 +693,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final int status = routedResponse.getStatus();
             InputStream responseStream = routedResponse.getInputStream();
             // compression addition
-            final String maybegzipencoding = routedResponse.getHeaders().getOnlyOneValue("content-encoding");
+            final String maybegzipencoding = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_ENCODING);
             if (maybegzipencoding != null && maybegzipencoding.contains("gzip")) { // case of value ?
                 if (responseStream != null ){
                     // logger.info("Compression #4");
