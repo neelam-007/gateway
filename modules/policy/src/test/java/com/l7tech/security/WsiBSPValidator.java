@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -113,14 +114,38 @@ public class WsiBSPValidator {
 
     /**
      *
-     * @param document
      */
     public boolean isValid(Document document) {
         boolean valid = true;
 
+
+        Set<String> skipRules = new HashSet<String>();
+        for(int i = 0; i < xpes.length; i++) {
+            if ( !rules[i].isBranchRule() ) {
+                continue;
+            }
+
+            XPathExpression xpe = xpes[i];
+            if(xpe!=null) {
+                boolean passed = false;
+                try {
+                    passed = Boolean.parseBoolean(xpe.evaluate(document));
+                }
+                catch(XPathExpressionException xpee) {
+                    xpee.printStackTrace();
+                }
+                if( !passed ) {
+                    skipRules.addAll( rules[i].getBranchRuleIds() );
+                }
+            }
+        }
+
         for(int i = 0; i < xpes.length; i++) {
             XPathExpression xpe = xpes[i];
             if(xpe!=null) {
+                if ( rules[i].isBranchRule() ) continue;
+                if ( skipRules.contains( rules[i].getId() ) ) continue;
+
                 boolean passed = false;
                 try {
                     passed = Boolean.parseBoolean(xpe.evaluate(document));
@@ -515,6 +540,23 @@ public class WsiBSPValidator {
 
         private String getDescription() {
             return description;
+        }
+
+        private boolean isBranchRule() {
+            return getId().startsWith( "B" );
+        }
+
+        private Set<String> getBranchRuleIds() {
+            Set<String> ruleIds;
+
+            int index = description.indexOf( ':' );
+            if ( !isBranchRule() || index < 0 ) {
+                ruleIds = Collections.emptySet();
+            } else {
+                ruleIds = new HashSet<String>( Arrays.asList( description.substring( index+1 ).split( " " ) ) );
+            }
+
+            return ruleIds;
         }
     }
 }

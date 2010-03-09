@@ -2,10 +2,13 @@ package com.l7tech.server.policy.assertion;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.namespace.NamespaceContext;
@@ -36,8 +39,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  *
  * <p>Currently request and response validation use the same rules.</p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
  */
 public abstract class ServerXpathValidationAssertion<AT extends Assertion> extends AbstractServerAssertion<AT> {    
 
@@ -267,8 +269,13 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
             else {
                 try {
                     boolean success = true;
-                    for (Object o : rulesMap.keySet()) {
-                        XPathExpression xpe = (XPathExpression) o;
+                    final Set<String> skipRules = processBranchRules( xpathContext );
+                    for (XPathExpression xpe : rulesMap.keySet()) {
+                        if (isBranchRule(xpe)) continue;
+
+                        final String[] details = getDetails(xpe);
+                        if ( skipRules.contains( details[0] ) ) continue;
+
                         if (logger.isLoggable(Level.FINEST)) {
                             logger.finest("Evaluating XPath '" + xpe.toString() + "'.");
                         }
@@ -276,7 +283,6 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
                             if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
-                            String[] details = getDetails(xpe);
                             onRequestNonCompliance(details[0], details[1]);
                             success = false;
                             if (isFailOnNonCompliantRequest()) break; // fail fast
@@ -322,8 +328,13 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
             else {
                 try {
                     boolean success = true;
-                    for (Object o : rulesMap.keySet()) {
-                        XPathExpression xpe = (XPathExpression) o;
+                    final Set<String> skipRules = processBranchRules( xpathContext );
+                    for ( final XPathExpression xpe : rulesMap.keySet() ) {
+                        if (isBranchRule(xpe)) continue;
+
+                        final String[] details = getDetails(xpe);
+                        if ( skipRules.contains( details[0] ) ) continue; 
+
                         if (logger.isLoggable(Level.FINEST)) {
                             logger.finest("Evaluating XPath '" + xpe.toString() + "'.");
                         }
@@ -331,7 +342,6 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
                             if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
-                            String[] details = getDetails(xpe);
                             onResponseNonCompliance(details[0], details[1]);
                             success = false;
                             if (isFailOnNonCompliantResponse()) break;
@@ -362,6 +372,49 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
         String description = rulesMap.get(xpe);
         if(description==null) description = "";
         return description.split(": ", 2);
+    }
+
+    /**
+     *
+     */
+    private boolean isBranchRule(final XPathExpression xpe) {
+        return getDetails(xpe)[0].startsWith( "B" );
+    }
+
+    /**
+     *
+     */
+    private Set<String> getBranchRuleIds(final XPathExpression xpe) {
+        Set<String> ruleIds;
+
+        String description = getDetails(xpe)[1];
+        int index = description.indexOf( ':' );
+        if ( !isBranchRule(xpe) || index < 0 ) {
+            ruleIds = Collections.emptySet();
+        } else {
+            ruleIds = new HashSet<String>( Arrays.asList( description.substring( index+1 ).split( " " ) ) );
+        }
+
+        return ruleIds;
+    }
+
+    /**
+     *
+     */
+    private Set<String> processBranchRules( final Object xpathContext ) throws XPathExpressionException {
+        final Set<String> skipRules = new HashSet<String>();
+        for ( final XPathExpression xpe : rulesMap.keySet() ) {
+            if (!isBranchRule(xpe)) continue;
+
+            if (logger.isLoggable( Level.FINEST)) {
+                logger.finest("Evaluating branch XPath '" + xpe.toString() + "'.");
+            }
+
+            if (!"true".equals(xpe.evaluate(xpathContext))) {
+                skipRules.addAll( getBranchRuleIds(xpe) );
+            }
+        }
+        return skipRules;
     }
 
     /**
