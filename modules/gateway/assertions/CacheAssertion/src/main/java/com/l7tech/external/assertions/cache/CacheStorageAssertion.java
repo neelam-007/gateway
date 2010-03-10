@@ -144,7 +144,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
             @Override
             public String getAssertionName(final CacheStorageAssertion assertion, final boolean decorate) {
                 final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
-                return decorate ? assertion.getTargetName() +": " + displayName + " [" + cacheId + "]" : displayName;
+                return decorate ? assertion.getTargetName() +": " + displayName + " [" + assertion.getCacheId() + "]" : displayName;
             }
         });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.cache.CacheAssertionAdvice");
