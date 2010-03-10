@@ -228,8 +228,10 @@ class ExternalReferenceResolver {
                         for (IncludedPolicyReference ref: fragmtRefs) {
                             if (ref.getGuid().equals(include.getPolicyGuid())) {
                                 childrenList.add(ref);
-                                childrenList.addAll(hierarchyFragmtRefsMap.get(ref));
-                                hierarchyFragmtRefsMap.remove(ref);
+                                if(hierarchyFragmtRefsMap.containsKey(ref)) {
+                                    childrenList.addAll(hierarchyFragmtRefsMap.get(ref));
+                                    hierarchyFragmtRefsMap.remove(ref);
+                                }
                             }
                         }
                     }
