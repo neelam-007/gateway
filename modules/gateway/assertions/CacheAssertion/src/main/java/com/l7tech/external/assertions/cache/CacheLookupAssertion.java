@@ -20,7 +20,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
     private String cacheId = "defaultCache";
     private String cacheEntryKey = "${request.url}";
-    private long maxEntryAgeMillis = Long.MAX_VALUE;
+    private long maxEntryAgeMillis = 30000L; // 30s
     private String contentTypeOverride = null;
 
     public CacheLookupAssertion() {
