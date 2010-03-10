@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.migration.Migration;
@@ -37,7 +38,9 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return TargetMessageType.OTHER == getTarget() ? new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable()) } : new VariableMetadata[0];
+        return TargetMessageType.OTHER == getTarget() ?
+            new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) } : 
+            new VariableMetadata[0];
     }
 
     /** @return the name of the cache in which the item is to be looked up.  May contain variables that need interpolation. */
