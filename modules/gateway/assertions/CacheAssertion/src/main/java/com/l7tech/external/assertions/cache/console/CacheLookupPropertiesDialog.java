@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -64,7 +65,15 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         });
 
         validator.constrainTextFieldToBeNonEmpty("Cache ID", cacheIdField, null);
-        validator.constrainTextFieldToBeNonEmpty("Cache Entry Key", cacheKeyField, null);
+        validator.constrainTextFieldToBeNonEmpty("Cache Entry Key", cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
+            @Override
+            public String getValidationError() {
+                String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
+                if (refs == null || refs.length < 1)
+                    return "The cache entry key must contain at least one interpolated context variable.";
+                return null;
+            }
+        });
         validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, 1000000L);
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
