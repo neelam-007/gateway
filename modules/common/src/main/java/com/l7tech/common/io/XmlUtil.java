@@ -686,22 +686,25 @@ public class XmlUtil extends DomUtils {
             }
             else {
                 // find imported namespaces
-                Set importedNamespaces = new HashSet();
+                Set<String> importedNamespaces = new HashSet<String>();
                 NodeList importElements = schemaDocument.getElementsByTagNameNS(XMLConstants.W3C_XML_SCHEMA_NS_URI, "import");
-                int numImportsWithNoNamespace = 0;
                 for (int n=0; n<importElements.getLength(); n++) {
                     Element importElement = (Element) importElements.item(n);
                     if (importElement.hasAttribute("namespace")) {
                         importedNamespaces.add(importElement.getAttribute("namespace"));
                     }else{
-                        numImportsWithNoNamespace++;
+                        //null will never be added when the namespace attribute is defined on an element
+                        importedNamespaces.add(null);
                     }
                 }
-                if(numImportsWithNoNamespace > 1){
-                    //if we allowed this and some element / type in an instance document or from the importing
-                    //schema requires something imported from the 2nd or more no namespace import, then this schema
-                    //will not validate
-                    throw new BadSchemaException("A Schema cannot contain more than a single import element which does not define a targetNamespace.");    
+
+                if(importedNamespaces.size() != importElements.getLength()){
+                    logger.log(Level.INFO, "Schema imports more than a single schema with the same (or empty) namespace.");
+                }
+                
+                //clean up added null if it was added
+                if(importedNamespaces.contains(null)){
+                    importedNamespaces.remove(null);
                 }
 
                 // add import for default ns and tns
