@@ -84,7 +84,11 @@ public class SchemaEntry extends NamedEntityImp {
     }
 
     public void setTns(String tns) {
-        this.tns = tns;
+        if(tns == null){
+            this.tns = "";
+        }else{
+            this.tns = tns;
+        }
     }
 
     @Column(name = "system")

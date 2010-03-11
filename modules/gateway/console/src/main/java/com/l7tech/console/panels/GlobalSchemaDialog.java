@@ -356,6 +356,7 @@ public class GlobalSchemaDialog extends JDialog {
 
             // then check on SSG
             try {
+                boolean hasTns = !importns.isEmpty();
                 final boolean tnsFound = !(importns.isEmpty() || reg.getSchemaAdmin().findByTNS(importns).isEmpty());
                 final boolean locFound = !(importloc.isEmpty() || reg.getSchemaAdmin().findByName(importloc).isEmpty());
                 if ( !locFound ) {
@@ -364,7 +365,10 @@ public class GlobalSchemaDialog extends JDialog {
                     } else if (reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
                         unresolvedImportsList.add(importns);
                     }
-                } else if ( !tnsFound ) {
+                } else if ( !tnsFound && hasTns) {
+                    //this is redundant as this branch is executed when we have already resolved the import - importLoc is true
+                    //this does validate the tns can find a schema when hasTns is true, however it may not find the same
+                    //SchemaEntry that the above code in locFound found, as there is no tns uniqueness
                     unresolvedImportsList.add(importns);
                 }
             } catch (ObjectModelException e) {

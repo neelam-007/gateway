@@ -654,11 +654,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             logger.warning("Problem parsing schemaContent");
             return false;
         }
-        if (tns == null || tns.isEmpty()) {
-            logger.warning("This schemaContent does not declare a target namespace.");
-            return false;
-        }
-        if (systemId == null || systemId.isEmpty()) {
+
+        if (systemId == null || systemId.trim().isEmpty()) {
             logger.warning("You must provide a system id (name) for this schemaContent to be referenced by another schemaContent.");
             return false;
         }
@@ -720,7 +717,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     /** @return true iff. info was committed successfully */
     private boolean commitSpecifyTab() {
-        // check that whatever is captured is an xml document, a schema and has a tns
+        // check that whatever is captured is an xml document and a schema with or without a tns
         String contents = uiAccessibility.getEditor().getText();
 
         try {

@@ -32,6 +32,7 @@ public interface SchemaAdmin {
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
     long saveSchemaEntry(SchemaEntry entry) throws SaveException, UpdateException;
 
+    //todo this does not need to be a collection for a unique property
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<SchemaEntry> findByName(String schemaName) throws FindException;
 

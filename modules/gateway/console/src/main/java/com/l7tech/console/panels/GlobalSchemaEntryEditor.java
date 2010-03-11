@@ -335,22 +335,17 @@ public class GlobalSchemaEntryEditor extends JDialog {
                                                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (tns == null || tns.length() < 1) {
-                JOptionPane.showMessageDialog(this, "This schema does not declare a target namespace.",
-                                                    "Invalid Schema",
-                                                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+
             // make sure there is a name captioned
-            String sustemid = schemanametxt.getText();
-            if (sustemid == null || sustemid.length() < 1) {
+            String systemId = schemanametxt.getText();
+            if (systemId == null || systemId.length() < 1) {
                 JOptionPane.showMessageDialog(this, "You must provide a system id (name) for this schema to be referenced by another schema.",
                                                     "Invalid Schema",
                                                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
             // save it
-            subject.setName(sustemid);
+            subject.setName(systemId);
             subject.setSchema(contents);
             subject.setTns(tns);
             success = true;

@@ -638,6 +638,13 @@ public class XmlUtil extends DomUtils {
         return sw.toString();
     }
 
+    /**
+     * Get the targetNamespace from a Schema. This also does some validation on the entire schema.
+     *
+     * @param schemaSrc String schema xml
+     * @return String the target namespace, null if none declared
+     * @throws BadSchemaException if the schema is not valid
+     */
     @SuppressWarnings({"unchecked", "ForLoopReplaceableByForEach"})
     public static String getSchemaTNS(String schemaSrc) throws BadSchemaException {
         if (schemaSrc == null) {
@@ -681,18 +688,29 @@ public class XmlUtil extends DomUtils {
                 // find imported namespaces
                 Set importedNamespaces = new HashSet();
                 NodeList importElements = schemaDocument.getElementsByTagNameNS(XMLConstants.W3C_XML_SCHEMA_NS_URI, "import");
+                int numImportsWithNoNamespace = 0;
                 for (int n=0; n<importElements.getLength(); n++) {
                     Element importElement = (Element) importElements.item(n);
                     if (importElement.hasAttribute("namespace")) {
                         importedNamespaces.add(importElement.getAttribute("namespace"));
+                    }else{
+                        numImportsWithNoNamespace++;
                     }
                 }
+                if(numImportsWithNoNamespace > 1){
+                    //if we allowed this and some element / type in an instance document or from the importing
+                    //schema requires something imported from the 2nd or more no namespace import, then this schema
+                    //will never validate, as the validator ignores an any subsequent no namespace import
+                    throw new BadSchemaException("A Schema cannot contain more than a single import element which does not define a targetNamespace.");    
+                }
+
                 // add import for default ns and tns
                 importedNamespaces.add(XMLConstants.W3C_XML_SCHEMA_NS_URI);
                 importedNamespaces.add(tns);
 
                 // ensure that all "type" attributes are using valid (declared) prefixes and are imported
                 NodeList elementElements = schemaDocument.getElementsByTagNameNS(XMLConstants.W3C_XML_SCHEMA_NS_URI, "element");
+
                 for (int n=0; n<elementElements.getLength(); n++) {
                     Element eleElement = (Element) elementElements.item(n);
 
@@ -718,11 +736,7 @@ public class XmlUtil extends DomUtils {
 
                         String namespace = (String) namespaces.get(qnameAttributes[i][2]);
 
-                        if (namespace == null) {
-                            throw new BadSchemaException("Undeclared namespace prefix '"+qnameAttributes[i][2]+"' for "+qnameAttributes[i][0]+" '"+qnameAttributes[i][1]+"'.");
-                        }
-
-                        if (!importedNamespaces.contains(namespace)) {
+                        if (namespace != null && !importedNamespaces.contains(namespace)) {
                             throw new BadSchemaException("Unimported namespace prefix '"+qnameAttributes[i][2]+"' for "+qnameAttributes[i][0]+" '"+qnameAttributes[i][1]+"'.");
                         }
                     }
