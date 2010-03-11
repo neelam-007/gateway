@@ -700,7 +700,7 @@ public class XmlUtil extends DomUtils {
                 if(numImportsWithNoNamespace > 1){
                     //if we allowed this and some element / type in an instance document or from the importing
                     //schema requires something imported from the 2nd or more no namespace import, then this schema
-                    //will never validate, as the validator ignores an any subsequent no namespace import
+                    //will not validate
                     throw new BadSchemaException("A Schema cannot contain more than a single import element which does not define a targetNamespace.");    
                 }
 
