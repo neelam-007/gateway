@@ -145,6 +145,7 @@ class EntityPropertiesHelper {
             "id",
             "name",
             "oid",
+            "providerTypeCustomized",
             "properties"
         ) ) )
         .put( JmsEndpoint.class, Collections.unmodifiableCollection( Arrays.asList(

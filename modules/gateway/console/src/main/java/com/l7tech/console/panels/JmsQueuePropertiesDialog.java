@@ -546,20 +546,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         // If we already have a connection, and it was using non-default provider settings,
         // preserve it's old settings in a "Custom" provider
-        boolean usingCustom = false;
-        if (connection != null) {
-            usingCustom = true;
-            for (JmsProvider provider : providers) {
-                if (providerMatchesConnection(provider, connection)) {
-                    usingCustom = false;
-                    break;
-                }
-            }
-        }
-
         JmsProvider customProvider = new JmsProvider();
-        customProvider.setName("(Custom)");
-        if (usingCustom) {
+        customProvider.setName(JmsProvider.CUSTOM_LABEL);
+        if (connection != null && connection.isProviderTypeCustomized()) {
             customProvider.setDefaultDestinationFactoryUrl(connection.getDestinationFactoryUrl());
             customProvider.setDefaultQueueFactoryUrl(connection.getQueueFactoryUrl());
             customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
@@ -694,12 +683,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (connection != null) {
             conn = new JmsConnection();
             conn.copyFrom(connection);
+            conn.setProviderTypeCustomized(connection.isProviderTypeCustomized() && providerComboBox.getSelectedIndex() <= 0);
         } else {
             final ProviderComboBoxItem providerItem = ((ProviderComboBoxItem)providerComboBox.getSelectedItem());
             if (providerItem == null) {
                 conn = new JmsConnection();
             } else {
                 JmsProvider provider = providerItem.getProvider();
+                // The flag providerTypeCustomized has been set during the JmsProvider creates a JMS connection.  Please see the method createConnection(...).
                 conn = provider.createConnection(queueNameTextField.getText(),
                   jndiUrlTextField.getText());
             }
@@ -886,15 +877,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void selectProviderForConnection(JmsConnection connection) {
-        int numProviders = providerComboBox.getModel().getSize();
-        for (int i = 0; i < numProviders; ++i) {
-            ProviderComboBoxItem item = (ProviderComboBoxItem)providerComboBox.getModel().getElementAt(i);
-            JmsProvider provider = item.getProvider();
-            if (providerMatchesConnection(provider, connection)) {
-                providerComboBox.setSelectedItem(item);
-                return;
+        if (! connection.isProviderTypeCustomized()) {
+            int numProviders = providerComboBox.getModel().getSize();
+            for (int i = 0; i < numProviders; ++i) {
+                ProviderComboBoxItem item = (ProviderComboBoxItem)providerComboBox.getModel().getElementAt(i);
+                JmsProvider provider = item.getProvider();
+                if (providerMatchesConnection(provider, connection)) {
+                    providerComboBox.setSelectedItem(item);
+                    return;
+                }
             }
         }
+
         providerComboBox.setSelectedIndex(0);
     }
 
