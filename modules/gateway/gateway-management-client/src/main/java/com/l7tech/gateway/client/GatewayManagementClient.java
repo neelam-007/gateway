@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,20 +67,17 @@ public class GatewayManagementClient {
 
     public static void main( final String[] args ) {
         JdkLoggerConfigurator.configure("com.l7tech.gateway.client", "com/l7tech/gateway/client/logging.properties", "logging.properties", true, true);
-        int exitCode = 1;
-        try {
-            GatewayManagementClient gmc = new GatewayManagementClient(args);
-            exitCode = gmc.run();
-        } catch ( Exception e ) {
-            handleErrorException( e );
-        }
+        GatewayManagementClient gmc = new GatewayManagementClient(args, System.out, System.err);
+        final int exitCode = gmc.run();
         System.err.flush();
         System.exit( exitCode );
     }
 
-    public GatewayManagementClient( final String args[] )  {
+    public GatewayManagementClient( final String args[], final OutputStream out, final OutputStream err )  {
         final Arguments arguments = new Arguments();
         final Map<Integer,String> extraArgs = new TreeMap<Integer,String>();
+        this.out = out;
+        this.err = err;
 
         Command command = null;
         String error = null;
@@ -99,7 +97,7 @@ public class GatewayManagementClient {
                 command = buildCommand(extraArgs.get(1), extraArgs.get(0), arguments, extraArguments);
             } catch ( Cli.CliException ce ) {
                 error = ce.getMessage();
-                System.err.println( ce.getMessage() );
+                printError( ce.getMessage() );
                 usage();
             }
         } catch ( CommandException ce ) {
@@ -115,56 +113,13 @@ public class GatewayManagementClient {
 
     public int run() {
         int exitCode = 1;
-        if ( arguments.help ) {
-            String commandName = null;
-            for ( String arg : commandLineArguments ) {
-                if ( isCommand(arg) ) {
-                    commandName = arg;
-                    break;
-                }
-            }
 
-            if ( commandName == null ) {
-                try {
-                    usage();
-                    exitCode = 0;
-                } catch ( CommandException ce ) {
-                    handleCommandException( ce );
-                }
-            } else {
-                try {
-                    String types = resources.getString( "help.types" );
-                    String common = resources.getString( "help.common" );
-                    String help = resources.getString( "help.command." + commandName );
-                    System.out.println( tabReplace(MessageFormat.format( help, types, common )) );
-                    exitCode = 0;
-                } catch ( MissingResourceException mre ) {
-                    System.out.println("Help not available for command '"+commandName+"'.");
-                }
-            }
-        } else if ( arguments.version ) {
-            printInfo( "message.version", getVersion() );
-            exitCode = 0;
-        } else {
-            if ( command != null ) {
-                try {
-                    initProxy();
-                    command.run();
-                    exitCode = 0;
-                } catch ( CommandException ce ) {
-                    handleCommandException( ce );
-                } catch ( ManagementRuntimeException mre ) {
-                    handleManagementException( mre );
-                }
-            } else if ( error == null ) {
-                try {
-                    usage();
-                    exitCode = 1;
-                } catch ( CommandException ce ) {
-                    handleCommandException( ce );
-                }
-            }
+        try {
+            exitCode = doRun();
+        } catch ( Exception e ) {
+            handleErrorException( e );
         }
+
         return exitCode;
     }
 
@@ -190,34 +145,119 @@ public class GatewayManagementClient {
     private static final String DEFAULT_HTTPS_PORT = "8443";
     private static final String HTTP_PREFIX = "http://";
     private static final String HTTPS_PREFIX = "https://";
+    private static final Charset charset = Charset.defaultCharset();
 
+
+    private final OutputStream out;
+    private final OutputStream err;
     private final String[] commandLineArguments;
     private final Arguments arguments;
     private final Command command;
     private final String error;
 
+    private int doRun() {
+        int exitCode = 1;
+        if ( arguments.help ) {
+            String commandName = null;
+            for ( String arg : commandLineArguments ) {
+                if ( isCommand(arg) ) {
+                    commandName = arg;
+                    break;
+                }
+            }
+
+            if ( commandName == null ) {
+                try {
+                    usage();
+                    exitCode = 0;
+                } catch ( CommandException ce ) {
+                    handleCommandException( ce );
+                }
+            } else {
+                try {
+                    String types = resources.getString( "help.types" );
+                    String common = resources.getString( "help.common" );
+                    String help = resources.getString( "help.command." + commandName );
+                    printInfo(MessageFormat.format( help, types, common ));
+                    exitCode = 0;
+                } catch ( MissingResourceException mre ) {
+                    printInfo("Help not available for command '"+commandName+"'.");
+                }
+            }
+        } else if ( arguments.version ) {
+            printInfoMessage( "message.version", getVersion() );
+            exitCode = 0;
+        } else {
+            if ( command != null ) {
+                try {
+                    initProxy();
+                    command.run();
+                    exitCode = 0;
+                } catch ( CommandException ce ) {
+                    handleCommandException( ce );
+                } catch ( ManagementRuntimeException mre ) {
+                    handleManagementException( mre );
+                }
+            } else if ( error == null ) {
+                try {
+                    usage();
+                    exitCode = 1;
+                } catch ( CommandException ce ) {
+                    handleCommandException( ce );
+                }
+            }
+        }
+        return exitCode;        
+    }
+
     private void usage() throws CommandException {
-        printInfo( "usage" );
+        final StringBuilder usage = new StringBuilder(1024);
         try {
-            Cli.usage( new Arguments(), System.out );
+            Cli.usage( new Arguments(), usage );
         } catch ( IOException ioe ) {
             throw new CommandException("Error writing usage", ioe);
         }
+        printInfoMessage( "usage" );
+        printInfo(usage.toString());
     }
 
     private static String getVersion() {
         return BuildInfo.getProductVersion() + " (" + BuildInfo.getBuildNumber() + ")";
     }
 
-    private static void printError( final String messageKey, final Object... parameters ) {
-        System.err.println( tabReplace(MessageFormat.format( resources.getString(messageKey), parameters )) );
+    private void printInfo( final String message ) {
+        printOutput( out, message );
     }
 
-    private static void printInfo( final String messageKey, final Object... parameters ) {
-        System.out.println( tabReplace(MessageFormat.format( resources.getString(messageKey), parameters )) );
+    private void printInfoMessage( final String messageKey, final Object... parameters ) {
+        printOutputMessage( out, messageKey, parameters );
     }
 
-    private static String tabReplace( final String text ) {
+    private void printError( final String message ) {
+        printOutput( err, message );
+    }
+
+    private void printErrorMessage( final String messageKey, final Object... parameters ) {
+        printOutputMessage( err, messageKey, parameters );
+    }
+
+    private void printOutputMessage( final OutputStream out, final String messageKey, final Object... parameters ) {
+        printOutput( out, getMessage(messageKey, parameters) );
+    }
+
+    private void printOutput( final OutputStream out, final String message ) {
+        try {
+            out.write( (message + "\n").getBytes( charset ));
+        } catch ( IOException ioe ) {
+            // suppress error writing message
+        }
+    }
+
+    private String getMessage( final String messageKey, final Object... parameters ) {
+        return tabReplace(MessageFormat.format( resources.getString(messageKey), parameters ));
+    }
+
+    private String tabReplace( final String text ) {
         return text.replaceAll("\t", "    ");        
     }
 
@@ -229,9 +269,9 @@ public class GatewayManagementClient {
 
 
         if ( command != null ) {
-            command.init( buildUrl( hostPortOrUrl ), arguments, Collections.unmodifiableList(extraArguments) );
+            command.init( out, buildUrl( hostPortOrUrl ), arguments, Collections.unmodifiableList(extraArguments) );
         } else if ( commandName != null ) {
-            usage();
+            printErrorMessage("message.unknowncommand", commandName);
         }
 
         return command;
@@ -362,38 +402,44 @@ public class GatewayManagementClient {
 
     private void handleCommandException( final CommandException ce ) {
         if ( ExceptionUtils.causedBy( ce, Accessor.AccessorNetworkException.class )) {
-            printError("message.networkerror", ExceptionUtils.getMessage( ce ));
+            printErrorMessage("message.networkerror", ExceptionUtils.getMessage( ce ));
         } else if ( ExceptionUtils.causedBy( ce, Accessor.AccessorNotFoundException.class )) {
-            printError("message.notfound");
+            printErrorMessage("message.notfound");
         } else if ( ce.getCause() == null ) {
             printError( ExceptionUtils.getMessage( ce ) );
         } else {
-            handleErrorException( ce );   
+            handleErrorException( ce );
         }
     }
 
     private void handleManagementException( final ManagementRuntimeException mre ) {
         if ( mre instanceof Accessor.AccessorNetworkException ) {
-            printError("message.networkerror", ExceptionUtils.getMessage( mre ));
+            printErrorMessage("message.networkerror", ExceptionUtils.getMessage( mre ));
         } else if ( mre instanceof Accessor.AccessorSOAPFaultException ) {
             Accessor.AccessorSOAPFaultException soapFault = (Accessor.AccessorSOAPFaultException) mre;
-            printError("message.soapfault", soapFault.getFault(), soapFault.getRole(), soapFault.getDetails());
+            if ( "The action is not supported by the service.".equals( soapFault.getFault() ) ) {
+                printErrorMessage("message.commandnotsupported", this.arguments.type);
+            } else if ( "The sender was not authorized to access the resource.".equals( soapFault.getFault() ) ) {
+                printErrorMessage("message.accessdenied");
+            } else {
+                printErrorMessage("message.soapfault", soapFault.getFault(), soapFault.getRole(), soapFault.getDetails());
+            }
         } else if ( ExceptionUtils.causedBy( mre, IOException.class )) {
             final IOException ioe = ExceptionUtils.getCauseIfCausedBy( mre, IOException.class );
             if ( ExceptionUtils.getMessage(ioe).equals( "Unauthorized" ) ) {
-                printError("message.notauthorized");
+                printErrorMessage("message.notauthorized");
             } else if ( ioe instanceof SSLHandshakeException ) {
-                printError("message.servernottrusted");
+                printErrorMessage("message.servernottrusted");
             } else {
-                printError("message.ioerror", ExceptionUtils.getMessage( ioe ));
+                printErrorMessage("message.ioerror", ExceptionUtils.getMessage( ioe ));
             }
         } else {
-            handleErrorException( mre );   
+            handleErrorException( mre );
         }
     }
 
-    private static void handleErrorException( final Exception ce ) {
-        printError("message.unexpectederror", ExceptionUtils.getMessage( ce ));
+    private void handleErrorException( final Exception ce ) {
+        printErrorMessage("message.unexpectederror", ExceptionUtils.getMessage( ce ));
 
         final StringBuilder sb = new StringBuilder();
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd 'at' HH:mm:ss z");
@@ -418,9 +464,9 @@ public class GatewayManagementClient {
         try {
             out = new FileWriter(filename);
             IOUtils.copyStream( new StringReader(errorReport), out);
-            printError( "message.errorreport", filename );
+            printErrorMessage( "message.errorreport", filename );
         } catch ( IOException e ) {
-            printError( "message.errorreporterror", filename, ExceptionUtils.getMessage(e) );
+            printErrorMessage( "message.errorreporterror", filename, ExceptionUtils.getMessage(e) );
         } finally {
             ResourceUtils.closeQuietly( out );
         }
@@ -440,7 +486,11 @@ public class GatewayManagementClient {
 
         //- PUBLIC
 
-        public void init( final String url, final Arguments arguments, final List<String> extraArguments ) {
+        public void init( final OutputStream defaultOut,
+                          final String url,
+                          final Arguments arguments,
+                          final List<String> extraArguments ) {
+            this.defaultOut = defaultOut;
             this.url = url;
             this.arguments = arguments;
             this.extraArguments = extraArguments;
@@ -592,7 +642,7 @@ public class GatewayManagementClient {
                     if ( outFile != null ) {
                         out = new FileOutputStream( outFile );
                     } else {
-                        out = new FilterOutputStream( System.out ){
+                        out = new FilterOutputStream( defaultOut ){
                             @Override
                             public void close() throws IOException {
                                 flush();
@@ -623,6 +673,7 @@ public class GatewayManagementClient {
 
         //- PRIVATE
 
+        private OutputStream defaultOut;
         private String url;
         private Arguments arguments;
         private List<String> extraArguments;
@@ -643,6 +694,8 @@ public class GatewayManagementClient {
                 clientFactory.setFeature( ClientFactory.FEATURE_CERTIFICATE_VALIDATION, verifyCertificate );
                 clientFactory.setAttribute( ClientFactory.ATTRIBUTE_PROXY_USERNAME, proxyUsername );
                 clientFactory.setAttribute( ClientFactory.ATTRIBUTE_PROXY_PASSWORD, proxyPassword );
+                clientFactory.setAttribute( ClientFactory.ATTRIBUTE_NET_CONNECT_TIMEOUT, 30000 );
+                clientFactory.setAttribute( ClientFactory.ATTRIBUTE_NET_READ_TIMEOUT, 330000 );  // > server operation timeout
             } catch ( ClientFactory.InvalidOptionException ioe ) {
                 throw ExceptionUtils.wrap( ioe );               
             }
@@ -790,7 +843,8 @@ public class GatewayManagementClient {
             final Accessor<AO> accessor = client.getAccessor( type );
 
             try {
-                accessor.put( cast( readInput(), type) );
+                AO ao = accessor.put( cast( readInput(), type ) );
+                writeOutput( ao );
             } catch ( Accessor.AccessorException e ) {
                 throw new CommandException( "Accessor error", e );
             }

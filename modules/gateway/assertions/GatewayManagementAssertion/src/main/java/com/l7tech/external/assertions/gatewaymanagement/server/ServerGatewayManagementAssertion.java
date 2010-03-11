@@ -1,15 +1,18 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -259,6 +262,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
             processingResponse = true;
             sendResponse(soapResponse, response);
+            context.setRoutingStatus( RoutingStatus.ROUTED);
         } catch ( IOException e ) {
             if ( !processingResponse ) throw e;
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
@@ -322,21 +326,30 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         }
     }
 
-   private static void sendManagementResponse( final Management managementResponse,
-                                               final Message response )
-           throws SOAPException, JAXBException, IOException {
+    private static void sendManagementResponse( final Management managementResponse,
+                                                final Message response )
+            throws SOAPException, JAXBException, IOException {
+        final HttpResponseKnob httpResponseKnob = response.getHttpResponseKnob();
 
         if ( managementResponse.getBody().hasFault()) {
             // sender faults need to set error code to BAD_REQUEST for client errors
             if ( SOAP.SENDER.equals(managementResponse.getBody().getFault().getFaultCodeAsQName())) {
-                response.getHttpResponseKnob().setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                httpResponseKnob.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             } else {
-                response.getHttpResponseKnob().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                httpResponseKnob.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         }
 
-       ByteArrayOutputStream os = new ByteArrayOutputStream();
-       managementResponse.writeTo(os);
-       response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, os.toByteArray() );
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        managementResponse.writeTo(os);
+        final byte[] responseData = os.toByteArray();
+        httpResponseKnob.setHeader( HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(responseData.length) );
+        if ( managementResponse.getHeader() != null && managementResponse.getAction() != null ) {
+            response.initialize(
+                    ContentTypeHeader.parseValue(ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action="+managementResponse.getAction()), 
+                    responseData );
+        } else {
+            response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, responseData );
+        }
     }    
 }

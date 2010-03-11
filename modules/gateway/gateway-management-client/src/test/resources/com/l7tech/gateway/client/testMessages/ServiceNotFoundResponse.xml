@@ -1,0 +1,18 @@
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
+    <soapenv:Body>
+        <soapenv:Fault>
+            <soapenv:Code>
+                <soapenv:Value>soapenv:Receiver</soapenv:Value>
+            </soapenv:Code>
+            <soapenv:Reason>
+                <soapenv:Text xml:lang="en-US">Policy Falsified</soapenv:Text>
+            </soapenv:Reason>
+            <soapenv:Role>http://localhost:8080/wsmanee</soapenv:Role>
+            <soapenv:Detail>
+                <l7:policyResult
+                    status="Service Not Found.  The request may have been sent to an invalid URL, or intended for an unsupported operation."
+                    xmlns:l7="http://www.layer7tech.com/ws/policy/fault" xmlns:l7p="http://www.layer7tech.com/ws/policy"/>
+            </soapenv:Detail>
+        </soapenv:Fault>
+    </soapenv:Body>
+</soapenv:Envelope>

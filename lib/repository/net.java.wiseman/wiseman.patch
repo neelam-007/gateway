@@ -1,0 +1,1402 @@
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/ConfigurableHTTPTransportClient.java wiseman/client/src/com/sun/ws/management/client/impl/ConfigurableHTTPTransportClient.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/ConfigurableHTTPTransportClient.java	1969-12-31 16:00:00.000000000 -0800
++++ wiseman/client/src/com/sun/ws/management/client/impl/ConfigurableHTTPTransportClient.java	2010-03-09 17:18:52.000000000 -0800
+@@ -0,0 +1,320 @@
++package com.sun.ws.management.client.impl;
++
++import com.sun.ws.management.Message;
++import com.sun.ws.management.addressing.Addressing;
++import com.sun.ws.management.transport.ContentType;
++
++import javax.net.ssl.HostnameVerifier;
++import javax.net.ssl.HttpsURLConnection;
++import javax.net.ssl.SSLSocketFactory;
++import javax.xml.bind.JAXBException;
++import javax.xml.soap.SOAPException;
++import javax.xml.soap.SOAPMessage;
++import java.io.ByteArrayOutputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.net.HttpURLConnection;
++import java.net.PasswordAuthentication;
++import java.net.URL;
++import java.net.URLConnection;
++import java.nio.charset.Charset;
++import java.util.Map;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++/**
++ * HTTP Transport Client that supports configuration.
++ */
++public class ConfigurableHTTPTransportClient implements TransportClient {
++
++    //- PUBLIC
++
++    public HostnameVerifier getHostnameVerifier() {
++        return hostnameVerifier;
++    }
++
++    public void setHostnameVerifier( final HostnameVerifier hostnameVerifier ) {
++        this.hostnameVerifier = hostnameVerifier;
++    }
++
++    public SSLSocketFactory getSslSocketFactory() {
++        return sslSocketFactory;
++    }
++
++    public void setSslSocketFactory( final SSLSocketFactory sslSocketFactory ) {
++        this.sslSocketFactory = sslSocketFactory;
++    }
++
++    public PasswordAuthentication getPasswordAuthentication() {
++        return passwordAuthentication;
++    }
++
++    public void setPasswordAuthentication( final PasswordAuthentication passwordAuthentication ) {
++        this.passwordAuthentication = passwordAuthentication;
++    }
++
++    public boolean isFollowRedirects() {
++        return followRedirects;
++    }
++
++    public void setFollowRedirects( final boolean followRedirects ) {
++        this.followRedirects = followRedirects;
++    }
++
++    public boolean isAllowUserInteraction() {
++        return allowUserInteraction;
++    }
++
++    public void setAllowUserInteraction( final boolean allowUserInteraction ) {
++        this.allowUserInteraction = allowUserInteraction;
++    }
++
++    public int getConnectTimeout() {
++        return connectTimeout;
++    }
++
++    public void setConnectTimeout( final int connectTimeout ) {
++        this.connectTimeout = connectTimeout;
++    }
++
++    public int getReadTimeout() {
++        return readTimeout;
++    }
++
++    public void setReadTimeout( final int readTimeout ) {
++        this.readTimeout = readTimeout;
++    }
++
++    public boolean isUseCaches() {
++        return useCaches;
++    }
++
++    public void setUseCaches( final boolean useCaches ) {
++        this.useCaches = useCaches;
++    }
++
++    public String getUserAgent() {
++        return userAgent;
++    }
++
++    public void setUserAgent( final String userAgent ) {
++        this.userAgent = userAgent;
++    }
++
++    public Addressing sendRequest( final Addressing msg,
++                                   final Map.Entry<String, String>... headers ) throws IOException, SOAPException, JAXBException {
++        final HttpURLConnection http = initConnection(msg.getTo(), getContentType(null, msg, msg.getContentType()));
++
++        setHeaders( http, headers );
++
++        writeRequest(http, null, msg);
++
++        final Addressing response = readResponse(http);
++        response.setXmlBinding(msg.getXmlBinding());
++
++        return response;
++    }
++
++    public Addressing sendRequest( final SOAPMessage msg,
++                                   final String destination,
++                                   final Map.Entry<String, String>... headers ) throws IOException, SOAPException, JAXBException {
++        final HttpURLConnection http = initConnection(
++                destination,
++                getContentType(msg, null, ContentType.createFromEncoding((String) msg.getProperty(SOAPMessage.CHARACTER_SET_ENCODING))));
++
++        setHeaders( http, headers );
++
++        writeRequest(http, msg, null);
++
++        return readResponse(http);
++    }
++
++    //- PROTECTED
++
++    /**
++     * Override to provide or modify the content type header.
++     *
++     * @param soapMessage The SOAPMessage (may be null).
++     * @param message The Message (may be null)
++     * @param suggestedContentType The suggested content type (may be null)
++     * @return The content type to use (or null)
++     */
++    protected String getContentType( final SOAPMessage soapMessage,
++                                     final Message message,
++                                     final ContentType suggestedContentType ) {
++        return suggestedContentType == null ? null : suggestedContentType.toString();
++    }
++
++    /**
++     * Set the given headers on the given HTTP URL connection.
++     *
++     * @param httpURLConnection The connection to set headers on
++     * @param headers The headers to set
++     */
++    protected void setHeaders( final HttpURLConnection httpURLConnection,
++                               final Map.Entry<String, String>[] headers ) {
++        if (headers != null) {
++            for ( Map.Entry<String,String> entry : headers ) {
++                httpURLConnection.setRequestProperty(entry.getKey(), entry.getValue());
++            }
++        }
++    }
++
++    /**
++     * Initialize the HTTP URL connection.
++     *
++     * @param to The destination URL (required)
++     * @param contentType The content type to use (may be null)
++     * @return The new HTTP URL connection
++     * @throws IOException If an error occurs
++     */
++    protected HttpURLConnection initConnection( final String to,
++                                                final String contentType ) throws IOException {
++        if (to == null) {
++            throw new IllegalArgumentException("Required Element is missing: " + Addressing.TO);
++        }
++
++        final URL dest = new URL(to);
++        final URLConnection conn = dest.openConnection();
++
++        conn.setConnectTimeout( connectTimeout );
++        conn.setReadTimeout( readTimeout );
++        conn.setAllowUserInteraction( allowUserInteraction );
++        conn.setUseCaches( useCaches );
++        conn.setDoInput(true);
++        conn.setDoOutput(true);
++        conn.setRequestProperty("Accept", ContentType.ACCEPTABLE_CONTENT_TYPES);
++        conn.setRequestProperty("Content-Type",
++                contentType == null ? ContentType.DEFAULT_CONTENT_TYPE.toString() : contentType);
++        conn.setRequestProperty("User-Agent", userAgent);
++
++        final HttpURLConnection http = (HttpURLConnection) conn;
++        http.setInstanceFollowRedirects( followRedirects );
++        http.setRequestMethod("POST");
++
++        if ( http instanceof HttpsURLConnection ) {
++            final HttpsURLConnection https = (HttpsURLConnection) http;
++
++            if ( hostnameVerifier != null ) {
++                https.setHostnameVerifier( hostnameVerifier );
++            }
++
++            if ( sslSocketFactory != null ) {
++                https.setSSLSocketFactory( sslSocketFactory );
++            }
++        }
++
++        setAuthentication( http );
++
++        return http;
++    }
++
++    /**
++     * Set an authentication header on the provided HTTP URL connection.
++     *
++     * @param httpURLConnection The HTTP URL connection to use.
++     * @see #setPasswordAuthentication
++     */
++    protected void setAuthentication( final HttpURLConnection httpURLConnection ) {
++        if ( passwordAuthentication != null ) {
++            final String userPass = passwordAuthentication.getUserName() + ":" + new String(passwordAuthentication.getPassword());
++            final String encoding = new sun.misc.BASE64Encoder().encode ( userPass.getBytes( ISO_8859_1 ) ); 
++            httpURLConnection.setRequestProperty ("Authorization", "Basic " + encoding);
++        }
++    }
++
++    /**
++     * Write the given message to the provided HTTP URL connection.
++     *
++     * @param httpURLConnection The connection to write to
++     * @param soapMessage The SOAPMessage to write (may be null)
++     * @param message The Message to write (may be null)
++     * @throws IOException If an error occurs
++     * @throws SOAPException If an error occurs
++     * @throws JAXBException If an error occurs
++     */
++    protected void writeRequest( final HttpURLConnection httpURLConnection,
++                                 final SOAPMessage soapMessage,
++                                 final Message message ) throws IOException, SOAPException, JAXBException {
++        OutputStream os = null;
++        try {
++            os = httpURLConnection.getOutputStream();
++
++            if ( message != null ) {
++                message.writeTo(os);
++            } else if ( soapMessage != null ) {
++                soapMessage.writeTo(os);
++            }
++        } finally {
++            if (os != null) { os.close(); }
++        }
++    }
++
++    /**
++     * Read the response message from the provided HTTP URL connection.
++     *
++     * @param http The HTTP URL connection to use.
++     * @return The response message
++     * @throws IOException If an error occurs
++     * @throws SOAPException If an error occurs
++     */
++    protected Addressing readResponse( final HttpURLConnection http ) throws IOException, SOAPException {
++        final Addressing addr;
++        InputStream is = null;
++        try {
++            final int response = http.getResponseCode();
++            if (response == HttpURLConnection.HTTP_OK) {
++                is = http.getInputStream();
++            } else if (response == HttpURLConnection.HTTP_BAD_REQUEST ||
++                    response == HttpURLConnection.HTTP_INTERNAL_ERROR) {
++                // read the fault from the error stream
++                is = http.getErrorStream();
++            } else {
++                final String detail = http.getResponseMessage();
++                throw new IOException(detail == null ? Integer.toString(response) : detail);
++            }
++
++            final String responseType = http.getContentType();
++            final ContentType contentType = ContentType.createFromHttpContentType(responseType);
++            if (contentType==null||!contentType.isAcceptable()) {
++                // dump the first 4k bytes of the response for help in debugging
++                if (LOG.isLoggable(Level.INFO)) {
++                    final byte[] buffer = new byte[4096];
++                    final int nread = is.read(buffer);
++                    if (nread > 0) {
++                        final ByteArrayOutputStream bos = new ByteArrayOutputStream(buffer.length);
++                        bos.write(buffer, 0, nread);
++                        LOG.info("Response discarded: " + new String(bos.toByteArray()));
++                    }
++                }
++                throw new IOException("Content-Type of response is not acceptable: " + responseType);
++            }
++
++            addr = new Addressing(is);
++            addr.setContentType(contentType);
++        } finally {
++            if (is != null) { is.close(); }
++        }
++
++        return addr;
++    }
++
++    //- PRIVATE
++
++    private static final Logger LOG = Logger.getLogger(ConfigurableHTTPTransportClient.class.getName());
++
++    private static final Charset ISO_8859_1 = Charset.forName( "ISO-8859-1" );
++    private static final String DEFAULT_USER_AGENT = "https://wiseman.dev.java.net";
++
++    private HostnameVerifier hostnameVerifier;
++    private SSLSocketFactory sslSocketFactory;
++    private PasswordAuthentication passwordAuthentication;
++    private boolean followRedirects = false;
++    private boolean allowUserInteraction = false;
++    private int connectTimeout = 0;
++    private int readTimeout = 0;
++    private boolean useCaches = false;
++    private String userAgent = DEFAULT_USER_AGENT;
++
++}
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/DefaultHTTPTransportClient.java wiseman/client/src/com/sun/ws/management/client/impl/DefaultHTTPTransportClient.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/DefaultHTTPTransportClient.java	1969-12-31 16:00:00.000000000 -0800
++++ wiseman/client/src/com/sun/ws/management/client/impl/DefaultHTTPTransportClient.java	2010-03-08 23:19:12.000000000 -0800
+@@ -0,0 +1,27 @@
++package com.sun.ws.management.client.impl;
++
++import com.sun.ws.management.addressing.Addressing;
++import com.sun.ws.management.transport.HttpClient;
++
++import javax.xml.bind.JAXBException;
++import javax.xml.soap.SOAPException;
++import javax.xml.soap.SOAPMessage;
++import java.io.IOException;
++import java.util.Map;
++
++/**
++ * Default HTTP implementation of the TransportClient interface.
++ */
++public class DefaultHTTPTransportClient implements TransportClient {
++
++    public Addressing sendRequest( final Addressing msg,
++                                   final Map.Entry<String, String>... headers ) throws IOException, SOAPException, JAXBException {
++        return HttpClient.sendRequest( msg, headers );
++    }
++
++    public Addressing sendRequest( final SOAPMessage msg,
++                                   final String destination,
++                                   final Map.Entry<String, String>... headers ) throws IOException, SOAPException, JAXBException {
++        return HttpClient.sendRequest( msg, destination, headers );
++    }
++}
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/EnumerationResourceImpl.java wiseman/client/src/com/sun/ws/management/client/impl/EnumerationResourceImpl.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/EnumerationResourceImpl.java	2007-06-19 12:50:39.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/impl/EnumerationResourceImpl.java	2010-03-08 23:19:12.000000000 -0800
+@@ -60,6 +60,7 @@
+ import javax.xml.soap.SOAPFault;
+ import javax.xml.xpath.XPathExpressionException;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.AttributableNonNegativeInteger;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.DialectableMixedDataType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
+@@ -82,7 +83,6 @@
+ import com.sun.ws.management.enumeration.EnumerationExtensions.Mode;
+ import com.sun.ws.management.server.EnumerationItem;
+ import com.sun.ws.management.transfer.Transfer;
+-import com.sun.ws.management.transport.HttpClient;
+ import com.sun.ws.management.xml.XPath;
+ import com.sun.ws.management.xml.XmlBinding;
+ 
+@@ -96,13 +96,13 @@
+ 	private boolean endOfSequence = false;
+ 
+ 	public EnumerationResourceImpl(String destination, String resourceURI,
+-			SelectorSetType selectors, XmlBinding binding) throws SOAPException, JAXBException {
+-		super(destination, resourceURI, selectors, binding);
++			SelectorSetType selectors, XmlBinding binding, TransportClient client) throws SOAPException, JAXBException {
++		super(destination, resourceURI, selectors, binding, client);
+ 	}
+ 
+-	public EnumerationResourceImpl(Element eprElement, String endpointUrl, XmlBinding binding)
++	public EnumerationResourceImpl(Element eprElement, String endpointUrl, XmlBinding binding, TransportClient client)
+ 			throws SOAPException, JAXBException {
+-		super(eprElement, endpointUrl, binding);
++		super(eprElement, endpointUrl, binding, client);
+ 	}
+ 
+ 	// attributes
+@@ -277,7 +277,7 @@
+ 					null, null, enumerationMode, params);
+ 		}
+ 
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 		response.setXmlBinding(mgmt.getXmlBinding());
+ 
+ 		// Check for fault during message generation
+@@ -371,7 +371,7 @@
+ 		Vector<ResourceImpl> ret = new Vector<ResourceImpl>();
+ 		for (int index = 0; index < eprNodes.getLength(); index++) {
+ 			Element eprElement = (Element) eprNodes.item(index);
+-			ret.add(new ResourceImpl(eprElement, endpointUrl, getBinding()));
++			ret.add(new ResourceImpl(eprElement, endpointUrl, getBinding(), client));
+ 		}
+ 		return (Resource[]) ret.toArray(new Resource[] {});
+ 	}
+@@ -502,7 +502,7 @@
+ 			enu.setRequestTotalItemsCountEstimate();
+ 		}
+ 
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 		response.setXmlBinding(mgmt.getXmlBinding());
+ 
+ 		// Check for fault during message generation
+@@ -592,7 +592,7 @@
+ 		// Add any user defined options to the header
+ 		addOptionSetHeader(mgmt);
+ 
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 		response.setXmlBinding(mgmt.getXmlBinding());
+ 
+ 		// Check for fault during message generation
+@@ -625,7 +625,7 @@
+ 		// Add any user defined options to the header
+ 		addOptionSetHeader(mgmt);
+ 
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 		response.setXmlBinding(mgmt.getXmlBinding());
+ 
+ 		// Check for fault during message generation
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/JAXBResourceImpl.java wiseman/client/src/com/sun/ws/management/client/impl/JAXBResourceImpl.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/JAXBResourceImpl.java	2007-05-30 06:29:44.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/impl/JAXBResourceImpl.java	2010-03-08 23:19:12.000000000 -0800
+@@ -39,6 +39,7 @@
+ import javax.xml.datatype.DatatypeConfigurationException;
+ import javax.xml.soap.SOAPException;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.EnumerationModeType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
+ import org.w3c.dom.Document;
+@@ -74,30 +75,30 @@
+ 	private static Logger log = Logger.getLogger(JAXBResourceImpl.class.getName());
+ 
+ 
+-	public JAXBResourceImpl(String destination, String resourceURI,SelectorSetType selectors, XmlBinding b) throws SOAPException, JAXBException{
+-		super(destination, resourceURI,selectors,b);
++	public JAXBResourceImpl(String destination, String resourceURI,SelectorSetType selectors, XmlBinding b, TransportClient client) throws SOAPException, JAXBException{
++		super(destination, resourceURI,selectors,b, client);
+ 	}
+ 
+-	JAXBResourceImpl(String destination, String resourceURI,XmlBinding b) throws SOAPException, JAXBException {
+-		super(destination, resourceURI, null);
++	JAXBResourceImpl(String destination, String resourceURI,XmlBinding b, TransportClient client) throws SOAPException, JAXBException {
++		super(destination, resourceURI, null, client);
+ 	}
+ 
+-	JAXBResourceImpl(Element eprElement, String endpointUrl, XmlBinding b) throws SOAPException, JAXBException {
+-		super(eprElement, endpointUrl, b);
++	JAXBResourceImpl(Element eprElement, String endpointUrl, XmlBinding b, TransportClient client) throws SOAPException, JAXBException {
++		super(eprElement, endpointUrl, b, client);
+ 	}
+ 
+-	JAXBResourceImpl(String destination, String resourceURI,SelectorSetType selectors, final String... packageNames) throws SOAPException, JAXBException{
+-		super(destination, resourceURI,selectors, null);
++	JAXBResourceImpl(String destination, String resourceURI, TransportClient client,SelectorSetType selectors, final String... packageNames) throws SOAPException, JAXBException{
++		super(destination, resourceURI,selectors, null, client);
+ 		setBinding(packageNames);
+ 	}
+ 
+-	JAXBResourceImpl(String destination, String resourceURI, final String... packageNames) throws SOAPException, JAXBException {
+-		super(destination, resourceURI, null);
++	JAXBResourceImpl(String destination, String resourceURI, TransportClient client, final String... packageNames) throws SOAPException, JAXBException {
++		super(destination, resourceURI, null, client);
+ 		setBinding(packageNames);
+ 	}
+ 
+-	JAXBResourceImpl(Element eprElement, String endpointUrl, final String... packageNames) throws SOAPException, JAXBException {
+-		super(eprElement, endpointUrl, null);
++	JAXBResourceImpl(Element eprElement, String endpointUrl, TransportClient client, final String... packageNames) throws SOAPException, JAXBException {
++		super(eprElement, endpointUrl, null, client);
+ 		setBinding(packageNames);
+ 	}
+ 
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/ResourceImpl.java wiseman/client/src/com/sun/ws/management/client/impl/ResourceImpl.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/ResourceImpl.java	2007-06-03 23:25:10.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/impl/ResourceImpl.java	2010-03-08 23:19:12.000000000 -0800
+@@ -51,6 +51,7 @@
+ import javax.xml.soap.SOAPException;
+ import javax.xml.soap.SOAPFault;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorType;
+ import org.w3c.dom.Document;
+@@ -62,23 +63,22 @@
+ import com.sun.ws.management.client.ResourceState;
+ import com.sun.ws.management.client.exceptions.FaultException;
+ import com.sun.ws.management.transfer.Transfer;
+-import com.sun.ws.management.transport.HttpClient;
+ import com.sun.ws.management.xml.XmlBinding;
+ 
+ public class ResourceImpl extends EnumerationResourceImpl implements Resource {
+ 	
+     protected static final String UUID_SCHEME = "uuid:";
+ 
+-	public ResourceImpl(String destination, String resourceURI, SelectorSetType selectors, XmlBinding binding) throws SOAPException, JAXBException{
+-		super(destination, resourceURI, selectors, binding);//
++	public ResourceImpl(String destination, String resourceURI, SelectorSetType selectors, XmlBinding binding, TransportClient client) throws SOAPException, JAXBException{
++		super(destination, resourceURI, selectors, binding, client);//
+ 	}
+ 
+-	public ResourceImpl(String destination, String resourceURI, XmlBinding binding) throws SOAPException, JAXBException {
+-		super(destination, resourceURI, null, binding);
++	public ResourceImpl(String destination, String resourceURI, XmlBinding binding, TransportClient client) throws SOAPException, JAXBException {
++		super(destination, resourceURI, null, binding, client);
+ 	}
+ 
+-	public ResourceImpl(Element eprElement, String endpointUrl, XmlBinding binding) throws SOAPException, JAXBException {
+-		super(eprElement, endpointUrl, binding);
++	public ResourceImpl(Element eprElement, String endpointUrl, XmlBinding binding, TransportClient client) throws SOAPException, JAXBException {
++		super(eprElement, endpointUrl, binding, client);
+ 	}
+ 
+ 	public ResourceState invoke(String action, Document document) throws SOAPException, JAXBException, IOException, FaultException, DatatypeConfigurationException {
+@@ -101,7 +101,7 @@
+ 		xf.getBody().addDocument(document);
+ 		
+         //Send the request
+-        final Addressing response = HttpClient.sendRequest(mgmt);
++        final Addressing response = client.sendRequest(mgmt);
+ 
+         //Check for fault during message generation
+ 		if (response.getBody().hasFault()) {
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/TransferableResourceImpl.java wiseman/client/src/com/sun/ws/management/client/impl/TransferableResourceImpl.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/TransferableResourceImpl.java	2007-06-03 23:25:11.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/impl/TransferableResourceImpl.java	2010-03-08 23:19:12.000000000 -0800
+@@ -68,6 +68,7 @@
+ import javax.xml.transform.dom.DOMSource;
+ import javax.xml.transform.stream.StreamResult;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.AttributableURI;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.MaxEnvelopeSizeType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.OptionType;
+@@ -88,7 +89,6 @@
+ import com.sun.ws.management.server.BaseSupport;
+ import com.sun.ws.management.transfer.Transfer;
+ import com.sun.ws.management.transfer.TransferExtensions;
+-import com.sun.ws.management.transport.HttpClient;
+ import com.sun.ws.management.xml.XmlBinding;
+ 
+ public class TransferableResourceImpl implements TransferableResource {
+@@ -102,6 +102,8 @@
+ 
+ 	public XmlBinding binding = null;
+ 
++    protected TransportClient client;
++
+ 	// Attributes
+ 	/**
+ 	 * The Resource URI that should be use to refer to this resource when calls
+@@ -154,12 +156,13 @@
+ 	 * @throws JAXBException
+ 	 */
+ 	TransferableResourceImpl(String destination, String resourceURI,
+-			SelectorSetType selectors, XmlBinding binding)
++			SelectorSetType selectors, XmlBinding binding, TransportClient client)
+ 			throws SOAPException, JAXBException {
+ 		setDestination(destination);
+ 		setResourceUri(resourceURI);
+ 		this.selectorSet = selectors;
+ 		this.binding = binding;
++        this.client = client;
+ 
+ 		initJAXB();
+ 	}
+@@ -177,11 +180,12 @@
+ 	 */
+ 	@SuppressWarnings("unchecked")
+ 	TransferableResourceImpl(Element eprElement, String endpointUrl,
+-			XmlBinding binding) throws SOAPException, JAXBException {
++			XmlBinding binding, TransportClient client) throws SOAPException, JAXBException {
+ 		initJAXB();
+ 		if (binding == null)
+ 			binding = new XmlBinding(null);
+ 		this.binding = binding;
++        this.client = client;
+ 		EndpointReferenceType epr = null;
+ 		epr = ((JAXBElement<EndpointReferenceType>) this.binding
+ 				.unmarshal(eprElement)).getValue();
+@@ -279,7 +283,7 @@
+ 		addOptionSetHeader(mgmt);
+ 
+ 		// Send the request
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 
+ 		// Check for fault during message generation
+ 		if (response.getBody().hasFault()) {
+@@ -377,7 +381,7 @@
+ 		addOptionSetHeader(mgmt);
+ 
+ 		// Send the request
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 
+ 		// Check for fault during message generation
+ 		if (response.getBody().hasFault()) {
+@@ -537,7 +541,7 @@
+ 		addOptionSetHeader(mgmt);
+ 
+ 		// Send the request
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 
+ 		// Check for fault during message generation
+ 		if (response.getBody().hasFault()) {
+@@ -789,4 +793,23 @@
+ 	public void setBinding(final String... packageNames) throws JAXBException {
+ 		this.binding = new XmlBinding(null, packageNames);
+ 	}
++
++    /**
++     * Set the client responsible for message transfer.
++     *
++     * @param client The client to use.
++     */
++    public void setTransportClient( final TransportClient client ) {
++        this.client = client;
++    }
++
++    /**
++     * Get the client responsible for message transfer.
++     *
++     * @return The client.
++     */
++    public TransportClient getTransportClient() {
++        return client;
++    }
++
+ }
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/TransportClient.java wiseman/client/src/com/sun/ws/management/client/impl/TransportClient.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/impl/TransportClient.java	1969-12-31 16:00:00.000000000 -0800
++++ wiseman/client/src/com/sun/ws/management/client/impl/TransportClient.java	2010-03-08 23:19:12.000000000 -0800
+@@ -0,0 +1,24 @@
++package com.sun.ws.management.client.impl;
++
++import com.sun.ws.management.addressing.Addressing;
++
++import javax.xml.bind.JAXBException;
++import javax.xml.soap.SOAPException;
++import javax.xml.soap.SOAPMessage;
++import java.io.IOException;
++import java.util.Map;
++
++/**
++ *
++ */
++public interface TransportClient {
++
++        
++    Addressing sendRequest( final Addressing msg,
++                            final Map.Entry<String, String>... headers) throws IOException, SOAPException, JAXBException;
++
++    Addressing sendRequest( final SOAPMessage msg,
++                            final String destination,
++                            final Map.Entry<String, String>... headers) throws IOException, SOAPException, JAXBException;
++
++}
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/ResourceFactory.java wiseman/client/src/com/sun/ws/management/client/ResourceFactory.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/ResourceFactory.java	2007-06-03 23:25:09.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/ResourceFactory.java	2010-03-10 15:23:58.000000000 -0800
+@@ -61,12 +61,16 @@
+ import javax.xml.soap.SOAPException;
+ import javax.xml.soap.SOAPFault;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
++import com.sun.ws.management.client.impl.DefaultHTTPTransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.AttributableURI;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.OptionType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorType;
+ import org.w3c.dom.Document;
+ import org.w3c.dom.DocumentFragment;
++import org.w3c.dom.Element;
++import org.w3c.dom.Node;
+ import org.w3c.dom.NodeList;
+ import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
+ import org.xmlsoap.schemas.ws._2004._08.addressing.ReferenceParametersType;
+@@ -80,7 +84,6 @@
+ import com.sun.ws.management.server.BaseSupport;
+ import com.sun.ws.management.transfer.Transfer;
+ import com.sun.ws.management.transfer.TransferExtensions;
+-import com.sun.ws.management.transport.HttpClient;
+ import com.sun.ws.management.xml.XmlBinding;
+ 
+ /**
+@@ -103,17 +106,29 @@
+ 	public static final String LATEST = "LATEST";
+ 
+     private static Logger log = Logger.getLogger(ResourceFactory.class.getName());
+-    private static XmlBinding xmlBinding = null;
++    private static XmlBinding defaultXmlBinding = null;
++    private static TransportClient defaultClient = new DefaultHTTPTransportClient();
++
++    private XmlBinding xmlBinding;
++    private TransportClient client;
+ 
+ 	/**
+ 	 * You should never create a factory. Access it statically.
+ 	 */
+ 	private static org.dmtf.schemas.wbem.wsman._1.wsman.ObjectFactory wsManFactory=
+ 		new org.dmtf.schemas.wbem.wsman._1.wsman.ObjectFactory();
+-	private ResourceFactory() {
++
++    private ResourceFactory( final XmlBinding xmlBinding,
++                             final TransportClient client ) {
+ 		super();
++        this.xmlBinding = xmlBinding;
++        this.client = client;
+ 	}
+ 
++    public static ResourceFactory newInstance() {
++        return new ResourceFactory( defaultXmlBinding, defaultClient );
++    }
++
+ 	/**
+ 	 * Creates a new resource instance on the server.
+ 	 *
+@@ -130,7 +145,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static Resource create(String destination, String resourceURI,
++	public Resource create(String destination, String resourceURI,
+ 			long timeoutInMilliseconds, Document content, String specVersion)
+ 			throws SOAPException, JAXBException, IOException, FaultException,
+ 			DatatypeConfigurationException	{
+@@ -155,7 +170,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static Resource create(String destination, String resourceURI,
++	public Resource create(String destination, String resourceURI,
+ 			long timeoutInMilliseconds, Document content, String specVersion,
+ 			HashSet<OptionType> optionSet)
+ 			throws SOAPException, JAXBException, IOException, FaultException,
+@@ -185,7 +200,7 @@
+      * @throws FaultException
+      * @throws DatatypeConfigurationException
+      */
+-	public static Resource createFragment(String destination,
++	public Resource createFragment(String destination,
+ 			String resourceURI, SelectorSetType existingResourceId,
+ 			long timeoutInMilliseconds, Document content,
+ 			String specVersion, String fragmentExp, String dialect) throws SOAPException,
+@@ -235,7 +250,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static Resource create(final String destination,
++	public Resource create(final String destination,
+ 			final String resourceURI, final SelectorSetType existingResourceId,
+ 			final long timeoutInMilliseconds, final Object content,
+ 			final String specVersion, HashSet<OptionType> optionSet, final Object expression,
+@@ -323,7 +338,7 @@
+ 		}
+ 
+ 		// Send the request
+-		final Addressing response = HttpClient.sendRequest(mgmt);
++		final Addressing response = client.sendRequest(mgmt);
+ 		response.setXmlBinding(mgmt.getXmlBinding());
+ 
+ 		// Check for fault during message generation
+@@ -336,7 +351,7 @@
+ 		// Iterate through the create response to obtain the selectors
+ 		final SOAPBody body = response.getBody();
+ 		final JAXBElement createResponse = (JAXBElement) response.getXmlBinding()
+-				.unmarshal(body.getFirstChild());
++				.unmarshal(getFirstElementChild(body));
+ 		final EndpointReferenceType resCreated = (EndpointReferenceType) createResponse
+ 				.getValue();
+ 
+@@ -364,18 +379,34 @@
+ 		}
+ 		final ResourceImpl resource = new ResourceImpl(destination,
+ 				returnedResourceUri, populateSelectorSet(resCreated),
+-				xmlBinding);
++				xmlBinding, client);
+ 		resource.setMessageTimeout(timeoutInMilliseconds);
+ 		return resource;
+ 	}
+ 
++    private Element getFirstElementChild( final Element element ) {
++        Element child = null;
++
++        if ( element != null ) {
++            Node childNode = element.getFirstChild();
++            while ( childNode != null && childNode.getNodeType() != Node.ELEMENT_NODE ) {
++                childNode = childNode.getNextSibling();
++            }
++            if ( childNode != null ) {
++                child = (Element) childNode;                
++            }
++        }
++
++        return child;
++    }
++
+ 	/**
+ 	 * Extracts and builds a selector set from the response from create.
+ 	 * 
+ 	 * @param createResponse
+ 	 * @return the SelectorSetType created
+ 	 */
+-	private static SelectorSetType populateSelectorSet(
++	private SelectorSetType populateSelectorSet(
+ 			EndpointReferenceType createResponse) {
+ 
+ 		// Check the reference parameters
+@@ -433,7 +464,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static void delete(Resource res) throws SOAPException,
++	public void delete(Resource res) throws SOAPException,
+ 			JAXBException, IOException, FaultException,
+ 			DatatypeConfigurationException {
+ 		res.delete();
+@@ -465,7 +496,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static Resource[] find(String destination, String resourceURI,
++	public Resource[] find(String destination, String resourceURI,
+ 			long timeout, SelectorSetType selectors) throws SOAPException,
+ 			JAXBException, IOException, FaultException,
+ 			DatatypeConfigurationException {
+@@ -477,7 +508,8 @@
+ 		final Resource enumerationResource = new ResourceImpl(destination,
+ 				                                              resourceURI,
+ 				                                              selectors,
+-				                                              xmlBinding);
++				                                              xmlBinding,
++                                                              client);
+ 		enumerationResource.setMessageTimeout(timeout);
+ 		resourceList[0] = enumerationResource;
+ 
+@@ -510,7 +542,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static Resource[] find(String destination, String resourceURI,
++	public Resource[] find(String destination, String resourceURI,
+ 			long timeout, Map<String,String> selectors) throws SOAPException,JAXBException, IOException, FaultException,
+ 			DatatypeConfigurationException {
+ 		SelectorSetType selectorsSetType = null;
+@@ -529,7 +561,7 @@
+ 		return find(destination, resourceURI, timeout, selectorsSetType);
+ 	}
+ 
+-	private static void setFragmentHeader(final Object expression,
++	private void setFragmentHeader(final Object expression,
+ 			final Map<String, String> namespaces, final String dialect,
+ 			final Management mgmt) throws SOAPException, JAXBException {
+ 		final TransferExtensions transfer = new TransferExtensions(mgmt);
+@@ -546,7 +578,7 @@
+      * @throws IOException
+      * @throws JAXBException
+      */
+-	public static ServerIdentity getIdentity(String destination)
++	public ServerIdentity getIdentity(String destination)
+ 			throws SOAPException, IOException, JAXBException {
+ 		try {
+ 			return getIdentity(destination, -1);
+@@ -575,7 +607,7 @@
+ 	 * @throws InterruptedException
+ 	 * @throws TimeoutException
+ 	 */
+-	public static ServerIdentity getIdentity(final String destination,int timeout) throws SOAPException, IOException, JAXBException, InterruptedException, TimeoutException{
++	public ServerIdentity getIdentity(final String destination,int timeout) throws SOAPException, IOException, JAXBException, InterruptedException, TimeoutException{
+ 		final Map.Entry<String, String>[] map = null;
+ 		final ServerIdentity identity = getIdentity(destination, timeout, map);
+ 		return identity;
+@@ -597,7 +629,7 @@
+ 	 * @throws InterruptedException
+ 	 * @throws TimeoutException
+ 	 */
+-	public static ServerIdentity getIdentity(final String destination,
++	public ServerIdentity getIdentity(final String destination,
+ 			int timeout, final Entry<String, String>... headers)
+ 			throws SOAPException, IOException, JAXBException,
+ 			InterruptedException, TimeoutException {
+@@ -626,7 +658,7 @@
+ 	 * 
+ 	 * @param binding
+ 	 */
+-	public static void setBinding(XmlBinding binding) {
++	public void setBinding(XmlBinding binding) {
+ 		xmlBinding = binding;
+ 	}
+ 
+@@ -634,11 +666,64 @@
+ 	 * Gets the XmlBinding that is used for marshaling and unmarshaling.
+ 	 * @return the XmlBinding.
+ 	 */
+-	public static XmlBinding getBinding() {
++	public XmlBinding getBinding() {
+ 		return xmlBinding;
+ 	}
+ 
+-	/**
++    /**
++     * Set the TransportClient that will be used for message transport.
++     *
++     * @param transportClient The client to use (Required)
++     */
++    public void setTransportClient( TransportClient transportClient ) {
++        client = transportClient;
++    }
++
++    /**
++     * Get the TransportClient used for message transport.
++     *
++     * @return The client
++     */
++    public TransportClient getTransportClient() {
++        return client;
++    }
++
++    /**
++     * Sets the default XmlBinding that will be used for marshalling and unmarshalling.
++     *
++     * @param binding
++     */
++    public static void setDefaultBinding( final XmlBinding binding ) {
++        defaultXmlBinding = binding;
++    }
++
++    /**
++     * Gets the default XmlBinding that is used for marshaling and unmarshaling.
++     * @return the XmlBinding.
++     */
++    public static XmlBinding getDefaultBinding() {
++        return defaultXmlBinding;
++    }
++
++    /**
++     * Set the default TransportClient that will be used for message transport.
++     *
++     * @param transportClient The client to use (Required)
++     */
++    public static void setDefaultTransportClient( final TransportClient transportClient ) {
++        defaultClient = transportClient;
++    }
++
++    /**
++     * Get the default TransportClient used for message transport.
++     *
++     * @return The client
++     */
++    public static TransportClient getDefaultTransportClient() {
++        return defaultClient;
++    }
++
++    /**
+ 	 * Creates a new resource instance on the server.
+ 	 *
+ 	 * @param destination A URL for the destination port of this service.
+@@ -658,7 +743,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static JAXBResource createJAXB(String destination,
++	public JAXBResource createJAXB(String destination,
+ 			String resourceURI, long timeoutInMilliseconds, Object content,
+ 			String specVersion, XmlBinding binding) throws SOAPException,
+ 			JAXBException, IOException, FaultException,
+@@ -676,7 +761,7 @@
+ 		// now construct a JAXBResourceImpl to talk with it
+ 		final JAXBResource jaxbResource = new JAXBResourceImpl(resource
+ 				.getDestination(), resource.getResourceUri(), resource
+-				.getSelectorSet(), binding);
++				.getSelectorSet(), binding, client);
+ 		return jaxbResource;
+ 
+ 	}
+@@ -704,7 +789,7 @@
+ 	 * @throws FaultException
+ 	 * @throws DatatypeConfigurationException
+ 	 */
+-	public static JAXBResource createJAXB(String destination,
++	public JAXBResource createJAXB(String destination,
+ 			String resourceURI, long timeoutInMilliseconds, Object content,
+ 			String specVersion, final String... packageNames)
+ 			throws SOAPException, JAXBException, IOException, FaultException,
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/src/com/sun/ws/management/client/TransferableResource.java wiseman/client/src/com/sun/ws/management/client/TransferableResource.java
+--- wiseman_1_0_final/client/src/com/sun/ws/management/client/TransferableResource.java	2007-06-03 23:25:09.000000000 -0700
++++ wiseman/client/src/com/sun/ws/management/client/TransferableResource.java	2010-03-08 23:19:12.000000000 -0800
+@@ -49,6 +49,7 @@
+ import javax.xml.namespace.QName;
+ import javax.xml.soap.SOAPException;
+ 
++import com.sun.ws.management.client.impl.TransportClient;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.ObjectFactory;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.OptionType;
+ import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
+@@ -438,4 +439,18 @@
+      * @param binding the XmlBinding used by this Resource
+      */
+ 	public abstract void setBinding(XmlBinding binding);
++
++    /**
++     * Get the client responsible for message transfer.
++     *
++     * @return The client.
++     */
++    public abstract TransportClient getTransportClient();
++
++    /**
++     * Set the client responsible for message transfer.
++     *
++     * @param client The client to use.
++     */
++    public abstract void setTransportClient( final TransportClient client );
+ }
+\ No newline at end of file
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/test/src/com/sun/ws/management/client/EnumerationResourceTest.java wiseman/client/test/src/com/sun/ws/management/client/EnumerationResourceTest.java
+--- wiseman_1_0_final/client/test/src/com/sun/ws/management/client/EnumerationResourceTest.java	2007-06-08 08:38:38.000000000 -0700
++++ wiseman/client/test/src/com/sun/ws/management/client/EnumerationResourceTest.java	2010-03-09 15:01:06.000000000 -0800
+@@ -87,7 +87,7 @@
+ 	public void testEnumerate() throws SOAPException, JAXBException, IOException, FaultException, DatatypeConfigurationException {
+ 		
+ 		// Obtain an reference to a resource that represents an enum of users
+-		Resource[] enumerationResources = ResourceFactory.find(destUrl,resourceUri,timeout,(Map<String,String>)null);
++		Resource[] enumerationResources = ResourceFactory.newInstance().find(destUrl,resourceUri,timeout,(Map<String,String>)null);
+ 		assertNotNull(enumerationResources);
+ 		assertTrue(enumerationResources.length>0);
+ 		assertNotNull(enumerationResources[0]);
+@@ -106,7 +106,7 @@
+ 	
+ 	public void testCustomDialect() throws SOAPException, JAXBException, IOException, FaultException, DatatypeConfigurationException{
+ 		// Obtain an reference to a resource that represents an enum of users
+-		Resource[] enumerationResources = ResourceFactory.find(destUrl,resourceUri,timeout,(Map<String,String>)null);
++		Resource[] enumerationResources = ResourceFactory.newInstance().find(destUrl,resourceUri,timeout,(Map<String,String>)null);
+ 		assertNotNull(enumerationResources);
+ 		assertTrue(enumerationResources.length>0);
+ 		assertNotNull(enumerationResources[0]);
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/test/src/com/sun/ws/management/client/Interop20060801Test.java wiseman/client/test/src/com/sun/ws/management/client/Interop20060801Test.java
+--- wiseman_1_0_final/client/test/src/com/sun/ws/management/client/Interop20060801Test.java	2007-06-04 02:33:19.000000000 -0700
++++ wiseman/client/test/src/com/sun/ws/management/client/Interop20060801Test.java	2010-03-11 11:52:38.000000000 -0800
+@@ -83,7 +83,7 @@
+ 		validated=true;
+ 		try {
+ 		HashMap<String, String> selectors = null;
+-		Resource[] numericSensorEnumSet = ResourceFactory.find(destination, resourceURIComputerSystem, operationTimeout, selectors);
++		Resource[] numericSensorEnumSet = ResourceFactory.newInstance().find(destination, resourceURIComputerSystem, operationTimeout, selectors);
+ 		assertTrue(numericSensorEnumSet.length>0);
+ 		Resource numericSensorEnum = numericSensorEnumSet[0];
+ 		numericSensorEnum.setMaxEnvelopeSize(-1);
+@@ -157,7 +157,7 @@
+ 	public void testIdentify() throws SOAPException, IOException, JAXBException, XPathExpressionException, NoMatchFoundException{
+ 		log.info("_________________________________________________________________________");
+ 		log.info("6.1 Identify");
+-		ServerIdentity serverInfo = ResourceFactory.getIdentity(destination);
++		ServerIdentity serverInfo = ResourceFactory.newInstance().getIdentity(destination);
+ 		log.info(""+serverInfo);
+ 		assertNotNull(serverInfo);
+ 		assertNotNull(serverInfo.getProductVendor());
+@@ -313,12 +313,12 @@
+ 	 * In this scenario, the client does an enumeration request to retrieve all instances of CIM_NumericSensor class.
+ 	 * 
+ 	 * The sequence of operations is as follows:
+-	 * ¥	Client sends enumeration request
+-	 * ¥	Server sends response along with enumeration context A
+-	 * ¥	Client does a Pull request using enumeration context A
+-	 * ¥	Server responds with results along with enumeration context B
+-	 * ¥	Client does a Pull request using enumeration context B
+-	 * ¥	This continues until Server responds with results and EndOfSequence indicating there 
++	 * -	Client sends enumeration request
++	 * -	Server sends response along with enumeration context A
++	 * -	Client does a Pull request using enumeration context A
++	 * -	Server responds with results along with enumeration context B
++	 * -	Client does a Pull request using enumeration context B
++	 * -	This continues until Server responds with results and EndOfSequence indicating there 
+ 	 * 			are no more results
+ 	 * @throws DatatypeConfigurationException 
+ 	 * @throws FaultException 
+@@ -337,7 +337,7 @@
+ 		// for Intel openwsman
+ 		//resourceURINumericSensor="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/OMC_InitdService";
+ 		
+-		Resource[] numericSensorEnumSet = ResourceFactory.find(destination, resourceURINumericSensor, operationTimeout, selectors);
++		Resource[] numericSensorEnumSet = ResourceFactory.newInstance().find(destination, resourceURINumericSensor, operationTimeout, selectors);
+ 		assertTrue(numericSensorEnumSet.length>0);
+ 		Resource numericSensorEnum = numericSensorEnumSet[0];
+ 		numericSensorEnum.setMaxEnvelopeSize(maxEnvelopeSize);
+@@ -380,12 +380,12 @@
+ 	 * error being returned by the server.
+ 	 * 
+ 	 * The sequence of operations is as follows:
+-	 * ¥	Client sends enumeration request
+-	 * ¥	Server sends response along with enumeration context A
+-	 * ¥	Client does a Pull request using enumeration context A
+-	 * ¥	Server responds with results along with enumeration context B
+-	 * ¥	Client does a Pull request using enumeration context C
+-	 * ¥	Server returns an error
++	 * -	Client sends enumeration request
++	 * -	Server sends response along with enumeration context A
++	 * -	Client does a Pull request using enumeration context A
++	 * -	Server responds with results along with enumeration context B
++	 * -	Client does a Pull request using enumeration context C
++	 * -	Server returns an error
+ 	 * @throws DatatypeConfigurationException 
+ 	 * @throws FaultException 
+ 	 * @throws IOException 
+@@ -404,7 +404,7 @@
+ 		//resourceURINumericSensor="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/OMC_InitdService";
+ 
+ 		
+-		Resource[] numericSensorEnumSet = ResourceFactory.find(destination, resourceURINumericSensor, operationTimeout, selectors);
++		Resource[] numericSensorEnumSet = ResourceFactory.newInstance().find(destination, resourceURINumericSensor, operationTimeout, selectors);
+ 		assertTrue(numericSensorEnumSet.length>0);
+ 		Resource numericSensorEnum = numericSensorEnumSet[0];
+ 		numericSensorEnum.setMaxEnvelopeSize(maxEnvelopeSize);
+@@ -449,7 +449,7 @@
+ 	 * One of the common scenarios is to enumerate object and EPRs for a given resource URI, 
+ 	 * this URI could correspond to a standard CIM class. The returned instances can correspond
+ 	 * to the base class as well as derived classes (if polymorphism is suppored). The EPR 
+-	 * thatÕs returned along with the instance, can be used for modifying the instance using a 
++	 * that's returned along with the instance, can be used for modifying the instance using a 
+ 	 * Put.
+ 	 */
+ 	//TODO Optional
+@@ -509,7 +509,7 @@
+ //		resourceURINumericSensor="http://schemas.microsoft.com/wbem/wsman/1/wmi/root/hardware/NumericSensor";
+ 		
+ 		
+-		Resource[] resources = ResourceFactory.find(destination, resourceURINumericSensor, operationTimeout, selectors1);
++		Resource[] resources = ResourceFactory.newInstance().find(destination, resourceURINumericSensor, operationTimeout, selectors1);
+ 		assertTrue(resources.length>0);
+ 		Resource compSysResource = resources[0];
+ 		compSysResource.setMaxEnvelopeSize(32000);
+@@ -544,7 +544,7 @@
+ 		selectors.put("LUN", "0");
+ 		// Must be in for symlabs to pass timeout test
+ 		//selectors.put("timeout", "timeout");
+-		Resource[] computerSystemResources = ResourceFactory.find(destination, resourceURI, operationTimeout, selectors);
++		Resource[] computerSystemResources = ResourceFactory.newInstance().find(destination, resourceURI, operationTimeout, selectors);
+ 		assertTrue(computerSystemResources.length>0);
+ 		Resource computerSystemResource = computerSystemResources[0];
+ 		computerSystemResource.setMaxEnvelopeSize(maxEnvelopeSize);
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/client/test/src/com/sun/ws/management/client/ResourceTest.java wiseman/client/test/src/com/sun/ws/management/client/ResourceTest.java
+--- wiseman_1_0_final/client/test/src/com/sun/ws/management/client/ResourceTest.java	2007-06-19 06:08:08.000000000 -0700
++++ wiseman/client/test/src/com/sun/ws/management/client/ResourceTest.java	2010-03-09 15:02:40.000000000 -0800
+@@ -148,7 +148,7 @@
+ 	    
+ 		try {
+ 			binding = new XmlBinding(null, "com.hp.examples.ws.wsman.user");
+-			ResourceFactory.setBinding(binding);
++			ResourceFactory.setDefaultBinding(binding);
+ 		} catch (JAXBException e) {
+ 			fail(e.getMessage());
+ 		}
+@@ -157,7 +157,7 @@
+ 	
+ 	public void testIdentity() throws XPathExpressionException,
+ 			NoMatchFoundException, SOAPException, IOException, JAXBException {
+-		ServerIdentity serverInfo = ResourceFactory.getIdentity(destUrl);
++		ServerIdentity serverInfo = ResourceFactory.newInstance().getIdentity(destUrl);
+ 		assertNotNull(serverInfo);
+ 		assertNotNull(serverInfo.getProductVendor());
+ 		assertNotNull(serverInfo.getProductVersion());
+@@ -207,7 +207,7 @@
+ 		SocketChannel sChannel = ssChannel.accept();
+ 
+ 		try {
+-			ResourceFactory.getIdentity("http://localhost:10666/wsman", 500);
++			ResourceFactory.newInstance().getIdentity("http://localhost:10666/wsman", 500);
+ 		} catch (TimeoutException e) {
+ 			return;
+ 		}
+@@ -253,7 +253,7 @@
+ 		JAXBElement<UserType> userElement = userFactory.createUser(user);
+ 		binding.marshal(userElement, content);
+ 
+-		Resource resource = ResourceFactory.create(ResourceTest.destUrl,
++		Resource resource = ResourceFactory.newInstance().create(ResourceTest.destUrl,
+ 				ResourceTest.resourceUri, ResourceTest.timeoutInMilliseconds,
+ 				content, ResourceFactory.LATEST);
+ 
+@@ -319,7 +319,7 @@
+ 		JAXBElement<UserType> userElement = userFactory.createUser(user);
+ 		binding.marshal(userElement, content);
+ 
+-		Resource resource = ResourceFactory.create(ResourceTest.destUrl,
++		Resource resource = ResourceFactory.newInstance().create(ResourceTest.destUrl,
+ 				ResourceTest.resourceUri, ResourceTest.timeoutInMilliseconds,
+ 				content, ResourceFactory.LATEST);
+ 
+@@ -433,7 +433,7 @@
+ 		JAXBElement<UserType> userElement = userFactory.createUser(user);
+ 		binding.marshal(userElement, stateDocument);
+ 
+-		Resource newResource = ResourceFactory.create(ResourceTest.destUrl,
++		Resource newResource = ResourceFactory.newInstance().create(ResourceTest.destUrl,
+ 				ResourceTest.resourceUri, ResourceTest.timeoutInMilliseconds,
+ 				stateDocument, ResourceFactory.LATEST, null);
+ 
+@@ -480,7 +480,7 @@
+ 		opt.setValue("abcd");
+ 		options.add(opt);
+ 
+-		Resource newResource = ResourceFactory.create(ResourceTest.destUrl,
++		Resource newResource = ResourceFactory.newInstance().create(ResourceTest.destUrl,
+ 				ResourceTest.resourceUri, ResourceTest.timeoutInMilliseconds,
+ 				stateDocument, ResourceFactory.LATEST, options);
+ 
+@@ -532,7 +532,7 @@
+ 		JAXBElement<UserType> userElement = userFactory.createUser(user);
+ 		binding.marshal(userElement, stateDocument);
+ 
+-		Resource newResource = ResourceFactory.create(ResourceTest.destUrl,
++		Resource newResource = ResourceFactory.newInstance().create(ResourceTest.destUrl,
+ 				ResourceTest.resourceUri, ResourceTest.timeoutInMilliseconds,
+ 				stateDocument, ResourceFactory.LATEST);
+ 
+@@ -624,7 +624,7 @@
+ 		stateDocument.appendChild(element);
+ 		userElement = userFactory.createUser(user);
+ 
+-		final Resource newFragResource = ResourceFactory.createFragment(
++		final Resource newFragResource = ResourceFactory.newInstance().createFragment(
+ 				ResourceTest.destUrl, ResourceTest.resourceUri, newResource
+ 						.getSelectorSet(), ResourceTest.timeoutInMilliseconds,
+ 				stateDocument, ResourceFactory.LATEST, fragmentRequest,
+@@ -680,7 +680,7 @@
+ 
+ 		content = loadUserTypeToDocument(content, user, binding);
+ 
+-		Resource created = ResourceFactory.create(dest, resource,
++		Resource created = ResourceFactory.newInstance().create(dest, resource,
+ 				timeoutInMilliseconds, content, ResourceFactory.LATEST);
+ 		// pull out Epr and parse for selectors
+ 		// EndpointReferenceType retrievedEpr = created.getResourceEpr();
+@@ -730,7 +730,7 @@
+ 
+ 		// Resource created = ResourceFactory.create(dest, resource,
+ 		TransferableResource created = (TransferableResource) ResourceFactory
+-				.create(dest, resource, timeoutInMilliseconds, content,
++				.newInstance().create(dest, resource, timeoutInMilliseconds, content,
+ 						ResourceFactory.LATEST);
+ 		// pull out Epr and parse for selectors
+ 		// EndpointReferenceType retrievedEpr = created.getResourceEpr();
+@@ -787,7 +787,7 @@
+ 		} catch (JAXBException e1) {
+ 			fail(e1.getMessage());
+ 		}
+-		Resource created = ResourceFactory.create(dest, resource,
++		Resource created = ResourceFactory.newInstance().create(dest, resource,
+ 				timeoutInMilliseconds, content, ResourceFactory.LATEST);
+ 
+ 		created.addOption("opt1", "value1");
+@@ -857,7 +857,7 @@
+ 		// TransferableResource created =(TransferableResource)
+ 		// ResourceFactory.create(dest, resource,
+ 		TransferableResource created = (TransferableResource) ResourceFactory
+-				.create(dest, resource, timeoutInMilliseconds, content,
++				.newInstance().create(dest, resource, timeoutInMilliseconds, content,
+ 						ResourceFactory.LATEST);
+ 
+ 		// DONE: create fragment request to update state field only.
+@@ -932,7 +932,7 @@
+ 		// TransferableResource created =(TransferableResource)
+ 		// ResourceFactory.create(dest, resource,
+ 		TransferableResource created = (TransferableResource) ResourceFactory
+-				.create(dest, resource, timeoutInMilliseconds, content,
++				.newInstance().create(dest, resource, timeoutInMilliseconds, content,
+ 						ResourceFactory.LATEST);
+ 
+ 		// DONE: create fragment request to update state field only.
+@@ -971,7 +971,7 @@
+ 
+ 		// test that Find works to retrieve the Enumeration instance.
+ 		HashMap<String, String> selectors = null;
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, ResourceTest.resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 		assertEquals("Expected one resource.", 1, enumerableResources.length);
+@@ -987,7 +987,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1072,7 +1072,7 @@
+ 		assertNotNull("No pull results obtained.", retrievedValues);
+ 
+ 		// Now do a find again to make sure that correct context is retrieved.
+-		Resource[] enumResources = ResourceFactory.find(ResourceTest.destUrl,
++		Resource[] enumResources = ResourceFactory.newInstance().find(ResourceTest.destUrl,
+ 				resourceUri, ResourceTest.timeoutInMilliseconds, selectors);
+ 		// Only resource retrieved should be the enumerable resource
+ 		Resource retEnumRes = enumResources[0];
+@@ -1102,7 +1102,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1197,7 +1197,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1290,7 +1290,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1362,7 +1362,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1438,7 +1438,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+@@ -1510,7 +1510,7 @@
+ 
+ 		SelectorSetType selectors = null;
+ 		// test that Find works to retrieve the Enumeration instance.
+-		Resource[] enumerableResources = ResourceFactory.find(
++		Resource[] enumerableResources = ResourceFactory.newInstance().find(
+ 				ResourceTest.destUrl, resourceUri,
+ 				ResourceTest.timeoutInMilliseconds, selectors);
+ 
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/se/src/com/sun/ws/management/enumeration/EnumerationUtility.java wiseman/se/src/com/sun/ws/management/enumeration/EnumerationUtility.java
+--- wiseman_1_0_final/se/src/com/sun/ws/management/enumeration/EnumerationUtility.java	2007-06-19 12:50:39.000000000 -0700
++++ wiseman/se/src/com/sun/ws/management/enumeration/EnumerationUtility.java	2010-03-08 18:39:25.000000000 -0800
+@@ -57,7 +57,6 @@
+ import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
+ import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
+ 
+-import com.sun.org.apache.xerces.internal.jaxp.datatype.DurationImpl;
+ import com.sun.ws.management.Management;
+ import com.sun.ws.management.ManagementUtility;
+ import com.sun.ws.management.addressing.Addressing;
+diff -rNU 3 --exclude=CVS wiseman_1_0_final/se/test/src/com/sun/ws/management/server/handler/wsman/auth/eventcreator_Handler.java wiseman/se/test/src/com/sun/ws/management/server/handler/wsman/auth/eventcreator_Handler.java
+--- wiseman_1_0_final/se/test/src/com/sun/ws/management/server/handler/wsman/auth/eventcreator_Handler.java	2007-06-19 05:29:35.000000000 -0700
++++ wiseman/se/test/src/com/sun/ws/management/server/handler/wsman/auth/eventcreator_Handler.java	2010-03-08 23:12:21.000000000 -0800
+@@ -106,7 +106,7 @@
+ import com.sun.ws.management.transfer.TransferUtility;
+ import com.sun.ws.management.transport.HttpClient;
+ import com.sun.ws.management.xml.XmlBinding;
+-import com.sun.xml.ws.addressing.model.ActionNotSupportedException;
++//import com.sun.xml.ws.addressing.model.ActionNotSupportedException;
+ //import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation.ANONYMOUS;
+ 
+ @WsManagementDefaultAddressingModelAnnotation(
+@@ -164,7 +164,7 @@
+ 			//Lazy instantiation
+ 		  response = initialize(context, request, response);
+ 		}else{
+-			throw new ActionNotSupportedException(action);
++			throw new Exception(action);
+ 		}
+ 	}
+ 

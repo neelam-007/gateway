@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="net.java.wiseman"
 		module="wiseman-client"
-		revision="1.0"
+		revision="1.0-l7p1"
 		status="release"
-		publication="20100121142335"
+		publication="20100308232928"
 		default="true"
 	/>
 	<configurations>

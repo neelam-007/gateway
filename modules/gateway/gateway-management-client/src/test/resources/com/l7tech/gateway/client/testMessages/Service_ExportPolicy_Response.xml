@@ -1,0 +1,82 @@
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+              xmlns:l7="http://ns.l7tech.com/2010/01/gateway-management"
+              xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
+              xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
+              xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+              xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" 
+              xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+              xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+              xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
+              xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer"
+              xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://ns.l7tech.com/2010/01/gateway-management/services/ExportPolicyResponse</wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true">uuid:763b638f-d1eb-4417-9e13-b48257d0ff5f</wsa:MessageID>
+        <wsa:RelatesTo>uuid:9423f10e-8505-40c0-9f78-3aa3eccd249b</wsa:RelatesTo>
+        <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    </env:Header>
+    <env:Body>
+        <l7:PolicyExportResult>
+            <l7:Resource type="policyexport">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;exp:Export Version="3.0"
+    xmlns:L7p="http://www.layer7tech.com/ws/policy"
+    xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;exp:References/&gt;
+    &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+        &lt;wsp:All wsp:Usage="Required"&gt;
+            &lt;L7p:AuditAssertion/&gt;
+            &lt;L7p:SslAssertion&gt;
+                &lt;L7p:RequireClientAuthentication booleanValue="true"/&gt;
+            &lt;/L7p:SslAssertion&gt;
+            &lt;wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"&gt;
+                &lt;wsse:TokenType&gt;urn:oasis:names:tc:SAML:2.0:assertion#Assertion&lt;/wsse:TokenType&gt;
+                &lt;L7p:SamlParams&gt;
+                    &lt;L7p:AuthenticationStatement samlAuthenticationInfo="included"&gt;
+                        &lt;L7p:AuthenticationMethods stringArrayValue="included"&gt;
+                            &lt;L7p:item stringValue="urn:ietf:rfc:1510"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:unspecified"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:SPKI"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:X509-PKI"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"/&gt;
+                            &lt;L7p:item stringValue="urn:ietf:rfc:3075"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken"/&gt;
+                            &lt;L7p:item stringValue="urn:ietf:rfc:2945"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PreviousSession"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorUnregistered"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorContract"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:AuthenticatedTelephony"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:XKMS"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:PGP"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:HardwareToken"/&gt;
+                            &lt;L7p:item stringValue="urn:ietf:rfc:2246"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PersonalizedTelephony"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocol"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:Telephony"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocolPassword"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"/&gt;
+                            &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:password"/&gt;
+                        &lt;/L7p:AuthenticationMethods&gt;
+                    &lt;/L7p:AuthenticationStatement&gt;
+                    &lt;L7p:NameFormats stringArrayValue="included"&gt;
+                        &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/&gt;
+                    &lt;/L7p:NameFormats&gt;
+                    &lt;L7p:NameQualifier stringValue=""/&gt;
+                    &lt;L7p:SubjectConfirmations stringArrayValue="included"&gt;
+                        &lt;L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/&gt;
+                    &lt;/L7p:SubjectConfirmations&gt;
+                    &lt;L7p:Version boxedIntegerValue="0"/&gt;
+                &lt;/L7p:SamlParams&gt;
+            &lt;/wsse:SecurityToken&gt;
+            &lt;L7p:EchoRoutingAssertion/&gt;
+        &lt;/wsp:All&gt;
+    &lt;/wsp:Policy&gt;
+&lt;/exp:Export&gt;
+</l7:Resource>
+</l7:PolicyExportResult>
+</env:Body>
+</env:Envelope>

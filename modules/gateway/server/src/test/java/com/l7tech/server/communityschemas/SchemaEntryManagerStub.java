@@ -16,10 +16,21 @@ import java.util.Collections;
  * @author mike
  */
 public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry,EntityHeader> implements SchemaEntryManager {
+
+    public SchemaEntryManagerStub() {
+        super();
+    }
+
+    public SchemaEntryManagerStub( final SchemaEntry... entitiesIn ) {
+        super( entitiesIn );
+    }
+
+    @Override
     public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         return Collections.emptySet();
     }
 
+    @Override
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         return Collections.emptySet();
     }

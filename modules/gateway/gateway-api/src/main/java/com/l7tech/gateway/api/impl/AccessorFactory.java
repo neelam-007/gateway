@@ -3,6 +3,7 @@ package com.l7tech.gateway.api.impl;
 import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.Accessor;
 import com.l7tech.gateway.api.ManagementRuntimeException;
+import com.sun.ws.management.client.ResourceFactory;
 
 import javax.xml.bind.annotation.XmlSchema;
 import java.lang.annotation.Retention;
@@ -23,12 +24,15 @@ public class AccessorFactory {
     @SuppressWarnings({ "unchecked" })
     public static <MO extends AccessibleObject> Accessor<MO> createAccessor( final Class<MO> managedObjectClass,
                                                                              final String url,
+                                                                             final ResourceFactory resourceFactory,
                                                                              final ResourceTracker resourceTracker ) {
+        Accessor<MO> accessor;
+
         if ( hasAccessor(managedObjectClass) ) {
             final Class<? extends Accessor> accessorClass = getAccessor( managedObjectClass );
             try {
-                final Constructor constructor = accessorClass.getDeclaredConstructor( String.class, String.class, Class.class, ResourceTracker.class );
-                return (Accessor<MO>) constructor.newInstance( url, getResourceUri(managedObjectClass), managedObjectClass, resourceTracker );
+                final Constructor constructor = accessorClass.getDeclaredConstructor( String.class, String.class, Class.class, ResourceFactory.class, ResourceTracker.class );
+                accessor = (Accessor<MO>) constructor.newInstance( url, getResourceUri(managedObjectClass), managedObjectClass, resourceFactory, resourceTracker );
             } catch ( InstantiationException e ) {
                 throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
             } catch ( IllegalAccessException e ) {
@@ -39,8 +43,10 @@ public class AccessorFactory {
                 throw new ManagementRuntimeException("Error creating accessor for '"+managedObjectClass.getName()+"'", e);
             }
         } else {
-            return new AccessorImpl<MO>( url, getResourceUri(managedObjectClass), managedObjectClass, resourceTracker );
+            accessor = new AccessorImpl<MO>( url, getResourceUri(managedObjectClass), managedObjectClass, resourceFactory, resourceTracker );
         }
+
+        return accessor;
     }
 
     public static String getResourceName( final Class<? extends AccessibleObject> managedObjectClass ) {

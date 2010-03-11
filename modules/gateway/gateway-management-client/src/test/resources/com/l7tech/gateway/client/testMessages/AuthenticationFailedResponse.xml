@@ -1,0 +1,24 @@
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope">
+    <soapenv:Body>
+        <soapenv:Fault>
+            <soapenv:Code>
+                <soapenv:Value>soapenv:Receiver</soapenv:Value>
+            </soapenv:Code>
+            <soapenv:Reason>
+                <soapenv:Text xml:lang="en-US">Policy Falsified</soapenv:Text>
+            </soapenv:Reason>
+            <soapenv:Role>http://localhost:8080/wsman</soapenv:Role>
+            <soapenv:Detail>
+                <l7:policyResult status="Authentication Failed"
+                    xmlns:l7="http://www.layer7tech.com/ws/policy/fault" xmlns:l7p="http://www.layer7tech.com/ws/policy">
+                    <l7:assertionResult assertion="l7p:HttpBasic" status="No Error">
+                        <l7:detailMessage id="4104">Found user: admine</l7:detailMessage>
+                    </l7:assertionResult>
+                    <l7:assertionResult assertion="l7p:Authentication" status="Authentication Failed">
+                        <l7:detailMessage id="4208">Authentication failed for identity provider ID -2</l7:detailMessage>
+                    </l7:assertionResult>
+                </l7:policyResult>
+            </soapenv:Detail>
+        </soapenv:Fault>
+    </soapenv:Body>
+</soapenv:Envelope>

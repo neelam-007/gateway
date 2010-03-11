@@ -71,9 +71,10 @@ public interface Accessor<AO extends AccessibleObject> {
      * in which case request values will be ignored.</p>
      *
      * @param item The item with updated values.
+     * @return The updated managed object
      * @throws AccessorException If an error occurs
      */
-    void put( AO item ) throws AccessorException;
+    AO put( AO item ) throws AccessorException;
 
     /**
      * Create a new managed object.

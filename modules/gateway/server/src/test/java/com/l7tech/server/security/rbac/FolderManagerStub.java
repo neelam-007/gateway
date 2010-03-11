@@ -13,6 +13,15 @@ import com.l7tech.server.folder.FolderManager;
 
 /** @author alex */
 public class FolderManagerStub extends EntityManagerStub<Folder, FolderHeader> implements FolderManager {
+
+    public FolderManagerStub() {
+        super();
+    }
+
+    public FolderManagerStub( final Folder... entitiesIn ) {
+        super( entitiesIn ); 
+    }
+
     @Override
     public Class<? extends Entity> getImpClass() {
         return Folder.class;

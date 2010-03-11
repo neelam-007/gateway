@@ -1,27 +1,50 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
+import com.l7tech.server.communityschemas.SchemaEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.TestIdentityProviderConfigManager;
+import com.l7tech.server.identity.cert.TestTrustedCertManager;
+import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
+import com.l7tech.server.security.keystore.SsgKeyFinderStub;
+import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
+import com.l7tech.server.security.rbac.FolderManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
-import com.l7tech.server.service.ServiceManagerStub;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.mock.web.MockServletContext;
@@ -33,7 +56,11 @@ import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collection;
 import javax.xml.soap.SOAPConstants;
 
 
@@ -167,27 +194,26 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testCreate() throws Exception {
+    public void testCreateClusterProperty() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/clusterProperties";
         String payload = "<n1:ClusterProperty xmlns:n1=\"http://ns.l7tech.com/2010/01/gateway-management\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty>";
         String expectedId = "4";
         doCreate( resourceUri, payload, expectedId );
     }
 
-// TODO [steve] Create testing entity manager for services and re-enable    
-//    @Test
-//    public void testCreateService() throws Exception {
-//        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/services";
-//        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><ServiceDetail><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
-//                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
-//                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
-//                "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
-//                "    &lt;/wsp:All&gt;\n" +
-//                "&lt;/wsp:Policy&gt;\n" +
-//                "</Resource></ResourceSet></Resources></Service>";
-//        String expectedId = "";
-//        doCreate( resourceUri, payload, expectedId );
-//    }
+    @Test
+    public void testCreateService() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/services";
+        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><ServiceDetail><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+                "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;\n" +
+                "</Resource></ResourceSet></Resources></Service>";
+        String expectedId = "2";
+        doCreate( resourceUri, payload, expectedId );
+    }
 
     @Test
     public void testCreateJMSDestination() throws Exception {
@@ -213,7 +239,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Properties>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        String expectedId = "1";
+        String expectedId = "2";
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -229,7 +255,18 @@ public class ServerGatewayManagementAssertionTest {
                 "    &lt;/wsp:All&gt;\n" +
                 "&lt;/wsp:Policy&gt;\n" +
                 "</Resource></ResourceSet></Resources></Policy>";
-        String expectedId = "1";
+        String expectedId = "2";
+        doCreate( resourceUri, payload, expectedId );
+    }
+
+    @Test
+    public void testCreateSchema() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/01/gateway-management/resources";
+        String payload =
+                "<ResourceDocument xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
+                "    <Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema targetNamespace=\"urn:books2\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</Resource>\n" +
+                "</ResourceDocument>";
+        String expectedId = "2";
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -386,6 +423,75 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testEnumerateAll() throws Exception {
+        for ( String resourceUri : RESOURCE_URIS ) {
+            final String message =
+                    "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                    "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                    "            xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" \n" +
+                    "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                    "  <s:Header>\n" +
+                    "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                    "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                    "    <a:ReplyTo> \n" +
+                    "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                    "    </a:ReplyTo> \n" +
+                    "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</a:Action> \n" +
+                    "    <w:ResourceURI s:mustUnderstand=\"true\">{0}</w:ResourceURI> \n" +
+                    "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                    "  </s:Header>\n" +
+                    "  <s:Body>\n" +
+                    "    <wsen:Enumerate/>" +
+                    "  </s:Body> \n" +
+                    "</s:Envelope>";
+
+            final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate", MessageFormat.format(message, resourceUri) );
+
+            final Element soapBody = SoapUtil.getBodyElement(result);
+            final Element enumerateResponse = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_WS_ENUMERATION, "EnumerateResponse");
+            final Element enumerationContext = XmlUtil.findExactlyOneChildElementByName(enumerateResponse, NS_WS_ENUMERATION, "EnumerationContext");
+
+            final String context = XmlUtil.getTextValue(enumerationContext);
+
+            assertNotNull("Valid enumeration context " + resourceUri, context);
+            assertFalse("Valid enumeration context " + resourceUri, context.trim().isEmpty());
+
+            final String pullMessage =
+                    "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                    "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                    "            xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" \n" +
+                    "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                    "  <s:Header>\n" +
+                    "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                    "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                    "    <a:ReplyTo> \n" +
+                    "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                    "    </a:ReplyTo> \n" +
+                    "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull</a:Action> \n" +
+                    "    <w:ResourceURI s:mustUnderstand=\"true\">{0}</w:ResourceURI> \n" +
+                    "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                    "  </s:Header>\n" +
+                    "  <s:Body>\n" +
+                    "    <wsen:Pull>\n" +
+                    "      <wsen:EnumerationContext>{1}</wsen:EnumerationContext>\n" +
+                    "      <wsen:MaxElements>1000</wsen:MaxElements>\n" +
+                    "    </wsen:Pull>\n" +
+                    "  </s:Body> \n" +
+                    "</s:Envelope>";
+
+            final Document pullResult = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull", MessageFormat.format(pullMessage, resourceUri, context));
+
+            final Element soapBody2 = SoapUtil.getBodyElement(pullResult);
+            final Element pullResponse = XmlUtil.findExactlyOneChildElementByName(soapBody2, NS_WS_ENUMERATION, "PullResponse");
+            final Element items = XmlUtil.findExactlyOneChildElementByName(pullResponse, NS_WS_ENUMERATION, "Items");
+            assertTrue( "Enumeration not empty " + resourceUri, items.hasChildNodes() );
+            XmlUtil.findExactlyOneChildElementByName(pullResponse, NS_WS_ENUMERATION, "EndOfSequence");
+        }
+
+
+    }
+
+    @Test
     public void testMissingHeader() throws Exception {
         final String message =
                 "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
@@ -509,40 +615,138 @@ public class ServerGatewayManagementAssertionTest {
     private static final String NS_WS_MANAGEMENT_IDENTITY = "http://schemas.dmtf.org/wbem/wsman/identity/1/wsmanidentity.xsd";
     private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/01/gateway-management";
 
+    private static final String[] RESOURCE_URIS = new String[]{
+        "http://ns.l7tech.com/2010/01/gateway-management/clusterProperties",
+        "http://ns.l7tech.com/2010/01/gateway-management/folders",
+        "http://ns.l7tech.com/2010/01/gateway-management/identityProviders",
+        "http://ns.l7tech.com/2010/01/gateway-management/jdbcConnections",
+        "http://ns.l7tech.com/2010/01/gateway-management/jmsDestinations",
+        "http://ns.l7tech.com/2010/01/gateway-management/policies",
+        "http://ns.l7tech.com/2010/01/gateway-management/privateKeys",
+        "http://ns.l7tech.com/2010/01/gateway-management/resources",
+        "http://ns.l7tech.com/2010/01/gateway-management/services",
+        "http://ns.l7tech.com/2010/01/gateway-management/trustedCertificates"
+    };
+
     static {
-        init();
+        try {
+            init();
+        } catch ( Exception e ) {
+            throw ExceptionUtils.wrap( e );
+        }
     }
 
     @SuppressWarnings({"serial"})
-    private static void init() {
-        PolicyManager policyManager = new PolicyManagerStub();
-        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("testProp1", "testValue1"){
-            {
-                setOid(1);
-            }
-        },new ClusterProperty("testProp2", "testValue2"){
-            {
-                setOid(2);
-            }
-        },new ClusterProperty("testProp3", "testValue3"){
-            {
-                setOid(3);
-            }
-        }));
-        beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub());
-        beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub());
-        beanFactory.addBean( "policyManager",  policyManager);
+    private static void init() throws Exception {
+        Folder rootFolder = folder(-5002, null, "Root Node");
+        beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
+                cert(1, "Alice", TestDocuments.getWssInteropAliceCert()) ) );
+        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager(
+                prop(1, "testProp1", "testValue1"),
+                prop(2, "testProp2", "testValue2"),
+                prop(3, "testProp3", "testValue3")));
+        beanFactory.addBean( "schemaEntryManager", new SchemaEntryManagerStub(
+                schema(1,"books.xsd", "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>")) );
+        beanFactory.addBean( "folderManager", new FolderManagerStub(
+                rootFolder,
+                folder(1, rootFolder, "Test Folder") ) );
+        beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
+                provider(-2, IdentityProviderType.INTERNAL, "Internal Identity Provider") ) );
+        beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
+                jmsConnection(1, "Test Endpoint", "com.context.Classname", "qcf") ));
+        beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
+                jmsEndpoint(1, 1, "Test Endpoint") ));
+        beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
+                connection(1, "Test Connection") ) );
+        beanFactory.addBean( "policyManager",  new PolicyManagerStub(
+                policy(1, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>") ));
+        beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
+                key( 0, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
-        beanFactory.addBean( "serviceManager", new ServiceManagerStub( policyManager, new PublishedService(){
-            {
-                setOid(1);
-                setName( "Test Service" );
-                setDisabled( false );
-                setSoap( false );
-            }
-        }) );
+        beanFactory.addBean( "serviceManager", new MockServiceManager(
+                service(1, "Test Service", false, false)));
+    }
+
+    private static TrustedCert cert( final long oid, final String name, final X509Certificate x509Certificate ) {
+        final TrustedCert cert = new TrustedCert();
+        cert.setOid( oid );
+        cert.setName( name );
+        cert.setCertificate( x509Certificate );
+        return cert;
+    }
+
+    private static ClusterProperty prop( final long oid, final String name, final String value ) {
+        final ClusterProperty prop = new ClusterProperty( name, value );
+        prop.setOid( oid );
+        return prop;
+    }
+
+    private static Folder folder( final long oid, final Folder parent, final String name ) {
+        final Folder folder = new Folder( name, parent );
+        folder.setOid( oid );
+        return folder;
+    }
+
+    private static IdentityProviderConfig provider( final long oid, final IdentityProviderType type, final String name ) {
+        final IdentityProviderConfig provider = new IdentityProviderConfig( type );
+        provider.setOid( oid );
+        provider.setName( name );
+        return provider;
+    }
+
+    private static JdbcConnection connection( final long oid, final String name ) {
+        final JdbcConnection connection = new JdbcConnection();
+        connection.setOid( oid );
+        connection.setName( name );
+        return connection;
+    }
+
+    private static JmsConnection jmsConnection( final long oid, final String name, final String contextClassname, final String queueFactory) {
+        final JmsConnection connection = new JmsConnection();
+        connection.setOid( oid );
+        connection.setName( name );
+        connection.setQueueFactoryUrl( queueFactory );
+        connection.setInitialContextFactoryClassname( contextClassname );
+        return connection;
+    }
+
+    private static JmsEndpoint jmsEndpoint( final long oid, final long connectionOid, final String queueName) {
+        final JmsEndpoint endpoint = new JmsEndpoint();
+        endpoint.setOid( oid );
+        endpoint.setConnectionOid( connectionOid );
+        endpoint.setName( queueName );
+        endpoint.setDestinationName( queueName );
+        return endpoint;
+    }
+
+    private static Policy policy( final long oid, final PolicyType type, final String name, final boolean soap, final String policyXml ) {
+        final Policy policy = new Policy( type, name, policyXml, soap);
+        policy.setOid( oid );
+        return policy;
+    }
+
+    private static SsgKeyEntry key( final long keystoreOid, final String alias, final X509Certificate cert, final PrivateKey privateKey ) {
+        return new SsgKeyEntry( keystoreOid, alias, new X509Certificate[]{cert}, privateKey);
+    }
+
+    private static SchemaEntry schema( final long oid, final String systemId, final String tns, final String schemaXml ) {
+        final SchemaEntry entry = new SchemaEntry();
+        entry.setOid( oid );
+        entry.setName( systemId );
+        entry.setTns( tns );
+        entry.setSchema( schemaXml );
+        return entry;
+    }
+
+    private static PublishedService service( final long oid, final String name, final boolean disabled, final boolean soap ) {
+        final PublishedService service = new PublishedService();
+        service.setOid( oid );
+        service.setName( name );
+        service.setDisabled( disabled );
+        service.setSoap( soap );
+        return service;
     }
 
     private void doCreate( final String resourceUri,
@@ -612,6 +816,27 @@ public class ServerGatewayManagementAssertionTest {
             return responseDoc;            
         } finally {
             ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    private static class MockServiceManager extends EntityManagerStub<PublishedService,ServiceHeader> implements ServiceManager {
+        MockServiceManager( final PublishedService... entitiesIn ) {
+            super( entitiesIn );
+        }
+
+        @Override
+        public String resolveWsdlTarget( final String url ) {
+            return null;
+        }
+
+        @Override
+        public void addManageServiceRole( final PublishedService service ) throws SaveException {
+            throw new SaveException("Not implemented");
+        }
+
+        @Override
+        public Collection<ServiceHeader> findAllHeaders( final boolean includeAliases ) throws FindException {
+            throw new FindException("Not implemented");
         }
     }
 

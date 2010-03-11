@@ -9,6 +9,7 @@ import com.l7tech.util.SyspropUtil;
 import com.sun.ws.management.client.EnumerationCtx;
 import com.sun.ws.management.client.Resource;
 import com.sun.ws.management.client.ResourceFactory;
+import com.sun.ws.management.client.ResourceState;
 import com.sun.ws.management.client.exceptions.FaultException;
 import com.sun.ws.management.server.EnumerationItem;
 import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorSetType;
@@ -69,7 +70,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
             @Override
             public AO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
+                        getResourceFactory().find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
 
                 return ManagedObjectFactory.read( fixNs(resource.get().getDocument()), typeClass);
             }
@@ -77,16 +78,17 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
     }
 
     @Override
-    public void put( final AO item ) throws AccessorException {
+    public AO put( final AO item ) throws AccessorException {
         require( "item", item );
-        invoke(new AccessorMethod<Void>(){
+        return invoke(new AccessorMethod<AO>(){
             @Override
-            public Void invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
+            public AO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
                 final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, Collections.singletonMap(ID_SELECTOR, item.getId()))[0];
+                        getResourceFactory().find( url, resourceUri, timeout, Collections.singletonMap(ID_SELECTOR, item.getId()))[0];
 
-                resource.put( ManagedObjectFactory.write( item ) );
-                return null;
+                final ResourceState resourceState = resource.put( ManagedObjectFactory.write( item ) );
+
+                return ManagedObjectFactory.read( resourceState.getDocument(), typeClass );
             }
         });
     }
@@ -98,7 +100,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
             @Override
             public String invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
                 final Resource resource =
-                        ResourceFactory.create( url, resourceUri, timeout, ManagedObjectFactory.write( item ), null);
+                        getResourceFactory().create( url, resourceUri, timeout, ManagedObjectFactory.write( item ), null);
 
                 return getId(resource);
             }
@@ -124,10 +126,11 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         invoke(new AccessorMethod<AO>(){
             @Override
             public AO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
+                final ResourceFactory resourceFactory = getResourceFactory();
                 final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
+                        resourceFactory.find( url, resourceUri, timeout, asSelectorMap(propertyMap))[0];
 
-                ResourceFactory.delete( resource );
+                resourceFactory.delete( resource );
                 return null;
             }
         });
@@ -135,7 +138,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
     @Override
     public Iterator<AO> enumerate() throws AccessorException {
-        return new EnumeratingIterator<AO>( url, resourceUri, timeout, typeClass, resourceTracker );
+        return new EnumeratingIterator<AO>( url, resourceUri, timeout, typeClass, resourceTracker, getResourceFactory() );
     }
 
     //- PACKAGE
@@ -146,12 +149,14 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
     AccessorImpl( final String url,
                   final String resourceUri,
                   final Class<AO> typeClass,
+                  final ResourceFactory resourceFactory,
                   final ResourceTracker resourceTracker ) {
         this.url = url;
         this.resourceUri = resourceUri;
         this.typeClass = typeClass;
-        this.timeout = 60000L;
+        this.timeout = DEFAULT_TIMEOUT;
         this.resourceTracker = resourceTracker;
+        this.resourceFactory = resourceFactory;
     }
 
     String getUrl() {
@@ -162,7 +167,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         return resourceUri;
     }
 
-    long getTimeout() {
+    int getTimeout() {
         return timeout;
     }
 
@@ -194,6 +199,10 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         }
     }
 
+    ResourceFactory getResourceFactory() {
+        return resourceFactory;
+    }
+
     <R> R invoke( final AccessorMethod<R> accessMethod ) throws AccessorException {
         try {
             return accessMethod.invoke();
@@ -223,11 +232,14 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
     //- PRIVATE
 
+    private final int DEFAULT_TIMEOUT = SyspropUtil.getInteger( "com.l7tech.gateway.api.operationTimeout", 300000 );
+
     private final String url;
     private final String resourceUri;
     private final Class<AO> typeClass;
-    private final long timeout;
+    private final int timeout;
     private final ResourceTracker resourceTracker;
+    private final ResourceFactory resourceFactory;
 
     private String getId( final Resource resource ) {
         return getId( resource.getSelectorSet() );
@@ -343,7 +355,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
             if ( !complete ) {
                 try {
                     final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, (SelectorSetType) null )[0];
+                        resourceFactory.find( url, resourceUri, timeout, (SelectorSetType) null )[0];
 
                     resource.release( context );
 
@@ -366,8 +378,9 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         private final String url;
         private final String resourceUri;
         private final Class<IMO> typeClass;
-        private final long timeout;
+        private final int timeout;
         private final ResourceTracker resourceTracker;
+        private final ResourceFactory resourceFactory;
         private final int batchSize = SyspropUtil.getInteger( "com.l7tech.gateway.api.enumerationBatchSize", 10 );
         private final List<IMO> nextItems = new ArrayList<IMO>(batchSize);
 
@@ -376,14 +389,16 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
         private EnumeratingIterator( final String url,
                                      final String resourceUri,
-                                     final long timeout,
+                                     final int timeout,
                                      final Class<IMO> typeClass,
-                                     final ResourceTracker resourceTracker ) {
+                                     final ResourceTracker resourceTracker,
+                                     final ResourceFactory resourceFactory ) {
             this.url = url;
             this.resourceUri = resourceUri;
             this.typeClass = typeClass;
             this.timeout = timeout;
             this.resourceTracker = resourceTracker;
+            this.resourceFactory = resourceFactory;
             resourceTracker.registerCloseable( this );
         }
 
@@ -391,13 +406,13 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
             if ( !complete ) {
                 try {
                     final Resource resource =
-                        ResourceFactory.find( url, resourceUri, timeout, (SelectorSetType) null )[0];
+                        resourceFactory.find( url, resourceUri, timeout, (SelectorSetType) null )[0];
 
                     if ( context == null ) {
                         context = resource.enumerate( null, null, null, false, true );
                     }
 
-                    final List<EnumerationItem> items = resource.pullItems( context, (int)timeout, batchSize, 0, false );
+                    final List<EnumerationItem> items = resource.pullItems( context, timeout, batchSize, 0, false );
                     for ( EnumerationItem item : items ) {
                         nextItems.add( ManagedObjectFactory.read( ((Element) item.getItem()).getOwnerDocument(), typeClass ));
                     }

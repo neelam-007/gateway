@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.ServiceDetail;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.ServiceMOAccessor;
+import com.sun.ws.management.client.ResourceFactory;
 
 /**
  *
@@ -50,8 +51,9 @@ public class ServiceMOAccessorImpl extends PolicyAccessorImpl<ServiceMO> impleme
     ServiceMOAccessorImpl( final String url,
                            final String resourceUri,
                            final Class<ServiceMO> typeClass,
+                           final ResourceFactory resourceFactory,
                            final ResourceTracker resourceTracker ) {
-        super( url, resourceUri, typeClass, resourceTracker );
+        super( url, resourceUri, typeClass, resourceFactory, resourceTracker );
     }
 
     //- PRIVATE

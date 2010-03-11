@@ -2,15 +2,15 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorFactory;
 import com.l7tech.gateway.api.impl.ResourceTracker;
-import com.sun.ws.management.transport.HttpClient;
+import com.l7tech.gateway.api.impl.TransportFactory;
+import com.sun.ws.management.client.ResourceFactory;
+import com.sun.ws.management.client.impl.TransportClient;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.net.PasswordAuthentication;
 
 /**
  * Client for access to managed objects for the target SecureSpan Gateway.
@@ -33,6 +33,7 @@ public class Client implements Closeable {
         return AccessorFactory.createAccessor( 
                 accessibleObjectClass,
                 url,
+                resourceFactory,
                 tracker );
     }
 
@@ -51,33 +52,26 @@ public class Client implements Closeable {
     //- PACKAGE
 
     Client( final String url,
-            final Authenticator authenticator,
+            final int connectTimeout,
+            final int readTimeout,
+            final PasswordAuthentication passwordAuthentication,
             final HostnameVerifier hostnameVerifier,
-            final X509TrustManager trustManager ) {
+            final SSLSocketFactory sslSocketFactory ) {
         this.url = url;
 
-        if ( authenticator != null ) {
-            HttpClient.setAuthenticator( authenticator );
-        }
-
-        if ( hostnameVerifier != null ) {
-            HttpClient.setHostnameVerifier( hostnameVerifier );
-        }
-
-        if ( trustManager != null ) {
-            try {
-                HttpClient.setTrustManager( trustManager );
-            } catch ( NoSuchAlgorithmException e ) {
-                throw new ManagementRuntimeException( e );
-            } catch ( KeyManagementException e ) {
-                throw new ManagementRuntimeException( e );
-            }
-        }
+        final TransportClient client = TransportFactory.newTransportClient(
+                connectTimeout,
+                readTimeout,
+                passwordAuthentication,
+                hostnameVerifier,
+                sslSocketFactory );
+        resourceFactory.setTransportClient( client );
     }
 
     //- PRIVATE
 
     private final ResourceTracker tracker = new ResourceTracker();
+    private final ResourceFactory resourceFactory = ResourceFactory.newInstance();
     private final String url;
 
 }

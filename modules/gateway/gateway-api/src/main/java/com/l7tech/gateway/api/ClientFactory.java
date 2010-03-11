@@ -1,7 +1,10 @@
 package com.l7tech.gateway.api;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -13,6 +16,8 @@ import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -73,6 +78,13 @@ public class ClientFactory {
     public static final String ATTRIBUTE_HOSTNAME_VERIFIER = "http://www.layer7tech.com/com.l7tech.gateway.api/hostname-verifier";
 
     /**
+     * Attribute for a custom SSL socket factory, if set this overrides the certificate validation feature..
+     *
+     * @see SSLSocketFactory
+     */
+    public static final String ATTRIBUTE_SSL_SOCKET_FACTORY = "http://www.layer7tech.com/com.l7tech.gateway.api/ssl-socket-factory";
+
+    /**
      * Attribute for HTTP proxy username.
      */
     public static final String ATTRIBUTE_PROXY_USERNAME = "http://www.layer7tech.com/com.l7tech.gateway.api/proxy-username";
@@ -81,6 +93,16 @@ public class ClientFactory {
      * Attribute for HTTP proxy password.
      */
     public static final String ATTRIBUTE_PROXY_PASSWORD = "http://www.layer7tech.com/com.l7tech.gateway.api/proxy-password";
+
+    /**
+     * Attribute for socket connect timeout in milliseconds (Integer)
+     */
+    public static final String ATTRIBUTE_NET_CONNECT_TIMEOUT = "http://www.layer7tech.com/com.l7tech.gateway.api/connect-timeout";
+
+    /**
+     * Attribute for socket read timeout in milliseconds (Integer)
+     */
+    public static final String ATTRIBUTE_NET_READ_TIMEOUT = "http://www.layer7tech.com/com.l7tech.gateway.api/read-timeout";
 
     /**
      * Callback prompt for SecureSpan Gateway username.
@@ -176,8 +198,15 @@ public class ClientFactory {
         final String password = getAttribute( ATTRIBUTE_PASSWORD, String.class );
         final String proxyUsername = getAttribute( ATTRIBUTE_PROXY_USERNAME, String.class );
         final String proxyPassword = getAttribute( ATTRIBUTE_PROXY_PASSWORD, String.class );
+        final Integer connectTimeout = getAttribute( ATTRIBUTE_NET_CONNECT_TIMEOUT, Integer.class, 0 );
+        final Integer readTimeout = getAttribute( ATTRIBUTE_NET_READ_TIMEOUT, Integer.class, 0 );
         final CallbackHandler callbackHandler = getAttribute( ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER, CallbackHandler.class );
-        final Authenticator authenticator = new Authenticator() {
+        final PasswordAuthentication passwordAuthentication = username!=null && password != null ?
+                new PasswordAuthentication( username, password.toCharArray() ) :
+                null;
+
+        final boolean useAuthenticator = proxyUsername != null || callbackHandler != null;
+        final Authenticator authenticator = !useAuthenticator ? null : new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 String name = null;
@@ -250,24 +279,42 @@ public class ClientFactory {
             };
         }
 
-        final X509TrustManager trustManager;
-        if ( features.get(FEATURE_CERTIFICATE_VALIDATION) ) {
-            trustManager = null; // Use JDK default trust manager    
-        } else {
-            trustManager = new X509TrustManager(){ // Allow any server certificate
-                @Override
-                public void checkClientTrusted( X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                @Override
-                public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                @Override
-                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-            };
+        SSLSocketFactory sslSocketFactory = getAttribute(ATTRIBUTE_SSL_SOCKET_FACTORY, SSLSocketFactory.class);
+        if ( sslSocketFactory == null ) {
+            if ( !features.get(FEATURE_CERTIFICATE_VALIDATION) ) {
+                final X509TrustManager trustManager = new X509TrustManager(){ // Allow any server certificate
+                    @Override
+                    public void checkClientTrusted( X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                };
+
+                try {
+                    SSLContext sc = SSLContext.getInstance("TLS");
+                    sc.init( null, new TrustManager[]{trustManager}, null);
+                    sslSocketFactory = sc.getSocketFactory();
+                } catch ( NoSuchAlgorithmException e ) {
+                    throw new ManagementRuntimeException("Error creating SSLSocketFactory", e);
+                } catch ( KeyManagementException e ) {
+                    throw new ManagementRuntimeException("Error creating SSLSocketFactory", e);
+                }
+            }
+        }
+
+        if ( authenticator != null ) {
+            // Currently there is no other way to set an authenticator.
+            // see Sun bug 4941958 (http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4941958)
+            Authenticator.setDefault( authenticator );
         }
 
         return new Client( url,
-                           authenticator,
+                           connectTimeout,
+                           readTimeout,
+                           passwordAuthentication,
                            verifier,
-                           trustManager );
+                           sslSocketFactory );
     }
 
     /**
@@ -301,7 +348,9 @@ public class ClientFactory {
         ATTRIBUTE_CREDENTIAL_CALLBACK_HANDLER,
         ATTRIBUTE_HOSTNAME_VERIFIER,
         ATTRIBUTE_PROXY_USERNAME,
-        ATTRIBUTE_PROXY_PASSWORD
+        ATTRIBUTE_PROXY_PASSWORD,
+        ATTRIBUTE_NET_CONNECT_TIMEOUT,
+        ATTRIBUTE_NET_READ_TIMEOUT
     )) );
 
     private final Map<String,Object> attributes;
@@ -312,13 +361,19 @@ public class ClientFactory {
         features = new HashMap<String,Boolean>( DEFAULT_FEATURES );
     }
 
-    @SuppressWarnings( { "unchecked" } )
     private <T> T getAttribute( final String name, final Class<T> type ) {
+        return getAttribute( name, type, null );
+    }
+
+    @SuppressWarnings( { "unchecked" } )
+    private <T> T getAttribute( final String name, final Class<T> type, final T defaultValue ) {
         final Object value = attributes.get( name );
-        T typedValue = null;
+        T typedValue;
 
         if ( type.isInstance(value) ) {
             typedValue = (T) value;
+        } else {
+            typedValue = defaultValue;
         }
 
         return typedValue;

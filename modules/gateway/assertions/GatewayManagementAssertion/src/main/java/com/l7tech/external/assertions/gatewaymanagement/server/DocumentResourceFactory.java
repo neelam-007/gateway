@@ -31,7 +31,7 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
                                     final SecurityFilter securityFilter,
                                     final PlatformTransactionManager transactionManager,
                                     final SchemaEntryManager schemaEntryManager ) {
-        super( true, false, services, securityFilter, transactionManager, schemaEntryManager );
+        super( false, false, services, securityFilter, transactionManager, schemaEntryManager );
     }
 
     //- PROTECTED

@@ -27,6 +27,11 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
         this.defaultKey = defaultKey;    
     }
 
+    public TestTrustedCertManager( final TrustedCert... entitiesIn ) {
+        super( entitiesIn );
+        this.defaultKey = null;
+    }
+
     @Override
     public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
         throw new UnsupportedOperationException();

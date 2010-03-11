@@ -31,6 +31,7 @@ public class SsgKeyStoreManagerStub implements SsgKeyStoreManager {
 
     @Override
     public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
+        if ( ssgKeyFinder != null && ssgKeyFinder.getOid()==id ) return ssgKeyFinder;
         throw new ObjectNotFoundException("Not found");
     }
 

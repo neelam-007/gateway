@@ -14,6 +14,16 @@ import java.util.Collections;
 
 /** @author alex */
 public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
+
+    public JmsConnectionManagerStub() {
+        super();
+    }
+
+    public JmsConnectionManagerStub( final JmsConnection... entitiesIn ) {
+        super( entitiesIn );
+    }
+
+    @Override
     public Collection<JmsProvider> findAllProviders() throws FindException {
         return Collections.emptyList();
     }

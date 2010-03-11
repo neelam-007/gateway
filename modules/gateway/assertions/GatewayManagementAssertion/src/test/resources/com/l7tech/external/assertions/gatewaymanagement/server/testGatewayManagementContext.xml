@@ -36,8 +36,23 @@
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="trustedCertManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="clusterPropertyManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="schemaEntryManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="folderManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="identityProviderConfigManager"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="jdbcConnectionManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="jmsEndpointManager"/>
@@ -46,6 +61,9 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="policyManager"/>
                     <constructor-arg index="4" ref="policyHelper"/>
+                </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="ssgKeyStoreManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="serviceManager"/>

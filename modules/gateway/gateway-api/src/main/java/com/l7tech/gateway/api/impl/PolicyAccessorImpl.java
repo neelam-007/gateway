@@ -61,7 +61,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             @Override
             public String invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+                        getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
 
                 final ResourceState resourceState =
                         resource.invoke( buildResourceScopedActionUri("ExportPolicy"), newDocument() );
@@ -83,7 +83,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             @Override
             public PolicyImportResult invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+                        getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
 
                 final PolicyImportContext context = new PolicyImportContext();
                 context.setProperties( properties );
@@ -155,8 +155,9 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
     PolicyAccessorImpl( final String url,
                         final String resourceUri,
                         final Class<AO> typeClass,
+                        final ResourceFactory resourceFactory,
                         final ResourceTracker resourceTracker ) {
-        super( url, resourceUri, typeClass, resourceTracker );
+        super( url, resourceUri, typeClass, resourceFactory, resourceTracker );
     }
 
     <FO> FO getFragment( final Class<FO> fragmentClass,
@@ -166,7 +167,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             @Override
             public FO invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+                        getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
 
                 final ResourceState resourceState =
                         resource.get( xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
@@ -183,7 +184,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             @Override
             public Void invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException {
                 final Resource resource =
-                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
+                        getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
 
                 resource.put( fragment, xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
 
@@ -283,7 +284,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             @Override
             public PolicyValidationResult invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
                 final Resource resource =
-                        ResourceFactory.find( getUrl(), getResourceUri(), getTimeout(), selectorMap)[0];
+                        getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), selectorMap)[0];
 
                 final ResourceState resourceState =
                         resource.invoke( buildResourceScopedActionUri("ValidatePolicy"), requestGetter.call() );

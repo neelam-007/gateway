@@ -12,14 +12,26 @@ import java.util.Collection;
 
 /** @author alex */
 public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
+
+    public JmsEndpointManagerStub() {
+        super();
+    }
+
+    public JmsEndpointManagerStub( final JmsEndpoint... entitiesIn ) {
+        super( entitiesIn );
+    }
+
+    @Override
     public Collection findMessageSourceEndpoints() throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public JmsEndpointHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
         throw new UnsupportedOperationException();
     }

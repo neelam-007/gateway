@@ -18,7 +18,7 @@ import java.util.EnumSet;
  * @author alex
 */
 public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> implements PolicyManager {
-    public PolicyManagerStub(Policy[] entities) {
+    public PolicyManagerStub(Policy... entities) {
         super(entities);
     }
 
@@ -26,10 +26,12 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
         super(new Policy[0]);
     }
 
+    @Override
     public Collection<PolicyHeader> findHeadersByType(PolicyType type) throws FindException {
         return findHeadersWithTypes(EnumSet.of(type));
     }
 
+    @Override
     public Policy findByGuid(String guid) throws FindException {
         if(guid == null) {
             return null;
@@ -44,10 +46,12 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
         return null;
     }
 
+    @Override
     public Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types, boolean includeAliases) {
         return findHeadersWithTypes(types);        
     }
 
+    @Override
     public Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) {
         Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {
@@ -56,6 +60,7 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
         return hs;
     }
 
+    @Override
     public void addManagePolicyRole(Policy policy) throws SaveException {
         // No-op for stub mode
     }
