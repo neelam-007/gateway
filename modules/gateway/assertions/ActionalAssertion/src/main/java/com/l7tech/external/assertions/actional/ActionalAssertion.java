@@ -9,13 +9,11 @@ import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * 
  */
 public class ActionalAssertion extends Assertion implements SetsVariables {
-    protected static final Logger logger = Logger.getLogger(ActionalAssertion.class.getName());
 
     //
     // Metadata
@@ -28,12 +26,14 @@ public class ActionalAssertion extends Assertion implements SetsVariables {
     public static final String INTERCEPTOR_CONFIG_DIRECTORY = "interceptor.configDir";
     public static final String INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE = "interceptor.enforceInboundTrustZone";
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
                 new VariableMetadata(INTERCEPTOR_ENABLE_CLUSTER_PROPERTY, false, false, null, false, DataType.BOOLEAN),
         };
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))

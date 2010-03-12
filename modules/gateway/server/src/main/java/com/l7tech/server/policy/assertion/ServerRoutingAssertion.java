@@ -431,11 +431,11 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         return value;
     }
 
-    protected void firePostRouting(PolicyEnforcementContext context, URL url, int status) {
-        messageProcessingEventChannel.publishEvent(new PostRoutingEvent(this, context, url, status));
+    protected void firePostRouting(PolicyEnforcementContext context, Message routedResponseDestination, URL url, int status) {
+        messageProcessingEventChannel.publishEvent(new PostRoutingEvent(this, context, routedResponseDestination, url, status));
     }
 
-    protected void firePreRouting(PolicyEnforcementContext context, URL u) {
-        messageProcessingEventChannel.publishEvent(new PreRoutingEvent(this, context, u));
+    protected void firePreRouting(PolicyEnforcementContext context, Message requestMessage, URL u) {
+        messageProcessingEventChannel.publishEvent(new PreRoutingEvent(this, context, requestMessage, u));
     }
 }

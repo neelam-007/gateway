@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.event;
 
+import com.l7tech.message.Message;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.net.URL;
@@ -12,10 +13,12 @@ import java.net.URL;
  */
 public class PostRoutingEvent extends RoutingEvent {
     private final int httpResponseStatus;
+    private final Message routedResponse;
 
-    public PostRoutingEvent(Object source, PolicyEnforcementContext context, URL url, int status) {
+    public PostRoutingEvent(Object source, PolicyEnforcementContext context, Message routedResponseDestination, URL url, int status) {
         super(source, context, url);
         this.httpResponseStatus = status;
+        this.routedResponse = routedResponseDestination;
     }
 
     /**
@@ -23,5 +26,9 @@ public class PostRoutingEvent extends RoutingEvent {
      */
     public int getHttpResponseStatus() {
         return httpResponseStatus;
+    }
+
+    public Message getRoutedResponse() {
+        return routedResponse;
     }
 }

@@ -236,9 +236,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 return AssertionStatus.FAILED;
             }
 
-            firePreRouting(context, u);
+            Message requestMessage = getRequestMessage(context);
+            firePreRouting(context, requestMessage, u);
             if (failoverStrategy == null)
-                return tryUrl(context, getRequestMessage(context), u);
+                return tryUrl(context, requestMessage, u);
 
             String failedService = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
@@ -258,7 +259,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 } else {
                     url = new URL(u.getProtocol(), failoverServiceExpanded, u.getPort(), u.getFile());
                 }
-                AssertionStatus result = tryUrl(context, getRequestMessage(context), url);
+                AssertionStatus result = tryUrl(context, requestMessage, url);
                 if (result == AssertionStatus.NONE) {
                     failoverStrategy.reportSuccess(failoverService);
                     return result;
@@ -445,6 +446,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                          URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
+        Message routedResponseDestination = null;
         int status = -1;
         try {
             final MimeKnob reqMime = requestMessage.getKnob(MimeKnob.class);
@@ -537,7 +539,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             status = routedResponse.getStatus();
 
             // Determines the routed response destination.
-            Message routedResponseDestination = context.getResponse();
+            routedResponseDestination = context.getResponse();
             boolean routedResponseDestinationIsContextVariable = false;
             if (assertion.getResponseMsgDest() != null) {
                 routedResponseDestinationIsContextVariable = true;
@@ -654,7 +656,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     }
                 });
             }
-            firePostRouting(context, url, status);
+            firePostRouting(context, routedResponseDestination, url, status);
         }
 
         return AssertionStatus.FAILED;

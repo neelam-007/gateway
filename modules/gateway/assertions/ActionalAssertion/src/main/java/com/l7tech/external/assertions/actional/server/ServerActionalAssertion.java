@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.external.assertions.actional.server.InterceptorEventListener;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
@@ -30,6 +29,7 @@ public class ServerActionalAssertion extends AbstractServerAssertion<ActionalAss
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
        InterceptorEventListener interceptor = InterceptorEventListener.getInstance();
         if (interceptor == null) {
