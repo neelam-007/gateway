@@ -542,6 +542,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (assertion.getResponseMsgDest() != null) {
                 routedResponseDestinationIsContextVariable = true;
                 routedResponseDestination = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
+                if (routedResponseDestination.getKnob(MimeKnob.class) != null) {
+                    //this Message has already been initialized, close it so it can be reused
+                    routedResponseDestination.close();
+                }
                 routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                     @Override
                     public void addCookie(HttpCookie cookie) {
