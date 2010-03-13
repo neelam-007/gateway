@@ -4,14 +4,17 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.util.AuditingOperationListener;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
@@ -32,12 +35,16 @@ import java.util.logging.Logger;
 public class SoapOperationResolver extends NameValueServiceResolver<List<QName>> {
     private static final Logger logger = Logger.getLogger(SoapOperationResolver.class.getName());
     private static final List<List<QName>> EMPTY = Collections.emptyList();
+    private final ServiceDocumentManager serviceDocumentManager;
 
-    public SoapOperationResolver(ApplicationContext spring) {
-        super(spring);
+    public SoapOperationResolver( final Auditor.AuditorFactory auditorFactory,
+                                  final ServiceDocumentManager serviceDocumentManager ) {
+        super( auditorFactory );
+        this.serviceDocumentManager = serviceDocumentManager;
     }
 
-    protected List<List<QName>> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
+    @Override
+    protected List<List<QName>> doGetTargetValues( final PublishedService service ) throws ServiceResolutionException {
         try {
             if (!service.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NOT_SOAP);
@@ -49,7 +56,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
                 return EMPTY;
             }
 
-            List<List<QName>> operationQnameLists = getAllOperationQNames(wsdl);
+            List<List<QName>> operationQnameLists = getAllOperationQNames(wsdl, service.getOid());
 
             if (operationQnameLists.isEmpty()) {
                 auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NO_QNAMES_AT_ALL, service.getName(), Long.toString(service.getOid()));
@@ -63,23 +70,51 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         }
     }
 
-    private List<List<QName>> getAllOperationQNames(Wsdl wsdl) {
+    @SuppressWarnings({ "unchecked" })
+    private List<List<QName>> getAllOperationQNames( final Wsdl wsdl, final long serviceOid ) {
         List<List<QName>> operationQnameLists = new ArrayList<List<QName>>();
-        //noinspection unchecked
         Collection<Binding> bindings = wsdl.getBindings();
         if (bindings == null || bindings.isEmpty()) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_WSDL_NO_BINDINGS);
             return EMPTY;
         }
 
-        for (Binding binding : bindings) {
+        final AuditingOperationListener listener = new AuditingOperationListener(auditor);
+        final WsdlSchemaTypeResolver typeResolver = new WsdlSchemaTypeResolver(wsdl){
+            private Collection<ServiceDocument> serviceDocuments;
+
+            @Override
+            public String resolveSchema( final String schemaUri ) {
+                String schemaXml = null;
+
+                for ( final ServiceDocument serviceDocument : getServiceDocuments() ) {
+                    if ( schemaUri.equals(serviceDocument.getUri()) &&
+                         "text/xml".equalsIgnoreCase(serviceDocument.getContentType())) {
+                        schemaXml = serviceDocument.getContents();
+                    }
+                }
+
+                return schemaXml;
+            }
+
+            private Collection<ServiceDocument> getServiceDocuments() {
+                if ( serviceDocuments == null ) {
+                    try {
+                        serviceDocuments = serviceDocumentManager.findByServiceIdAndType( serviceOid, "WSDL-IMPORT" );
+                    } catch ( FindException fe ) {
+                        serviceDocuments = Collections.emptyList();
+                    }
+                }
+                return serviceDocuments;
+            }
+        };
+        for ( final Binding binding : bindings ) {
             String bindingStyle = null;
 
-            //noinspection unchecked
-            List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
+            final List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             SOAPBinding sb = null;
             SOAP12Binding sb12 = null;
-            for (ExtensibilityElement eel : bindingEels) {
+            for ( final ExtensibilityElement eel : bindingEels ) {
                 if (eel instanceof SOAPBinding) {
                     sb = (SOAPBinding) eel;
                     bindingStyle = sb.getStyle();
@@ -92,20 +127,21 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
                 continue;
             }
 
-            //noinspection unchecked
-            List<BindingOperation> bops = binding.getBindingOperations();
-            AuditingOperationListener listener = new AuditingOperationListener(auditor);
-            for (BindingOperation bop : bops) {
-                List<QName> operationQnames = SoapUtil.getOperationPayloadQNames(bop, bindingStyle, listener);
-                if (operationQnames != null) operationQnameLists.add(operationQnames);
+            final List<BindingOperation> bops = binding.getBindingOperations();
+            for ( final BindingOperation bop : bops ) {
+                final Set<List<QName>> operationQnames = SoapUtil.getOperationPayloadQNames(bop, bindingStyle, listener, typeResolver);
+                if (operationQnames != null) {
+                    operationQnameLists.addAll(operationQnames);
+                }
             }
         }
 
         return operationQnameLists;
     }
 
+    @Override
     protected List<QName> getRequestValue(Message request) throws ServiceResolutionException {
-        SoapKnob sk = (SoapKnob) request.getKnob(SoapKnob.class);
+        SoapKnob sk = request.getKnob(SoapKnob.class);
         try {
             QName[] names = sk.getPayloadNames();
             for (QName name : names) {
@@ -121,6 +157,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         }
     }
 
+    @Override
     public boolean isApplicableToMessage(Message msg) throws ServiceResolutionException {
         try {
             return msg.isSoap();
@@ -129,10 +166,12 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         }
     }
 
+    @Override
     public boolean usesMessageContent() {
         return true;
     }
 
+    @Override
     public Set<List<QName>> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
         throw new UnsupportedOperationException();
     }

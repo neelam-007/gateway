@@ -8,34 +8,37 @@ import com.l7tech.message.HasSoapAction;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.gateway.common.service.PublishedService;
-import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * @author alex
  */
 public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
-    public SoapActionResolver(ApplicationContext spring) {
-        super(spring);
+    public SoapActionResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
     }
 
+    @Override
     public boolean usesMessageContent() {
         return false;
     }
 
-    protected String getTargetValue(Definition def, BindingOperation operation) {
-        return SoapUtil.findSoapAction(operation);
+    @Override
+    protected Set<String> getTargetValues(Definition def, BindingOperation operation) {
+        return Collections.singleton(SoapUtil.findSoapAction(operation));
     }
 
+    @Override
     protected String getRequestValue(Message request) throws ServiceResolutionException {
-        HasSoapAction hsa = (HasSoapAction)request.getKnob(HasSoapAction.class);
+        HasSoapAction hsa = request.getKnob(HasSoapAction.class);
         if (hsa == null)
             return null;
         String soapAction;
@@ -57,8 +60,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
     public boolean isApplicableToMessage(Message request) {
         // Filter out requests for which resolution by soap action is not appropriate.
         //
-        MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
-        HasSoapAction hsa = (HasSoapAction) request.getKnob(HasSoapAction.class);
+        MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
+        HasSoapAction hsa = request.getKnob(HasSoapAction.class);
         boolean isHttp = request.getKnob(HttpRequestKnob.class) != null;
         boolean isXml = false;
         boolean soapActionAvailable = false;

@@ -91,6 +91,7 @@ public class DocumentReferenceProcessor {
 
             final List<String> newReferences = new ArrayList<String>();
             processDocumentReferences( document, new ReferenceCustomizer() {
+                @Override
                 public String customize(Document document, Node node, String documentUrl, String referenceUrl) {
                     newReferences.add( referenceUrl );
                     return null;
@@ -131,7 +132,27 @@ public class DocumentReferenceProcessor {
     public void processDocumentReferences( final Document document,
                                            final ReferenceCustomizer referenceCustomizer ) {
         final String documentUrl = document.getDocumentURI();
-        XmlUtil.visitNodes( document.getDocumentElement(), new Functions.UnaryVoid<Node>(){
+        processDocumentReferences(
+                documentUrl,
+                document.getDocumentElement(),
+                referenceCustomizer );
+    }
+
+    /**
+     * Process references in the given document.
+     *
+     * <p>Note that the document must have been parsed in a manner that
+     * preserved it source URL.</p>
+     *
+     * @param element The element to process
+     * @param referenceCustomizer The customizer
+     */
+    public void processDocumentReferences( final String url,
+                                           final Element element,
+                                           final ReferenceCustomizer referenceCustomizer ) {
+        final Document document = element.getOwnerDocument();
+        XmlUtil.visitNodes( element, new Functions.UnaryVoid<Node>(){
+            @Override
             public void call( final Node node ) {
                 switch ( node.getNodeType() ) {
                     case Node.ELEMENT_NODE:
@@ -142,7 +163,7 @@ public class DocumentReferenceProcessor {
                             if ( processor != null ) {
                                 String referenceUrl = processor.extractReference( node );
                                 if ( referenceUrl != null ) {
-                                    String newUrl = referenceCustomizer.customize( document, node, documentUrl, referenceUrl );
+                                    String newUrl = referenceCustomizer.customize( document, node, url, referenceUrl );
                                     if ( newUrl != null ) {
                                         processor.replaceReference( node, referenceUrl, newUrl );
                                     }
@@ -199,6 +220,7 @@ public class DocumentReferenceProcessor {
             this.elements = new HashSet<String>( Arrays.asList(elements) );
         }
 
+        @Override
         public String extractReference( final Node node) {
             String referenceUrl = null;
 
@@ -215,6 +237,7 @@ public class DocumentReferenceProcessor {
             return referenceUrl;
         }
 
+        @Override
         public void replaceReference( final Node node,
                                       final String referenceUrl,
                                       final String replacementReferenceUrl ) {

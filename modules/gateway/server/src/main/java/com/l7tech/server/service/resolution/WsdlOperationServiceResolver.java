@@ -3,10 +3,10 @@
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
@@ -17,17 +17,17 @@ import java.util.*;
  * @author alex
  */
 public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceResolver<T> {
-    protected WsdlOperationServiceResolver(ApplicationContext spring) {
-        super(spring);
+    protected WsdlOperationServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
     }
 
+    @Override
     protected List<T> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
         // non soap services do not have those parameters
         if (!service.isSoap()) {
             return Collections.emptyList();
         }
         List<T> values = new ArrayList<T>(2);
-        //int max = getMaxLength();
         try {
             Wsdl wsdl = service.parsedWsdl();
             // fla bugfix for 1827 soap bindings only should be considered for soap web services
@@ -37,10 +37,9 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
             BindingOperation operation;
             while ( operations.hasNext() ) {
                 operation = (BindingOperation)operations.next();
-                T value = getTargetValue( wsdl.getDefinition(), operation );
-                if ( value != null ) {
-                    //if (value.length() > max) value = value.substring(0, max);
-                    values.add( value );
+                Set<T> targetValues = getTargetValues( wsdl.getDefinition(), operation );
+                if ( targetValues != null ) {
+                    values.addAll( targetValues );
                 }
             }
         } catch ( WSDLException we ) {
@@ -55,6 +54,7 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
      * @param candidateService object from which to extract parameters from
      * @return a Set containing distinct strings
      */
+    @Override
     public Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
         Set<T> out = new HashSet<T>();
         // non soap services do not have those parameters
@@ -70,8 +70,8 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
             BindingOperation operation;
             while (operations.hasNext()) {
                 operation = (BindingOperation)operations.next();
-                T value = getTargetValue(wsdl.getDefinition(), operation);
-                out.add(value); // Bug 1741: Ensure we don't return an empty set, it confuses ResolutionManager.
+                Set<T> values = getTargetValues(wsdl.getDefinition(), operation);
+                out.addAll(values); // Bug 1741: Ensure we don't return an empty set, it confuses ResolutionManager.
             }
         } catch ( WSDLException we ) {
             throw new ServiceResolutionException("Error accessing service WSDL '"+we.getMessage()+"'.", we);
@@ -80,8 +80,9 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
         return out;
     }
 
-    protected abstract T getTargetValue(Definition def, BindingOperation operation);
+    protected abstract Set<T> getTargetValues(Definition def, BindingOperation operation);
 
+    @Override
     public boolean isApplicableToMessage(Message msg) throws ServiceResolutionException {
         try {
             return msg.isSoap();

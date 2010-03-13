@@ -4,15 +4,13 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Query;
@@ -36,25 +34,21 @@ import java.sql.SQLException;
  */
 @SuppressWarnings({ "JpaQlInspection" })
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class ReolutionManagerImpl extends HibernateDaoSupport implements ResolutionManager, ApplicationContextAware {
+public class ReolutionManagerImpl extends HibernateDaoSupport implements ResolutionManager {
     private static final String HQL_FIND_BY_SERVICE_OID =
             "FROM sr IN CLASS " + ResolutionParameters.class.getName() +
                     " WHERE sr.serviceid = ?";
 
     private static final String HQL_FIND_ALL = "FROM sr IN CLASS " + ResolutionParameters.class.getName();
 
-    private SoapActionResolver soapresolver;
-    private UrnResolver urnresolver;
-    private UriResolver uriresolver;
+    private final SoapActionResolver soapresolver;
+    private final UrnResolver urnresolver;
+    private final UriResolver uriresolver;
 
-    public ReolutionManagerImpl() {
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        soapresolver = new SoapActionResolver(applicationContext);
-        urnresolver = new UrnResolver(applicationContext);
-        uriresolver = new UriResolver(applicationContext);
+    public ReolutionManagerImpl( final Auditor.AuditorFactory auditorFactory ) {
+        soapresolver = new SoapActionResolver(auditorFactory);
+        urnresolver = new UrnResolver(auditorFactory);
+        uriresolver = new UriResolver(auditorFactory);
     }
 
     /**
@@ -164,7 +158,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         return sameParams;
     }
 
-    private Collection getDistinct(PublishedService service) throws ServiceResolutionException {
+    private Collection<ResolutionParameters> getDistinct(PublishedService service) throws ServiceResolutionException {
         ArrayList<ResolutionParameters> listOfParameters = new ArrayList<ResolutionParameters>();
 
         String httpuri = uriresolver.doGetTargetValue(service);
@@ -185,9 +179,10 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         return listOfParameters;
     }
 
+    @SuppressWarnings({ "unchecked" })
     private Collection<ResolutionParameters> existingResolutionParameters(final long serviceid) {
         try {
-            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            return (Collection<ResolutionParameters>) getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
@@ -227,9 +222,10 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      * @throws DuplicateObjectException on duplicate detect
      * @throws HibernateException       on hibernate error
      */
+    @SuppressWarnings({ "unchecked" })
     private void checkForDuplicateResolutionParameters(Collection<ResolutionParameters> parameters, long serviceIdToIgnore) throws DuplicateObjectException {
 
-        Set duplicates = new HashSet();
+        Set<ResolutionParameters> duplicates = new HashSet<ResolutionParameters>();
         List<ResolutionParameters> results = getHibernateTemplate().find(HQL_FIND_ALL);
         for (ResolutionParameters rp : results) {
             for (ResolutionParameters r : parameters) {

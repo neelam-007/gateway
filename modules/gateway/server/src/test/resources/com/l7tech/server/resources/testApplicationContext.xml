@@ -36,14 +36,33 @@
         <property name="serviceManager" ref="serviceManager"/>
     </bean>
 
-    <!-- server side service manager -->
+    <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
-        <constructor-arg ref="policyCache"/>
-        <constructor-arg><null/></constructor-arg>
-        <constructor-arg ref="serviceManager"/>
-        <constructor-arg ref="serviceUsageManager"/>
-        <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg><null/></constructor-arg>
+        <constructor-arg index="0" ref="policyCache"/>
+        <constructor-arg index="1"><null/></constructor-arg>
+        <constructor-arg index="2" ref="serviceManager"/>
+        <constructor-arg index="3" ref="serviceUsageManager"/>
+        <constructor-arg index="4">
+            <bean class="com.l7tech.server.service.resolution.ServiceResolutionManager">
+                <constructor-arg index="0">
+                    <list>
+                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
+                    </list>
+                </constructor-arg>
+                <constructor-arg index="1">
+                    <list>
+                        <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
+                            <constructor-arg ref="auditorFactory"/>
+                            <constructor-arg ref="serviceDocumentManager"/>
+                        </bean>
+                    </list>
+                </constructor-arg>
+            </bean>        </constructor-arg>
+        <constructor-arg index="5" ref="clusterInfoManager"/>
+        <constructor-arg index="6"><null/></constructor-arg>
     </bean>
 
     <!-- server side service manager -->
@@ -181,9 +200,14 @@
         <property name="targetBeanName" value="auditContextTarget"/>
     </bean>
 
+    <bean id="auditorFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
+        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="1"><null/></constructor-arg>
+    </bean>
+
     <bean id="securityTokenResolver" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
-        <constructor-arg ref="sslKeystoreCertificate"/>
-        <constructor-arg ref="sslKeystoreKey"/>
+        <constructor-arg index="0" ref="sslKeystoreCertificate"/>
+        <constructor-arg index="1" ref="sslKeystoreKey"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager">
@@ -200,11 +224,11 @@
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
 
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" >
             <ref local="httpClientFactory"/>
         </constructor-arg>
-        <constructor-arg>
+        <constructor-arg index="2" >
             <null/>
         </constructor-arg>
     </bean>

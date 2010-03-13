@@ -7,8 +7,10 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.logging.LogRecord;
@@ -129,4 +131,52 @@ public class Auditor implements Audit {
             }
         }
     }
+
+    /**
+     * Factory for auditors.
+     */
+    public static interface AuditorFactory {
+        /**
+         * Create an Auditor for the specified source and logger.
+         *
+         * @param source Source object for audit events.  Required.
+         * @param logger Logger to which details will be written.
+         * @return The new Auditor
+         */
+        Auditor newInstance( Object source, Logger logger );
+    }
+
+    /**
+     *
+     */
+    public static final class DefaultAuditorFactory implements ApplicationContextAware, AuditorFactory {
+
+        //- PUBLIC
+
+        @Override
+        public Auditor newInstance( final Object source, final Logger logger ) {
+            if ( eventPublisher == null ) throw new IllegalStateException("Not initialized");
+            return new Auditor( source, auditLogListener, auditDetailFilter, eventPublisher, logger );
+        }
+
+        @Override
+        public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+            eventPublisher = applicationContext;
+        }
+
+        //- PACKAGE
+
+        DefaultAuditorFactory( final AuditDetailFilter auditDetailFilter,
+                        final AuditLogListener auditLogListener ) {
+            this.auditDetailFilter = auditDetailFilter;
+            this.auditLogListener = auditLogListener;
+        }
+
+        //- PRIVATE
+
+        private final AuditDetailFilter auditDetailFilter;
+        private final AuditLogListener auditLogListener;
+        private ApplicationEventPublisher eventPublisher;
+    }
+
 }

@@ -6,10 +6,11 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.AuditingOperationListener;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -19,18 +20,23 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author alex
  */
 public class UrnResolver extends WsdlOperationServiceResolver<String> {
-    public UrnResolver(ApplicationContext spring) {
-        super(spring);
+    public UrnResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
     }
 
-    protected String getTargetValue(Definition def, BindingOperation operation) {
+    @SuppressWarnings({ "unchecked" })
+    @Override
+    protected Set<String> getTargetValues(Definition def, BindingOperation operation) {
         String bindingStyle = null;
         Collection<Binding> bindings = def.getBindings().values();
         for (Binding binding : bindings) {
@@ -47,11 +53,22 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
         }
 
         AuditingOperationListener listener = new AuditingOperationListener(auditor);
-        List<QName> names = SoapUtil.getOperationPayloadQNames(operation, bindingStyle, listener);
-        if (names == null || names.isEmpty()) return def.getTargetNamespace();
-        return names.get(0).getNamespaceURI();
+        Set<List<QName>> names = SoapUtil.getOperationPayloadQNames(operation, bindingStyle, listener);
+        if (names == null || names.isEmpty()) {
+            return new HashSet<String>( Arrays.asList( def.getTargetNamespace(), null ) );            
+        }
+        return new HashSet<String>( Functions.map( names, new Functions.Unary<String,List<QName>>(){
+            @Override
+            public String call( final List<QName> qNames ) {
+                if ( qNames!=null && !qNames.isEmpty() ) {
+                    return qNames.get( 0 ).getNamespaceURI();
+                }
+                return null;
+            }
+        } ) );
     }
 
+    @Override
     protected String getRequestValue(Message request) throws ServiceResolutionException {
         try {
             if (request.isSoap()) {
@@ -83,6 +100,7 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
         }
     }
 
+    @Override
     public boolean usesMessageContent() {
         return true;
     }

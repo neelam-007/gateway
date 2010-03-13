@@ -4,6 +4,7 @@ import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.cluster.ServiceUsageManager;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.server.service.resolution.ServiceResolutionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Timer;
@@ -20,12 +21,14 @@ public class ServiceCacheStub extends ServiceCache {
                             final PlatformTransactionManager transactionManager,
                             final ServiceManager serviceManager,
                             final ServiceUsageManager serviceUsageManager,
+                            final ServiceResolutionManager serviceResolutionManager,
                             final ClusterInfoManager clusterInfoManager,
                             final Timer timer) {
         super( policyCache,
                transactionManager,
                serviceManager,
                serviceUsageManager,
+               serviceResolutionManager,
                clusterInfoManager,
                timer );
     }

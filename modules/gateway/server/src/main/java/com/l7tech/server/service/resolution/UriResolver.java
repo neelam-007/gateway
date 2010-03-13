@@ -10,7 +10,6 @@ import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.server.audit.Auditor;
-import org.springframework.context.ApplicationContext;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,10 +47,11 @@ import java.util.regex.Pattern;
  * @author franco
  */
 public class UriResolver extends ServiceResolver<String> {
-    public UriResolver(ApplicationContext spring) {
-        super(spring);
+    public UriResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
     }
 
+    @Override
     public boolean usesMessageContent() {
         return false;
     }
@@ -110,6 +110,7 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
+    @Override
     public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
@@ -153,6 +154,7 @@ public class UriResolver extends ServiceResolver<String> {
         return output;
     }
 
+    @Override
     public void serviceCreated(PublishedService service) {
         rwlock.writeLock().lock();
         try {
@@ -163,6 +165,7 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
+    @Override
     public void serviceDeleted(PublishedService service) {
         rwlock.writeLock().lock();
         try {
@@ -172,6 +175,7 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
+    @Override
     public void serviceUpdated(PublishedService service) {
         rwlock.writeLock().lock();
         try {
@@ -183,6 +187,7 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
+    @Override
     public Set<String> getDistinctParameters(PublishedService candidateService) {
         throw new UnsupportedOperationException();
     }
@@ -288,6 +293,10 @@ public class UriResolver extends ServiceResolver<String> {
      * @return true if the request arrived over a transport that provides a request URI.
      */
     public boolean appliesToMessage(Message request) {
+        return canResolveByURI( request );
+    }
+
+    public static boolean canResolveByURI( final Message request ) {
         return (request.getKnob(HttpRequestKnob.class) != null) || (request.getKnob(FtpRequestKnob.class) != null);
     }
 

@@ -1491,25 +1491,76 @@ public class SoapUtil extends SoapConstants {
     }
 
     public interface OperationListener {
-        public void notifyNoStyle(final String name);
-        public void notifyPartName(final String name);
-        public void notifyBadStyle(final String operationStyle, final String name);
-        public void notifyNoNames(final String name);
+        void notifyNoStyle( String name );
+        void notifyPartName( String name );
+        void notifyBadStyle( String operationStyle, String name );
+        void notifyNoNames( String name );
+    }
+
+    /**
+     * Interface for resolving an XML Schema type to its related elements.
+     *
+     * <p>Technically the resolved elements will be a set, which may be
+     * empty. The resulting collection may contain a null QName if the type
+     * has (only) optional content.</p>
+     */
+    public interface SchemaTypeResolver {
+        
+        /**
+         * Find elements that satisfy the given type requirement.
+         *
+         * @param type The type QName
+         * @return The collection of element QNames
+         */
+        Collection<QName> resolveType( QName type );
     }
 
     /**
      * Gets the QName(s) of the element(s) that should appear as children of the SOAP Body element for messages destined
      * for the provided operation.
+     *
+     * <p>The result is a set of lists of element QNames. Each item in the set
+     * is an option for the operation and each item in the list is a required
+     * part of that option.</p>
+     *
+     * <p>If an operation has no payload then this is indicated by an empty
+     * QName list.</p>
+     * 
      * @param bindingOperation the operation to get QNames from. Must not be null.
      * @param bindingStyle     the style from the SOAP binding element; will be used if the operation doesn't specify its own style. May be null, indicating a default of "document".
      * @param listener         a listener implementation to notify of errors / warnings to.  May be null.
-     * @return
+     * @return The set of qname lists
      */
-    public static List<QName> getOperationPayloadQNames(final BindingOperation bindingOperation,
-                                               final String bindingStyle,
-                                               final OperationListener listener)
+    public static Set<List<QName>> getOperationPayloadQNames( final BindingOperation bindingOperation,
+                                                              final String bindingStyle,
+                                                              final OperationListener listener )
     {
-        //noinspection unchecked
+        return getOperationPayloadQNames( bindingOperation, bindingStyle, listener, null );
+    }
+
+    /**
+     * Gets the QName(s) of the element(s) that should appear as children of the SOAP Body element for messages destined
+     * for the provided operation.
+     *
+     * <p>The result is a set of lists of element QNames. Each item in the set
+     * is an option for the operation and each item in the list is a required
+     * part of that option.</p>
+     *
+     * <p>If an operation has no payload then this is indicated by an empty
+     * QName list.</p>
+     *
+     * @param bindingOperation the operation to get QNames from. Must not be null.
+     * @param bindingStyle     the style from the SOAP binding element; will be used if the operation doesn't specify its own style. May be null, indicating a default of "document".
+     * @param listener         a listener implementation to notify of errors / warnings to.  May be null.
+     * @param schemaTypeResolver the XML Schema type resolver.  May be null.
+     * @return The set of qname lists
+     */
+    @SuppressWarnings({ "unchecked" })
+    public static Set<List<QName>> getOperationPayloadQNames( final BindingOperation bindingOperation,
+                                                              final String bindingStyle,
+                                                              final OperationListener listener,
+                                                              final SchemaTypeResolver schemaTypeResolver )
+    {
         final List<ExtensibilityElement> bopEels = bindingOperation.getExtensibilityElements();
         String operationStyle = null;
         for (ExtensibilityElement eel : bopEels) {
@@ -1525,7 +1576,6 @@ public class SoapUtil extends SoapConstants {
             return null;
 
         BindingInput input = bindingOperation.getBindingInput();
-        //noinspection unchecked
         List<ExtensibilityElement> eels = input.getExtensibilityElements();
         String use = null;
         String namespace = null;
@@ -1540,10 +1590,8 @@ public class SoapUtil extends SoapConstants {
                 namespace = body.getNamespaceURI();
             } else if (eel instanceof MIMEMultipartRelated) {
                 MIMEMultipartRelated mime = (MIMEMultipartRelated) eel;
-                //noinspection unchecked
                 List<MIMEPart> parts = mime.getMIMEParts();
                 MIMEPart part1 = parts.get(0);
-                //noinspection unchecked
                 List<ExtensibilityElement> partEels = part1.getExtensibilityElements();
                 for (ExtensibilityElement partEel : partEels) {
                     if (partEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
@@ -1564,7 +1612,8 @@ public class SoapUtil extends SoapConstants {
             return null;
         }
 
-        List<QName> operationQNames = new ArrayList<QName>();
+        Set<List<QName>> operationQNames = new HashSet<List<QName>>();
+        operationQNames.add( new ArrayList<QName>() );
 
         if (operationStyle == null) operationStyle = bindingStyle;
         if (operationStyle == null) {
@@ -1573,7 +1622,9 @@ public class SoapUtil extends SoapConstants {
         }
 
         if (Wsdl.STYLE_RPC.equalsIgnoreCase(operationStyle.trim())) {
-            operationQNames.add(new QName(namespace, bindingOperation.getName()));
+            for ( List<QName> list : operationQNames ) {
+                list.add(new QName(namespace, bindingOperation.getName()));
+            }
         } else if (Wsdl.STYLE_DOCUMENT.equalsIgnoreCase(operationStyle.trim())) {
             javax.wsdl.Message inputMessage = bindingOperation.getOperation().getInput().getMessage();
             if (inputMessage == null) {
@@ -1581,25 +1632,21 @@ public class SoapUtil extends SoapConstants {
                 return null;
             }
 
-            //noinspection unchecked
             List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
             List<String> partNames = null;
             for (ExtensibilityElement inputEel : inputEels) {
                 // Headers are not relevant for service resolution (yet?)
                 if (inputEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                     javax.wsdl.extensions.soap.SOAPBody inputBody = (javax.wsdl.extensions.soap.SOAPBody) inputEel;
-                    //noinspection unchecked
                     partNames = inputBody.getParts();
                 } else if (inputEel instanceof SOAP12Body) {
                     SOAP12Body inputBody = (SOAP12Body) inputEel;
-                    //noinspection unchecked
                     partNames = inputBody.getParts();
                 }
             }
 
             List<Part> parts;
             if (partNames == null) {
-                //noinspection unchecked
                 parts = inputMessage.getOrderedParts(null);
             } else {
                 parts = new ArrayList<Part>();
@@ -1608,17 +1655,33 @@ public class SoapUtil extends SoapConstants {
                 }
             }
 
-            //noinspection unchecked
-            for (Part part : parts) {
+            for ( final Part part : parts ) {
                 QName tq = part.getTypeName();
                 QName eq = part.getElementName();
                 if (tq != null && eq != null) {
                     if (listener != null) listener.notifyPartName(part.getName());
                     return null;
                 } else if (tq != null) {
-                    operationQNames.add(new QName(null, part.getName()));
+                    if ( schemaTypeResolver != null ) {
+                        final Collection<QName> partAlternatives = schemaTypeResolver.resolveType( tq );
+                        final Set<List<QName>> newOperationQNames = new HashSet<List<QName>>();
+                        for ( final QName alternative : partAlternatives ) {
+                            for ( final List<QName> list : operationQNames ) {
+                                final List<QName> names = new ArrayList<QName>( list );
+                                names.add( alternative );
+                                newOperationQNames.add( names );
+                            }
+                        }
+                        operationQNames = newOperationQNames;
+                    } else {
+                        for ( List<QName> list : operationQNames ) {
+                            list.add(new QName(null, part.getName()));
+                        }
+                    }
                 } else if (eq != null) {
-                    operationQNames.add(eq);
+                    for ( List<QName> list : operationQNames ) {
+                        list.add(eq);
+                    }
                 }
             }
         } else {

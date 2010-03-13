@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.WsspWriter;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -109,11 +110,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
         serviceDocumentManager = (ServiceDocumentManager)appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
+        Auditor.AuditorFactory auditorFactory = (Auditor.AuditorFactory)appcontext.getBean("auditorFactory", Auditor.AuditorFactory.class);
         PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) appcontext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
         policyPathBuilder = pathBuilderFactory.makePathBuilder();
 
-        sactionResolver = new SoapActionResolver(appcontext);
-        nsResolver = new UrnResolver(appcontext);
+        sactionResolver = new SoapActionResolver(auditorFactory);
+        nsResolver = new UrnResolver(auditorFactory);
     }
 
     @Override
@@ -197,7 +199,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     class AmbiguousServiceException extends Exception {
-        public AmbiguousServiceException(String s) {
+        AmbiguousServiceException(String s) {
             super(s);
         }
     }

@@ -4,6 +4,7 @@ import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.test.BugNumber;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
@@ -63,6 +64,7 @@ public class SoapUtilTest  {
         assertTrue(op.getName().equals("listProducts"));
     }
 
+    @BugNumber(2304)
     @Test
     public void testBugzilla2304() throws Exception {
         Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "facadeAddService.xml");
@@ -84,6 +86,7 @@ public class SoapUtilTest  {
     }
 
     @SuppressWarnings({ "deprecation" })
+    @BugNumber(3250)
     @Test
     public void testBug3250_QA_Wsdl() throws Exception {
         Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "bug3250.wsdl"));
@@ -94,6 +97,7 @@ public class SoapUtilTest  {
     }
 
     @SuppressWarnings({ "deprecation" })
+    @BugNumber(3250)
     @Test
     public void testBug3250_BofA_Wsdl() throws Exception {
         Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "AuthenticateServiceV001.wsdl"));
@@ -103,6 +107,7 @@ public class SoapUtilTest  {
         }
     }
 
+    @BugNumber(3888)
     @Test
     public void testBug3888_IsSoapRejectsProcessingInstructions() throws Exception {
         Document doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT);

@@ -22,18 +22,14 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.message.SoapKnob;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -86,33 +82,18 @@ public class ServiceCache
 
     private final ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
-    // TODO replace with Jgroups notifications
     private final Timer checker; // Don't use Background since this is high priority
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
-
-    /**
-     * Resolvers that are used to actually resolve services.
-     * Not final due to Spring requirement -- see {@link #initApplicationContext}
-     */
-    private ServiceResolver[] activeResolvers;
-
-    /**
-     * Resolvers that are notified of CRUD events on services.
-     * Not final due to Spring requirement -- see {@link #initApplicationContext}
-     */
-    private ServiceResolver[] notifyResolvers;
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     private boolean running = false;
 
     private Auditor auditor;
     private Long nonSoapCatchAllServiceOid = null;
-    private SoapOperationResolver soapOperationResolver;
-    private UriResolver uriResolver;
     private final PolicyCache policyCache;
+    private final ServiceResolutionManager serviceResolutionManager;
     private final AtomicBoolean needXpathCompile = new AtomicBoolean(true);
-
 
     /**
      * Constructor for bean usage via subclassing.
@@ -121,6 +102,7 @@ public class ServiceCache
                         PlatformTransactionManager transactionManager,
                         ServiceManager serviceManager,
                         ServiceUsageManager serviceUsageManager,
+                        ServiceResolutionManager serviceResolutionManager,
                         ClusterInfoManager clusterInfoManager,
                         Timer timer)
     {
@@ -128,30 +110,12 @@ public class ServiceCache
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
         this.policyCache = policyCache;
+        this.serviceResolutionManager = serviceResolutionManager;
         this.checker = timer;
         this.transactionManager = transactionManager;
         this.serviceManager = serviceManager;
         this.serviceUsageManager = serviceUsageManager;
         this.clusterInfoManager = clusterInfoManager;
-    }
-
-    @Override
-    protected void initApplicationContext() throws BeansException {
-        ApplicationContext spring = getApplicationContext();
-
-        activeResolvers = new ServiceResolver[] {
-            new ServiceOidResolver(spring),
-            uriResolver = new UriResolver(spring),
-            new SoapActionResolver(spring),
-            new UrnResolver(spring),
-        };
-
-        soapOperationResolver = new SoapOperationResolver(spring);
-
-        ServiceResolver[] allResolvers = new ServiceResolver[activeResolvers.length+1];
-        System.arraycopy(activeResolvers, 0, allResolvers, 0, activeResolvers.length);
-        allResolvers[activeResolvers.length] = soapOperationResolver;
-        this.notifyResolvers = allResolvers;
     }
 
     @ManagedOperation(description="Check Cache Integrity")
@@ -424,7 +388,7 @@ public class ServiceCache
         try {
             Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
             PublishedService result = resolve( req, rl, serviceSet );
-            if (result == null && nonSoapCatchAllServiceOid != null && uriResolver.appliesToMessage(req)) {
+            if (result == null && nonSoapCatchAllServiceOid != null && UriResolver.canResolveByURI(req)) {
                 result = services.get(nonSoapCatchAllServiceOid);
                 if (result != null)
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_CATCHALL, result.getName(), result.getId());
@@ -438,87 +402,25 @@ public class ServiceCache
     /**
      * Caller must hold read lock
      */
-    private PublishedService resolve(Message req, ResolutionListener rl, Collection<PublishedService> serviceSet) throws ServiceResolutionException {
-        if (serviceSet.isEmpty()) {
-            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_SERVICES);
-            return null;
-        }
-
-        boolean notified = false;
-        for (ServiceResolver resolver : activeResolvers) {
-            if (rl != null && resolver.usesMessageContent() && !notified) {
-                notified = true;
-                if (!rl.notifyPreParseServices(req, getServiceMetadata(serviceSet)))
-                    return null;
+    private PublishedService resolve( final Message req,
+                                      final ResolutionListener rl,
+                                      final Collection<PublishedService> serviceSet ) throws ServiceResolutionException {
+        return serviceResolutionManager.resolve( auditor, req, new ServiceResolutionManager.ServiceResolutionListener() {
+            @Override
+            public boolean notifyMessageBodyAccess( final Message message,
+                                                    final Collection<PublishedService> serviceSet ) {
+                return rl.notifyPreParseServices( message, getServiceMetadata(serviceSet) );
             }
 
-            Set<PublishedService> resolvedServices;
-            Result result = resolver.resolve(req, serviceSet);
-            if (result == Result.NOT_APPLICABLE) {
-                // next resolver gets the same subset
-                continue;
-            } else if (result == Result.NO_MATCH) {
-                // Early failure
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
-                return null;
-            } else {
-                // Matched at least one... Next resolver can narrow it down
-                resolvedServices = result.getMatches();
-            }
-
-            int size = resolvedServices.size();
-            // if remaining services are 0 or 1, we are done
-            if (size == 1) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
-                serviceSet = resolvedServices;
-                break;
-            } else if (size == 0) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
-                return null;
-            }
-
-            // otherwise, try to narrow down further using next resolver
-            serviceSet = resolvedServices;
-        }
-
-        if (serviceSet.isEmpty()) {
-            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
-            return null;
-        } else if (serviceSet.size() == 1) {
-            Set<ServiceMetadata> metadatas = getServiceMetadata(serviceSet);
-            PublishedService service = serviceSet.iterator().next();
-
-            if (!service.isSoap() || service.isLaxResolution()) {
-                return service;
-            }
-
-            if (rl != null && !notified) {
-                if (!rl.notifyPreParseServices(req, metadatas))
-                    return null;
-            }
-
-            // If this service is set to strict mode, validate that the message is soap, and that it matches an
-            // operation supported in the WSDL.
-            if (req.getKnob(SoapKnob.class) == null) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
-                return null;
-            } else {
+            @Override
+            public void notifyMessageValidation( final Message req, final PublishedService service ) {
                 // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
                 XmlKnob xk = req.getKnob(XmlKnob.class);
-                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
-                Result services = soapOperationResolver.resolve(req, serviceSet);
-                if (services.getMatches().isEmpty()) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
-                    return null;
-                } else {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
-                    return service;
+                if ( xk != null ) {
+                    xk.setTarariWanted( getServiceMetadata(service).isTarariWanted() );
                 }
             }
-        } else {
-            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MULTI);
-            return null;
-        }
+        }, serviceSet );
     }
 
     private Set<ServiceMetadata> getServiceMetadata( final Collection<PublishedService> services ) {
@@ -660,27 +562,11 @@ public class ServiceCache
         }
 
         if (update) {
-            for (ServiceResolver resolver : notifyResolvers) {
-                try {
-                    resolver.serviceUpdated(service);
-                } catch (ServiceResolutionException sre) {
-                    auditor.logAndAudit(SystemMessages.SERVICE_WSDL_ERROR,
-                            new String[]{service.displayName(), sre.getMessage()}, sre);
-                }
-            }
+            serviceResolutionManager.notifyServiceUpdated( auditor, service );
             notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.UPDATED));
             logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
-            // make sure no duplicate exist
-            //validate(service);
-            for (ServiceResolver resolver : notifyResolvers) {
-                try {
-                    resolver.serviceCreated(service);
-                } catch (ServiceResolutionException sre) {
-                    auditor.logAndAudit(SystemMessages.SERVICE_WSDL_ERROR,
-                            new String[]{service.displayName(), sre.getMessage()}, sre);
-                }
-            }
+            serviceResolutionManager.notifyServiceCreated( auditor, service );
             notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.CREATED));
             logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
         }
@@ -785,9 +671,7 @@ public class ServiceCache
             policyCache.remove( policy.getOid() );
         }
         serviceStatistics.remove(key);
-        for (ServiceResolver resolver : notifyResolvers) {
-            resolver.serviceDeleted(service);
-        }
+        serviceResolutionManager.notifyServiceDeleted( service );
         if ( policy != null ) {
             policy.forceRecompile();
         }

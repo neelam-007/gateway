@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.HasServiceOid;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.server.audit.Auditor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,8 +28,8 @@ import java.util.regex.Pattern;
 public class ServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
 
-    public ServiceOidResolver(final ApplicationContext spring) {
-        super(spring);
+    public ServiceOidResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
         List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {

@@ -6,7 +6,6 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
-import org.springframework.context.ApplicationContext;
 
 import java.util.Set;
 import java.util.Collection;
@@ -19,8 +18,8 @@ public abstract class ServiceResolver<T> {
     protected final Logger logger = Logger.getLogger(getClass().getName()); // Not static so we get the real classname
     protected final Auditor auditor;
 
-    public ServiceResolver(ApplicationContext spring) {
-        auditor = new Auditor(this, spring, logger);
+    public ServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+        auditor = auditorFactory.newInstance( this, logger );
     }
 
     /**

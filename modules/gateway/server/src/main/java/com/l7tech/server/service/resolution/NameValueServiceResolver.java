@@ -6,7 +6,7 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.server.audit.Auditor;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -17,23 +17,21 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author alex
  */
 public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
-    public NameValueServiceResolver(ApplicationContext spring) {
-        super(spring);
+    public NameValueServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+        super( auditorFactory );
     }
 
+    @Override
     public void serviceCreated(PublishedService service) throws ServiceResolutionException {
-        List<T> targetValues = getTargetValues(service);
-        T value;
-        Map<Long, PublishedService> serviceMap;
-        Long oid = service.getOid();
+        final List<T> targetValues = getTargetValues(service);
+        final Long oid = service.getOid();
 
         _rwlock.writeLock().lock();
         try {
             serviceOidToValueListMap.put( oid, targetValues );
 
-            for (T targetValue : targetValues) {
-                value = targetValue;
-                serviceMap = getServiceMap(value);
+            for ( T targetValue : targetValues ) {
+                Map<Long, PublishedService> serviceMap = getServiceMap(targetValue);
                 serviceMap.put(oid, service);
             }
         } finally {
@@ -41,6 +39,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
+    @Override
     public void serviceDeleted(PublishedService service) {
         Long oid = service.getOid();
 
@@ -56,6 +55,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
+    @Override
     public void serviceUpdated(PublishedService service) throws ServiceResolutionException {
         _rwlock.writeLock().lock();
         try {
@@ -86,9 +86,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
                     } finally {
                         _rwlock.writeLock().unlock();
                     }
-                } else {
-                    read.unlock();
-                    read = null;
                 }
                 return values;
             } finally {
@@ -116,51 +113,38 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
                 } finally {
                     _rwlock.writeLock().unlock();
                 }
-            } else {
-                read.unlock();
-                read = null;
-            }
+            } 
             return serviceMap;
         } finally {
             if (read != null) read.unlock();
         }
     }
 
+    @Override
     public final Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         if (!isApplicableToMessage(request)) return Result.NOT_APPLICABLE;
         T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
 
-    protected Result resolve(T value, Collection serviceSubset) throws ServiceResolutionException {
-        /*if (value instanceof String) {
-            String s = (String)value;
-            if (s.length() > getMaxLength()) {
-                s = s.substring(0,getMaxLength());
-                value = s;
-            }
-        }*/
-        Map<Long, PublishedService> serviceMap = getServiceMap(value);
+    protected Result resolve( final T value, final Collection serviceSubset ) throws ServiceResolutionException {
+        final Map<Long, PublishedService> serviceMap = getServiceMap(value);
 
         if ( serviceMap == null || serviceMap.isEmpty() ) return Result.NO_MATCH;
 
-        Set<PublishedService> resultSet = null;
-        List<T> targetValues;
+        final Set<PublishedService> resultSet = new HashSet<PublishedService>();
 
-        for (Long oid : serviceMap.keySet()) {
-            PublishedService service = serviceMap.get(oid);
-            if (serviceSubset.contains(service)) {
-                targetValues = getTargetValues(service);
-                for (Object targetValue : targetValues) {
-                    if (targetValue != null && targetValue.equals(value)) {
-                        if (resultSet == null) resultSet = new HashSet<PublishedService>();
+        for ( final PublishedService service : serviceMap.values()) {
+            if ( serviceSubset.contains(service) ) {
+                final List<T> targetValues = getTargetValues(service);
+                for ( T targetValue : targetValues ) {
+                    if ( (targetValue != null && targetValue.equals(value)) ||
+                         (targetValue == null && value==null) ) {
                         resultSet.add(service);
                     }
                 }
             }
         }
-
-        if ( resultSet == null ) resultSet = Collections.emptySet();
 
         return new Result(resultSet);
     }

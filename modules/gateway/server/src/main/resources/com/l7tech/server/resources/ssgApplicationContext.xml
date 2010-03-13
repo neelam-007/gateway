@@ -470,14 +470,35 @@
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
         <constructor-arg ref="licenseManager"/>
     </bean>
-    <!-- server side service cache -->
+
+    <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="wsdlStrategyServiceDocumentsInitializer">
-        <constructor-arg ref="policyCache"/>
-        <constructor-arg ref="transactionManager"/>
-        <constructor-arg ref="serviceManager"/>
-        <constructor-arg ref="serviceUsageManager"/>
-        <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg>
+        <constructor-arg index="0" ref="policyCache"/>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="serviceManager"/>
+        <constructor-arg index="3" ref="serviceUsageManager"/>
+        <constructor-arg index="4">
+            <bean class="com.l7tech.server.service.resolution.ServiceResolutionManager">
+                <constructor-arg index="0">
+                    <list>
+                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
+                    </list>
+                </constructor-arg>
+                <constructor-arg index="1">
+                    <list>
+                        <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
+                            <constructor-arg ref="auditorFactory"/>
+                            <constructor-arg ref="serviceDocumentManager"/>
+                        </bean>
+                    </list>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="5" ref="clusterInfoManager"/>
+        <constructor-arg index="6" >
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Service cache refresh"/>
             </bean>
@@ -735,6 +756,7 @@
 
     <!-- server side resolution manager -->
     <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl" depends-on="wsdlStrategyServiceDocumentsInitializer">
+        <constructor-arg index="0" ref="auditorFactory"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -1399,6 +1421,11 @@
 
     <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
         <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="auditorFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
+        <constructor-arg index="0" ref="auditDetailFilter"/>
+        <constructor-arg index="1" ref="auditLogListener"/>
     </bean>
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
