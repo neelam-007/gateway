@@ -298,15 +298,35 @@ public class SsgConnectorSslHelper {
         } else {
             delegate.setNeedClientAuth(SsgConnector.CLIENT_AUTH_NEVER != ssgConnector.getClientAuth());
         }
+
         return new SSLEngine() {
             @Override
             public SSLEngineResult wrap(ByteBuffer[] byteBuffers, int i, int i1, ByteBuffer byteBuffer) throws SSLException {
-                return delegate.wrap(byteBuffers, i, i1, byteBuffer);
+                final SSLEngineResult result = delegate.wrap(byteBuffers, i, i1, byteBuffer);
+                maybeDisableHandshaking(result);
+                return result;
             }
 
             @Override
             public SSLEngineResult unwrap(ByteBuffer byteBuffer, ByteBuffer[] byteBuffers, int i, int i1) throws SSLException {
-                return delegate.unwrap(byteBuffer, byteBuffers, i, i1);
+                final SSLEngineResult result = delegate.unwrap(byteBuffer, byteBuffers, i, i1);
+                maybeDisableHandshaking(result);
+                return result;
+            }
+
+            // TODO hack to work around TLS renegatiation bug, until fixed in SunJSSE.  Disable renegotiation after first handshake completes
+            boolean disabledRehandshakes = false;
+            private void maybeDisableHandshaking(SSLEngineResult result) {
+                if (SSLEngineResult.HandshakeStatus.FINISHED.equals(result.getHandshakeStatus()) ||
+                    SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING.equals(result.getHandshakeStatus()))
+                {
+                    if (!disabledRehandshakes) {
+                        getSession().invalidate();
+                        setEnableSessionCreation(false);
+                        setEnabledCipherSuites(new String[0]);
+                        disabledRehandshakes = true;
+                    }
+                }
             }
 
             @Override
@@ -411,7 +431,7 @@ public class SsgConnectorSslHelper {
 
             @Override
             public void setEnableSessionCreation(boolean b) {
-                delegate.setEnableSessionCreation(b);
+                // Ignored -- we force this to false after initial handshake to work around
             }
 
             @Override
