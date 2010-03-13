@@ -22,10 +22,12 @@ import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
 import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -44,6 +46,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * @author mike
@@ -975,6 +979,19 @@ public class WssProcessorTest {
         doTest(makeEttkTestDocument("ECDSA signed by Milton", XmlUtil.stringAsDocument(ECDSA_EXAMPLE_FROM_MILTON_GD)));
     }
 
+    @Test
+    @BugNumber(7157)
+    public void testMultipleSignatures() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "bug7157_signatureCombination.xml");
+        TestDocument td = new TestDocument("Multiple signatures", d, null, null, null, null, null);
+        doTest(td);
+
+        // Test proposed XPath for detecting this issue
+        Map<String, String> nsmap = new HashMap<String, String>();
+        nsmap.put("ds", SoapUtil.DIGSIG_URI);
+        assertEquals(Boolean.TRUE, XpathUtil.compileAndEvaluate(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=2", nsmap, null));
+        assertEquals(Boolean.FALSE, XpathUtil.compileAndEvaluate(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=1", nsmap, null));
+    }
 
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
