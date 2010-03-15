@@ -49,7 +49,7 @@ public class JmsProvider implements Serializable {
         c.setQueueFactoryUrl(getDefaultQueueFactoryUrl());
         c.setTopicFactoryUrl(getDefaultTopicFactoryUrl());
         c.setDestinationFactoryUrl(getDefaultDestinationFactoryUrl());
-        c.setProviderTypeCustomized(CUSTOM_LABEL.equals(name));
+        c.setProviderTypeCustomized(CUSTOM_LABEL.equals(_name));
         return c;
     }
 
