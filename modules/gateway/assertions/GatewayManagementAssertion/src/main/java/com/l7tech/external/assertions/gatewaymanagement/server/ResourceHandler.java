@@ -593,7 +593,8 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                 throw new ConcurrencyFault();
             } else {
                 setOperationInfo( context, null, null, null, "Error: " + ExceptionUtils.getMessage(e) );
-                throw new InternalErrorFault(ExceptionUtils.getMessage(e));
+                logger.log( Level.WARNING, "Resource access error processing management request", e );
+                throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
             }
         } else if ( e instanceof FaultException ) {
             setOperationInfo( context, null, null, null, ExceptionUtils.getMessage(e) );

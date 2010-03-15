@@ -287,29 +287,34 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
     protected void afterUpdateEntity( final EntityBag<PublishedService> entityBag ) throws ObjectModelException {
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
         final long serviceOid = serviceEntityBag.getPublishedService().getOid();
-        final Collection<ServiceDocument> serviceDocuments = serviceEntityBag.getServiceDocuments();
 
-        final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId( serviceOid );
-        for ( final ServiceDocument serviceDocument : existingServiceDocuments ) {
-            serviceDocumentManager.delete(serviceDocument);
-        }
-        for ( final ServiceDocument serviceDocument : serviceDocuments ) {
-            serviceDocument.setOid(-1);
-            serviceDocument.setServiceId( serviceOid );
-            serviceDocumentManager.save( serviceDocument );
+        if ( serviceEntityBag.serviceDocumentsReplaced() ) {
+            final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId( serviceOid );
+            for ( final ServiceDocument serviceDocument : existingServiceDocuments ) {
+                serviceDocumentManager.delete(serviceDocument);
+            }
+
+            for ( final ServiceDocument serviceDocument : serviceEntityBag.getServiceDocuments() ) {
+                serviceDocument.setOid(-1);
+                serviceDocument.setServiceId( serviceOid );
+                serviceDocumentManager.save( serviceDocument );
+            }
         }
     }
 
     protected static class ServiceEntityBag extends EntityBag<PublishedService> {
+        private boolean serviceDocumentsReplaced;
         private Collection<ServiceDocument> serviceDocuments;
 
         protected ServiceEntityBag( final PublishedService entity,
                                     final Collection<ServiceDocument> serviceDocuments ) {
             super( entity );
+            this.serviceDocumentsReplaced = false;
             this.serviceDocuments = Collections.unmodifiableCollection( serviceDocuments );
         }
 
         protected void replaceServiceDocuments( final Collection<ServiceDocument> serviceDocuments ) {
+            this.serviceDocumentsReplaced = true;
             this.serviceDocuments = Collections.unmodifiableCollection( serviceDocuments );
         }
 
@@ -319,6 +324,10 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
 
         protected Collection<ServiceDocument> getServiceDocuments() {
             return serviceDocuments;
+        }
+
+        protected boolean serviceDocumentsReplaced() {
+            return serviceDocumentsReplaced;
         }
 
         @Override

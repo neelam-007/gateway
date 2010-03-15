@@ -287,8 +287,8 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
 
     @SuppressWarnings({"unchecked"})
     protected <R> R transactional( final TransactionalCallback<R,?> callback,
-                                 final boolean readOnly,
-                                 final Class<?>... checkedExceptionTypes )  {
+                                   final boolean readOnly,
+                                   final Class<?>... checkedExceptionTypes )  {
         try {
             TransactionTemplate tt = new TransactionTemplate(transactionManager);
             tt.setReadOnly( readOnly );
@@ -342,11 +342,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
 
     @SuppressWarnings({"serial"})
     private static class TransactionalException extends RuntimeException {
-        public TransactionalException( final Throwable cause ) {
+        TransactionalException( final Throwable cause ) {
             super(cause);
         }
 
-        public void throwException( final Class<?>... checkedExceptionTypes ) {
+        void throwException( final Class<?>... checkedExceptionTypes ) {
             final Throwable cause = getCause();
 
             for ( Class<?> exceptionClass : checkedExceptionTypes ) {
