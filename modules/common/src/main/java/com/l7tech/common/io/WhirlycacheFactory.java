@@ -85,7 +85,7 @@ public class WhirlycacheFactory {
             if (!shutdown) {
                 if ( cacheMap.containsKey(name) ) logger.warning("Duplicate cache name used '" + name + "'.");
 
-                CacheDecorator cacheDecorator = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+                CacheDecorator cacheDecorator = new CacheDecoratorEx(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
                 cache = cacheDecorator;
                 cacheMap.put(name, cacheDecorator);
             }
@@ -156,18 +156,32 @@ public class WhirlycacheFactory {
     private static final Logger logger = Logger.getLogger(WhirlycacheFactory.class.getName());
 
     private static final Cache NullCache = new Cache() {
-        public void clear() {}
-        public Object remove(Cacheable key) { return null; }
-        public Object remove(Object key) { return null; }
-        public Object retrieve(Cacheable key) { return null; }
-        public Object retrieve(Object key) { return null; }
-        public int size() { return 0; }
-        public void store(Cacheable key, Object value) {}
-        public void store(Cacheable key, Object value, long expireTime) {}
-        public void store(Object key, Object value) {}
-        public void store(Object key, Object value, long expireTime) {}
+        @Override public void clear() {}
+        @Override public Object remove(Cacheable key) { return null; }
+        @Override public Object remove(Object key) { return null; }
+        @Override public Object retrieve(Cacheable key) { return null; }
+        @Override public Object retrieve(Object key) { return null; }
+        @Override public int size() { return 0; }
+        @Override public void store(Cacheable key, Object value) {}
+        @Override public void store(Cacheable key, Object value, long expireTime) {}
+        @Override public void store(Object key, Object value) {}
+        @Override public void store(Object key, Object value, long expireTime) {}
     };
 
     private static final Map<String,CacheDecorator> cacheMap = Collections.synchronizedMap(new HashMap<String,CacheDecorator>());
     private static boolean shutdown = false;
+
+    private static final class CacheDecoratorEx extends CacheDecorator {
+        CacheDecoratorEx( final ManagedCache managedCache,
+                          final CacheConfiguration cacheConfiguration,
+                          final CacheMaintenancePolicy[] cacheMaintenancePolicies ) {
+            super( managedCache, cacheConfiguration, cacheMaintenancePolicies );
+            final Thread thread = this.tunerThread;
+            if ( thread != null ) {
+                // This prevents the parent context class loader being inherited (see bug 8451)
+                // Note that the thread will already have been started.
+                thread.setContextClassLoader( null );
+            }
+        }
+    }
 }

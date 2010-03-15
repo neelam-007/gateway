@@ -23,9 +23,6 @@ import com.l7tech.util.ResourceUtils;
  * <p>Note that although this class extends ServletInputStream, you can only
  * use the {@link #readLine(byte[],int,int) readLine} method if the wrapped
  * stream is a ServletInputStream (else you will get an exception)</p>
- *
- * @author $Author$
- * @version $Revision$
  */
 public class TimeoutInputStream extends ServletInputStream {
 
@@ -309,20 +306,20 @@ public class TimeoutInputStream extends ServletInputStream {
     private static Exception diedWithException = null;
     private static Thread timer = null;
     static {
-        ThreadGroup group = getThreadGroup();
-
         synchronized(timerLock) {
-            timer = new Thread(group, new Interrupter());
+            timer = new Thread(new Interrupter());
             timer.setDaemon(true);
             timer.setName("InputTimeoutThread");
             timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+            timer.setContextClassLoader(null);
             timer.start();
         }
 
-        Thread timerWatcher = new Thread(group, new InterrupterWatcher());
+        Thread timerWatcher = new Thread(new InterrupterWatcher());
         timerWatcher.setDaemon(true);
         timerWatcher.setName("InputTimeoutThreadWatchdog");
         timerWatcher.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+        timerWatcher.setContextClassLoader(null);
         timerWatcher.start();
     }
 
@@ -367,27 +364,6 @@ public class TimeoutInputStream extends ServletInputStream {
      */
     private void checkTimeout() throws IOException {
         if(bin.isTimedOut()) throw new IOException("Stream timeout");
-    }
-
-    /**
-     *
-     */
-    private static ThreadGroup getThreadGroup() {
-        ThreadGroup group = Thread.currentThread().getThreadGroup();
-
-        if ( group != null ) {
-            ThreadGroup currentGroup = group;
-            while ( currentGroup != null ) {
-                if ( "system".equals( currentGroup.getName() ) ) {
-                    group = currentGroup;
-                    break;
-                } else {
-                    currentGroup = currentGroup.getParent();
-                }
-            }
-        }
-
-        return group;
     }
 
     /**
@@ -563,6 +539,7 @@ public class TimeoutInputStream extends ServletInputStream {
                             timer.setDaemon(true);
                             timer.setName("InputTimeoutThread");
                             timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
+                            timer.setContextClassLoader(null);
                             timer.start();
                         }
                         logger.log(Level.INFO, "Restarted input stream processing thread.");
