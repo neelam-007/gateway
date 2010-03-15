@@ -24,11 +24,11 @@ public class MarshallingUtils {
 
     //- PUBLIC
 
-    public static void marshal( final Object mo, final Result result ) throws IOException {
+    public static void marshal( final Object mo, final Result result, final boolean isFragment ) throws IOException {
         try {
             final JAXBContext context = getJAXBContext();
             final Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
+            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, isFragment);
 
             try {
                 marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );

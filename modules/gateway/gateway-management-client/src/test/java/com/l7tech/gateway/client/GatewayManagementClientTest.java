@@ -251,7 +251,20 @@ public class GatewayManagementClientTest {
         int exitcode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0, exitcode );
-        assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("<ClusterProperty") && output.startsWith( "<enumeration>" ));
+        assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("<ClusterProperty") && output.contains( "<enumeration>" ) && output.endsWith( "</enumeration>\n" ));
+    }
+
+    @Test
+    public void testEmptyEnumerate() throws Exception {
+        setResponse(
+                "ClusterProperty_Enumerate_Response1.xml",
+                "ClusterProperty_Enumerate_Response4.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, out, out );
+        int exitcode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitcode );
+        assertTrue( "Expected empty enumeration:\n" + output , output.contains( "<enumeration/>" ));
     }
 
     @Test

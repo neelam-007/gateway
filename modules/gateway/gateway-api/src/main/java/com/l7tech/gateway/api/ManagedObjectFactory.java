@@ -366,7 +366,7 @@ public class ManagedObjectFactory {
      */
     public static Document write( final ManagedObject mo ) throws IOException {
         final DOMResult result = new DOMResult();
-        MarshallingUtils.marshal( mo, result );
+        MarshallingUtils.marshal( mo, result, false );
         return (Document) result.getNode();
     }
 
@@ -379,7 +379,7 @@ public class ManagedObjectFactory {
      */
     public static void write( final ManagedObject mo, final OutputStream out ) throws IOException {
         final StreamResult result = new StreamResult( out );
-        MarshallingUtils.marshal( mo, result );
+        MarshallingUtils.marshal( mo, result, false );
     }
 
     /**

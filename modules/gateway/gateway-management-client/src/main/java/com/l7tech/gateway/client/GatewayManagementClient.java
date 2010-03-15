@@ -11,6 +11,7 @@ import com.l7tech.gateway.api.PolicyAccessor;
 import com.l7tech.gateway.api.PolicyImportResult;
 import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.PolicyValidationResult;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.Cli;
@@ -31,6 +32,7 @@ import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -496,21 +498,19 @@ public class GatewayManagementClient {
             this.extraArguments = extraArguments;
         }
 
-        abstract public void run() throws CommandException;
+        public final void run() throws CommandException {
+            Client client = null;
+            try {
+                client = buildClient();
+                doRun( client );
+            } finally {
+                ResourceUtils.closeQuietly( client );
+            }
+        }
 
         //- PROTECTED
 
-        protected final Client buildClient() throws CommandException {
-            return buildClient(
-                    url,
-                    arguments.username,
-                    getArgValue(arguments.password, arguments.passwordFile, "UTF-8", "-passwordFile"),
-                    arguments.verifyHostname,
-                    arguments.verifyCertificate,
-                    arguments.proxyUsername,
-                    getArgValue(arguments.proxyPassword, arguments.proxyPasswordFile, "UTF-8", "-proxyPasswordFile")
-            );
-        }
+        protected abstract void doRun( Client client ) throws CommandException;
 
         @SuppressWarnings( { "unchecked" } )
         protected final Class<? extends AccessibleObject> getAccessibleObjectType() throws CommandException {
@@ -678,6 +678,18 @@ public class GatewayManagementClient {
         private Arguments arguments;
         private List<String> extraArguments;
 
+        private Client buildClient() throws CommandException {
+            return buildClient(
+                    url,
+                    arguments.username,
+                    getArgValue(arguments.password, arguments.passwordFile, "UTF-8", "-passwordFile"),
+                    arguments.verifyHostname,
+                    arguments.verifyCertificate,
+                    arguments.proxyUsername,
+                    getArgValue(arguments.proxyPassword, arguments.proxyPasswordFile, "UTF-8", "-proxyPasswordFile")
+            );
+        }
+
         private Client buildClient( final String url,
                                     final String username,
                                     final String password,
@@ -764,9 +776,13 @@ public class GatewayManagementClient {
     }
 
     private static final class EnumerateCommand extends Command {
+        private static final String XML_DECL = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
+        private static final String ENUM_START = "<enumeration>\n";
+        private static final String ENUM_EMPTY = "<enumeration/>\n";
+        private static final String ENUM_END = "</enumeration>\n";
+
         @Override
-        public void run() throws CommandException {
-            final Client client = buildClient();
+        protected void doRun( final Client client ) throws CommandException {
             final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
@@ -775,6 +791,7 @@ public class GatewayManagementClient {
                     @Override
                     public Void call( final OutputStream out ) throws CommandException {
                         try {
+                            final StreamResult outResult = new StreamResult( out );
                             boolean first = true;
                             while ( iterator.hasNext() ) {
                                 ManagedObject mo;
@@ -785,10 +802,11 @@ public class GatewayManagementClient {
                                     throw re;
                                 }
                                 if ( first ) {
-                                    out.write( "<enumeration>".getBytes( "UTF-8" ));
+                                    writeBytes( out, XML_DECL );
+                                    writeBytes( out, ENUM_START );
                                     first = false;
                                 }
-                                ManagedObjectFactory.write( mo, out );
+                                MarshallingUtils.marshal( mo, outResult, true );
                             }
                             endOutput( out, first, false );
                         } catch ( IOException ioe ) {
@@ -807,20 +825,24 @@ public class GatewayManagementClient {
                                 final boolean suppressError ) throws IOException {
             try {
                 if ( first ) {
-                    out.write( "<enumeration/>".getBytes( "UTF-8" ));
+                    writeBytes( out, XML_DECL );
+                    writeBytes( out, ENUM_EMPTY );
                 } else {
-                    out.write( "</enumeration>".getBytes( "UTF-8" ));
+                    writeBytes( out, ENUM_END );
                 }
             } catch ( IOException ioe ) {
                 if ( !suppressError ) throw ioe;
             }
         }
+
+        private void writeBytes( final OutputStream out, final String data ) throws IOException {
+            out.write( data.getBytes( "UTF-8" ));
+        }
     }
 
     private static final class GetCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            final Client client = buildClient();
+        protected void doRun( final Client client )  throws CommandException {
             final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
@@ -834,12 +856,12 @@ public class GatewayManagementClient {
 
     private static final class PutCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            doPut( getAccessibleObjectType() );
+        protected void doRun( final Client client )  throws CommandException {
+            doPut( client, getAccessibleObjectType() );
         }
 
-        private <AO extends AccessibleObject> void doPut( final Class<AO> type ) throws CommandException {
-            final Client client = buildClient();
+        private <AO extends AccessibleObject> void doPut( final Client client,
+                                                          final Class<AO> type ) throws CommandException {
             final Accessor<AO> accessor = client.getAccessor( type );
 
             try {
@@ -853,12 +875,12 @@ public class GatewayManagementClient {
 
     private static final class CreateCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            doCreate( getAccessibleObjectType() );
+        protected void doRun( final Client client )  throws CommandException {
+            doCreate( client, getAccessibleObjectType() );
         }
 
-        private <AO extends AccessibleObject> void doCreate( final Class<AO> type ) throws CommandException {
-            final Client client = buildClient();
+        private <AO extends AccessibleObject> void doCreate( final Client client,
+                                                             final Class<AO> type ) throws CommandException {
             final Accessor<AO> accessor = client.getAccessor( type );
 
             try {
@@ -874,8 +896,7 @@ public class GatewayManagementClient {
 
     private static final class DeleteCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            final Client client = buildClient();
+        protected void doRun( final Client client )  throws CommandException {
             final Accessor<?> accessor = client.getAccessor( getAccessibleObjectType() );
 
             try {
@@ -888,8 +909,7 @@ public class GatewayManagementClient {
 
     private static final class ExportCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            final Client client = buildClient();
+        protected void doRun( final Client client )  throws CommandException {
             final PolicyAccessor<?> accessor = getPolicyAccessor( client, getAccessibleObjectType() );
 
             try {
@@ -913,8 +933,7 @@ public class GatewayManagementClient {
 
     private static final class ImportCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            final Client client = buildClient();
+        protected void doRun( final Client client )  throws CommandException {
             final PolicyAccessor<?> policyAccessor = getPolicyAccessor( client, getAccessibleObjectType() );
 
             final List<PolicyReferenceInstruction> instructions = new ArrayList<PolicyReferenceInstruction>();
@@ -993,12 +1012,12 @@ public class GatewayManagementClient {
 
     private static final class ValidateCommand extends Command {
         @Override
-        public void run() throws CommandException {
-            doValidate( getAccessibleObjectType() );
+        protected void doRun( final Client client )  throws CommandException {
+            doValidate( client, getAccessibleObjectType() );
         }
 
-        private <AO extends AccessibleObject> void doValidate( final Class<AO> type ) throws CommandException {
-            final Client client = buildClient();
+        private <AO extends AccessibleObject> void doValidate( final Client client,
+                                                               final Class<AO> type ) throws CommandException {
             final PolicyAccessor<AO> accessor = getPolicyAccessor( client, type );
 
             try {
