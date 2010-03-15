@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceHandler;
 
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -83,7 +83,7 @@ public class WsdlGenerator {
                 final Class<? extends ResourceFactory> factory = (Class<? extends ResourceFactory>) Class.forName( factoryClass );
                 final ResourceFactory.ResourceType type = factory.getAnnotation( ResourceFactory.ResourceType.class );
 
-                out.println( "<name>" + AccessorFactory.getResourceName(type.type()) + "</name>" );
+                out.println( "<name>" + AccessorSupport.getResourceName(type.type()) + "</name>" );
                 out.println( "<resource class=\"" + type.type().getName() + "\">" );
                 out.println( "<element>" + type.type().getAnnotation( XmlRootElement.class).name()+ "</element>" );
                 out.println( "<type>" + asSchemaType(type.type())+ "</type>" );

@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -19,7 +19,7 @@ import java.util.List;
  */
 @XmlRootElement(name="Service")
 @XmlType(name="ServiceType", propOrder={"serviceDetail", "extensions", "resourceSets"})
-@AccessorFactory.AccessibleResource(name="services", accessorClassname="com.l7tech.gateway.api.impl.ServiceMOAccessorImpl")
+@AccessorSupport.AccessibleResource(name="services", accessorClassname="com.l7tech.gateway.api.impl.ServiceMOAccessorImpl")
 public class ServiceMO extends AccessibleObject {
 
     //- PUBLIC

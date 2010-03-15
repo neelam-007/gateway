@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,7 +18,7 @@ import java.util.List;
  */
 @XmlRootElement(name="JMSDestination")
 @XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extensions"})
-@AccessorFactory.AccessibleResource(name ="jmsDestinations")
+@AccessorSupport.AccessibleResource(name ="jmsDestinations")
 public class JMSDestinationMO extends AccessibleObject {
 
     //- PUBLIC

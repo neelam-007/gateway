@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="IdentityProvider")
 @XmlType(name="IdentityProviderType", propOrder={"name","identityProviderType","extensions","properties"})
-@AccessorFactory.AccessibleResource(name ="identityProviders")
+@AccessorSupport.AccessibleResource(name ="identityProviders")
 public class IdentityProviderMO extends AccessibleObject {
 
     //- PUBLIC

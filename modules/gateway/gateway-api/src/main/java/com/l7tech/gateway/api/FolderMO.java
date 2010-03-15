@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="Folder")
 @XmlType(name="FolderType", propOrder={"name", "extensions", "properties"})
-@AccessorFactory.AccessibleResource(name ="folders")
+@AccessorSupport.AccessibleResource(name ="folders")
 public class FolderMO extends AccessibleObject {
 
     //- PUBLIC

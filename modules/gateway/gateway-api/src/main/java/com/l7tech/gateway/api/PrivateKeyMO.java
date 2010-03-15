@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="PrivateKey")
 @XmlType(name="PrivateKeyType",propOrder={"certificateChain","extensions","properties"})
-@AccessorFactory.AccessibleResource(name ="privateKeys")
+@AccessorSupport.AccessibleResource(name ="privateKeys")
 public class PrivateKeyMO extends AccessibleObject {
 
     //- PUBLIC

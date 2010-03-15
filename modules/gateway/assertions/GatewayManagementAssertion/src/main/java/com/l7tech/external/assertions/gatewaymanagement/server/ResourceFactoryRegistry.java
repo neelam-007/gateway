@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.ws.management.InternalErrorFault;
@@ -12,6 +12,7 @@ import com.sun.ws.management.server.EnumerationSupport;
 import com.sun.ws.management.server.HandlerContext;
 import com.sun.ws.management.server.IteratorFactory;
 import com.sun.ws.management.soap.FaultException;
+import com.sun.ws.management.soap.SOAP;
 import org.springframework.beans.factory.InitializingBean;
 import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 
@@ -97,7 +98,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                 throw new IllegalStateException("Attempt to register resource factory '"+factory.getClass().getName()+"' missing ResourceType annotation.");
             }
 
-            if ( factoryMap.put( AccessorFactory.getResourceName( resourceType.type() ), factory ) != null ) {
+            if ( factoryMap.put( AccessorSupport.getResourceName( resourceType.type() ), factory ) != null ) {
                 throw new IllegalStateException("Attempt to register resource factory '"+factory.getClass().getName()+"' with duplicate resource name.");
             }
         }
@@ -149,11 +150,11 @@ public class ResourceFactoryRegistry implements InitializingBean {
         private final boolean includeItem;
         private final boolean includeEPR;
 
-        public ResourceEnumerationIterator( final String resourceUri,
-                                            final ResourceFactory<?> resourceFactory,
-                                            final String address,
-                                            final boolean includeItem,
-                                            final boolean includeEPR ) {
+        ResourceEnumerationIterator( final String resourceUri,
+                                     final ResourceFactory<?> resourceFactory,
+                                     final String address,
+                                     final boolean includeItem,
+                                     final boolean includeEPR ) {
             this.resourceUri = resourceUri;
             this.resourceFactory = resourceFactory;
             this.address = address;
@@ -164,7 +165,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                 resourceSelectors = resourceFactory.getResources();
                 resourceSelectorIterator = resourceSelectors.iterator();
             } catch ( Exception e ) {
-                throw new InternalErrorFault(e);
+                throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
             }
         }
 
@@ -192,7 +193,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                 try {
                     resource = resourceFactory.getResource( selectors );
                 } catch (ResourceFactory.ResourceNotFoundException e) {
-                    throw new InternalErrorFault(e);
+                    throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
                 }
             } else {
                 resource = null;
@@ -206,7 +207,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                             resourceUri,
                             selectors );
                 } catch ( Exception e ) {
-                    throw new InternalErrorFault(e);
+                    throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
                 }
             } else {
                 epr = null;

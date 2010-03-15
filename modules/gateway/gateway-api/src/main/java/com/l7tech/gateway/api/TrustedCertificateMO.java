@@ -1,6 +1,6 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.AccessorFactory;
+import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -40,7 +40,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="TrustedCertificate")
 @XmlType(name="TrustedCertificateType", propOrder={"name","certificateData","extensions","properties"})
-@AccessorFactory.AccessibleResource(name ="trustedCertificates")
+@AccessorSupport.AccessibleResource(name ="trustedCertificates")
 public class TrustedCertificateMO extends AccessibleObject {
     
     //- PUBLIC
