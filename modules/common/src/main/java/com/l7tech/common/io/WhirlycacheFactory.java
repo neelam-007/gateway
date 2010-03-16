@@ -85,7 +85,7 @@ public class WhirlycacheFactory {
             if (!shutdown) {
                 if ( cacheMap.containsKey(name) ) logger.warning("Duplicate cache name used '" + name + "'.");
 
-                CacheDecorator cacheDecorator = new CacheDecoratorEx(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+                CacheDecorator cacheDecorator = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
                 cache = cacheDecorator;
                 cacheMap.put(name, cacheDecorator);
             }
@@ -170,18 +170,4 @@ public class WhirlycacheFactory {
 
     private static final Map<String,CacheDecorator> cacheMap = Collections.synchronizedMap(new HashMap<String,CacheDecorator>());
     private static boolean shutdown = false;
-
-    private static final class CacheDecoratorEx extends CacheDecorator {
-        CacheDecoratorEx( final ManagedCache managedCache,
-                          final CacheConfiguration cacheConfiguration,
-                          final CacheMaintenancePolicy[] cacheMaintenancePolicies ) {
-            super( managedCache, cacheConfiguration, cacheMaintenancePolicies );
-            final Thread thread = this.tunerThread;
-            if ( thread != null ) {
-                // This prevents the parent context class loader being inherited (see bug 8451)
-                // Note that the thread will already have been started.
-                thread.setContextClassLoader( null );
-            }
-        }
-    }
 }

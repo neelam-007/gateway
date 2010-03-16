@@ -311,7 +311,6 @@ public class TimeoutInputStream extends ServletInputStream {
             timer.setDaemon(true);
             timer.setName("InputTimeoutThread");
             timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
-            timer.setContextClassLoader(null);
             timer.start();
         }
 
@@ -319,7 +318,6 @@ public class TimeoutInputStream extends ServletInputStream {
         timerWatcher.setDaemon(true);
         timerWatcher.setName("InputTimeoutThreadWatchdog");
         timerWatcher.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
-        timerWatcher.setContextClassLoader(null);
         timerWatcher.start();
     }
 
@@ -539,7 +537,6 @@ public class TimeoutInputStream extends ServletInputStream {
                             timer.setDaemon(true);
                             timer.setName("InputTimeoutThread");
                             timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
-                            timer.setContextClassLoader(null);
                             timer.start();
                         }
                         logger.log(Level.INFO, "Restarted input stream processing thread.");

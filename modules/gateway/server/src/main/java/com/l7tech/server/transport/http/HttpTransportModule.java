@@ -25,12 +25,15 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
+import org.apache.catalina.loader.WebappClassLoader;
+import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.startup.Embedded;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
+import org.apache.tomcat.util.IntrospectionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
@@ -193,6 +196,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         dflt.setLoadOnStartup(1);
         context.addChild(dflt);
         context.addServletMapping("/", "default");
+
+        WebappLoader webappLoader = new WebappLoader(context.getParentClassLoader());
+        webappLoader.setDelegate(context.getDelegate());
+        webappLoader.setLoaderClass(WebappClassLoaderEx.class.getName());
+        context.setLoader(webappLoader);
 
         host.addChild(context);
     }
@@ -907,7 +915,28 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *
      * @return the serverConfig
      */
+    @Override
     public ServerConfig getServerConfig() {
         return serverConfig;
+    }
+
+    public static final class WebappClassLoaderEx extends WebappClassLoader {
+        public WebappClassLoaderEx() {
+            super();
+        }
+
+        public WebappClassLoaderEx( final ClassLoader parent ) {
+            super( parent );
+        }
+
+        /**
+         * Overridden to prevent cleanup that is not necessary in our environment.
+         */
+        @Override
+        protected void clearReferences() {
+            IntrospectionUtils.clear();
+            org.apache.juli.logging.LogFactory.release(this);
+            java.beans.Introspector.flushCaches();
+        }
     }
 }
