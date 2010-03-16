@@ -180,7 +180,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         });
 
         props.put(XACML_PDP_MAX_DOWNLOAD_SIZE, new String[]{
-                "Maximum size allowed for a remote XACML policy (Integer)",
+                "Maximum size in bytes of a XACML policy document download (Integer)",
                 "${documentDownload.maxSize}" } );
 
         meta.put(CLUSTER_PROPERTIES, props);
