@@ -83,7 +83,7 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
     }
 
     @Override
-    protected DatedUserObject<LdapCacheEntry<PT>> doGet(String urlStr, String lastModifiedStr, long lastSuccessfulPollStarted) throws IOException {
+    protected DatedUserObject<LdapCacheEntry<PT>> doGet(String urlStr, String lastModifiedStr, long lastSuccessfulPollStarted, String etag) throws IOException {
         try {
             LdapURL ldapUrl = new LdapURL(urlStr);
             String query = ldapUrl.getQuery();
@@ -100,7 +100,7 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
             try {
                 context = LdapUtils.getLdapContext(urlStr, bindDn, bindPassword, connectTimeout, readTimeout);
                 Attributes attrs = context.getAttributes("");
-                return new DatedUserObject<LdapCacheEntry<PT>>(new LdapCacheEntry<PT>(attrs, query, binary), Long.toString(System.currentTimeMillis()));
+                return new DatedUserObject<LdapCacheEntry<PT>>(new LdapCacheEntry<PT>(attrs, query, binary), Long.toString(System.currentTimeMillis()), null);
             } finally {
                 ResourceUtils.closeQuietly(context);
             }

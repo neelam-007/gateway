@@ -26,8 +26,12 @@ import java.net.URL;
  */
 public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
-    private static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize"; 
+    private static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize";
+    private static final String SYSPROP_ENABLE_LASTMODIFED = "com.l7tech.server.url.httpCacheEnableLastModified";
+    private static final String SYSPROP_ENABLE_ETAG = "com.l7tech.server.url.httpCacheEnableETag";
     private static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
+    private static final boolean enableLastModified = SyspropUtil.getBoolean( SYSPROP_ENABLE_LASTMODIFED, true );
+    private static final boolean enableETag = SyspropUtil.getBoolean( SYSPROP_ENABLE_ETAG, true );;
 
     protected final GenericHttpClientFactory httpClientFactory;
     protected final UserObjectFactory<UT> userObjectFactory;
@@ -100,9 +104,10 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     }
 
     @Override
-    protected DatedUserObject<UT> doGet(String urlStr,
-                                            String lastModifiedStr,
-                                            long lastSuccessfulPollStarted)
+    protected DatedUserObject<UT> doGet( final String urlStr,
+                                         final String lastModifiedStr,
+                                         final long lastSuccessfulPollStarted,
+                                         final String currentEtag )
             throws IOException
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
@@ -112,21 +117,28 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
         try {
             final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(urlStr));
 
-            // Prefer the server's provided modification date, since it uses the server's own clock
-            final HttpHeader ifModSince;
-            if (lastModifiedStr != null) {
-                // Use the server's own modification date
-                ifModSince = new GenericHttpHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE, lastModifiedStr);
-            } else if (lastSuccessfulPollStarted > 0) {
-                // Fall back to making one up, using our own clock
-                ifModSince = GenericHttpHeader.makeDateHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE,
-                                                              new Date(lastSuccessfulPollStarted));
-            } else {
-                ifModSince = null;
+            if ( enableLastModified ) {
+                // Prefer the server's provided modification date, since it uses the server's own clock
+                final HttpHeader ifModSince;
+                if (lastModifiedStr != null) {
+                    // Use the server's own modification date
+                    ifModSince = new GenericHttpHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE, lastModifiedStr);
+                } else if (lastSuccessfulPollStarted > 0) {
+                    // Fall back to making one up, using our own clock
+                    ifModSince = GenericHttpHeader.makeDateHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE,
+                                                                  new Date(lastSuccessfulPollStarted));
+                } else {
+                    ifModSince = null;
+                }
+
+                if ( ifModSince != null )
+                    params.replaceExtraHeader(ifModSince);
             }
 
-            if ( ifModSince != null )
-                params.replaceExtraHeader(ifModSince);
+            if ( enableETag && currentEtag != null ) {
+                final HttpHeader ifNoneMatch = new GenericHttpHeader(HttpConstants.HEADER_IF_NONE_MATCH, currentEtag);
+                params.replaceExtraHeader(ifNoneMatch);
+            }
 
             req = httpClientFactory.createHttpClient().createRequest(HttpMethod.GET, params);
             resp = req.getResponse();
@@ -134,11 +146,12 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             // Get server-provided last-modified date
             final HttpHeaders headers = resp.getHeaders();
             final String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
+            final String etag = headers.getFirstValue(HttpConstants.HEADER_ETAG);
 
             if (resp.getStatus() == HttpConstants.STATUS_NOT_MODIFIED) {
                 // Don't even bother doing another round-trip through the UserObjectFactory
                 if (logger.isLoggable(Level.FINER)) logger.finer("Server reports no change for URL '" + urlStr + "'");
-                return new DatedUserObject<UT>(null, modified!=null ? modified : lastModifiedStr);
+                return new DatedUserObject<UT>(null, modified!=null ? modified : lastModifiedStr, etag);
             }
 
             final GenericHttpResponse sourceResponse = resp;
@@ -160,7 +173,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             });
             if (userObject != null) {
                 if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
-                return new DatedUserObject<UT>(userObject, modified);
+                return new DatedUserObject<UT>(userObject, modified, etag);
             }
 
             throw new IOException("Response not accepted for caching");

@@ -21,6 +21,8 @@ public final class HttpConstants {
     public static final String HEADER_USER_AGENT = "User-Agent";
     public static final String HEADER_IF_MODIFIED_SINCE = "If-Modified-Since";
     public static final String HEADER_LAST_MODIFIED = "Last-Modified";
+    public static final String HEADER_IF_NONE_MATCH = "If-None-Match";
+    public static final String HEADER_ETAG = "ETag";
     public static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
     public static final String HEADER_AUTHORIZATION = "Authorization";
     public static final String HEADER_ACCEPT = "Accept";

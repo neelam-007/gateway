@@ -410,17 +410,20 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         UT entryObject;
         String entryLastModified;
         long entryLastSuccessfulPollStarted;
+        String etag;
         synchronized( entry ) {
             entryObject = entry.userObject;
             entryLastModified = entry.lastModified;
             entryLastSuccessfulPollStarted = entry.lastSuccessfulPollStarted;
+            etag = entry.etag;
         }
 
         boolean reported = false;
         try {
-            DatedUserObject<UT> dup = doGet(urlStr, entryLastModified, entryLastSuccessfulPollStarted);
+            DatedUserObject<UT> dup = doGet(urlStr, entryLastModified, entryLastSuccessfulPollStarted, etag);
             long lastSuccessfulPollStarted = requestStart;
             String userObjectModified = dup.getLastModified();
+            String userObjectETag = dup.getETag();
             UT userObject = dup.getUserObject();
             if (userObject == null) {
                 userObject = entryObject;
@@ -434,7 +437,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
                     userObjectModified = null;
                 }
             }
-            FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, lastSuccessfulPollStarted, userObjectModified, userObject);
+            FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, lastSuccessfulPollStarted, userObjectModified, userObjectETag, userObject);
             reported = true;
             return ret;
         } catch (IOException e) {
@@ -449,6 +452,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
     protected static final class DatedUserObject<UT> {
         private final String lastModified;
+        private final String etag;
         private final UT userObject;
 
         /**
@@ -461,13 +465,20 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
          *                      back to {@link AbstractUrlObjectCache#doGet} the next time it is called on this
          *                      URL.
          */
-        public DatedUserObject(UT userObject, String lastModified) {
+        public DatedUserObject( final UT userObject,
+                                final String lastModified,
+                                final String etag ) {
             this.lastModified = lastModified;
             this.userObject = userObject;
+            this.etag = etag;
         }
 
         public String getLastModified() {
             return lastModified;
+        }
+
+        public String getETag() {
+            return etag;
         }
 
         public UT getUserObject() {
@@ -484,7 +495,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      *         configurations.
      * @throws IOException if the poll was unsuccessful.
      */
-    protected abstract DatedUserObject<UT> doGet(String urlStr, String lastModifiedStr, long lastSuccessfulPollStarted) throws IOException;
+    protected abstract DatedUserObject<UT> doGet(String urlStr, String lastModifiedStr, long lastSuccessfulPollStarted, String etag) throws IOException;
 
     private FetchResult<UT> doFailedDownload(AbstractCacheEntry<UT> entry, IOException exception) {
         synchronized (entry) {
@@ -514,6 +525,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
                                                  long requestStart,
                                                  long lastSuccessfulPollStarted,
                                                  String modified,
+                                                 String etag,
                                                  UT userObject)
     {
         // Record the success, wake up other threads, and return the result.
@@ -521,6 +533,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             entry.accessCount = 0;
             entry.lastSuccessfulPollStarted = lastSuccessfulPollStarted;
             entry.lastModified = modified;
+            entry.etag = etag;
             entry.exception = null;
             entry.exceptionCreated = 0;
             entry.userObject = userObject;
@@ -563,6 +576,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         private int accessCount; // Number of time this entry has been accessed since last download
         private long lastSuccessfulPollStarted; // time of last successful poll; use only if lastModified not provided
         private String lastModified; // last Modified: header from server; use in preference to lastPollStarted
+        private String etag; // ETag header from server (if any)
         private UT userObject;
         private long userObjectCreated; // actually the time just before the download request began
         private IOException exception;
