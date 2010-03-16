@@ -21,6 +21,13 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
     protected SamlpAuthorizationStatement authorizationStatement;
     protected SamlAttributeStatement attributeStatement;
 
+    public SamlProtocolAssertion() {
+    }
+
+    protected SamlProtocolAssertion(boolean targetModified) {
+        super(targetModified);
+    }
+
     /**
      * Get the SAML version for this assertion
      *

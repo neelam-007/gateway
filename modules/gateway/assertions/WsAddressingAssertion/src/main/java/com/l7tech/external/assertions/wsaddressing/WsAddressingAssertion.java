@@ -41,6 +41,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
      * Create a WS-Addressing assertion with default values;
      */
     public WsAddressingAssertion() {
+        super(false);
         setEnableWsAddressing10(true);
     }
 

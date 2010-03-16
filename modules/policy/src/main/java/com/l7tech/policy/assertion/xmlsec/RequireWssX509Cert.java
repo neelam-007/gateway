@@ -1,16 +1,17 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import com.l7tech.util.Functions;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.List;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * This assertion verifies that the soap message contained
@@ -118,6 +119,11 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     }
 
     @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> used = new ArrayList<String>( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
@@ -128,6 +134,12 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
             used.add( signatureReferenceElementVariable );
         }
         return used.toArray( new String[used.size()] );
+    }
+
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return messageTargetableSupport.getVariablesSet();
     }
 
     @Override
@@ -143,5 +155,5 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     private String signatureElementVariable;
     private String signatureReferenceElementVariable;
     private MessageTargetableSupport messageTargetableSupport
-            = new MessageTargetableSupport(TargetMessageType.REQUEST);
+            = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
 }

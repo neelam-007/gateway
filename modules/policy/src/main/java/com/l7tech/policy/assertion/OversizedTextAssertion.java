@@ -9,16 +9,16 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
-import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
 
 /**
  * Assertion that can limit length of attribute and text nodes.
@@ -52,6 +52,10 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     private boolean requireValidSoapEnvelope = false;
     private boolean limitAttrNameChars = true;
     private int maxAttrNameChars = DEFAULT_ATTR_NAME_LIMIT;
+
+    public OversizedTextAssertion() {
+        super(false);
+    }
 
     public boolean isLimitTextChars() {
         return limitTextChars;

@@ -1,17 +1,18 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.variable.Syntax;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.Syntax;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Add a WS-Security UsernameToken decoration.
@@ -22,7 +23,7 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     //- PUBLIC
 
     public AddWssUsernameToken() {
-        super( TargetMessageType.RESPONSE );
+        super( TargetMessageType.RESPONSE, true );
     }
 
     public boolean isIncludePassword() {

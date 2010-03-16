@@ -20,9 +20,12 @@ public abstract class IdentityAssertion extends MessageTargetableAssertion imple
     protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
     protected String identityTag;
 
-    protected IdentityAssertion() { }
+    protected IdentityAssertion() {
+        super(false);
+    }
 
     protected IdentityAssertion(long providerOid) {
+        super(false);
         this._identityProviderOid = providerOid;
     }
 

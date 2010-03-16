@@ -21,7 +21,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
     protected String variablePrefix = "";
 
     public NonSoapDecryptElementAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, true);
         setXpathExpression(getDefaultXpathExpression());
     }
 
@@ -35,11 +35,11 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return mergeVariablesSet(new VariableMetadata[] {
                 new VariableMetadata(prefix(VAR_ELEMENTS_DECRYPTED), false, true, prefix(VAR_ELEMENTS_DECRYPTED), false, DataType.ELEMENT),
                 new VariableMetadata(prefix(VAR_ENCRYPTION_METHOD_URIS), false, true, prefix(VAR_ENCRYPTION_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE),
-        };
+        });
     }
 
     /**

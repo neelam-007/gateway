@@ -1,18 +1,12 @@
 package com.l7tech.external.assertions.mtom;
 
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
 
 import java.util.Collections;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  *
@@ -23,6 +17,11 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
     //- PUBLIC
 
     public static final String PROP_DECODE_SECURED = "mtom.decodeSecuredMessages";
+
+    public MtomDecodeAssertion() {
+        // Primary target is only read; outputTarget is modified
+        super(false);
+    }
 
     public boolean isRequireEncoded() {
         return requireEncoded;
@@ -54,20 +53,13 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
 
     public void setOutputTarget( final MessageTargetableSupport outputTarget ) {
         this.outputTarget = outputTarget;
+        if (outputTarget != null)
+            outputTarget.setTargetModifiedByGateway(true);
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        VariableMetadata[] variables;
-
-        if ( outputTarget!=null && outputTarget.getTarget()==TargetMessageType.OTHER ) {
-            String name = outputTarget.getOtherTargetMessageVariable();
-            variables = new VariableMetadata[]{ new VariableMetadata(name, false, false, name, true, DataType.MESSAGE) };
-        } else {
-            variables = new VariableMetadata[0];
-        }
-
-        return variables;
+        return outputTarget == null ? new VariableMetadata[0] : outputTarget.getVariablesSet();
     }
 
     @Override

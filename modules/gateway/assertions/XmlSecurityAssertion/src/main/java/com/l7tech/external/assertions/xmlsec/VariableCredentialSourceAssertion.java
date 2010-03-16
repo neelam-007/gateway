@@ -16,7 +16,7 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
     private String variableName;
 
     public VariableCredentialSourceAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, false); // Changing a Message's authentication context doesn't count as changing a Message variable, even though there's a 1-1 mapping
     }
 
     public String getVariableName() {

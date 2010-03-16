@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * @author alex
@@ -17,6 +18,10 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
  */
 @RequiresSOAP(wss=true)
 public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddressableSupport implements MessageTargetable {
+
+    protected WssCredentialSourceAssertion() {
+        messageTargetableSupport.setTargetModifiedByGateway(false);
+    }
 
     //- PUBLIC
 
@@ -58,6 +63,16 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
     @Override
     public String[] getVariablesUsed() {
         return messageTargetableSupport.getVariablesUsed();
+    }
+
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return messageTargetableSupport.getVariablesSet();
     }
 
     @Override

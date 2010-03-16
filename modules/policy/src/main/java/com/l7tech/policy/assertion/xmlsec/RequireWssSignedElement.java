@@ -37,7 +37,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     }
 
     public RequireWssSignedElement(XpathExpression xpath) {
-        super( TargetMessageType.REQUEST );
+        super( TargetMessageType.REQUEST, false );
         setXpathExpression(xpath);
     }
 

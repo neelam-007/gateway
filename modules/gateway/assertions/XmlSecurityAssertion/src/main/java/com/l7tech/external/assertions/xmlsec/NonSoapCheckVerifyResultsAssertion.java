@@ -25,7 +25,7 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
      * Create an assertion with default configuration.
      */
     public NonSoapCheckVerifyResultsAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, false);
     }
 
     @Override

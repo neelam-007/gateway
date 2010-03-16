@@ -3,23 +3,24 @@
  */
 package com.l7tech.policy.assertion.xml;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -31,6 +32,7 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
     public static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
 
     public SchemaValidation() {
+        super(false);
         clearTarget(); // Backward compatibility; null implies old post-routing heuristic
     }
 
@@ -61,9 +63,9 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return mergeVariablesSet(new VariableMetadata[] {
                 new VariableMetadata(SCHEMA_FAILURE_VARIABLE, false, true, SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
-        };
+        });
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.SCHEMA_ENTRY)

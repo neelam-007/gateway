@@ -1,13 +1,16 @@
 package com.l7tech.policy.assertion.xml;
 
-import com.l7tech.policy.assertion.annotation.RequiresXML;
-import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresXML;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Removes an XML element from the target specified through the MessageTargetable interface.
@@ -21,6 +24,7 @@ public class RemoveElement extends MessageTargetableAssertion {
     private String elementFromVariable;
 
     public RemoveElement() {
+        super(true);
     }
 
     public String getElementFromVariable() {

@@ -3,12 +3,13 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.Functions;
 import com.l7tech.policy.validator.ValidatorFlag;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.util.Functions;
 
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Provides threat protection against code injection attacks targeting web
@@ -35,7 +36,7 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
     private CodeInjectionProtectionType[] _protections = new CodeInjectionProtectionType[0];
 
     public CodeInjectionProtectionAssertion() {
-        super(null);
+        super(null, false);
     }
 
     public boolean isIncludeRequestUrl() {

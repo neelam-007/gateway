@@ -3,13 +3,18 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
-import java.io.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Support class for MessageTargetable implementation.
  */
-public class MessageTargetableSupport implements MessageTargetable, UsesVariables, Serializable {
+public class MessageTargetableSupport implements MessageTargetable, Serializable {
 
     //- PUBLIC
 
@@ -48,6 +53,38 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
         setTargetMessage( messageTargetable );
     }
 
+    /**
+     * Create a instance targetting the request message and setting the modification flag.
+     *
+     * @param targetModifiedByGateway true if the target message might be modified by the server implementation; false if the target message is only read by the server assertion.
+     */
+    public MessageTargetableSupport(boolean targetModifiedByGateway) {
+        this();
+        this.targetModifiedByGateway = targetModifiedByGateway;
+    }
+
+    /**
+     * Create a instance targetting the given message.
+     *
+     * @param targetMessageType The request/response target
+     * @param targetModifiedByGateway true if the target message might be modified by the server implementation; false if the target message is only read by the server assertion.
+     */
+    public MessageTargetableSupport(TargetMessageType targetMessageType, boolean targetModifiedByGateway) {
+        this(targetMessageType);
+        this.targetModifiedByGateway = targetModifiedByGateway;
+    }
+
+    /**
+     * Create a instance targetting the given message variable.
+     *
+     * @param otherTargetMessageVariable The variable target
+     * @param targetModifiedByGateway true if the target message might be modified by the server implementation; false if the target message is only read by the server assertion.
+     */
+    public MessageTargetableSupport(String otherTargetMessageVariable, boolean targetModifiedByGateway) {
+        this(otherTargetMessageVariable);
+        this.targetModifiedByGateway = targetModifiedByGateway;
+    }
+
     @Override
     public TargetMessageType getTarget() {
         return target;
@@ -81,6 +118,60 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
         return new String[0];
     }
 
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return mergeVariablesSet(null);
+    }
+
+    /**
+     * Check whether the target message might be modified by the assertion.
+     *
+     * @return true if the target message might be modified; false if the target message is only read.
+     */
+    public boolean isTargetModifiedByGateway() {
+        return targetModifiedByGateway;
+    }
+
+    /**
+     * Set whether the target message might be modified by the assertion.
+     *
+     * @param targetModifiedByGateway true if the target message might be modified; false if the target message is only read.
+     */
+    public void setTargetModifiedByGateway(boolean targetModifiedByGateway) {
+        this.targetModifiedByGateway = targetModifiedByGateway;
+    }
+
+    /**
+     * Get the variable metadata describing the target message, if it is a message variable that may be modified.
+     * <p/>
+     * This method returns a VariableMetadata instance describing the target message if it is
+     * {@link TargetMessageType#OTHER} and {@link #isTargetModifiedByGateway()} is true;
+     * otherwise, this method returns null.
+     *
+     * @return a VariableMetadata instance describing a target Message variable that may be modified in-place, or null.
+     */
+    public VariableMetadata getOtherTargetVariableMetadata() {
+        return TargetMessageType.OTHER.equals(getTarget()) && isTargetModifiedByGateway()
+                ? new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, true, DataType.MESSAGE)
+                : null;
+    }
+
+    /**
+     * Prepends an additional entry to a list of variables set representing a modified target message variable, if any.
+     *
+     * @param otherVariablesSet  variables set, or null.  Null is treated as equivalent to empty.
+     * @return variables with getOtherTargetVariableMetadata() prepended, if applicable.  Never null, but may be empty.
+     */
+    public VariableMetadata[] mergeVariablesSet(VariableMetadata[] otherVariablesSet) {
+        List<VariableMetadata> ret = new ArrayList<VariableMetadata>();
+        VariableMetadata targetVariableMetadata = getOtherTargetVariableMetadata();
+        if (targetVariableMetadata != null)
+            ret.add(targetVariableMetadata);
+        if (otherVariablesSet != null && otherVariablesSet.length > 0)
+            ret.addAll(Arrays.asList(otherVariablesSet));
+        return ret.toArray(new VariableMetadata[ret.size()]);
+    }
+
     public void setTargetMessage( final MessageTargetable messageTargetable ) {
         if ( messageTargetable != null ) {
             this.target = messageTargetable.getTarget();
@@ -101,6 +192,7 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
         if (otherTargetMessageVariable != null ? !otherTargetMessageVariable.equals(that.otherTargetMessageVariable) : that.otherTargetMessageVariable != null)
             return false;
         if (target != that.target) return false;
+        if (targetModifiedByGateway != that.targetModifiedByGateway) return false;
 
         return true;
     }
@@ -110,6 +202,7 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
         int result;
         result = (target != null ? target.hashCode() : 0);
         result = 31 * result + (otherTargetMessageVariable != null ? otherTargetMessageVariable.hashCode() : 0);
+        result = 31 * result + (targetModifiedByGateway ? 1231 : 1237);
         return result;
     }
 
@@ -154,5 +247,5 @@ public class MessageTargetableSupport implements MessageTargetable, UsesVariable
 
     private TargetMessageType target;
     private String otherTargetMessageVariable;
-
+    private boolean targetModifiedByGateway;
 }

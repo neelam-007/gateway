@@ -25,7 +25,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireSenderVouchesWithMessageSignature = false;
     private boolean requireHolderOfKeyWithMessageSignature = false;
-    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
+    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(false);
     private boolean checkAssertionValidity = true;
 
     public RequireWssSaml() {
@@ -177,6 +177,11 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     }
 
     @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
+
+    @Override
     public String[] getVariablesUsed() {
         return messageTargetableSupport.getVariablesUsed();
     }
@@ -295,9 +300,9 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return messageTargetableSupport.mergeVariablesSet(new VariableMetadata[] {
                 new VariableMetadata(PREFIX_SAML_ATTR, true, true, PREFIX_SAML_ATTR, false)
-        };
+        });
     }
 
     private static final Pattern converter = Pattern.compile("[^a-zA-Z0-9]");

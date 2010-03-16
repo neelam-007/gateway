@@ -22,7 +22,7 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     }
 
     public WssSignElement(XpathExpression xpath) {
-        super( TargetMessageType.RESPONSE );
+        super( TargetMessageType.RESPONSE, true );
         setXpathExpression(xpath);
     }
 

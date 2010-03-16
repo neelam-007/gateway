@@ -1,17 +1,16 @@
 package com.l7tech.external.assertions.cache;
 
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * 
@@ -25,6 +24,7 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
 
     public CacheLookupAssertion() {
         setTarget(TargetMessageType.RESPONSE);
+        setTargetModifiedByGateway(true);
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -34,13 +34,6 @@ public class CacheLookupAssertion extends MessageTargetableAssertion implements 
         if (cacheId != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheId)));
         if (cacheEntryKey != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheEntryKey)));
         return ret.toArray(new String[ret.size()]);
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return TargetMessageType.OTHER == getTarget() ?
-            new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) } : 
-            new VariableMetadata[0];
     }
 
     /** @return the name of the cache in which the item is to be looked up.  May contain variables that need interpolation. */

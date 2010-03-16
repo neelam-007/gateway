@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import java.util.*;
@@ -12,8 +13,8 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
     public static final String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
     private MessageTargetableSupport messageTargetableSupport;
 
-    protected NonSoapSecurityAssertionBase(TargetMessageType defaultTargetMessageType) {
-        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType);
+    protected NonSoapSecurityAssertionBase(TargetMessageType defaultTargetMessageType, boolean targetModifiedByGateway) {
+        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, targetModifiedByGateway);
     }
 
     /**
@@ -30,6 +31,16 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
         variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
         variables.addAll( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
         return variables.toArray( new String[variables.size()] );
+    }
+
+    @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return messageTargetableSupport.getVariablesSet();
     }
 
     @Override
@@ -74,6 +85,10 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
 
     public String getPropertiesDialogTitle() {
         return String.valueOf(meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
+    }
+
+    protected VariableMetadata[] mergeVariablesSet(VariableMetadata[] variablesSet) {
+        return messageTargetableSupport.mergeVariablesSet(variablesSet);
     }
 
     protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NonSoapSecurityAssertionBase>(){

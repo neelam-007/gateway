@@ -14,13 +14,13 @@ public class SelectElementAssertion extends NonSoapSecurityAssertionBase impleme
     private String elementVariable = "element";
 
     public SelectElementAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, false);
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return elementVariable == null ? new VariableMetadata[0] :
-                new VariableMetadata[] { new VariableMetadata(elementVariable, false, false, elementVariable, true, DataType.ELEMENT) };
+        return mergeVariablesSet(elementVariable == null ? new VariableMetadata[0] :
+                new VariableMetadata[] { new VariableMetadata(elementVariable, false, false, elementVariable, true, DataType.ELEMENT) });
     }
 
     public String getElementVariable() {

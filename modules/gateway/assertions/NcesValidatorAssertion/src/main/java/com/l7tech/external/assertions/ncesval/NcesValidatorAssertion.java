@@ -1,13 +1,12 @@
 package com.l7tech.external.assertions.ncesval;
 
-import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.security.types.CertificateValidationType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Validates that messages are NCES-compliant.  This implies the following:
@@ -20,12 +19,14 @@ import java.util.logging.Logger;
  */
 @RequiresSOAP(wss=true)
 public class NcesValidatorAssertion extends MessageTargetableAssertion implements UsesVariables {
-    protected static final Logger logger = Logger.getLogger(NcesValidatorAssertion.class.getName());
-
     private boolean samlRequired;
     private CertificateValidationType certificateValidationType;
     private CertificateInfo[] trustedCertificateInfo;
     private CertificateInfo[] trustedIssuerCertificateInfo;
+
+    public NcesValidatorAssertion() {
+        super(false);
+    }
 
     public boolean isSamlRequired() {
         return samlRequired;

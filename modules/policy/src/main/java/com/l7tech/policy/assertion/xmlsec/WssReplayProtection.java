@@ -26,6 +26,7 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
     //- PUBLIC
 
     public WssReplayProtection() {
+        super(false);
     }
 
     public boolean isCustomProtection() {

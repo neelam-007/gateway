@@ -4,18 +4,17 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.policy.assertion.PrivateKeyableSupport;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.security.xml.KeyReference;
-import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TimeUnit;
 
 import java.util.Collections;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Creates a wsu:Timestamp element and adds it to the SOAP security header in the response.
@@ -35,7 +34,7 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     public static enum Resolution { NANOSECONDS, MILLISECONDS, SECONDS }
 
     public AddWssTimestamp() {
-        super(TargetMessageType.RESPONSE);
+        super(TargetMessageType.RESPONSE, true);
     }
 
     /**

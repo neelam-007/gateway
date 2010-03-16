@@ -28,7 +28,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     private boolean ignoreKeyInfo;
 
     public NonSoapVerifyElementAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, false);
         setXpathExpression(getDefaultXpathExpression());
     }
 
@@ -68,14 +68,14 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return mergeVariablesSet(new VariableMetadata[] {
                 new VariableMetadata(prefix(VAR_ELEMENTS_VERIFIED), false, true, prefix(VAR_ELEMENTS_VERIFIED), false, DataType.ELEMENT),
                 new VariableMetadata(prefix(VAR_SIGNATURE_METHOD_URIS), false, true, prefix(VAR_SIGNATURE_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_DIGEST_METHOD_URIS), false, true, prefix(VAR_DIGEST_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_SIGNING_CERTIFICATES), false, true, prefix(VAR_SIGNING_CERTIFICATES), false, DataType.CERTIFICATE),
                 new VariableMetadata(prefix(VAR_SIGNATURE_VALUES), false, true, prefix(VAR_SIGNATURE_VALUES), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_SIGNATURE_ELEMENTS), false, true, prefix(VAR_SIGNATURE_ELEMENTS), false, DataType.ELEMENT),
-        };
+        });
     }
 
     /**

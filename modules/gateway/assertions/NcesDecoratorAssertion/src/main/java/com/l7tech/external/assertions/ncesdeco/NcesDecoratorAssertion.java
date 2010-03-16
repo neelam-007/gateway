@@ -51,6 +51,10 @@ public class NcesDecoratorAssertion
     private String keyAlias;
     private boolean deferDecoration = false;
 
+    public NcesDecoratorAssertion() {
+        super(true);
+    }
+
     public String getMessageIdUriPrefix() {
         return messageIdUriPrefix;
     }

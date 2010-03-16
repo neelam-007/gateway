@@ -1,20 +1,18 @@
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
 
@@ -28,6 +26,9 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * An assertion for XSLT transformations of soap messages.
@@ -62,6 +63,10 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     private String msgVarPrefix;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private int whichMimePart = 0;
+
+    public XslTransformation() {
+        super(true);
+    }
 
     /**
      * Whether this assertion applies to requests or responses soap messages.
@@ -223,11 +228,11 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return mergeVariablesSet(new VariableMetadata[] {
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME, false, false, null, false, DataType.STRING),
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".first", false, false, null, false, DataType.STRING),
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".last", false, false, null, false, DataType.STRING)
-        };
+        });
     }
 
     private transient volatile String[] varsUsed;

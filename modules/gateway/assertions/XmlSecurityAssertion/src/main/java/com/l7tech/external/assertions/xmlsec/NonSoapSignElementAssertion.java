@@ -12,7 +12,7 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();
 
     public NonSoapSignElementAssertion() {
-        super(TargetMessageType.RESPONSE);
+        super(TargetMessageType.RESPONSE, true);
     }
 
     private final static String baseName = "(Non-SOAP) Sign XML Element";

@@ -23,7 +23,7 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
     }
 
     public RequireWssEncryptedElement(XpathExpression xpath) {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, false);
         setXpathExpression(xpath);
     }
 

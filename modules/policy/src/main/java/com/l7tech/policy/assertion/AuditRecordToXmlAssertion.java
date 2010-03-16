@@ -6,7 +6,7 @@ package com.l7tech.policy.assertion;
 @SuppressWarnings({ "serial" })
 public class AuditRecordToXmlAssertion extends MessageTargetableAssertion {
     public AuditRecordToXmlAssertion() {
-        super(TargetMessageType.REQUEST);
+        super(TargetMessageType.REQUEST, true);
     }
 
     @Override

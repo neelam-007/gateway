@@ -4,6 +4,9 @@
 package com.l7tech.external.assertions.samlpassertion;
 
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -14,12 +17,10 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * This assertion contains the configuration properties for building a SAML-Protocol (SAMLP) request message.
@@ -73,18 +74,22 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     )));
 
     public SamlpRequestBuilderAssertion() {
+        super(true);
         initTargetMessage();
     }
 
     public SamlpRequestBuilderAssertion(SamlAuthenticationStatement authnStmt) {
+        super(true);
         this.authenticationStatement = authnStmt;
     }
 
     public SamlpRequestBuilderAssertion(SamlAttributeStatement attrStmt) {
+        super(true);
         this.attributeStatement = attrStmt;
     }
 
     public SamlpRequestBuilderAssertion(SamlpAuthorizationStatement authzStmt) {
+        super(true);
         this.authorizationStatement = authzStmt;
     }
 
@@ -373,8 +378,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     @Override
     public VariableMetadata[] getVariablesSet() {
         if (getTarget() == TargetMessageType.OTHER && getOtherTargetMessageVariable() != null) {
-            return new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) };
+            return mergeVariablesSet(new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) });
         }
-        return new VariableMetadata[0];
+        return super.getVariablesSet();
     }
 }

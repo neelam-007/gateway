@@ -30,7 +30,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     private String xencAlgorithm = XencUtil.AES_128_CBC;
 
     public NonSoapEncryptElementAssertion() {
-        super(TargetMessageType.RESPONSE);
+        super(TargetMessageType.RESPONSE, true);
     }
 
     private final static String baseName = "(Non-SOAP) Encrypt XML Element";

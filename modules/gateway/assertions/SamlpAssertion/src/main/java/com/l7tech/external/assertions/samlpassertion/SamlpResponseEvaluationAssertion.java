@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -10,15 +13,13 @@ import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * User: vchan
@@ -33,18 +34,22 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
     private String variablePrefixOverride;
 
     public SamlpResponseEvaluationAssertion() {
+        super(false);
         initTargetMessage();
     }
 
     public SamlpResponseEvaluationAssertion(SamlAuthenticationStatement authnStmt) {
+        super(false);
         this.authenticationStatement = authnStmt;
     }
 
     public SamlpResponseEvaluationAssertion(SamlAttributeStatement attrStmt) {
+        super(false);
         this.attributeStatement = attrStmt;
     }
 
     public SamlpResponseEvaluationAssertion(SamlpAuthorizationStatement authzStmt) {
+        super(false);
         this.authorizationStatement = authzStmt;
     }
 

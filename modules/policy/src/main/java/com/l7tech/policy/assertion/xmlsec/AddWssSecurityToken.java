@@ -1,10 +1,11 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.KeyReference;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.xml.KeyReference;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Creates a Security Token element and adds it to the SOAP security header in the target message.
@@ -24,7 +25,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     private String digestAlgorithmName;
 
     public AddWssSecurityToken() {
-        super(TargetMessageType.RESPONSE);
+        super(TargetMessageType.RESPONSE, true);
     }
 
     public SecurityTokenType getTokenType() {

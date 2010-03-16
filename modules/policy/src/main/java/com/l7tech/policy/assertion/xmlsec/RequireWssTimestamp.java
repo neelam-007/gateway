@@ -3,20 +3,20 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 
-import java.util.Set;
 import java.util.EnumSet;
+import java.util.Set;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * This assertion verifies that the soap message contains a wsu:Timestamp element in a SOAP header.
@@ -32,8 +32,13 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
      */
     public static final int DEFAULT_MAX_EXPIRY_TIME = TimeUnit.HOURS.getMultiplier(); // One hour
 
+    public RequireWssTimestamp() {
+        super(false);
+    }
+
     /**
      * Create a new RequestWssTimestamp with default properties.
+     * @return a new instance with default properties.  never null.
      */
     public static RequireWssTimestamp newInstance() {
         RequireWssTimestamp timestamp = new RequireWssTimestamp();

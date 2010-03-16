@@ -1,18 +1,15 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Base class for XML Security Assertions (Confidentiality and Integrity). Shares the concept
@@ -75,11 +72,21 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
     }
 
     @Override
+    public boolean isTargetModifiedByGateway() {
+        return messageTargetableSupport.isTargetModifiedByGateway();
+    }
+
+    @Override
     public String[] getVariablesUsed() {
         List<String> variables = new ArrayList<String>();
         variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
         variables.addAll( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
         return variables.toArray( new String[variables.size()] );
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return messageTargetableSupport.getVariablesSet();
     }
 
     @Override
@@ -110,6 +117,10 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
 
     protected XmlSecurityAssertionBase( final TargetMessageType defaultTargetMessageType ) {
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType);
+    }
+
+    protected XmlSecurityAssertionBase( final TargetMessageType defaultTargetMessageType, boolean targetModifiedByGateway ) {
+        this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, targetModifiedByGateway);
     }
 
     //- PRIVATE

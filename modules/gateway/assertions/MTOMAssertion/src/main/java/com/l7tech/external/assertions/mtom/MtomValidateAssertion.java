@@ -1,21 +1,22 @@
 package com.l7tech.external.assertions.mtom;
 
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
+import com.l7tech.policy.wsp.BeanTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  *
@@ -24,6 +25,10 @@ import java.util.Set;
 public class MtomValidateAssertion extends MessageTargetableAssertion implements UsesVariables {
 
     //- PUBLIC
+
+    public MtomValidateAssertion() {
+        super(false);
+    }
 
     public boolean isRequireEncoded() {
         return requireEncoded;

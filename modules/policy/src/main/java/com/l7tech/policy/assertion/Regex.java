@@ -95,6 +95,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
      */
     public void setReplace(boolean replace) {
         this.replace = replace;
+        setTargetModifiedByGateway(replace);
     }
 
     /**
@@ -198,10 +199,10 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        if (captureVar == null) return new VariableMetadata[0];
-        return new VariableMetadata[] {
+        VariableMetadata[] set = captureVar == null ? null : new VariableMetadata[] {
                 new VariableMetadata(captureVar, false, true, captureVar, true, DataType.STRING),
         };
+        return mergeVariablesSet(set);
     }
 
     private final static String baseName = "Evaluate Regular Expression";

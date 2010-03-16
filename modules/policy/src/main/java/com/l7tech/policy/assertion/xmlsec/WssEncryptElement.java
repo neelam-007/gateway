@@ -23,7 +23,7 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
     }
 
     public WssEncryptElement(final XpathExpression xpath) {
-        super(TargetMessageType.RESPONSE);
+        super(TargetMessageType.RESPONSE, true);
         setXpathExpression(xpath);
     }
 

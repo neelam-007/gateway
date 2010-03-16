@@ -8,7 +8,7 @@ package com.l7tech.policy.assertion;
  * @see MessageTargetableAssertion  
  * @author alex
  */
-public interface MessageTargetable extends UsesVariables {
+public interface MessageTargetable extends UsesVariables, SetsVariables {
     /**
      * The type of message this assertion targets.  Defaults to {@link TargetMessageType#REQUEST}. Never null.
      */
@@ -40,4 +40,9 @@ public interface MessageTargetable extends UsesVariables {
      * @return the target name or null if no target is set.
      */
     String getTargetName();
+
+    /**
+     * @return true if the target message might be modified; false if the assertion only reads the target message.
+     */
+    boolean isTargetModifiedByGateway();
 }

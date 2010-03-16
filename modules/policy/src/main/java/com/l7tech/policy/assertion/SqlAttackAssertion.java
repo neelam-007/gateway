@@ -5,11 +5,12 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.Functions;
 import com.l7tech.policy.validator.ValidatorFlag;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.util.Functions;
 
 import java.util.*;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion that triggers the canned SQL attack threat protection behavior.
@@ -52,6 +53,7 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     Set<String> protections = new HashSet<String>();
 
     public SqlAttackAssertion() {
+        super(false);
     }
 
     private final static String baseName = "Protect Against SQL Attacks";
