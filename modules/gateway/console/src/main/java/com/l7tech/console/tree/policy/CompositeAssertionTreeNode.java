@@ -122,8 +122,8 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      */
     @Override
     protected String iconResource(boolean open) {
-        if (open) return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON);
-        return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON_OPEN);
+        if (open) return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON_OPEN);
+        return assertion.meta().get(AssertionMetadata.POLICY_NODE_ICON);
     }
 
     /**

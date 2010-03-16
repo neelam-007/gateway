@@ -1,6 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -11,35 +10,25 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static org.junit.Assert.*;
+
 /**
  * Test for Assertion#meta() and DefaultAssertionMetadata.
  */
-public class AssertionMetadataTest extends TestCase {
+public class AssertionMetadataTest {
     private static final Logger log = Logger.getLogger(AssertionMetadataTest.class.getName());
 
     static {
         AssertionRegistry.installEnhancedMetadataDefaults();
     }
 
-    public AssertionMetadataTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(AssertionMetadataTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testDefaults() throws Exception {
         Assertion ass = new UncustomizedMetadataAssertion();
         AssertionMetadata am = ass.meta();
@@ -65,6 +54,7 @@ public class AssertionMetadataTest extends TestCase {
         log.info("Generated defaults test OK");
     }
 
+    @Test
     public void testMemoization() throws Exception {
         // Ensures that caching works
         testDefaults();
@@ -80,6 +70,7 @@ public class AssertionMetadataTest extends TestCase {
         assertTrue(tm2 == tm4 && tm4 == tm6);
     }
 
+    @Test
     public void testCoreAssertionWspNames() throws Exception {
 
         assertEquals("com.l7tech.server.policy.assertion.identity.ServerAuthenticationAssertion",
@@ -92,6 +83,7 @@ public class AssertionMetadataTest extends TestCase {
                      new OneOrMoreAssertion().meta().get(CLIENT_ASSERTION_CLASSNAME));
     }
     
+    @Test
     public void testDyanmicWsp() throws Exception {
         WspWriter.getPolicyXml(new UncustomizedMetadataAssertion());
 
@@ -113,6 +105,11 @@ public class AssertionMetadataTest extends TestCase {
         reg.registerAssertion(UncustomizedMetadataAssertion.class);
         Assertion out = new WspReader(reg).parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
         assertEquals(UncustomizedMetadataAssertion.class.getName(), firstKid(firstKid(out)).getClass().getName());
+    }
+
+    @Test
+    public void testCompositeAssertionFolders() {
+        assertEquals("com/l7tech/console/resources/folder.gif", new AllAssertion().meta().get(AssertionMetadata.POLICY_NODE_ICON));
     }
 
     private Assertion firstKid(Assertion parent) {

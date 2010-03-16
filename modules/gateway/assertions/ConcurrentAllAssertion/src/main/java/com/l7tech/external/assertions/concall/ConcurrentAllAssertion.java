@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
 /**
  * 
  */
@@ -53,6 +55,13 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
+        meta.put(SHORT_NAME, "Run All Assertions Concurrently");
+        meta.put(DESCRIPTION, "All child assertions are " +
+                "run concurrently and must evaluate to true. Can help reduce overall latency but " +
+                "use with caution.");
+
+        meta.put(PROPERTIES_ACTION_NAME, "Add 'All...' Folder");
+        
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put(CP_MAX_CONC, new String[] {
@@ -75,6 +84,9 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
 
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folderConc.gif");
+        meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpenConc.gif");
+        
         meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.concall.console.ConcurrentAllAssertionPolicyNode");
 
         meta.put(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.external.assertions.concall.ConcurrentAllAssertionTypeMapping");
