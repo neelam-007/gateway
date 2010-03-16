@@ -155,7 +155,7 @@ public class DsigUtil {
         else if (senderSigningKey instanceof SecretKey)
             keyAlg = "SecretKey";
         else if (senderSigningKey != null)
-            throw new SignatureException("Private Key type not supported: " + senderSigningKey.getAlgorithm() + " / " +
+            throw new SignatureException("Signing Key type not recognized: " + senderSigningKey.getAlgorithm() + " / " +
                     senderSigningKey.getClass().getName());
         else
             throw new NullPointerException("senderSigningKey is required");
@@ -428,7 +428,8 @@ public class DsigUtil {
         } else if (signingKey instanceof SecretKey) {
             signaturemethod = SupportedSignatureMethods.HMAC_SHA1;
         } else {
-            throw new SignatureException("Private Key type not supported " + signingKey.getClass().getName());
+            throw new SignatureException("No signature method available for signing key type: " + signingKey.getAlgorithm() + " / " +
+                    signingKey.getClass().getName());
         }
         return signaturemethod;
     }

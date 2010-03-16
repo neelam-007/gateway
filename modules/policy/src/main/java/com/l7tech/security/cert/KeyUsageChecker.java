@@ -119,7 +119,7 @@ public class KeyUsageChecker {
         } else if (key instanceof SecretKey) {
             // Ok; nothing to check
         } else {
-            throw new CertificateException("Key type not supported: " + key.getClass().getName());
+            throw new CertificateException("Key type not supported for key usage checking: " + key.getClass().getName());
         }
     }
 

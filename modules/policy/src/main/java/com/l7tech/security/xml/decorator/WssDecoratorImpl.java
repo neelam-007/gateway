@@ -1166,7 +1166,7 @@ public class WssDecoratorImpl implements WssDecorator {
         try {
             signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, false);
         } catch (SignatureException e) {
-            throw new DecoratorException("Private Key type not supported " + senderSigningKey.getClass().getName(), e);
+            throw new DecoratorException("Unable to find signature method: " + ExceptionUtils.getMessage(e), e);
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
