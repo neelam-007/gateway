@@ -121,6 +121,8 @@ public class JdkLoggerConfigurator {
                     if (readConfiguration(logManager, probeDef, file.toURI().toURL(), false)) {
                         configFound = true;
                         probeFile = file;
+                        //update to show the full file path so its clear which logging.properties was used
+                        configCandidate = file.getAbsolutePath();
                         break;
                     }
                 }

@@ -67,6 +67,9 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
     private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.crlCacheSize";
 
+    protected static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize";
+    protected static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
+    
     public CrlCacheImpl( final HttpClientFactory httpClientFactory,
                          final ServerConfig serverConfig,
                          final Timer cacheTimer ) throws Exception {
@@ -95,7 +98,14 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
             logger.config("Using system property " + MAX_HTTP_CACHE_OBJECTS_PROP + "=" + httpObjectCacheSize);
         }
 
-        this.httpObjectCache = new HttpObjectCache<X509CRL>(httpObjectCacheSize, maxCacheAge, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
+        this.httpObjectCache = new HttpObjectCache<X509CRL>(
+                httpObjectCacheSize,
+                maxCacheAge,
+                httpClientFactory,
+                new CrlHttpObjectFactory(),
+                AbstractUrlObjectCache.WAIT_INITIAL,
+                SYSPROP_MAX_CRL_SIZE,
+                DEFAULT_MAX_CRL_SIZE);
 
         executor = buildExecutor( cacheThreads );
         scheduleCacheRefresh( cacheTimer, cacheExpiry );

@@ -322,6 +322,10 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_samlValidateBeforeOffsetMinutes = "samlValidateBeforeOffsetMinutes";
     public static final String PARAM_samlValidateAfterOffsetMinutes = "samlValidateAfterOffsetMinutes";
 
+    public static final String PARAM_DOCUMENT_DOWNLOAD_MAXSIZE = "documentDownload.maxSize";
+    public static final String PARAM_WSDL_MAX_DOWNLOAD_SIZE = "wsdlDocMaxDownloadSize";
+    public static final String PARAM_XSL_MAX_DOWNLOAD_SIZE = "xslDocMaxDownloadSize";
+    
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
     private static final String SUFFIX_GETSYSPROP = ".getSystemProperty";

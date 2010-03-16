@@ -93,6 +93,7 @@ public class ServerXslTransformation
 
     private static final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<CompiledStylesheet>() {
+                    @Override
                     public CompiledStylesheet createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                         String response = responseSource.getString(true);                        
                         try {
@@ -126,15 +127,19 @@ public class ServerXslTransformation
         ResourceObjectFactory<CompiledStylesheet> resourceObjectfactory =
                 new ResourceObjectFactory<CompiledStylesheet>()
                 {
+                    @Override
                     public CompiledStylesheet createResourceObject(final String resourceString) throws ParseException {
                         try {
                             return cacheObjectFactory.createUserObject("", new AbstractUrlObjectCache.UserObjectSource(){
+                                @Override
                                 public byte[] getBytes() throws IOException {
                                     throw new IOException("Not supported");
                                 }
+                                @Override
                                 public ContentTypeHeader getContentType() {
                                     return null;
                                 }
+                                @Override
                                 public String getString(boolean isXml) {
                                     return resourceString;
                                 }
@@ -144,11 +149,13 @@ public class ServerXslTransformation
                                     ExceptionUtils.getMessage(e), 0).initCause(e);
                         }
                     }                    
+                    @Override
                     public void closeResourceObject( final CompiledStylesheet resourceObject ) {
                     }
                 };
 
         UrlFinder urlFinder = new UrlFinder() {
+            @Override
             public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
                 try {
                     return findXslHref(message);
@@ -182,12 +189,13 @@ public class ServerXslTransformation
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
                         ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
                         ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
-                        clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
+                        clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE);
 
             return httpObjectCache;
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         final Message message;
@@ -258,6 +266,7 @@ public class ServerXslTransformation
         if (whichMimePart <= 0) whichMimePart = 0;
 
         Functions.Unary<Object, String> variableGetter = new Functions.Unary<Object, String>() {
+            @Override
             public Object call(String varName) {
                 try {
                     return context.getVariable(varName);
@@ -282,6 +291,7 @@ public class ServerXslTransformation
                 }
                 transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
                 transformOutput = new TransformOutput() {
+                    @Override
                     public void setBytes(byte[] bytes) throws IOException {
                         message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
                     }
@@ -298,6 +308,7 @@ public class ServerXslTransformation
 
                 transformInput = makePartInfoTransformInput(partInfo, variableGetter);
                 transformOutput = new TransformOutput() {
+                    @Override
                     public void setBytes(byte[] bytes) throws IOException {
                         partInfo.setBodyBytes(bytes);
                     }
@@ -350,10 +361,10 @@ public class ServerXslTransformation
             auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, e.getUrl());
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.ResourceIOException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
+            auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e));
@@ -371,13 +382,16 @@ public class ServerXslTransformation
 
     private ErrorListener getErrorListener(final PolicyEnforcementContext context) {
         return new ErrorListener() {
+            @Override
             public void warning(TransformerException exception) throws TransformerException {
                 addXsltMessageIntoVariable(context, exception.getMessage());
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
             }
+            @Override
             public void error(TransformerException exception) throws TransformerException {
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
             }
+            @Override
             public void fatalError(TransformerException exception) throws TransformerException {
                 throw exception;
             }
@@ -466,6 +480,7 @@ public class ServerXslTransformation
 
             final String[] found = new String[] { null, null }; // name, type
             parser.parse(new ByteArrayInputStream(fakeXml.getBytes()), new DefaultHandler() {
+                @Override
                 public void startElement(String uri, String localName, String qName, Attributes attributes) {
                     int numAttrs = attributes.getLength();
                     for (int i = 0; i < numAttrs; ++i) {
@@ -527,6 +542,7 @@ public class ServerXslTransformation
         final TarariMessageContext tmc = makeTarariMessageContext(partInfo);
         if (tmc != null)
             return new CloseableTransformInput(tmc.getElementCursor(), variableGetter) {
+                @Override
                 public void close() {
                     tmc.close();
                 }

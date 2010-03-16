@@ -51,7 +51,7 @@ public class CommonsHttpClientMultipleContentLengthHeadersTest {
         GenericHttpRequest request = client.createRequest(HttpMethod.POST, new GenericHttpRequestParams(new URL("http://localhost:7353")));
         request.setInputStream(new ByteArrayInputStream("<blah/>".getBytes()));
         GenericHttpResponse response = request.getResponse();
-        String got = response.getAsString(false);
+        String got = response.getAsString(false, 1024 * 1024 * 10);
         assertEquals(RESP, got);
         assertEquals((double)RESP.length(), response.getContentLength(), 0.00004);
     }

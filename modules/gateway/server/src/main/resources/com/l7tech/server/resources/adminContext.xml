@@ -250,6 +250,7 @@
     <!-- schema admin servant -->
     <bean id="schemaAdmin" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
         <property name="schemaEntryManager" ref="schemaEntryManager"/>
+        <property name="serviceDocumentResolver" ref="serviceDocumentResolver"/>
     </bean>
 
     <!-- jms admin servant -->

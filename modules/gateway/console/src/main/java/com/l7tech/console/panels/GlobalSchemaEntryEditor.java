@@ -10,11 +10,12 @@ import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.schema.SchemaEntry;
@@ -36,12 +37,10 @@ import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.AccessControlException;
 
 /**
  * Called by the GlobalSchemaDialog, this is used to edit an existing or add a new global schema entry.
@@ -195,35 +194,39 @@ public class GlobalSchemaEntryEditor extends JDialog {
             return;
         }
         // compose input source
-        URL url;
         try {
-            url = new URL(urlstr);
+            new URL(urlstr);
         } catch (MalformedURLException e) {
             displayError(urlstr + " is not a valid url", null);
             return;
         }
-        // try to get document
-        InputStream is;
+
+        final SchemaAdmin schemaAdmin;
+        final Registry reg = Registry.getDefault();
+        if (reg == null || reg.getServiceManager() == null) {
+            throw new RuntimeException("No access to registry. Cannot download document.");
+        } else {
+            schemaAdmin = reg.getSchemaAdmin();
+        }
+
+        final String schemaXml;
         try {
-            is = url.openStream();
-        } catch (AccessControlException ace) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-            return;
+            schemaXml = schemaAdmin.resolveSchemaTarget(urlstr);
         } catch (IOException e) {
-            displayError("Could not read from " + " " + urlstr, null);
+            //this is likely to be a GenericHttpException
+            final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
+            displayError(errorMsg, "Errors downloading file");
             return;
         }
 
         Document doc;
         try {
-            doc = XmlUtil.parse(is);
+            doc = XmlUtil.parse(schemaXml);
         } catch (SAXException e) {
             displayError("No XML at " + urlstr, null);
             return;
-        } catch (IOException e) {
-            displayError("No XML at " + urlstr, null);
-            return;
         }
+
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema

@@ -9,9 +9,11 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceAdminPublic;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -37,9 +39,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.AccessControlException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -269,62 +268,37 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
     private void readFromUrl(String urlstr) {
         // try to get document
-        byte[] bytes;
-        String encoding;
-        ByteOrderMarkInputStream bomis = null;
-        InputStream httpStream = null;
+        final ServiceAdmin serviceAdmin;
+        final Registry reg = Registry.getDefault();
+        if (reg == null || reg.getServiceManager() == null) {
+            throw new RuntimeException("No access to registry. Cannot download document.");
+        } else {
+            serviceAdmin = reg.getServiceManager();
+        }
+
+        final String xslString;
         try {
-            URLConnection conn = new URL(urlstr).openConnection();
-            String ctype = conn.getContentType();
-            encoding = ctype == null ? null : ContentTypeHeader.parseValue(ctype).getEncoding();
-            httpStream = conn.getInputStream();
-            bytes = IOUtils.slurpStream(httpStream);
-            bomis = new ByteOrderMarkInputStream(new ByteArrayInputStream(bytes));
-            if (encoding == null) encoding = bomis.getEncoding();
-        } catch (AccessControlException ace) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-            return;
+            xslString = serviceAdmin.resolveUrlTarget(urlstr, ServiceAdminPublic.DownloadDocumentType.XSL);
         } catch (IOException e) {
-            xslDialog.displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
+            //this is likely to be a GenericHttpException
+            xslDialog.displayError(resources.getString("error.urlnocontent") + " '" + urlstr+"'. " +
+                    "Due to: " + ExceptionUtils.getMessage(e), null);
             return;
-        } finally {
-            ResourceUtils.closeQuietly(httpStream);
-            ResourceUtils.closeQuietly(bomis);
         }
 
         Document doc;
         try {
-            doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
+            doc = XmlUtil.parse(xslString);
         } catch (SAXException e) {
             xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
-        } catch (IOException e) {
-            xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
-            log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return;
         }
-        
+
         // check if it's a xslt
         try {
             docIsXsl(doc);
-            // set the new xslt
-            String printedxml;
-
-            try {
-                if (encoding == null) {
-                    log.log(Level.FINE, "Unable to determine character encoding for " + urlstr + "; using platform default");
-                    printedxml = new String(bytes);
-                } else {
-                    printedxml = new String(bytes, encoding);
-                }
-            } catch (IOException e) {
-                String msg = "error reading document";
-                xslDialog.displayError(msg, null);
-                log.log(Level.FINE, msg, e);
-                return;
-            }
-            uiAccessibility.getEditor().setText(printedxml);
+            uiAccessibility.getEditor().setText(xslString);
             //okButton.setEnabled(true);
         } catch (SAXException e) {
             xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + urlstr + ": " + ExceptionUtils.getMessage(e), null);

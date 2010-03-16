@@ -72,8 +72,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             hardwareRecompileLatency = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
             hardwareRecompileMinAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
             hardwareRecompileMaxAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
-            maxSchemaSize = serverConfig.getLongProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, 1000000L);
-
+            maxSchemaSize = serverConfig.getLongProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+            
             // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
             softwareFallback = !("false".equals(serverConfig.getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK)));
         }
@@ -154,6 +154,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private SafeTimerTask hardwareReloadTask;
 
     private abstract static class SafeTimerTask extends TimerTask {
+        @Override
         public final void run() {
             try {
                 doRun();
@@ -187,6 +188,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private synchronized void updateCacheConfiguration() {
         conf.set(new CacheConf(serverConfig));
         HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
+            @Override
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                 String response = responseSource.getString(true);
                 onUrlDownloaded(url);
@@ -210,9 +212,11 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                                                       conf.get().maxCacheAge,
                                                       hcf,
                                                       userObjectFactory,
-                                                      HttpObjectCache.WAIT_LATEST));
+                                                      HttpObjectCache.WAIT_LATEST,
+                                                      ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE ));
 
         cacheCleanupTask = new SafeTimerTask() {
+            @Override
             public void doRun() {
                 cacheCleanup();
             }
@@ -221,6 +225,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         if (tarariSchemaHandler != null) {
             hardwareReloadTask = new SafeTimerTask() {
+                @Override
                 public void doRun() {
                     maybeRebuildHardwareCache();
                 }
@@ -229,6 +234,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         logger.info("Rebuilding schema cache due to change in cache configuration");
         try {
@@ -240,16 +246,19 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
     private GenericHttpClientFactory wrapHttpClientFactory(final HttpClientFactory httpClientFactory, final long maxResponseSize) {
         return new GenericHttpClientFactory() {
+            @Override
             public GenericHttpClient createHttpClient() {
                 return wrapHttpClient(httpClientFactory.createHttpClient());
             }
 
+            @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity));
             }
 
             private GenericHttpClient wrapHttpClient(final GenericHttpClient httpClient) {
                 return new GenericHttpClient() {
+                    @Override
                     public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                         return wrapHttpRequest(httpClient.createRequest(method, params));
                     }
@@ -258,18 +267,22 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
             private GenericHttpRequest wrapHttpRequest(final GenericHttpRequest request) {
                 return new GenericHttpRequest() {
+                    @Override
                     public void setInputStream(InputStream bodyInputStream) {
                         request.setInputStream(bodyInputStream);
                     }
 
+                    @Override
                     public GenericHttpResponse getResponse() throws GenericHttpException {
                         return wrapHttpResponse(request.getResponse());
                     }
 
+                    @Override
                     public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
                         request.addParameter(paramName, paramValue);
                     }
 
+                    @Override
                     public void close() {
                         request.close();
                     }
@@ -278,26 +291,32 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
             private GenericHttpResponse wrapHttpResponse(final GenericHttpResponse response) {
                 return new GenericHttpResponse() {
+                    @Override
                     public InputStream getInputStream() throws GenericHttpException {
                         return new ByteLimitInputStream(response.getInputStream(), 1024, maxResponseSize);
                     }
 
+                    @Override
                     public void close() {
                         response.close();
                     }
 
+                    @Override
                     public int getStatus() {
                         return response.getStatus();
                     }
 
+                    @Override
                     public HttpHeaders getHeaders() {
                         return response.getHeaders();
                     }
 
+                    @Override
                     public ContentTypeHeader getContentType() {
                         return response.getContentType();
                     }
 
+                    @Override
                     public Long getContentLength() {
                         return response.getContentLength();
                     }
@@ -347,6 +366,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 // Have to double check in case one went away while we were copying out of the map
                 if (extras > 0) {
                     Collections.sort(handles, new Comparator<SchemaHandle>() {
+                        @Override
                         public int compare(SchemaHandle left, SchemaHandle right) {
                             CompiledSchema leftCs = left.getTarget();
                             CompiledSchema rightCs = right.getTarget();
@@ -498,6 +518,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * @return schema for URL, creating it if necessary.
      *         This is a new handle duped just for the caller; caller must close it when they are finished with it.
      */
+    @Override
     public SchemaHandle getSchemaByUrl(String url) throws IOException, SAXException {
         cacheLock.readLock().lock();
         try {
@@ -651,6 +672,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         return cacheLock.readLock();
     }
 
+    @Override
     public void registerSchema(String globalUrl, String schemadoc) {
         if (schemadoc == null) throw new NullPointerException("A schema must be provided");
         String old = globalSchemasByUrl.put(globalUrl, schemadoc);
@@ -658,6 +680,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             onUrlDownloaded(globalUrl);
     }
 
+    @Override
     public void unregisterSchema(String globalUrl) {
         String old = globalSchemasByUrl.remove(globalUrl);
         if (old != null)
@@ -715,6 +738,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             this.resourceDescription = resourceDescription;
         }
 
+        @Override
         public String getMessage() {
             return "Unable to resolve resource " + resourceDescription;
         }
@@ -740,6 +764,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
         LSResourceResolver lsrr = new LSResourceResolver() {
+            @Override
             public LSInput resolveResource(String type,
                                            String namespaceURI,
                                            String publicId,
@@ -893,6 +918,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         final Map<String,SchemaHandle> directImports = new HashMap<String,SchemaHandle>();
         final LSResourceResolver lsrr = new LSResourceResolver() {
+            @Override
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                 try {
                     if (systemId == null) {
@@ -1172,6 +1198,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
         if (maintenanceTimer != null) {
             SafeTimerTask task = new SafeTimerTask() {
+                @Override
                 public void doRun() {
                     maybeRebuildHardwareCache();
                 }

@@ -2,10 +2,12 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -398,29 +400,27 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
     private void readFromUrl(String urlstr) {
         // try to get document
-        byte[] bytes;
-        ByteOrderMarkInputStream bomis = null;
-        InputStream httpStream = null;
-        try {
-            URLConnection conn = new URL(urlstr).openConnection();
-            httpStream = conn.getInputStream();
-            bytes = IOUtils.slurpStream(httpStream);
-            bomis = new ByteOrderMarkInputStream(new ByteArrayInputStream(bytes));
-        } catch (AccessControlException ace) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-            return;
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "No content could be retrieved at that URL. " + urlstr, "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        } finally {
-            ResourceUtils.closeQuietly(httpStream);
-            ResourceUtils.closeQuietly(bomis);
+        final ServiceAdmin serviceAdmin;
+        final Registry reg = Registry.getDefault();
+        if (reg == null || reg.getServiceManager() == null) {
+            throw new RuntimeException("No access to registry. Cannot download document.");
+        } else {
+            serviceAdmin = reg.getServiceManager();
         }
 
-        Document doc;
+        final String policyXml;
         try {
-            doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
+            policyXml = serviceAdmin.resolveUrlTarget(urlstr, XacmlPdpAssertion.XACML_PDP_MAX_DOWNLOAD_SIZE);
+        } catch (IOException e) {
+            //this is likely to be a GenericHttpException
+            JOptionPane.showMessageDialog(this, "No content could be retrieved at URL '" + urlstr+"'. " +
+                    "Due to: " + ExceptionUtils.getMessage(e), "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
+        final Document doc;
+        try {
+            doc = XmlUtil.parse(policyXml);
         } catch (SAXException e) {
             JOptionPane.showMessageDialog(this,
                     "Cannot parse the XML from URL '" + urlstr+ "' due to error: " + e.getMessage(),
@@ -428,19 +428,12 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                     JOptionPane.ERROR_MESSAGE);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Cannot parse the XML from URL '" + urlstr+"'",
-                    "XACML Policy Error",
-                    JOptionPane.ERROR_MESSAGE);
-            log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return;
-        }
+        } 
 
         try {
             docIsXacmlPolicy(doc);
 
-            uiAccessibility.getEditor().setText(new String(bytes));
+            uiAccessibility.getEditor().setText(policyXml);
             uiAccessibility.getEditor().setCaretPosition(0);
 
             enableDisableComponents();

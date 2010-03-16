@@ -981,17 +981,17 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         }
 
-        final ServiceAdminPublic serviceAdminPublic;
+        final SchemaAdmin schemaAdmin;
         final Registry reg = Registry.getDefault();
         if (reg == null || reg.getServiceManager() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
         } else {
-            serviceAdminPublic = reg.getServiceManager();
+            schemaAdmin = reg.getSchemaAdmin();
         }
 
         final String schemaXml;
         try {
-            schemaXml = serviceAdminPublic.resolveWsdlTarget(urlstr);
+            schemaXml = schemaAdmin.resolveSchemaTarget(urlstr);
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);

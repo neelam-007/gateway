@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.xacmlpdp.server;
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -277,7 +277,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     /**
      * Access the PolicyFinder
      *
-     * @throws IOException If there is an IO issue for the request message
+     * @throws IOException If there is an IO issuen for the request message
      * @throws InvalidMessageException If the request is not valid
      * @throws InvalidPolicyException If there is a problem with the XACML policy
      */
@@ -330,7 +330,9 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
                 clientFactory,
                 cacheObjectFactory,
-                HttpObjectCache.WAIT_INITIAL);
+                HttpObjectCache.WAIT_INITIAL,
+                ClusterProperty.asServerConfigPropertyName(XacmlPdpAssertion.XACML_PDP_MAX_DOWNLOAD_SIZE)
+        );
 
         return httpObjectCache;
     }
@@ -370,10 +372,10 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                             policyFinder.setModules(policyModules);
 
                             return policyFinder;
-                        } catch( SAXException saxe ) {
-                            throw new CausedIOException(ExceptionUtils.getMessage( saxe ), saxe);
-                        } catch( ParsingException pe ) {
-                            throw new CausedIOException(ExceptionUtils.getMessage( pe ), pe);
+                        } catch (SAXException saxe) {
+                            throw new CausedIOException(ExceptionUtils.getMessage(saxe), saxe);
+                        } catch (ParsingException pe) {
+                            throw new CausedIOException(ExceptionUtils.getMessage(pe), pe);
                         }
                     }
                 };

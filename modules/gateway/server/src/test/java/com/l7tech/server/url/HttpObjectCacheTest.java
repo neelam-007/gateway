@@ -7,6 +7,7 @@ package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
 import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_LATEST;
@@ -83,7 +84,13 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
+                new HttpObjectCache<UserObj>(500,
+                        TEST_POLL_AGE,
+                        clientFactory,
+                        factory,
+                        WAIT_NEVER,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
         httpObjectCache.clock = clock;
 
         final String url = "http://blat/";
@@ -293,7 +300,13 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
+                new HttpObjectCache<UserObj>(500,
+                        TEST_POLL_AGE,
+                        clientFactory,
+                        factory,
+                        WAIT_NEVER,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
         httpObjectCache.clock = clock;
 
         // Make two test threads

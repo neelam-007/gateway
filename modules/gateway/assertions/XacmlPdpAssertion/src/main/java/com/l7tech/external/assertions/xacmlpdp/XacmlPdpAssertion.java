@@ -22,6 +22,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
     public static final String CPROP_XACML_POLICY_CACHE_MAX_AGE = "xacml.pdp.policyCache.maxAge";
     public static final String PARAM_XACML_POLICY_CACHE_MAX_ENTRIES = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES);
     public static final String PARAM_XACML_POLICY_CACHE_MAX_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_AGE);
+    public static final String XACML_PDP_MAX_DOWNLOAD_SIZE = "xacml.pdp.maxDownloadSize";
 
     public enum SoapEncapsulationType {
         NONE("None"),
@@ -177,6 +178,11 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
                 "Maximum age to cache a downloaded policy before checking to see if it has been updated (Milliseconds)",
                 "300000"
         });
+
+        props.put(XACML_PDP_MAX_DOWNLOAD_SIZE, new String[]{
+                "Maximum size allowed for a remote XACML policy (Integer)",
+                "${documentDownload.maxSize}" } );
+
         meta.put(CLUSTER_PROPERTIES, props);
 
         meta.put(PROPERTIES_ACTION_NAME, "XACML Policy Properties");

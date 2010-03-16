@@ -113,6 +113,16 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
+    public String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException {
+        return serviceDocumentResolver.resolveDocumentTarget(url, DownloadDocumentType.MOD_ASS, maxSizeClusterProperty);
+    }
+
+    @Override
+    public String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException {
+        return serviceDocumentResolver.resolveDocumentTarget(url, docType);
+    }
+
+    @Override
     public PublishedService findServiceByID(String serviceID) throws FindException {
         long oid = parseServiceOid(serviceID);
         PublishedService service = serviceManager.findByPrimaryKey(oid);

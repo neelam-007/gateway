@@ -3,7 +3,6 @@ package com.l7tech.server.service;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.CollectionUpdate;
@@ -83,6 +82,16 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     @Override
     public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
+    }
+
+    @Override
+    public String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException {
+        return null;
+    }
+
+    @Override
+    public String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException {
+        return null;
     }
 
     /**

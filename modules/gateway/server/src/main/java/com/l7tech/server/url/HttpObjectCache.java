@@ -6,6 +6,7 @@ package com.l7tech.server.url;
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.IOUtils;
 
@@ -25,43 +26,82 @@ import java.net.URL;
  * if any.
  */
 public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
+    public final static int DEFAULT_DOWNLOAD_LIMIT = 10 * 1024 * 1024;//10MB
+
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
-    private static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize";
     private static final String SYSPROP_ENABLE_LASTMODIFED = "com.l7tech.server.url.httpCacheEnableLastModified";
     private static final String SYSPROP_ENABLE_ETAG = "com.l7tech.server.url.httpCacheEnableETag";
-    private static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
     private static final boolean enableLastModified = SyspropUtil.getBoolean( SYSPROP_ENABLE_LASTMODIFED, true );
-    private static final boolean enableETag = SyspropUtil.getBoolean( SYSPROP_ENABLE_ETAG, true );;
+    private static final boolean enableETag = SyspropUtil.getBoolean( SYSPROP_ENABLE_ETAG, true );
 
     protected final GenericHttpClientFactory httpClientFactory;
     protected final UserObjectFactory<UT> userObjectFactory;
     protected final LRUMap cache;
-    protected final int maxCrlSize;
+
+    /**
+     * This may be either a cluster property name or a system property
+     */
+    private final String maxDownloadSizeProperty;
+    private final int emergencyDownloadSize;
 
     /**
      * Create a cache that will keep user objects associated with URLs.
      *
-     * @param maxCachedObjects      maximum number of objects that can be cached.  The cache will periodically remove
-     *                              the least recently used objects as needed to keep the size below this limit.
-     * @param recheckAge            if a cached object (or cached error message) is more than this many milliseconds old
-     *                              when a request is issued, an If-Modified-Since: query will be issued to the URL.
-     * @param httpClientFactory     factory that creates HTTP clients to fetch with.  Must not be null.
-     * @param userObjectFactory     strategy for converting the HTTP body into an application-level object.
-     *                              The returned object will be cached and returned to other fetchers of this URL
-     *                              but is otherwise opaque to HttpObjectCache.
-     * @param defaultWaitMode       default {@link AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link AbstractUrlObjectCache#WAIT_INITIAL}.
+     * @param maxCachedObjects        maximum number of objects that can be cached.  The cache will periodically remove
+     *                                the least recently used objects as needed to keep the size below this limit.
+     * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
+     *                                when a request is issued, an If-Modified-Since: query will be issued to the URL.
+     * @param httpClientFactory       factory that creates HTTP clients to fetch with.  Must not be null.
+     * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
+     *                                The returned object will be cached and returned to other fetchers of this URL
+     *                                but is otherwise opaque to HttpObjectCache.
+     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
+     * @param maxDownloadSizeProperty String the cluster property to retrieve the download limit from
      */
     public HttpObjectCache(int maxCachedObjects,
                            long recheckAge,
                            GenericHttpClientFactory httpClientFactory,
                            UserObjectFactory<UT> userObjectFactory,
-                           WaitMode defaultWaitMode)
-    {
+                           WaitMode defaultWaitMode,
+                           String maxDownloadSizeProperty) {
+        this(maxCachedObjects,
+                recheckAge,
+                httpClientFactory,
+                userObjectFactory,
+                defaultWaitMode,
+                maxDownloadSizeProperty,
+                DEFAULT_DOWNLOAD_LIMIT);
+    }
+
+    /**
+     * Create a cache that will keep user objects associated with URLs.
+     *
+     * @param maxCachedObjects        maximum number of objects that can be cached.  The cache will periodically remove
+     *                                the least recently used objects as needed to keep the size below this limit.
+     * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
+     *                                when a request is issued, an If-Modified-Since: query will be issued to the URL.
+     * @param httpClientFactory       factory that creates HTTP clients to fetch with.  Must not be null.
+     * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
+     *                                The returned object will be cached and returned to other fetchers of this URL
+     *                                but is otherwise opaque to HttpObjectCache.
+     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
+     * @param maxDownloadSizeProperty String the cluster property to retrieve the download limit from
+     * @param emergencyDownloadSize   int emergency value to use for the max download size, when the cluster property
+     * referneced in maxDownloadSizeProperty provides an invalid numeric value
+     */
+    public HttpObjectCache(int maxCachedObjects,
+                           long recheckAge,
+                           GenericHttpClientFactory httpClientFactory,
+                           UserObjectFactory<UT> userObjectFactory,
+                           WaitMode defaultWaitMode,
+                           String maxDownloadSizeProperty,
+                           int emergencyDownloadSize) {
         super(recheckAge, defaultWaitMode);
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
         this.cache = new LRUMap(maxCachedObjects);
-        this.maxCrlSize = SyspropUtil.getIntegerCached(SYSPROP_MAX_CRL_SIZE, DEFAULT_MAX_CRL_SIZE);
+        this.maxDownloadSizeProperty = maxDownloadSizeProperty;
+        this.emergencyDownloadSize = emergencyDownloadSize;
 
         if (httpClientFactory == null || userObjectFactory == null) throw new NullPointerException();
     }
@@ -155,10 +195,12 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             }
 
             final GenericHttpResponse sourceResponse = resp;
+            //read max size here so that it can be modified after a HttpObjectCache has been created
+            final int maxSize = ServerConfig.getInstance().getIntProperty(maxDownloadSizeProperty, emergencyDownloadSize);
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
                 @Override
                 public byte[] getBytes() throws IOException {
-                    return IOUtils.slurpStream(new ByteLimitInputStream(sourceResponse.getInputStream(), 1024, maxCrlSize));
+                    return IOUtils.slurpStream(new ByteLimitInputStream(sourceResponse.getInputStream(), 1024, maxSize));
                 }
 
                 @Override
@@ -168,7 +210,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
 
                 @Override
                 public String getString(boolean isXml) throws IOException {
-                    return sourceResponse.getAsString(isXml);
+                    return sourceResponse.getAsString(isXml, maxSize);
                 }
             });
             if (userObject != null) {

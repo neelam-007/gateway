@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
@@ -72,6 +74,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.httpClientFactory = httpClientFactory;
+        this.serverConfig = ServerConfig.getInstance();
     }
 
     @Override
@@ -144,6 +147,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;
     private final HttpClientFactory httpClientFactory;
+    private final ServerConfig serverConfig;
 
     private static String describe( final UDDIRegistry uddiRegistry ) {
         return uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")";
@@ -696,7 +700,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     }
 
                                     // Fetch wsdl
-                                    final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), 10*1024*1024);
+                                    final int maxSize = factory.serverConfig.getIntProperty(ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                                    final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), maxSize);
                                     try {
                                         final RemoteEntityResolver resolver = new RemoteEntityResolver( httpClient, ps.getWsdlUrl() );
                                         final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();

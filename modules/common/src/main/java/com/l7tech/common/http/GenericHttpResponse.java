@@ -6,6 +6,7 @@
 
 package com.l7tech.common.http;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IOUtils;
 
@@ -36,25 +37,27 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
     /**
      * Get the entire HTTP response body as a String, if the returned HTTP status was 200.
      *
-     * @param isXml Whether the input stream contains an XML document or not. If true, then this
-     * method will try to get the charset encoding from the input stream rather than the HTTP
-     * headers.
+     * @param isXml           Whether the input stream contains an XML document or not. If true, then this
+     *                        method will try to get the charset encoding from the input stream rather than the HTTP
+     *                        headers.
+     * @param maxResponseSize int maximum allowed size of the response in bytes
      * @return a String with HTTP-ly-correct encoding (default ISO8859-1 if not declared).  Never null.
-     * @throws IOException  if the status isn't 200
-     * @throws java.io.UnsupportedEncodingException if we can't handle the declared character encoding
+     * @throws IOException if the status isn't 200
+     * @throws java.io.UnsupportedEncodingException
+     *                     if we can't handle the declared character encoding
      */
-    public String getAsString(boolean isXml) throws IOException {
+    public String getAsString(boolean isXml, int maxResponseSize) throws IOException {
         if (getStatus() != HttpConstants.STATUS_OK)
             throw new IOException("HTTP status was " + getStatus());
 
-        byte[] bytes = IOUtils.slurpStream(getInputStream());
+        byte[] bytes = IOUtils.slurpStream(new ByteLimitInputStream(getInputStream(), 1024, maxResponseSize));
 
         // Try to get the charset encoding from the data, if that fails, then use
         // HTTP charset encoding.
         ContentTypeHeader ctype = getContentType();
-        if(isXml) {
+        if (isXml) {
             GuessedEncodingResult result = getXmlEncoding(bytes);
-            if(result.encoding == null) {
+            if (result.encoding == null) {
                 result.encoding = ctype == null ? ContentTypeHeader.DEFAULT_HTTP_ENCODING : ctype.getEncoding();
                 result.bytesToSkip = 0;
             }

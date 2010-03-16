@@ -65,7 +65,7 @@ public interface ServiceAdminPublic {
      * can get at services that are 'hidden' behind the gateway.
      * This is meant to be used when a service is originally published.
      * <p/>
-     * URL may be http or https with or without client auth
+     * URL may be http or https with or without client auth, and may contain authentication information
      *
      * @param url the url that the gateway will use to resolve the wsdl document. this may contain
      *            userinfo type credentials
@@ -75,4 +75,34 @@ public interface ServiceAdminPublic {
      */
     @Transactional(propagation = SUPPORTS)
     String resolveWsdlTarget(String url) throws IOException;
+
+    /**
+     * Get a document from a URL.
+     * <p/>
+     * URL may be http or https with or without client auth, and may contain authentication information
+     *
+     * @param url                    String URL to download the document from
+     * @param maxSizeClusterProperty cluster property which will limit the maximum size of the document at the url. Required
+     * @return the contents resolved by this url
+     * @throws IOException           thrown on I/O error accessing the WSDL url
+     * @throws MalformedURLException thrown on malformed WSDL url
+     */
+    @Transactional(propagation = SUPPORTS)
+    String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException;
+
+    /**
+     * Get a document from a URL.
+     * <p/>
+     * URL may be http or https with or without client auth, and may contain authentication information
+     *
+     * @param url                    String URL to download the document from
+     * @param docType                DownloadDocumentType type of document, which will govern it's max download size
+     * @return the contents resolved by this url
+     * @throws IOException           thrown on I/O error accessing the WSDL url
+     * @throws MalformedURLException thrown on malformed WSDL url
+     */
+    @Transactional(propagation = SUPPORTS)
+    String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException;
+
+    enum DownloadDocumentType {WSDL, SCHEMA, XSL, MOD_ASS}
 }
