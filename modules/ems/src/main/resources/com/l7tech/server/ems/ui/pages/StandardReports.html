@@ -750,7 +750,7 @@
             l7.Widget.selectDropDownByValue(tr._ssgClusterDropDown, ssgClusterId);
             populateGroupingMessageContextDropDown(tr._messageContextDropDown, ssgClusterId);
             l7.Widget.selectDropDownByValue(tr._messageContextDropDown, messageContextKey);
-            tr._constraintTextBox.value = constraint;
+            tr._constraintTextBox.value = constraint == null? "" : constraint;
             return null;
         }
 
@@ -874,7 +874,7 @@
                 var grouping = {};
                 grouping.clusterId = tr._ssgClusterDropDown.value;
                 grouping.messageContextKey = tr._messageContextDropDown.value;
-                grouping.constraint = tr._constraintTextBox.value;
+                grouping.constraint = tr._constraintTextBox.value == ""? null : tr._constraintTextBox.value;
                 settings.groupings.push(grouping);
             }
             settings.summaryChart = summaryChartCheckBox.checked;
