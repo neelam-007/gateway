@@ -286,7 +286,7 @@ public class XOPUtils {
             String base64Text = getTextValue( sourceDomElement );
             if ( getBase64DataLength(base64Text) > threshold ) {
                 if ( !isCanonicalBase64(base64Text) ) {
-                    throw new XOPException("Base64 element content must not include whitespace.");
+                    throw new XOPException("Invalid Base64 element content (only Base64 characters are permitted, must not contain whitespace)");
                 }
                 Element element = getTargetElement( document, sourceDomElement );
                 if ( element == null ) continue;

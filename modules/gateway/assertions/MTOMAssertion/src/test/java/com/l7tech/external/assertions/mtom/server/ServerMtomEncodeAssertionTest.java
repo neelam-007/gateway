@@ -277,7 +277,7 @@ public class ServerMtomEncodeAssertionTest {
             assertEquals( "status falsified for " + description, AssertionStatus.FALSIFIED, status );
             boolean sawAudit = false;
             for ( String auditMessage : messages ) {
-                if ( auditMessage.contains("Base64 element content must not include whitespace." )) {
+                if ( auditMessage.contains("Invalid Base64 element content (only Base64 characters are permitted, must not contain whitespace)" )) {
                     sawAudit = true;
                 }
             }
