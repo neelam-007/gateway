@@ -57,9 +57,9 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
         // Show details of the unresolved reference
-        certName.setText(certReference.getCertName());
-        issuerDn.setText(certReference.getCertIssuerDn());
-        serialNumber.setText(certReference.getCertSerial().toString());
+        certName.setText(certReference.getCertName() == null? "<Not Found>" : certReference.getCertName());
+        issuerDn.setText(certReference.getCertIssuerDn() == null? "<Not Found>" : certReference.getCertIssuerDn());
+        serialNumber.setText(certReference.getCertSerial() == null? "<Not Found>" : certReference.getCertSerial().toString());
 
         changeRadio.setSelected(true);
 
