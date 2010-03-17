@@ -72,6 +72,11 @@ public class AuditContextStub implements AuditContextStubInt {
             lastRecord = record;
         }
 
+        clear();
+    }
+
+    @Override
+    public void clear() {
         record = null;
         details = new HashMap<Object,List<AuditDetail>>();
     }

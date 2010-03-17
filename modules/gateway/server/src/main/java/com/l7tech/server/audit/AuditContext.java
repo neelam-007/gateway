@@ -142,6 +142,12 @@ public interface AuditContext {
     void flush();
 
     /**
+     * Clears the current {@link AuditRecord} and any associated {@link AuditDetail}
+     * records but without saving to the database or audit sink policy.
+     */
+    void clear();
+
+    /**
      * Returns an unmodifiable Map&lt;Object, List&lt;AuditDetail&gt;&gt; of this AuditContext's details.
      * The Object is the source of the event, often a {@link com.l7tech.server.policy.assertion.ServerAssertion}.
      * @return an unmodifiable Map&lt;Object, List&lt;AuditDetail&gt;&gt; of this AuditContext's details.

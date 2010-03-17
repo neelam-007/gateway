@@ -4,6 +4,8 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
@@ -11,6 +13,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -44,10 +47,14 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private final Auditor auditor;
     private final List<String[]> varsUsed;
     private final List<String[]> varsSet;
+    private final BeanFactory beanFactory;
+    private final ApplicationEventPublisher eventPub;
 
     public ServerConcurrentAllAssertion(ConcurrentAllAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException, LicenseException {
         super(assertion, beanFactory);
         this.auditor = new Auditor(this, beanFactory, eventPub, logger);
+        this.beanFactory = beanFactory;
+        this.eventPub = eventPub;
 
         final List<Assertion> kids = assertion.getChildren();
         if (kids == null || kids.isEmpty()) {
@@ -101,10 +108,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static class KidContext {
         final ServerAssertion serverAssertion;
         final PolicyEnforcementContext context;
-        final Future<AssertionStatus> futureResult;
-        AssertionStatus actualResult;
+        final Future<KidResult> futureResult;
+        KidResult actualResult;
 
-        private KidContext(ServerAssertion serverAssertion, PolicyEnforcementContext context, Future<AssertionStatus> futureResult) {
+        private KidContext(ServerAssertion serverAssertion, PolicyEnforcementContext context, Future<KidResult> futureResult) {
             this.serverAssertion = serverAssertion;
             this.context = context;
             this.futureResult = futureResult;
@@ -129,12 +136,22 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             return;
 
         for (KidContext context : contexts) {
-            Future<AssertionStatus> future = context.futureResult;
+            Future<KidResult> future = context.futureResult;
             if (future != null) {
                 if (!future.isDone())
                     future.cancel(true);
             }
             ResourceUtils.closeQuietly(context.context);
+        }
+    }
+
+    private static class KidResult {
+        final AssertionStatus assertionStatus;
+        final Map<Object, List<AuditDetail>> details;
+
+        private KidResult(AssertionStatus assertionStatus, Map<Object, List<AuditDetail>> details) {
+            this.assertionStatus = assertionStatus;
+            this.details = details;
         }
     }
 
@@ -150,15 +167,38 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
             final Map<String, Object> kidVarMap = context.getVariableMap(varsUsedByKid, auditor);
             final PolicyEnforcementContext kidPec = copyContext(context, kidVarMap);
-            Future<AssertionStatus> kidResult = assertionExecutor.submit(new Callable<AssertionStatus>() {
+            Future<KidResult> kidResult = assertionExecutor.submit(new Callable<KidResult>() {
                 @Override
-                public AssertionStatus call() throws Exception {
+                public KidResult call() throws Exception {
+                    try {
+                        // Configure the thread-local audit context to buffer detail messages
+                        AuditContext auditContext = (AuditContext)beanFactory.getBean("auditContext", AuditContext.class);
+                        auditContext.clear();
+
+                        AssertionStatus status = doCall();
+
+                        Map<Object, List<AuditDetail>> details = auditContext.getDetails();
+                        auditContext.clear();
+                        return new KidResult(status, details);
+
+                    } catch (Throwable t) {
+                        Map<Object, List<AuditDetail>> fakeDetails = new HashMap<Object, List<AuditDetail>>();
+                        fakeDetails.put(ServerConcurrentAllAssertion.this, Arrays.asList(new AuditDetail(
+                                AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {
+                                    "Unexpected error preparing to run concurrent assertion: " + ExceptionUtils.getMessage(t)
+                                }, t)));
+                        return new KidResult(AssertionStatus.SERVER_ERROR, fakeDetails);
+                    }
+                }
+
+                AssertionStatus doCall() throws Exception {
                     try {
                         return kid.checkRequest(kidPec);
                     } catch (AssertionStatusException e) {
                         return e.getAssertionStatus();
                     } catch (Throwable t) {
-                        logger.log(Level.WARNING, "Unexpected exception while running concurrent assertion: " + ExceptionUtils.getMessage(t), t);
+                        new Auditor(this, beanFactory, eventPub, logger).logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                new String[] { "Unable to run concurrent assertion: " + ExceptionUtils.getMessage(t) }, t);
                         return AssertionStatus.SERVER_ERROR;
                     }
                 }
@@ -196,7 +236,9 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             if (kidContext.actualResult == null || !kid.getAssertion().isEnabled())
                 continue;
 
-            result = kidContext.actualResult;
+            KidResult kidResult = kidContext.actualResult;
+            result = kidResult.assertionStatus;
+            importAuditDetails(kidResult.details);
 
             context.assertionFinished(kid, result);
 
@@ -207,6 +249,17 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             }
         }
         return result;
+    }
+
+    private void importAuditDetails(Map<Object, List<AuditDetail>> details) {
+        AuditContext auditContext = (AuditContext)beanFactory.getBean("auditContext", AuditContext.class);
+        if (details != null) for (Map.Entry<Object, List<AuditDetail>> objectListEntry : details.entrySet()) {
+            Object source = objectListEntry.getKey();
+            List<AuditDetail> detailList = objectListEntry.getValue();
+            if (detailList != null) for (AuditDetail auditDetail : detailList) {
+                auditContext.addDetail(auditDetail, source);
+            }
+        }
     }
 
     private void mergeContextVariables(String[] varsSetByKid, PolicyEnforcementContext source, PolicyEnforcementContext dest) throws IOException {

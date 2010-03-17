@@ -11,16 +11,12 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.HexUtils;
-import com.l7tech.security.prov.JceProvider;
 
-import javax.crypto.Cipher;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.interfaces.ECKey;
@@ -257,19 +253,24 @@ public class AuditContextImpl implements AuditContext {
             logger.log(Level.SEVERE, "Couldn't update audit records", e);
         } finally {
             // Reinitialize in case this thread needs us again for a new request
-            currentRecord = null;
-            currentAdminThreshold = null;
-            currentSystemClientThreshold = null;
-            currentAssociatedLogsThreshold = null;
-            currentUseAssociatedLogsThreshold = null;
-            currentMessageThreshold = null;
-            currentSignAuditSetting = null;
-            details.clear();
-            highestLevelYetSeen = Level.ALL;
-            ordinal = 0;
-            update = false;
-            //system = false;
+            clear();
         }
+    }
+
+    @Override
+    public void clear() {
+        currentRecord = null;
+        currentAdminThreshold = null;
+        currentSystemClientThreshold = null;
+        currentAssociatedLogsThreshold = null;
+        currentUseAssociatedLogsThreshold = null;
+        currentMessageThreshold = null;
+        currentSignAuditSetting = null;
+        details.clear();
+        highestLevelYetSeen = Level.ALL;
+        ordinal = 0;
+        update = false;
+        //system = false;
     }
 
     private void outputRecord(AuditRecord rec, boolean update, PolicyEnforcementContext policyEnforcementContext) throws UpdateException, SaveException {

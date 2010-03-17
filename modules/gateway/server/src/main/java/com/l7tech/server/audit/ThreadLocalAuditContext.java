@@ -27,46 +27,62 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
         this.targetId = id;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
+    @Override
     public void addDetail(AuditDetail detail, Object source) {
         threadLocalDelegate.get().addDetail(detail, source);
     }
 
+    @Override
     public void addDetail(AuditDetail detail, Object source, Throwable exception) {
         threadLocalDelegate.get().addDetail(detail, source, exception);
     }
 
+    @Override
     public void flush() {
         threadLocalDelegate.get().flush();
     }
 
+    @Override
+    public void clear() {
+        threadLocalDelegate.get().clear();
+    }
+
+    @Override
     public Map<Object, List<AuditDetail>> getDetails() {
         return threadLocalDelegate.get().getDetails();
     }
 
+    @Override
     public Set getHints() {
         return threadLocalDelegate.get().getHints();
     }
 
+    @Override
     public void setCurrentRecord(AuditRecord record) {
         threadLocalDelegate.get().setCurrentRecord(record);
     }
 
+    @Override
     public boolean isUpdate() {
         return threadLocalDelegate.get().isUpdate();
     }
 
+    @Override
     public void setUpdate(boolean update) {
         threadLocalDelegate.get().setUpdate(update);
     }
 
+    @Override
     public String[] getContextVariablesUsed() {
         return threadLocalDelegate.get().getContextVariablesUsed();
     }
 
+    @Override
     public void setContextVariables(Map<String, Object> variables) {
         threadLocalDelegate.get().setContextVariables(variables);
     }

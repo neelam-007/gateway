@@ -4,9 +4,11 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
+import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -14,22 +16,25 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TestLicenseManager;
+import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.IOUtils;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.support.GenericApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the ConcurrentAllAssertion.
@@ -41,6 +46,7 @@ public class ServerConcurrentAllAssertionTest {
     static ServerPolicyFactory serverPolicyFactory;
     static DefaultListableBeanFactory beanFactory;
     static GenericApplicationContext applicationContext;
+    static ConcurrentDetailCollectingAuditContext auditContext;
 
 
     @BeforeClass
@@ -50,13 +56,22 @@ public class ServerConcurrentAllAssertionTest {
         assertionRegistry.registerAssertion(ConcurrentAllAssertion.class);
         assertionRegistry.registerAssertion(DelayedCopyVariableAssertion.class);
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager());
+        auditContext = new ConcurrentDetailCollectingAuditContext();
+        auditContext.logDetails = true;
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("serverConfig", ServerConfig.getInstance());
             put("policyFactory", serverPolicyFactory);
+            put("auditContext", auditContext);
         }});
         applicationContext = new GenericApplicationContext(beanFactory);
         serverPolicyFactory.setApplicationContext(applicationContext);
+        applicationContext.addApplicationListener(new AuditDetailProcessingAuditListener(auditContext));
         applicationContext.refresh();
+    }
+
+    @Before
+    public void before() {
+        auditContext.clearAll();
     }
 
     @Test
@@ -184,6 +199,37 @@ public class ServerConcurrentAllAssertionTest {
 
         assertEquals("var content 1", toString((Message)context.getVariable("dest1")));
         assertEquals("<foo>var content 2</foo>", toString((Message)context.getVariable("dest2")));
+    }
+
+    @Test
+    public void testAuditDetailMessages() throws Exception {
+        ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+                new AllAssertion(Arrays.asList(
+                        new AuditDetailAssertion("detail1")
+                )),
+                new AllAssertion(Arrays.asList(
+                        new AuditDetailAssertion("detail2"),
+                        new AuditDetailAssertion("detail3")
+                ))
+        ));
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("source1", makeMessage(ContentTypeHeader.TEXT_DEFAULT, "var content 1"));
+
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        // Ensure all audit details from concurrent subpolicies got collected.  Note that the order they get saved in is undefined.
+        List<AuditDetail> details = auditContext.getCurrentThreadDetails();
+        assertEquals(3, details.size());
+        Set<String> msgs = new HashSet<String>();
+        msgs.add(details.get(0).getParams()[0]);
+        msgs.add(details.get(1).getParams()[0]);
+        msgs.add(details.get(2).getParams()[0]);
+        assertTrue(msgs.contains("detail1"));
+        assertTrue(msgs.contains("detail2"));
+        assertTrue(msgs.contains("detail3"));
     }
 
     @Test

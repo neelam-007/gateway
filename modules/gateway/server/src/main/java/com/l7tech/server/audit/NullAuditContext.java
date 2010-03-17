@@ -43,6 +43,10 @@ public class NullAuditContext implements AuditContext {
     }
 
     @Override
+    public void clear() {
+    }
+
+    @Override
     public Map<Object, List<AuditDetail>> getDetails() {
         return Collections.emptyMap();
     }
