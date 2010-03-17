@@ -1232,6 +1232,7 @@
                             bodyHtml += '</div>';
                             l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
                         }
+                        deleteAllGroupings();
                         setFieldsFromSettings(settings);
                         document.getElementById('saveSettingsDialog_name').value = settingsName;
                     }
