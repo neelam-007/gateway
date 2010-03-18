@@ -9,6 +9,7 @@
     <xsl:param name="projectmeta"/> <!-- Javadoc URLs etc for libraries -->    
     <xsl:param name="idea.jdk">1.6</xsl:param>
     <xsl:param name="idea.javac.out">idea-classes</xsl:param>
+    <xsl:param name="idea.ant.integration">true</xsl:param>
 
     <!-- Globals -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>
@@ -17,6 +18,15 @@
     <xsl:variable name="modules" select="document($data)/modules"/>
     <xsl:variable name="module-libs" select="document($datalibs)/modules/modules"/>
     <xsl:key name="moduleid" match="module" use="concat(@organisation, '.', @name, '.', @rev)"/> 
+
+    <!-- Enable/Disable ANT integration -->
+    <xsl:template match="/project/component[@name = 'AntConfiguration']/buildFile[@url = 'file://$PROJECT_DIR$/etc/build/idea_build.xml']/executeOn[@event = 'afterCompilation']">
+        <xsl:if test="$idea.ant.integration = 'true'">
+            <xsl:copy>
+                <xsl:apply-templates select="*|@*|text()|processing-instruction()|comment()"/>
+            </xsl:copy>
+        </xsl:if>
+    </xsl:template>
 
     <!-- Update if not initialized -->
     <xsl:template match="/project/component[@name = 'ProjectRootManager' and @project-jdk-name = '']">

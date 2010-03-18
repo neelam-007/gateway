@@ -596,6 +596,7 @@
             <param name="data" expression="${build.etc}/modules.xml"/>
             <param name="datalibs" expression="${build.etc}/module-dependencies.xml"/>
             <param name="projectmeta" expression="${src.root}/etc/build/idea_meta.xml"/>
+            <param name="idea.ant.integration" expression="${idea.ant.integration}" if="idea.ant.integration"/>
             <param name="idea.javac.out" expression="${idea.javac.out}" if="idea.javac.out"/>
             <param name="idea.jdk" expression="${idea.jdk}" if="idea.jdk"/>
         </xslt>
