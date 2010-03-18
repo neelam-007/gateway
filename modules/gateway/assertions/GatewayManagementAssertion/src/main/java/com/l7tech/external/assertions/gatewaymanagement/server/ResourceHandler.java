@@ -584,11 +584,11 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             setOperationInfo( context, null, null, null, "Access denied" );
             throw new AccessDeniedFault();
         } else if ( e instanceof ResourceFactory.ResourceAccessException ) {
-            Throwable cause = e.getCause();
-            if ( cause instanceof DuplicateObjectException ) {
+            if ( ExceptionUtils.causedBy( e, DuplicateObjectException.class ) ) {
+                final DuplicateObjectException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateObjectException.class );
                 setOperationInfo( context, null, null, null, ExceptionUtils.getMessage( cause ) );
                 throw new AlreadyExistsFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( cause ), null, null, null));
-            } else if ( cause instanceof StaleUpdateException ) {
+            } else if ( ExceptionUtils.causedBy( e, StaleUpdateException.class) ) {
                 setOperationInfo( context, null, null, null, "Incorrect version (stale update)" );
                 throw new ConcurrencyFault();
             } else {
