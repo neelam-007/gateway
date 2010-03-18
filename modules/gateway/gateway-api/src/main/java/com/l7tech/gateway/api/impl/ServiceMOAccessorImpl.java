@@ -42,8 +42,7 @@ public class ServiceMOAccessorImpl extends PolicyAccessorImpl<ServiceMO> impleme
         require( "identifier", identifier );
         require( "resourceSet", resourceSet );
 
-        putFragment( resourceSet, identifier, XPATH_DETAIL );
-
+        putFragment( resourceSet, identifier, XPATH_WSDL );
     }
 
     //- PACKAGE

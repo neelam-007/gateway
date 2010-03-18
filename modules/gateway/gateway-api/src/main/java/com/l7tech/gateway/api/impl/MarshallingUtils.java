@@ -1,16 +1,21 @@
 package com.l7tech.gateway.api.impl;
 
+import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
@@ -24,6 +29,7 @@ public class MarshallingUtils {
 
     //- PUBLIC
 
+    @SuppressWarnings({ "unchecked" })
     public static void marshal( final Object mo, final Result result, final boolean isFragment ) throws IOException {
         try {
             final JAXBContext context = getJAXBContext();
@@ -36,7 +42,16 @@ public class MarshallingUtils {
                 logger.info( "Unable to set marshaller for formatted output '"+ ExceptionUtils.getMessage(e)+"'." );
             }
 
-            marshaller.marshal(mo, result );
+            Object data = mo;
+            if ( !(mo instanceof ManagedObject) && mo.getClass().getAnnotation(XmlRootElement.class) == null ) {
+                XmlType type = mo.getClass().getAnnotation(XmlType.class);
+                if ( type == null ) {
+                    throw new IOException( "Cannot marshal object without XmlType '" + mo.getClass() + "'" );
+                }
+                data = new JAXBElement( new QName(type.namespace(), asElementName(type.name())), mo.getClass(), mo );
+            }
+            
+            marshaller.marshal(data, result );
         } catch ( JAXBException e ) {
             throw new IOException( "Error writing object '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
@@ -124,4 +139,14 @@ public class MarshallingUtils {
     }
 
     private static JAXBContext context;
+
+    private static String asElementName( final String typeName ) {
+        String elementName = typeName;
+
+        if ( elementName.endsWith( "Type" )) {
+            elementName = elementName.substring( 0, elementName.length() - 4 );
+        }
+
+        return elementName;
+    }
 }

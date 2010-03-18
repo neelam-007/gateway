@@ -21,6 +21,7 @@ import org.w3c.dom.Document;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.soap.SOAPException;
+import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,7 +187,9 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
                 final Resource resource =
                         getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), Collections.singletonMap(ID_SELECTOR, identifier))[0];
 
-                resource.put( fragment, xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
+                final DOMResult result = new DOMResult();
+                MarshallingUtils.marshal( fragment, result, true );
+                resource.put( result.getNode(), xpathExpression, Collections.singletonMap(XPATH_NS_PREFIX, getNamespace()) ,Resource.XPATH_DIALECT );
 
                 return null;
             }

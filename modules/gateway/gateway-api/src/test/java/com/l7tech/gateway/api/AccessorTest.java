@@ -1,17 +1,39 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.TransportFactory;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
+import com.sun.ws.management.Management;
+import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.client.exceptions.FaultException;
+import com.sun.ws.management.client.impl.TransportClient;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
+import javax.xml.bind.JAXBException;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPConstants;
+import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.PasswordAuthentication;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +41,303 @@ import java.util.regex.Pattern;
  *
  */
 public class AccessorTest {
+
+    //- PUBLIC
+
+    @Test
+    public void testCreate() throws Exception {
+        setResponse( "ClusterProperty_Create_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            final ClusterPropertyMO clusterProperty = ManagedObjectFactory.createClusterProperty();
+            clusterProperty.setName( "a" );
+            clusterProperty.setValue( "b" );
+            final String identifier = clusterPropertyAccessor.create( clusterProperty );
+            assertEquals( "identifier", "264372224", identifier );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetById() throws Exception {
+        setResponse( "ClusterProperty_Get_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            final ClusterPropertyMO clusterProperty = clusterPropertyAccessor.get( "20774913" );
+            assertEquals( "id", "20774913", clusterProperty.getId() );
+            assertEquals( "version", (Integer)4, clusterProperty.getVersion() );
+            assertEquals( "name", "soap.roles", clusterProperty.getName() );
+            assertEquals( "value", "secure_span\nhttp://www.layer7tech.com/ws/policy\nhttp://tempuri.org/myactor4", clusterProperty.getValue() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetByName() throws Exception {
+        setResponse( "ClusterProperty_Get_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            final ClusterPropertyMO clusterProperty = clusterPropertyAccessor.get( "name", "soap.roles" );
+            assertEquals( "id", "20774913", clusterProperty.getId() );
+            assertEquals( "version", (Integer)4, clusterProperty.getVersion() );
+            assertEquals( "name", "soap.roles", clusterProperty.getName() );
+            assertEquals( "value", "secure_span\nhttp://www.layer7tech.com/ws/policy\nhttp://tempuri.org/myactor4", clusterProperty.getValue() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testPut() throws Exception {
+        setResponse( "ClusterProperty_Put_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            final ClusterPropertyMO clusterProperty = ManagedObjectFactory.createClusterProperty();
+            clusterProperty.setId("264372224");
+            clusterProperty.setVersion(0);
+            clusterProperty.setName( "testproperty" );
+            clusterProperty.setValue( "testvalue2" );
+            final ClusterPropertyMO clusterPropertyUpdated = clusterPropertyAccessor.put( clusterProperty );
+            assertEquals( "id", "264372224", clusterPropertyUpdated.getId() );
+            assertEquals( "version", (Integer)1, clusterPropertyUpdated.getVersion() );
+            assertEquals( "name", "testproperty", clusterPropertyUpdated.getName() );
+            assertEquals( "value", "testvalue2", clusterPropertyUpdated.getValue() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testDelete() throws Exception {
+        setResponse( "ClusterProperty_Delete_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            clusterPropertyAccessor.delete( "1234" );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testEnumerate() throws Exception {
+        setResponse( "ClusterProperty_Enumerate_Response1.xml", "ClusterProperty_Enumerate_Response2.xml", "ClusterProperty_Enumerate_Response3.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final Accessor<ClusterPropertyMO> clusterPropertyAccessor = client.getAccessor( ClusterPropertyMO.class );
+            final Iterator<ClusterPropertyMO> clusterPropertyIterator = clusterPropertyAccessor.enumerate();
+            int count = 0;
+            while ( clusterPropertyIterator.hasNext() ) {
+                final ClusterPropertyMO clusterProperty = clusterPropertyIterator.next();
+                assertNotNull( clusterProperty );
+                assertNotNull( clusterProperty.getId() );
+                assertNotNull( clusterProperty.getName() );
+                assertNotNull( clusterProperty.getValue() );
+                count++;
+            }
+            assertEquals( "Cluster property count", 12, count );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetPolicy() throws Exception {
+        setResponse( "Policy_GetPolicy_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final Resource policyResource = policyAccessor.getPolicy( "248872960" );
+            assertEquals( "resource type", "policy", policyResource.getType() );
+            assertEquals( "resource content", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:AuditDetailAssertion>\n" +
+                    "            <L7p:Detail stringValue=\"Policy Fragment: 555\"/>\n" +
+                    "        </L7p:AuditDetailAssertion>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n", policyResource.getContent() );
+            assertNull( "resource id", policyResource.getId() );
+            assertNull( "resource version", policyResource.getVersion() );
+            assertNull( "resource source url", policyResource.getSourceUrl() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testPutPolicy() throws Exception {
+        setResponse( "Policy_PutPolicy_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final Resource policyResource = ManagedObjectFactory.createResource();
+            policyResource.setType( "policy" );
+            policyResource.setContent( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:AuditDetailAssertion>\n" +
+                    "            <L7p:Detail stringValue=\"Policy Fragment: 555\"/>\n" +
+                    "        </L7p:AuditDetailAssertion>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n" );
+            policyAccessor.putPolicy( "248872960", policyResource );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetPolicyDetail() throws Exception {
+        setResponse( "Policy_GetDetails_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyMOAccessor policyAccessor = (PolicyMOAccessor) client.getAccessor( PolicyMO.class );
+            final PolicyDetail detail = policyAccessor.getPolicyDetail( "248872960" );
+            assertEquals( "id", "248872960", detail.getId() );
+            assertEquals( "guid", "447a0133-5e33-43eb-a197-8a70e6e3d2f1", detail.getGuid() );
+            assertEquals( "version", (Integer)0, detail.getVersion() );
+            assertNull( "folderId", detail.getFolderId() );
+            assertEquals( "name", "555", detail.getName() );
+            assertEquals( "policy type", PolicyDetail.PolicyType.INCLUDE, detail.getPolicyType() );
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "revision", 2L );
+            props.put( "soap", true );
+            assertEquals( "properties", props, detail.getProperties() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testPutPolicyDetail() throws Exception {
+        setResponse( "Policy_PutDetails_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyMOAccessor policyAccessor = (PolicyMOAccessor) client.getAccessor( PolicyMO.class );
+            final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyDetail.setId( "248872960" );
+            policyDetail.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
+            policyDetail.setVersion( 0 );
+            policyDetail.setName( "555" );
+            policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "revision", 2L );
+            props.put( "soap", false );
+            policyDetail.setProperties( props );
+            policyAccessor.putPolicyDetail( "248872960", policyDetail );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetServiceDetail() throws Exception {
+        setResponse( "Service_GetDetails_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceDetail detail = serviceAccessor.getServiceDetail( "229376" );
+            assertEquals( "id", "229376", detail.getId() );
+            assertEquals( "version", (Integer)51, detail.getVersion() );
+            assertNull( "folderId", detail.getFolderId() );
+            assertEquals( "name", "Warehouse", detail.getName() );
+            assertEquals( "enabled", true, detail.getEnabled() );
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "internal", false );
+            props.put( "policyRevision", 1381L );
+            props.put( "soap", true );
+            props.put( "wssProcessingEnabled", true );
+            assertEquals( "properties", props, detail.getProperties() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testPutServiceDetail() throws Exception {
+        setResponse( "Service_PutDetails_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+            serviceDetail.setId( "229376" );
+            serviceDetail.setVersion( 51 );
+            serviceDetail.setName( "Warehouse" );
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "internal", false );
+            props.put( "policyRevision", 1381L );
+            props.put( "soap", true );
+            props.put( "wssProcessingEnabled", true );
+            serviceDetail.setProperties( props );
+            serviceAccessor.putServiceDetail( "229376", serviceDetail );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testGetWsdl() throws Exception {
+        setResponse( "Service_GetWsdl_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ResourceSet wsdlResourceSet = serviceAccessor.getWsdl( "229376" );
+            assertEquals( "tag", "wsdl", wsdlResourceSet.getTag() );
+            assertEquals( "root url", "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl", wsdlResourceSet.getRootUrl() );
+            final List<Resource> resources = wsdlResourceSet.getResources();
+            assertNotNull( resources );
+            assertEquals( "resources size", 1, resources.size() );
+            final Resource resource = resources.get( 0 );
+            assertEquals( "resource type", "wsdl", resource.getType() );
+            assertEquals( "resource url", "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl", resource.getSourceUrl() );
+            assertNull( "resource id", resource.getId() );
+            assertNull( "resource version", resource.getVersion() );
+            assertNotNull( "resource content", resource.getContent() );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+    
+    @Test
+    public void testPutWsdl() throws Exception {
+        setResponse( "Service_PutWsdl_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
+            wsdlResourceSet.setTag( "wsdl" );
+            wsdlResourceSet.setRootUrl( "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl" );
+            final Resource wsdlResource = ManagedObjectFactory.createResource();
+            wsdlResource.setType( "wsdl" );
+            wsdlResource.setSourceUrl( "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl" );
+            wsdlResource.setContent( "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
+            wsdlResourceSet.setResources( Arrays.asList( wsdlResource ) );
+            serviceAccessor.putWsdl( "229376", wsdlResourceSet );            
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
 
     @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     @Test
@@ -140,6 +459,94 @@ public class AccessorTest {
             assertEquals("Fault subcodes", "", matcher5.group(4) );
             assertEquals("Fault details", "test fault details\nerserwser\nasdfe ", matcher5.group(5) );
         }
+    }
+
+    @BeforeClass
+    public static void setup() {
+        TransportFactory.setTransportStrategy( new TransportFactory.TransportStrategy(){
+            @Override
+            public TransportClient newTransportClient( final int connectTimeout,
+                                                       final int readTimeout,
+                                                       final PasswordAuthentication passwordAuthentication,
+                                                       final HostnameVerifier hostnameVerifier,
+                                                       final SSLSocketFactory sslSocketFactory ) {
+                return new TransportClient(){
+                    @Override
+                    public Addressing sendRequest( final Addressing addressing,
+                                                   final Map.Entry<String, String>... entries ) throws IOException, SOAPException, JAXBException {
+                        logMessage( addressing );
+                        Addressing response = getResponseMessage();
+                        logMessage( response );
+                        return response;
+                    }
+
+                    @Override
+                    public Addressing sendRequest( final SOAPMessage soapMessage,
+                                                   final String s,
+                                                   final Map.Entry<String, String>... entries ) throws IOException, SOAPException, JAXBException {
+                        return getResponseMessage();
+                    }
+
+                    private void logMessage( final Addressing addressing ) {
+                        if ( logMessages ) {
+                            try {
+                                addressing.writeTo( System.out );
+                                System.out.println();
+                            } catch ( Exception e ) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                };
+            }
+        } );
+    }
+
+    //- PRIVATE
+
+    private static final Queue<Object> responseObjects = new ArrayDeque<Object>();
+    private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.api.logTestMessages", true );
+
+    private static void setResponse( final String... responseFileNames ) {
+        responseObjects.clear();
+        for ( String responseFileName : responseFileNames ) {
+            responseObjects.add( "testMessages/" + responseFileName );
+        }
+    }
+
+    private static Management getResponseMessage() throws IOException, SOAPException {
+        InputStream messageIn = null;
+        try {
+            String responseResourceName;
+            Object responseObject = responseObjects.remove();
+            if ( responseObject instanceof IOException ) {
+                throw (IOException) responseObject;
+            } else if ( responseObject instanceof SOAPException ) {
+                throw (SOAPException) responseObject;
+            } else if ( responseObject instanceof RuntimeException ) {
+                throw (RuntimeException) responseObject;
+            } else if ( responseObject instanceof String ) {
+                responseResourceName = (String) responseObject;
+            } else {
+                throw new IOException("Unexpected response object type");
+            }
+
+            messageIn = AccessorTest.class.getResourceAsStream(responseResourceName);
+            if ( messageIn == null ) {
+                throw new FileNotFoundException(responseResourceName);
+            }
+            return new Management( messageIn );
+        } catch ( NoSuchElementException e ) {
+            throw new IOException("No message queued for request.");
+        } finally {
+            ResourceUtils.closeQuietly( messageIn );
+        }
+
+    }
+
+    private Client getClient() {
+        ClientFactory factory = ClientFactory.newInstance();
+        return factory.createClient( "http://localhost:12345/thisisnotused" );
     }
 
     @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
