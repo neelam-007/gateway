@@ -23,6 +23,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
     private long maxEntryAgeMillis = SsgCache.Config.DEFAULT_MAX_AGE_MILLIS;
     private long maxEntrySizeBytes = SsgCache.Config.DEFAULT_MAX_SIZE_BYTES;
     private String cacheEntryKey = "${request.url}";
+    private boolean storeSoapFaults = false;
 
     public CacheStorageAssertion() {
         setTarget(TargetMessageType.RESPONSE);
@@ -122,6 +123,18 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
         this.cacheEntryKey = cacheEntryKey;
     }
 
+    /**
+     * Configures the assertion for storing or ignoring SOAP faults.
+     *
+     * @return true if SOAP faults are stored in this cache, false otherwise.
+     */
+    public boolean isStoreSoapFaults() {
+        return storeSoapFaults;
+    }
+
+    public void setStoreSoapFaults(boolean storeSoapFaults) {
+        this.storeSoapFaults = storeSoapFaults;
+    }
 
     //
     // Metadata

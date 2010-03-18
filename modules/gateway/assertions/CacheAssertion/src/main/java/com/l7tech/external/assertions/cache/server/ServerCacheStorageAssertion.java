@@ -61,8 +61,10 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
                     .maxAgeMillis(assertion.getMaxEntryAgeMillis())
                     .maxSizeBytes(assertion.getMaxEntrySizeBytes());
                 SsgCache cache = cacheManager.getCache(cacheConfig);
-                cache.store(key, messageBody, contentType.getFullValue());
-                logger.log(Level.FINE, "Stored to cache: " + key);
+                if (assertion.isStoreSoapFaults() || ! isSoapFault(messageToCache)) {
+                    cache.store(key, messageBody, contentType.getFullValue());
+                    logger.log(Level.FINE, "Stored to cache: " + key);
+                }
             } finally {
                 if (messageBody != null) messageBody.close();
             }
@@ -71,6 +73,14 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
                 new String[]{"Unable to store cached value: " + ExceptionUtils.getMessage(e)}, e);
         }
         return AssertionStatus.NONE;
+    }
+
+    private boolean isSoapFault(Message messageToCache) {
+        try {
+            return messageToCache.isSoap() && messageToCache.getSoapKnob().isFault();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

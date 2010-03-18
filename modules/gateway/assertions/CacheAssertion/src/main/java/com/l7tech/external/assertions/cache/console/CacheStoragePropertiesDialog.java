@@ -25,6 +25,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
     private SquigglyTextField maxEntryAgeField;
     private SquigglyTextField maxEntrySizeField;
     private SquigglyTextField cacheKeyField;
+    private JCheckBox dontCacheFaults;
 
     /** @noinspection ThisEscapedInObjectConstruction*/
     private final InputValidator validator = new InputValidator(this, TITLE);
@@ -109,6 +110,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         maxEntryAgeField.setText(Long.toString(ass.getMaxEntryAgeMillis() / 1000L));
         maxEntriesField.setText(Integer.toString(ass.getMaxEntries()));
         maxEntrySizeField.setText(Long.toString(ass.getMaxEntrySizeBytes()));
+        dontCacheFaults.setSelected(! ass.isStoreSoapFaults());
     }
 
     @Override
@@ -118,6 +120,7 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
         ass.setMaxEntrySizeBytes(Long.parseLong(maxEntrySizeField.getText()));
         ass.setCacheId(cacheIdField.getText());
         ass.setCacheEntryKey(cacheKeyField.getText());
+        ass.setStoreSoapFaults(! dontCacheFaults.isSelected());
         return ass;
     }
 }
