@@ -352,7 +352,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             _expressionStatusTextArea.setText("OK");
             _expressionStatusScrollPane.setBorder(null);
         } else {
-            ok = false;
             _expressionStatusLabel.setIcon(WARNING_ICON);
             _expressionStatusTextArea.setText(expressionStatus);
             _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
