@@ -54,10 +54,6 @@ public class ResourceFactoryRegistry implements InitializingBean {
         return factory;
     }
 
-    public Collection<ResourceFactory<?>> getResourceFactories() {
-        return null;    
-    }
-
     /**
      * Performs registration of the resource factories.
      */

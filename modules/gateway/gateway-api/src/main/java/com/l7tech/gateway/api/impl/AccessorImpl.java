@@ -144,7 +144,6 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
     //- PACKAGE
 
     static final String ID_SELECTOR = "id";
-    static final String NAME_SELECTOR = "name";
 
     AccessorImpl( final String url,
                   final String resourceUri,
@@ -171,20 +170,12 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         return timeout;
     }
 
-    Class<AO> getTypeClass() {
-        return typeClass;
-    }
-
     void require( final String description, final Object value ) throws AccessorException {
         if ( value == null ) throw new AccessorException( description + " is required" );        
     }
 
     String getNamespace() {
         return AccessorImpl.class.getPackage().getAnnotation(XmlSchema.class).namespace();
-    }
-
-    String buildActionUri( final String name ) {
-        return getNamespace() + "/" + name;
     }
 
     String buildResourceScopedActionUri( final String name ) {
@@ -232,7 +223,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
     //- PRIVATE
 
-    private final int DEFAULT_TIMEOUT = SyspropUtil.getInteger( "com.l7tech.gateway.api.operationTimeout", 300000 );
+    private static final int DEFAULT_TIMEOUT = SyspropUtil.getInteger( "com.l7tech.gateway.api.operationTimeout", 300000 );
 
     private final String url;
     private final String resourceUri;
