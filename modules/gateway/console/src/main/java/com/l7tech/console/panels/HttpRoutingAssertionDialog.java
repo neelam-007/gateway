@@ -4,10 +4,14 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
@@ -438,9 +442,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private Map<String, VariableMetadata> getVariablesSetByPredecessors() {
         if (assertionToUseInSearchForPredecessorVariables == null) {
-            return PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+            return SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
         } else {
-            return PolicyVariableUtils.getVariablesSetByPredecessors(assertionToUseInSearchForPredecessorVariables);
+            return SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertionToUseInSearchForPredecessorVariables);
         }
     }
 

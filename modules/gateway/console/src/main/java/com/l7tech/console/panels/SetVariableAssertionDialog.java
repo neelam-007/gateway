@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
@@ -83,8 +84,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         clearExpressionStatus();
 
         Set<String> vars = contextAssertion==null ?
-                PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
-                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
+                SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
+                SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
         _predecessorVariables = new TreeSet<String>(vars);
 
         // Populates data type combo box with supported data types.

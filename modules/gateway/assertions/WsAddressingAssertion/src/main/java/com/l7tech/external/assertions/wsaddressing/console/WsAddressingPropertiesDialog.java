@@ -1,22 +1,22 @@
 package com.l7tech.external.assertions.wsaddressing.console;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.PauseListener;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
-import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * Properties dialog for WS-Addressing assertion.
@@ -148,7 +148,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private boolean validateVariablePrefix() {
         return VariablePrefixUtil.validateVariablePrefix(
             variablePrefixTextField.getText(),
-            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
             assertion.getVariableSuffixes(),
             varPrefixStatusLabel);
     }

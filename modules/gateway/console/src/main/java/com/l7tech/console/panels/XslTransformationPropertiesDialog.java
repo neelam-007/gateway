@@ -3,19 +3,19 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -174,7 +174,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private boolean validateVariablePrefix() {
         return VariablePrefixUtil.validateVariablePrefix(
             messageVariablePrefixTextField.getText(),
-            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
             new String[] {XslTransformation.VARIABLE_NAME},
             prefixStatusLabel);
     }

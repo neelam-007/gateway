@@ -1,55 +1,50 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.action.ActionModel;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.UrlPanel;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.VariablePrefixUtil;
-import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.console.panels.UrlPanel;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.*;
 import com.sun.xacml.Policy;
-import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.PopupModel;
-import com.japisoft.xmlpad.UIAccessibility;
-import com.japisoft.xmlpad.editor.XMLEditor;
-import com.japisoft.xmlpad.action.ActionModel;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.io.*;
+import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
-import java.net.URLConnection;
-import java.net.URL;
-import java.security.AccessControlException;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -313,8 +308,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                         XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE, null));
 
         final Map<String, VariableMetadata> predecessorVariables =
-                (assertion.getParent() != null) ? PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
-                (getPreviousAssertion() != null)? PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
                 Collections.<String, VariableMetadata>emptyMap();
 
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());

@@ -6,27 +6,27 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.Iterator;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.logging.Logger;
+import java.util.Iterator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A dialog for editing a ThroughputQuota dialog.
@@ -222,7 +222,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private boolean validateVariablePrefix() {
         return VariablePrefixUtil.validateVariablePrefix(
             varPrefixField.getText(),
-            PolicyVariableUtils.getVariablesSetByPredecessors(subject).keySet(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(subject).keySet(),
             subject.getVariableSuffixes(),
             varPrefixStatusLabel);
     }

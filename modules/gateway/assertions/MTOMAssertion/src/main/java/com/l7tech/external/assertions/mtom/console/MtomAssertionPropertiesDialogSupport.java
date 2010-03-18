@@ -1,27 +1,23 @@
 package com.l7tech.external.assertions.mtom.console;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -45,8 +41,8 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
 
         final Map<String, VariableMetadata> predecessorVariables =
-                (assertion.getParent() != null) ? PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
-                (getPreviousAssertion() != null)? PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
                 Collections.<String, VariableMetadata>emptyMap();
 
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());

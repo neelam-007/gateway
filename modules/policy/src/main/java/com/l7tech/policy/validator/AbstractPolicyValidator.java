@@ -1,23 +1,17 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * A class for validating policies.
@@ -51,7 +45,25 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * Validates the specified assertion tree.
      */
     @Override
-    public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
+    public PolicyValidatorResult validate(final Assertion assertion, final PolicyType policyType, final Wsdl wsdl, final boolean soap, final AssertionLicense assertionLicense) throws InterruptedException {
+        try {
+            final AssertionTranslator at = policyFinder == null ? null : new IncludeAssertionDereferenceTranslator(policyFinder);
+            return CurrentAssertionTranslator.doWithAssertionTranslator(at, new Callable<PolicyValidatorResult>() {
+                @Override
+                public PolicyValidatorResult call() throws Exception {
+                    return validateWithCurrentAssertionTranslator(assertion, policyType, wsdl, soap, assertionLicense);
+                }
+            });
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected PolicyValidatorResult validateWithCurrentAssertionTranslator(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
         assertion.treeChanged();
 
         // where to collect the result

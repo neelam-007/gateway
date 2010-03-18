@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
@@ -25,8 +26,10 @@ import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
-import com.l7tech.objectmodel.*;
-import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
@@ -34,7 +37,6 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
@@ -263,16 +265,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             // Populates xml message source combo box, and selects according to assertion.
             xmlMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, "Default Response"));
 
-            final GuidBasedEntityManager<Policy> policyFinder = Registry.getDefault().getPolicyFinder();
-            IncludeAssertionDereferenceTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder);
-
-            Map<String, VariableMetadata> predecessorVariables;
-            try {
-                predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion, translator, false);
-            } catch (PolicyAssertionException e) {
-                predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
-                log.log(Level.WARNING, "Could not discover any variables set by any included policies");
-            }
+            Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
 
             final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
             for (String variableName: predecessorVariableNames) {
@@ -1307,7 +1300,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
         }
         try {
-            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
@@ -1332,7 +1325,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         // Check if hardware accel is known not to work with this xpath
         String convertedXpath = xpath;
         try {
-            final Set<String> variables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
             convertedXpath = fastXpath.getExpression();
             XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, buildXpathVariableFinder(variables));
@@ -1377,7 +1370,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         return VariablePrefixUtil.validateVariablePrefix(
             varPrefixField.getText(),
-            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
             suffixes,
             varPrefixStatusLabel);
     }

@@ -1,35 +1,38 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
-import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xpath.NoSuchXpathVariableException;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVariableFinder;
-import com.l7tech.xml.xpath.NoSuchXpathVariableException;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.sun.xacml.attr.DateTimeAttribute;
+import org.jaxen.JaxenException;
+import org.jaxen.XPathSyntaxException;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import org.jaxen.XPathSyntaxException;
-import org.jaxen.JaxenException;
-import org.w3c.dom.Document;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -480,8 +483,8 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         String error = null;
         try {
             final Map<String, VariableMetadata> predecessorVariables = assertion.getParent() != null ?
-                    PolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
-                    PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( builderDialog.getPreviousAssertion() );
+                    SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                    SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( builderDialog.getPreviousAssertion() );
 
             XpathUtil.compileAndEvaluate(testDocument, xpath, namespaces, buildXpathVariableFinder(predecessorVariables.keySet()));
         } catch ( XPathSyntaxException e) {

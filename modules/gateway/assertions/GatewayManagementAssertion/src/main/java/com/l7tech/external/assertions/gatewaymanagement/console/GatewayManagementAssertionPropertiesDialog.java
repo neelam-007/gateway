@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.policy.variable.PolicyVariableUtils;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -94,7 +94,7 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
 
         return VariablePrefixUtil.validateVariablePrefix(
             variablePrefixTextField.getText(),
-            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
             suffixes,
             varPrefixStatusLabel);
     }

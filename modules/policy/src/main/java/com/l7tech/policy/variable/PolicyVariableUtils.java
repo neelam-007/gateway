@@ -28,12 +28,7 @@ public final class PolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf( final Assertion assertion ) {
-        try {
-            return getVariablesSetByPredecessors(assertion, null, true);
-        } catch (PolicyAssertionException e) {
-            //can't happen
-            throw new IllegalStateException("PolicyAssertionException should not be thrown");
-        }
+        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), true);
     }
 
     /**
@@ -47,12 +42,7 @@ public final class PolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors( final Assertion assertion ) {
-        try {
-            return getVariablesSetByPredecessors(assertion, null, false);
-        } catch (PolicyAssertionException e) {
-            //can't happen
-            throw new IllegalStateException("PolicyAssertionException should not be thrown");
-        }
+        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), false);
     }
 
     /**
@@ -67,13 +57,12 @@ public final class PolicyVariableUtils {
      *                            variables
      * @return a map of all variables found in the policy up to and including the current assertion (if includedSelf is true)
      *         Never null.
-     * @throws PolicyAssertionException thrown if an include assertion cannot be dereferenced. Will never be thrown when
-     *                                  assertionTranslator is null
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors(
             final Assertion assertion,
             final AssertionTranslator assertionTranslator,
-            final boolean includeSelf) throws PolicyAssertionException {
+            final boolean includeSelf)
+    {
 
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
 
@@ -89,15 +78,20 @@ public final class PolicyVariableUtils {
                 if (ass.isEnabled() && ass instanceof SetsVariables) {
                     collectVariables((SetsVariables) ass, vars);
                 } else if (ass.isEnabled() && ass instanceof Include && assertionTranslator != null) {
-                    Assertion translated = assertionTranslator.translate(ass);
-                    assertionTranslator.translationFinished(ass);
-                    NewPreorderIterator newPreorderIterator = new NewPreorderIterator(translated, assertionTranslator);
-
-                    while (newPreorderIterator.hasNext()) {
-                        Assertion includedAssertion = newPreorderIterator.next();
-                        if(includedAssertion.isEnabled() && includedAssertion instanceof SetsVariables){
-                            collectVariables((SetsVariables)includedAssertion, vars);    
+                    try {
+                        Assertion translated = assertionTranslator.translate(ass);
+                        NewPreorderIterator newPreorderIterator = new NewPreorderIterator(translated, assertionTranslator);
+                        while (newPreorderIterator.hasNext()) {
+                            Assertion includedAssertion = newPreorderIterator.next();
+                            if(includedAssertion.isEnabled() && includedAssertion instanceof SetsVariables){
+                                collectVariables((SetsVariables)includedAssertion, vars);
+                            }
                         }
+                    } catch (PolicyAssertionException e) {
+                        if (logger.isLoggable(Level.FINE))
+                            logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+                    } finally {
+                        assertionTranslator.translationFinished(ass);
                     }
                 }
 
@@ -124,6 +118,17 @@ public final class PolicyVariableUtils {
      * @return The Set of variables names (case insensitive), may be empty but never null.
      */
     public static Set<String> getVariablesUsedBySuccessors( Assertion assertion ) {
+        return getVariablesUsedBySuccessors(assertion, CurrentAssertionTranslator.get());
+    }
+
+    /**
+     * Get the variables that are known to be used by successor assertions, using the specified AssertionTranslator to resolve Include assertions.
+     *
+     * @param assertion The assertion to process.
+     * @param assertionTranslator an AssertionTranslator to use, or null to avoid descending into Include assertions.
+     * @return The Set of variables names (case insensitive), may be empty but never null.
+     */
+    public static Set<String> getVariablesUsedBySuccessors( Assertion assertion, AssertionTranslator assertionTranslator ) {
         Set<String> vars = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
         if ( assertion != null ) {
@@ -135,7 +140,7 @@ public final class PolicyVariableUtils {
                     if (kid == assertion) {
                         seenMe = true;
                     } else if (seenMe) {
-                        simpleRecursiveGather(kid, vars);
+                        simpleRecursiveGather(kid, vars, assertionTranslator);
                     }
                 }
                 assertion = assertion.getParent();
@@ -145,33 +150,36 @@ public final class PolicyVariableUtils {
         return vars;
     }
 
-    private static void simpleRecursiveGather(Assertion kid, Set<String> vars) {
+    private static void simpleRecursiveGather(Assertion kid, Set<String> vars, AssertionTranslator assertionTranslator) {
         if (!kid.isEnabled())
             return;
+
         if (kid instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion) kid;
-            for (Iterator i = compositeAssertion.getChildren().iterator(); i.hasNext();) {
-                Assertion newKid = (Assertion) i.next();
-                simpleRecursiveGather(newKid, vars);
+            for (Assertion newKid : compositeAssertion.getChildren()) {
+                simpleRecursiveGather(newKid, vars, assertionTranslator);
             }
-        } else if (kid instanceof UsesVariables) {
+        }
+
+        if (kid instanceof Include && assertionTranslator != null) {
+            try {
+                Assertion translated = assertionTranslator.translate(kid);
+                NewPreorderIterator iterator = new NewPreorderIterator(translated, assertionTranslator);
+                while (iterator.hasNext()) {
+                    Assertion includedAssertion = iterator.next();
+                    simpleRecursiveGather(includedAssertion, vars, assertionTranslator);
+                }
+                assertionTranslator.translationFinished(kid);
+            } catch (PolicyAssertionException e) {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
+        if (kid instanceof UsesVariables) {
             UsesVariables usesVariables = (UsesVariables) kid;
             vars.addAll(Arrays.asList(usesVariables.getVariablesUsed()));
         }
-    }
-
-    /**
-     * Wraps SetsVariables.getVariablesSet() with a version that can optionally catch the VariableNameSyntaxException
-     * and replace it with an empty VariableMetadata array.
-     *
-     * @param sv the SetsVariables to query.  Required.
-     * @param ignoreNameSyntaxExceptions if false, this method will behave excactly the same as SetsVariables.getVariablesSet().
-     *                                   If true, this method will catch any VariableNameSyntaxException and translate it into an empty metadata array.
-     * @return the variables set by this object.  May be empty, but should not normally be null.
-     * @throws VariableNameSyntaxException if ignoreNameSyntaxExceptions was false and VariableNameSyntaxException was thrown.
-     */
-    public static VariableMetadata[] getVariablesSet(SetsVariables sv, boolean ignoreNameSyntaxExceptions) throws VariableNameSyntaxException {
-        return ignoreNameSyntaxExceptions ? getVariablesSetNoThrow(sv) : sv.getVariablesSet();
     }
 
     /**
