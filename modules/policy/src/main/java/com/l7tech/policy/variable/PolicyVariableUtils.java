@@ -3,15 +3,13 @@
  */
 package com.l7tech.policy.variable;
 
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
 
-import java.text.MessageFormat;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -148,6 +146,8 @@ public final class PolicyVariableUtils {
     }
 
     private static void simpleRecursiveGather(Assertion kid, Set<String> vars) {
+        if (!kid.isEnabled())
+            return;
         if (kid instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion) kid;
             for (Iterator i = compositeAssertion.getChildren().iterator(); i.hasNext();) {
