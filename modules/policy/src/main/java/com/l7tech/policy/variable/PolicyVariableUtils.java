@@ -169,10 +169,11 @@ public final class PolicyVariableUtils {
                     Assertion includedAssertion = iterator.next();
                     simpleRecursiveGather(includedAssertion, vars, assertionTranslator);
                 }
-                assertionTranslator.translationFinished(kid);
             } catch (PolicyAssertionException e) {
                 if (logger.isLoggable(Level.FINE))
                     logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+            } finally {
+                assertionTranslator.translationFinished(kid);
             }
         }
 
