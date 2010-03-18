@@ -89,7 +89,9 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
                 final PolicyImportContext context = new PolicyImportContext();
                 context.setProperties( properties );
                 context.setResource( ManagedObjectFactory.createResource() );
-                context.setPolicyReferenceInstructions( instructions );
+                if ( instructions != null && !instructions.isEmpty() ) {
+                    context.setPolicyReferenceInstructions( instructions );
+                }
 
                 context.getResource().setType( "policyexport" );
                 context.getResource().setContent( export );

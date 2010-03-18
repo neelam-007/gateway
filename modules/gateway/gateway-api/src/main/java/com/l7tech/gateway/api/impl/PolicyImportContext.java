@@ -42,7 +42,7 @@ public class PolicyImportContext extends ManagedObject {
     }
 
     @XmlElementWrapper(name="PolicyReferenceInstructions")
-    @XmlElement(name="PolicyReferenceInstruction")
+    @XmlElement(name="PolicyReferenceInstruction", required=true)
     public List<PolicyReferenceInstruction> getPolicyReferenceInstructions() {
         return policyReferenceInstructions;
     }

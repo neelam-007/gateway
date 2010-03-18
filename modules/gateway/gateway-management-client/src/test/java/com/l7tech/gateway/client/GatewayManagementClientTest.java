@@ -68,6 +68,16 @@ public class GatewayManagementClientTest {
     }
 
     @Test
+    public void testVersion() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{"-version"}, out, out );
+        int exitcode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitcode );
+        assertTrue( "Expected usage:\n"+output, output.startsWith( "Version " ));
+    }
+
+    @Test
     public void testInvalidCommand() {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
@@ -361,7 +371,13 @@ public class GatewayManagementClientTest {
         setResponse( "Service_ImportPolicy_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
-                new String[]{ "gateway", "import", "-type", "service", "-id", "17268736", "-in", policy },
+                new String[]{ "gateway", "import", "-type", "service", "-id", "17268736", "-in", policy,
+                    // Add one of each type of import instruction
+                    "-import", "accept", "IdProviderReference", "10231",               // Import assertions referencing the provider as-is
+                    "-import", "remove", "IdProviderReference", "10231",               // Do not import assertions referencing the provider
+                    "-import", "replace", "IdProviderReference", "10231", "23111",     // Replace references to the provider with the given id
+                    "-import", "rename", "IncludedPolicyReference", "13214", "NewName" // Rename the included policy fragment when importing
+                },
                 out,
                 out );
         int exitcode = gmc.run();

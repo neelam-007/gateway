@@ -79,11 +79,13 @@ public class DocumentReferenceProcessor {
                 continue; // already processed this resource    
             }
 
+            String documentSource;
             Document document;
             try {
+                documentSource = resolver.resolve(referenceUrl);
                 InputSource source = new InputSource();
                 source.setSystemId(referenceUrl);
-                source.setCharacterStream( new StringReader( resolver.resolve(referenceUrl) ) );
+                source.setCharacterStream( new StringReader( documentSource ) );
                 document = XmlUtil.parse( source, false );
             } catch ( SAXException se ) {
                 throw new CausedIOException("Error parsing document '"+referenceUrl+"'.", se);
@@ -114,7 +116,7 @@ public class DocumentReferenceProcessor {
                 throw new CausedIOException("Unable to resolve reference URI for base '"+referenceUrl+"'.", use);
             }
 
-            resources.put( referenceUrl, XmlUtil.nodeToString(document) );
+            resources.put( referenceUrl, documentSource );
         }
 
         return resources;

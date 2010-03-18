@@ -306,8 +306,9 @@ public class PolicyHelper {
 
         final PolicyValidationResult pvr = ManagedObjectFactory.createPolicyValidationResult();
         pvr.setStatus( status );
-        pvr.setPolicyValidationMessages( new ArrayList<PolicyValidationResult.PolicyValidationMessage>(messages) );
-
+        if ( !messages.isEmpty() ) {
+            pvr.setPolicyValidationMessages( new ArrayList<PolicyValidationResult.PolicyValidationMessage>(messages) );
+        }
         return pvr;
     }
 

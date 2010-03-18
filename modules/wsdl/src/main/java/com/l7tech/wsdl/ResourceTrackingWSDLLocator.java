@@ -348,7 +348,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 Document document = db.parse(source);
                 if (stripSchemas && SchemaUtil.isSchema(document)) {
                     wsdl = NOOP_WSDL;
-                } else if (stripDoctypes) {
+                } else if (stripDoctypes && document.getDoctype() != null) {
                     wsdl = stripExternalEntities(document);
                 }
             }

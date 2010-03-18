@@ -115,6 +115,10 @@ class ResourceHelper {
                     throw new ResourceFactory.InvalidResourceException(
                             ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
                             "missing rootUrl for resource with tag '"+tag+"'");
+                } else if ( rootUrl != null && (resources.isEmpty() || !rootUrl.equals(resources.get( 0 ).getSourceUrl())) ) {
+                    throw new ResourceFactory.InvalidResourceException(
+                            ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,
+                            "rootUrl does not match any resource for tag '"+tag+"'");
                 }
             } else if ( rootUrl != null && resourceResolver != null ) {
                 fetchResources( resources, rootUrl, resourceResolver );
@@ -177,6 +181,8 @@ class ResourceHelper {
             if ( namespace != null ) {
                 if ( XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(namespace) ) {
                     type = ResourceHelper.SCHEMA_TYPE;
+                } else if ( NAMESPACE_WSDL.equals(namespace) ) {
+                    type = ResourceHelper.WSDL_TYPE;
                 }
             }                                                      
         }
@@ -185,6 +191,8 @@ class ResourceHelper {
     }
 
     //- PRIVATE
+
+    private static final String NAMESPACE_WSDL = "http://schemas.xmlsoap.org/wsdl/";
 
     private static final XMLReporter SILENT_REPORTER = new XMLReporter() {
         @Override

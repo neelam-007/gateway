@@ -20,9 +20,12 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.PolicyValidatorStub;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.EntityManagerStub;
@@ -44,6 +47,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
+import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -56,13 +60,16 @@ import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.net.MalformedURLException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import javax.xml.soap.SOAPConstants;
-
 
 /**
  * Test the GatewayManagementAssertion.
@@ -176,7 +183,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
                 "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services</w:ResourceURI> \n" +
                 "    <w:SelectorSet>\n" +
-                "      <w:Selector Name=\"id\">1</w:Selector> \n" +
+                "      <w:Selector Name=\"id\">2</w:Selector> \n" +
                 "    </w:SelectorSet>\n" +
                 "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
                 "  </s:Header>\n" +
@@ -190,8 +197,40 @@ public class ServerGatewayManagementAssertionTest {
         final Element service = XmlUtil.findExactlyOneChildElementByName(serviceContainer, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
         final Element name = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "Name");
 
-        assertEquals("Service name", "Test Service", XmlUtil.getTextValue(name));
+        assertEquals("Service name", "Test Service 2", XmlUtil.getTextValue(name));
     }
+
+    @Test
+    public void testGetInvalidSelector() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                "  <s:Header>\n" +
+                "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                "    <a:ReplyTo> \n" +
+                "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                "    </a:ReplyTo> \n" +
+                "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services</w:ResourceURI> \n" +
+                "    <w:SelectorSet>\n" +
+                "      <w:Selector Name=\"unknown-selector\">1</w:Selector> \n" +
+                "    </w:SelectorSet>\n" +
+                "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                "  </s:Header>\n" +
+                "  <s:Body/> \n" +
+                "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element soapFault = XmlUtil.findExactlyOneChildElementByName(soapBody, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Fault");
+        final Element code = XmlUtil.findExactlyOneChildElementByName(soapFault, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Code");
+        final Element subcode = XmlUtil.findExactlyOneChildElementByName(code, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
+        final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+
+        assertEquals("SOAP Fault value", "wsman:InvalidSelectors", XmlUtil.getTextValue(value));    }
 
     @Test
     public void testCreateClusterProperty() throws Exception {
@@ -211,7 +250,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    &lt;/wsp:All&gt;\n" +
                 "&lt;/wsp:Policy&gt;\n" +
                 "</Resource></ResourceSet></Resources></Service>";
-        String expectedId = "2";
+        String expectedId = "3";
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -281,6 +320,69 @@ public class ServerGatewayManagementAssertionTest {
         final Element value = XmlUtil.findExactlyOneChildElementByName(clusterProperty, NS_GATEWAY_MANAGEMENT, "Value");
 
         assertEquals("Property value", "value2", XmlUtil.getTextValue(value));
+    }
+
+    @Test
+    public void testPutService() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/01/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Service id=\"2\" version=\"1\">\n" +
+                "            <l7:ServiceDetail id=\"2\" version=\"1\">\n" +
+                "                <l7:Name>Test Service 2</l7:Name>\n" +
+                "                <l7:Enabled>true</l7:Enabled>\n" +
+                "                <l7:ServiceMappings>\n" +
+                "                    <l7:HttpMapping>\n" +
+                "                        <l7:Verbs>\n" +
+                "                            <l7:Verb>POST</l7:Verb>\n" +
+                "                        </l7:Verbs>\n" +
+                "                    </l7:HttpMapping>\n" +
+                "                    <l7:SoapMapping>\n" +
+                "                        <l7:Lax>false</l7:Lax>\n" +
+                "                    </l7:SoapMapping>\n" +
+                "                </l7:ServiceMappings>\n" +
+                "                <l7:Properties>\n" +
+                "                    <l7:Property key=\"policyRevision\">\n" +
+                "                        <l7:LongValue>0</l7:LongValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"wssProcessingEnabled\">\n" +
+                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"soap\">\n" +
+                "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"internal\">\n" +
+                "                        <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "                    </l7:Property>\n" +
+                "                </l7:Properties>\n" +
+                "            </l7:ServiceDetail>\n" +
+                "            <l7:Resources>\n" +
+                "                <l7:ResourceSet tag=\"policy\">\n" +
+                "                    <l7:Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                "    &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;</l7:Resource>\n" +
+                "                </l7:ResourceSet>\n" +
+                "                <l7:ResourceSet\n" +
+                "                    rootUrl=\"http://localhost:8080/test.wsdl\" tag=\"wsdl\">\n" +
+                "                    <l7:Resource\n" +
+                "                        sourceUrl=\"http://localhost:8080/test.wsdl\" type=\"wsdl\">&lt;wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/&gt;</l7:Resource>\n" +
+                "                </l7:ResourceSet>\n" +
+                "            </l7:Resources>\n" +
+                "        </l7:Service>" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element service = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Service");
+        final Element serviceDetail = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
+        final Element serviceDetailName = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Service id", "2", service.getAttribute( "id" ));
+        assertEquals("Service version", "1", service.getAttribute( "version" ));
+        assertEquals("Service detail id", "2", serviceDetail.getAttribute( "id" ));
+        assertEquals("Service detail version", "1", serviceDetail.getAttribute( "version" ));
+        assertEquals("Service detail name", "Test Service 2", XmlUtil.getTextValue(serviceDetailName));
     }
 
     @Test
@@ -487,8 +589,156 @@ public class ServerGatewayManagementAssertionTest {
             assertTrue( "Enumeration not empty " + resourceUri, items.hasChildNodes() );
             XmlUtil.findExactlyOneChildElementByName(pullResponse, NS_WS_ENUMERATION, "EndOfSequence");
         }
+    }
 
+    @Test
+    public void testPolicyExport() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/policies/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
 
+        final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/policies/ExportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element policyExportResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyExportResult");
+        final Element resource = XmlUtil.findExactlyOneChildElementByName(policyExportResult, NS_GATEWAY_MANAGEMENT, "Resource");
+
+        assertEquals( "resource type", "policyexport", resource.getAttribute("type"));
+        assertTrue( "resource content is export", XmlUtil.getTextValue(resource).contains( "<exp:Export " ));
+    }
+
+    @Test
+    public void testPolicyImport() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References/&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:AuditAssertion/&gt;\n" +
+                        "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource></PolicyImportContext></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+    }
+
+    @Test
+    public void testPolicyValidate() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/policies/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+
+        {
+            policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
+            policyValidator.setWarnings( Collections.<PolicyValidatorResult.Warning>emptyList() );
+
+            final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/policies/ValidatePolicy", message );
+
+            final Element soapBody = SoapUtil.getBodyElement(result);
+            final Element validationResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyValidationResult");
+            final Element validationStatus = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationStatus");
+            final Element validationMessages = XmlUtil.findFirstChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationMessages");
+
+            assertEquals("Validation status", "OK", XmlUtil.getTextValue(validationStatus));
+            assertNull("Validation messages",validationMessages);
+        }
+        {
+            policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
+            policyValidator.setWarnings( Arrays.asList(
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message", null )
+            ) );
+
+            final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/policies/ValidatePolicy", message );
+
+            final Element soapBody = SoapUtil.getBodyElement(result);
+            final Element validationResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyValidationResult");
+            final Element validationStatus = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationStatus");
+            final Element validationMessages = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationMessages");
+            final Element validationMessage = XmlUtil.findExactlyOneChildElementByName(validationMessages, NS_GATEWAY_MANAGEMENT, "ValidationMessage");
+            final Element validationWarning = XmlUtil.findExactlyOneChildElementByName(validationMessage, NS_GATEWAY_MANAGEMENT, "Message");
+
+            assertEquals("Validation status", "Warning", XmlUtil.getTextValue(validationStatus));
+            assertEquals("Validation warning message", "Test warning message", XmlUtil.getTextValue(validationWarning));
+        }
+        {
+            policyValidator.setErrors( Arrays.asList(
+                    new PolicyValidatorResult.Error( Arrays.asList( 0 ), 1, 1, "Test error message", null )
+            ) );
+            policyValidator.setWarnings( Arrays.asList(
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message 1", null ),
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message 2", null )
+            ) );
+
+            final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/policies/ValidatePolicy", message );
+
+            final Element soapBody = SoapUtil.getBodyElement(result);
+            final Element validationResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyValidationResult");
+            final Element validationStatus = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationStatus");
+            final Element validationMessages = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationMessages");
+            final List<Element> validationMessageElements = XmlUtil.findChildElementsByName( validationMessages, NS_GATEWAY_MANAGEMENT, "ValidationMessage" );
+
+            assertEquals("Validation status", "Error", XmlUtil.getTextValue(validationStatus));
+            assertEquals("Validation messages size", 3, validationMessageElements.size());
+        }
+    }
+
+    @Test
+    public void testServicePolicyExport() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services/ExportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d521f4b4-ef2a-4381-b11c-fa72eb760a99</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/services/ExportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element policyExportResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyExportResult");
+        final Element resource = XmlUtil.findExactlyOneChildElementByName(policyExportResult, NS_GATEWAY_MANAGEMENT, "Resource");
+
+        assertEquals( "resource type", "policyexport", resource.getAttribute("type"));
+        assertTrue( "resource content is export", XmlUtil.getTextValue(resource).contains( "<exp:Export " ));
+    }
+
+    @Test
+    public void testServicePolicyImport() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References/&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;L7p:FalseAssertion/&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource></PolicyImportContext></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/services/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+    }
+
+    @Test
+    public void testServicePolicyValidate() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/01/gateway-management/services/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/services</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
+
+        policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
+        policyValidator.setWarnings( Collections.<PolicyValidatorResult.Warning>emptyList() );
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/01/gateway-management/services/ValidatePolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element validationResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyValidationResult");
+        final Element validationStatus = XmlUtil.findExactlyOneChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationStatus");
+        final Element validationMessages = XmlUtil.findFirstChildElementByName(validationResult, NS_GATEWAY_MANAGEMENT, "ValidationMessages");
+
+        assertEquals("Validation status", "OK", XmlUtil.getTextValue(validationStatus));
+        assertNull("Validation messages",validationMessages);
     }
 
     @Test
@@ -608,12 +858,14 @@ public class ServerGatewayManagementAssertionTest {
     //- PRIVATE
 
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    private static final PolicyValidatorStub policyValidator = new PolicyValidatorStub();
     private static final String NS_WS_TRANSFER = "http://schemas.xmlsoap.org/ws/2004/09/transfer";
     private static final String NS_WS_ADDRESSING = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
     private static final String NS_WS_ENUMERATION = "http://schemas.xmlsoap.org/ws/2004/09/enumeration";
     private static final String NS_WS_MANAGEMENT = "http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd";
     private static final String NS_WS_MANAGEMENT_IDENTITY = "http://schemas.dmtf.org/wbem/wsman/identity/1/wsmanidentity.xsd";
     private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/01/gateway-management";
+    private static final String WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>";
 
     private static final String[] RESOURCE_URIS = new String[]{
         "http://ns.l7tech.com/2010/01/gateway-management/clusterProperties",
@@ -666,7 +918,15 @@ public class ServerGatewayManagementAssertionTest {
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
         beanFactory.addBean( "serviceManager", new MockServiceManager(
-                service(1, "Test Service", false, false)));
+                service(1, "Test Service 1", false, false, null, null),
+                service(2, "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
+        beanFactory.addBean( "policyValidator", policyValidator );
+        beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
+            @Override
+            public boolean isWsdlUpdatePermitted( final PublishedService service, final boolean resetWsdlXml ) throws UpdateException {
+                return true;
+            }
+        } );
     }
 
     private static TrustedCert cert( final long oid, final String name, final X509Certificate x509Certificate ) {
@@ -740,12 +1000,20 @@ public class ServerGatewayManagementAssertionTest {
         return entry;
     }
 
-    private static PublishedService service( final long oid, final String name, final boolean disabled, final boolean soap ) {
+    private static PublishedService service( final long oid, final String name, final boolean disabled, final boolean soap, final String wsdlUrl, final String wsdlXml ) {
         final PublishedService service = new PublishedService();
         service.setOid( oid );
         service.setName( name );
+        service.getPolicy().setName( "Policy for " + name + " (#" + oid + ")" );
+        service.getPolicy().setGuid( UUID.randomUUID().toString() );
         service.setDisabled( disabled );
         service.setSoap( soap );
+        try {
+            service.setWsdlUrl( wsdlUrl );
+        } catch ( MalformedURLException e ) {
+            throw ExceptionUtils.wrap( e );
+        }
+        service.setWsdlXml( wsdlXml );
         return service;
     }
 
