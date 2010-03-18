@@ -50,6 +50,12 @@ public abstract class Assertion implements Cloneable, Serializable {
         this.ordinal = 1;
     }
 
+    /**
+     * This will return null when an assertion is first dropped into the policy editor. This is important for assertions which
+     * show their dialog when first dropped into the policy editor in particular when the assertion needs to find
+     * variables set from predecessor assertions.
+     * @return parent assertion. May be null
+     */
     public CompositeAssertion getParent() {
         return parent;
     }

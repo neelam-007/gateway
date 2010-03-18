@@ -25,10 +25,8 @@ import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SpeedIndicator;
 import com.l7tech.gui.widgets.SquigglyField;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
@@ -264,7 +262,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
             // Populates xml message source combo box, and selects according to assertion.
             xmlMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, "Default Response"));
-            final Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+
+            final GuidBasedEntityManager<Policy> policyFinder = Registry.getDefault().getPolicyFinder();
+            IncludeAssertionDereferenceTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder);
+
+            Map<String, VariableMetadata> predecessorVariables;
+            try {
+                predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion, translator, false);
+            } catch (PolicyAssertionException e) {
+                predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+                log.log(Level.WARNING, "Could not discover any variables set by any included policies");
+            }
+
             final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
             for (String variableName: predecessorVariableNames) {
                 if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {

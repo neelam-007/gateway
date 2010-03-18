@@ -3,12 +3,12 @@
  */
 package com.l7tech.policy.variable;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -19,26 +19,23 @@ import java.util.logging.Level;
 public final class PolicyVariableUtils {
     private static final Logger logger = Logger.getLogger(PolicyVariableUtils.class.getName());
 
+    /**
+     * Get the variables (that may be) set before this assertions runs including those the supplied assertion sets.
+     *
+     * <p>The returned Map keys are in the correct case, and the Map is case
+     * insensitive.</p>
+     *
+     * @param assertion The assertion to process.
+     * @return The Map of names to VariableMetadata, may be empty but never null.
+     * @see VariableMetadata
+     */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf( final Assertion assertion ) {
-        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
-        if ( assertion != null ) {
-            Assertion ancestor = assertion.getPath()[0];
-            for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
-                Assertion ass = (Assertion) i.next();
-                if (ass instanceof SetsVariables) {
-                    SetsVariables sv = (SetsVariables)ass;
-                    for (VariableMetadata meta : getVariablesSetNoThrow(sv)) {
-                        String name = meta.getName();
-                        if (vars.containsKey(name)) {
-                            vars.remove(name);  // So that case change in name will cause map key to be updated as well.
-                        }
-                        vars.put(name, meta);
-                    }
-                }
-                if (ass == assertion) break; // Can't use variables of any subsequent assertion
-            }
+        try {
+            return getVariablesSetByPredecessors(assertion, null, true);
+        } catch (PolicyAssertionException e) {
+            //can't happen
+            throw new IllegalStateException("PolicyAssertionException should not be thrown");
         }
-        return vars;
     }
 
     /**
@@ -52,25 +49,74 @@ public final class PolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors( final Assertion assertion ) {
+        try {
+            return getVariablesSetByPredecessors(assertion, null, false);
+        } catch (PolicyAssertionException e) {
+            //can't happen
+            throw new IllegalStateException("PolicyAssertionException should not be thrown");
+        }
+    }
+
+    /**
+     * Get the variables (that may be) set before this assertions runs. Optionally include variables set by the
+     * supplied assertion.
+     * <p/>
+     * The returned Map keys are in the correct case, and the Map is case insensitive.
+     *
+     * @param assertion           Assertion to collect predecessor variables for
+     * @param assertionTranslator AssertionTranslator used to dereference include assertions to obtain the included assertions
+     * @param includeSelf         boolean if true, then the variables set by the current assertion will be included in the returned
+     *                            variables
+     * @return a map of all variables found in the policy up to and including the current assertion (if includedSelf is true)
+     *         Never null.
+     * @throws PolicyAssertionException thrown if an include assertion cannot be dereferenced. Will never be thrown when
+     *                                  assertionTranslator is null
+     */
+    public static Map<String, VariableMetadata> getVariablesSetByPredecessors(
+            final Assertion assertion,
+            final AssertionTranslator assertionTranslator,
+            final boolean includeSelf) throws PolicyAssertionException {
+
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
-        if ( assertion != null ) {
-            Assertion ancestor = assertion.getPath()[0];
-            for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
+
+        if (assertion != null) {
+            Assertion ancestor = assertion.getPath()[0];//get the root assertion, all paths have the same root
+
+            for (Iterator i = ancestor.preorderIterator(); i.hasNext();) {
                 Assertion ass = (Assertion) i.next();
-                if (ass == assertion) break; // Can't use our own variables or those of any subsequent assertion
+
+                if (ass == assertion && !includeSelf)
+                    break; // Can't use our own variables or those of any subsequent assertion
+
                 if (ass.isEnabled() && ass instanceof SetsVariables) {
-                    SetsVariables sv = (SetsVariables)ass;
-                    for (VariableMetadata meta : getVariablesSetNoThrow(sv)) {
-                        String name = meta.getName();
-                        if (vars.containsKey(name)) {
-                            vars.remove(name);  // So that case change in name will cause map key to be updated as well.
+                    collectVariables((SetsVariables) ass, vars);
+                } else if (ass.isEnabled() && ass instanceof Include && assertionTranslator != null) {
+                    Assertion translated = assertionTranslator.translate(ass);
+                    assertionTranslator.translationFinished(ass);
+                    NewPreorderIterator newPreorderIterator = new NewPreorderIterator(translated, assertionTranslator);
+
+                    while (newPreorderIterator.hasNext()) {
+                        Assertion includedAssertion = newPreorderIterator.next();
+                        if(includedAssertion.isEnabled() && includedAssertion instanceof SetsVariables){
+                            collectVariables((SetsVariables)includedAssertion, vars);    
                         }
-                        vars.put(name, meta);
                     }
                 }
+
+                if (ass == assertion) break; // Can't use variables of any subsequent assertion
             }
         }
-        return vars;
+       return vars;
+    }
+
+    private static void collectVariables(SetsVariables setsVariables, Map<String, VariableMetadata> vars){
+        for (VariableMetadata meta : getVariablesSetNoThrow(setsVariables)) {
+            String name = meta.getName();
+            if (vars.containsKey(name)) {
+                vars.remove(name);  // So that case change in name will cause map key to be updated as well.
+            }
+            vars.put(name, meta);
+        }
     }
 
     /**
