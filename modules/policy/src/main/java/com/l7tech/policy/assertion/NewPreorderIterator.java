@@ -16,7 +16,7 @@ import java.io.IOException;
 /**
  * @author alex
  */
-public class NewPreorderIterator implements Iterator {
+public class NewPreorderIterator implements Iterator<Assertion> {
     private final AssertionTranslator translator;
     private final Iterator delegate;
 
@@ -44,7 +44,7 @@ public class NewPreorderIterator implements Iterator {
             this.delegate = Arrays.asList(translated).iterator();
             return;
         }
-        final List results = new ArrayList();
+        final List<Assertion> results = new ArrayList<Assertion>();
         results.add(root);
         collect(comp, results);
         this.delegate = results.iterator();
@@ -71,17 +71,17 @@ public class NewPreorderIterator implements Iterator {
     }
 
     private void collect(final CompositeAssertion root,
-                         final List results)
+                         final List<Assertion> results)
             throws PolicyAssertionException
     {
-        final List kids = root.getChildren();
+        final List<Assertion> kids = root.getChildren();
         for (int i = 0; i < kids.size(); i++) {
-            Assertion kid = (Assertion) kids.get(i);
+            Assertion kid = kids.get(i);
 
             // Translate if necessary
             final Assertion translated = translator == null ? kid : translator.translate(kid);
 
-            // Reparent
+            // Re-parent
             translated.setParent(root);
             kids.set(i, translated);
 
@@ -91,18 +91,23 @@ public class NewPreorderIterator implements Iterator {
                 collect((CompositeAssertion) translated, results);
             }
 
-            translator.translationFinished(kid);
+            if ( translator != null ) {
+                translator.translationFinished(kid);
+            }
         }
     }
 
+    @Override
     public boolean hasNext() {
         return delegate.hasNext();
     }
 
+    @Override
     public Assertion next() {
         return last = (Assertion) delegate.next();
     }
 
+    @Override
     public void remove() {
         final CompositeAssertion parent = last.getParent();
         if (parent == null) throw new UnsupportedOperationException("Can't remove root");

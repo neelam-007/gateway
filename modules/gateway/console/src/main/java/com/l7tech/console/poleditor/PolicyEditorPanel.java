@@ -309,9 +309,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             throw new RuntimeException("Unable to find policy", e);
         }
 
-		final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
+            final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
             callable = new Callable<PolicyValidatorResult>() {
                 @Override
                 public PolicyValidatorResult call() throws Exception {
@@ -726,38 +726,40 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
+                    final PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
-                    if (getPublishedService() != null) {
-                        ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
-                        AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.
-                                validatePolicy(policyXml, type, soap, wsdl, includedFragments); //TODO fix this in a better way, but for now pass null for the WSDL
-                        PolicyValidatorResult result2 = null;
-                        double delay = DELAY_INITIAL;
+                    final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+                    final AsyncAdminMethods.JobId<PolicyValidatorResult> serverValidationJobId =
+                            serviceAdmin.validatePolicy(policyXml, type, soap, wsdl, includedFragments);
+                    double delay = DELAY_INITIAL;
+                    Thread.sleep((long)delay);
+                    PolicyValidatorResult serverValidationResult = null;
+                    while ( serverValidationResult == null ) {
+                        final String status = serviceAdmin.getJobStatus(serverValidationJobId);
+                        if ( status == null ) {
+                            log.warning("Server could not find our policy validation job ID");
+                            break;
+                        }
+                        if (status.startsWith("i")) {
+                            serverValidationResult = serviceAdmin.getJobResult(serverValidationJobId).result;
+                            if ( serverValidationResult == null ) {
+                                log.warning("Server returned a null job result");
+                                break;
+                            }
+                        }
+                        delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
                         Thread.sleep((long)delay);
-                        while (result2 == null) {
-                            String status = serviceAdmin.getJobStatus(result2Job);
-                            if (status == null)
-                                throw new IllegalStateException("Server could not find our policy validation job ID");
-                            if (status.startsWith("i")) {
-                                result2 = serviceAdmin.getJobResult(result2Job).result;
-                                if (result2 == null)
-                                    throw new RuntimeException("Server returned a null job result");
-                            }
-                            delay = delay >= DELAY_CAP ? DELAY_CAP : delay * DELAY_MULTIPLIER;
-                            Thread.sleep((long)delay);
+                    }
+
+                    if ( serverValidationResult != null ) {
+                        for ( final PolicyValidatorResult.Error error : serverValidationResult.getErrors() ) {
+                            result.addError( error );
                         }
-                        if (result2.getErrorCount() > 0) {
-                            for (Object o : result2.getErrors()) {
-                                result.addError((PolicyValidatorResult.Error)o);
-                            }
-                        }
-                        if (result2.getWarningCount() > 0) {
-                            for (Object o : result2.getWarnings()) {
-                                result.addWarning((PolicyValidatorResult.Warning)o);
-                            }
+                        for ( final PolicyValidatorResult.Warning warning : serverValidationResult.getWarnings() ) {
+                            result.addWarning( warning );
                         }
                     }
+
                     return result;
                 }
             };

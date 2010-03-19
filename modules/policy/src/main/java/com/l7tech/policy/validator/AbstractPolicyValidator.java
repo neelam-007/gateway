@@ -47,8 +47,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
     @Override
     public PolicyValidatorResult validate(final Assertion assertion, final PolicyType policyType, final Wsdl wsdl, final boolean soap, final AssertionLicense assertionLicense) throws InterruptedException {
         try {
-            final AssertionTranslator at = policyFinder == null ? null : new IncludeAssertionDereferenceTranslator(policyFinder);
-            return CurrentAssertionTranslator.doWithAssertionTranslator(at, new Callable<PolicyValidatorResult>() {
+            return CurrentAssertionTranslator.doWithAssertionTranslator(getAssertionTranslator(), new Callable<PolicyValidatorResult>() {
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     return validateWithCurrentAssertionTranslator(assertion, policyType, wsdl, soap, assertionLicense);
@@ -66,29 +65,44 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
     protected PolicyValidatorResult validateWithCurrentAssertionTranslator(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
         assertion.treeChanged();
 
-        // where to collect the result
-        PolicyValidatorResult result = new PolicyValidatorResult();
-        PolicyPathResult path;
-        try {
-            //we'll pre-process for any include fragments errors, if there are errors then we'll return the list of errors
-            //back to the GUI
-            result = preProcessIncludeFragments(assertion);
+        //we'll pre-process for any include fragments errors, if there are errors then we'll return the list of errors
+        //back to the GUI
+        PolicyValidatorResult result = preProcessIncludeFragments(assertion);
 
-            //if contains at least one error, report it to GUI
-            if ( !result.getErrors().isEmpty() ) {
-                return result;
-            }
-
-            path = pathBuilderFactory.makePathBuilder().generate(assertion);
-        } catch (PolicyAssertionException e) {
-            result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+        //if contains at least one error, report it to GUI
+        if ( !result.getErrors().isEmpty() ) {
             return result;
         }
 
-        for ( AssertionPath assertionPath : path.paths()) {
-            validatePath(assertionPath, policyType, wsdl, soap, assertionLicense, result);
-        }
+        // perform main validation
+        doValidation( assertion, policyType, wsdl, soap, assertionLicense, result );
+
         return result;
+    }
+
+    protected AssertionTranslator getAssertionTranslator() {
+        return policyFinder == null ? null : new IncludeAssertionDereferenceTranslator(policyFinder);
+
+    }
+
+    protected void doValidation( final Assertion assertion,
+                                 final PolicyType policyType,
+                                 final Wsdl wsdl,
+                                 final boolean soap,
+                                 final AssertionLicense assertionLicense,
+                                 final PolicyValidatorResult result ) throws InterruptedException {
+        PolicyPathResult path = null;
+        try {
+            path = pathBuilderFactory.makePathBuilder().generate(assertion);
+        } catch ( PolicyAssertionException e) {
+            result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+        }
+
+        if ( path != null ) {
+            for ( final AssertionPath assertionPath : path.paths() ) {
+                validatePath(assertionPath, policyType, wsdl, soap, assertionLicense, result);
+            }
+        }
     }
 
     /**

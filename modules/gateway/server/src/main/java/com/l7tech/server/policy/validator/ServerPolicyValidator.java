@@ -95,16 +95,46 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
 
-    public ServerPolicyValidator(GuidBasedEntityManager<Policy> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
+                                  final PolicyPathBuilderFactory pathBuilderFactory ) {
         super(policyFinder, pathBuilderFactory);
     }
 
     @Override
-    public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) {
-        Assertion[] ass = ap.getPath();
+    protected void doValidation( final Assertion assertion,
+                                 final PolicyType policyType,
+                                 final Wsdl wsdl,
+                                 final boolean soap,
+                                 final AssertionLicense assertionLicense,
+                                 final PolicyValidatorResult result ) throws InterruptedException {
+        if ( policyType.isServicePolicy() ) {
+            // Full path validation
+            super.doValidation( assertion, policyType, wsdl, soap, assertionLicense, result );
+        } else {
+            // Assertion validation only
+            try {
+                final Iterator<Assertion> assertions = assertion.preorderIterator( getAssertionTranslator() );
+                while ( assertions.hasNext() ) {
+                    final Assertion as = assertions.next();
+                    if (as.isEnabled()) validateAssertion( as, null, result, null );
+                }
+            } catch ( PolicyAssertionException e) {
+                result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+            }
+        }
+    }
+
+    @Override
+    public void validatePath( final AssertionPath path,
+                              final PolicyType policyType,
+                              final Wsdl wsdl,
+                              final boolean soap,
+                              final AssertionLicense assertionLicense,
+                              final PolicyValidatorResult result ) {
+        Assertion[] ass = path.getPath();
         PathContext pathContext = new PathContext();
         for (Assertion as : ass) {
-            if (as.isEnabled()) validateAssertion(as, pathContext, r, ap);
+            if (as.isEnabled()) validateAssertion( as, pathContext, result, path );
         }
     }
 
@@ -112,37 +142,40 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
      * Validate the specific assertion.
      * Precondition: the assertion "a" must have been pre-checked to be enabled.
      * @see {@link com.l7tech.server.policy.validator.ServerPolicyValidator#validatePath}
-     * @param a: the assertion to be validated.
-     * @param pathContext: the assertion path context.
-     * @param r: storing the validation result.
-     * @param ap: the assertion path containing the assertion, "a".
+     * @param assertion: the assertion to be validated.
+     * @param pathContext: the assertion path context (May be null)
+     * @param result: storing the validation result.
+     * @param path: the assertion path containing the given assertion (May be null)
      */
     @SuppressWarnings(value = "fallthrough")
-    private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap) {
-        final String targetName = AssertionUtils.getTargetName(a);
-        if (a instanceof IdentityAssertion) {
-            final IdentityAssertion identityAssertion = (IdentityAssertion)a;
+    private void validateAssertion( final Assertion assertion,
+                                    final PathContext pathContext,
+                                    final PolicyValidatorResult result,
+                                    final AssertionPath path ) {
+        final String targetName = AssertionUtils.getTargetName( assertion );
+        if ( assertion instanceof IdentityAssertion) {
+            final IdentityAssertion identityAssertion = (IdentityAssertion) assertion;
             int idStatus = getIdentityStatus(identityAssertion);
             switch (idStatus) {
                 case PROVIDER_NOT_EXIST:
-                    r.addError(new PolicyValidatorResult.Error(a,
-                      ap,
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                      path,
                       "The corresponding identity provider does not exist any more. " +
                       "Please remove the assertion from the policy.",
                       null));
                     break;
                 case ID_NOT_EXIST:
-                    r.addError(new PolicyValidatorResult.Error(a,
-                      ap,
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                      path,
                       "The corresponding identity cannot be found. " +
                       "Please remove the assertion from the policy.",
                       null));
                     break;
                 case ID_FIP_NOCERT:
-                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
                     // fall through to the rest of the samlonly handling
                 case ID_FIP:
-                    { // scope
+                    if ( pathContext != null ) {
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (credSrc instanceof RequireWssSaml ||
@@ -155,8 +188,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                             }
                         }
                         if(!foundUsableCredSource) {
-                            r.addError(new PolicyValidatorResult.Error(a,
-                              ap,
+                            result.addError(new PolicyValidatorResult.Error( assertion,
+                              path,
                               "This identity cannot authenticate with the " +
                               "type of credential " +
                               "source specified.",
@@ -165,10 +198,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     }
                     break;
                 case ID_SAMLONLY_NOCERT:
-                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
                     // fall through to the rest of the samlonly handling
                 case ID_SAMLONLY:
-                    { // scope
+                    if ( pathContext != null ) {
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (credSrc instanceof RequireWssSaml || credSrc instanceof SslAssertion) {
@@ -177,18 +210,18 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                             }
                         }
                         if(!foundUsableCredSource) {
-                            r.addError(new PolicyValidatorResult.Error(a,
-                              ap,
+                            result.addError(new PolicyValidatorResult.Error( assertion,
+                              path,
                               "This identity can only authenticate with a SAML token or SSL Client Certificate but another type of credential source is specified.",
                               null));
                         }
                     }
                     break;
                 case ID_X509ONLY_NOCERT:
-                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
                     // fall through to the rest of the x509only handling
                 case ID_X509ONLY:
-                    { // scope
+                    if ( pathContext != null ) {
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (isX509CredentialSource(credSrc)) {
@@ -197,34 +230,36 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                             }
                         }
                         if(!foundUsableCredSource) {
-                            r.addError(new PolicyValidatorResult.Error(a,
-                              ap,
+                            result.addError(new PolicyValidatorResult.Error( assertion,
+                              path,
                               "This identity can only authenticate using its client cert. The specified type of credential source is not supported by that user.",
                               null));
                         }
                     }
                     break;
                 case ID_LDAP:
-                    if (identityAssertion instanceof SpecificUser) {
+                    if ( pathContext != null && identityAssertion instanceof SpecificUser) {
                         if (pathContext.contains(targetName, HttpDigest.class)) {
-                            r.addWarning(new PolicyValidatorResult.Warning(a,
-                              ap,
+                            result.addWarning(new PolicyValidatorResult.Warning( assertion,
+                              path,
                               "This identity may not be able to authenticate with the type of credential source specified.",
                               null));
                         }
                     }
                     break;
                 case ID_ERROR:
-                    r.addWarning(new PolicyValidatorResult.Warning(a,
-                      ap,
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion,
+                      path,
                       "This identity cannot be validated at this time (identity provider error)",
                       null));
                     break;
             }
-        } else if (a.isCredentialSource()) {
-            pathContext.seenCredentialSource(targetName, a);
-        } else if (a instanceof JmsRoutingAssertion) {
-            JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
+        } else if ( assertion.isCredentialSource()) {
+            if ( pathContext != null ) {
+                pathContext.seenCredentialSource(targetName, assertion );
+            }
+        } else if ( assertion instanceof JmsRoutingAssertion) {
+            JmsRoutingAssertion jmsass = (JmsRoutingAssertion) assertion;
             if (jmsass.getEndpointOid() != null) {
                 long endpointid = jmsass.getEndpointOid();
                 boolean jmsEndpointDefinedOk = false;
@@ -235,28 +270,28 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     logger.log(Level.FINE, "Error fetching endpoint " + endpointid + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
                 if (!jmsEndpointDefinedOk) {
-                    r.addError(new PolicyValidatorResult.Error(a,
-                      ap,
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                      path,
                       "This routing assertion refers to a JMS " +
                       "endpoint that cannot be found on this system.",
                       null));
                 }
             }
-        } else if (a instanceof SchemaValidation) {
+        } else if ( assertion instanceof SchemaValidation) {
 
-            SchemaValidation svass = (SchemaValidation)a;
+            SchemaValidation svass = (SchemaValidation) assertion;
             AssertionResourceInfo ri = svass.getResourceInfo();
             if (ri instanceof StaticResourceInfo) { // check for unresolved imports
-                validateSchemaValidation(a, ap, (StaticResourceInfo)ri, r);
+                validateSchemaValidation( assertion, path, (StaticResourceInfo)ri, result);
             } else if (ri instanceof GlobalResourceInfo) { // check for broken ref
                 boolean res = checkGlobalSchemaExists((GlobalResourceInfo)ri);
                 if (!res) {
-                    r.addError(new PolicyValidatorResult.Error(a,
-                                        ap, "This assertion refers to a global schema that no longer exists.", null));
+                    result.addError(new PolicyValidatorResult.Error( assertion,
+                                        path, "This assertion refers to a global schema that no longer exists.", null));
                 }
             }
-        } else if (a instanceof UnknownAssertion) {
-            UnknownAssertion ua = (UnknownAssertion) a;
+        } else if ( assertion instanceof UnknownAssertion) {
+            UnknownAssertion ua = (UnknownAssertion) assertion;
 
             String message = "Unknown assertion {0}; all requests to this service will fail.";
             String detail = "";
@@ -265,9 +300,9 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 String className = cause.getMessage();
                 detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
             }
-            r.addError(new PolicyValidatorResult.Error(a, ap, MessageFormat.format(message, detail), null));
-        } else if (a instanceof HttpFormPost) {
-            HttpFormPost httpFormPost = (HttpFormPost) a;
+            result.addError(new PolicyValidatorResult.Error( assertion, path, MessageFormat.format(message, detail), null));
+        } else if ( assertion instanceof HttpFormPost) {
+            HttpFormPost httpFormPost = (HttpFormPost) assertion;
 
             StringBuffer contentTypeBuffer = new StringBuffer();
             HttpFormPost.FieldInfo[] fieldInfos = httpFormPost.getFieldInfos();
@@ -290,31 +325,31 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
             if (contentTypeBuffer.length() > 0) {
                 String msg = "Invalid MIME Content-Type(s): " + contentTypeBuffer.toString();
-                r.addError(new PolicyValidatorResult.Error(a, ap, msg, null));
+                result.addError(new PolicyValidatorResult.Error( assertion, path, msg, null));
             }
         }
 
         // not else-if since this is also a credential source
-        if (a instanceof RequestWssKerberos) {
+        if ( assertion instanceof RequestWssKerberos) {
             try {
                 KerberosClient.getKerberosAcceptPrincipal(true);
             }
             catch(KerberosConfigException kce) {
-                r.addError(new PolicyValidatorResult.Error(a,
-                  ap,
+                result.addError(new PolicyValidatorResult.Error( assertion,
+                  path,
                   "Kerberos is not configured on the Gateway.",
                   null));
             }
             catch(KerberosException ke) {
-                r.addError(new PolicyValidatorResult.Error(a,
-                  ap,
+                result.addError(new PolicyValidatorResult.Error( assertion,
+                  path,
                   "Gateway Kerberos configuration is invalid.",
                   null));
             }
         }
 
-        if (a instanceof UsesEntities && !(a instanceof IdentityAssertion || a instanceof JmsRoutingAssertion)) {
-            UsesEntities uea = (UsesEntities)a;
+        if ( assertion instanceof UsesEntities && !(assertion instanceof IdentityAssertion || assertion instanceof JmsRoutingAssertion)) {
+            UsesEntities uea = (UsesEntities) assertion;
             for (EntityHeader header : uea.getEntitiesUsed()) {
                 Entity entity = null;
                 FindException thrown = null;
@@ -335,15 +370,15 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     thrown = e;
                 }
                 if (entity == null)
-                    r.addError(new PolicyValidatorResult.Error(a, ap,
+                    result.addError(new PolicyValidatorResult.Error( assertion, path,
                             "Assertion refers to a " + header.getType().getName() +
                                     " that cannot be located on this system", thrown));
             }
 
         }
 
-        if (a instanceof PrivateKeyable) {
-            checkPrivateKey((PrivateKeyable)a, ap, r);
+        if ( assertion instanceof PrivateKeyable) {
+            checkPrivateKey((PrivateKeyable) assertion, path, result);
         }
     }
 
@@ -445,9 +480,9 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     }
 
     /**
-     * This is synchronized just in case, i dont expect this to be invoked from multiple simultaneous threads.
+     * This is synchronized just in case, i don't expect this to be invoked from multiple simultaneous threads.
      * Add more return values as needed.
-     * todo: ocnsider refactoring into some sort of status class 'IdentityStatus' instead of returning codes. - em
+     * todo: consider refactoring into some sort of status class 'IdentityStatus' instead of returning codes. - em
      *
      * @return see ID_NOT_EXIST, ID_EXIST, or ID_EXIST_BUT_SAMLONLY
      */

@@ -229,7 +229,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return	an <code>Iterator</code> for traversing the assertion tree in
      *          preorder
      */
-    public Iterator preorderIterator(AssertionTranslator translator) throws PolicyAssertionException {
+    public Iterator<Assertion> preorderIterator(AssertionTranslator translator) throws PolicyAssertionException {
         return new NewPreorderIterator(this, translator);
     }
 
