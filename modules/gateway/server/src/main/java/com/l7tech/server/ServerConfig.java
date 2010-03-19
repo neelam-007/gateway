@@ -54,6 +54,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_HOSTNAME = "hostname";
     public static final String PARAM_HTTPPORT = "httpPort";
     public static final String PARAM_HTTPSPORT = "httpsPort";
+    public static final String PARAM_HTTP_SESSION_NAME = "httpSessionName";
     public static final String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";

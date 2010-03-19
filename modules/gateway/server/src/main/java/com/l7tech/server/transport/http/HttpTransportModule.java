@@ -120,6 +120,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         embedded = new Embedded();
 
+        String httpSessionName = serverConfig.getProperty(ServerConfig.PARAM_HTTP_SESSION_NAME);
+        System.setProperty("org.apache.catalina.SESSION_PARAMETER_NAME", httpSessionName);
+        System.setProperty("org.apache.catalina.SESSION_COOKIE_NAME", httpSessionName);
+
         // Create the thread pool
         final int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
         final int coreSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
