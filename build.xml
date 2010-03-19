@@ -3079,6 +3079,7 @@
             <mkdir dir="@{dir}/${install.src.ssg.messagecache}"/>
             <mkdir dir="@{dir}/${install.src.ssg.base}"/>
             <mkdir dir="@{dir}/${install.src.ssg.bin}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.samples}"/>
             <mkdir dir="@{dir}/${install.src.ssg.conf}"/>
             <mkdir dir="@{dir}/${install.src.ssg.configwizard}"/>
             <mkdir dir="@{dir}/${install.src.ssg.etc}"/>
@@ -3188,6 +3189,13 @@
                     <include name="gateway.sh"/>
                     <include name="setup.sh"/>
                     <include name="upgrade.sh"/>
+                </fileset>
+            </copy>
+
+            <!-- sample files -->
+            <copy todir="@{dir}/${install.src.ssg.samples}">
+                <fileset dir="${src.root}/etc/appliance">
+                    <include name="fix_banner.sh"/>
                 </fileset>
             </copy>
 
@@ -3307,6 +3315,9 @@
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.ssg}">
+                <include  name="${install.src.ssg.samples}/*.sh"/>
             </tarfileset>
             <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="555" dirmode="775" prefix="${install.target.pc}">
                 <include name="etc"/>
