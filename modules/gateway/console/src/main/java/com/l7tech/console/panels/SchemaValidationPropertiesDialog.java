@@ -18,7 +18,6 @@ import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceAdminPublic;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -492,7 +491,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      *
      * @return true if there is at least one imported schema unabled to resolve.
      */
-    private boolean checkForUnresolvedImports(Document schemaDoc) {
+    private boolean checkForUnresolvedImports(Document schemaDoc) throws XmlUtil.BadSchemaException {
         try {
             resolveImportedSchemas(null, schemaDoc, new HashSet<String>()); // "null" means this is a root schema.  A hashset is for tracking circular imports.
         } catch (FetchSchemaFailureException e) {
@@ -518,8 +517,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      * @param seenSystemIds: to keep tracking circular imports.
      *
      * @throws FetchSchemaFailureException: thrown when cannot to fetch an imported schema due to invalid schema URL or namespace, etc.
+     * @throws com.l7tech.common.io.XmlUtil.BadSchemaException if import of an invalid schema was attempted
      */
-    private void resolveImportedSchemas(String systemId, Document schemaDoc, HashSet<String> seenSystemIds) throws FetchSchemaFailureException {
+    private void resolveImportedSchemas(String systemId, Document schemaDoc, HashSet<String> seenSystemIds) throws FetchSchemaFailureException, XmlUtil.BadSchemaException {
         Element schemaElmt = schemaDoc.getDocumentElement();
         List<Element> listofimports = XmlUtil.findChildElementsByName(schemaElmt, schemaElmt.getNamespaceURI(), "import");
 
@@ -645,15 +645,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      *
      * @return true if the schema is successfully saved or updated.
      */
-    private boolean saveImportedSchema(String systemId, String schemaContent) {
+    private boolean saveImportedSchema(String systemId, String schemaContent) throws XmlUtil.BadSchemaException {
         // Get current target namespace and precheck it and systemId
-        String tns;
-        try {
-            tns = XmlUtil.getSchemaTNS(schemaContent);
-        } catch (XmlUtil.BadSchemaException e) {
-            logger.warning("Problem parsing schemaContent");
-            return false;
-        }
+        String tns = XmlUtil.getSchemaTNS(schemaContent);
 
         if (systemId == null || systemId.trim().isEmpty()) {
             logger.warning("You must provide a system id (name) for this schemaContent to be referenced by another schemaContent.");
@@ -740,6 +734,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } catch (SAXException e) {
             log.log(Level.WARNING, "issue with xml document", e);
             displayError("The schema is not formatted properly. " + e.getMessage(), null);
+            return false;
+        } catch (XmlUtil.BadSchemaException e) {
+            String errMsg = "Error importing schema: " + ExceptionUtils.getMessage(e);
+            log.log(Level.WARNING, errMsg, ExceptionUtils.getDebugException(e));
+            displayError(errMsg, null);
             return false;
         }
 
