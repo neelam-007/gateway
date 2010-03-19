@@ -568,6 +568,7 @@ public class GatewayFeatureSets {
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
+            fs(esmAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -588,6 +589,7 @@ public class GatewayFeatureSets {
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
+            fs(esmAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -610,7 +612,8 @@ public class GatewayFeatureSets {
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
-            fs(customFw));
+            fs(customFw),
+            fs(esmAssertions));
 
         GatewayFeatureSet profileGateway =
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
@@ -637,6 +640,7 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(uiFw),
+            fs(esmAssertions),
             fs(wssp));
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
@@ -671,6 +675,7 @@ public class GatewayFeatureSets {
             fs(mtomDecodeAssertions),
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
+            fs(esmAssertions),
             fs(uiFw));
 
         PROFILE_ALL =
