@@ -115,6 +115,28 @@ public abstract class Syntax {
      * @throws VariableNameSyntaxException
      */
     public static String[] getReferencedNamesIndexedVarsOmitted(String s) throws VariableNameSyntaxException {
+        return getReferencedNamesWithIndexedVars(s, true);
+    }
+
+    /**
+     * Get all variables referenced from String s, no matter if context variable is indexed or not.
+     * @param s: A string to find out what variables are referenced from it
+     * @return a list of all variables
+     * @throws VariableNameSyntaxException
+     */
+    public static String[] getReferencedNamesIndexedVarsNotOmitted(String s) throws VariableNameSyntaxException {
+        return getReferencedNamesWithIndexedVars(s, false);
+    }
+
+    /**
+     * Get should-be-processed variables referenced from the string s.  Any variable being able to be processed depends on
+     * the flag "omitted", which indicates whether indexed variables will be omitted or not.
+     * @param s: A string to find out what variables are referenced from it
+     * @param omitted: A boolean flag to determine whether indexed variables will be omitted or not.
+     * @return a list of all should-be-processed variables.
+     * @throws VariableNameSyntaxException
+     */
+    private static String[] getReferencedNamesWithIndexedVars(String s, boolean omitted) throws VariableNameSyntaxException {
         if (s == null) throw new IllegalArgumentException();
 
         ArrayList vars = new ArrayList();
@@ -128,14 +150,12 @@ public abstract class Syntax {
             if (var != null) var = var.trim();
             final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
 
-            if (varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
+            if (omitted && varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
 
-            vars.add(varSyntax.remainingName);
-
+            vars.add(omitted? varSyntax.remainingName : var);
         }
         return (String[]) vars.toArray(new String[0]);
     }
-
 
     // TODO find out how to move this into Syntax subclasses
     public static Syntax parse(String rawName, final String delimiter) {
