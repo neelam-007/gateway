@@ -514,15 +514,15 @@ public class GatewayFeatureSets {
             mass("assertion:UDDINotification"));
 
         GatewayFeatureSet mtomDecodeAssertions =
-        fsr("set:MtomDecode:Assertions", "The necessary assertions to enable Mtom Decode functionality",
+        fsr("set:MtomDecode:Assertions", "The necessary assertions to enable MTOM Decode functionality",
             mass("assertion:MtomDecode"));
 
         GatewayFeatureSet mtomEncodeAssertions =
-        fsr("set:MtomEncode:Assertions", "The necessary assertions to enable Mtom Encode functionality",
+        fsr("set:MtomEncode:Assertions", "The necessary assertions to enable MTOM Encode functionality",
             mass("assertion:MtomEncode"));
 
         GatewayFeatureSet mtomValidateAssertions =
-        fsr("set:MtomValidate:Assertions", "The necessary assertions to enable Mtom Validate functionality",
+        fsr("set:MtomValidate:Assertions", "The necessary assertions to enable MTOM Validate functionality",
             mass("assertion:MtomValidate"));
 
         // US (NCES)
@@ -565,9 +565,6 @@ public class GatewayFeatureSets {
             fs(uiDs),
             fs(customDs),
             fs(uddiNotificationAssertions),
-            fs(mtomDecodeAssertions),
-            fs(mtomEncodeAssertions),
-            fs(mtomValidateAssertions),
             fs(esmAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
@@ -586,9 +583,6 @@ public class GatewayFeatureSets {
             fs(uiAccel),
             fs(moduleLoader),
             fs(uddiNotificationAssertions),
-            fs(mtomDecodeAssertions),
-            fs(mtomEncodeAssertions),
-            fs(mtomValidateAssertions),
             fs(esmAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
