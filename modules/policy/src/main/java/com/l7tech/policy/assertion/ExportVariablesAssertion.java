@@ -25,7 +25,7 @@ public class ExportVariablesAssertion extends Assertion implements UsesVariables
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.SHORT_NAME, "Export Variables from Fragment");
-        meta.put(AssertionMetadata.DESCRIPTION, "Designate variables that will be used by other policies that include this policy.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Designate variables that will be used by other policies that include this policy.\nThis assertion should be used within an included policy, near the end.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS,  new String[] { "policyLogic" });
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none"); // Can't open properties dialog until assertion is embedded in a policy
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ExportVariablesAssertionPropertiesDialog");
