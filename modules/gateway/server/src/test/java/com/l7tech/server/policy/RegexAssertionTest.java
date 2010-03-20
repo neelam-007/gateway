@@ -418,12 +418,12 @@ public class RegexAssertionTest {
     @Test
     public void testNewSimpleMatch() throws Exception {
         expect(AssertionStatus.NONE, regex(SUBSTR_FOO), context(PHRASE_FOO, PHRASE_ORLY));
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context(PHRASE_POO, PHRASE_ORLY));
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO), context(PHRASE_POO, PHRASE_ORLY));
     }
 
     @Test
     public void testNewSimpleMatchNegated() throws Exception {
-        expect(AssertionStatus.FAILED, negate(regex(SUBSTR_FOO)), context(PHRASE_FOO, PHRASE_ORLY));
+        expect(AssertionStatus.FALSIFIED, negate(regex(SUBSTR_FOO)), context(PHRASE_FOO, PHRASE_ORLY));
         expect(AssertionStatus.NONE, negate(regex(SUBSTR_FOO)), context(PHRASE_POO, PHRASE_ORLY));
     }
 
@@ -452,11 +452,11 @@ public class RegexAssertionTest {
 
         // Match against response should fail
         context.setRoutingStatus(RoutingStatus.ROUTED);
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context);
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO), context);
 
         // Match against response should fail
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context);
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO), context);
 
         // Match against request should succeed again
         context.setRoutingStatus(RoutingStatus.NONE);
@@ -466,19 +466,19 @@ public class RegexAssertionTest {
     @Test
     public void testNewTargetRequestResponse() throws Exception {
         expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, REQUEST), context(PHRASE_FOO, PHRASE_ORLY));
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_FOO, PHRASE_ORLY));
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_FOO, PHRASE_ORLY));
     }
 
     @Test
     public void testNewTargetMessageVariable() throws Exception {
         expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, message(PHRASE_FOO)));
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, message(PHRASE_POO)));
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, message(PHRASE_POO)));
     }
 
     @Test
     public void testNewTargetStringVariable() throws Exception {
         expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_FOO));
-        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_POO));
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_POO));
     }
     
     @Test
@@ -530,7 +530,7 @@ public class RegexAssertionTest {
         expect(AssertionStatus.NONE, regex, context);
 
         regex.setEncoding("UTF-8");
-        expect(AssertionStatus.FAILED, regex, context);
+        expect(AssertionStatus.FALSIFIED, regex, context);
     }
 
     @Test
@@ -543,7 +543,7 @@ public class RegexAssertionTest {
         expect(AssertionStatus.NONE, regex, context);
 
         regex.setEncoding("ISO-8859-1");
-        expect(AssertionStatus.FAILED, regex, context);
+        expect(AssertionStatus.FALSIFIED, regex, context);
     }
 
     @Test
@@ -581,7 +581,7 @@ public class RegexAssertionTest {
         final Regex regex = regex("BlAh");
         regex.setCaseInsensitive(true);
         expect(AssertionStatus.NONE, regex, context("bLaH", ""));
-        expect(AssertionStatus.FAILED, regex, context("HaLb", ""));
+        expect(AssertionStatus.FALSIFIED, regex, context("HaLb", ""));
     }
 
     @Test

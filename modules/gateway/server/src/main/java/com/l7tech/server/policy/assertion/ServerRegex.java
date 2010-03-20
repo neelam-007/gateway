@@ -73,12 +73,12 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     {
         checkPattern();
 
-        Pair<RegexInput, RegexOutput> inout = getInputAndOutput(context);
+        Pair<RegexInput, RegexOutput> inputAndOutput = getInputAndOutput(context);
 
-        Matcher matcher = regexPattern.matcher(inout.left.getInput());
+        Matcher matcher = regexPattern.matcher(inputAndOutput.left.getInput());
 
         return isReplacement
-                ? doReplace(context, matcher, inout.right)
+                ? doReplace(context, matcher, inputAndOutput.right)
                 : doMatch(context, matcher);
     }
 
@@ -174,15 +174,15 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     private AssertionStatus doMatch(PolicyEnforcementContext context, Matcher matcher) {
         final boolean matched = matcher.find();
 
-        final String capvar = assertion.getCaptureVar();
-        if (matched && capvar != null) {
+        final String captureVar = assertion.getCaptureVar();
+        if (matched && captureVar != null) {
             List<String> captured = new ArrayList<String>();
             captured.add(matcher.group(0));
             int groupCount = matcher.groupCount();
             for (int i = 1; i <= groupCount; ++i) { // note 1-based
                 captured.add(matcher.group(i));
             }
-            context.setVariable(capvar, captured.toArray(new String[captured.size()]));
+            context.setVariable(captureVar, captured.toArray(new String[captured.size()]));
         }
 
         if (assertion.isProceedIfPatternMatches()) {
@@ -192,12 +192,12 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
                 return AssertionStatus.NONE;
             } else {
                 auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, assertion.getRegex());
-                return AssertionStatus.FAILED;
+                return AssertionStatus.FALSIFIED;
             }
         } else { // !proceedIfPatternMatches
             if (matched) {
                 auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, assertion.getRegex());
-                return AssertionStatus.FAILED;
+                return AssertionStatus.FALSIFIED;
             } else {
                 if (logger.isLoggable(Level.FINE))
                     logger.fine("Proceeding : Not matched and proceed if no match requested " + assertion.getRegex());
