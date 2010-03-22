@@ -453,18 +453,27 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void remove() {
-        Registry reg = Registry.getDefault();
-        if (reg == null || reg.getSchemaAdmin() == null) {
-            logger.warning("No access to registry. Cannot remove entry.");
-            return;
+        SchemaEntry schemasToBeDeleted = globalSchemas.get(schemaTable.getSelectedRow());
+        Object[] options = {"Remove", "Cancel"};
+        String message = "<html><center>Are you sure you want to remove the schemas, '" + schemasToBeDeleted.getName() + "'?</center>" +
+                "<center>This action cannot be undone.</center></html>";
+
+        int result = JOptionPane.showOptionDialog(GlobalSchemaDialog.this, message, "Confirm Global Schemas Removal",
+                0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+        if (result == 0) {
+            Registry reg = Registry.getDefault();
+            if (reg == null || reg.getSchemaAdmin() == null) {
+                logger.warning("No access to registry. Cannot remove entry.");
+                return;
+            }
+            try {
+                reg.getSchemaAdmin().deleteSchemaEntry(schemasToBeDeleted);
+            } catch (DeleteException e) {
+                logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
+            }
+            populate();
         }
-        SchemaEntry todelete = globalSchemas.get(schemaTable.getSelectedRow());
-        try {
-            reg.getSchemaAdmin().deleteSchemaEntry(todelete);
-        } catch (DeleteException e) {
-            logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
-        }
-        populate();
     }
 
     private void close() {
