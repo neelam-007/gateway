@@ -371,8 +371,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             ServerConfig sg = (ServerConfig)getApplicationContext().getBean("serverConfig");
             if (sg != null) {
                 int beforeoffset = sg.getIntProperty("samlBeforeOffsetMinute", 2);
+                options.setNotBeforeSeconds(beforeoffset * 60);
                 System.setProperty(SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY, Integer.toString(beforeoffset));
                 int afteroffset = sg.getIntProperty("samlAfterOffsetMinute", 5);
+                options.setNotAfterSeconds(afteroffset * 60);
                 System.setProperty(SamlAssertionGenerator.AFTER_OFFSET_SYSTEM_PROPERTY, Integer.toString(afteroffset));
             }
         }
