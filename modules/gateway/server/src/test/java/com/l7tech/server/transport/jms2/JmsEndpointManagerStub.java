@@ -53,6 +53,10 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
             endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_FMQ_IN);
         } else if (oid == 106L) {
             endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_FMQ_OUT);
+        } else if (oid == 107L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN);
+        } else if (oid == 108L) {
+            endpt = buildEndpoint(JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_OUT);
         } else {
             endpt = buildEndpoint(6666);
         }
@@ -133,6 +137,30 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
                 endpt.setConnectionOid(which);
                 endpt.setName("vchan_out");
                 endpt.setDestinationName("vchan_out");
+                endpt.setReplyType(JmsReplyType.NO_REPLY);
+                endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
+                endpt.setUseMessageIdForCorrelation(false);
+                break;
+            }
+            case JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_IN: {
+                endpt.setOid(107);
+                endpt.setVersion(0);
+                endpt.setConnectionOid(which);
+                endpt.setName("ilona.in1");
+                endpt.setDestinationName("ilona.in1");
+                endpt.setReplyType(JmsReplyType.REPLY_TO_OTHER);
+                endpt.setReplyToQueueName("ilona.in3");
+                endpt.setAcknowledgementType(JmsAcknowledgementType.ON_COMPLETION);
+                endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
+                endpt.setUseMessageIdForCorrelation(false);
+                break;
+            }
+            case JmsConnectionManagerStub.TEST_CONFIG_DYNAMIC_OUT: {
+                endpt.setOid(108);
+                endpt.setVersion(0);
+                endpt.setConnectionOid(which);
+                endpt.setName("ilona.in1");
+                endpt.setDestinationName("ilona.in1");
                 endpt.setReplyType(JmsReplyType.NO_REPLY);
                 endpt.setOutboundMessageType(JmsOutboundMessageType.AUTOMATIC);
                 endpt.setUseMessageIdForCorrelation(false);

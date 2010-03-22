@@ -14,12 +14,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * New Sutbbed JmsConnectionManager for Jms-subsystem unit tests.
+ * New Stubbed JmsConnectionManager for Jms-subsystem unit tests.
  *
  * @author: vchan
  */
 public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
-
 
     public static final int TEST_CONFIG_AMQ_IN  = 1000;
     public static final int TEST_CONFIG_AMQ_OUT = 1001;
@@ -28,7 +27,27 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
     public static final int TEST_CONFIG_FMQ_IN  = 1004;
     public static final int TEST_CONFIG_FMQ_OUT = 1005;
 
+    /*
+     * new stuff for dynamic jms routing
+     * (i.e. routing destination defined/derived dynamically during policy execution)
+     */
+    public static final int TEST_CONFIG_DYNAMIC_IN  = 1666;
+    public static final int TEST_CONFIG_DYNAMIC_OUT = 2666;
+
+    /*
+     * Set this to the preferred Test Config
+     */
     private static int TEST_CONFIG = TEST_CONFIG_AMQ_IN;
+
+    /*
+     * Set this to the exected JMS Provider to be used
+     * - ActiveMQ
+     * - WebSphere MQ
+     * - Fiorano
+     * - Tibco EMS
+     * - Dynamic (new)
+     */
+    protected String DEFAULT_QUEUE_PROVIDER = QPROVIDER_DYNAMIC;
 
     public static void setTestConfig(int which) {
         TEST_CONFIG = which;
@@ -41,7 +60,7 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
     protected static final String AMQ_QUEUE_DEFAULT = "dynamicQueues/JMS.JUNIT.Q";
     protected static final String AMQ_JNDI_URL = "tcp://localhost:61616";
 
-    // Configuration for apache MQSeries over LDAP
+    // Configuration for MQSeries over LDAP
     protected static final String QPROVIDER_MQS = "MQSeries";
     protected static final String MQS_INITIAL_CONTEXT_FACTORY_CLASS = "com.sun.jndi.ldap.LdapCtxFactory";
     protected static final String MQS_DEFAULT_QUEUE_FACTORY_URL = "cn=vcQueueConnectionFactory";
@@ -57,7 +76,7 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
             "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
             "</properties>";
 
-    // Configuration for apache Fiorano MQ
+    // Configuration for Fiorano MQ
     protected static final String QPROVIDER_FMQ = "fioranoMQ";
     protected static final String FMQ_INITIAL_CONTEXT_FACTORY_CLASS = "fiorano.jms.runtime.naming.FioranoInitialContextFactory";
     protected static final String FMQ_DEFAULT_QUEUE_FACTORY_URL = "primaryJMXQCF";
@@ -75,7 +94,25 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
             "<entry key=\"com.l7tech.server.jms.prop.queue.ssgKeystoreId\">0</entry>\n" +
             "</properties>";
 
-    protected String DEFAULT_QUEUE_PROVIDER = QPROVIDER_AMQ;
+    // Configuration for Dynamic JMS routing (using Tibco EMS - can be anything else)
+    protected static final String QPROVIDER_DYNAMIC = "tibDynamicMQ";
+    protected static final String DYNAMIC_INITIAL_CONTEXT_FACTORY_CLASS = "com.tibco.tibjms.naming.TibjmsInitialContextFactory";
+    protected static final String DYNAMIC_DEFAULT_QUEUE_FACTORY_URL = "ilonaQCF"; // ilonaQCF || ${jmsQCF}
+    protected static final String DYNAMIC_QUEUE_DEFAULT = "ilona.in1"; // ilona.in1 || ${jmsQ}
+    protected static final String DYNAMIC_JNDI_URL = "tibjmsnaming://qatibcomq:7222";
+    protected static final String DYNAMIC_CONN_PROPERTIES = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
+            "<properties>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.ssl.enable_verify_host\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.ssl.auth_only\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.naming.ssl_enable_verify_host\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.ssl.enable_verify_hostname\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.naming.ssl_auth_only\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.tibco.tibjms.naming.ssl_enable_verify_hostname\">com.l7tech.server.jms.prop.boolean.false</entry>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.contentType.source\"/>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.contentType.value\"/>\n" +
+            "</properties>";
 
     protected String queueProvider;
 
@@ -85,7 +122,6 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         createTestConnections(1);
     }
 
-    @Override
     public Collection<JmsProvider> findAllProviders() throws FindException {
         return createTestConnections(1);
     }
@@ -100,6 +136,8 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
                 result = QPROVIDER_MQS;
             else if (TEST_CONFIG == TEST_CONFIG_FMQ_IN || TEST_CONFIG == TEST_CONFIG_FMQ_OUT)
                 result = QPROVIDER_FMQ;
+            else if (TEST_CONFIG == TEST_CONFIG_DYNAMIC_IN || TEST_CONFIG == TEST_CONFIG_DYNAMIC_OUT)
+                result = QPROVIDER_DYNAMIC;
             else
                 result = DEFAULT_QUEUE_PROVIDER;
 //        }
@@ -139,6 +177,9 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         }
         else if (provider == null && QPROVIDER_FMQ.equals(qProv)) {
             provider = new JmsProvider("TestJmsProvider", FMQ_INITIAL_CONTEXT_FACTORY_CLASS, FMQ_DEFAULT_QUEUE_FACTORY_URL);
+        }
+        else if (provider == null && QPROVIDER_DYNAMIC.equals(qProv)) {
+            provider = new JmsProvider("TestJmsProvider", DYNAMIC_INITIAL_CONTEXT_FACTORY_CLASS, DYNAMIC_DEFAULT_QUEUE_FACTORY_URL);
         }
 
         list.add(provider);
@@ -182,6 +223,18 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
                 conn = provider.createConnection("vchan_out", FMQ_JNDI_URL);
                 conn.setOid(TEST_CONFIG_FMQ_OUT);
 //                conn.setProperties(FMQ_CONN_PROPERTIES);
+                break;
+            }
+            case TEST_CONFIG_DYNAMIC_IN: {
+                conn = provider.createConnection("ilona.in1", DYNAMIC_JNDI_URL);
+                conn.setOid(TEST_CONFIG_DYNAMIC_IN);
+//                conn.setProperties(DYNAMIC_CONN_PROPERTIES); // for ssl
+                break;
+            }
+            case TEST_CONFIG_DYNAMIC_OUT: {
+                conn = provider.createConnection("ilona.in1", DYNAMIC_JNDI_URL);
+                conn.setOid(TEST_CONFIG_DYNAMIC_OUT);
+//                conn.setProperties(DYNAMIC_CONN_PROPERTIES);
                 break;
             }
             default: {

@@ -10,12 +10,15 @@ import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.JmsDynamicProperties;
+import com.l7tech.policy.variable.Syntax;
+
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Holds information needed to route a message to an outbound JMS destination.
  */
-public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities {
+public class JmsRoutingAssertion extends RoutingAssertion implements UsesVariables{
     public static final int DEFAULT_TIMEOUT = 10000;
 
     /**
@@ -140,9 +143,28 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         return meta;
     }
 
+    public String[] getVariablesUsed() {
+        if (dynamicJmsRoutingProperties != null) {
+            String vars = dynamicJmsRoutingProperties.getFieldsAsVariables();
+
+            if (vars != null && !vars.equals(""))
+                return Syntax.getReferencedNames(vars);
+        }
+        return new String[0];
+    }
+
+    public JmsDynamicProperties getDynamicJmsRoutingProperties() {
+        return dynamicJmsRoutingProperties;
+    }
+
+    public void setDynamicJmsRoutingProperties(JmsDynamicProperties dynamicJmsRoutingProperties) {
+        this.dynamicJmsRoutingProperties = dynamicJmsRoutingProperties;
+    }
+
     private Long endpointOid = null;
     private String endpointName = null;
     private int responseTimeout = DEFAULT_TIMEOUT;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
+    private JmsDynamicProperties dynamicJmsRoutingProperties;
 }

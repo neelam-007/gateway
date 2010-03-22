@@ -4,24 +4,26 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.security.FormAuthorizationPreparer;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
-import com.l7tech.gateway.common.transport.jms.*;
-import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.console.security.FormAuthorizationPreparer;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.naming.Context;
 import javax.swing.*;
@@ -29,13 +31,15 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Properties;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
+
+import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
@@ -107,6 +111,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
  	private JTextField getContentTypeFromProperty;
  	private JCheckBox specifyContentTypeCheckBox;
     private JPanel serviceNamePanel;
+    private JCheckBox isTemplateQueue;
+    private JTextField jmsEndpoingDescriptiveName;
 
 
     private JmsConnection connection = null;
@@ -118,7 +124,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private ContentTypeComboBoxModel contentTypeModel;
 
     private PermissionFlags flags;
-    
     public ServiceAdmin getServiceAdmin() {
         return Registry.getDefault().getServiceManager();
     }
@@ -283,8 +288,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         inboundRadioButton.setEnabled(!isOutboundOnly());
         outboundRadioButton.setEnabled(!isOutboundOnly());
+        isTemplateQueue.setEnabled(true);
+        isTemplateQueue.addItemListener(formPreener);
 
         inboundRadioButton.addItemListener(formPreener);
+        outboundRadioButton.addItemListener(formPreener);
+
 
         initProviderComboBox();
 
@@ -327,7 +336,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jmsMsgPropWithSoapActionTextField.setDocument(new MaxLengthDocument(255));
         outboundReplySpecifiedQueueField.setDocument(new MaxLengthDocument(128));
 
-        // Add a doc listener for those text fields that need to dectect if input is validated or not.
+        // Add a doc listener for those text fields that need to detect if input is validated or not.
         // Case 1: in the JNDI Tab
         icfTextField.getDocument().addDocumentListener(formPreener);
         jndiUrlTextField.getDocument().addDocumentListener(formPreener);
@@ -792,9 +801,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
         JmsEndpoint ep = new JmsEndpoint();
         if (endpoint != null)
             ep.copyFrom(endpoint);
-        String name = queueNameTextField.getText();
+//        String name = queueNameTextField.getText();
+        String name = jmsEndpoingDescriptiveName.getText();
         ep.setName(name);
-        ep.setDestinationName(name);
+        String queueName = queueNameTextField.getText();
+        ep.setDestinationName(queueName);
+        
         JmsAcknowledgementType type = (JmsAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
 
         JmsOutboundMessageType omt = JmsOutboundMessageType.AUTOMATIC;
@@ -814,7 +826,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton);
         } else {
             configureEndpointReplyBehaviour(
-                    ep, "Outbound",
+                    ep, isTemplateQueue.isSelected()?"Outbound Template":"Outbound",
                     outboundReplyAutomaticRadioButton,
                     outboundReplyNoneRadioButton,
                     outboundReplySpecifiedQueueRadioButton,
@@ -832,7 +844,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setFailureDestinationName( null );
         }
         ep.setMessageSource(inboundRadioButton.isSelected());
-
+        ep.setTemplate(isTemplateQueue.isSelected());
+        
         if (useQueueCredentialsCheckBox.isSelected()) {
             ep.setUsername(queueUsernameTextField.getText());
             ep.setPassword(new String(queuePasswordField.getPassword()));
@@ -858,6 +871,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private static void configureEndpointReplyBehaviour(JmsEndpoint ep, String what, final JRadioButton autoButton, final JRadioButton noneButton, final JRadioButton specifiedButton, final JTextField specifiedField, JRadioButton messageIdRadioButton) {
+        boolean isTemplate = ep.isTemplate();
         if (autoButton.isSelected()) {
             ep.setReplyType(JmsReplyType.AUTOMATIC);
             ep.setReplyToQueueName(null);
@@ -869,7 +883,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setReplyType(JmsReplyType.REPLY_TO_OTHER);
             final String t = specifiedField.getText();
             ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
-            if (t == null || t.length() == 0) throw new IllegalStateException(what + " Specified Queue name must be set");
+            if (!isTemplate && (t == null || t.length() == 0) ) throw new IllegalStateException(what + " Specified Queue name must be set");
             ep.setReplyToQueueName(t);
         } else {
             throw new IllegalStateException(what + " was selected, but no reply type was selected");
@@ -1078,6 +1092,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
         if (endpoint != null) {
+            isTemplateQueue.setSelected(endpoint.isTemplate());
+            jmsEndpoingDescriptiveName.setText(endpoint.getName());
             JmsAcknowledgementType type = endpoint.getAcknowledgementType();
             if (type != null) {
                 acknowledgementModeComboBox.setSelectedItem(type);
@@ -1154,19 +1170,20 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * @return true iff. form has enough info to construct a JmsConnection
      */
     private boolean validateForm() {
-        if (queueNameTextField.getText().trim().length() < 1)
+        boolean isTemplate = isTemplateQueue.isSelected();
+        if (!isTemplate && queueNameTextField.getText().trim().length() == 0)
             return false;
-        if (jndiUrlTextField.getText().length() < 1)
+        if (!isTemplate && jndiUrlTextField.getText().length() == 0)
             return false;
-        if (qcfTextField.getText().length() < 1)
+        if (!isTemplate && qcfTextField.getText().length() == 0)
             return false;
-        if (icfTextField.getText().length() < 1)
+        if (!isTemplate && icfTextField.getText().length() == 0)
             return false;
         if (jndiExtraPropertiesPanel != null && !jndiExtraPropertiesPanel.validatePanel())
             return false;
         if (queueExtraPropertiesPanel != null && !queueExtraPropertiesPanel.validatePanel())
             return false;
-        if (outboundRadioButton.isSelected() && !isOutboundPaneValid())
+        if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate))
             return false;
         if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
@@ -1178,10 +1195,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     }
 
-    private boolean isOutboundPaneValid() {
+    private boolean isOutboundPaneValid(boolean isTemplate) {
         //noinspection RedundantIfStatement
         if (outboundReplySpecifiedQueueField.isEnabled() &&
-            outboundReplySpecifiedQueueField.getText().trim().length() == 0)
+            (!isTemplate && outboundReplySpecifiedQueueField.getText().trim().length() == 0))
             return false;
         return true;
     }
@@ -1244,6 +1261,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             outboundCorrelationIdRadioButton.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
         }
 
+        isTemplateQueue.setEnabled(outboundRadioButton.isSelected());
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
         testButton.setEnabled(valid);

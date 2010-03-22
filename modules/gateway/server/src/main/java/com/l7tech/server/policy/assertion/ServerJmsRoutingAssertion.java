@@ -4,8 +4,6 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -17,7 +15,9 @@ import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -31,22 +31,21 @@ import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.jms.*;
 import javax.jms.Message;
+import javax.jms.Queue;
 import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.lang.IllegalStateException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -124,21 +123,38 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
             }
 
+            /*
+             * When context variables are used for JMS queue properties, this check must be
+             * done to see whether a different JMS destination queue needs to be initialized
+             * for routing.
+             */
+            JmsDynamicProperties dynamicProps = getDynamicRoutingProps();
+            JmsDynamicProperties dynamicPropsWithValues = null;
+            if (dynamicProps != null) {
+                dynamicPropsWithValues = getContextVariablesValues(context, dynamicProps);
+            }
+
             // Get JMS Session
             while (true) {
                 try {
                     if (markedForUpdate()) {
                         try {
                             logger.info("JMS information needs update, closing session (if open).");
+
                             resetEndpointInfo();
+                            dynamicProps = getDynamicRoutingProps();
+                            dynamicPropsWithValues = null;
+                            if (dynamicProps != null) {
+                                dynamicPropsWithValues = getContextVariablesValues(context, dynamicProps);
+                            }
                         } finally {
                             markUpdate(false);
                         }
                     }
 
                     // Get the current JmsEndpointConfig
-                    cfg = getEndpointConfig(auditor);
-                    jmsBag = getJmsBag(auditor);
+                    cfg = getEndpointConfig(dynamicPropsWithValues);
+                    jmsBag = getJmsBag(cfg);
                     jmsSession = jmsBag.getSession();
                     break; // if successful, no need for further retries
                 } catch (FindException e) {
@@ -362,7 +378,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             throw new JMSException("Interrupted during send retry");
                         }
 
-                        jmsBag = getJmsBag(auditor);
+                        jmsBag = getJmsBag(cfg);
                         jmsSession = jmsBag.getSession();
                     } else {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
@@ -380,7 +396,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         jmsInboundDest = null;
                         closeBagDueToError(cfg, jmsBag);
 
-                        jmsBag = getJmsBag(auditor);
+                        jmsBag = getJmsBag(cfg);
                         jmsSession = jmsBag.getSession();
 
                     } else {
@@ -429,6 +445,39 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
     }
 
+
+    /**
+     * Returns whether the configured JMS endpoint is setup for dynamic routing (i.e. uses context variables).
+     *
+     * This method will potentially access the Jms tables in the database, so it should only be called once per
+     * checkRequest call to find the value at time of request.
+     *
+     * @return the Dynamically configured JMS endpoint properties, if configured, Null otherwise
+     */
+    private JmsDynamicProperties getDynamicRoutingProps()  {
+        return assertion.getDynamicJmsRoutingProperties();
+
+
+//        final String SPACE = " ";
+//        StringBuffer sb = new StringBuffer();
+//        JmsEndpoint endpt = getRoutedRequestEndpoint();
+//        JmsConnection conn = getRoutedRequestConnection(endpt, auditor);
+//
+//        // get all 5 possible context variable values
+//        sb.append(conn.getInitialContextFactoryClassname()).append(SPACE);
+//        sb.append(conn.getJndiUrl()).append(SPACE);
+//        sb.append(conn.getQueueFactoryUrl()).append(SPACE);
+//        sb.append(endpt.getDestinationName()).append(SPACE);
+//        sb.append(endpt.getReplyToQueueName());
+//
+//        String[] vars = Syntax.getReferencedNames(sb.toString());
+//        if (vars.length > 0) {
+//            return new Pair<Boolean, String[]>(true, vars);
+//        }
+//        return new Pair<Boolean, String[]>(false, new String[0]);
+    }
+
+
     private boolean markedForUpdate() {
         boolean updatedRequired;
 
@@ -470,9 +519,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
     private synchronized void resetEndpointInfo() {
         synchronized (jmsInfoSync) {
-            routedRequestConnection = null;
-            routedRequestEndpoint = null;
-            endpointConfig = null;
+            if (markedForUpdate()) {
+                routedRequestConnection = null;
+                routedRequestEndpoint = null;
+                endpointConfig = null;
+            }
         }
     }
 
@@ -601,23 +652,106 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         return routedRequestConnection;
     }
 
-    private JmsEndpointConfig getEndpointConfig(Auditor auditor) throws FindException {
-        if (endpointConfig == null) {
-            JmsEndpoint endpoint = getRoutedRequestEndpoint();
-            if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
-
-            JmsConnection conn = getRoutedRequestConnection(endpoint, auditor);
-            if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
-
-            endpointConfig = new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring);
+    private JmsEndpointConfig getEndpointConfig(JmsDynamicProperties ctxVariablesValues)
+        throws FindException
+    {
+        if (ctxVariablesValues == null && endpointConfig != null) {
+            return endpointConfig;
         }
-        return endpointConfig;
+
+        JmsEndpoint endpoint = getRoutedRequestEndpoint();
+        if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
+
+        JmsConnection conn = getRoutedRequestConnection(endpoint, auditor);
+        if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
+
+        // check for the need to use dynamic routing properties
+        if (ctxVariablesValues!= null) {
+            return new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring, ctxVariablesValues);
+        } else {
+            endpointConfig = new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring);
+            return endpointConfig;
+        }
     }
 
-    private JmsBag getJmsBag(Auditor auditor) throws JmsRuntimeException, FindException {
+    private JmsBag getJmsBag(final JmsEndpointConfig endpointCfg) throws JmsRuntimeException, FindException {
 
         // for multi-threaded execution, use the JmsResourceManager to obtain a JmsBag
-        return JmsResourceManager.getInstance().getJmsBag(getEndpointConfig(auditor));
+        return JmsResourceManager.getInstance().getJmsBag(endpointCfg);
+    }
+
+    /**
+     * returns the string value from the pec for the context variable in var. If the variable is not found by name or is
+     * not of type String, then a message is logged, missingValues has the missing variable added to it, and null is returned.
+     * @param var the variable name to look for
+     * @param pec the pec in which the values reside
+     * @param missingValues a list containing the values that are not found (not String, or not present in pec)
+     * @return the string value from the pec for the context variable in var if found, null otherwise.
+     */
+    private String getVariableValueFromName(String var, PolicyEnforcementContext pec, List<String> missingValues) {
+        String [] referencedNames = Syntax.getReferencedNames(var);
+        if (referencedNames.length > 0) {
+            try {
+                Object val = pec.getVariable(referencedNames[0]);
+                if (val instanceof String) {
+                     return (String) val;
+                } else {
+                    logger.log(Level.WARNING, MessageFormat.format("Dynamic JMS Routing variable is not of type String ({0}:{1})", referencedNames[0], val.getClass().getName()));
+                }
+            } catch (NoSuchVariableException e) {
+                logger.log(Level.WARNING, MessageFormat.format("Dynamic JMS Routing variable not found ({0})", referencedNames[0]));
+            }
+        }
+        missingValues.add(var);
+        return null;
+    }
+
+    private JmsDynamicProperties getContextVariablesValues(PolicyEnforcementContext pec, JmsDynamicProperties variablesWanted) {
+
+        JmsDynamicProperties propsWithValues = new JmsDynamicProperties();
+
+        if (variablesWanted == null) return propsWithValues;
+
+        List<String> missing = new ArrayList<String>();
+
+        //dest Q Name
+        if (variablesWanted.getDestQName() != null && !"".equals(variablesWanted.getDestQName().trim()))
+            propsWithValues.setDestQName(getVariableValueFromName(variablesWanted.getDestQName(), pec, missing));
+
+        //replyTo Q Name
+        if (variablesWanted.getReplytoQName() != null && !"".equals(variablesWanted.getReplytoQName().trim()))
+            propsWithValues.setReplytoQName(getVariableValueFromName(variablesWanted.getReplytoQName(), pec, missing));
+
+        // JNDI Url
+        if (variablesWanted.getJndiUrl() != null && !"".equals(variablesWanted.getJndiUrl().trim()))
+            propsWithValues.setJndiUrl(getVariableValueFromName(variablesWanted.getJndiUrl(), pec, missing));
+
+        //ICF Name
+        if (variablesWanted.getIcfName() != null && !"".equals(variablesWanted.getIcfName().trim()))
+            propsWithValues.setIcfName(getVariableValueFromName(variablesWanted.getIcfName(), pec, missing));
+
+        //QCF Name
+        if (variablesWanted.getQcfName() != null && !"".equals(variablesWanted.getQcfName().trim()))
+            propsWithValues.setQcfName(getVariableValueFromName(variablesWanted.getQcfName(), pec, missing));
+
+        // check for mismatch && log warning as the assertion will likely fail
+        if (!missing.isEmpty()) {
+            try {
+                logger.log(Level.WARNING,"Mismatched JMS dynamic routing variables not set in policy");
+
+                final String SEP = "; ";
+                StringBuffer sb = new StringBuffer("JMS variables missing from policy: ");
+
+                for (String s : missing) {
+                    sb.append(s).append(SEP);
+                }
+                logger.log(Level.INFO, sb.toString());
+            } catch (Throwable t) {
+                // prevent logging from stopping the policy execution
+                logger.log(Level.FINE, "Problem creating logs: {0}", ExceptionUtils.getMessage(t));
+            }
+        }
+        return propsWithValues;
     }
 
     private void enforceJmsMessagePropertyRuleSet(PolicyEnforcementContext context, JmsMessagePropertyRuleSet ruleSet, Map<String, Object> src,  Map<String, Object> dst) {

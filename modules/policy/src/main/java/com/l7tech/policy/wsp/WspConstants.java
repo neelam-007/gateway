@@ -4,6 +4,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.policy.*;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.TimeUnit;
@@ -14,11 +15,6 @@ import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.MessageUrlResourceInfo;
-import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
@@ -329,6 +325,7 @@ public class WspConstants {
         new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
         new ArrayTypeMapping(new CodeInjectionProtectionType[0], "codeInjectionProtectionTypeArray"),
         new BeanTypeMapping(JmsMessagePropertyRule.class, "jmsMessagePropertyRule"),
+        new BeanTypeMapping(JmsDynamicProperties.class, "dynamicJmsRoutingProperties"),
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
         new BeanTypeMapping(IdentityTarget.class, "IdentityTarget"),

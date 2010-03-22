@@ -383,6 +383,7 @@ CREATE TABLE jms_endpoint(
   password varchar(32) default '',
   max_concurrent_requests integer default '1',
   is_message_source tinyint default '0',
+  is_template tinyint default '0',
   outbound_message_type varchar(128),
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   primary key(objectid)

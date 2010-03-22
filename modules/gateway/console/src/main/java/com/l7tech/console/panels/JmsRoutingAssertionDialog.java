@@ -10,6 +10,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -21,9 +22,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.EventListener;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -120,6 +119,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel samlPanel;
     private JmsMessagePropertiesPanel requestMsgPropsPanel;
     private JmsMessagePropertiesPanel responseMsgPropsPanel;
+    private JPanel dynamicPropertiesPanel;
+    private JTextField dynamicICF;
+    private JTextField dynamicJndiUrl;
+    private JTextField dynamicQCF;
+    private JTextField dynamicDestQueueName;
+    private JTextField dynamicReplyToName;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -170,6 +175,19 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         queueComboBox.setModel(new DefaultComboBoxModel(getQueueItems()));
+        queueComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                populateDynamicPropertyFields();
+                applyDynamicAssertionPropertyOverrides();
+            }
+        });
+
+        Utilities.enableGrayOnDisabled(dynamicICF);
+        Utilities.enableGrayOnDisabled(dynamicJndiUrl);
+        Utilities.enableGrayOnDisabled(dynamicQCF);
+        Utilities.enableGrayOnDisabled(dynamicDestQueueName);
+        Utilities.enableGrayOnDisabled(dynamicReplyToName); 
 
         ButtonGroup secButtonGroup = new ButtonGroup();
         secButtonGroup.add(authNoneRadio);
@@ -226,8 +244,29 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     assertion.setEndpointName(null);
                 } else {
                     JmsEndpoint endpoint = item.getQueue().getEndpoint();
+                    JmsConnection conn = item.getQueue().getConnection();
+
                     assertion.setEndpointOid(new Long(endpoint.getOid()));
                     assertion.setEndpointName(endpoint.getName());
+                    JmsDynamicProperties dynProps = null;
+                    if (endpoint.isTemplate()) {
+                        dynProps = new JmsDynamicProperties();
+                        if (endpoint.getDestinationName() == null || endpoint.getDestinationName().equals(""))
+                            dynProps.setDestQName(dynamicDestQueueName.getText());
+
+                        if (endpoint.getReplyToQueueName() == null || endpoint.getReplyToQueueName().equals(""))
+                            dynProps.setReplytoQName(dynamicReplyToName.getText());
+
+                        if (conn.getJndiUrl() == null || conn.getJndiUrl().equals(""))
+                            dynProps.setJndiUrl(dynamicJndiUrl.getText()) ;
+
+                        if (conn.getInitialContextFactoryClassname() == null || conn.getInitialContextFactoryClassname().equals(""))
+                            dynProps.setIcfName(dynamicICF.getText());
+
+                        if (conn.getQueueFactoryUrl() == null || conn.getQueueFactoryUrl().equals(""))
+                            dynProps.setQcfName(dynamicQCF.getText());
+                    }
+                    assertion.setDynamicJmsRoutingProperties(dynProps);
                 }
 
                 assertion.setGroupMembershipStatement(false);
@@ -257,6 +296,76 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 JmsRoutingAssertionDialog.this.dispose();
             }
         });
+    }
+
+    private void populateDynamicPropertyFields() {
+        JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
+        if (selected != null) {
+            JmsEndpoint ep = selected.getQueue().getEndpoint();
+            JmsConnection conn = selected.getQueue().getConnection();
+
+            if (ep.isTemplate()) {
+                Utilities.setEnabled(dynamicPropertiesPanel, true);
+                String destQName = ep.getDestinationName();
+                dynamicDestQueueName.setText(destQName);
+                if (destQName != null && !"".equals(destQName.trim())) {
+                    dynamicDestQueueName.setEnabled(false);
+                }
+
+                String replyToQueueName = ep.getReplyToQueueName();
+                dynamicReplyToName.setText(replyToQueueName);
+                if (replyToQueueName != null && !"".equals(replyToQueueName.trim())) {
+                    dynamicReplyToName.setEnabled(false);
+                }
+
+                String jndiUrl = conn.getJndiUrl();
+                dynamicJndiUrl.setText(jndiUrl);
+                if (jndiUrl != null && !"".equals(jndiUrl.trim())){
+                    dynamicJndiUrl.setEnabled(false);
+                }
+
+                String icfClassName = conn.getInitialContextFactoryClassname();
+                dynamicICF.setText(icfClassName);
+                if (icfClassName != null && !"".equals(icfClassName.trim())) {
+                    dynamicICF.setEnabled(false);
+                }
+
+                String qcfName = conn.getQueueFactoryUrl();
+                dynamicQCF.setText(qcfName);
+                if (qcfName != null && !"".equals(qcfName.trim())) {
+                    dynamicQCF.setEnabled(false);
+                }
+            } else {
+                Utilities.setEnabled(dynamicPropertiesPanel, false);
+            }
+        } else {
+            Utilities.setEnabled(dynamicPropertiesPanel, false);            
+        }
+    }
+
+    private void applyDynamicAssertionPropertyOverrides() {
+        if (assertion != null && assertion.getDynamicJmsRoutingProperties() != null) {
+            JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
+            if (selected != null) {
+                if (selected.getQueue().getEndpoint().getOid() == assertion.getEndpointOid()) {    
+                    if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null)
+                        dynamicJndiUrl.setText(assertion.getDynamicJmsRoutingProperties().getJndiUrl());
+
+                    if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null)
+                        dynamicDestQueueName.setText(assertion.getDynamicJmsRoutingProperties().getDestQName());
+
+                    if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null)
+                        dynamicReplyToName.setText(assertion.getDynamicJmsRoutingProperties().getReplytoQName());
+
+                    if (assertion.getDynamicJmsRoutingProperties().getIcfName() != null)
+                        dynamicICF.setText(assertion.getDynamicJmsRoutingProperties().getIcfName());
+
+                    if (assertion.getDynamicJmsRoutingProperties().getQcfName() != null)
+                        dynamicQCF.setText(assertion.getDynamicJmsRoutingProperties().getQcfName());
+
+                }
+            }
+        }
     }
 
     private JmsUtilities.QueueItem[] loadQueueItems() {
@@ -293,6 +402,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid.longValue());
             }
             JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
+            applyDynamicAssertionPropertyOverrides();
+
         } catch (Exception e) {
             throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
         }

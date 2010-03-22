@@ -48,6 +48,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private JmsOutboundMessageType outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
     private boolean disabled;
     private boolean useMessageIdForCorrelation;
+    private boolean isTemplate;
 
     public void copyFrom( JmsEndpoint other ) {
         setOid( other.getOid() );
@@ -59,6 +60,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setAcknowledgementType( other.getAcknowledgementType() );
         setReplyType( other.getReplyType() );
         setUsername( other.getUsername() );
+        setTemplate( other.isTemplate() );
         setPassword( other.getPassword() );
         setMaxConcurrentRequests( other.getMaxConcurrentRequests() );
         setMessageSource( other.isMessageSource() );
@@ -253,5 +255,14 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
             return 0;
         }
         throw new IllegalArgumentException("May only compare JmsEndpoint to other JmsEndpoints");
+    }
+
+    @Column(name="is_template")
+    public boolean isTemplate() {
+        return isTemplate;
+    }
+
+    public void setTemplate(boolean template) {
+        isTemplate = template;
     }
 }

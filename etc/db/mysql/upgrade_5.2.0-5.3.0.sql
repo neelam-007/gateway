@@ -51,6 +51,9 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-500301, 0, "upgrade.task.500301", "com.l7tech.server.upgrade.Upgrade52To53UpdateRoles");
 
+
+ALTER TABLE jms_endpoint ADD COLUMN is_template tinyint default '0' after is_message_source;
+
 --
 -- Upgrade task for DN canonicalization (This is a repeat of a 5.2 upgrade task as the format has changed)
 --

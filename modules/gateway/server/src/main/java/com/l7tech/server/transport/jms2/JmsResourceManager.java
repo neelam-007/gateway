@@ -175,7 +175,7 @@ public class JmsResourceManager {
     private String getKey(JmsEndpointConfig cfg) {
         StringBuffer sb = new StringBuffer();
         if (cfg != null) {
-            sb.append(cfg.getEndpoint().getOid()).append("-").append(cfg.getConnection().getOid());
+            sb.append(cfg.getEndpointIdentifier());
         }
         return sb.toString();
     }
@@ -255,7 +255,8 @@ public class JmsResourceManager {
 
         CachedConnection(JmsEndpointConfig cfg, JmsBag bag) {
             this.bag = bag;
-            this.name = cfg.getDisplayName().substring(cfg.getDisplayName().lastIndexOf("/"));
+//            this.name = cfg.getDisplayName().substring(cfg.getDisplayName().lastIndexOf("/"));
+            this.name = cfg.getEndpointIdentifier();
             this.endpointVersion = cfg.getEndpoint().getVersion();
             this.connectionVersion = cfg.getConnection().getVersion();
             this.key = getKey(cfg);

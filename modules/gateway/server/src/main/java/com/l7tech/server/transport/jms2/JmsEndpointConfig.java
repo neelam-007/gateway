@@ -4,7 +4,10 @@ import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.policy.JmsDynamicProperties;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.transport.jms.JmsBag;
+import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
 import org.springframework.context.ApplicationContext;
 
@@ -13,6 +16,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import java.util.Map;
 
 /**
  * POJO specifying one inbound Jms endpoint configured for the gateway.
@@ -20,6 +24,9 @@ import javax.naming.NamingException;
  * @author: vchan
  */
 public class JmsEndpointConfig {
+
+    /** Separator used in the endpoint DisplayName */
+    private static final String SEPARATOR = "/";
 
     /** Configured Jms connection attributes */
     private final JmsConnection conn;
@@ -29,10 +36,14 @@ public class JmsEndpointConfig {
     private final JmsPropertyMapper propertyMapper;
     /** Flag specifying whether the endpoint should handle messages transactionally */
     private Boolean transactional;
+    /** Flag specifying whether the endpoint is dynamic */
+    private Boolean dynamic;
     /** Spring application context */
     private final ApplicationContext appContext;
     /** String denoting the display name for an endpoint instance */
     private final String displayName;
+    /** String identifier representing this JMS endpoint configuration  */
+    private String endpointIdentifier;
 
     /**
      * Constructor.
@@ -47,12 +58,55 @@ public class JmsEndpointConfig {
                              final JmsPropertyMapper propertyMapper,
                              final ApplicationContext appContext)
     {
+        this(connection, endpoint, propertyMapper, appContext, new JmsDynamicProperties());
+    }
+
+    /**
+     * Constructor using overrides.
+     *
+     * @param connection configured Jms connection attributes
+     * @param endpoint configured Jms endpoint attributes
+     * @param propertyMapper mapper for Jms initial context properties
+     * @param appContext spring application context
+     * @param dynamicProperties dynamic JMS queue configuration values
+     */
+    public JmsEndpointConfig(final JmsConnection connection,
+                             final JmsEndpoint endpoint,
+                             final JmsPropertyMapper propertyMapper,
+                             final ApplicationContext appContext,
+                             final JmsDynamicProperties dynamicProperties)
+    {
         super();
-        this.conn = connection;
-        this.endpoint = endpoint;
+
+        // check if this is a template endpoint
+        this.dynamic = endpoint.isTemplate();
+        if (dynamic) {
+            // clone the JmsConnection and JmsEndpoint beans since they will be overwritten
+            JmsConnection connClone = new JmsConnection();
+            connClone.copyFrom(connection);
+            this.conn = connClone;
+
+            JmsEndpoint endpointClone = new JmsEndpoint();
+            endpointClone.copyFrom(endpoint);
+            this.endpoint = endpointClone;
+
+            try {
+                applyOverrides(dynamicProperties);
+            } catch (JmsConfigException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+
+        } else {
+            
+            this.conn = connection;
+            this.endpoint = endpoint;
+        }
+
         this.propertyMapper = propertyMapper;
         this.appContext = appContext;
-        this.displayName = getConnection().getJndiUrl() + "/" + getConnection().getName();
+
+        StringBuffer sb = new StringBuffer(getConnection().getJndiUrl()).append(SEPARATOR).append(getConnection().getName());
+        this.displayName =  sb.toString();
     }
 
     /* Getters */
@@ -129,6 +183,29 @@ public class JmsEndpointConfig {
     }
 
     /**
+     * Returns the endpoing Id for the specific JMS endpoint.
+     *
+     * @return String for the endpoint display name
+     */
+    public String getEndpointIdentifier() {
+
+        if (endpointIdentifier == null) {
+            StringBuffer sb = new StringBuffer().append(endpoint.getOid()).append("-").append(conn.getOid());
+
+            /*
+             * For dynamic endpoints, append the full JMS destination (JNDI, QName, and QCF)
+             */
+            if (isDynamic()) {
+                sb.append("-dest-").append(getDisplayName());
+                sb.append(SEPARATOR).append(getConnection().getQueueFactoryUrl()); // append QCF
+            }
+
+            endpointIdentifier = sb.toString();
+        }
+        return endpointIdentifier;
+    }
+
+    /**
      * Returns whether the endpoint is configured to be transactional.
      *
      * @return true if the endpoint JmsAcknowledgementType=ON_COMPLETE, false otherwise
@@ -138,5 +215,59 @@ public class JmsEndpointConfig {
         if (transactional == null)
             transactional = (this.endpoint.getAcknowledgementType() == JmsAcknowledgementType.ON_COMPLETION);
         return transactional;
+    }
+
+    /**
+     * Returns whether the is dynamic.
+     *
+     * @return true if the outbound JMS queue was configured using context variables for queue destination
+     */
+    public boolean isDynamic() {
+        return dynamic;
+    }
+
+    /**
+     * Note: this could be a problem if the ctx var type is of Message rather than String
+     */
+    private void applyOverrides(JmsDynamicProperties overrides) throws JmsConfigException {
+        //get all the empty fields and populate them with context variables.
+        if (conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()))
+            conn.setInitialContextFactoryClassname(overrides.getIcfName());
+
+        if (conn.getJndiUrl() == null || "".equals(conn.getJndiUrl()))
+            conn.setJndiUrl(overrides.getJndiUrl());
+
+        if (conn.getQueueFactoryUrl() == null || "".equals(conn.getQueueFactoryUrl()))
+            conn.setQueueFactoryUrl(overrides.getQcfName());
+
+        if (endpoint.getReplyToQueueName() == null || "".equals(endpoint.getReplyToQueueName()))
+            endpoint.setReplyToQueueName(overrides.getReplytoQName());
+
+        if (endpoint.getDestinationName() == null || "".equals(endpoint.getDestinationName()))
+            endpoint.setDestinationName(overrides.getDestQName());
+    }
+
+    private String getCtxVariableName(final String check) {
+
+        if (check != null && check.length() > 0) {
+
+            String[] vars = Syntax.getReferencedNames(check);
+            if (vars.length > 0) {
+                return vars[0];
+            }
+
+        }
+        return null;
+    }
+
+    private String getKeyValue(Map<String, Object> map, final String key, final String defaultValue) {
+
+        if (key != null) {
+            Object value = map.get(key.toLowerCase());
+            if (value != null) {
+                return value.toString();
+            }
+        }
+        return defaultValue;
     }
 }
