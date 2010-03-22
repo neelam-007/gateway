@@ -143,9 +143,15 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             return checkCertificateOnly(endEntityCertificate, subjectDnForLoggingOnly, auditor);
 
         // Time to build a path
-        final PKIXBuilderParameters pbp = makePKIXBuilderParameters(endEntityCertificatePath,
-                                                                    valType == CertificateValidationType.REVOCATION,
-                                                                    auditor);
+        final PKIXBuilderParameters pbp;
+        try {
+            pbp = makePKIXBuilderParameters(endEntityCertificatePath, valType == CertificateValidationType.REVOCATION, auditor);
+        } catch (InvalidAlgorithmParameterException e) {
+            auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDnForLoggingOnly, ExceptionUtils.getMessage(e) }, e.getCause());
+            return CertificateValidationResult.CANT_BUILD_PATH;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
         try {
             CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
             builder.build(pbp);
@@ -385,28 +391,22 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate[] endEntityCertificatePath, boolean checkRevocation, Auditor auditor) {
+    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate[] endEntityCertificatePath, boolean checkRevocation, Auditor auditor) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         X509CertSelector sel;
         lock.readLock().lock();
         try {
             sel = new X509CertSelector();
             sel.setCertificate(endEntityCertificatePath[0]);
-            try {
-                Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
-                tempAnchors.addAll(trustAnchorsByDn.values());
-                PKIXBuilderParameters pbp = new PKIXBuilderParameters(tempAnchors, sel);
-                pbp.setRevocationEnabled(false); // We'll do our own
-                if (checkRevocation)
-                    pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
-                pbp.addCertStore(certStore);
-                pbp.addCertStore(CertStore.getInstance("Collection",
-                        new CollectionCertStoreParameters(Arrays.asList(endEntityCertificatePath))));
-                return pbp;
-            } catch (InvalidAlgorithmParameterException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+            Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
+            tempAnchors.addAll(trustAnchorsByDn.values());
+            PKIXBuilderParameters pbp = new PKIXBuilderParameters(tempAnchors, sel);
+            pbp.setRevocationEnabled(false); // We'll do our own
+            if (checkRevocation)
+                pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
+            pbp.addCertStore(certStore);
+            pbp.addCertStore(CertStore.getInstance("Collection",
+                    new CollectionCertStoreParameters(Arrays.asList(endEntityCertificatePath))));
+            return pbp;
         } finally {
             lock.readLock().unlock();
         }

@@ -26,6 +26,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.EntityResolver;
 
+import javax.net.ssl.SSLException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -629,6 +630,12 @@ public class WsdlLocationPanel extends JPanel {
                                     JOptionPane.showMessageDialog(null,
                                                                   "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
                                                                   "'\n",
+                                                                  "Error",
+                                                                  JOptionPane.ERROR_MESSAGE);
+                                } else if (ExceptionUtils.causedBy(e1, SSLException.class)) {
+                                    JOptionPane.showMessageDialog(null,
+                                                                  "<html><center>Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +  "':</center>" +
+                                                                  "<center>" + ExceptionUtils.getMessage(e1) + "</center></html>\n",
                                                                   "Error",
                                                                   JOptionPane.ERROR_MESSAGE);
                                 } else {
