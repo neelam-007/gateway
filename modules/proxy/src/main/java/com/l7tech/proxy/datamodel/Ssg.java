@@ -483,6 +483,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * @param keyStorePath the key store pathname
      * @deprecated this is only here for backward compat with old config files.  Use {@link #setKeyStoreFile} instead.
      */
+    @Deprecated
     public void setKeyStorePath(String keyStorePath) {
         if (keyStorePath == null)
             throw new IllegalArgumentException("keyStorePath may not be null");
@@ -508,6 +509,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * @param trustStorePath the trust store pathname
      * @deprecated this is here only for backward compatibility.  Use {@link #setTrustStoreFile} instead.
      */
+    @Deprecated
     public void setTrustStorePath(String trustStorePath) {
         if (trustStorePath == null)
             throw new IllegalArgumentException("trustStorePath may not be null");

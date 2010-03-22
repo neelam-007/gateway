@@ -75,6 +75,7 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
      * @deprecated dont touch this unless you really need it.
      * @return the raw HttpServletResponse
      * */
+    @Deprecated
     public HttpServletResponse getHttpServletResponse() {
         return response;
     }

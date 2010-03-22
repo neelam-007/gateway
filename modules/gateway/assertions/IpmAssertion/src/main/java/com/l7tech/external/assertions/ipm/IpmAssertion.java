@@ -73,6 +73,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
      * @return base64-encoded template string
      * @deprecated only for serialization
      */
+    @Deprecated
     public String getTemplateb64() {
         return templateb64;
     }
@@ -81,6 +82,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
      * @param templateb64 the new base64-encoded template string
      * @deprecated only for serialization
      */
+    @Deprecated
     public void setTemplateb64(String templateb64) {
         this.templateb64 = templateb64;
         this.template = null;

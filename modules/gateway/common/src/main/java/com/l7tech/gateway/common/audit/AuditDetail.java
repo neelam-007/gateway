@@ -106,30 +106,36 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
      }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public AuditDetail() {
     }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public void setComponentId(int componentId) {
         this.componentId = componentId;
     }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public void setTime(long time) {
         this.time = time;
     }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public void setMessageId(int messageId) {
         this.messageId = messageId;
     }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public void setParams(String[] params) {
         this.params = params;
     }
 
     /** @deprecated only for persistence */
+    @Deprecated
     public void setException(String exception) {
         this.exception = exception;
     }

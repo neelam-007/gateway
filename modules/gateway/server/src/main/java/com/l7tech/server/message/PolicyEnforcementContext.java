@@ -70,22 +70,22 @@ public interface PolicyEnforcementContext extends Closeable {
 
     void setAuditSaveResponse(boolean auditSaveResponse);
 
-    @Deprecated
     /**
      * @deprecated
      */
+    @Deprecated
     Collection<ServerAssertion> getDeferredAssertions();
 
-    @Deprecated
     /**
      * @deprecated
      */
+    @Deprecated
     void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration);
 
-    @Deprecated
     /**
      * @deprecated
      */
+    @Deprecated
     void removeDeferredAssertion(ServerAssertion owner);
 
     RoutingResultListener getRoutingResultListener();

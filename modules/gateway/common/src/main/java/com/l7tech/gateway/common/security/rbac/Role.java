@@ -197,6 +197,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     @Column(name="entity_type", length=255)
     protected String getEntityTypeName() {
         if (entityType == null) return null;
@@ -204,6 +205,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     protected void setEntityTypeName(String typeName) {
         if (typeName == null) return;
         entityType = EntityType.valueOf(typeName);

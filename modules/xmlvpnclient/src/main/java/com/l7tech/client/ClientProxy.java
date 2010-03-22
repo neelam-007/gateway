@@ -78,6 +78,7 @@ public class ClientProxy {
      * @param bindPort The port on which to pretend to listen for HTTP connections.
      * @deprecated Do not use this constructor except while writing GUI test code that needs a fake ClientProxy.
      */
+    @Deprecated
     protected ClientProxy(int bindPort) {
         this.bindPort = bindPort;
     }

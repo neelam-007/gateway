@@ -35,6 +35,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public MessageSummaryAuditRecord() {
     }
 
@@ -210,57 +211,68 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setOperationName(String operationName) {
         this.operationNameHaver = null;
         this.operationName = operationName;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setStatus( int status ) {
         this.status = status;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setRequestXml( String requestXml ) {
         this.requestXml = requestXml;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setResponseXml( String responseXml ) {
         this.responseXml = responseXml;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setServiceOid( long serviceOid ) {
         this.serviceOid = serviceOid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setAuthenticated( boolean authenticated ) {
         this.authenticated = authenticated;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setAuthenticationType(SecurityTokenType authenticationType) {
         this.authenticationType = authenticationType;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setRequestContentLength( int requestContentLength ) {
         this.requestContentLength = requestContentLength;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setResponseContentLength( int responseContentLength ) {
         this.responseContentLength = responseContentLength;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setResponseHttpStatus(int responseHttpStatus) {
         this.responseHttpStatus = responseHttpStatus;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected void setRoutingLatency(int routingLatency) {
         this.routingLatency = routingLatency;
     }

@@ -138,6 +138,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      * @param ski  the Subject Key Identifier to set.
      * @deprecated for use only by serialization & persistence layers
      */
+    @Deprecated
     public void setSki(String ski) {
         mutate();
         this.ski = ski;
@@ -147,6 +148,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      * @param thumbprintSha1 the thumbprint of the certificate, base64-encoded.
      * @deprecated for use only by serialization & persistence layers
      */
+    @Deprecated
     public void setThumbprintSha1(String thumbprintSha1) {
         mutate();
         this.thumbprintSha1 = thumbprintSha1;

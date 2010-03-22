@@ -319,6 +319,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             /**
              * @deprecated
              */
+            @Deprecated
             public void setStatus(int i, String string) {
                 super.setStatus(i, string);
             }
@@ -326,6 +327,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             /**
              * @deprecated
              */
+            @Deprecated
             public String encodeRedirectUrl(String string) {
                 return super.encodeRedirectUrl(string);
             }
@@ -333,6 +335,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             /**
              * @deprecated
              */
+            @Deprecated
             public String encodeUrl(String string) {
                 return super.encodeUrl(string);
             }

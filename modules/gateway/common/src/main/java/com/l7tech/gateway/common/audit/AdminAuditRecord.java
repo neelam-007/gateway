@@ -62,6 +62,7 @@ public class AdminAuditRecord extends AuditRecord {
 
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public AdminAuditRecord() {
     }
 
@@ -90,16 +91,19 @@ public class AdminAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setEntityClassname(String entityClassname) {
         this.entityClassname = entityClassname;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setEntityOid( long entityOid ) {
         this.entityOid = entityOid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setAction(char action) {
         this.action = action;
     }

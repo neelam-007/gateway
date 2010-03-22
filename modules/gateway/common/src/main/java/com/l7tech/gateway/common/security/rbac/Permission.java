@@ -135,6 +135,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     @Column(name="entity_type", nullable=false, length=255)
     protected String getEntityTypeName() {
         if (entityType == null) return null;
@@ -142,12 +143,14 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     protected void setEntityTypeName(String typeName) {
         if (typeName == null) return;
         entityType = EntityType.valueOf(typeName);
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     @Column(name="operation_type", nullable=false, length=16)
     protected String getOperationTypeName() {
         if (operation == null) return null;
@@ -155,6 +158,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Deprecated
     protected void setOperationTypeName(String name) {
         if (name == null) return;
         operation = OperationType.valueOf(name);

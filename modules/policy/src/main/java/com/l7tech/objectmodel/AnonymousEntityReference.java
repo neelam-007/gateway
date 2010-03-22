@@ -59,6 +59,7 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
     }
 
     /** @deprecated */
+    @Deprecated
     public void setName(String name) {
         throw new UnsupportedOperationException();
     }

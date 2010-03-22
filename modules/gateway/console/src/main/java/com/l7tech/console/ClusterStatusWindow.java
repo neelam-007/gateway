@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  *
  * @deprecated Replaced by {@link com.l7tech.console.panels.dashboard.ClusterStatusPanel} since SecureSpan 4.2.
  */
+@Deprecated
 public class ClusterStatusWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;

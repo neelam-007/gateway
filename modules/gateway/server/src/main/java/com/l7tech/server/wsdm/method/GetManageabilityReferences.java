@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
  * User: flascell<br/>
  * Date: Nov 2, 2007<br/>
  */
+@Deprecated
 public class GetManageabilityReferences extends ESMMethod {
     private String resourceIdRequested;
 

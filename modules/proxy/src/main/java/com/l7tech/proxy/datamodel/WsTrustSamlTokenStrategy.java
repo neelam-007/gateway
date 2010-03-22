@@ -187,6 +187,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
     /**
      * @deprecated use password/storePassword methods (leave this for xml file config)
      */
+    @Deprecated
     public char[] getPassword() {
         return new char[0];
     }
@@ -194,6 +195,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
     /**
      * @deprecated use password/storePassword methods (leave this for xml file config)
      */
+    @Deprecated
     public void setPassword(char[] password) {
         this.password = password;
     }

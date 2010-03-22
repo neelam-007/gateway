@@ -771,6 +771,7 @@ public class XmlUtil extends DomUtils {
     }
 
     /** @deprecated For unit tests only */
+    @Deprecated
     public static void setSerializeWithXss4j(Boolean b) {
         serializeWithXss4j = b == null ? DEFAULT_SERIALIZE_WITH_XSS4J : b;
     }

@@ -79,6 +79,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public boolean isStaleCheckingEnabled() {
         if (hasConnection()) {
             return wrappedConnection.isStaleCheckingEnabled();
@@ -98,6 +99,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void setStaleCheckingEnabled(boolean staleCheckEnabled) {
         if (hasConnection()) {
             wrappedConnection.setStaleCheckingEnabled(staleCheckEnabled);
@@ -239,6 +241,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void print(String data)
         throws IOException, IllegalStateException {
         if (hasConnection()) {
@@ -260,6 +263,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void printLine(String data)
         throws IOException, IllegalStateException {
         if (hasConnection()) {
@@ -272,6 +276,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public String readLine() throws IOException, IllegalStateException {
         if (hasConnection()) {
             return wrappedConnection.readLine();
@@ -294,6 +299,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void setConnectionTimeout(int timeout) {
         if (hasConnection()) {
             wrappedConnection.setConnectionTimeout(timeout);
@@ -361,6 +367,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void setSoTimeout(int timeout)
         throws SocketException, IllegalStateException {
         if (hasConnection()) {
@@ -373,6 +380,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void shutdownOutput() {
         if (hasConnection()) {
             wrappedConnection.shutdownOutput();
@@ -436,6 +444,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public int getSoTimeout() throws SocketException {
         if (hasConnection()) {
             return wrappedConnection.getSoTimeout();
@@ -447,6 +456,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public String getVirtualHost() {
         if (hasConnection()) {
             return wrappedConnection.getVirtualHost();
@@ -458,6 +468,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void setVirtualHost(String host) throws IllegalStateException {
         if (hasConnection()) {
             wrappedConnection.setVirtualHost(host);
@@ -477,6 +488,7 @@ final class HttpConnectionWrapper extends HttpConnection {
     /**
      * @deprecated
      */
+    @Deprecated
     public void setSendBufferSize(int sendBufferSize) throws SocketException {
         if (hasConnection()) {
             wrappedConnection.setSendBufferSize(sendBufferSize);

@@ -105,7 +105,6 @@
             <compilerarg value="-Xlint:-serial" compiler="modern"/>
             <compilerarg value="-Xlint:-path" compiler="modern"/>
             <compilerarg value="-Xlint:-unchecked" compiler="modern"/>
-            <compilerarg value="-Xlint:-dep-ann" compiler="modern"/>
             <classpath refid="lib.path.id"/>
         </javac>
     </presetdef>

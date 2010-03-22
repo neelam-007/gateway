@@ -120,6 +120,7 @@ class UnsynchronizedNamingProperties extends Properties {
      *  
      * @deprecated
      */
+    @Deprecated
     public void save( OutputStream out, String header ) {
         throw new UnsupportedOperationException();
     }

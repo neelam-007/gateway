@@ -19,6 +19,7 @@ import java.io.IOException;
  */
 public class SystemAuditRecord extends AuditRecord {
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected SystemAuditRecord() {
     }
 
@@ -63,11 +64,13 @@ public class SystemAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setComponentId(int componentId) {
         this.componentId = componentId;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setAction( String action ) {
         this.action = action;
     }

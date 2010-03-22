@@ -52,6 +52,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     };
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     protected AuditRecord() {
     }
 
@@ -156,11 +157,13 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setIpAddress( String ipAddress ) {
         this.ipAddress = ipAddress;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setName( String name ) {
         this.name = name;
     }
@@ -199,28 +202,33 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     @Override
     public void setOid(long oid) {
         this.oid = oid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     @Override
     public void setVersion(int version) {
         this.version = version;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setIdentityProviderOid( long identityProviderOid ) {
         this.identityProviderOid = identityProviderOid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setUserName( String userName ) {
         this.userName = userName;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    @Deprecated
     public void setUserId( String userId ) {
         this.userId = userId;
     }

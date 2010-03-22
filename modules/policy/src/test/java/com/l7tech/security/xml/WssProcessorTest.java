@@ -1047,6 +1047,7 @@ public class WssProcessorTest {
             "EQTDNN63uJSIPSQnDkbOuBBywbxmJtgcPfOliMn/FnrD8NwO";
 
     /** @deprecated this message was generated before the fix for bug #7859 and so encodes the ECDSA SignatureValue incorrectly (as ASN.1, rather than as raw r,s pair) */
+    @Deprecated
     private static final String SIGNED_USING_SHA384_WITH_ECDSA =
             "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
             "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/" +

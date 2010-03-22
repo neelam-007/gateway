@@ -200,6 +200,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *
      * @deprecated Use {@link MetricsSummaryBin} instead.
      */
+    @Deprecated
     public static void combine(final List<MetricsBin> bins, final MetricsBin result) {
         if (bins.size() == 0) {
             throw new IllegalArgumentException("Must have at least one metrics bin.");

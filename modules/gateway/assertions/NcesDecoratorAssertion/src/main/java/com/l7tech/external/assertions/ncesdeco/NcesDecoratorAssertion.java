@@ -98,6 +98,7 @@ public class NcesDecoratorAssertion
     /**
      * @deprecated use {@link #getTarget} instead TODO DELETE
      */
+    @Deprecated
     public boolean isOperateOnResponse() {
         return getTarget() == TargetMessageType.RESPONSE;
     }
@@ -105,6 +106,7 @@ public class NcesDecoratorAssertion
     /**
      * @deprecated use {@link #setTarget} instead TODO DELETE
      */
+    @Deprecated
     public void setOperateOnResponse(boolean operateOnResponse) {
         setTarget(operateOnResponse ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
     }

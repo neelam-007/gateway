@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
  * User: flascell<br/>
  * Date: Nov 2, 2007<br/>
  */
+@Deprecated
 public class GetResourceProperty extends ESMMethod {
     private ResourceProperty propertyRequested;
 

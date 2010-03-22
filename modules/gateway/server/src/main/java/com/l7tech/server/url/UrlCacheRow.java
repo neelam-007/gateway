@@ -68,36 +68,43 @@ public class UrlCacheRow extends NamedEntityImp {
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setCanonicalUrl(String canonicalUrl) {
         this.canonicalUrl = canonicalUrl;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setContent(String content) {
         this.content = content;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setOriginalUrl(String originalUrl) {
         this.originalUrl = originalUrl;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setSize(int size) {
         this.size = size;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
     /** @deprecated only used for serialization and persistence */
+    @Deprecated
     protected void setType(UrlCacheEntryType type) {
         this.type = type;
     }

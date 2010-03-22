@@ -113,6 +113,7 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     /**
      * @deprecated this method is only here for deserialization purposes and should not be called directly.
      */
+    @Deprecated
     public void setProtections(Set<String> protections) {
         this.protections = protections == null ? new HashSet<String>() : new HashSet<String>(protections);
     }

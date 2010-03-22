@@ -92,43 +92,51 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public String getExpression2() {
         if (check()) return compat().getRightValue();
         return null;
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public void setExpression2(String expression2) {
         if (check()) compat().setRightValue(expression2);
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public ComparisonOperator getOperator() {
         if (check()) return compat().getOperator();
         return null;
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public void setOperator(ComparisonOperator operator) {
         if (check()) compat().setOperator(operator);
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public boolean isNegate() {
         return check() && compat().isNegated();
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public void setNegate(boolean negate) {
         if (check()) compat().setNegated(negate);
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public boolean isCaseSensitive() {
         return check() && compat().isCaseSensitive();
     }
 
     /** @deprecated -- use a {@link BinaryPredicate} in {@link #predicates}*/
+    @Deprecated
     public void setCaseSensitive(boolean caseSensitive) {
         if (check()) compat().setCaseSensitive(caseSensitive);
     }

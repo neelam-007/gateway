@@ -119,6 +119,7 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
     /**
      * @deprecated this is only for backward compatibility with the old property name
      */
+    @Deprecated
     public void setOtherMessageVariableName(String otherMessageVariableName) {
         setOtherTargetMessageVariable(otherMessageVariableName);
     }

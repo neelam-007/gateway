@@ -355,6 +355,7 @@ public class InputTimeoutFilter implements Filter {
         /**
          * @deprecated
          */
+        @Deprecated
         public boolean isRequestedSessionIdFromUrl() {
             return super.isRequestedSessionIdFromUrl();
         }
@@ -362,6 +363,7 @@ public class InputTimeoutFilter implements Filter {
         /**
          * @deprecated
          */
+        @Deprecated
         public String getRealPath(String string) {
             return super.getRealPath(string);
         }
