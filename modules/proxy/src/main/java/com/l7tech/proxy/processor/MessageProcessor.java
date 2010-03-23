@@ -29,8 +29,8 @@ import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.DomainIdInjector;
 import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
@@ -180,7 +180,20 @@ public class MessageProcessor {
                     ssg.getRuntime().handleKeyStoreCorrupt();
                     // FALLTHROUGH -- retry, creating new keystore
                 } catch (DecoratorException e) {
-                    throw new ConfigurationException(e);
+                    if (ExceptionUtils.causedBy(e, CredentialsRequiredException.class)) {
+                        ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg, CredentialManager.ReasonHint.PRIVATE_KEY, false, false);
+                        // FALLTHROUGH -- retry with credentials
+                    } else
+                        throw new ConfigurationException(e);
+                } catch (ProcessorException e) {
+                    if (ExceptionUtils.causedBy(e, CredentialsRequiredException.class)) {
+                        ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg, CredentialManager.ReasonHint.PRIVATE_KEY, false, false);
+                        // FALLTHROUGH -- retry with credentials
+                    } else
+                        throw e;
+                } catch (CredentialsRequiredException e) {
+                    ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg, CredentialManager.ReasonHint.PRIVATE_KEY, false, false);
+                    // FALLTHROUGH -- retry with credentials
                 }
                 context.reset();
             }
@@ -221,6 +234,11 @@ public class MessageProcessor {
     }
 
     private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, HttpChallengeRequiredException {
+        if (ExceptionUtils.causedBy(e, CredentialsRequiredException.class)) {
+            ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg, CredentialManager.ReasonHint.PRIVATE_KEY, false, false);
+            // Handled; retry now that we have credentials
+            return;
+        }
         if (context.getSsg().isGeneric()) {
             // We won't try to handle SSL exceptions for generic services
             throw new SSLException(e);
@@ -314,10 +332,10 @@ public class MessageProcessor {
      *                                    if the Ssg certificate needs to be (re)imported.
      */
     private void enforcePolicy(PolicyApplicationContext context)
-      throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
-      IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
-      HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-      InvalidDocumentFormatException, DecoratorException, ConfigurationException {
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
+            IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
+            InvalidDocumentFormatException, DecoratorException, ConfigurationException, CredentialsRequiredException {
         Policy policy = lookupPolicy(context);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
@@ -568,7 +586,7 @@ public class MessageProcessor {
     }
 
     private static boolean isSslUrl(URL url) {
-        return "https".equals(url.getProtocol());
+        return "https".equalsIgnoreCase(url.getProtocol());
     }
 
     private static class WrappedInputStreamFactoryException extends RuntimeException {
@@ -639,8 +657,7 @@ public class MessageProcessor {
             throws ConfigurationException, IOException, PolicyRetryableException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, GeneralSecurityException,
-            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
-    {
+            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException, CredentialsRequiredException {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
 
@@ -683,7 +700,9 @@ public class MessageProcessor {
             if (interceptor != null)
                 interceptor.onBackEndRequest(context, params.getExtraHeaders());
 
-
+            // Ensure private key unlocked if necessary
+            if (isSslUrl(url) && ssg.getClientCertificate() != null)
+                context.prepareClientCertificate();
             httpRequest = httpClient.createRequest(HttpMethod.POST, params);
 
             configureRequestFailover(request, httpRequest, zippedInputStream, iscompressed);
@@ -829,7 +848,7 @@ public class MessageProcessor {
         }
     }
 
-    private void checkResponsePolicyUrl(PolicyApplicationContext context, Ssg ssg, GenericHttpResponse httpResponse, int status, HttpHeaders responseHeaders) throws IOException, ConfigurationException, OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, PolicyLockedException, BadCredentialsException {
+    private void checkResponsePolicyUrl(PolicyApplicationContext context, Ssg ssg, GenericHttpResponse httpResponse, int status, HttpHeaders responseHeaders) throws IOException, ConfigurationException, OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, PolicyLockedException, BadCredentialsException, CredentialsRequiredException {
         String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
         if (policyUrlStr != null) {
             log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
@@ -1056,9 +1075,8 @@ public class MessageProcessor {
                                                Message response,
                                                SecurityContextFinder scf)
             throws KeyStoreCorruptException, BadCredentialsException, HttpChallengeRequiredException,
-                   OperationCanceledException, ProcessorException, InvalidDocumentFormatException,
-                   GeneralSecurityException, BadSecurityContextException, SAXException, IOException
-    {
+            OperationCanceledException, ProcessorException, InvalidDocumentFormatException,
+            GeneralSecurityException, BadSecurityContextException, SAXException, IOException, CredentialsRequiredException {
         ProcessorResult processorResult;// TODO optimize this -- a lot of these parameter objects could be saved and reused
         final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
         final SignerInfo clientSignerInfo = haveKey ? new SignerInfo(ssg.getClientCertificatePrivateKey(),

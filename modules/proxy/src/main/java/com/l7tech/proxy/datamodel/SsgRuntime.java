@@ -14,30 +14,22 @@ import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.util.DateTranslator;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.*;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.DateTranslator;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -468,23 +460,26 @@ public class SsgRuntime {
     {
         synchronized (ssg) {
             log.info("Creating new SSL context for SSG " + toString());
-            ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
-            X509TrustManager trustManager = getTrustManager();
-            SSLContext sslContext;
+            final ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
+            final X509TrustManager trustManager = getTrustManager();
             try {
-                String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER);
-                sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
-                sslContext.init(new X509KeyManager[] {keyManager},
-                                new X509TrustManager[] {trustManager},
-                                null);
-                return sslContext;
-            } catch (NoSuchAlgorithmException e) {
+                return sslContext = CurrentSslPeer.doWithSslPeer(ssg, new Callable<SSLContext>() {
+                    @Override
+                    public SSLContext call() throws Exception {
+                        String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER);
+                        SSLContext sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
+                        sslContext.init(new X509KeyManager[] {keyManager},
+                                        new X509TrustManager[] {trustManager},
+                                        null);
+                        return sslContext;
+                    }
+                });
+            } catch (RuntimeException e) {
+                if (ExceptionUtils.causedBy(e, CredentialsRequiredException.class))
+                    throw e;
                 log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e); // shouldn't happen
-            } catch (NoSuchProviderException e) {
-                log.log(Level.SEVERE, "Unable to create SSL context", e);
-                throw new RuntimeException(e); // shoudn't happen
-            } catch (KeyManagementException e) {
+            } catch (Exception e) {
                 log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e); // shouldn't happen
             }
@@ -504,10 +499,25 @@ public class SsgRuntime {
         resetSslContext();
     }
 
+    private void flushAllSslSessions(SSLContext sslContext) {
+        SSLSessionContext sc = sslContext.getClientSessionContext();
+        List<byte[]> idlist = new ArrayList<byte[]>();
+        Enumeration<byte[]> ids = sc.getIds();
+        while (ids.hasMoreElements()) {
+            idlist.add(ids.nextElement());
+        }
+        for (byte[] bytes : idlist) {
+            SSLSession sess = sc.getSession(bytes);
+            if (sess != null)
+                sess.invalidate();
+        }
+    }
+
     /** Flush SSL context and cached certificates. */
     public void resetSslContext()
     {
         synchronized (ssg) {
+            flushAllSslSessions(getSslContext()); // Create one if necessary -- need to access SSL-J global session state, not reset by creating a new SSLContext
             keyStore(null);
             trustStore(null);
             setCachedPrivateKey(null);

@@ -6,17 +6,16 @@
 
 package com.l7tech.proxy.ssl;
 
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 
 /**
@@ -51,36 +50,35 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
     }
 
     public Socket createSocket() throws IOException {
-        return (SSLSocket) socketFactory().createSocket();
+        return configSocket((SSLSocket) socketFactory().createSocket());
     }
 
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-            throws IOException, UnknownHostException
-    {
-        return (SSLSocket) socketFactory().createSocket(socket, host, port, autoClose);
+            throws IOException {
+        return configSocket((SSLSocket) socketFactory().createSocket(socket, host, port, autoClose));
     }
 
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
-            throws IOException, UnknownHostException
-    {
-        return (SSLSocket) socketFactory().createSocket(host, port, clientHost, clientPort);
+            throws IOException {
+        return configSocket((SSLSocket) socketFactory().createSocket(host, port, clientHost, clientPort));
     }
 
     public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException
     {
-        return (SSLSocket) socketFactory().createSocket(inetAddress, i, inetAddress1, i1);
+        return configSocket((SSLSocket) socketFactory().createSocket(inetAddress, i, inetAddress1, i1));
     }
 
-    public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-        return (SSLSocket) socketFactory().createSocket(host, port);
+    public Socket createSocket(String host, int port) throws IOException {
+        return configSocket((SSLSocket) socketFactory().createSocket(host, port));
     }
 
     public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
-        return (SSLSocket) socketFactory().createSocket(inetAddress, i);
+        return configSocket((SSLSocket) socketFactory().createSocket(inetAddress, i));
     }
 
-    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
-        Socket socket = socketFactory().createSocket();
+    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
+        SSLSocket socket = (SSLSocket) socketFactory().createSocket();
+        configSocket(socket);
         int connectTimeout = httpConnectionParams.getConnectionTimeout();
 
         socket.bind(new InetSocketAddress(clientHost, clientPort));
@@ -93,5 +91,13 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         }
 
         return socket;
+    }
+
+    private SSLSocket configSocket(SSLSocket s) {
+        // TODO add configuration of enabled XVC cipher suites and TLS versions here
+        //s.setEnabledCipherSuites(...);
+        //s.setEnabledProtocols(...);
+        s.setWantClientAuth(true);
+        return s;
     }
 }

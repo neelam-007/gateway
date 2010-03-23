@@ -776,7 +776,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * Get the private key.  Might take a long time if it needs to prompt for a password.
      * @return the private key, or null if we don't yet have a client certificate.
      */
-    public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException {
+    public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException, CredentialsRequiredException {
         return getClientCertificatePrivateKey(null);
     }
 
@@ -785,11 +785,10 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * @param passwordAuthentication OPTIONAL credentials to use (may be null)
      * @return the private key, or null if we don't yet have a client certificate.
      */
-    public PrivateKey getClientCertificatePrivateKey(PasswordAuthentication passwordAuthentication) throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException {
-        PasswordAuthentication pa = passwordAuthentication;
+    public PrivateKey getClientCertificatePrivateKey(PasswordAuthentication passwordAuthentication) throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException, CredentialsRequiredException {
         for (;;) {
             try {
-                return getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey(pa);
+                return getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey(passwordAuthentication);
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException("Unable to read private key from keystore", e);
             } catch (KeyStoreCorruptException e) {

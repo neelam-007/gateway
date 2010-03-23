@@ -7,10 +7,11 @@
 package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedKeyManager;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
 /**
  * Key manager that knows how to find our per-SslPeer Key information.
  */
-public class ClientProxyKeyManager implements X509KeyManager {
+public class ClientProxyKeyManager extends X509ExtendedKeyManager {
     private static final Logger log = Logger.getLogger(ClientProxyKeyManager.class.getName());
 
     public PrivateKey getPrivateKey(String s) {
@@ -59,11 +60,11 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String[] getClientAliases(String s, Principal[] principals) {
-        return null;
+        return new String[] { "x" };
     }
 
     public String[] getServerAliases(String s, Principal[] principals) {
-        return new String[0];
+        return new String[] { "x" };
     }
 
     public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
@@ -92,5 +93,10 @@ public class ClientProxyKeyManager implements X509KeyManager {
         }
         log.log(Level.FINE, "No client cert found for this connection to hostname " + hostname);
         return null;
+    }
+
+    @Override
+    public String chooseEngineClientAlias(String[] strings, Principal[] principals, SSLEngine sslEngine) {
+        return super.chooseEngineClientAlias(strings, principals, sslEngine);
     }
 }

@@ -5,15 +5,15 @@ package com.l7tech.proxy.message;
 
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.message.CredentialContext;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
 import com.l7tech.message.SecurityKnob;
-import com.l7tech.message.CredentialContext;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
@@ -28,14 +28,7 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.socket.LocalTcpPeerIdentifier;
 import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
-import com.l7tech.security.token.HasUsername;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.X509SigningSecurityToken;
-import com.l7tech.security.token.KerberosSigningSecurityToken;
-import com.l7tech.security.token.SecurityContextToken;
-import com.l7tech.security.token.EncryptedKey;
+import com.l7tech.security.token.*;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
@@ -576,7 +569,17 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
             }
             else if(!ssg.isFederatedGateway()){ // the following is primarily for SAML SenderVouches
                 logger.info("ensuring client certificate key is accessible");
-                ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
+                try {
+                    ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
+                } catch (CredentialsRequiredException e) {
+                    ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg, CredentialManager.ReasonHint.PRIVATE_KEY, false, false);
+                    try {
+                        ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
+                    } catch (CredentialsRequiredException e1) {
+                        // Can't happen a second time
+                        throw new OperationCanceledException("Unable to prepare client certificate: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
             }
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
@@ -634,7 +637,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
 
     private String establishSecureConversationSession()
             throws OperationCanceledException, GeneralSecurityException,
-                   BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, HttpChallengeRequiredException, ConfigurationException {
+            BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, HttpChallengeRequiredException, ConfigurationException, CredentialsRequiredException {
         Ssg ssg = getSsg();
         if (ssg.isGeneric())
             throw new ConfigurationException("No WS-SecureConversation token service is available for Gateway " + ssg);
@@ -746,7 +749,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
     public String getOrCreateSecureConversationId()
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
             ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException,
-            HttpChallengeRequiredException {
+            HttpChallengeRequiredException, CredentialsRequiredException {
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;
@@ -802,7 +805,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
      */
     public SamlAssertion getOrCreateSamlHolderOfKeyAssertion(int version)
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException, HttpChallengeRequiredException {
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException, HttpChallengeRequiredException, CredentialsRequiredException {
         TokenStrategy samlStrat;
 
         if (version == 1) {
@@ -829,8 +832,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
     public SamlAssertion getOrCreateSamlSenderVouchesAssertion(int version)
             throws ConfigurationException, OperationCanceledException, GeneralSecurityException,
             IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
-            PolicyRetryableException, HttpChallengeRequiredException
-    {
+            PolicyRetryableException, HttpChallengeRequiredException, CredentialsRequiredException {
 
         Object username = null;
 
@@ -1082,8 +1084,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
     public void downloadPolicy(String serviceid)
             throws OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException,
             IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException,
-            ConfigurationException, PolicyLockedException
-    {
+            ConfigurationException, PolicyLockedException, CredentialsRequiredException {
         final Ssg ssg = getSsg();
         if (!ssg.isPolicyDiscoverySupported())
             throw new OperationCanceledException("Unable to download policy: Gateway " + ssg + " does not support automatic policy discovery");
@@ -1136,6 +1137,10 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
             if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
             logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
             throw new PolicyRetryableException(e);
+        } catch (RuntimeException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw e;
         }
     }
 
