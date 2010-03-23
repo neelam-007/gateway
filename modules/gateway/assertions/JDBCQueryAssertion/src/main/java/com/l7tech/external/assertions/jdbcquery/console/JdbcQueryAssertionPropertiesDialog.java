@@ -98,7 +98,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         Utilities.setEscKeyStrokeDisposes(this);
 
         sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
-        queryNameTextField.setDocument(new MaxLengthDocument(48));
+        queryNameTextField.setDocument(new MaxLengthDocument(128));
 
         final EventListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
