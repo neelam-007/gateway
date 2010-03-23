@@ -151,7 +151,8 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
             // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
             // Run slightly after the period end to allow all fine bins to be persisted
-            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + (long)(15000 * random.nextInt(10)) );
+            long hourlyRandomScheduleDelay = 15000L * random.nextInt(10);
+            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + hourlyRandomScheduleDelay);
             _hourlyArchiver = new HourlyTask();
             timer.scheduleAtFixedRate(_hourlyArchiver, nextHourlyStart, HOUR);
             logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
@@ -160,7 +161,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             // But can't just schedule at fixed rate of 24-hours interval because a
             // calender day varies, e.g., when switching Daylight Savings Time.
             // Run slightly after the period end to allow all hourly bins to be persisted
-            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + (long)(15000 * random.nextInt(10)) );
+            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + hourlyRandomScheduleDelay + TimeUnit.MINUTES.toMillis(1) );
             _dailyArchiver = new DailyTask();
             timer.schedule(_dailyArchiver, nextDailyStart);
             logger.config("Scheduled first daily archive task for " + nextDailyStart);
