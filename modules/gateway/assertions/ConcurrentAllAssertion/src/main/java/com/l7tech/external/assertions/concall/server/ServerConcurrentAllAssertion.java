@@ -244,7 +244,6 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
             if (result != AssertionStatus.NONE) {
                 seenAssertionStatus(context, result);
-                rollbackDeferredAssertions(context);
                 return result;
             }
         }
