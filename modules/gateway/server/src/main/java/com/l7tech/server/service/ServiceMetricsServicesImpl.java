@@ -15,9 +15,11 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.annotation.PostConstruct;
@@ -36,6 +38,7 @@ import java.util.logging.Logger;
 
 public class ServiceMetricsServicesImpl implements ServiceMetricsServices, ApplicationListener, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(ServiceMetricsServicesImpl.class.getName());
+    private static final Random random = new Random();
 
     public ServiceMetricsServicesImpl(String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
@@ -148,7 +151,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
             // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
             // Run slightly after the period end to allow all fine bins to be persisted
-            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + TimeUnit.MINUTES.toMillis(1));
+            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + (long)(15000 * random.nextInt(10)) );
             _hourlyArchiver = new HourlyTask();
             timer.scheduleAtFixedRate(_hourlyArchiver, nextHourlyStart, HOUR);
             logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
@@ -157,7 +160,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             // But can't just schedule at fixed rate of 24-hours interval because a
             // calender day varies, e.g., when switching Daylight Savings Time.
             // Run slightly after the period end to allow all hourly bins to be persisted
-            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + TimeUnit.MINUTES.toMillis(2));
+            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + (long)(15000 * random.nextInt(10)) );
             _dailyArchiver = new DailyTask();
             timer.schedule(_dailyArchiver, nextDailyStart);
             logger.config("Scheduled first daily archive task for " + nextDailyStart);
@@ -390,10 +393,29 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             long startTime = MetricsBin.periodStartFor( MetricsBin.RES_HOURLY, 0, System.currentTimeMillis() ) - TimeUnit.HOURS.toMillis(1);
             for ( Long serviceOid : list ) {
                 final ServiceState state = serviceStates.get( serviceOid );
-                try {
-                    serviceMetricsManager.createHourlyBin( serviceOid, state, startTime );
-                } catch (SaveException e) {
-                    logger.log(Level.WARNING, "Couldn't create hourly metrics bin", e); // TODO reschedule?
+                int retriesLeft = 2;
+                long retryMillis = 5000;
+                boolean retry = true;
+                while (retriesLeft > 0 && retry) {
+                    try {
+                        serviceMetricsManager.createHourlyBin(serviceOid, state, startTime);
+                        retry = false;
+                    } catch (SaveException e) {
+                        if (retriesLeft < 1 || ExceptionUtils.getCauseIfCausedBy(e, CannotAcquireLockException.class) == null) {
+                            retry = false;
+                            logger.log(Level.WARNING, "Couldn't create hourly metrics bin", e);
+                        } else {
+                            retry = true;
+                            logger.log(Level.INFO, "Error saving hourly metrics bin, will retry in " + (retryMillis / 1000) + " seconds: "  + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            try {
+                                Thread.sleep(retryMillis);
+                            } catch (InterruptedException e1) {
+                                // do nothing
+                            }
+                        }
+                    } finally {
+                        retriesLeft--;
+                    }
                 }
             }
             if (logger.isLoggable(Level.FINE))
@@ -416,10 +438,29 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             long startTime = MetricsBin.periodStartFor( MetricsBin.RES_DAILY, 0, System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1) );
             for ( Long serviceOid : list ) {
                 final ServiceState state = serviceStates.get( serviceOid );
-                try {
-                    serviceMetricsManager.createDailyBin( serviceOid, state, startTime );
-                } catch (SaveException e) {
-                    logger.log(Level.WARNING, "Couldn't create daily metrics bin", e); // TODO reschedule?
+                int retriesLeft = 2;
+                long retryMillis = 5000;
+                boolean retry = true;
+                while (retriesLeft > 0 && retry) {
+                    try {
+                        serviceMetricsManager.createDailyBin( serviceOid, state, startTime );
+                        retry = false;
+                    } catch (SaveException e) {
+                        if (retriesLeft < 1 || ExceptionUtils.getCauseIfCausedBy(e, CannotAcquireLockException.class) == null) {
+                            retry = false;
+                            logger.log(Level.WARNING, "Couldn't create daily metrics bin", e);
+                        } else {
+                            retry = true;
+                            logger.log(Level.INFO, "Error saving daily metrics bin, will retry in " + (retryMillis / 1000) + " seconds: "  + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            try {
+                                Thread.sleep(retryMillis);
+                            } catch (InterruptedException e1) {
+                                // do nothing
+                            }
+                        }
+                    } finally {
+                        retriesLeft--;
+                    }
                 }
             }
             if (logger.isLoggable(Level.FINE))
