@@ -140,7 +140,22 @@ fi
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/etc/conf" ] || chown -R layer7.gateway "${RPM_INSTALL_PREFIX0}/node/default/etc/conf"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/var" ] || chown -R gateway.gateway "${RPM_INSTALL_PREFIX0}/node/default/var"
 [ ! -d /opt/SecureSpan/Controller/etc ] || chown -R layer7.layer7 /opt/SecureSpan/Controller/etc
-[ ! -d /opt/SecureSpan/Controller/var ] || chown -R layer7.layer7 /opt/SecureSpan/Controller/var
+prev_gateway_uid=`find /opt/SecureSpan/Controller/ -nouser -printf "%u\n" | sort -n | head -1`
+if [ -n "$prev_gateway_uid" ]; then
+    find /opt/SecureSpan/Controller/ -user $prev_gateway_uid -exec chown gateway '{}' \;
+    prev_layer7_uid=`find /opt/SecureSpan/Controller/ -nouser -printf "%u\n" | sort -n | grep -v $prev_gateway_uid | head -1`
+    if [ -n "$prev_layer7_uid" ]; then
+        find /opt/SecureSpan/Controller/ -user $prev_layer7_uid -exec chown layer7 '{}' \;
+    fi
+fi
+prev_gateway_gid=`find /opt/SecureSpan/Controller/ -nogroup -printf "%g\n" | sort -n | head -1`
+if [ -n "$prev_gateway_gid" ]; then
+    find /opt/SecureSpan/Controller/ -group $prev_gateway_gid -exec chgrp gateway '{}' \;
+    prev_layer7_gid=`find /opt/SecureSpan/Controller/ -nogroup -printf "%g\n" | sort -n | grep -v $prev_gateway_gid | head -1`
+    if [ -n "$prev_layer7_gid" ]; then
+        find /opt/SecureSpan/Controller/ -group $prev_layer7_gid -exec chgrp layer7 '{}' \;
+    fi
+fi
 
 %post
 if [ -d "/ssg" ] ; then
