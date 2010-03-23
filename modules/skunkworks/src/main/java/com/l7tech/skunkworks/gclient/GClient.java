@@ -88,7 +88,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.2");
+        frame = new JFrame("GClient v0.9.3");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -175,6 +175,8 @@ public class GClient {
     private JRadioButton textMessageRadioButton;
     private JRadioButton bytesMessageRadioButton;
     private JCheckBox gzipCheckBox;
+    private JTextField httpHeaderValueTextField;
+    private JTextField httpHeaderNameTextField;
 
 
     //
@@ -1171,6 +1173,9 @@ public class GClient {
             }
             if (gzip) {
                 headers.add(new GenericHttpHeader("Content-Encoding", "gzip"));
+            }
+            if (!httpHeaderNameTextField.getText().trim().isEmpty()) {
+                headers.add(new GenericHttpHeader(httpHeaderNameTextField.getText().trim(), httpHeaderValueTextField.getText()));
             }
             if (!headers.isEmpty())
                 params.setExtraHeaders(headers.toArray(new GenericHttpHeader[headers.size()]));
