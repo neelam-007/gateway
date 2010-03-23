@@ -556,9 +556,7 @@ public class SsgConnectorSslHelper {
             // Use globally-overridden issuers list, even if it is empty.
             tm = new ClientTrustingTrustManager(ClientTrustingTrustManager.parseIssuerCerts(overriddenIssuers));
         } else {
-            // TODO one second is probably much too short given the potential cost of looking up all the certs,
-            // but much longer and XVC will not be able to connect immediately after obtaining a client cert automatically
-            long updateInterval = Long.getLong(SYSPROP_ACCEPTED_ISSUERS_CACHE_TIMEOUT, 1000L);
+            long updateInterval = Long.getLong(SYSPROP_ACCEPTED_ISSUERS_CACHE_TIMEOUT, 79103L);
             tm = new ClientTrustingTrustManager(new CachedCallable<X509Certificate[]>(updateInterval, new Callable<X509Certificate[]>() {
                     @Override
                     public X509Certificate[] call() throws Exception {
