@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -23,6 +24,7 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
@@ -114,6 +116,7 @@ public class PolicyProcessingTest {
         {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
         {"/httproutetaicredchain", "POLICY_httproutetaicredchain.xml"},
         {"/httproutepassthru", "POLICY_httproutepassthru.xml"},
+        {"/httproutepassheaders", "POLICY_httproutepassheaders.xml"},
         {"/httproutejms", "POLICY_httproutejms.xml", "WSDL_httproutejms.wsdl"},
         {"/httpwssheaderleave", "POLICY_httpwssheaderleave.xml"},
         {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
@@ -504,6 +507,108 @@ public class PolicyProcessingTest {
 
         assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
         assertFalse("Outbound response cookie present", newCookieExists(result2.context.getCookies(),"cookie", "outvalue"));
+    }
+
+    /**
+     * Test outbound headers
+     */
+    @Test
+	public void testHttpRoutingHeaders() throws Exception {
+        final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
+        final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+
+        final Pair<String,String> extraHeader = new Pair<String,String>( "X-TEST_HEADER", "value" );
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[],byte[],GenericHttpRequestParams>(){
+            @Override
+            public byte[] call( final byte[] bytes, final GenericHttpRequestParams genericHttpRequestParams ) {
+                boolean foundHeader = false;
+                for ( final HttpHeader header : genericHttpRequestParams.getExtraHeaders() ) {
+                    if ( extraHeader.left.equalsIgnoreCase( header.getName() ) ) {
+                        foundHeader = true;
+                    }
+                }
+                assertTrue("httpHeader routed", foundHeader);
+                return responseMessage1;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext policyEnforcementContext ) {
+                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                String variable =  ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header"}, logOnlyAuditor) ,logOnlyAuditor);
+                assertEquals( "Http header variable value", "value", variable );
+            }
+        });
+    }
+
+    /**
+     * Test outbound headers
+     */
+    @Test
+	public void testHttpRoutingBlockHeaders() throws Exception {
+        final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
+        final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+
+        final Pair<String,String> extraHeader = new Pair<String,String>( "X-TEST_HEADER_BAD", "value" );
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[],byte[],GenericHttpRequestParams>(){
+            @Override
+            public byte[] call( final byte[] bytes, final GenericHttpRequestParams genericHttpRequestParams ) {
+                boolean foundHeader = false;
+                for ( final HttpHeader header : genericHttpRequestParams.getExtraHeaders() ) {
+                    if ( extraHeader.left.equalsIgnoreCase( header.getName() ) ) {
+                        foundHeader = true;
+                    }
+                }
+                assertFalse("httpHeader routed", foundHeader);
+                return responseMessage1;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext policyEnforcementContext ) {
+                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                String variable =  ExpandVariables.process( "${request.http.header.x-test_header_bad}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header_bad"}, logOnlyAuditor) ,logOnlyAuditor);
+                assertEquals( "Http header variable value", "value", variable );
+            }
+        });
+    }
+
+    /**
+     * Test outbound headers
+     */
+    @Test
+	public void testHttpRoutingAllHeaders() throws Exception {
+        final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
+        final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+
+        final Pair<String,String> extraHeader = new Pair<String,String>( "X-TEST_HEADER", "value" );
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[],byte[],GenericHttpRequestParams>(){
+            @Override
+            public byte[] call( final byte[] bytes, final GenericHttpRequestParams genericHttpRequestParams ) {
+                boolean foundHeader = false;
+                for ( final HttpHeader header : genericHttpRequestParams.getExtraHeaders() ) {
+                    if ( extraHeader.left.equalsIgnoreCase( header.getName() ) ) {
+                        foundHeader = true;
+                    }
+                }
+                assertTrue("httpHeader routed", foundHeader);
+                return responseMessage1;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/httproutepassheaders", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext policyEnforcementContext ) {
+                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                String variable =  ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header"}, logOnlyAuditor) ,logOnlyAuditor);
+                assertEquals( "Http header variable value", "value", variable );
+            }
+        });
     }
 
     /**
@@ -1040,9 +1145,9 @@ public class PolicyProcessingTest {
      */
     @Test
 	public void testSignatureConfirmation() throws Exception {
-        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Unary<byte[], byte[]>(){
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[], byte[],GenericHttpRequestParams>(){
             @Override
-            public byte[] call( final byte[] requestBytes ) {
+            public byte[] call( final byte[] requestBytes, final GenericHttpRequestParams parameters ) {
                 final byte[][] responseHolder = new byte[1][];
                 try {
                     final Document outboundRequest = XmlUtil.parse( new String(requestBytes) );
@@ -1100,9 +1205,9 @@ public class PolicyProcessingTest {
      */
     @Test
 	public void testSignatureConfirmationInOut() throws Exception {
-        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Unary<byte[], byte[]>(){
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[], byte[], GenericHttpRequestParams>(){
             @Override
-            public byte[] call( final byte[] requestBytes ) {
+            public byte[] call( final byte[] requestBytes, final GenericHttpRequestParams parameters ) {
                 final byte[][] responseHolder = new byte[1][];
                 try {
                     final Document outboundRequest = XmlUtil.parse( new String(requestBytes) );
@@ -1288,6 +1393,20 @@ public class PolicyProcessingTest {
                                    final PasswordAuthentication contextAuth,
                                    final String authHeader,
                                    final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
+        return processMessage( uri, message, requestIp, expectedStatus, contextAuth, authHeader, null, validationCallback );
+    }
+
+    /**
+     *
+     */
+    private Result processMessage( final String uri,
+                                   final String message,
+                                   final String requestIp,
+                                   final int expectedStatus,
+                                   final PasswordAuthentication contextAuth,
+                                   final String authHeader,
+                                   final Pair<String,String> extraHeader,
+                                   final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
@@ -1348,6 +1467,13 @@ public class PolicyProcessingTest {
                 user.setCleartextPassword(new String(contextAuth.getPassword()));
                 context.getDefaultAuthenticationContext().addAuthenticationResult(
                         new AuthenticationResult(user, new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, contextAuth)));
+            }
+
+            // Add extra header if requested
+            if ( extraHeader != null ) {
+                HttpOutboundRequestFacet
+                        .getOrCreateHttpOutboundRequestKnob( request )
+                        .addHeader( extraHeader.left, extraHeader.right );
             }
 
             status = messageProcessor.processMessage(context);
@@ -1558,7 +1684,7 @@ public class PolicyProcessingTest {
      *
      */
     private static MockGenericHttpClient buildCallbackMockHttpClient( GenericHttpHeaders headers,
-                                                                      final Functions.Unary<byte[],byte[]> router ) {
+                                                                      final Functions.Binary<byte[],byte[],GenericHttpRequestParams> router ) {
         if (headers == null) {
             HttpHeader[] responseHeaders = new HttpHeader[]{
                     new GenericHttpHeader("Content-Type","text/xml; charset=utf8"),
@@ -1574,7 +1700,7 @@ public class PolicyProcessingTest {
                 null){
             @Override
             protected byte[] getResponseBody() {
-                return router.call( clients[0].getRequestBody() );
+                return router.call( clients[0].getRequestBody(), clients[0].getParams() );
             }
         };
 

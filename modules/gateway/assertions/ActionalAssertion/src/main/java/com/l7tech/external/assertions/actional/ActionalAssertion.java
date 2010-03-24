@@ -21,10 +21,15 @@ public class ActionalAssertion extends Assertion implements SetsVariables {
     private static final String META_INITIALIZED = ActionalAssertion.class.getName() + ".metadataInitialized";
 
     public static final String INTERCEPTOR_ENABLE_CLUSTER_PROPERTY = "interceptor.enabled";
+    public static final String INTERCEPTOR_ENABLE_OUTBOUND_HTTP_HEADER = "interceptor.enableOutboundHttpHeader";
+    public static final String INTERCEPTOR_HTTP_OUTBOUND_HEADER_NAME = "interceptor.outboundHttpHeaderName";
+    public static final String INTERCEPTOR_HTTP_INBOUND_HEADER_NAME = "interceptor.inboundHttpHeaderName";
     public static final String INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitProviderPayloads";
     public static final String INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitConsumerPayloads";
     public static final String INTERCEPTOR_CONFIG_DIRECTORY = "interceptor.configDir";
     public static final String INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE = "interceptor.enforceInboundTrustZone";
+
+    public static final String DEFAULT_HEADER_NAME = "LG_Header"; // see InterHelpBase.kLGTransport
 
     @Override
     public VariableMetadata[] getVariablesSet() {
@@ -96,6 +101,21 @@ public class ActionalAssertion extends Assertion implements SetsVariables {
         clusterProperties.put(INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE, new String[]{
                 "Determines whether or not the Gateway interceptor enforces Trust Zones on inbound messages.",
                 String.valueOf(Boolean.FALSE)
+        });
+
+        clusterProperties.put(INTERCEPTOR_ENABLE_OUTBOUND_HTTP_HEADER, new String[]{
+                "Determines whether or not the Gateway interceptor adds a manifest HTTP header to the outbound request.",
+                String.valueOf(Boolean.TRUE)
+        });
+
+        clusterProperties.put(INTERCEPTOR_HTTP_INBOUND_HEADER_NAME, new String[]{
+                "The HTTP header name used when processing the manifest HTTP header from the inbound request message.",
+                DEFAULT_HEADER_NAME
+        });
+
+        clusterProperties.put(INTERCEPTOR_HTTP_OUTBOUND_HEADER_NAME, new String[]{
+                "The HTTP header name used if adding a manifest HTTP header to outbound request messages.",
+                DEFAULT_HEADER_NAME
         });
 
         return clusterProperties;

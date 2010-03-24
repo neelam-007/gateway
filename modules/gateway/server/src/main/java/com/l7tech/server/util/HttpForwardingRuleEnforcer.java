@@ -9,6 +9,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.xml.sax.SAXException;
 
@@ -32,8 +33,10 @@ public class HttpForwardingRuleEnforcer {
     private static final Logger logger = Logger.getLogger(HttpForwardingRuleEnforcer.class.getName());
 
     /**
-     * for forwarding request http headers downstream (from routing assertion)
-     * @param routedRequestParams httpclientproperty
+     * For forwarding request http headers downstream (from routing assertion)
+     *
+     * @param headerSource Source for HTTP Headers (in addition to the request Message, may be null)
+     * @param httpRequestParams Target for HTTP headers
      * @param context the pec
      * @param targetDomain name of domain used for cookie forwarding
      * @param rules http rules dictating what headers should be forwarded and under which conditions
@@ -41,83 +44,90 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
-    public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams, PolicyEnforcementContext context,
-                                            String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor,
-                                            Map vars, String[] varNames) throws IOException {
-        String soapActionFromRequest = null;
+    public static void handleRequestHeaders( final HasOutboundHeaders headerSource,
+                                             final GenericHttpRequestParams httpRequestParams,
+                                             final PolicyEnforcementContext context,
+                                             final String targetDomain,
+                                             final HttpPassthroughRuleSet rules, 
+                                             final Auditor auditor,
+                                             Map<String,Object> vars,
+                                             final String[] varNames) throws IOException {
+        final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
 
         // we should only forward def user-agent if the rules are not going to insert own
         if (rules.ruleForName(HttpConstants.HEADER_USER_AGENT) != HttpPassthroughRuleSet.BLOCK) {
-            flushExisting(HttpConstants.HEADER_USER_AGENT, routedRequestParams);
+            flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
         }
+
+        final HttpRequestKnob knob = context.getRequest().getKnob(HttpRequestKnob.class);
         if (rules.isForwardAll()) {
             // forward everything
-            HttpRequestKnob knob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
+            source.writeHeaders( httpRequestParams );
             if (knob == null) {
                 logger.log(Level.FINE, "no headers to forward cause this is not an incoming http request");
 
-                //but still try to get and set a SOAPAction
-                soapActionFromRequest = getSoapActionIfPossible(context);
-                if (soapActionFromRequest != null) {
-                    routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, soapActionFromRequest));
+                //but still try to get and set a SOAPAction If not already set.
+                if ( !source.containsHeader( SoapUtil.SOAPACTION ) ) {
+                    handleSoapActionHeader( httpRequestParams, context, source );
                 }
             } else {
                 String[] headerNames = knob.getHeaderNames();
                 boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
-                for (String headername : headerNames) {
-                    if (headername.length() < 1)
+                for ( final String headerName : headerNames ) {
+                    if (headerName.length() < 1)
                         throw new IOException("Request contains an HTTP header with an empty name");
 
-                    if (headerShouldBeIgnored(headername)) {
+                    if (headerShouldBeIgnored(headerName)) {
                         // some headers should just be ignored cause they are not 'application headers'
-                        logger.fine("not passing through " + headername);
-                    } else if (headername.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && !cookieAlreadyHandled) {
-                        // special cookie handling
-                        List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
-                        if (!res.isEmpty()) {
-                            routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
-                                                                                     HttpCookie.getCookieHeader(res)));
+                        logger.fine("not passing through " + headerName);
+                    } else if (headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                        if ( !cookieAlreadyHandled ) {
+                            // special cookie handling
+                            List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
+                            if (!res.isEmpty()) {
+                                httpRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
+                                                                                         HttpCookie.getCookieHeader(res)));
+                            }
+
+                            cookieAlreadyHandled = true;
                         }
-                        cookieAlreadyHandled = true;
-                    } else if (headername.equalsIgnoreCase(SoapUtil.SOAPACTION)){
-                        //special SOAPAction handling
-                        soapActionFromRequest = getSoapActionIfPossible(context);
-                        if (soapActionFromRequest != null) {
-                            //add the soapaction header, using the original header case
-                            routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, soapActionFromRequest));
+                    } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)){
+                        if ( !source.containsHeader( SoapUtil.SOAPACTION ) ) {
+                            //special SOAPAction handling
+                            handleSoapActionHeader( httpRequestParams, context, source );
                         }
                     } else {
-                        String[] values = knob.getHeaderValues(headername);
+                        String[] values = knob.getHeaderValues(headerName);
                         for (String value : values) {
-                            routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                            if ( !source.containsHeader(headerName) ) { // source overrides other values
+                                httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
+                            }
                         }
                     }
                 }
             }
         } else {
-            HttpRequestKnob knob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
             if (knob == null) {
                 logger.log(Level.FINE, "incoming headers wont be forwarded cause this is not an incoming http request");
-                knob = null;
             }
             for (int i = 0; i < rules.getRules().length; i++) {
-                HttpPassthroughRule rule = rules.getRules()[i];
+                final HttpPassthroughRule rule = rules.getRules()[i];
                 if (rule.isUsesCustomizedValue()) {
                     // set header with custom value
-                    String headername = rule.getName();
-                    if (headername.length() < 1)
+                    final String headerName = rule.getName();
+                    if (headerName.length() < 1)
                         throw new IOException("Request contains an HTTP header with an empty name");
-                    String headervalue = rule.getCustomizeValue();
+                    String headerValue = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
                     }
-                    routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
+                    httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, headerValue));
                 } else {
-                    String headerNameFromRule = rule.getName();
+                    final String headerNameFromRule = rule.getName();
                     if (headerNameFromRule.length() < 1)
                         throw new IOException("Request contains an HTTP header with an empty name");
 
@@ -126,27 +136,29 @@ public class HttpForwardingRuleEnforcer {
                         if (headerNameFromRule.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
                             List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
                             if (!res.isEmpty()) {
-                                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
+                                httpRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
                                                                                          HttpCookie.getCookieHeader(res)));
                             }
                         } else if (headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
-                            soapActionFromRequest = getSoapActionIfPossible(context);
-                            if (soapActionFromRequest != null) {
-                                //add the soapaction header, using the original header case
-                                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, soapActionFromRequest));
-                            }
+                            handleSoapActionHeader( httpRequestParams, context, source );
                         } else {
-                            String[] values = knob.getHeaderValues(headerNameFromRule);
-                            for (String value : values) {
-                                routedRequestParams.addExtraHeader(new GenericHttpHeader(headerNameFromRule, value));
+                            final String[] values = source.containsHeader(headerNameFromRule) ?
+                                    source.getHeaderValues( headerNameFromRule ) :
+                                    knob.getHeaderValues(headerNameFromRule);
+
+                            for ( String value : values ) {
+                                httpRequestParams.addExtraHeader(new GenericHttpHeader(headerNameFromRule, value));
                             }
                         }
                     } else {
                         //we should still try to set a SOAPAction if possible
-                        if (headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
-                            soapActionFromRequest = getSoapActionIfPossible(context);
-                            if (soapActionFromRequest != null)
-                                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, soapActionFromRequest));
+                        if ( headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION) ) {
+                            handleSoapActionHeader( httpRequestParams, context, source );
+                        } else {
+                            final String[] values = source.getHeaderValues(headerNameFromRule);
+                            for ( final String value : values ) {
+                                httpRequestParams.addExtraHeader(new GenericHttpHeader(headerNameFromRule, value));
+                            }                            
                         }
                     }
                 }
@@ -154,105 +166,143 @@ public class HttpForwardingRuleEnforcer {
         }
     }
 
-    private static String getSoapActionIfPossible(PolicyEnforcementContext context) {
-        String returnMe = null;
-        Message request = context.getRequest();
-
-        try {
-            if (request.isSoap()) {
-                try {
-                    HasSoapAction haver = (HasSoapAction) request.getKnob(HasSoapAction.class);
-                    if (haver != null) {
-                        returnMe = haver.getSoapAction();
-                        if (returnMe == null)
-                            returnMe = "";
-                    }
-                } catch (IOException e) {
-                    logger.info("Request message SOAPAction is multivalued. Not setting SOAPAction.");
-                }
-            }
-        } catch (IOException e) {
-            logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
-        } catch (SAXException e1) {
-            logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
+    private static void handleSoapActionHeader( final GenericHttpRequestParams httpRequestParams,
+                                                final PolicyEnforcementContext context,
+                                                final HasOutboundHeaders source ) {
+        final String soapAction = getSoapActionIfPossible(context, source);
+        if (soapAction != null) {
+            //add the soap action header, using the original header case
+            httpRequestParams.addExtraHeader(new GenericHttpHeader( SoapUtil.SOAPACTION, soapAction));
         }
-        return returnMe;
     }
 
-    private static void flushExisting(String hname, GenericHttpRequestParams routedRequestParams) {
-        List existingheaders = routedRequestParams.getExtraHeaders();
-        for (Iterator iterator = existingheaders.iterator(); iterator.hasNext();) {
+    private static String getSoapActionIfPossible( final PolicyEnforcementContext context,
+                                                   final HasOutboundHeaders headerSource ) {
+        String soapAction = null;
+
+        String[] soapActions = headerSource.getHeaderValues(SoapUtil.SOAPACTION);
+        if ( soapActions.length > 0 ) {
+            soapAction = soapActions[0];
+        }
+
+        if ( soapAction == null ) {
+            Message request = context.getRequest();
+
+            try {
+                if (request.isSoap()) {
+                    try {
+                        HasSoapAction haver = request.getKnob(HasSoapAction.class);
+                        if (haver != null) {
+                            soapAction = haver.getSoapAction();
+                            if (soapAction == null)
+                                soapAction = "";
+                        }
+                    } catch (IOException e) {
+                        logger.info("Request message SOAPAction is multivalued. Not setting SOAPAction.");
+                    }
+                }
+            } catch (IOException e) {
+                logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
+            } catch (SAXException e1) {
+                logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
+            }
+        }
+
+        return soapAction;
+    }
+
+    private static void flushExisting( final String headerName,
+                                       final GenericHttpRequestParams routedRequestParams ) {
+        final List existingHeaders = routedRequestParams.getExtraHeaders();
+        for (Iterator iterator = existingHeaders.iterator(); iterator.hasNext();) {
             GenericHttpHeader gh = (GenericHttpHeader) iterator.next();
-            if (hname.compareToIgnoreCase(gh.getName()) == 0) {
-                logger.finest("removing " + hname + " user agent value " + gh.getFullValue());
+            if (headerName.compareToIgnoreCase(gh.getName()) == 0) {
+                logger.finest("removing " + headerName + " user agent value " + gh.getFullValue());
                 iterator.remove();
             }
         }
     }
 
-    public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams,
-                                            PolicyEnforcementContext context, HttpPassthroughRuleSet rules,
-                                            Auditor auditor, Map vars, String[] varNames) {
+    /**
+     * Handle request headers for Bridge Routing.
+     *
+     * @param headerSource The source for extra headers (may be null)
+     * @param httpRequestParams The target for outbound headers (required)
+     * @param context The current context (required)
+     * @param rules The header processing rules (required)
+     * @param auditor The auditor to use (required)
+     * @param vars The relevant variables (may be null)
+     * @param varNames The variables used in header rules (may be null)
+     */
+    public static void handleRequestHeaders( final HasOutboundHeaders headerSource,
+                                             final GenericHttpRequestParams httpRequestParams,
+                                             final PolicyEnforcementContext context,
+                                             final HttpPassthroughRuleSet rules,
+                                             final Auditor auditor,
+                                             Map<String,Object> vars,
+                                             final String[] varNames ) {
+        final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
+        final HttpRequestKnob knob = context.getRequest().getKnob(HttpRequestKnob.class);
+
         if (rules.isForwardAll()) {
             // forward everything
-            HttpRequestKnob knob;
-            try {
-                knob = context.getRequest().getHttpRequestKnob();
-            } catch (IllegalStateException e) {
+            source.writeHeaders( httpRequestParams );
+            if ( knob == null ) {
                 logger.log(Level.FINE, "no header to forward cause this is not an incoming http request");
                 return;
             }
             String[] headerNames = knob.getHeaderNames();
             boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
-            for (String headername : headerNames) {
-                if (headerShouldBeIgnored(headername)) {
+            for ( final String headerName : headerNames ) {
+                if (headerShouldBeIgnored(headerName)) {
                     // some headers should just be ignored cause they are not 'application headers'
-                    logger.fine("not passing through " + headername);
-                } else if (headername.toLowerCase().equals(HttpConstants.HEADER_COOKIE.toLowerCase()) && !cookieAlreadyHandled) {
+                    logger.fine("not passing through " + headerName);
+                } else if (headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) && !cookieAlreadyHandled) {
                     // cookies are handled separately by the ServerBRA
-                }  else if (headername.toLowerCase().equals("soapaction") && !cookieAlreadyHandled) {
-                    // the bridge has it's own handling for soapaction
+                }  else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION) && !cookieAlreadyHandled) {
+                    // the bridge has it's own handling for soap action
                 } else {
-                    String[] values = knob.getHeaderValues(headername);
-                    for (String value : values) {
-                        routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                    final String[] values = knob.getHeaderValues(headerName);
+                    for ( final String value : values ) {
+                        if ( !source.containsHeader(headerName) ) { // source overrides other values
+                            httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
+                        }
                     }
                 }
             }
         } else {
-            HttpRequestKnob knob;
-            try {
-                knob = context.getRequest().getHttpRequestKnob();
-            } catch (IllegalStateException e) {
+            if ( knob == null ) {
                 logger.log(Level.FINE, "incoming headers wont be forwarded cause this is not an incoming http request");
-                knob = null;
             }
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
-                if (rule.isUsesCustomizedValue()) {
+                if ( rule.isUsesCustomizedValue() ) {
                     // set header with custom value
-                    String headername = rule.getName();
-                    String headervalue = rule.getCustomizeValue();
+                    String headerName = rule.getName();
+                    String headerValue = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
                     }
-                    routedRequestParams.replaceExtraHeader(new GenericHttpHeader(headername, headervalue));
-                } else if (knob != null) {
+                    httpRequestParams.replaceExtraHeader(new GenericHttpHeader(headerName, headerValue));
+                } else {
                     // set header with incoming value if it's present
-                    String headername = rule.getName();
+                    final String headerName = rule.getName();
                     // special cookie handling
-                    if (headername.toLowerCase().equals(HttpConstants.HEADER_COOKIE.toLowerCase())) {
+                    if (headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
                         // outgoing cookies are handled separately by the ServerBra
-                    } else if (headername.toLowerCase().equals("soapaction")) {
-                        // the bride already has its own handling for soapaction
+                    } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
+                        // the bridge already has its own handling for soap action
                     } else {
-                        String[] values = knob.getHeaderValues(headername);
+                        final String[] values = source.containsHeader(headerName) || knob == null ?
+                                source.getHeaderValues( headerName ) :
+                                knob.getHeaderValues( headerName );
+
                         for (String value : values) {
-                            routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                            httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
                         }
                     }
                 }
@@ -269,11 +319,13 @@ public class HttpForwardingRuleEnforcer {
         public String value;
     }
 
-    public static List<Param> handleRequestParameters(PolicyEnforcementContext context,
-                                                      HttpPassthroughRuleSet rules, Auditor auditor, Map vars,
-                                                      String[] varNames) throws IOException {
+    public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
+                                                       final HttpPassthroughRuleSet rules,
+                                                       final Auditor auditor,
+                                                       Map<String,Object> vars,
+                                                       final String[] varNames ) throws IOException {
         // 1st, make sure we have a HttpServletRequestKnob
-        HttpServletRequestKnob knob = (HttpServletRequestKnob) context.getRequest().getKnob(HttpServletRequestKnob.class);
+        HttpServletRequestKnob knob = context.getRequest().getKnob(HttpServletRequestKnob.class);
         if (knob == null) {
             logger.log(Level.FINE, "no parameter to forward cause the incoming request is not http");
             return null;
@@ -288,35 +340,35 @@ public class HttpForwardingRuleEnforcer {
         ArrayList<Param> output = new ArrayList<Param>();
 
         // 3rd, apply the rules
-        Map<String, String[]> requestBodyParams = knob.getRequestBodyParameterMap();
+        Map<String, String[]> requestBodyParameterMap = knob.getRequestBodyParameterMap();
         if (rules.isForwardAll()) {
-            for (Map.Entry<String, String[]> param : requestBodyParams.entrySet()) {
-                String paramName = param.getKey();
-                String[] vals = param.getValue();
-                for (String paramVal : vals) {
-                    output.add(new Param(paramName, paramVal));
+            for (Map.Entry<String, String[]> parameter : requestBodyParameterMap.entrySet()) {
+                String parameterName = parameter.getKey();
+                String[] values = parameter.getValue();
+                for (String value : values) {
+                    output.add(new Param(parameterName, value));
                 }
             }
         } else {
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
-                String paramName = rule.getName();
+                String parameterName = rule.getName();
                 if (rule.isUsesCustomizedValue()) {
-                    // set param with custom value
-                    String paramVal = rule.getCustomizeValue();
+                    // set parameter with custom value
+                    String value = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        paramVal = ExpandVariables.process(paramVal, vars, auditor);
+                        value = ExpandVariables.process(value, vars, auditor);
                     }
-                    output.add(new Param(paramName, paramVal));
+                    output.add(new Param(parameterName, value));
                 } else {
-                    String[] vals = requestBodyParams.get(paramName);
-                    if (vals != null && vals.length > 0) {
-                        for (String paramVal : vals) {
-                            output.add(new Param(paramName, paramVal));
+                    String[] values = requestBodyParameterMap.get(parameterName);
+                    if (values != null && values.length > 0) {
+                        for (String value : values) {
+                            output.add(new Param(parameterName, value));
                         }
                     }
                 }
@@ -326,16 +378,16 @@ public class HttpForwardingRuleEnforcer {
         return output;
     }
 
-    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, 
-                                             Auditor auditor,
-                                             ServerBridgeRoutingAssertion.HeaderHolder hh,
-                                             HttpPassthroughRuleSet rules,
-                                             Map vars,
-                                             String[] varNames,
-                                             PolicyEnforcementContext context) {
+    public static void handleResponseHeaders( final HttpResponseKnob targetForResponseHeaders,
+                                              final Auditor auditor,
+                                              final ServerBridgeRoutingAssertion.HeaderHolder hh,
+                                              final HttpPassthroughRuleSet rules,
+                                              Map<String,Object> vars,
+                                              final String[] varNames,
+                                              final PolicyEnforcementContext context ) {
         if (rules.isForwardAll()) {
-            HttpHeader[] headers = hh.getHeaders().toArray();
-            for (HttpHeader h : headers) {
+            final HttpHeader[] headers = hh.getHeaders().toArray();
+            for ( final HttpHeader h : headers ) {
                 if (headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(h.getName().toLowerCase())) {
@@ -347,26 +399,25 @@ public class HttpForwardingRuleEnforcer {
             }
         } else {
             for (int i = 0; i < rules.getRules().length; i++) {
-                HttpPassthroughRule rule = rules.getRules()[i];
+                final HttpPassthroughRule rule = rules.getRules()[i];
                 if (rule.isUsesCustomizedValue()) {
-                    String headervalue = rule.getCustomizeValue();
+                    String headerValue = rule.getCustomizeValue();
                     // resolve context variable if applicable
-                    if (varNames != null && varNames.length > 0) {
+                    if ( varNames != null && varNames.length > 0 ) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
                     }
-                    targetForResponseHeaders.setHeader(rule.getName(), headervalue);
+                    targetForResponseHeaders.setHeader(rule.getName(), headerValue);
                 } else {
                     if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(rule.getName().toLowerCase())) {
                         // special cookie handling happens outside this class by the ServerBRA
                     } else {
-                        List vals = hh.getHeaders().getValues(rule.getName());
-                        if (vals != null && vals.size() > 0) {
-                            for (Object valo : vals) {
-                                String val = (String) valo;
-                                targetForResponseHeaders.setHeader(rule.getName(), val);
+                        final List<String> values = hh.getHeaders().getValues(rule.getName());
+                        if ( values != null && values.size() > 0 ) {
+                            for ( final String value : values ) {
+                                targetForResponseHeaders.setHeader(rule.getName(), value);
                             }
                         } else {
                             logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
@@ -390,15 +441,15 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
-    public static void handleResponseHeaders(HttpInboundResponseKnob sourceOfResponseHeaders,
-                                             HttpResponseKnob targetForResponseHeaders,
-                                             Auditor auditor,
-                                             HttpPassthroughRuleSet rules,
-                                             boolean passThroughSpecialHeaders,
-                                             PolicyEnforcementContext context,
-                                             GenericHttpRequestParams routedRequestParams,
-                                             Map vars,
-                                             String[] varNames) {
+    public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
+                                              final HttpResponseKnob targetForResponseHeaders,
+                                              final Auditor auditor,
+                                              final HttpPassthroughRuleSet rules,
+                                              final boolean passThroughSpecialHeaders,
+                                              final PolicyEnforcementContext context,
+                                              final GenericHttpRequestParams routedRequestParams,
+                                              Map<String,Object> vars,
+                                              final String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
             for (HttpHeader h : sourceOfResponseHeaders.getHeadersArray()) {
@@ -423,23 +474,23 @@ public class HttpForwardingRuleEnforcer {
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
                 if (rule.isUsesCustomizedValue()) {
-                    String headervalue = rule.getCustomizeValue();
+                    String headerValue = rule.getCustomizeValue();
                     // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
                         }
-                        headervalue = ExpandVariables.process(headervalue, vars, auditor);
+                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
                     }
-                    targetForResponseHeaders.addHeader(rule.getName(), headervalue);
+                    targetForResponseHeaders.addHeader(rule.getName(), headerValue);
                 } else {
                     if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
                         // special cookie handling outside this loop (see below)
                         passIncomingCookies = true;
                     } else {
-                        String[] vals = sourceOfResponseHeaders.getHeaderValues(rule.getName());
-                        if (vals != null && vals.length > 0) {
-                            for (String val : vals) {
+                        String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
+                        if (values != null && values.length > 0) {
+                            for (String val : values) {
                                 targetForResponseHeaders.addHeader(rule.getName(), val);
                             }
                         } else {
@@ -454,55 +505,50 @@ public class HttpForwardingRuleEnforcer {
         // handle cookies separately
         if (passIncomingCookies) {
             String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
-            for (Object setCookieValue1 : setCookieValues) {
-                String setCookieValue = (String) setCookieValue1;
+            for (String setCookieValue : setCookieValues) {
                 try {
                     context.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
-                } catch (HttpCookie.IllegalFormatException hcife) {
+                } catch (HttpCookie.IllegalFormatException e) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
                 }
             }
         }
     }
 
-    private static boolean isItAForm(HttpRequestKnob knob) {
-        String[] ctypes = knob.getHeaderValues("content-type");
-        if (ctypes != null) {
-            for (String val : ctypes) {
+    private static boolean isItAForm( final HttpRequestKnob knob ) {
+        String[] contentTypeHeaders = knob.getHeaderValues("content-type");
+        if (contentTypeHeaders != null) {
+            for (String val : contentTypeHeaders) {
                 if (val.toLowerCase().contains("form")) return true;
             }
         }
         return false;
     }
 
-    private static boolean headerShouldBeIgnored(String headerName) {
-        headerName = headerName.toLowerCase();
-        for (String ignoreme : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD) {
-            if (ignoreme.equals(headerName)) return true;
-        }
-        return false;
+    private static boolean headerShouldBeIgnored( String headerName ) {
+        return ArrayUtils.contains( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD, headerName.toLowerCase() );
     }
 
     private static List<HttpCookie> passableCookies(PolicyEnforcementContext context, String targetDomain, Auditor auditor) {
         List<HttpCookie> output = new ArrayList<HttpCookie>();
         Set<HttpCookie> contextCookies = context.getCookies();
 
-        for (HttpCookie ssgc : contextCookies) {
-            if (CookieUtils.isPassThroughCookie(ssgc)) {
-                if (ssgc.isNew()) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, ssgc.getCookieName(), String.valueOf(ssgc.getVersion()));
+        for ( final HttpCookie httpCookie : contextCookies ) {
+            if (CookieUtils.isPassThroughCookie(httpCookie)) {
+                if (httpCookie.isNew()) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, httpCookie.getCookieName(), String.valueOf(httpCookie.getVersion()));
                 } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, ssgc.getCookieName());
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, httpCookie.getCookieName());
                 }
                 HttpCookie newCookie = new HttpCookie(
-                        ssgc.getCookieName(),
-                        ssgc.getCookieValue(),
-                        ssgc.getVersion(),
+                        httpCookie.getCookieName(),
+                        httpCookie.getCookieValue(),
+                        httpCookie.getVersion(),
                         "/",
                         targetDomain,
-                        ssgc.getMaxAge(),
-                        ssgc.isSecure(),
-                        ssgc.getComment()
+                        httpCookie.getMaxAge(),
+                        httpCookie.isSecure(),
+                        httpCookie.getComment()
                 );
                 // attach and record
                 output.add(newCookie);

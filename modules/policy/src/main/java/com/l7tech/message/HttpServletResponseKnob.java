@@ -29,6 +29,7 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
         this.response = response;
     }
 
+    @Override
     public void addCookie(HttpCookie cookie) {
         cookiesToSend.add(CookieUtils.toServletCookie(cookie));
     }
@@ -38,7 +39,8 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
      */
     public void beginResponse() {
         response.setStatus(statusToSet);
-        for (Pair<String, Object> pair : headersToSend) {
+        
+        for ( final Pair<String, Object> pair : getHeadersToSend() ) {
             final Object value = pair.right;
             if (value instanceof Long) {
                 response.addDateHeader(pair.left, (Long)value);
@@ -47,7 +49,7 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
             }
         }
 
-        for (Cookie cookie : cookiesToSend) {
+        for ( final Cookie cookie : cookiesToSend ) {
             response.addCookie(cookie);
         }
     }
@@ -70,9 +72,9 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
 
     /**
      * Think twice before using this. The HttpServletResponse should be restricted for the usage of the http transport.
-     * Other uses may interfeer with the stealth mode implementation. See ResponseKillerValve for more information.
-     * todo, remove this completly?
-     * @deprecated dont touch this unless you really need it.
+     * Other uses may interfere with the stealth mode implementation. See ResponseKillerValve for more information.
+     * todo, remove this completely?
+     * @deprecated don't touch this unless you really need it.
      * @return the raw HttpServletResponse
      * */
     @Deprecated

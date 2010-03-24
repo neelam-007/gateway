@@ -601,7 +601,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
             @Override
             public SimpleHttpClient getHttpClient() {
-                return newRRLSimpleHttpClient(context, super.getHttpClient(), context.getRoutingResultListener(), hh);
+                return newRRLSimpleHttpClient(
+                        context,
+                        super.getHttpClient(),
+                        context.getRoutingResultListener(),
+                        hh,
+                        bridgeRequest.getKnob(HttpOutboundRequestKnob.class));
             }
         };
     }
@@ -646,8 +651,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
      *
      * NOTE: this is NOT compatible with a non-sticky failover client.
      */
-    private SimpleHttpClient newRRLSimpleHttpClient(final PolicyEnforcementContext context, final SimpleHttpClient client, final RoutingResultListener rrl, final HeaderHolder hh) {
-        return new BRASimpleHttpClient(client, context, rrl, hh);
+    private SimpleHttpClient newRRLSimpleHttpClient( final PolicyEnforcementContext context,
+                                                     final SimpleHttpClient client,
+                                                     final RoutingResultListener rrl,
+                                                     final HeaderHolder hh,
+                                                     final HasOutboundHeaders oh ) {
+        return new BRASimpleHttpClient(client, context, rrl, hh ,oh);
     }
 
     private class BRASimpleHttpClient extends SimpleHttpClient implements RerunnableGenericHttpClient {
@@ -655,22 +664,25 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         private final PolicyEnforcementContext context;
         private final RoutingResultListener rrl;
         private final HeaderHolder hh;
+        private final HasOutboundHeaders oh;
 
         private BRASimpleHttpClient(final GenericHttpClient client,
                                     final PolicyEnforcementContext context,
                                     final RoutingResultListener rrl,
-                                    final HeaderHolder hh) {
+                                    final HeaderHolder hh,
+                                    final HasOutboundHeaders oh ) {
             super(client);
             this.client = client;
             this.context = context;
             this.rrl = rrl;
             this.hh = hh;
+            this.oh = oh;
         }
 
         @Override
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
-            HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
+            HttpForwardingRuleEnforcer.handleRequestHeaders(oh, params, context, assertion.getRequestHeaderRules(),
                                                             auditor, null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {

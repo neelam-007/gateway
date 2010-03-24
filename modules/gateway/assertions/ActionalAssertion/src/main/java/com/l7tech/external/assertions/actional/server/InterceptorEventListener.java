@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.actional.server;
 
+import com.l7tech.external.assertions.actional.ActionalAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.ServerConfig;
@@ -19,7 +20,7 @@ import org.springframework.context.ApplicationListener;
 
 import java.util.Set;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,13 +33,13 @@ import static com.l7tech.external.assertions.actional.ActionalAssertion.*;
  * Actional Interceptor specific events are:
  * PreRoutingEvent (ClientInteraction request)
  * PostRoutingEvent (ClientInteraction response)
- * MessageRecieved (ServerInteraction request)
+ * MessageReceived (ServerInteraction request)
  * MessageProcessed (ServerInteraction response)
  *
  * @author jules
  */
 public class InterceptorEventListener implements ApplicationListener {
-    protected static final Logger logger = Logger.getLogger(InterceptorEventListener.class.getName());
+    private static final Logger logger = Logger.getLogger(InterceptorEventListener.class.getName());
 
     /**
      * This module's instance of the InterceptorEventListener.
@@ -55,7 +56,6 @@ public class InterceptorEventListener implements ApplicationListener {
      */
     private final ApplicationEventProxy applicationEventProxy;
 
-    // CLUSTER PROPERTIES STUFF
     /**
      * Determines how often cluster properties should be checked for updates.
      * <p/>
@@ -64,35 +64,8 @@ public class InterceptorEventListener implements ApplicationListener {
     private static final long POLLING_INTERVAL = 120000;
     // should the above be configurable via a cluster property?
 
-    /**
-     * The following variables map directly to cluster properties.
-     * These cluster properties are polled every 'pollingInterval' for changes.
-     */
-
-    /**
-     * Determines whether the Actional Interceptor module has been enabled.
-     * <p/>
-     * The Interceptor will be enabled/configured via cluster property.
-     * <p/>
-     */
-    private AtomicBoolean enabled = new AtomicBoolean(false);
-
-    /**
-     * Deteremines whether or not the Interceptor should transmit the XML payload
-     * for either incoming "provider" or outgoing "consumer" requests
-     * along with other message processing information to the Actional Agent.
-     * <p/>
-     */
-    private AtomicBoolean transmitProviderPayload = new AtomicBoolean(false);
-    private AtomicBoolean transmitConsumerPayload = new AtomicBoolean(false);
-
-    /**
-     * Determines whether or not the Gateway interceptor enforces Trust Zones on inbound messages.
-     * If false, TrustZone information will not be checked on the incoming request.  Otherwise TrustZone support will be checked.
-     * Note that this setting only affects inbound messages.  TrustZone information will always be included in the outbound actional header.
-     */
-    private AtomicBoolean enforceInboundTrustZone = new AtomicBoolean(false);
-    // END CLUSTER PROPERTIES STUFF
+    private AtomicReference<ActionalConfig> configuration =
+            new AtomicReference<ActionalConfig>( new ActionalConfig(false, false, false, false, true, DEFAULT_HEADER_NAME, DEFAULT_HEADER_NAME ) );
 
     /**
      * Determines whether or not this module has been initialized or not.
@@ -104,7 +77,7 @@ public class InterceptorEventListener implements ApplicationListener {
      *
      * @param applicationContext the Spring application context.  Required.
      */
-    public InterceptorEventListener(ApplicationContext applicationContext) {
+    InterceptorEventListener(ApplicationContext applicationContext) {
         this.serverConfig = (ServerConfig) applicationContext.getBean("serverConfig", ServerConfig.class);
         this.applicationEventProxy = (ApplicationEventProxy) applicationContext.getBean("messageProcessingEventChannel", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
@@ -113,19 +86,20 @@ public class InterceptorEventListener implements ApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (enabled.get()) {//dispatch to appropriate Interceptor handler
+        final ActionalConfig config = configuration.get();
+        if (config.enabled) { //dispatch to appropriate Interceptor handler
             if (event instanceof MessageReceived) {
                 final MessageReceived messageReceivedEvent = (MessageReceived) event;
-                Interceptor.handleServerRequest(messageReceivedEvent, transmitProviderPayload.get(), enforceInboundTrustZone.get());
+                Interceptor.handleServerRequest(messageReceivedEvent, config.transmitProviderPayload, config.enforceInboundTrustZone, config.inboundHttpHeaderName);
             } else if (event instanceof MessageProcessed) {
                 final MessageProcessed messageProcessedEvent = (MessageProcessed) event;
-                Interceptor.handleServerResponse(messageProcessedEvent, transmitProviderPayload.get());
+                Interceptor.handleServerResponse(messageProcessedEvent, config.transmitProviderPayload);
             } else if (event instanceof PreRoutingEvent) {
                 final PreRoutingEvent preRoutingEvent = (PreRoutingEvent) event;
-                Interceptor.handleClientRequest(preRoutingEvent, transmitConsumerPayload.get());
+                Interceptor.handleClientRequest(preRoutingEvent, config.transmitConsumerPayload, config.getHeaderNameIfEnabled());
             } else if (event instanceof PostRoutingEvent) {
                 final PostRoutingEvent postRoutingEvent = (PostRoutingEvent) event;
-                Interceptor.handleClientResponse(postRoutingEvent, transmitConsumerPayload.get());
+                Interceptor.handleClientResponse(postRoutingEvent, config.transmitConsumerPayload);
             }
         } else if (!initialized) {
             if (event instanceof AssertionModuleRegistrationEvent) {// TODO do we actually care about any other events?
@@ -152,7 +126,7 @@ public class InterceptorEventListener implements ApplicationListener {
     }
 
     private void initialize() {
-        //check if the modul then e is enabled
+        //check if the module is enabled
         updateClusterProperties();
 
         Background.scheduleRepeated(new TimerTask() {
@@ -179,41 +153,43 @@ public class InterceptorEventListener implements ApplicationListener {
             logger.log(Level.FINE, "Updating Actional Interceptor cluster property values...");
         }
 
-        boolean enabledPropertyValue = Boolean.parseBoolean(serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENABLE_CLUSTER_PROPERTY)));
-        boolean transmitProviderPayloadPropertyValue = Boolean.parseBoolean(serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY)));
-        boolean transmitConsumerPayloadPropertyValue = Boolean.parseBoolean(serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY)));
-        String configDirPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_CONFIG_DIRECTORY));
-        boolean enforceInboundTrustZoneCheck = Boolean.parseBoolean(serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE)));
+        final boolean enabledPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENABLE_CLUSTER_PROPERTY), false);
+        final boolean transmitProviderPayloadPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY), false);
+        final boolean transmitConsumerPayloadPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY), false);
+        final String configDirPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_CONFIG_DIRECTORY));
+        final boolean enforceInboundTrustZoneCheck = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE), false);
 
-        synchronized (this) {
-            enabled.set(enabledPropertyValue);
-            transmitProviderPayload.set(transmitProviderPayloadPropertyValue);
-            transmitConsumerPayload.set(transmitConsumerPayloadPropertyValue);
-            enforceInboundTrustZone.set(enforceInboundTrustZoneCheck);
-        }
+        final boolean httpHeaderEnabled = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName( INTERCEPTOR_ENABLE_OUTBOUND_HTTP_HEADER ), true);
+        final String outboundHttpHeaderName = serverConfig.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_OUTBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
+        final String inboundHttpHeaderName = serverConfig.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_INBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
+
+        configuration.set( new ActionalConfig(
+                enabledPropertyValue,
+                transmitProviderPayloadPropertyValue,
+                transmitConsumerPayloadPropertyValue,
+                enforceInboundTrustZoneCheck,
+                httpHeaderEnabled,
+                outboundHttpHeaderName,
+                inboundHttpHeaderName ) );
 
         //this only takes effect on module re-load
         System.setProperty("com.actional.lg.interceptor.config", configDirPropertyValue);
     }
 
-    public boolean isEnabled() {
-        return enabled.get();
+    boolean isEnabled() {
+        return configuration.get().enabled;
     }
 
-    public void destroy() throws Exception {
-        try {
-            //destroy some stuff...
+    void destroy() throws Exception {
+        //destroy some stuff...
 
-            //if module is removed in the middle of processing
-            //close out any ServerInteraction or ClientInteraction objects ?
+        //if module is removed in the middle of processing
+        //close out any ServerInteraction or ClientInteraction objects ?
 
-            //shutdown background thread?
+        //shutdown background thread?
 
-        } finally {
-            // Unsubscribe from the applicationEventProxy
-            if (applicationEventProxy != null)
-                applicationEventProxy.removeApplicationListener(this);
-        }
+        // Unsubscribe from the applicationEventProxy
+        applicationEventProxy.removeApplicationListener(this);
     }
 
     /**
@@ -221,7 +197,7 @@ public class InterceptorEventListener implements ApplicationListener {
      *
      * @return the current instance, created when onModuleLoaded() was called, or null if there isn't one.
      */
-    public static InterceptorEventListener getInstance() {
+    static InterceptorEventListener getInstance() {
         return instance;
     }
 
@@ -250,6 +226,71 @@ public class InterceptorEventListener implements ApplicationListener {
             } finally {
                 instance = null;
             }
+        }
+    }
+
+    /**
+     * The configuration variables map directly to cluster properties.
+     * These cluster properties are polled every 'pollingInterval' for changes.
+     */
+    private static final class ActionalConfig {
+        /**
+         * Determines whether the Actional Interceptor module has been enabled.
+         * <p/>
+         * The Interceptor will be enabled/configured via cluster property.
+         * <p/>
+         */
+        private final boolean enabled;
+
+        /**
+         * Determines whether or not the Interceptor should transmit the XML payload
+         * for either incoming "provider" or outgoing "consumer" requests
+         * along with other message processing information to the Actional Agent.
+         * <p/>
+         */
+        private final boolean transmitProviderPayload;
+        private final boolean transmitConsumerPayload;
+
+        /**
+         * Determines whether or not the Gateway interceptor enforces Trust Zones on inbound messages.
+         * If false, TrustZone information will not be checked on the incoming request.  Otherwise TrustZone support will be checked.
+         * Note that this setting only affects inbound messages.  TrustZone information will always be included in the outbound actional header.
+         */
+        private final boolean enforceInboundTrustZone;
+
+        /**
+         * Is the outbound HTTP header enabled?
+         */
+        private final boolean enableHttpHeader;
+
+        /**
+         * Name of the HTTP header to check for in requests.
+         */
+        private final String inboundHttpHeaderName;
+
+        /**
+         * Name of the HTTP header to add when routing.
+         */
+        private final String outboundHttpHeaderName;
+
+        ActionalConfig( final boolean enabled,
+                        final boolean transmitProviderPayload,
+                        final boolean transmitConsumerPayload,
+                        final boolean enforceInboundTrustZone,
+                        final boolean enableHttpHeader,
+                        final String outboundHttpHeaderName,
+                        final String inboundHttpHeaderName ) {
+            this.enabled = enabled;
+            this.transmitProviderPayload = transmitProviderPayload;
+            this.transmitConsumerPayload = transmitConsumerPayload;
+            this.enforceInboundTrustZone = enforceInboundTrustZone;
+            this.enableHttpHeader = enableHttpHeader;
+            this.outboundHttpHeaderName = outboundHttpHeaderName;
+            this.inboundHttpHeaderName = inboundHttpHeaderName;
+        }
+
+        public String getHeaderNameIfEnabled() {
+            return enableHttpHeader ? outboundHttpHeaderName : null;
         }
     }
 }

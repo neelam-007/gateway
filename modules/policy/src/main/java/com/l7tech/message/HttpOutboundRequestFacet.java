@@ -1,22 +1,15 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.message;
 
 import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.util.Pair;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * An abstract skeleton of an HttpResponseKnob implementation.
+ * Implementation of the HttpOutboundRequestKnob for attachment to Messages.
+ *
+ * <p>This facet supports aggregation of HTTP headers for use when routing.</p>
  */
-public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
-    protected final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();
-    protected final List<String> challengesToSend = new ArrayList<String>();
-    protected int statusToSet;
+public class HttpOutboundRequestFacet implements HttpOutboundRequestKnob {
+
+    //- PUBLIC
 
     @Override
     public void setDateHeader( final String name, final long date ) {
@@ -63,22 +56,24 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
         headerSupport.writeHeaders( target );
     }
 
-    @Override
-    public void addChallenge(String value) {
-        challengesToSend.add(value);
+    /**
+     * Ensure that the specified message has an HttpOutboundRequestKnob.
+     *
+     * @param message the Message that should have an HttpOutboundRequestKnob.  Required.
+     * @return an existing or new HttpOutboundRequestKnob.  Never null.
+     */
+    public static HttpOutboundRequestKnob getOrCreateHttpOutboundRequestKnob( final Message message ) {
+        HttpOutboundRequestKnob httpOutboundRequestKnob = message.getKnob(HttpOutboundRequestKnob.class);
+
+        if ( httpOutboundRequestKnob == null ) {
+            httpOutboundRequestKnob = new HttpOutboundRequestFacet();
+            message.attachKnob(HttpOutboundRequestKnob.class, httpOutboundRequestKnob);
+        }
+
+        return httpOutboundRequestKnob;
     }
 
-    @Override
-    public void setStatus(int code) {
-        statusToSet = code;
-    }
+    //- PRIVATE
 
-    @Override
-    public int getStatus() {
-        return statusToSet;
-    }
-
-    protected List<Pair<String, Object>> getHeadersToSend() {
-        return headerSupport.headersToSend;
-    }
+    private final OutboundHeaderSupport headerSupport = new OutboundHeaderSupport();
 }

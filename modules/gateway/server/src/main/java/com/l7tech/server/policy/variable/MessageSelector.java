@@ -437,7 +437,7 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true);
 
     private static final List<Class<? extends HasHeaders>> headerHaverKnobClasses =
-            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class); 
+            Arrays.<Class<? extends HasHeaders>>asList(HttpRequestKnob.class, HttpOutboundRequestKnob.class, HttpResponseKnob.class, HttpInboundResponseKnob.class); 
 
     private static class HeaderSelector implements MessageAttributeSelector {
         String prefix;

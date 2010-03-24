@@ -6,6 +6,7 @@ import com.actional.lg.interceptor.sdk.ServerInteraction;
 import com.actional.lg.interceptor.sdk.helpers.InterHelpBase;
 import com.actional.lg.interceptor.sdk.helpers.InterHelpJ2ee;
 import com.actional.lg.interceptor.sdk.helpers.InterHelpTrust;
+import com.l7tech.message.HttpOutboundRequestFacet;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
  *
  * @author jules
  */
-public class Interceptor {
+class Interceptor {
 
     // - PUBLIC
 
@@ -42,15 +43,15 @@ public class Interceptor {
      * @param event           the PreRoutingEvent to be processed
      * @param transmitPayload whether or not to intercept & transmit the payload
      */
-    public static void handleClientRequest(PreRoutingEvent event, boolean transmitPayload) {
+    public static void handleClientRequest( final PreRoutingEvent event,
+                                            final boolean transmitPayload,
+                                            final String headerName ) {
         logger.log(Level.FINE, "Interceptor.handleClientRequest");
         final PolicyEnforcementContext pec = event.getContext();
         final Message requestMessage = event.getRequest();
 
-        ClientInteraction ci = null;
+        final ClientInteraction ci = ClientInteraction.begin();
         try {
-            ci = ClientInteraction.begin();
-
             ci.setUrl(event.getUrl().toString());
 
             // group, service, operation, used for identification purposes by actional
@@ -82,17 +83,16 @@ public class Interceptor {
             ci.setSvcType(GeneralUtil.DISPLAY_TYPE_SERVICE.shortValue());
             ci.setOpType(GeneralUtil.DISPLAY_TYPE_OP.shortValue());
 
-            //build the Actional Manifest header
-            String actionalManifestHeader;
-            try {
-                actionalManifestHeader = InterHelpBase.writeHeader(ci, true);
-                pec.setVariable(ACTIONAL_HEADERVALUE_VARIABLE, actionalManifestHeader);
-                // todo: store this into InterHelpBase.kLGTransport header
-                // todo: context var is not reported by any SetVariables, doesn't show up in the http routing assertion
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Interceptor could not construct Actional manifest header. No header will be sent.");
+            if ( headerName != null ) {
+                //build the Actional Manifest header
+                try {
+                    final String actionalManifestHeader = InterHelpBase.writeHeader(ci, true);
+                    HttpOutboundRequestFacet.getOrCreateHttpOutboundRequestKnob(requestMessage).setHeader( headerName, actionalManifestHeader );
+                    // todo: store this into InterHelpBase.kLGTransport header
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Interceptor could not construct Actional manifest header. No header will be sent.");
+                }                
             }
-
         } finally {
             ci.requestAnalyzed();
         }
@@ -104,17 +104,16 @@ public class Interceptor {
      * @param event           the PostRoutingEvent to be processed
      * @param transmitPayload whether or not to intercept & transmit the payload
      */
-    public static void handleClientResponse(PostRoutingEvent event, boolean transmitPayload) {
+    public static void handleClientResponse( final PostRoutingEvent event,
+                                             final boolean transmitPayload ) {
         logger.log(Level.FINE, "Interceptor.handleClientResponse");
         final Message responseMessage = event.getRoutedResponse();
 
-        ClientInteraction ci = null;
+        final ClientInteraction ci = ClientInteraction.get();
+        if (ci == null) {
+            throw new InterceptorException("Null client interaction for response (not initialized by request?)");
+        }
         try {
-            ci = ClientInteraction.get();
-            if (ci == null) {
-                throw new InterceptorException("Null client interaction for response (not initialized by request?)");
-            }
-
             try {
                 // process soap faults
                 if (responseMessage.isXml() && responseMessage.isSoap() && responseMessage.getSoapKnob().isFault()) {
@@ -148,7 +147,7 @@ public class Interceptor {
                 logger.log(Level.WARNING, "Error determining response size: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         } finally {
-            if (ci != null) ci.end();
+            ci.end();
         }
     }
 
@@ -158,7 +157,10 @@ public class Interceptor {
      * @param event           the MessageReceived event to be processed
      * @param transmitPayload whether or not to intercept & transmit the payload
      */
-    public static void handleServerRequest(MessageReceived event, boolean transmitPayload, boolean enforceTrustZone) {
+    public static void handleServerRequest( final MessageReceived event,
+                                            final boolean transmitPayload,
+                                            final boolean enforceTrustZone,
+                                            final String httpHeaderName ) {
         logger.log(Level.FINE, "Interceptor.handleServerRequest");
         final PolicyEnforcementContext pec = event.getContext();
         final Message requestMessage = pec.getRequest();
@@ -172,10 +174,12 @@ public class Interceptor {
             }
             //enable flow IDs & deal with the Actional manifest header -- order matters here
             InterHelpJ2ee.extractTransportHeaders(si, httpServletRequestKnob.getHttpServletRequest());
-            try {
-                InterHelpBase.readHeader(httpServletRequestKnob.getHeaderSingleValue(InterHelpBase.kLGTransport), si);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Found more than one value for the header: " + InterHelpBase.kLGTransport);
+            if ( httpHeaderName != null ) {
+                try {
+                    InterHelpBase.readHeader(httpServletRequestKnob.getHeaderSingleValue(httpHeaderName), si);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Found more than one value for the header: " + httpHeaderName);
+                }
             }
 
             //not sure that an authUser will ever exist at this point
@@ -247,18 +251,17 @@ public class Interceptor {
      * @param event           the MessageProcessed event to be processed
      * @param transmitPayload whether or not to intercept & transmit the payload
      */
-    public static void handleServerResponse(MessageProcessed event, boolean transmitPayload) {
+    public static void handleServerResponse( final MessageProcessed event,
+                                             final boolean transmitPayload ) {
         logger.log(Level.FINE, "Interceptor.handleServerResponse");
         final PolicyEnforcementContext pec = event.getContext();
         final Message responseMessage = pec.getResponse();
 
-        ServerInteraction si = null;
+        final ServerInteraction si = ServerInteraction.get();
+        if (si == null) {
+            throw new InterceptorException("Null server interaction for response (not initialized by request?)");
+        }
         try {
-            si = ServerInteraction.get();
-            if (si == null) {
-                throw new InterceptorException("Null server interaction for response (not initialized by request?)");
-            }
-
             try {
                 if (responseMessage.isXml() && responseMessage.isSoap() && responseMessage.getSoapKnob().isFault()) {
                     // process soap faults
@@ -291,7 +294,7 @@ public class Interceptor {
                 logger.log(Level.WARNING, "Error determining response size: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         } finally {
-            if (si != null) si.end();
+            si.end();
         }
     }
 
@@ -299,6 +302,4 @@ public class Interceptor {
 
     private static final Logger logger = Logger.getLogger(Interceptor.class.getName());
     private static final String PROVIDER_GROUP_NAME = "Layer 7 SecureSpan Gateway";
-    private static final String ACTIONAL_HEADERVALUE_VARIABLE = "actional.httpheader.value";
-
 }
