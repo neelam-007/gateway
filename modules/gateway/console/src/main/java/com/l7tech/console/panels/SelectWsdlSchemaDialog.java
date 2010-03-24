@@ -97,7 +97,9 @@ public class SelectWsdlSchemaDialog extends JDialog {
         // create the xml control for the recipient panel
         initializeXmlContainer();
         xmlpanel.setLayout(new BorderLayout());
-        xmlpanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+        JScrollPane jScrollPane = new JScrollPane(xmlContainer.getView());
+        jScrollPane.setPreferredSize(new Dimension(600, 400));
+        xmlpanel.add(jScrollPane, BorderLayout.CENTER);
         ButtonGroup bg = new ButtonGroup();
         bg.add(allradio);
         bg.add(requestradio);

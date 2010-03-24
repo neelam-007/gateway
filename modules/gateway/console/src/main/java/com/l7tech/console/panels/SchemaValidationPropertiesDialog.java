@@ -499,10 +499,28 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         try {
             resolveImportedSchemas(null, schemaDoc, new HashSet<String>()); // "null" means this is a root schema.  A hashset is for tracking circular imports.
         } catch (FetchSchemaFailureException e) {
-            StringBuilder messageBuilder = new StringBuilder("<html>").append(e.getMessage());
-            messageBuilder.append("<center>Would you like to manually add the unresolved schema?</center></html>");
+            StringBuilder messageBuilder = new StringBuilder(e.getMessage());
+            messageBuilder.append("\nWould you like to manually add the unresolved schema?");
+            String msg = messageBuilder.toString();
 
-            if (JOptionPane.showConfirmDialog(this, messageBuilder, "Unresolved Import", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
+            final Object object;
+            if(width > 800){
+                JTextArea jTextArea = new JTextArea(msg);
+                jTextArea.setRows(3);
+                jTextArea.setEditable(false);
+                jTextArea.setCaretPosition(0);
+                jTextArea.setBackground(this.getBackground());
+                
+                JScrollPane jScrollPane = new JScrollPane(jTextArea);
+                final int textHeight = this.getFontMetrics(this.getFont()).getHeight();
+                jScrollPane.setPreferredSize(new Dimension(600, textHeight * 5));
+                object = jScrollPane;
+            }else{
+                object = msg;
+            }
+
+            if (JOptionPane.showConfirmDialog(this, object, "Unresolved Import", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
                 globalSchemaManager.pack();
                 Utilities.centerOnScreen(globalSchemaManager);
@@ -599,7 +617,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             importedSchemaContent = fetchSchemaFromUrl(importloc, reportErrorEnabled);
 
             if (!foundSchemaInDatabase && importedSchemaContent == null) {
-                errorMessage = "<center>Cannot fetch the imported schema from the URL:</center><center>" + importloc + "</center>";
+                errorMessage = "Cannot fetch the imported schema from the URL:\n" + importloc;
             }
         }
         // Case 2: schemaLocation does not exist
@@ -611,7 +629,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             importedSchemaContent = fetchSchemaByTargetNamespace(importns, reportErrorEnabled);
 
             if (!foundSchemaInDatabase && importedSchemaContent == null) {
-                errorMessage = "<center>Cannot fetch the imported schema from the target namespace:</center><center>" + importns + "</center>";
+                errorMessage = "Cannot fetch the imported schema from the target namespace:\n" + importns;
             }
         }
 
@@ -1072,7 +1090,17 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     private void displayError(String msg, String title) {
         if (title == null) title = resources.getString("error.window.title");
-        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
+        final FontMetrics fontMetrics = this.getFontMetrics(this.getFont());
+        final int width = SwingUtilities.computeStringWidth(fontMetrics, msg);
+        if(width > 600){
+            JLabel jLabel = new JLabel(msg);
+            JScrollPane jScrollPane = new JScrollPane(jLabel);
+            jScrollPane.setPreferredSize(new Dimension(600, fontMetrics.getHeight() * 3));
+            JOptionPane.showMessageDialog(this, jScrollPane, title, JOptionPane.ERROR_MESSAGE);
+        }else{
+            JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);    
+        }
+
     }
 
     private void allocControls() {

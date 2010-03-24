@@ -17,6 +17,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.common.io.XmlUtil;
@@ -156,7 +157,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
             }
         });
 
-        schemanametxt.setDocument(new FilterDocument(128, new FilterDocument.Filter() {
+        schemanametxt.setDocument(new FilterDocument(EntityUtil.getMaxFieldLength(SchemaEntry.class, "getName", 4096), new FilterDocument.Filter() {
                                                                 public boolean accept(String str) {
                                                                     if (str == null) return false;
                                                                     return true;
