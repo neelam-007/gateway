@@ -9,15 +9,14 @@
               xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse</wsa:Action>
-        <wsa:MessageID env:mustUnderstand="true">uuid:f90089ec-a844-4734-82a4-22af0411a2e1</wsa:MessageID>
-        <wsa:RelatesTo>uuid:9c6b21fb-941a-4393-ae74-692487cdfb79</wsa:RelatesTo>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://ns.l7tech.com/2010/01/gateway-management/policies/ValidatePolicyResponse</wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true">uuid:633b90b0-002b-4f8f-bd1b-10f4a01700a7</wsa:MessageID>
+        <wsa:RelatesTo>uuid:1670ee1d-43e1-438e-9e6d-6ca328c42b9d</wsa:RelatesTo>
         <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
     </env:Header>
     <env:Body>
-        <l7:ClusterProperty id="264372224" version="1">
-            <l7:Name>test.property</l7:Name>
-            <l7:Value>test value2</l7:Value>
-        </l7:ClusterProperty>
+        <l7:PolicyValidationResult>
+            <l7:ValidationStatus>OK</l7:ValidationStatus>
+        </l7:PolicyValidationResult>
     </env:Body>
 </env:Envelope>

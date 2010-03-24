@@ -41,9 +41,9 @@ public class GatewayManagementClientTest {
     public void testUsage() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{}, out, out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertTrue( "Expected usage:\n"+output, output.startsWith( "Usage:" ));
     }
 
@@ -52,17 +52,17 @@ public class GatewayManagementClientTest {
         {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "-help", "enumerate" }, out, out );
-            int exitcode = gmc.run();
+            int exitCode = gmc.run();
             String output = out.toString();
-            assertEquals( "Exit code", 0, exitcode );
+            assertEquals( "Exit code", 0, exitCode );
             assertTrue( "Expected help for enumerate command:\n"+output, output.startsWith( "enumerate:" ));
         }
         {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "enumerate", "-help" }, out, out );
-            int exitcode = gmc.run();
+            int exitCode = gmc.run();
             String output = out.toString();
-            assertEquals( "Exit code", 0, exitcode );
+            assertEquals( "Exit code", 0, exitCode );
             assertTrue( "Expected help for enumerate command:\n"+output, output.startsWith( "enumerate:" ));
         }
     }
@@ -71,9 +71,9 @@ public class GatewayManagementClientTest {
     public void testVersion() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{"-version"}, out, out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected usage:\n"+output, output.startsWith( "Version " ));
     }
 
@@ -81,13 +81,13 @@ public class GatewayManagementClientTest {
     public void testInvalidCommand() {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
-                new String[]{ "gateway", "unknowncommand" },
+                new String[]{ "gateway", "unknown-command" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
-        assertTrue( "Expected unknown command:\n" + output , output.startsWith("Command 'unknowncommand' not recognized." ));
+        assertEquals( "Exit code", 1, exitCode );
+        assertTrue( "Expected unknown command:\n" + output , output.startsWith("Command 'unknown-command' not recognized." ));
     }
 
     @Test
@@ -98,9 +98,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected network error", "Network error 'Connection refused'\n", output);
     }
 
@@ -112,9 +112,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected trust error", "Server TLS/SSL certificate is not trusted.\n", output);
     }
 
@@ -126,9 +126,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected soap fault",
                 "SOAP Fault from service:\n" +
                 "  Fault: Policy Falsified\n" +
@@ -144,9 +144,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected not authorized", "Not authorized to access Gateway Management service.\n", output);
     }
 
@@ -158,14 +158,14 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected soap fault",
                 "SOAP Fault from service:\n" +
                 "  Fault: Policy Falsified\n" +
                 "  Role: http://localhost:8080/wsman\n" +
-                "  Details: [Found user: admine, Authentication failed for identity provider ID -2]\n", output);
+                "  Details: [Found user: admin, Authentication failed for identity provider ID -2]\n", output);
     }
 
     @Test
@@ -176,9 +176,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected resource not found message", "No resource matched the specified name or identifier.\n", output);
     }
 
@@ -189,9 +189,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "validate", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertEquals( "Expected not applicable message", "Command not applicable for type 'clusterProperty'\n", output);
     }
 
@@ -199,17 +199,17 @@ public class GatewayManagementClientTest {
     public void testInvalidInput() throws Exception {
         final String property =
                 "<ns9:ClusterP  roperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
-                "  <ns9:Name>testproperty</ns9:Name>\n" +
-                "  <ns9:Value>testvalue</ns9:Value>\n" +
+                "  <ns9:Name>test.property</ns9:Name>\n" +
+                "  <ns9:Value>test value</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "create", "-type", "clusterProperty", "-in", property },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertTrue( "Expected input error:\n" + output , output.contains("Error processing input") );
     }
 
@@ -217,7 +217,7 @@ public class GatewayManagementClientTest {
     public void testActionNotSupported() throws Exception {
         final String folder =
                 "<Folder xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\" version=\"0\" id=\"256704512\">\n" +
-                "    <Name>Foldere</Name>\n" +
+                "    <Name>Folder</Name>\n" +
                 "</Folder>";
         setResponse( "ActionNotSupportedResponse.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -225,9 +225,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "put", "-type", "folder", "-in", folder },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertTrue( "Expected not supported:\n" + output , output.equals("Command not supported for type 'folder'.\n") );
     }
     
@@ -235,8 +235,8 @@ public class GatewayManagementClientTest {
     public void testPermissionDenied() {
         final String property =
                 "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\" id=\"264372224\" version=\"0\">\n" +
-                "  <ns9:Name>testproperty</ns9:Name>\n" +
-                "  <ns9:Value>testvalue2</ns9:Value>\n" +
+                "  <ns9:Name>test.property</ns9:Name>\n" +
+                "  <ns9:Value>test value2</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
         setResponse( "AccessDeniedResponse.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -244,9 +244,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "put", "-type", "clusterProperty", "-in", property },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitcode );
+        assertEquals( "Exit code", 1, exitCode );
         assertTrue( "Expected permission denied:\n" + output , output.equals("Permission denied when accessing resource.\n") );
     }
 
@@ -258,9 +258,9 @@ public class GatewayManagementClientTest {
                 "ClusterProperty_Enumerate_Response3.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, out, out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("<ClusterProperty") && output.contains( "<enumeration>" ) && output.endsWith( "</enumeration>\n" ));
     }
 
@@ -271,9 +271,9 @@ public class GatewayManagementClientTest {
                 "ClusterProperty_Enumerate_Response4.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, out, out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected empty enumeration:\n" + output , output.contains( "<enumeration/>" ));
     }
 
@@ -281,8 +281,8 @@ public class GatewayManagementClientTest {
     public void testCreate() throws Exception {
         final String property =
                 "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
-                "  <ns9:Name>testproperty</ns9:Name>\n" +
-                "  <ns9:Value>testvalue</ns9:Value>\n" +
+                "  <ns9:Name>test.property</ns9:Name>\n" +
+                "  <ns9:Value>test value</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
         setResponse( "ClusterProperty_Create_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -290,10 +290,10 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "create", "-type", "clusterProperty", "-in", property },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
-        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "testvalue" ));
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
     }
 
@@ -305,9 +305,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "secure_span" ));
     }
 
@@ -315,8 +315,8 @@ public class GatewayManagementClientTest {
     public void testPut() throws Exception {
         final String property =
                 "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\" id=\"264372224\" version=\"0\">\n" +
-                "  <ns9:Name>testproperty</ns9:Name>\n" +
-                "  <ns9:Value>testvalue2</ns9:Value>\n" +
+                "  <ns9:Name>test.property</ns9:Name>\n" +
+                "  <ns9:Value>test value2</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
         setResponse( "ClusterProperty_Put_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -324,10 +324,10 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "put", "-type", "clusterProperty", "-in", property },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
-        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "testvalue2" ));
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value2" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
         assertTrue( "Expected version in output:\n" + output , output.contains( "version=\"1\"" ));
     }
@@ -337,12 +337,12 @@ public class GatewayManagementClientTest {
         setResponse( "ClusterProperty_Delete_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
-                new String[]{ "gateway", "delete", "-type", "clusterProperty", "-name", "testproperty" },
+                new String[]{ "gateway", "delete", "-type", "clusterProperty", "-name", "test.property" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected no output:\n" + output , output.isEmpty());
     }
 
@@ -354,9 +354,23 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "validate", "-type", "service", "-id", "17268736" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
+    }
+
+    @Test
+    public void testValidatePolicyInput() throws Exception {
+        setResponse( "Service_ValidatePolicy_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
@@ -380,9 +394,9 @@ public class GatewayManagementClientTest {
                 },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected policy import result:\n" + output , output.contains("<PolicyImportResult") );
     }
 
@@ -394,9 +408,9 @@ public class GatewayManagementClientTest {
                 new String[]{ "gateway", "export", "-type", "service", "-id", "17268736" },
                 out,
                 out );
-        int exitcode = gmc.run();
+        int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitcode );
+        assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected policy export:\n" + output , output.contains("<exp:Export") && output.contains( "<exp:References/>" ));
     }
 

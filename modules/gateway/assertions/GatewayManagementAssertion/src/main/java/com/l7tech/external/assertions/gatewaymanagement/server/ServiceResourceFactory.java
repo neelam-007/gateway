@@ -379,6 +379,9 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         resourceSet.setResources( Collections.singletonList(resource) );
         resource.setType( ResourceHelper.POLICY_TYPE );
         resource.setContent( policy.getXml() );
+        if ( policy.getVersion() != Policy.DEFAULT_OID ) {
+            resource.setVersion( policy.getVersion() );
+        }
         return resourceSet;
     }
 

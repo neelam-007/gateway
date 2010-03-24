@@ -11,12 +11,11 @@ import com.l7tech.gateway.api.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.ServiceMO;
-import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import com.sun.ws.management.client.Resource;
 import com.sun.ws.management.client.ResourceFactory;
 import com.sun.ws.management.client.ResourceState;
 import com.sun.ws.management.client.exceptions.FaultException;
-import org.w3c.dom.Document;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -110,12 +110,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
 
         return doValidatePolicy( 
                 Collections.singletonMap(ID_SELECTOR, identifier),
-                new Functions.NullaryThrows<Document,IOException>(){
-            @Override
-            public Document call() {
-                return newDocument();
-            }
-        } );
+                ManagedObjectFactory.createPolicyValidationContext() );
     }
 
     /**
@@ -145,12 +140,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             throw new AccessorException("Policy validation does not support '"+(managedObject==null ? "<null>" : managedObject.getClass().getName())+"'");
         }
 
-        return doValidatePolicy( null, new Functions.NullaryThrows<Document,IOException>(){
-            @Override
-            public Document call() throws IOException {
-                return ManagedObjectFactory.write(context);
-            }
-        } );
+        return doValidatePolicy( null, context);
     }
 
     //- PACKAGE
@@ -202,6 +192,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
 
     private static final String XPATH_RESOURCE = "l7:Resources/l7:ResourceSet[@tag='policy']/l7:Resource";
     private static final String XPATH_NS_PREFIX = "l7";
+    private static final Random random = new Random();
 
     private boolean isSoap( final Map<String,Object> properties ) {
         boolean soap = false;
@@ -249,9 +240,21 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
                     merged.setTag( resourceSetEntry.getValue().getTag() );
                     if ( resourceSetEntry.getValue().getResources() != null )
                         resources.addAll( resourceSetEntry.getValue().getResources() );
-                    if ( toAdd.getResources() != null )
+                    if ( toAdd.getResources() != null && !toAdd.getResources().isEmpty() ) {
+                        if ( merged.getRootUrl() == null && resources.size()==1 ) {
+                            // set the root url to identify the primary resource
+                            com.l7tech.gateway.api.Resource resource = resources.get( 0 );
+                            String id = resource.getId();
+                            if ( id == null ) {
+                                id = generateUniqueId();
+                                resource.setId( id );
+                            }
+                            merged.setRootUrl( "#" + id );
+                        }
                         resources.addAll( toAdd.getResources() );
+                    }
                     merged.setResources( resources );
+                    combined.add( merged );
                 } else {
                     combined.add( resourceSetEntry.getValue() );
                 }
@@ -283,8 +286,14 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
         return resourceSetMap;
     }
 
+    private String generateUniqueId() {
+        byte[] randomBytes = new byte[16];
+        random.nextBytes(randomBytes);
+        return "id-" + HexUtils.hexDump(randomBytes);
+    }
+
     private PolicyValidationResult doValidatePolicy( final Map<String,String> selectorMap,
-                                                     final Functions.NullaryThrows<Document,IOException> requestGetter ) throws AccessorException {
+                                                     final PolicyValidationContext context ) throws AccessorException {
         return invoke(new AccessorMethod<PolicyValidationResult>(){
             @Override
             public PolicyValidationResult invoke() throws DatatypeConfigurationException, FaultException, JAXBException, SOAPException, IOException, AccessorException {
@@ -292,7 +301,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
                         getResourceFactory().find( getUrl(), getResourceUri(), getTimeout(), selectorMap)[0];
 
                 final ResourceState resourceState =
-                        resource.invoke( buildResourceScopedActionUri("ValidatePolicy"), requestGetter.call() );
+                        resource.invoke( buildResourceScopedActionUri("ValidatePolicy"), ManagedObjectFactory.write(context) );
 
                 return ManagedObjectFactory.read( resourceState.getDocument(), PolicyValidationResult.class );
             }

@@ -1,6 +1,9 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.TransportFactory;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.sun.ws.management.Management;
@@ -9,6 +12,8 @@ import com.sun.ws.management.client.exceptions.FaultException;
 import com.sun.ws.management.client.impl.TransportClient;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.w3c.dom.Element;
+
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -16,6 +21,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.xml.bind.JAXBException;
 import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
@@ -196,6 +202,144 @@ public class AccessorTest {
                     "    </wsp:All>\n" +
                     "</wsp:Policy>\n" );
             policyAccessor.putPolicy( "248872960", policyResource );
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testValidatePolicy() throws Exception {
+        setResponse( "Policy_Validate_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyValidationResult result = policyAccessor.validatePolicy( "248872960" );
+            assertEquals("validation status", PolicyValidationResult.ValidationStatus.OK, result.getStatus());
+            assertNull("validation messages", result.getPolicyValidationMessages());
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testValidateSpecifiedPolicy() throws Exception {
+        // Callback to validate that the request message contains the policy resource
+        validationCallback = new Functions.UnaryVoid<Addressing>(){
+            @Override
+            public void call( final Addressing addressing ) {
+                try {
+                    final SOAPBody body = addressing.getBody();
+                    assertNotNull( "request body", body );
+                    Element context = DomUtils.findExactlyOneChildElementByName( body, NS_GATEWAY_MANAGEMENT, "PolicyValidationContext" );
+                    DomUtils.findExactlyOneChildElementByName( context, NS_GATEWAY_MANAGEMENT, "Resources" );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap( e );
+                }
+            }
+        };
+        setResponse( "Policy_Validate_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "revision", 2L );
+            props.put( "soap", false );
+
+            final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyDetail.setId( "248872960" );
+            policyDetail.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
+            policyDetail.setVersion( 0 );
+            policyDetail.setName( "555" );
+            policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
+            policyDetail.setProperties( props );
+
+            final Resource policyResource = ManagedObjectFactory.createResource();
+            policyResource.setContent( "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;" );
+            policyResource.setType( "policy" );
+
+            final ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+            policyResourceSet.setTag( "policy" );
+            policyResourceSet.setResources( Arrays.asList(policyResource) );
+
+            final PolicyMO policy = ManagedObjectFactory.createPolicy();
+            policy.setId( "248872960" );
+            policy.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
+            policy.setPolicyDetail( policyDetail );
+            policy.setResourceSets( Arrays.asList( policyResourceSet ) );
+
+            final PolicyValidationResult result = policyAccessor.validatePolicy( policy, null );
+            assertEquals("validation status", PolicyValidationResult.ValidationStatus.OK, result.getStatus());
+            assertNull("validation messages", result.getPolicyValidationMessages());
+        } finally {
+            ResourceUtils.closeQuietly( client );
+        }
+    }
+
+    @Test
+    public void testValidateSpecifiedWithResourcePolicy() throws Exception {
+        // Callback to validate that the request message contains the policy resources
+        validationCallback = new Functions.UnaryVoid<Addressing>(){
+            @Override
+            public void call( final Addressing addressing ) {
+                try {
+                    final SOAPBody body = addressing.getBody();
+                    assertNotNull( "request body", body );
+                    Element context = DomUtils.findExactlyOneChildElementByName( body, NS_GATEWAY_MANAGEMENT, "PolicyValidationContext" );
+                    Element resourceList = DomUtils.findExactlyOneChildElementByName( context, NS_GATEWAY_MANAGEMENT, "Resources" );
+                    Element resourceSet = DomUtils.findExactlyOneChildElementByName( resourceList, NS_GATEWAY_MANAGEMENT, "ResourceSet" );
+                    List<Element> resources = DomUtils.findChildElementsByName( resourceSet, NS_GATEWAY_MANAGEMENT, "Resource" );
+                    assertEquals( "Resource count", 2, resources.size() );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap( e );
+                }
+            }
+        };
+        setResponse( "Policy_Validate_Response.xml" );
+        Client client = null;
+        try {
+            client = getClient();
+            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+
+            final Map<String,Object> props = new HashMap<String,Object>();
+            props.put( "revision", 2L );
+            props.put( "soap", false );
+
+            final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyDetail.setId( "248872960" );
+            policyDetail.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
+            policyDetail.setVersion( 0 );
+            policyDetail.setName( "555" );
+            policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
+            policyDetail.setProperties( props );
+
+            final Resource policyResource = ManagedObjectFactory.createResource();
+            policyResource.setContent( "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;" );
+            policyResource.setType( "policy" );
+
+            final ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+            policyResourceSet.setTag( "policy" );
+            policyResourceSet.setResources( Arrays.asList(policyResource) );
+
+            final PolicyMO policy = ManagedObjectFactory.createPolicy();
+            policy.setId( "248872960" );
+            policy.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
+            policy.setPolicyDetail( policyDetail );
+            policy.setResourceSets( Arrays.asList( policyResourceSet ) );
+
+            final Resource policyIncludeResource = ManagedObjectFactory.createResource();
+            policyIncludeResource.setContent( "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;" );
+            policyIncludeResource.setType( "policy" );
+
+            final ResourceSet policyIncludeResourceSet = ManagedObjectFactory.createResourceSet();
+            policyIncludeResourceSet.setTag( "policy" );
+            policyIncludeResourceSet.setResources( Arrays.asList(policyIncludeResource) );
+
+            final PolicyValidationResult result = policyAccessor.validatePolicy( policy, Arrays.asList( policyIncludeResourceSet ) );
+            assertEquals("validation status", PolicyValidationResult.ValidationStatus.OK, result.getStatus());
+            assertNull("validation messages", result.getPolicyValidationMessages());
         } finally {
             ResourceUtils.closeQuietly( client );
         }
@@ -475,6 +619,7 @@ public class AccessorTest {
                     public Addressing sendRequest( final Addressing addressing,
                                                    final Map.Entry<String, String>... entries ) throws IOException, SOAPException, JAXBException {
                         logMessage( addressing );
+                        validateRequestMessage(addressing);
                         Addressing response = getResponseMessage();
                         logMessage( response );
                         return response;
@@ -504,6 +649,8 @@ public class AccessorTest {
 
     //- PRIVATE
 
+    private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/01/gateway-management";
+    private static Functions.UnaryVoid<Addressing> validationCallback;
     private static final Queue<Object> responseObjects = new ArrayDeque<Object>();
     private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.api.logTestMessages", true );
 
@@ -512,6 +659,13 @@ public class AccessorTest {
         for ( String responseFileName : responseFileNames ) {
             responseObjects.add( "testMessages/" + responseFileName );
         }
+    }
+
+    private static void validateRequestMessage( final Addressing addressing ) throws IOException, SOAPException {
+        if ( validationCallback != null ) {
+            validationCallback.call( addressing );
+        }
+        validationCallback = null;
     }
 
     private static Management getResponseMessage() throws IOException, SOAPException {
