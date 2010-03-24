@@ -174,7 +174,6 @@ public class PatchBuilder {
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
                 if (config.hasOption(this)) {
-                    if ( ! config.hasOption(this)) return;
                     spec.mainClass(config.options.get(this).get(0));
                     spec.entry(new PatchSpecFileEntry(spec.getMainClassEntryName(), config.options.get(this).get(1)));
                 } else {
