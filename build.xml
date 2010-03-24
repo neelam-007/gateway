@@ -3323,7 +3323,7 @@
                 <include name="etc"/>
                 <include name="etc/*"/>
             </tarfileset>
-            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="664" dirmode="775" prefix="${install.target.pc}">
+            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="664" dirmode="770" prefix="${install.target.pc}">
                 <include name="${install.src.pc.controllogs}"/>
                 <include name="${install.src.pc.controllogs}/*"/>
                 <include name="${install.src.pc.controlrun}"/>
