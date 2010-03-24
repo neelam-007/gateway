@@ -1,14 +1,9 @@
 package com.l7tech.util;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.text.ParseException;
 import java.util.logging.Level;
@@ -34,12 +29,8 @@ public class MasterPasswordManager {
              return keyBytes;
 
          char[] mp = getMasterPassword();
-         try {
-             return mp == null ? null : new String(mp).getBytes("UTF-8");
-         } catch (UnsupportedEncodingException e) {
-             throw new RuntimeException(e); // can't happen - misconfigured VM
-         }
-     }
+        return mp == null ? null : new String(mp).getBytes(Charsets.UTF8);
+    }
 
     /**
      * Create a MasterPasswordManager that will use the specified master password finder.
@@ -112,7 +103,7 @@ public class MasterPasswordManager {
             byte[] mpBytes = getMasterPasswordBytes();
             if (mpBytes == null)
                 return null;
-            byte[] saltBytes = salt.getBytes("UTF-8");
+            byte[] saltBytes = salt.getBytes(Charsets.UTF8);
 
             sha.reset();
             sha.update(mpBytes);
@@ -135,8 +126,6 @@ public class MasterPasswordManager {
             return new SecretKeySpec( keybytes, "AES" );
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("No SHA-512 implementation configured", e); // shouldn't happen
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("No UTF-8 implementation configured", e); // can't happen
         }
     }
 
@@ -174,7 +163,7 @@ public class MasterPasswordManager {
 
         try {
             byte[] saltBytes = HexUtils.decodeBase64(salt);
-            byte[] plaintextBytes = new String(plaintextPassword).getBytes("UTF-8");
+            byte[] plaintextBytes = new String(plaintextPassword).getBytes(Charsets.UTF8);
 
             Cipher aes = getAes();
             aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(saltBytes));
@@ -184,13 +173,9 @@ public class MasterPasswordManager {
 
         } catch (InvalidKeyException e) {
             throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // can't happen
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("No UTF-8 implementation configured", e); // can't happen
         } catch (IllegalBlockSizeException e) {
             throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
         } catch (BadPaddingException e) {
-            throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
-        } catch (IOException e) {
             throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen

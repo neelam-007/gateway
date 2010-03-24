@@ -8,20 +8,23 @@ package com.l7tech.common.http;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.Closeable;
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Provides a client-independant, generic interface to an HTTP response.
  */
 public abstract class GenericHttpResponse implements Closeable, GenericHttpResponseParams {
     protected static class GuessedEncodingResult {
-        public String encoding;
+        public Charset encoding;
         public int bytesToSkip;
     }
     
@@ -63,7 +66,7 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
             }
             return new String(bytes, result.bytesToSkip, bytes.length - result.bytesToSkip, result.encoding);
         } else {
-            String encoding = ctype == null ? ContentTypeHeader.DEFAULT_HTTP_ENCODING : ctype.getEncoding();
+            Charset encoding = ctype == null ? ContentTypeHeader.DEFAULT_HTTP_ENCODING : ctype.getEncoding();
             return new String(bytes, encoding);
         }
     }
@@ -86,34 +89,34 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
 
         if(bytes[0] == (byte)0x00 && bytes[1] == (byte)0x00) {
             if(bytes[2] == (byte)0xfe && bytes[3] == (byte)0xff) {
-                result.encoding = "UTF-32BE";
+                result.encoding = Charsets.UTF32BE;
             } else if(bytes[2] == (byte)0x00 && bytes[3] == (byte)0x3c) {
-                result.encoding = getDeclaredEncoding(bytes, "UTF-32BE");
+                result.encoding = getDeclaredEncoding(bytes, Charsets.UTF32BE);
             }
         } else if(bytes[0] == (byte)0xff && bytes[1] == (byte)0xfe) {
             if(bytes[2] == (byte)0x00 && bytes[3] == (byte)0x00) {
-                result.encoding = "UTF-32LE";
+                result.encoding = Charsets.UTF32LE;
             } else {
-                result.encoding = "X-UTF-16LE-BOM";
+                result.encoding = Charsets.X_UTF16LE_BOM;
             }
         } else if(bytes[0] == (byte)0xfe && bytes[1] == (byte)0xff) {
-            result.encoding = "UTF-16BE";
+            result.encoding = Charsets.UTF16BE;
             result.bytesToSkip = 2;
         } else if(bytes[0] == (byte)0xef && bytes[1] == (byte)0xbb && bytes[2] == (byte)0xbf) {
-            result.encoding = "UTF-8";
+            result.encoding = Charsets.UTF8;
             result.bytesToSkip = 3;
         } else if(bytes[0] == (byte)0x3c && bytes[1] == (byte)0x00) {
             if(bytes[2] == (byte)0x00 && bytes[3] == (byte)0x00) {
-                result.encoding = getDeclaredEncoding(bytes, "UTF-32LE");
+                result.encoding = getDeclaredEncoding(bytes, Charsets.UTF32LE);
             } else if(bytes[2] == (byte)0x3f && bytes[3] == (byte)0x00) {
-                result.encoding = getDeclaredEncoding(bytes, "UTF-16LE");
+                result.encoding = getDeclaredEncoding(bytes, Charsets.UTF16LE);
             }
         } else if(bytes[0] == (byte)0x00 && bytes[1] == (byte)0x3c && bytes[2] == (byte)0x00 && bytes[3] == (byte)0x3f) {
-            result.encoding = getDeclaredEncoding(bytes, "UTF-16BE");
+            result.encoding = getDeclaredEncoding(bytes, Charsets.UTF16BE);
         } else if(bytes[0] == (byte)0x3c && bytes[1] == (byte)0x3f && bytes[2] == (byte)0x78 && bytes[3] == (byte)0x6d) {
-            result.encoding = getDeclaredEncoding(bytes, "UTF-8");
+            result.encoding = getDeclaredEncoding(bytes, Charsets.UTF8);
         } else if(bytes[0] == (byte)0x4c && bytes[1] == (byte)0x6f && bytes[2] == (byte)0xa7 && bytes[3] == (byte)0x94) {
-            result.encoding = getDeclaredEncoding(bytes, "Cp1047");
+            result.encoding = getDeclaredEncoding(bytes, Charsets.CP1047);
         }
 
         return result;
@@ -128,9 +131,10 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
      * @param bytes The byte array to examine
      * @param possibleEncoding The charset to assume that the byte array is encoded with for the purposes
      * of finding the XML declaration
-     * @return The value of the encoding attribute of the XML declaration if found, or <CODE>possibleEncoding</CODE>
+     * @return The value of the encoding attribute of the XML declaration if found; <CODE>possibleEncoding</CODE>
+     *         if the value in the declaration is unrecognized; or null if no declaration is found.
      */
-    private static String getDeclaredEncoding(byte[] bytes, String possibleEncoding) {
+    private static Charset getDeclaredEncoding(byte[] bytes, Charset possibleEncoding) {
         try {
             // Only look for the XML declaration in the first 1kB
             String xmlString = new String(bytes, 0, 1024 > bytes.length ? bytes.length : 1024, possibleEncoding);
@@ -138,13 +142,13 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
             // character is used for quotes
             Matcher matcher = FIND_ENCODING.matcher(xmlString);
             if(matcher.find()) {
-                return matcher.group(2);
+                return Charset.forName(matcher.group(2));
             } else {
                 // There isn't an XML declaration, or it doesn't specify the encoding, so fallback to using
                 // the HTTP "Content-type" header.
                 return null;
             }
-        } catch(java.io.UnsupportedEncodingException e) {
+        } catch(UnsupportedCharsetException e) {
             return possibleEncoding;
         }
     }

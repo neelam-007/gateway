@@ -1,12 +1,8 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.*;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -171,7 +167,7 @@ public class GuiCertUtil {
 
                     try {
                         data = isPem ?
-                                CertUtils.encodeAsPEM(certificate).getBytes("UTF-8") :
+                                CertUtils.encodeAsPEM(certificate).getBytes(Charsets.UTF8) :
                                 certificate.getEncoded();
                     }
                     catch(IOException e) {

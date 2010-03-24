@@ -346,7 +346,7 @@ public class CertUtils {
     public static String encodeAsPEM(byte[] cert) throws IOException {
         BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
         try {
-            String encoding = "UTF-8";
+            Charset encoding = Charsets.UTF8;
             bos.write(PEM_CERT_BEGIN_MARKER.getBytes(encoding));
             bos.write("\n".getBytes(encoding));
             bos.write(HexUtils.encodeBase64(cert).getBytes(encoding));
@@ -368,7 +368,7 @@ public class CertUtils {
     public static String encodeCsrAsPEM(byte[] csr) throws IOException {
         BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
         try {
-            String encoding = "UTF-8";
+            Charset encoding = Charsets.UTF8;
             bos.write(PEM_CSR_BEGIN_MARKER.getBytes(encoding));
             bos.write("\n".getBytes(encoding));
             bos.write(HexUtils.encodeBase64(csr).getBytes(encoding));

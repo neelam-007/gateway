@@ -35,6 +35,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -164,7 +165,7 @@ public class CaWsdmObserver implements ApplicationListener {
             // message body only if the ODK API may be sending it.
             if (_sendSoap) {
                 // Extracts the message body.
-                final String charset = mimeKnob.getOuterContentType().getEncoding();
+                final Charset charset = mimeKnob.getOuterContentType().getEncoding();
                 final String requestBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
                 wsdmMessageContext.setRequestMessage(requestBody);
             }
@@ -250,7 +251,7 @@ public class CaWsdmObserver implements ApplicationListener {
                         // message body only if the ODK API may be sending it.
                         if (_sendSoap) {
                             // Extracts the message body.
-                            final String charset = mimeKnob.getOuterContentType().getEncoding();
+                            final Charset charset = mimeKnob.getOuterContentType().getEncoding();
                             final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
                             wsdmMessageContext.setResponseMessage(responseBody);
                         }
@@ -273,12 +274,12 @@ public class CaWsdmObserver implements ApplicationListener {
      * Extracts the string content of a given <code>InputStream</code>.
      *
      * @param s         the input stream
-     * @param charset   the name of a supported charset
+     * @param charset   a supported charset
      * @param limit     the maximum number of characters to extract
      *
      * @return extracted string content; <code>null</code> if IO error
      */
-    private static String getStreamContent(final InputStream s, final String charset, final int limit) {
+    private static String getStreamContent(final InputStream s, final Charset charset, final int limit) {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(s, charset));

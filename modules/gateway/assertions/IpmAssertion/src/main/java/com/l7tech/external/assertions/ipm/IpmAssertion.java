@@ -1,23 +1,24 @@
 package com.l7tech.external.assertions.ipm;
 
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Policy assertion bean for an assertion that performs expansion of messages per an IPM template.
@@ -38,12 +39,8 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
      * @param template the template string.  May be null.
      */
     public void template(String template) {
-        try {
-            this.template = template;
-            templateb64 = template == null ? null : HexUtils.encodeBase64(template.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+        this.template = template;
+        templateb64 = template == null ? null : HexUtils.encodeBase64(template.getBytes(Charsets.UTF8));
     }
 
     /**

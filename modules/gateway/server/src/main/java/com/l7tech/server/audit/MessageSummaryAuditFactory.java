@@ -6,44 +6,42 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditDetail;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
+import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.TcpKnob;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.util.IOUtils;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.mapping.MessageContextMappingManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
-import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
 
 import javax.wsdl.Operation;
-import java.io.UnsupportedEncodingException;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -55,8 +53,7 @@ import java.beans.PropertyChangeEvent;
 public class MessageSummaryAuditFactory implements PropertyChangeListener {
     private final String nodeId;
     private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
-    private static final String FALLBACK_ENCODING = "ISO8859-1";
-    private static final Set<String> KNOWN_GOOD_ENCODINGS = new HashSet<String>(Arrays.asList("utf-8", "utf-16", "iso8859-1"));
+    private static final Charset FALLBACK_ENCODING = Charsets.ISO8859;
 
     private MessageContextMappingManager messageContextMappingManager;
     private boolean addMappingsIntoAudit;
@@ -271,19 +268,9 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             byte[] req = IOUtils.slurpStream(part.getInputStream(false));
             lengthHolder[0] = req.length;
             ContentTypeHeader cth = part.getContentType();
-            String encoding = null;
+            Charset encoding = null;
             if (cth != null && (cth.isText() || cth.isXml())) {
-                String declaredEncoding = cth.getEncoding();
-                if (KNOWN_GOOD_ENCODINGS.contains(declaredEncoding.toLowerCase())) {
-                    encoding = declaredEncoding;
-                } else {
-                    try {
-                        new String(new byte[0], declaredEncoding);
-                        encoding = declaredEncoding;
-                    } catch (UnsupportedEncodingException e) {
-                        logger.log(Level.INFO, MessageFormat.format("Unsupported {0} character encoding \"{1}\"; using {2} to save {0} text", what, declaredEncoding, FALLBACK_ENCODING));
-                    }
-                }
+                encoding = cth.getEncoding();
             } else {
                 logger.log(Level.INFO, MessageFormat.format("Content-Type of {0} (\"{1}\") is unknown or not text; using {2} to save {0} text",
                         what, cth == null ? "null" : cth.getFullValue(), FALLBACK_ENCODING));

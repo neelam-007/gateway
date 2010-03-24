@@ -1,11 +1,13 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.test.BugNumber;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for ContentTypeHeader
@@ -21,7 +23,7 @@ public class ContentTypeHeaderTest {
     public void testParseContentTypeHeader() throws Exception {
         ContentTypeHeader cth = ContentTypeHeader.parseValue("text/xml; charset=UTF-8;");
 
-        assertEquals("Charset", "UTF-8", cth.getEncoding());
+        assertEquals("Charset", Charset.forName("UTF-8").name(), cth.getEncoding().name());
         assertEquals("Type", "text", cth.getType());
         assertEquals("Subtype", "xml", cth.getSubtype());
     }

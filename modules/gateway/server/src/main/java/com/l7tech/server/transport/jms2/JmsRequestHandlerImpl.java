@@ -11,12 +11,12 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsBag;
@@ -24,6 +24,7 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -32,7 +33,6 @@ import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
-import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 
 import javax.jms.*;
 import javax.jms.Queue;
@@ -43,6 +43,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 
 /**
  * The JmsRequestHandler is responsible for processing inbound Jms request messages and prvoiding
@@ -111,7 +113,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 if ( jmsRequest instanceof TextMessage ) {
                     size = ((TextMessage)jmsRequest).getText().length() * 2;
-                    requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
+                    requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes(Charsets.UTF8));
                 } else if ( jmsRequest instanceof BytesMessage ) {
                     size = ((BytesMessage)jmsRequest).getBodyLength();
                     requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
@@ -258,7 +260,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                         faultCode == null ? SoapUtil.FC_SERVER : faultCode,
                                         faultMessage, null, "");
 
-                                responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+                                responseStream = new ByteArrayInputStream(faultXml.getBytes(Charsets.UTF8));
 
                                 if (faultXml != null) {
                                     messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));

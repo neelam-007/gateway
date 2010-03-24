@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HtmlConstants;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -181,7 +182,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
                     loginParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
                     loginRequest = httpClient.createRequest(HttpMethod.POST, loginParams);
-                    loginRequest.setInputStream(new ByteArrayInputStream(getFormPostParameters(formPostParams).getBytes("UTF-8")));
+                    loginRequest.setInputStream(new ByteArrayInputStream(getFormPostParameters(formPostParams).getBytes(Charsets.UTF8)));
 
                     if(ap.isRedirectAfterSubmit()) {
                         GenericHttpRequest redirectRequest = loginRequest;

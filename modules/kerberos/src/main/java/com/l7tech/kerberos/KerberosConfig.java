@@ -1,5 +1,6 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -270,7 +271,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             if (file.exists()) file.delete();
             out = new FileOutputStream(file);
             out.write(MessageFormat.format(SSB_KRB5_CONF_TEMPLATE,
-                    ucRealm, lcRealm, kdcIp, encTypesTkt, encTypesTgs).replace("\n", ls).getBytes("UTF-8"));
+                    ucRealm, lcRealm, kdcIp, encTypesTkt, encTypesTgs).replace("\n", ls).getBytes(Charsets.UTF8));
         }
         catch(IOException ioe) {
             String fn = (file == null? "null" : file.getName());

@@ -13,6 +13,7 @@ import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.xml.DsigUtil;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -83,7 +84,7 @@ public class Xss4jWrapper {
     }
 
     Document parse( String xml ) throws Exception {
-        return dbf.newDocumentBuilder().parse( new ByteArrayInputStream( xml.getBytes("UTF-8") ) );
+        return dbf.newDocumentBuilder().parse( new ByteArrayInputStream( xml.getBytes(Charsets.UTF8) ) );
     }
 
     byte[] getSymmetricKeyBytes() {

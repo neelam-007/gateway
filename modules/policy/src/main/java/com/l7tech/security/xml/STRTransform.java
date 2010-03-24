@@ -1,26 +1,20 @@
 package com.l7tech.security.xml;
 
+import com.ibm.dom.util.ExclusiveCanonicalizer;
+import com.ibm.xml.dsig.Transform;
+import com.ibm.xml.dsig.TransformContext;
+import com.ibm.xml.dsig.TransformException;
+import com.l7tech.util.*;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.Writer;
-import java.io.OutputStreamWriter;
-import java.io.IOException;
-
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-
-import com.ibm.xml.dsig.Transform;
-import com.ibm.xml.dsig.TransformContext;
-import com.ibm.xml.dsig.TransformException;
-import com.ibm.dom.util.ExclusiveCanonicalizer;
 
 /**
  * STRTransform implementation for XSS4J.
@@ -96,7 +90,7 @@ public class STRTransform extends Transform {
                     logger.log(Level.FINEST, "Adding default namespace declaration to canonicalized form.");
                 cannond = cannond.replaceFirst(" ", " xmlns=\"\" ");
             }
-            c.setContent(cannond.getBytes("UTF-8"), "UTF-8");
+            c.setContent(cannond.getBytes(Charsets.UTF8), Charsets.UTF8.name());
         } catch (IOException e) {
             throw (TransformException) new TransformException().initCause(e);
         } finally {

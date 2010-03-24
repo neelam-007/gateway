@@ -4,8 +4,8 @@
 package com.l7tech.message;
 
 import com.l7tech.common.http.*;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.xml.soap.SoapUtil;
 
@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.text.ParseException;
@@ -124,7 +125,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        String enc = ctype.getEncoding();
+        Charset enc = ctype.getEncoding();
         byte[] buf = IOUtils.slurpStream(request.getInputStream());
         String blob = new String(buf, enc);
         requestBodyParams = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);

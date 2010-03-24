@@ -17,10 +17,10 @@ import com.l7tech.message.ProcessingContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -38,8 +38,9 @@ import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -658,13 +659,13 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
                     // Write back the modified context variable
                     try {
-                        String encoding = ctype.getEncoding();
+                        Charset encoding = ctype.getEncoding();
                         if (cvk.getOverrideEncoding() != null)
                             encoding = cvk.getOverrideEncoding();
                         final String val = new String(in, offset, length, encoding);
                         if (!val.equals(getVariable(variableName)))
                             setVariable(variableName, val);
-                    } catch (UnsupportedEncodingException e) {
+                    } catch (UnsupportedCharsetException e) {
                         throw new RuntimeException(e); // can't happen
                     } catch (NoSuchVariableException e) {
                         throw new RuntimeException(e); // Normally not possible

@@ -1,26 +1,28 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.IOUtils;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.InverseHttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 /**
@@ -32,7 +34,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
     private static Logger logger = Logger.getLogger(ServerInverseHttpFormPost.class.getName());
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = Charsets.UTF8;
     private final ContentTypeHeader contentType;
 
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
@@ -62,7 +64,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
 
                     baos.write(fieldName.getBytes(ENCODING));
                     baos.write("=".getBytes());
-                    baos.write(URLEncoder.encode(new String(partBytes, ctype.getEncoding()), ENCODING).getBytes(ENCODING));
+                    baos.write(URLEncoder.encode(new String(partBytes, ctype.getEncoding()), ENCODING.name()).getBytes(ENCODING));
                     if (i < assertion.getFieldNames().length - 1) baos.write("&".getBytes());
                 } catch (NoSuchPartException e) {
                     auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, Integer.toString(i));

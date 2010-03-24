@@ -1,24 +1,24 @@
 package com.l7tech.security.xml;
 
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.HashMap;
-
-import javax.mail.internet.HeaderTokenizer;
-import javax.mail.internet.ParseException;
-import javax.mail.internet.MimeUtility;
-
 import com.ibm.xml.dsig.TransformException;
-
+import com.l7tech.common.mime.MimeHeader;
+import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.common.mime.MimeHeaders;
-import com.l7tech.common.mime.MimeHeader;
+
+import javax.mail.internet.HeaderTokenizer;
+import javax.mail.internet.MimeUtility;
+import javax.mail.internet.ParseException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Transform to canonicalize a MIME attachment header and content.
@@ -102,7 +102,7 @@ public class AttachmentCompleteTransform extends AttachmentContentTransform {
     private static final byte[] PARAMETER_PAIR_SEPARATOR = new byte[]{';'};
     private static final byte[] PARAMETER_PREFIX = new byte[]{'"'};
     private static final byte[] PARAMETER_POSTFIX = PARAMETER_PREFIX;
-    private static final String CHARSET = "UTF-8";
+    private static final Charset CHARSET = Charsets.UTF8;
 
     // Content-Disposition, Content-ID, Content-Location, Content-Type are structured,
     // Content-Description is unstructured 

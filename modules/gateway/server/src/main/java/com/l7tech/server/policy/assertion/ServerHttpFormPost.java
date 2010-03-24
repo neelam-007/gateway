@@ -81,9 +81,7 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
                 return AssertionStatus.FAILED;
             }
 
-            String encoding = partContentType.getEncoding();
-            if (encoding == null) encoding = MimeUtil.DEFAULT_ENCODING;
-            parts[i] = partValue.getBytes(encoding);
+            parts[i] = partValue.getBytes(partContentType.getEncoding());
             contentTypes[i] = partContentType.getFullValue();
         }
 

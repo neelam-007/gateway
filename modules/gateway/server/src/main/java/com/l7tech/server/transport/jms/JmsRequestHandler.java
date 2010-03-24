@@ -14,11 +14,12 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -84,7 +85,7 @@ class JmsRequestHandler {
                 long size = 0;
                 if ( jmsRequest instanceof TextMessage ) {
                     size = ((TextMessage)jmsRequest).getText().length() * 2;
-                    requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
+                    requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes(Charsets.UTF8));
                     ctype = ContentTypeHeader.XML_DEFAULT;
                 } else if ( jmsRequest instanceof BytesMessage ) {
                     size = ((BytesMessage)jmsRequest).getBodyLength();
@@ -238,7 +239,7 @@ class JmsRequestHandler {
                                         faultCode == null ? SoapConstants.FC_SERVER : faultCode,
                                         faultMessage, null, "");
 
-                                responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+                                responseStream = new ByteArrayInputStream(faultXml.getBytes(Charsets.UTF8));
 
                                 if (faultXml != null)
                                     messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));

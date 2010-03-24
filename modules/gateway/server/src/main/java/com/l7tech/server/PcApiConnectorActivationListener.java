@@ -4,9 +4,13 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.transport.SsgConnectorActivationListener;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.FileUtils;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -14,10 +18,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * The Process Controller API connector activation listener records the API port for PC use.
@@ -39,7 +39,7 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
                 FileUtils.saveFileSafely(portFile.getAbsolutePath(), new FileUtils.Saver() {
                     @Override
                     public void doSave(FileOutputStream fos) throws IOException {
-                        fos.write(Integer.toString(connector.getPort()).getBytes("UTF-8"));
+                        fos.write(Integer.toString(connector.getPort()).getBytes(Charsets.UTF8));
                     }
                 });
             } catch (IOException e) {

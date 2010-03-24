@@ -8,6 +8,7 @@ import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -145,16 +146,14 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         void processMessageTruncation(String message) {
             int messageSize = 0;
             try {                              
-                messageSize = message == null ? 0 : message.getBytes("UTF-8").length * 2;
+                messageSize = message == null ? 0 : message.getBytes(Charsets.UTF8).length * 2;
                 if (messageSize  > getTruncateSize()) {
                     setMessageTruncated(true);
                     log.info("Message was truncated");
-                    this.message = (new String(message.getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                    this.message = (new String(message.getBytes(Charsets.UTF8), 0, getTruncateSize(), Charsets.UTF8)) + "\n   [Message truncated...]" ;
                 } else {
                     this.message = message;
                 }
-            } catch (UnsupportedEncodingException uee) {
-                this.message = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + uee;
             } catch (IndexOutOfBoundsException iobe) {
                 this.message = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + iobe;
             }
@@ -320,11 +319,11 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                 StringBuffer buf = new StringBuffer(XmlUtil.nodeToString(document));
 
                 //process the unformated message
-                messageSize = buf.toString().getBytes("UTF-8").length * 2;
+                messageSize = buf.toString().getBytes(Charsets.UTF8).length * 2;
                 if (messageSize > getTruncateSize()) {
                     log.info("Message was truncated");
                     setMessageTruncated(true);
-                    this.unformatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                    this.unformatted = (new String(buf.toString().getBytes(Charsets.UTF8), 0, getTruncateSize(), Charsets.UTF8)) + "\n   [Message truncated...]" ;
                     isTruncated = true;
                 } else {
                     this.unformatted = buf.toString();
@@ -332,14 +331,14 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
 
                 //process the formated message
                 buf = new StringBuffer(XmlUtil.nodeToFormattedString(document));
-                messageSize = buf.toString().getBytes("UTF-8").length * 2;
+                messageSize = buf.toString().getBytes(Charsets.UTF8).length * 2;
                 if (messageSize > getTruncateSize()) {
                     if (!isMessageTruncated()) {
                         log.info("Message was truncated");
                     }
 
                     setMessageTruncated(true);
-                    this.formatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                    this.formatted = (new String(buf.toString().getBytes(Charsets.UTF8), 0, getTruncateSize(), Charsets.UTF8)) + "\n   [Message truncated...]" ;
                     isTruncated = true;
                 } else {
                     this.formatted = buf.toString();

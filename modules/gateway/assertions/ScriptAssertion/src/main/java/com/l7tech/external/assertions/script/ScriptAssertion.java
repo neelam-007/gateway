@@ -1,16 +1,15 @@
 package com.l7tech.external.assertions.script;
 
-import com.l7tech.util.EnumTranslator;
-import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.EnumTranslator;
+import com.l7tech.util.HexUtils;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -81,24 +80,16 @@ public class ScriptAssertion extends Assertion {
     }
 
     public String decodeScript() {
-        try {
-            if (scriptBase64 == null)
-                return null;
-            if (scriptBase64.length() < 1)
-                return "";
-            else
-                return new String(HexUtils.decodeBase64(scriptBase64), "UTF-8");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        if (scriptBase64 == null)
+            return null;
+        if (scriptBase64.length() < 1)
+            return "";
+        else
+            return new String(HexUtils.decodeBase64(scriptBase64), Charsets.UTF8);
     }
 
     public void encodeScript(String script) {
-        try {
-            this.scriptBase64 = script == null ? null : HexUtils.encodeBase64(script.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        this.scriptBase64 = script == null ? null : HexUtils.encodeBase64(script.getBytes(Charsets.UTF8));
     }
 
     public String getScriptBase64() {

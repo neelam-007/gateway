@@ -310,8 +310,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 String contentType = fieldInfo.getContentType();
                 try {
                     ContentTypeHeader cth = ContentTypeHeader.parseValue(contentType);
-                    String encoding = cth.getEncoding();
-                    if (!Charset.isSupported(encoding)) {
+                    String encoding = cth.getParam("charset");
+                    if (encoding != null && !Charset.isSupported(encoding)) {
                         throw new IllegalStateException();
                     }
                 }

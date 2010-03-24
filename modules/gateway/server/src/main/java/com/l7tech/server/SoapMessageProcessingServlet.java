@@ -18,7 +18,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.FaultProcessed;
@@ -31,15 +31,15 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.security.xml.decorator.DecoratorException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
@@ -58,6 +58,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -157,7 +159,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         responseStream = hresponse.getOutputStream();
                         hresponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         hresponse.setContentType(DEFAULT_CONTENT_TYPE);
-                        responseStream.write(soapFault.getBytes("UTF-8"));
+                        responseStream.write(soapFault.getBytes(Charsets.UTF8));
                     } finally {
                         if(responseStream != null) responseStream.close();
                     }

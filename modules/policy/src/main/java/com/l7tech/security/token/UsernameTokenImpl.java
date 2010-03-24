@@ -14,8 +14,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
-import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -273,15 +271,10 @@ public class UsernameTokenImpl implements UsernameToken {
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
             if (nonce != null) sha1.update(HexUtils.decodeBase64(nonce, true));
-            if (created != null) sha1.update(created.getBytes("UTF-8"));
-            sha1.update(new String(password).getBytes("UTF-8"));
+            if (created != null) sha1.update(created.getBytes(Charsets.UTF8));
+            sha1.update(new String(password).getBytes(Charsets.UTF8));
             return HexUtils.encodeBase64(sha1.digest());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            // XXX This might make more sense as a checked exception
             throw new RuntimeException(e);
         }
     }

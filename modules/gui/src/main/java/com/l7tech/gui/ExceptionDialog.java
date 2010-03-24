@@ -1,9 +1,10 @@
 package com.l7tech.gui;
 
 
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.HyperlinkLabel;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
@@ -17,7 +18,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
 
@@ -392,11 +392,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         if (!HIDE_STACK_TRACES)
             return value;
 
-        try {
-            return "Debug information:\n\n" + HexUtils.encodeBase64(value.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return value; // can't happen
-        }
+        return "Debug information:\n\n" + HexUtils.encodeBase64(value.getBytes(Charsets.UTF8));
     }
 
 

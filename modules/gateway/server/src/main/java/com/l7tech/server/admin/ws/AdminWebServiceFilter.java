@@ -246,7 +246,7 @@ public class AdminWebServiceFilter implements Filter {
                         e.getMessage(),
                         null,
                         ((HttpServletRequest)servletRequest).getRequestURL().toString());
-                XmlUtil.nodeToOutputStream(fault.getDocumentElement(), out, ContentTypeHeader.XML_DEFAULT.getEncoding());
+                XmlUtil.nodeToOutputStream(fault.getDocumentElement(), out, ContentTypeHeader.XML_DEFAULT.getEncoding().name());
             } catch (SAXException e1) {
                 throw new ServletException(e1); // Can't happen really
             } finally {

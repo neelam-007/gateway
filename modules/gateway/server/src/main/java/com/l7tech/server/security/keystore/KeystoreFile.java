@@ -1,24 +1,19 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.util.Charsets;
+import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Basic;
-import javax.persistence.FetchType;
-import javax.persistence.Lob;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
+import javax.persistence.*;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
-
-import org.hibernate.annotations.Proxy;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents raw keystore data stored in a row of the "keystore" table.
@@ -34,7 +29,7 @@ import org.hibernate.annotations.Proxy;
 @Table(name="keystore_file")
 public class KeystoreFile extends NamedEntityImp {
     private static final long serialVersionUID = 7293792837442132345L;
-    private static final String PROPERTIES_ENCODING = "UTF-8";
+    private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     @Column(name="format", nullable=false, length=128)
     private String format;
@@ -73,8 +68,6 @@ public class KeystoreFile extends NamedEntityImp {
                 xe.writeObject(properties);
                 xe.close();
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
             } finally {
                 baos.close();
             }
@@ -86,13 +79,9 @@ public class KeystoreFile extends NamedEntityImp {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            try {
-                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                //noinspection unchecked
-                this.properties = (Map<String, String>)xd.readObject();
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            //noinspection unchecked
+            this.properties = (Map<String, String>)xd.readObject();
         }
     }
 

@@ -29,8 +29,8 @@ import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
-import com.l7tech.server.wsdm.QoSMetricsService;
 import com.l7tech.server.wsdm.Namespaces;
+import com.l7tech.server.wsdm.QoSMetricsService;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.GenericWSRFExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -541,7 +542,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                     InputStream in = response.getInputStream();
                     if ( in != null ) {
                         byte[] body = IOUtils.slurpStream(new ByteLimitInputStream(in, 16, 10*1024*1024));
-                        String charset = response.getContentType().getEncoding();
+                        Charset charset = response.getContentType().getEncoding();
                         logger.fine("Notification target responded 200 with " + new String(body, charset));
                     }
                 } 

@@ -5,12 +5,13 @@ package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
-import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.server.processcontroller.monitoring.InOut;
+import com.l7tech.server.util.UptimeMonitor;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.UptimeMetrics;
 import org.snmp4j.MessageDispatcher;
@@ -26,7 +27,6 @@ import org.snmp4j.smi.*;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.util.Map;
 import java.util.logging.Level;
@@ -97,12 +97,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         Map<String, String> variables = getMonitoringVariables(trigger, inOut, value);
 
         String body = ExpandVariables.process(text, variables, auditor);
-        OctetString errorMessage;
-        try {
-            errorMessage = new OctetString(body.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // Can't happen
-        }
+        OctetString errorMessage = new OctetString(body.getBytes(Charsets.UTF8));
         pdu.add(new VariableBinding(messageOid, errorMessage));
 
         // TODO consider caching this DNS lookup for a while (just not forever).

@@ -6,14 +6,11 @@
 
 package com.l7tech.proxy.util;
 
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.CertificateCheckInfo;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.util.Charsets;
 
 import java.io.IOException;
 import java.net.URL;
@@ -87,7 +84,7 @@ public class CertificateDownloader {
         logger.fine("Gateway certificate discovery service returned status " + result.getStatus() + " " + (ctype == null ? "(no Content-Type)" : ctype.toString()));
 
         if (result.getStatus() != 200) {
-            String msg = new String(certBytes, 0, Math.min(certBytes.length, 400), ctype == null ? "UTF-8" : ctype.getEncoding());
+            String msg = new String(certBytes, 0, Math.min(certBytes.length, 400), ctype == null ? Charsets.UTF8 : ctype.getEncoding());
             throw new IOException("Gateway certificate discovery service returned an unexpected error: " + msg);
         }
         X509Certificate cert = CertUtils.decodeCert(certBytes);

@@ -14,9 +14,9 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.schema.SchemaEntry;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -33,6 +33,7 @@ import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
@@ -41,8 +42,8 @@ import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -51,7 +52,10 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
@@ -628,11 +632,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private String generateURN(String namespace) {
         StringBuilder sb = new StringBuilder();
         sb.append("urn:uuid:");
-        try {
-            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes("UTF-8")).toString());
-        } catch (UnsupportedEncodingException e) {
-            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes()).toString());
-        }
+        sb.append(UUID.nameUUIDFromBytes(namespace.getBytes(Charsets.UTF8)).toString());
         return sb.toString();
     }
 

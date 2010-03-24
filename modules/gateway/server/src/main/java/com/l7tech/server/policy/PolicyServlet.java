@@ -14,6 +14,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
@@ -408,7 +409,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         // Find our certificate
         //byte[] cert = DefaultKey.getInstance().readRootCert();
         String pemEncodedServerCertificateString = CertUtils.encodeAsPEM(serverCertificate);
-        byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes("UTF-8");
+        byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes(Charsets.UTF8);
 
         // Insert Cert-Check-NNN: headers if we can.
         boolean certificateDiscoveryEnabled = Boolean.valueOf(

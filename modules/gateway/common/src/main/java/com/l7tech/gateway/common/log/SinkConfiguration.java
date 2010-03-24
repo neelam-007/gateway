@@ -1,18 +1,18 @@
 package com.l7tech.gateway.common.log;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.*;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * Describes the configuration of a logging sink.
@@ -24,7 +24,7 @@ import org.hibernate.annotations.Proxy;
 public class SinkConfiguration extends NamedEntityImp {
 
     /** The character encoding to use for encoding the properties to XML */
-    public static final String PROPERTIES_ENCODING = "UTF-8";
+    public static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     public static enum SinkType {
         /** Indicates that this is a log file sink. */
@@ -153,19 +153,15 @@ public class SinkConfiguration extends NamedEntityImp {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            try {
-                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                //noinspection unchecked
-                Object parsedObject = xd.readObject();
-                if (parsedObject instanceof Object[]) {
-                    Object[] readProperties = (Object[]) parsedObject;
-                    this.properties = (Map<String, String>) readProperties[0];
-                    this.syslogHosts = (List<String>) readProperties[1];
-                } else {
-                    this.properties = (Map<String, String>) parsedObject;
-                }
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            //noinspection unchecked
+            Object parsedObject = xd.readObject();
+            if (parsedObject instanceof Object[]) {
+                Object[] readProperties = (Object[]) parsedObject;
+                this.properties = (Map<String, String>) readProperties[0];
+                this.syslogHosts = (List<String>) readProperties[1];
+            } else {
+                this.properties = (Map<String, String>) parsedObject;
             }
         }
     }
@@ -197,8 +193,6 @@ public class SinkConfiguration extends NamedEntityImp {
                 xe.writeObject(writeObject);
                 xe.close();
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
             } finally {
                 baos.close();
             }

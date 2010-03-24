@@ -5,7 +5,6 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
@@ -21,13 +20,13 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,11 +72,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         this.message = ass.responseBodyString();
         this.status = ass.getResponseStatus();
         this.earlyResponse = ass.isEarlyResponse();
-        try {
-            messageBytesNoVar = this.message.getBytes(contentType.getEncoding());
-        } catch (UnsupportedEncodingException e) {
-            throw new PolicyAssertionException(assertion, "Invalid encoding for hardcoded response: " + ExceptionUtils.getMessage(e), e);
-        }
+        messageBytesNoVar = this.message.getBytes(contentType.getEncoding());
     }
 
     @Override

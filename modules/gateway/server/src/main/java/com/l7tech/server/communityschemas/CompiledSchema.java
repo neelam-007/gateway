@@ -3,19 +3,20 @@
  */
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.TarariKnob;
-import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.server.util.AbstractReferenceCounted;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.util.AbstractReferenceCounted;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,17 +24,16 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.namespace.QName;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
-import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 
 final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
@@ -78,11 +78,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
-        try {
-            this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // can't happen, it's UTF-8
-        }
+        this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument.getBytes(Charsets.UTF8);
         this.manager = manager;
         this.imports = imports;
         this.tnsGen = "{" + nextSystemIdGeneration(systemId) + "} " + systemId;

@@ -22,12 +22,7 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.PrettyGoodWSDLLocator;
@@ -953,7 +948,7 @@ public class GClient {
                 Document requestDocument = XmlUtil.stringToDocument(message);
 
                 if (!isFastInfoset) {
-                    requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
+                    requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes(Charsets.UTF8);
                 }
                 else {
                     com.sun.xml.fastinfoset.dom.DOMDocumentSerializer ser =
@@ -965,7 +960,7 @@ public class GClient {
                 }
             }
             else {
-                requestBytes = message.getBytes("UTF-8");
+                requestBytes = message.getBytes(Charsets.UTF8);
             }
 
             if ( gzip ) {

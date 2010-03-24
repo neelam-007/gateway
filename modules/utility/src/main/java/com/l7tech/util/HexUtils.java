@@ -314,11 +314,7 @@ public class HexUtils {
 
     public static String encodePasswd( String login, String passwd, String realm ) {
         String toEncode = login + ":" + realm + ":" + passwd;
-        try {
-            return hexDump(getMd5Digest(toEncode.getBytes("UTF-8")));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // Can't happen
-        }
+        return hexDump(getMd5Digest(toEncode.getBytes(Charsets.UTF8)));
     }
 
     /**

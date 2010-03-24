@@ -8,11 +8,11 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
@@ -26,9 +26,9 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.util.res.ResourceGetter;
-import static com.l7tech.server.util.res.ResourceGetter.*;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.xacml.Indenter;
 import com.sun.xacml.PDP;
@@ -54,6 +54,8 @@ import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.util.res.ResourceGetter.*;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -234,8 +236,9 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                     }
                 });
 
-                byte[] prefix = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE + "\">\n  <soapenv:Header/>\n  <soapenv:Body>\n").getBytes("UTF-8");
-                byte[] suffix = "  </soapenv:Body>\n</soapenv:Envelope>\n".getBytes("UTF-8");
+                byte[] prefix = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"" +
+                        SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE + "\">\n  <soapenv:Header/>\n  <soapenv:Body>\n").getBytes(Charsets.UTF8);
+                byte[] suffix = "  </soapenv:Body>\n</soapenv:Envelope>\n".getBytes(Charsets.UTF8);
                 byte[] content = baos.toByteArray();
 
                 messageBytes = new byte[prefix.length + content.length + suffix.length];

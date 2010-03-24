@@ -6,17 +6,18 @@
 
 package com.l7tech.external.assertions.snmptrap.server;
 
+import com.l7tech.external.assertions.snmptrap.SnmpTrapAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.util.UptimeMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.UptimeMonitor;
-import com.l7tech.external.assertions.snmptrap.SnmpTrapAssertion;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.UptimeMetrics;
 import org.snmp4j.MessageDispatcher;
 import org.snmp4j.MessageDispatcherImpl;
 import org.snmp4j.MessageException;
@@ -32,7 +33,6 @@ import org.snmp4j.transport.DefaultUdpTransportMapping;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
@@ -100,11 +100,7 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion implements 
 
         String body = ExpandVariables.process(ass.getErrorMessage(), context.getVariableMap(varsUsed, auditor), auditor);
         OctetString errorMessage;
-        try {
-            errorMessage = new OctetString(body.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // Can't happen
-        }
+        errorMessage = new OctetString(body.getBytes(Charsets.UTF8));
         pdu.add(new VariableBinding(messageOid, errorMessage));
 
         try {

@@ -1,7 +1,7 @@
 package com.l7tech.security.wsfederation;
 
-import com.l7tech.util.HtmlConstants;
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.XmlSecurityToken;
@@ -9,10 +9,8 @@ import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.cyberneko.html.parsers.DOMParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -103,9 +101,8 @@ public class FederationPassiveClient {
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
             if(!contentType.isHtml()) throw new InvalidHtmlException("Response is not html content " + contentType);
 
-            String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();
-            String html = new String(responseBytes, encoding);
+            String html = new String(responseBytes, contentType.getEncoding());
             result = getDocument(html);
         }
         catch(GenericHttpException ghe) {
@@ -151,7 +148,7 @@ public class FederationPassiveClient {
 
         try {
             // Get RSTR
-            byte[] bodyData = requestBody.getBytes(HttpConstants.ENCODING_UTF8);
+            byte[] bodyData = requestBody.getBytes(Charsets.UTF8);
             httpParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
             httpParams.setExtraHeaders(new GenericHttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(bodyData.length))});
             SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);
@@ -166,9 +163,8 @@ public class FederationPassiveClient {
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
             if(!contentType.isHtml()) throw new InvalidHtmlException("Response is not html content " + contentType);
 
-            String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();
-            String html = new String(responseBytes, encoding);
+            String html = new String(responseBytes, contentType.getEncoding());
             result = getDocument(html);
         }
         catch(GenericHttpException ghe) {
@@ -214,7 +210,7 @@ public class FederationPassiveClient {
 
         try {
             // POST RSTR
-            byte[] bodyData = requestBody.getBytes(HttpConstants.ENCODING_UTF8);
+            byte[] bodyData = requestBody.getBytes(Charsets.UTF8);
             httpParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
             httpParams.setExtraHeaders(new GenericHttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(bodyData.length))});
             SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);

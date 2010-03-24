@@ -2,12 +2,14 @@ package com.l7tech.server.message;
 
 import com.l7tech.message.MessageKnob;
 
+import java.nio.charset.Charset;
+
 /**
  * Knob that is present on Messages that are actually backed by context variables.
  */
 public class ContextVariableKnob implements MessageKnob {
     private String variableName;
-    private String overrideEncoding = null;
+    private Charset overrideEncoding = null;
 
     public ContextVariableKnob(String variableName) {
         this.variableName = variableName;
@@ -27,7 +29,7 @@ public class ContextVariableKnob implements MessageKnob {
      * @param overrideEncoding a Java encoding name to use instead of the encoding from this Message content type,
      *                         or null to just use the content type's encoding.
      */
-    public void setOverrideEncoding(String overrideEncoding) {
+    public void setOverrideEncoding(Charset overrideEncoding) {
         this.overrideEncoding = overrideEncoding;
     }
 
@@ -36,7 +38,7 @@ public class ContextVariableKnob implements MessageKnob {
      * 
      * @return the current override encoding, or null if we plan to use the encoding from the content type.
      */
-    public String getOverrideEncoding() {
+    public Charset getOverrideEncoding() {
         return overrideEncoding;
     }
 }

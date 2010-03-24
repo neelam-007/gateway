@@ -7,25 +7,28 @@
  */
 package com.l7tech.skunkworks.standardreports;
 
-import java.io.*;
-import java.sql.*;
-import java.util.*;
-
-import net.sf.jasperreports.engine.*;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
 import com.l7tech.gateway.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
+import net.sf.jasperreports.engine.*;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.*;
 
 
 public class ReportApp {
@@ -682,11 +685,11 @@ public class ReportApp {
 
         //Compile both subreports and add to parameters
         String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SubIntervalMasterReport.jrxml");
-        ByteArrayInputStream bais = new ByteArrayInputStream(subIntervalReport.getBytes("UTF-8"));
+        ByteArrayInputStream bais = new ByteArrayInputStream(subIntervalReport.getBytes(Charsets.UTF8));
         JasperReport subIntervalCompiledReport = JasperCompileManager.compileReport(bais);
 
         String subReport = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SubIntervalMasterReport_subreport0.jrxml");
-        bais = new ByteArrayInputStream(subReport.getBytes("UTF-8"));
+        bais = new ByteArrayInputStream(subReport.getBytes(Charsets.UTF8));
         JasperReport subCompiledReport = JasperCompileManager.compileReport(bais);
 
         parameters.put(SUB_INTERVAL_SUB_REPORT, subIntervalCompiledReport);

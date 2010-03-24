@@ -19,10 +19,7 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
@@ -144,7 +141,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         hresp.setStatus(400);
         hresp.setContentType("text/html; charset=UTF-8");
         final ServletOutputStream os = hresp.getOutputStream();
-        os.write(MessageFormat.format(loadStringResource(ERROR_HTML), htmlMessage).getBytes("utf8"));
+        os.write(MessageFormat.format(loadStringResource(ERROR_HTML), htmlMessage).getBytes(Charsets.UTF8));
     }
 
     private void sendError(HttpServletResponse hresp, CharSequence textMessage) throws IOException {
@@ -153,7 +150,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
 
     private void sendHtml(HttpServletResponse hresp, String html) throws IOException {
         hresp.setContentType("text/html; charset=UTF-8");
-        hresp.getOutputStream().write(html.getBytes("utf8"));
+        hresp.getOutputStream().write(html.getBytes(Charsets.UTF8));
     }
 
     @Override

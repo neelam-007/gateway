@@ -5,23 +5,20 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Table;
-import javax.persistence.Entity;
-import javax.persistence.Column;
-import javax.persistence.Lob;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * A reference to a preconfigured connection to a JMS provider.
@@ -34,7 +31,7 @@ import org.hibernate.annotations.Proxy;
 @Table(name="jms_connection")
 public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = Charsets.UTF8;
 
     // Constants used in property mapping/substitution.
     //
@@ -201,13 +198,15 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         if (properties == null) {
             setProperties("");
         } else {
+            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                properties.storeToXML(baos, null, ENCODING);
+                properties.storeToXML(baos, null, ENCODING.name());
                 setProperties(baos.toString(ENCODING));
             }
             catch (Exception e) {
                 logger.log(Level.WARNING, "Error saving properties", e);
+            } finally {
+                baos.close();
             }
         }
     }

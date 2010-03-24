@@ -1,27 +1,29 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.util.IOUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.IOUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.IOException;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.*;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles the traffic logger functionality. Records traffic information to a log. Where and what to log
@@ -212,7 +214,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         try {
             if (message.getKnob(MimeKnob.class) != null) {
                 byte[] req = IOUtils.slurpStream(message.getMimeKnob().getFirstPart().getInputStream(false));
-                String encoding = message.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                Charset encoding = message.getMimeKnob().getFirstPart().getContentType().getEncoding();
                 text = new String(req, encoding);
             }
         } catch (IOException e) {

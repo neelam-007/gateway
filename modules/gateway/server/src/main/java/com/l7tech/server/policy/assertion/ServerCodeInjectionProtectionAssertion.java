@@ -4,7 +4,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -15,15 +14,20 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
+import com.l7tech.policy.assertion.CodeInjectionProtectionType;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -233,7 +237,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanBodyAsText(final Message message, final String messageDesc, final String encoding ) throws IOException {
+    private AssertionStatus scanBodyAsText(final Message message, final String messageDesc, final Charset encoding ) throws IOException {
         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT, messageDesc);
         final String where = messageDesc + " message body";
         final MimeKnob mimeKnob = message.getMimeKnob();

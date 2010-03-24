@@ -1,17 +1,13 @@
 package com.l7tech.external.assertions.multipartassembly.server;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IteratorEnumeration;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion;
-import static com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion.*;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -19,13 +15,20 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IteratorEnumeration;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion.*;
 
 /**
  * Server side implementation of the MultipartAssemblyAssertion.
@@ -134,7 +137,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
                 int ordinal = i + 1; // ordinal zero is the entire original message, before we wrapped it
 
                 ContentTypeHeader ctype = getContentType(contentTypes.get(i));
-                String encoding = ctype.getParam("charset") == null ? null : ctype.getEncoding(); // avoid defaulting to ISO8859-1
+                Charset encoding = ctype.getParam("charset") == null ? null : ctype.getEncoding(); // avoid defaulting to ISO8859-1
                 contentTypeHeaders.add(ctype);
 
                 partIdStrings.add(getPartIdString(partIds.get(i)));
@@ -218,7 +221,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
                 headers.append("Content-Length: ").append(contentLength).append("\r\n");
                 headers.append("Content-ID: ").append(partIdStrings.get(nextPart)).append("\r\n");
                 headers.append("\r\n");
-                return new ByteArrayInputStream(headers.toString().getBytes("ISO8859-1"));
+                return new ByteArrayInputStream(headers.toString().getBytes(Charsets.ISO8859));
             }
         };
 
@@ -279,7 +282,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
     }
 
     // Attempt to convert the specified object into an attachment byte stream encoded using the specified encoding, or UTF-8 if no encoding is specified.
-    private static InputStream getPayloadInputStream(Object payloadObj, String encoding) throws UnsupportedEncodingException, BadPayloadException {
+    private static InputStream getPayloadInputStream(Object payloadObj, Charset encoding) throws UnsupportedEncodingException, BadPayloadException {
         if (payloadObj == null)
             throw new BadPayloadException("Payload is null");
 
@@ -289,7 +292,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
             return new ByteArrayInputStream(bytes);
         } else if (payloadObj instanceof CharSequence) {
             CharSequence charSequence = (CharSequence)payloadObj;
-            byte[] bytes = encoding != null ? charSequence.toString().getBytes(encoding) : charSequence.toString().getBytes("UTF-8");
+            byte[] bytes = encoding != null ? charSequence.toString().getBytes(encoding) : charSequence.toString().getBytes(Charsets.UTF8);
             return new ByteArrayInputStream(bytes);
         } else if (payloadObj instanceof ByteBuffer) {
             ByteBuffer buf = (ByteBuffer)payloadObj;

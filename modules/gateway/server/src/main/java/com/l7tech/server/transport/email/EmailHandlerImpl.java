@@ -2,6 +2,7 @@ package com.l7tech.server.transport.email;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.message.EmailKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
@@ -10,15 +11,15 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.gateway.common.transport.email.EmailListener;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -202,7 +203,7 @@ public class EmailHandlerImpl implements EmailHandler {
                                     faultCode == null ? "Server" : faultCode,
                                     faultMessage, null, "");
 
-                            responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+                            responseStream = new ByteArrayInputStream(faultXml.getBytes(Charsets.UTF8));
 
                             if (faultXml != null) {
                                 messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));

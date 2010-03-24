@@ -14,10 +14,7 @@ import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
@@ -30,7 +27,6 @@ import x0Assertion.oasisNamesTcSAML2.*;
 
 import javax.xml.XMLConstants;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -432,32 +428,22 @@ public final class SamlAssertionV2 extends SamlAssertion {
         if (hasEmbeddedIssuerSignature()) {
             X509Certificate cert = getIssuerCertificate();
             String samlIssuerSubjectDn = cert.getSubjectDN().getName();
-            try {
-                id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
-                        getAssertionId().getBytes("UTF-8"),
-                        samlIssuerSubjectDn.getBytes("UTF-8"),
-                        BigInteger.valueOf(assertion.getIssueInstant().getTimeInMillis()).toByteArray(),
-                        assertion.getSignature().getSignatureValue().getByteArrayValue()
-                }));
-            }
-            catch(UnsupportedEncodingException uee) {
-                throw new RuntimeException(uee); // Can't happen
-            }
+            id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
+                    getAssertionId().getBytes(Charsets.UTF8),
+                    samlIssuerSubjectDn.getBytes(Charsets.UTF8),
+                    BigInteger.valueOf(assertion.getIssueInstant().getTimeInMillis()).toByteArray(),
+                    assertion.getSignature().getSignatureValue().getByteArrayValue()
+            }));
         }
         else {
-            try {
-                id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
-                        getAssertionId().getBytes("UTF-8"),
-                        toString(assertion.getIssuer()).getBytes("UTF-8"),
-                        BigInteger.valueOf(safeGetTimeInMillis(assertion.getIssueInstant())).toByteArray(),
-                        subjectId.getBytes("UTF-8"),
-                        safeToString(authenticationMethod).getBytes("UTF-8"),
-                        safeToString(confirmationMethod).getBytes("UTF-8")
-                }));
-            }
-            catch(UnsupportedEncodingException uee) {
-                throw new RuntimeException(uee); // Can't happen
-            }
+            id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
+                    getAssertionId().getBytes(Charsets.UTF8),
+                    toString(assertion.getIssuer()).getBytes(Charsets.UTF8),
+                    BigInteger.valueOf(safeGetTimeInMillis(assertion.getIssueInstant())).toByteArray(),
+                    subjectId.getBytes(Charsets.UTF8),
+                    safeToString(authenticationMethod).getBytes(Charsets.UTF8),
+                    safeToString(confirmationMethod).getBytes(Charsets.UTF8)
+            }));
         }
 
         return id;

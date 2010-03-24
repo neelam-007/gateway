@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
@@ -351,7 +352,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 @Override
                 public void doSave(FileOutputStream fos) throws IOException {
                     for (String msg : pemCertChain) {
-                        fos.write(msg.getBytes("ASCII")); // it's PEM
+                        fos.write(msg.getBytes(Charsets.ASCII)); // it's PEM
                     }
                 }
             });

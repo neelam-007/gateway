@@ -5,11 +5,8 @@
 
 package com.l7tech.util;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
+import java.io.*;
+import java.nio.charset.Charset;
 
 /**
  * A version of ByteArrayOutputStream that uses the BufferPool.  This class is not synchronized.
@@ -297,6 +294,20 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      *         If the named encoding is not supported.
      */
     public String toString(String enc) throws UnsupportedEncodingException {
+        if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
+        return new String(buf, 0, count, enc);
+    }
+
+
+    /**
+     * Converts the buffer's contents into a string, translating bytes into
+     * characters according to the specified character encoding.
+     *
+     * @param   enc  a character-encoding name.
+     * @return String translated from the buffer's contents.
+     * @throws IllegalStateException if the output stream has been closed.
+     */
+    public String toString(Charset enc) {
         if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
         return new String(buf, 0, count, enc);
     }

@@ -1,12 +1,13 @@
 package com.l7tech.external.assertions.ipm.server.resources;
 
+import com.l7tech.util.Charsets;
+
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CharacterCodingException;
-import java.nio.CharBuffer;
-import java.nio.ByteBuffer;
 
 /**
  * Interface implemented by compiled templates.
@@ -122,13 +123,9 @@ public abstract class CompiledTemplate {
     private static final byte[] BENTLT;
     private static final byte[] BENTGT;
     static {
-        try {
-            BENTAMP = "&amp;".getBytes("UTF-8");
-            BENTLT = "&lt;".getBytes("UTF-8");
-            BENTGT = "&gt;".getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+        BENTAMP = "&amp;".getBytes(Charsets.UTF8);
+        BENTLT = "&lt;".getBytes(Charsets.UTF8);
+        BENTGT = "&gt;".getBytes(Charsets.UTF8);
     }
 
     /**

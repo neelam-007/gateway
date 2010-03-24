@@ -4,22 +4,24 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 
-import javax.persistence.MappedSuperclass;
 import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
+import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Map;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * Abstract superclass of {@link Group}s that are stored in the database, as opposed to in external directories.
@@ -28,7 +30,7 @@ import java.util.HashMap;
  */
 @MappedSuperclass
 public abstract class PersistentGroup extends NamedEntityImp implements Group {
-    public static final String PROPERTIES_ENCODING = "UTF-8";
+    public static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     private long providerOid;
     private String description;
@@ -48,20 +50,16 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     protected PersistentGroup(long providerOid, String name, Map<String, String> properties) {
         this.providerOid = providerOid;
         this._name = name;
-        this.properties = new HashMap(properties);
+        this.properties = new HashMap<String, String>(properties);
     }
 
     public synchronized void setXmlProperties(String xml) {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            try {
-                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                //noinspection unchecked
-                this.properties = (Map<String, String>)xd.readObject();
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            //noinspection unchecked
+            this.properties = (Map<String, String>)xd.readObject();
         }
     }
 
@@ -76,8 +74,6 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
                 xe.writeObject(properties);
                 xe.close();
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
             } finally {
                 baos.close();
             }

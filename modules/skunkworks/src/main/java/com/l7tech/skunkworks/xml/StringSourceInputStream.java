@@ -1,43 +1,45 @@
 package com.l7tech.skunkworks.xml;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * Provides an {@link InputStream} view of a {@link StringSource}.
  */
 class StringSourceInputStream extends InputStream {
     private final StringSource source;
-    private final String charsetName;
+    private final Charset charset;
     private byte[] cur;
     private int pos;
 
 
     public StringSourceInputStream(StringSource source) {
         this.source = source;
-        this.charsetName = null;
-        try {
-            next();
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-    }
-
-    public StringSourceInputStream(StringSource source, String charsetName) throws UnsupportedEncodingException {
-        this.source = source;
-        this.charsetName = charsetName;
+        this.charset = null;
         next();
     }
 
-    private void next() throws UnsupportedEncodingException {
+    public StringSourceInputStream(StringSource source, String charset) throws UnsupportedEncodingException {
+        this.source = source;
+        try {
+            this.charset = Charset.forName(charset);
+        } catch (UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(charset);
+        }
+        next();
+    }
+
+    private void next() {
         String s = source.next();
         if (s == null) {
             cur = null;
             return;
         }
 
-        cur = charsetName == null ? s.getBytes() : s.getBytes(charsetName);
+        cur = charset == null ? s.getBytes() : s.getBytes(charset);
         pos = 0;
     }
 

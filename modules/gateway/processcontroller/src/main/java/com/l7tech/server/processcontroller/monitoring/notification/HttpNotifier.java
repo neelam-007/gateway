@@ -15,6 +15,7 @@ import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.processcontroller.monitoring.InOut;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayInputStream;
@@ -71,7 +72,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
         GenericHttpResponse resp = null;
         try {
             req = httpClient.createRequest(httpMethod, params);
-            if (bodyText != null) req.setInputStream(new ByteArrayInputStream(bodyText.getBytes("UTF-8")));
+            if (bodyText != null) req.setInputStream(new ByteArrayInputStream(bodyText.getBytes(Charsets.UTF8)));
 
             resp = req.getResponse();
             if (resp.getStatus() != HttpConstants.STATUS_OK)

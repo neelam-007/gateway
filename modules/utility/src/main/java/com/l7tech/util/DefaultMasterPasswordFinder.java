@@ -3,7 +3,6 @@ package com.l7tech.util;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -63,21 +62,17 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
      * @return the obfuscated form of the password.
      */
     public static String obfuscate(String clear, long salt) {
-        try {
-            //noinspection UnsecureRandomNumberGeneration
-            Random rand = new Random(OBFUSCATION_SEED + salt);
-            byte[] in = clear.getBytes("UTF-8");
-            byte[] out = new byte[in.length];
-            for (int i = 0; i < in.length; i++) {
-                byte b = in[i];
-                b ^= rand.nextInt();
-                out[i] = b;
-            }
-            byte[] saltBytes = String.valueOf(salt).getBytes("UTF-8");
-            return OBFUSCATION_PREFIX + HexUtils.encodeBase64(saltBytes, true) + '$' + HexUtils.encodeBase64(out, true);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        //noinspection UnsecureRandomNumberGeneration
+        Random rand = new Random(OBFUSCATION_SEED + salt);
+        byte[] in = clear.getBytes(Charsets.UTF8);
+        byte[] out = new byte[in.length];
+        for (int i = 0; i < in.length; i++) {
+            byte b = in[i];
+            b ^= rand.nextInt();
+            out[i] = b;
         }
+        byte[] saltBytes = String.valueOf(salt).getBytes(Charsets.UTF8);
+        return OBFUSCATION_PREFIX + HexUtils.encodeBase64(saltBytes, true) + '$' + HexUtils.encodeBase64(out, true);
     }
 
     /**

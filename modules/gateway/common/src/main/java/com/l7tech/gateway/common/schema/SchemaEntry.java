@@ -7,17 +7,14 @@
 package com.l7tech.gateway.common.schema;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import org.hibernate.annotations.Proxy;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
@@ -114,11 +111,7 @@ public class SchemaEntry extends NamedEntityImp {
     }
 
     public static String createNameHash(String name) {
-        try {
-            return HexUtils.encodeBase64(HexUtils.getSha512Digest(name.getBytes("UTF-8")), true);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Cannot compute hash of name: " + ExceptionUtils.getMessage(e));
-        }
+        return HexUtils.encodeBase64(HexUtils.getSha512Digest(name.getBytes(Charsets.UTF8)), true);
     }
 
     // - PACKAGE

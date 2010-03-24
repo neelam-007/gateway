@@ -6,12 +6,15 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.SyspropUtil;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -22,6 +25,10 @@ import java.util.logging.Logger;
  */
 public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
+
+    public static final String PROP_STRICT_CHARSET = "com.l7tech.common.mime.strictCharset";
+    public static final boolean STRICT_CHARSET = SyspropUtil.getBoolean(PROP_STRICT_CHARSET, false);
+
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
@@ -29,7 +36,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
-    public static final String DEFAULT_HTTP_ENCODING = "ISO8859-1"; // See RFC2616 s3.7.1
+    public static final Charset DEFAULT_HTTP_ENCODING = Charset.forName("ISO8859-1"); // See RFC2616 s3.7.1
 
     static {
         try {
@@ -48,7 +55,7 @@ public class ContentTypeHeader extends MimeHeader {
     private final String type;
     private final String subtype;
 
-    private String javaEncoding = null; // figured out lazy-like
+    private Charset javaEncoding = null; // figured out lazy-like
     private String mimeCharset = null;
 
     /**
@@ -100,7 +107,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     /**
      * Parse a MIME Content-Type: header, not including the header name and colon.
-     * Example: <code>{@link #parseValue}("text/html; charset=\"UTF-8\"")</code>
+     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
      *
      * @param contentTypeHeaderValue the header value to parse
      * @return a ContentTypeHeader instance.  Never null.
@@ -211,11 +218,12 @@ public class ContentTypeHeader extends MimeHeader {
     /**
      * Convert MIME charset into Java encoding.
      *
-     * @return the name of the Java encoding corresponding to the charset of this content-type header,
-     *         or {@link #DEFAULT_HTTP_ENCODING} if there isn't any.  Always returns some string, never null.
-     *         The returned encoding is not guaranteed to be meaningful on this system, however.
+     * @return the Java Charset corresponding to the charset of this content-type header,
+     *         or {@link #DEFAULT_HTTP_ENCODING} if there isn't any.  Always returns some Charset, never null.
+     *         The returned Charset may be a default value if the content header did not specify one,
+     *         or if the one it specified is not recognized by this system.
      */
-    public String getEncoding() {
+    public Charset getEncoding() {
         if (javaEncoding == null) {
             this.mimeCharset = getParam("charset");
 
@@ -224,10 +232,17 @@ public class ContentTypeHeader extends MimeHeader {
                 javaEncoding = DEFAULT_HTTP_ENCODING;
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
-                if ("UTF8".equalsIgnoreCase(tmp))
+                if ("UTF8".equalsIgnoreCase(tmp)) {
                     javaEncoding = ENCODING;
-                else
-                    javaEncoding = tmp;
+                } else {
+                    try {
+                        javaEncoding = Charset.forName(tmp);
+                    } catch (UnsupportedCharsetException e) {
+                        if (STRICT_CHARSET) throw e;
+                        if (logger.isLoggable(Level.FINEST)) logger.finest("Unrecognized charset in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
+                        javaEncoding = DEFAULT_HTTP_ENCODING;
+                    }
+                }
             }
         }
         return javaEncoding;
@@ -380,7 +395,7 @@ public class ContentTypeHeader extends MimeHeader {
             // Convert Java encoding into MIME charset for the payload
             String charsetValue = mimeCharset;
             if (charsetValue == null && javaEncoding != null)
-                    charsetValue = MimeUtility.mimeCharset(javaEncoding);
+                    charsetValue = MimeUtility.mimeCharset(javaEncoding.name());
 
             if (charsetValue == null)
                 charsetValue = DEFAULT_CHARSET_MIME;

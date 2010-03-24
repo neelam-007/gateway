@@ -8,12 +8,14 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -29,7 +31,7 @@ import java.util.regex.Pattern;
  */
 public class MimeHeader implements HttpHeader {
     /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
-    public static final String ENCODING = "UTF-8";
+    public static final Charset ENCODING = Charsets.UTF8;
 
     // Common byte strings needed when serializing mime headers
     static final byte[] CRLF;
@@ -181,12 +183,14 @@ public class MimeHeader implements HttpHeader {
     public String getFullValue() {
         if (fullValue != null)
             return fullValue;
+        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(32);
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream(32);
             writeFullValue(out);
             return fullValue = out.toString(ENCODING);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
+        } finally {
+            out.close();
         }
     }
 

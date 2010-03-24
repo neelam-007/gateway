@@ -7,6 +7,7 @@
 package com.l7tech.skunkworks;
 
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
 import java.io.File;
@@ -60,7 +61,7 @@ public class JceSignaturePlayground {
         }
 
         final String cleartext = KEYINFO;
-        final byte[] clearBytes = cleartext.getBytes("UTF-8");
+        final byte[] clearBytes = cleartext.getBytes(Charsets.UTF8);
         final byte[] signature;
 
         try {

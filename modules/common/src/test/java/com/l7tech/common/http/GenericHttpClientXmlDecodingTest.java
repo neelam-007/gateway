@@ -1,14 +1,13 @@
 package com.l7tech.common.http;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import junit.framework.TestCase;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
-
-import com.l7tech.common.mime.ContentTypeHeader;
 
 /**
  * Tests the code that guesses the character encoding of XML files that are retrieved through
@@ -79,7 +78,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("X-UTF-32BE-BOM");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-32BE", guessedEncodingResult.encoding);
+        assertEquals("UTF-32BE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -95,7 +94,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = Arrays.copyOfRange(bytes, 4, bytes.length);
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-32BE", guessedEncodingResult.encoding);
+        assertEquals("UTF-32BE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -110,7 +109,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("X-UTF-32LE-BOM");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-32LE", guessedEncodingResult.encoding);
+        assertEquals("UTF-32LE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -125,7 +124,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("X-UTF-16LE-BOM");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("X-UTF-16LE-BOM", guessedEncodingResult.encoding);
+        assertEquals(Charset.forName("X-UTF-16LE-BOM").name(), guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -144,7 +143,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         System.arraycopy(bytes, 0, messageBytes, 2, bytes.length);
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-16BE", guessedEncodingResult.encoding);
+        assertEquals("UTF-16BE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -164,7 +163,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         System.arraycopy(bytes, 0, messageBytes, 3, bytes.length);
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-8", guessedEncodingResult.encoding);
+        assertEquals("UTF-8", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -180,7 +179,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = Arrays.copyOfRange(bytes, 4, bytes.length);
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-32LE", guessedEncodingResult.encoding);
+        assertEquals("UTF-32LE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -196,7 +195,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = Arrays.copyOfRange(bytes, 2, bytes.length);
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-16LE", guessedEncodingResult.encoding);
+        assertEquals("UTF-16LE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -211,7 +210,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("UTF-16BE");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-16BE", guessedEncodingResult.encoding);
+        assertEquals("UTF-16BE", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -226,7 +225,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("UTF-8");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("UTF-8", guessedEncodingResult.encoding);
+        assertEquals("UTF-8", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -241,7 +240,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("Cp1047");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("Cp1047", guessedEncodingResult.encoding);
+        assertEquals(Charset.forName("Cp1047").name(), guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
@@ -256,7 +255,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         byte[] messageBytes = message.getBytes("ISO-8859-1");
 
         GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
-        assertEquals("ISO-8859-1", guessedEncodingResult.encoding);
+        assertEquals("ISO-8859-1", guessedEncodingResult.encoding.name());
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);

@@ -9,10 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.LSInputImpl;
-import com.l7tech.util.DomUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
@@ -792,7 +789,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         sf.setResourceResolver(lsrr);
 
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
+            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes(Charsets.UTF8));
             sf.newSchema(new StreamSource(bais, systemId)); // populates imports as side-effect
             return imports;
         } catch (RuntimeException e) {
@@ -805,11 +802,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private String generateURN(String namespace) {
         StringBuilder sb = new StringBuilder();
         sb.append("urn:uuid:");
-        try {
-            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes("UTF-8")).toString());
-        } catch (UnsupportedEncodingException e) {
-            sb.append(UUID.nameUUIDFromBytes(namespace.getBytes()).toString());
-        }
+        sb.append(UUID.nameUUIDFromBytes(namespace.getBytes(Charsets.UTF8)).toString());
         return sb.toString();
     }
 
@@ -959,7 +952,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         sf.setResourceResolver(lsrr);
 
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
+            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes(Charsets.UTF8));
             Schema softwareSchema = sf.newSchema(new StreamSource(bais, systemId));
             String tns = XmlUtil.getSchemaTNS(schemadoc);
             Element mangledElement = DomUtils.normalizeNamespaces(XmlUtil.stringToDocument(schemadoc).getDocumentElement());

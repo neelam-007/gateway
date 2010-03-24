@@ -1,5 +1,6 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -370,7 +371,7 @@ public class Keytab implements Serializable {
             entry.write(2); // since 2 means 3
             String[] name = keytab.getKeyName();
             for (String part : name) {
-                byte[] partBytes = part.getBytes("UTF-8");
+                byte[] partBytes = part.getBytes(Charsets.UTF8);
                 int length = partBytes.length;
                 entry.write((length>>8)&0xFF);
                 entry.write(length&0xFF);

@@ -302,7 +302,7 @@ public class SecureSpanBridgeFactory {
                         if (responseBytes != null)
                             return responseBytes;
                         if (responseDoc != null)
-                            return XmlUtil.nodeToString(responseDoc).getBytes("UTF-8");
+                            return XmlUtil.nodeToString(responseDoc).getBytes(Charsets.UTF8);
                         throw new IllegalStateException("Response has neither bytes nor a Document"); // can't happen
                     }
                 };

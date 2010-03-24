@@ -1,24 +1,19 @@
 package com.l7tech.gateway.common.security;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
-import java.beans.XMLDecoder;
-import java.beans.XMLEncoder;
-
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.NonCloseableOutputStream;
-
-import javax.persistence.Table;
-import javax.persistence.Entity;
-import javax.persistence.Column;
-import javax.persistence.Transient;
-import javax.persistence.Lob;
-
+import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A Policy for Certificate Revocation Checking.
@@ -169,8 +164,6 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
                 xe.writeObject(new ArrayList<RevocationCheckPolicyItem>(policyItems));
                 xe.close();
                 revocationCheckPolicyXml = baos.toString(PROPERTIES_ENCODING);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
             } finally {
                 baos.close();
             }
@@ -185,19 +178,15 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         this.revocationCheckPolicyXml = xml;
 
         if ( xml != null && xml.length() > 0 ) {
-            try {
-                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-                //noinspection unchecked
-                this.revocationCheckItems = Collections.unmodifiableList(new ArrayList((List<RevocationCheckPolicyItem>)xd.readObject()));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            //noinspection unchecked
+            this.revocationCheckItems = Collections.unmodifiableList(new ArrayList((List<RevocationCheckPolicyItem>)xd.readObject()));
         }
     }
 
     //- PRIVATE
 
-    private static final String PROPERTIES_ENCODING = "UTF-8";
+    private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     private transient String revocationCheckPolicyXml;
     private List<RevocationCheckPolicyItem> revocationCheckItems;

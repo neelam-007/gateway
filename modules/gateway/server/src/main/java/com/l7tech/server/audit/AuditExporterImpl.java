@@ -659,7 +659,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             auditMetadata.appendChild(signature);
 
             zip.putNextEntry(new ZipEntry(SIG_FILENAME));
-            byte[] xmlBytes = XmlUtil.nodeToString(d).getBytes("UTF-8");
+            byte[] xmlBytes = XmlUtil.nodeToString(d).getBytes(Charsets.UTF8);
             zip.write(xmlBytes);
             zip.flush();
 

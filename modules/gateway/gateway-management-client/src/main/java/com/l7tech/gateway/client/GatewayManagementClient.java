@@ -1,64 +1,21 @@
 package com.l7tech.gateway.client;
 
-import com.l7tech.gateway.api.AccessibleObject;
-import com.l7tech.gateway.api.Accessor;
-import com.l7tech.gateway.api.Client;
-import com.l7tech.gateway.api.ClientFactory;
-import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.ManagementRuntimeException;
-import com.l7tech.gateway.api.PolicyAccessor;
-import com.l7tech.gateway.api.PolicyImportResult;
-import com.l7tech.gateway.api.PolicyReferenceInstruction;
-import com.l7tech.gateway.api.PolicyValidationResult;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ClassUtils;
-import com.l7tech.util.Cli;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLReporter;
-import javax.xml.stream.XMLResolver;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Client utility for the SecureSpan Gateway management service.
@@ -836,7 +793,7 @@ public class GatewayManagementClient {
         }
 
         private void writeBytes( final OutputStream out, final String data ) throws IOException {
-            out.write( data.getBytes( "UTF-8" ));
+            out.write( data.getBytes( Charsets.UTF8 ));
         }
     }
 

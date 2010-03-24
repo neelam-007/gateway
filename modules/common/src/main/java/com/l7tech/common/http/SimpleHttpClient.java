@@ -156,7 +156,7 @@ public class SimpleHttpClient implements GenericHttpClient {
             if ( contentType != null ) {
                 encodingBuilder.append(contentType.getEncoding());
             } else {
-                encodingBuilder.append(ContentTypeHeader.DEFAULT_HTTP_ENCODING);
+                encodingBuilder.append(ContentTypeHeader.DEFAULT_HTTP_ENCODING.name());
             }
 
             return new String(stripBom(getBytes(), encodingBuilder), encodingBuilder.toString());

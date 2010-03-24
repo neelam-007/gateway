@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.comparison.server.convert;
 
-import java.io.UnsupportedEncodingException;
+import com.l7tech.util.Charsets;
 
 /**
  * Converts the specified value into a String (by calling {@link String#toString()} on it as a last resort).
@@ -17,11 +17,7 @@ public class StringConverter implements ValueConverter<String> {
         } else if (val instanceof char[]) {
             return new String((char[])val);
         } else if (val instanceof byte[]) {
-            try {
-                return new String((byte[])val, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new ConversionException("Couldn't decode byte array", e);
-            }
+            return new String((byte[])val, Charsets.UTF8);
         }
         return val.toString();
     }

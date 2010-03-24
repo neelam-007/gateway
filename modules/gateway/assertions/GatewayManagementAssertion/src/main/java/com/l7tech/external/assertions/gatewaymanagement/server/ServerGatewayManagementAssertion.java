@@ -22,15 +22,15 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.InternalErrorFault;
-import com.sun.ws.management.addressing.Addressing;
-import com.sun.ws.management.transport.ContentType;
 import com.sun.ws.management.Management;
+import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.identify.Identify;
-import com.sun.ws.management.soap.SOAP;
 import com.sun.ws.management.server.HandlerContext;
 import com.sun.ws.management.server.HandlerContextImpl;
 import com.sun.ws.management.server.WSManAgent;
 import com.sun.ws.management.server.reflective.WSManReflectiveAgent;
+import com.sun.ws.management.soap.SOAP;
+import com.sun.ws.management.transport.ContentType;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -42,18 +42,19 @@ import org.xml.sax.SAXException;
 import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBException;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
-import javax.xml.bind.JAXBException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.security.Principal;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
-import java.security.Principal;
 
 /**
  * Server side implementation of the GatewayManagementAssertion.
@@ -247,14 +248,14 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             final ContentTypeHeader contentTypeHeader = mimeKnob.getOuterContentType();
             final String contentTypeStr = contentTypeHeader.getFullValue();
             final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-            final String charEncoding = contentTypeHeader.getEncoding();
+            final Charset charEncoding = contentTypeHeader.getEncoding();
             final HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
             final String url = httpRequestKnob.getRequestUrl();
             final Map<String, Object> properties = new HashMap<String, Object>(1);
             properties.put( "com.sun.ws.management.server.handler", "com.l7tech.external.assertions.wsmanagment.invalidhandlers" );
             properties.put( "com.l7tech.context", assertionContext );
             properties.put( "com.l7tech.remoteAddr", httpRequestKnob.getRemoteAddress() );
-            final HandlerContext handlerContext = new HandlerContextImpl(user, contentTypeStr, charEncoding, url, properties);
+            final HandlerContext handlerContext = new HandlerContextImpl(user, contentTypeStr, charEncoding.name(), url, properties);
 
             SOAP soapResponse = (SOAP) agent.handleRequest(managementRequest, handlerContext);
 

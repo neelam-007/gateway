@@ -6,6 +6,7 @@
 
 package com.l7tech.gateway.common.security;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
 import java.io.File;
@@ -80,7 +81,7 @@ public class ExportKeys {
                     byte encoded[] = cert.getEncoded();
                     fos = new FileOutputStream(certFilename + "-" + alias);
                     fos.write("-----BEGIN TRUSTED CERTIFICATE-----\n".getBytes());
-                    fos.write(HexUtils.encodeBase64(encoded).getBytes("UTF-8"));
+                    fos.write(HexUtils.encodeBase64(encoded).getBytes(Charsets.UTF8));
                     fos.write("\n-----END TRUSTED CERTIFICATE-----\n".getBytes());
                     System.err.println( "Wrote " + certFilename);
                 } finally {

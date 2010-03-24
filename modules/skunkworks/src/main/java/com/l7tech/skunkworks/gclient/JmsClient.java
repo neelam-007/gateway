@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.util.Charsets;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -288,7 +289,7 @@ public class JmsClient {
             } else {
                 // Default to BytesMessage
                 BytesMessage bmsg = bag.getSession().createBytesMessage();
-                bmsg.writeBytes(text.getBytes("UTF-8"));
+                bmsg.writeBytes(text.getBytes(Charsets.UTF8));
                 outboundRequestMsg = bmsg;
             }
         }

@@ -1,14 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.FontUtil;
-import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.FontUtil;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.Charsets;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -22,7 +23,9 @@ import java.net.URL;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.cert.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -318,7 +321,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             }
 
             try {
-                is = new ByteArrayInputStream(certPem.getBytes("UTF-8"));
+                is = new ByteArrayInputStream(certPem.getBytes(Charsets.UTF8));
                 Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
                 certChain = certs.toArray(new X509Certificate[0]);
             } catch (Exception e) {

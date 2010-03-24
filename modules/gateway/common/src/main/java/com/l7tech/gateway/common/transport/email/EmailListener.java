@@ -1,18 +1,18 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.*;
-
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Proxy;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Properties;
+import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An email listener configuration.
@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream;
 @Table(name="email_listener")
 public class EmailListener extends NamedEntityImp {
     private static final Logger logger = Logger.getLogger(EmailListener.class.getName());
-    private static final String ENCODING = "UTF-8";
+    private static final Charset ENCODING = Charsets.UTF8;
 
     private String host;
     private int port;
@@ -189,13 +189,15 @@ public class EmailListener extends NamedEntityImp {
         if (properties == null) {
             setProperties("");
         } else {
+            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                properties.storeToXML(baos, null, ENCODING);
+                properties.storeToXML(baos, null, ENCODING.name());
                 setProperties(baos.toString(ENCODING));
             }
             catch (Exception e) {
                 logger.log(Level.WARNING, "Error saving properties", e);
+            } finally {
+                baos.close();
             }
         }
     }

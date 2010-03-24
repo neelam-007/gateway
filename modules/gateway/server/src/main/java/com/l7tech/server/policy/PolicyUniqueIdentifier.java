@@ -1,15 +1,15 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.Map;
-import java.util.Collections;
-import java.util.TreeMap;
-import java.util.HashMap;
-import java.io.UnsupportedEncodingException;
 
 /**
  * Unique Identifier for a version of a policy and it's dependencies.
@@ -149,10 +149,6 @@ public class PolicyUniqueIdentifier {
     }
 
     private String generateUniqueIdentifier() {
-        try {
-            return HexUtils.hexDump( HexUtils.getMd5Digest( getUniqueVersion().getBytes( "UTF-8") ) );
-        } catch ( UnsupportedEncodingException uee ) {
-            throw new RuntimeException("UTF-8 support is required", uee);
-        }
+        return HexUtils.hexDump( HexUtils.getMd5Digest( getUniqueVersion().getBytes(Charsets.UTF8) ) );
     }
 }

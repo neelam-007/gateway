@@ -57,6 +57,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -963,7 +964,7 @@ public class MessageProcessor {
             log.info("Posting to Gateway (reformatted):\n" +
                      XmlUtil.nodeToFormattedString(decoratedDocument));
         } else {
-            final String encoding = request.getMimeKnob().getOuterContentType().getEncoding();
+            final Charset encoding = request.getMimeKnob().getOuterContentType().getEncoding();
             if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
                 BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                 try {

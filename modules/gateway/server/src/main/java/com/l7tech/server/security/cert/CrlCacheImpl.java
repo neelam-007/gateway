@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.security.cert.CRLException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -120,7 +121,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         @Override
         public X509CRL createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) throws IOException {
             ContentTypeHeader cth = response.getContentType();
-            String encoding = "UTF-8";
+            Charset encoding = Charsets.UTF8;
             if (cth != null && cth.isText()) {
                 encoding = cth.getEncoding();
             }

@@ -1,18 +1,19 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gui.util.SaveErrorStrategy;
-import com.l7tech.gui.util.SheetHolder;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.SaveErrorStrategy;
+import com.l7tech.gui.util.SheetHolder;
+import com.l7tech.util.Charsets;
 
 import javax.swing.*;
 import java.applet.Applet;
-import java.net.URL;
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * @auther: ghuang
@@ -53,7 +54,7 @@ public class BrowserSaveErrorStrategy extends SaveErrorStrategy {
             SimpleHttpClient sClient = new SimpleHttpClient(client);
             GenericHttpRequestParams params = new GenericHttpRequestParams(url);
             params.setContentType(ContentTypeHeader.TEXT_DEFAULT);
-            SimpleHttpClient.SimpleHttpResponse response = sClient.post(params, fileContent.getBytes("UTF-8"));
+            SimpleHttpClient.SimpleHttpResponse response = sClient.post(params, fileContent.getBytes(Charsets.UTF8));
             // Check for a 200 response code (on POST)
             if (response.getStatus() != 200) {
                 DialogDisplayer.showMessageDialog(applet, null, "The report cannot be saved.  Try it again.", null);

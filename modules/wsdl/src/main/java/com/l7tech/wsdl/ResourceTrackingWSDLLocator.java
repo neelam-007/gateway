@@ -387,7 +387,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             if (encoding == null) {
                 if (connection instanceof HttpURLConnection) {
                     HttpURLConnection httpConn = (HttpURLConnection) connection;
-                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding();
+                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding().name();
                 } else {
                     encoding = Charset.defaultCharset().name();
                 }
@@ -395,7 +395,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 // If BOM says UTF-8 it could be iso-8859-1 so check other info if available
                 if (connection instanceof HttpURLConnection) {
                     HttpURLConnection httpConn = (HttpURLConnection) connection;
-                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding();
+                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding().name();
                 } else {
                     encoding = "UTF-8";
                 }

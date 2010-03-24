@@ -7,6 +7,7 @@ package com.l7tech.xml.tarari;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.tarari.xml.XmlParseException;
@@ -37,17 +38,9 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
     private final Stylesheet master;
 
     // Empty XSLT document
-    private static final byte[] EMPTY_XSL_BYTES;
-    static {
-        byte[] bytes = null;
-        try {
-            bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"></xsl:stylesheet>".getBytes("UTF-8");
-        } catch(java.io.UnsupportedEncodingException e) {
-            // Will never happen
-        }
+    private static final byte[] EMPTY_XSL_BYTES =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"></xsl:stylesheet>".getBytes(Charsets.UTF8);
 
-        EMPTY_XSL_BYTES = bytes;
-    }
     private static final UriResolver NON_FETCHING_URI_RESOLVER = new UriResolver() {
         public XmlSource resolveUri(String s, String s1) throws java.io.IOException {
             return new XmlSource(s, EMPTY_XSL_BYTES);

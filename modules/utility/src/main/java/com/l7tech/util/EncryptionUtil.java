@@ -6,7 +6,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -66,14 +65,9 @@ public class EncryptionUtil {
 
     public static String encrypt(String data, byte[] key) {
         if(data==null) throw new IllegalArgumentException("data must not be null");
-        try {
-            byte[] dataBytes = data.getBytes(DEFAULT_ENCODING);
-            byte[] encrypted = encrypt(dataBytes, key);
-            return HexUtils.encodeBase64(encrypted);
-        }
-        catch(UnsupportedEncodingException uue) {
-            throw new RuntimeException("Platform must support default encoding.", uue);
-        }
+        byte[] dataBytes = data.getBytes(DEFAULT_ENCODING);
+        byte[] encrypted = encrypt(dataBytes, key);
+        return HexUtils.encodeBase64(encrypted);
     }
 
     /**
@@ -89,9 +83,7 @@ public class EncryptionUtil {
         try {
             byte[] encrypted = HexUtils.decodeBase64(data);
             byte[] dataBytes = decrypt(encrypted, key);
-            //return new String(dataBytes, DEFAULT_ENCODING); // does not handle invalid bytes
-            Charset utf8Charset = Charset.forName(DEFAULT_ENCODING);
-            CharsetDecoder decoder = utf8Charset.newDecoder();
+            CharsetDecoder decoder = DEFAULT_ENCODING.newDecoder();
             return decoder.decode(ByteBuffer.wrap(dataBytes)).toString();
         }
         catch(CharacterCodingException cce) {
@@ -179,12 +171,7 @@ public class EncryptionUtil {
      */
     public static String computeCustomRSAPubKeyID(RSAPublicKey key) {
         String keyIDNotHashed = key.getPublicExponent().toString() + key.getModulus().toString();
-        try {
-            return HexUtils.encodeBase64(HexUtils.getSha1Digest(keyIDNotHashed.getBytes(DEFAULT_ENCODING)));
-        } catch (UnsupportedEncodingException e) {
-            // wont happen
-            throw new RuntimeException(e);
-        }
+        return HexUtils.encodeBase64(HexUtils.getSha1Digest(keyIDNotHashed.getBytes(DEFAULT_ENCODING)));
     }
 
     //- PRIVATE
@@ -193,7 +180,7 @@ public class EncryptionUtil {
     private static final String DEFAULT_ALGORITHM = "AES";
 
     // Encode strings using UTF-8
-    private static final String DEFAULT_ENCODING = "UTF-8";
+    private static final Charset DEFAULT_ENCODING = Charsets.UTF8;
 
     // Random default key for obfuscate and deobfuscate
     private static final byte[] DEFAULT_KEY = new byte[]{(byte)0xa2, (byte)0xb5, (byte)0xfb, (byte)0x9c

@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -17,12 +16,16 @@ import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.ContextVariableKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -40,7 +43,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     private Pattern regexPattern;
     private Exception compileException;
     private final String[] varNames;
-    public static final String ENCODING = "UTF-8";
+    public static final Charset ENCODING = Charsets.UTF8;
     private final boolean isReplacement;
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
@@ -91,7 +94,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
 
         try {
             final PartInfo part = target.getMimeKnob().getPart(whichPart);
-            final String encoding = getEncoding(part);
+            final Charset encoding = getEncoding(part);
 
             ContextVariableKnob cvk = target.getKnob(ContextVariableKnob.class);
             if (cvk != null)
@@ -109,7 +112,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         return new Pair<RegexInput, RegexOutput>(input, output);
     }
 
-    private RegexInput makeInput(final PartInfo part, final String encoding) {
+    private RegexInput makeInput(final PartInfo part, final Charset encoding) {
         return new RegexInput() {
 
             @Override
@@ -131,7 +134,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         };
     }
 
-    private RegexOutput makeOutput(final PartInfo part, final String encoding) {
+    private RegexOutput makeOutput(final PartInfo part, final Charset encoding) {
         return new RegexOutput() {
             @Override
             public void setOutput(CharSequence output) throws IOException {
@@ -140,16 +143,22 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         };
     }
 
-    private String getEncoding(PartInfo part) {
-        String encoding = assertion.getEncoding();
-        if (encoding != null && encoding.length() > 0) {
-            auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encoding);
-        } else if (encoding == null || encoding.length() == 0) {
+    private Charset getEncoding(PartInfo part) {
+        String encodingName = assertion.getEncoding();
+        Charset encoding;
+        if (encodingName == null || encodingName.length() < 1) {
             encoding = part.getContentType().getEncoding();
+        } else {
+            try {
+                encoding = Charset.forName(encodingName);
+                auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encodingName);
+            } catch (UnsupportedCharsetException e) {
+                encoding = null;
+            }
         }
 
         if (encoding == null) {
-            auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING);
+            auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING.name());
             encoding = ENCODING;
         }
         return encoding;

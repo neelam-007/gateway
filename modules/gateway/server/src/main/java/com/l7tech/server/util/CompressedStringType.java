@@ -1,22 +1,18 @@
 package com.l7tech.server.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
+import org.hibernate.HibernateException;
+import org.hibernate.usertype.UserType;
+
+import java.io.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-
-import org.hibernate.HibernateException;
-import org.hibernate.usertype.UserType;
-
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
 
 /**
  * A Hibernate UserType that stores Strings as (Compressed) a blob/byte[].
@@ -120,7 +116,7 @@ public class CompressedStringType implements UserType {
         DeflaterOutputStream defOut = null;
         try {
             if (text.length() > 0) {
-                byte[] dataBytes = text.getBytes("UTF-8");
+                byte[] dataBytes = text.getBytes(Charsets.UTF8);
                 baos.write(lengthToBytes(dataBytes.length));
                 defOut = new DeflaterOutputStream(baos);
                 defOut.write(dataBytes);

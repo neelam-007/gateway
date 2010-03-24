@@ -357,7 +357,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 try {
                     String xml = messageViewer.getContent();
                     try {
-                        org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+                        org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
                         xml = XmlUtil.nodeToFormattedString(doc);
                     } catch (Exception e1) {
                         log.log(Level.WARNING, "Invalid XML", e1);
