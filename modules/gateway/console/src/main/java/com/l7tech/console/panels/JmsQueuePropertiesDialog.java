@@ -336,6 +336,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jmsMsgPropWithSoapActionTextField.setDocument(new MaxLengthDocument(255));
         outboundReplySpecifiedQueueField.setDocument(new MaxLengthDocument(128));
 
+        jmsEndpoingDescriptiveName.setDocument(new MaxLengthDocument(128));
+        
         // Add a doc listener for those text fields that need to detect if input is validated or not.
         // Case 1: in the JNDI Tab
         icfTextField.getDocument().addDocumentListener(formPreener);
