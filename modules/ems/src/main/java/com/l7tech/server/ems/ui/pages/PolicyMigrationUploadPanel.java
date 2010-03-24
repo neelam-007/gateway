@@ -91,7 +91,7 @@ public class PolicyMigrationUploadPanel extends Panel {
                         feedback.error( "Error processing archive, please try again." );
                     }
                 } catch ( ObjectModelException ome ) {
-                    logger.log( Level.WARNING, "Error processing migration archive upload.", ome );
+                    logger.log( Level.WARNING, "Error processing migration archive upload: " + ExceptionUtils.getMessage(ome), ExceptionUtils.getDebugException(ome) );
                     feedback.error( "Error processing archive, please try again." );
                 } catch (IOException ioe) {
                     logger.log( Level.WARNING, "IO error processing migration archive upload '"+ ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe) );
