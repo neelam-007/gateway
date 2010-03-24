@@ -377,7 +377,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             }
 
             List<ReportApi.FilterPair> lFp = keysToFilterPairs.get(key);
-            if (value.equals("")) {
+            if (value == null || value.equals("")) {
                 lFp.add(new ReportApi.FilterPair());
             } else {
                 if (value.length() > MAX_VALUE_CONSTRAINT_SIZE) {
