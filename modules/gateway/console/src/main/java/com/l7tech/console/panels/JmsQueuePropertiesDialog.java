@@ -803,9 +803,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
         JmsEndpoint ep = new JmsEndpoint();
         if (endpoint != null)
             ep.copyFrom(endpoint);
-//        String name = queueNameTextField.getText();
         String name = jmsEndpoingDescriptiveName.getText();
         ep.setName(name);
+        ep.setTemplate(isTemplateQueue.isSelected());
+
         String queueName = queueNameTextField.getText();
         ep.setDestinationName(queueName);
         
@@ -846,8 +847,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setFailureDestinationName( null );
         }
         ep.setMessageSource(inboundRadioButton.isSelected());
-        ep.setTemplate(isTemplateQueue.isSelected());
-        
+
         if (useQueueCredentialsCheckBox.isSelected()) {
             ep.setUsername(queueUsernameTextField.getText());
             ep.setPassword(new String(queuePasswordField.getPassword()));
