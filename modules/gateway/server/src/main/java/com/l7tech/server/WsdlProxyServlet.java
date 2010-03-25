@@ -14,10 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.WsspAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -588,8 +585,18 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             else {
                 logger.info("No policy to add!");
             }
-        }
-        catch(Exception e) {
+
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (PolicyAssertionException e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (SAXException e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (FilteringException e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch(Exception e) {
             logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), e);
         }
     }
