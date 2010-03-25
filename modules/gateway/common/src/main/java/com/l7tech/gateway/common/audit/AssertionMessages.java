@@ -348,6 +348,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_CANT_CONNECT_NOMORETRIES        = m(6022, Level.WARNING, "Tried {0} times to establish JMS connection and failed.");
     public static final M JMS_ROUTING_REQUEST_WITH_AUTOMATIC          = m(6023, Level.FINE, "Outbound request endpoint {0} specifies AUTOMATIC, using temporary queue");
     public static final M JMS_ROUTING_REQUEST_TOO_LARGE               = m(6024, Level.WARNING, "Request message too large.");
+    public static final M JMS_ROUTING_TEMPLATE_ERROR                  = m(6025, Level.WARNING, "Error processing JMS outbound template ''{0}''.");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
