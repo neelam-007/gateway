@@ -643,18 +643,18 @@
                 }
                 settings.params.from = notifDlg_eMail_fromTextBox.value;
                 settings.params.to = notifDlg_eMail_toTextBox.value;
-                settings.params.cc = notifDlg_eMail_ccTextBox.value;
-                settings.params.bcc = notifDlg_eMail_bccTextBox.value;
-                settings.params.subject = notifDlg_eMail_subjectTextBox.value;
-                settings.params.body = notifDlg_eMail_bodyTextArea.value;
+                settings.params.cc = new String(notifDlg_eMail_ccTextBox.value);
+                settings.params.bcc = new String(notifDlg_eMail_bccTextBox.value);
+                settings.params.subject = new String(notifDlg_eMail_subjectTextBox.value);
+                settings.params.body = new String(notifDlg_eMail_bodyTextArea.value);
             } else if (settings.type == l7.Constants.NOTIFICATION_TYPE.SNMP_TRAP) {
                 settings.params.host = notifDlg_snmpTrap_hostTextBox.value;
                 settings.params.defaultPort = notifDlg_snmpTrap_defaultPortRadioButton.checked;
                 if (!settings.params.defaultPort) {
                     settings.params.port = notifDlg_snmpTrap_customPortTextBox.value;
                 }
-                settings.params.community = notifDlg_snmpTrap_communityTextBox.value;
-                settings.params.textData = notifDlg_snmpTrap_textDataTextArea.value;
+                settings.params.community = new String(notifDlg_snmpTrap_communityTextBox.value);
+                settings.params.textData = new String(notifDlg_snmpTrap_textDataTextArea.value);
                 settings.params.oidSuffix = notifDlg_snmpTrap_oidSuffixTextBox.value;
             } else if (settings.type == l7.Constants.NOTIFICATION_TYPE.HTTP_REQUEST) {
                 settings.params.url = notifDlg_httpRequest_urlTextBox.value;
@@ -666,7 +666,7 @@
                     } else {
                         settings.params.contentType = notifDlg_httpRequest_customContentTypeTextBox.value;
                     }
-                    settings.params.body = notifDlg_httpRequest_bodyTextArea.value;
+                    settings.params.body = new String(notifDlg_httpRequest_bodyTextArea.value);
                 }
             }
 
