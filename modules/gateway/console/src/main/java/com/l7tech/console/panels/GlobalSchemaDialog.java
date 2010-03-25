@@ -455,10 +455,27 @@ public class GlobalSchemaDialog extends JDialog {
     private void remove() {
         SchemaEntry schemasToBeDeleted = globalSchemas.get(schemaTable.getSelectedRow());
         Object[] options = {"Remove", "Cancel"};
-        String message = "<html><center>Are you sure you want to remove the schemas, '" + schemasToBeDeleted.getName() + "'?</center>" +
-                "<center>This action cannot be undone.</center></html>";
+        String message = "Are you sure you want to remove the selected schema?\n" + schemasToBeDeleted.getName() +
+                "\nThis action cannot be undone.";
 
-        int result = JOptionPane.showOptionDialog(GlobalSchemaDialog.this, message, "Confirm Global Schemas Removal",
+        final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
+        final Object object;
+        if(width > 600){
+            JTextArea jTextArea = new JTextArea(message);
+            jTextArea.setRows(3);
+            jTextArea.setEditable(false);
+            jTextArea.setCaretPosition(0);
+            jTextArea.setBackground(this.getBackground());
+
+            JScrollPane jScrollPane = new JScrollPane(jTextArea);
+            final int textHeight = this.getFontMetrics(this.getFont()).getHeight();
+            jScrollPane.setPreferredSize(new Dimension(600, textHeight * 5));
+            object = jScrollPane;
+        }else{
+            object = message;
+        }
+
+        int result = JOptionPane.showOptionDialog(GlobalSchemaDialog.this, object, "Confirm Global Schemas Removal",
                 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {

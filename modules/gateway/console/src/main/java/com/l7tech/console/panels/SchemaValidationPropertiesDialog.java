@@ -543,7 +543,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
             final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
             final Object object;
-            if(width > 800){
+            if(width > 600){
                 JTextArea jTextArea = new JTextArea(msg);
                 jTextArea.setRows(3);
                 jTextArea.setEditable(false);
