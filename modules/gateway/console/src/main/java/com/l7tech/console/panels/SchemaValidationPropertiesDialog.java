@@ -33,10 +33,7 @@ import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import org.dom4j.DocumentException;
@@ -50,6 +47,7 @@ import org.xml.sax.SAXParseException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
 import javax.xml.transform.OutputKeys;
@@ -110,7 +108,14 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     // Widgets specific to MODE_SPECIFY_URL
     private JTextField specifyUrlField;
     private JPanel globalURLTab;
+
+    //contains the full system id. The globalSchemaCombo box only has a truncated name at 128 chars
+    //always in sync with the model of globalSchemaCombo
+    private final List<String> schemaNamesUnmodified = new ArrayList<String>();
+    //never get items from the combo box. Instead get their index and look up that index in schemaNamesUnmodified
     private JComboBox globalSchemaCombo;
+    //used to ensure all items in the combo box are unique
+    private final UUID uuid = UUID.randomUUID();
     private JButton editGlobalXMLSchemasButton;
     private TargetMessagePanel targetMessagePanel;
 
@@ -296,6 +301,27 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
+                //this ensures the combo box continues to look like a normal combo box.
+                //getting the current rendered and delegating to it does not work correctly
+                BasicComboBoxRenderer.UIResource newRenderer = new BasicComboBoxRenderer.UIResource(){
+                    @Override
+                    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                        final Component renderedComp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                        if (renderedComp instanceof BasicComboBoxRenderer){
+                            //remove the index + uuid from the start of each string, which is used to guarantee their uniqueness
+                            BasicComboBoxRenderer label = (BasicComboBoxRenderer) renderedComp;
+                            String text = label.getText();
+                            final int uuidEndIndex = text.indexOf(uuid.toString());
+                            if(uuidEndIndex != -1){
+                                final int endIndex = uuidEndIndex + uuid.toString().length();
+                                label.setText(text.substring(endIndex));
+                            }
+                        }
+                        return renderedComp;
+                    }
+                };
+                globalSchemaCombo.setRenderer(newRenderer);
+
                 modelToView();
                 updateModeComponents();
             }
@@ -337,10 +363,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
             if (ri instanceof GlobalResourceInfo) {
                 GlobalResourceInfo gri = (GlobalResourceInfo)ri;
-                DefaultComboBoxModel model = (DefaultComboBoxModel)globalSchemaCombo.getModel();
                 boolean found = false;
-                for (int i = 0; i < model.getSize(); i++) {
-                    String comboBoxItem = (String)model.getElementAt(i);
+                for (int i = 0; i < schemaNamesUnmodified.size(); i++) {
+                    String comboBoxItem = schemaNamesUnmodified.get(i);
                     if (gri.getId() != null && gri.getId().equals(comboBoxItem)) {
                         found = true;
                         globalSchemaCombo.setSelectedIndex(i);
@@ -403,23 +428,29 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
         }
         try {
+            //before we update the model we need to remember what was the old selection for global schema
+            final int index = globalSchemaCombo.getSelectedIndex();
+            String previousSchemaSelection = (index < schemaNamesUnmodified.size())? null : schemaNamesUnmodified.get(index);
+
+            schemaNamesUnmodified.clear();
             Collection<SchemaEntry> allschemas = reg.getSchemaAdmin().findAllSchemas();
             ArrayList<String> schemaNames = new ArrayList<String>();
             if (allschemas != null) {
+                int i = 1;
                 for (SchemaEntry s : allschemas) {
-                    schemaNames.add(s.getName());
+                    schemaNames.add(i + uuid.toString() + TextUtils.truncStringMiddleExact(s.getName(), 128));//128 is the old limit before it was extended to 4096
+                    schemaNamesUnmodified.add(s.getName());
+                    i++;
                 }
             }
             schemaNames.add(NOTSET);
 
-            //before we update the model we need to remember what was the old selection for global schema
-            String previousSchemaSelection;
-            previousSchemaSelection = (String) globalSchemaCombo.getSelectedItem();
             globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[schemaNames.size()])));
 
             //set back the selected item if in the new list
-            if (previousSchemaSelection != null && schemaNames.contains(previousSchemaSelection)) {
-                globalSchemaCombo.setSelectedItem(previousSchemaSelection);
+            if (previousSchemaSelection != null && schemaNamesUnmodified.contains(previousSchemaSelection)) {
+                final int newIndex = schemaNamesUnmodified.indexOf(previousSchemaSelection);
+                globalSchemaCombo.setSelectedIndex(newIndex);
             } else {
                 globalSchemaCombo.setSelectedItem(NOTSET);
             }
@@ -722,7 +753,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } else if (globalSchemaCombo.getSelectedItem().equals(NOTSET)) {
             return false;
         }
-        gri.setId(globalSchemaCombo.getSelectedItem().toString());
+        final int index = globalSchemaCombo.getSelectedIndex();
+        gri.setId(schemaNamesUnmodified.get(index));
         schemaValidationAssertion.setResourceInfo(gri);
         return true;
     }
