@@ -10,12 +10,14 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.util.HexUtils;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -24,7 +26,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource<HttpBasic> {
     private static final Logger logger = Logger.getLogger(ServerHttpBasic.class.getName());
     private final Auditor auditor;
 
-    public static final String ENCODING = "ISO-8859-1";//"UTF-8"; http client will not encode this with utf-8, see bugzilla #2733
+    public static final Charset ENCODING = Charsets.ISO8859; // http client will not encode this with utf-8, see bugzilla #2733
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 

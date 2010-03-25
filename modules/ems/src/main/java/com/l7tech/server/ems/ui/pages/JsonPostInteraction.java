@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.server.ems.enterprise.JSONException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.IRequestTarget;
@@ -52,7 +53,7 @@ public class JsonPostInteraction extends Panel {
                 WebRequest webRequest = (WebRequest) RequestCycle.get().getRequest();
                 try {
                     ServletInputStream inputStream = webRequest.getHttpServletRequest().getInputStream();
-                    String input = new String(IOUtils.slurpStream(inputStream, MAX_POST_SIZE), "utf-8");
+                    String input = new String(IOUtils.slurpStream(inputStream, MAX_POST_SIZE), Charsets.UTF8);
                     provider.setData(input);
                     if ( logger.isLoggable(Level.FINEST) ) {
                         logger.log(Level.FINEST, "Received JSON data: " + input);

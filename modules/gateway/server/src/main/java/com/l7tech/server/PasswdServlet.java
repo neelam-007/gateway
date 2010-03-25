@@ -1,26 +1,29 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -29,9 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Level;
-
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * This servlet lets a client change the password of his internal account.
@@ -127,13 +127,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         // unbase 64 it
-        try {
-            newpasswd = new String(HexUtils.decodeBase64(newpasswd, true), "UTF-8");
-        } catch (IOException e) {
-            logger.warning("The passed password could not be b64decoded, returning 400.");
-            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Password should be b64ed.");
-            return;
-        }
+        newpasswd = new String(HexUtils.decodeBase64(newpasswd, true), Charsets.UTF8);
 
         // DO IT!
         try {

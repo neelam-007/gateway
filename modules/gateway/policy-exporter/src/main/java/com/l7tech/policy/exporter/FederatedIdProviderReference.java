@@ -1,22 +1,21 @@
 package com.l7tech.policy.exporter;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,11 +88,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
         output.providerName = getParamFromEl(el, NAME_EL_NAME);
         String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
         if (b64edProps != null) {
-            try {
-                output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true), "UTF-8");
-            } catch (IOException e) {
-                throw new InvalidDocumentFormatException("could not un-b64 the provider props");
-            }
+            output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true), Charsets.UTF8);
         } else output.idProviderConfProps = null;
         val = getParamFromEl(el, TYPEVAL_EL_NAME);
         if (val != null) {
@@ -125,12 +120,8 @@ public class FederatedIdProviderReference extends IdProviderReference {
 
                 val = getParamFromEl(groupElement, PROPS_EL_NAME);
                 if(val != null) {
-                    try {
-                        val = new String(HexUtils.decodeBase64(val, true), "UTF-8");
-                        group.setXmlProperties(val);
-                    } catch (IOException e) {
-                        throw new InvalidDocumentFormatException("could not un-b64 the group props");
-                    }
+                    val = new String(HexUtils.decodeBase64(val, true), Charsets.UTF8);
+                    group.setXmlProperties(val);
                 }
 
                 NodeList memberElements = groupElement.getElementsByTagName(GROUP_MEMBER_EL_NAME);
@@ -166,12 +157,8 @@ public class FederatedIdProviderReference extends IdProviderReference {
 
                 val = getParamFromEl(groupElement, PROPS_EL_NAME);
                 if(val != null) {
-                    try {
-                        val = new String(HexUtils.decodeBase64(val, true), "UTF-8");
-                        group.setXmlProperties(val);
-                    } catch(IOException e) {
-                        throw new InvalidDocumentFormatException("could not un-b64 the group props");
-                    }
+                    val = new String(HexUtils.decodeBase64(val, true), Charsets.UTF8);
+                    group.setXmlProperties(val);
                 }
 
                 output.importedGroups.put(group.getId(), group);

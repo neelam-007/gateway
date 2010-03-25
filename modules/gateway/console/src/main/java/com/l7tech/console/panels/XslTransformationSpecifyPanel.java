@@ -9,13 +9,12 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceAdminPublic;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceAdminPublic;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -24,6 +23,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -39,6 +39,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -210,7 +211,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
         ByteOrderMarkInputStream bomis = null;
         String filename = dlg.getSelectedFile().getAbsolutePath();
         try {
-            String encoding;
+            Charset encoding;
             try {
                 bomis = new ByteOrderMarkInputStream(new FileInputStream(dlg.getSelectedFile()));
                 encoding = bomis.getEncoding();
@@ -243,18 +244,11 @@ public class XslTransformationSpecifyPanel extends JPanel {
                 docIsXsl(doc);
                 // set the new xslt
                 String printedxml;
-                try {
-                    if (encoding == null) {
-                        log.log(Level.FINE, "Unable to detect character encoding for " + filename + "; will use platform default encoding");
-                        printedxml = new String(bytes);
-                    } else {
-                        printedxml = new String(bytes, encoding);
-                    }
-                } catch (IOException e) {
-                    String msg = "error serializing document";
-                    xslDialog.displayError(msg, null);
-                    log.log(Level.FINE, msg, e);
-                    return;
+                if (encoding == null) {
+                    log.log(Level.FINE, "Unable to detect character encoding for " + filename + "; will use platform default encoding");
+                    printedxml = new String(bytes);
+                } else {
+                    printedxml = new String(bytes, encoding);
                 }
                 uiAccessibility.getEditor().setText(printedxml);
                 //okButton.setEnabled(true);

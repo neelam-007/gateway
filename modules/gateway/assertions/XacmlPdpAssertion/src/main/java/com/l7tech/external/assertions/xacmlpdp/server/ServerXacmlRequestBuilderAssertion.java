@@ -1,48 +1,44 @@
 package com.l7tech.external.assertions.xacmlpdp.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.CommonMessages;
+import com.l7tech.message.Message;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
-import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_RELATIVE;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.XPATH_ABSOLUTE;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.CONTEXT_VARIABLE;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.*;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.CommonMessages;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.DomUtils;
 import com.sun.xacml.attr.DateTimeAttribute;
+import org.jaxen.UnresolvableException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
-import org.jaxen.UnresolvableException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
-import java.util.logging.Logger;
-import java.util.*;
 import java.io.IOException;
+import java.util.*;
+import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.*;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -1173,7 +1169,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             try {
                 final BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
                 XmlUtil.canonicalize(elementToAddToParent, baos);
-                final String nodeAsText = baos.toString("UTF-8");
+                final String nodeAsText = baos.toString(Charsets.UTF8);
                 final Element nsSelfContainedNode = XmlUtil.parse(nodeAsText).getDocumentElement();
                 Node importedNode = parentElement.getOwnerDocument().importNode(nsSelfContainedNode, true);
 

@@ -3,7 +3,6 @@ package com.l7tech.util;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.security.*;
 import java.text.ParseException;
 import java.util.logging.Level;
@@ -265,12 +264,10 @@ public class MasterPasswordManager {
             aes.init(Cipher.DECRYPT_MODE, ourkey, new IvParameterSpec(saltBytes));
             byte[] plaintextBytes = aes.doFinal(ciphertextBytes);
 
-            return new String(plaintextBytes, "UTF-8").toCharArray();
+            return new String(plaintextBytes, Charsets.UTF8).toCharArray();
 
         } catch (IllegalBlockSizeException e) {
             throw new ParseException("Encrypted password does not have correct format: " + ExceptionUtils.getMessage(e), 0); // shouldn't be possible
-        } catch (IOException e) {
-            throw new ParseException("Encrypted password does not have correct format: bad Base 64: " + ExceptionUtils.getMessage(e), 0);
         } catch (BadPaddingException e) {
             throw new ParseException("Encrypted password does not have correct format: " + ExceptionUtils.getMessage(e), 0);
         } catch (InvalidKeyException e) {

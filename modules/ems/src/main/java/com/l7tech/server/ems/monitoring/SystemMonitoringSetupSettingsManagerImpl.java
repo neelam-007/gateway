@@ -4,23 +4,24 @@
 
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.logging.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * The implementation of the interface, {@link SystemMonitoringSetupSettingsManager}.
@@ -146,7 +147,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
                 encoder.writeObject(settingsMap);
                 encoder.close(); // writes closing XML tag
                 encoder = null;
-                settingsPropsXml = output.toString("UTF-8");
+                settingsPropsXml = output.toString(Charsets.UTF8);
             }
             finally {
                 if(encoder!=null) encoder.close();

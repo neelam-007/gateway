@@ -95,7 +95,7 @@ public class CompressedStringType implements UserType {
                 if (dataRead != dataLength) {
                     throw new HibernateException("Incorrect amount of data read for compressed string "+dataRead+"!="+dataLength+".");
                 }
-                uncompressed = new String(expandedData, "UTF-8");
+                uncompressed = new String(expandedData, Charsets.UTF8);
             }
             else {
                 uncompressed = ""; // empty != null

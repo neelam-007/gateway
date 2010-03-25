@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.management.NodeStateType;
-import static com.l7tech.server.management.NodeStateType.*;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.node.NodeApi;
@@ -15,11 +15,7 @@ import com.l7tech.server.management.config.host.HostFeature;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.NodeFeature;
 import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.ProcUtils;
+import com.l7tech.util.*;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -28,13 +24,15 @@ import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.management.NodeStateType.*;
 
 /** @author alex */
 public class ProcessController implements InitializingBean {
@@ -865,7 +863,7 @@ public class ProcessController implements InitializingBean {
             } else {
                 logger.info("Getting API port from " + portfile.getAbsolutePath());
                 try {
-                    int port = Integer.valueOf(new String(IOUtils.slurpFile(portfile), "UTF-8"));
+                    int port = Integer.valueOf(new String(IOUtils.slurpFile(portfile), Charsets.UTF8));
                     autoUrl = String.format("https://localhost:%d/ssg/services/processControllerNodeApi", port);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Couldn't read API port file; will try default port", e);

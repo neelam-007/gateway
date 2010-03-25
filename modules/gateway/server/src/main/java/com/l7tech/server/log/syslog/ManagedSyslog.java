@@ -1,5 +1,7 @@
 package com.l7tech.server.log.syslog;
 
+import com.l7tech.util.Charsets;
+
 import java.io.Closeable;
 import java.nio.charset.Charset;
 import java.text.*;
@@ -115,9 +117,9 @@ public abstract class ManagedSyslog implements Closeable {
             this.timeZone = timeZone == null ? TimeZone.getDefault() : TimeZone.getTimeZone(timeZone);
             // bug #6564 - bad charset name for LATIN-1
             if ("LATIN-1".equalsIgnoreCase(charset)) {
-                this.charset = Charset.forName("ISO-8859-1");
+                this.charset = Charsets.ISO8859;
             } else {
-                this.charset = charset == null ? Charset.forName("UTF-8") : Charset.forName(charset);
+                this.charset = charset == null ? Charsets.UTF8 : Charset.forName(charset);
             }
             this.delimiter = delimiter == null ? "\n" : delimiter;
             this.maxLength = maxLength;

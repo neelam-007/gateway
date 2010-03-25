@@ -1,14 +1,14 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.policy.variable.Syntax;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 
-import java.io.IOException;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * A pseudo-routing assertion that returns a hardcoded response message, with a hardcoded
@@ -48,11 +48,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     }
 
     public String responseBodyString() {
-        try {
-            return new String(HexUtils.decodeBase64(base64ResponseBody, true), "UTF-8");
-        } catch (IOException e) {
-            return base64ResponseBody;
-        }
+        return new String(HexUtils.decodeBase64(base64ResponseBody, true), Charsets.UTF8);
     }
 
     public void responseBodyString(String responseBody) {

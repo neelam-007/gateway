@@ -1,8 +1,9 @@
 package com.l7tech.xml.soap;
 
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.util.Charsets;
+import com.l7tech.wsdl.Wsdl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -17,13 +18,12 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.schema.Schema;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
-import javax.xml.XMLConstants;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
-import java.nio.charset.Charset;
 
 /**
  * The class creates and array of <code>SoapRequest</code> instances
@@ -292,8 +292,8 @@ public class SoapMessageGenerator {
 
     private InputStream getTemplateForSoapProtocol(String soapProtocol) {
         return SOAPConstants.SOAP_1_2_PROTOCOL.equals(soapProtocol)
-                ? new ByteArrayInputStream( SOAP_1_2_TEMPLATE.getBytes(Charset.forName("UTF-8")) )
-                : new ByteArrayInputStream( SOAP_1_1_TEMPLATE.getBytes(Charset.forName("UTF-8")) );
+                ? new ByteArrayInputStream( SOAP_1_2_TEMPLATE.getBytes(Charsets.UTF8) )
+                : new ByteArrayInputStream( SOAP_1_1_TEMPLATE.getBytes(Charsets.UTF8) );
     }
 
     /**

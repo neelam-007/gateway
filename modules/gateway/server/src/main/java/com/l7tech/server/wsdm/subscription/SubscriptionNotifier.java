@@ -683,7 +683,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
             try {
                 XmlUtil.nodeToOutputStreamWithXss4j(paramElement, out);
-                result.append(out.toString("UTF-8"));
+                result.append(out.toString(Charsets.UTF8));
             } catch (IOException e) {
                 auditor.logAndAudit(ServiceMessages.ESM_NOTIFY_IO_ERROR,
                         new String[]{subscription.getReferenceCallback(), subscription.getNotificationPolicyGuid(), ExceptionUtils.getMessage(e)},

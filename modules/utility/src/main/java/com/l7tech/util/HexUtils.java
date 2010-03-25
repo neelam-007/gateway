@@ -12,7 +12,6 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -27,7 +26,6 @@ import java.util.Random;
  * @noinspection UnnecessaryUnboxing,ForLoopReplaceableByForEach,unchecked
  */
 public class HexUtils {
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     private static final Random random = new SecureRandom();
 
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
@@ -131,7 +129,7 @@ public class HexUtils {
     }
 
     public static byte[] encodeUtf8(String text) {
-        ByteBuffer buffer = UTF8_CHARSET.encode(text);
+        ByteBuffer buffer = Charsets.UTF8.encode(text);
         byte[] backingArray = buffer.array();
         byte[] encoded;
 
@@ -146,7 +144,7 @@ public class HexUtils {
     }
 
     public static String decodeUtf8(byte[] encodedText) {
-        return UTF8_CHARSET.decode(ByteBuffer.wrap(encodedText)).toString();
+        return Charsets.UTF8.decode(ByteBuffer.wrap(encodedText)).toString();
     }
 
     /**

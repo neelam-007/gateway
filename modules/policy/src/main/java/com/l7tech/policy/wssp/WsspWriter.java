@@ -5,7 +5,6 @@
 
 package com.l7tech.policy.wssp;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -31,7 +30,6 @@ import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1019,7 +1017,7 @@ public class WsspWriter {
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         try {
             PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER).writePolicy(p, baos);
-            String xml = new String(baos.getPooledByteArray(), 0, baos.size(), "UTF-8");
+            String xml = baos.toString(Charsets.UTF8);
             if (srcUri != null && dstUri != null) {
                 // Translate namespace decls
                 xml = xml.replaceAll("\\<\\?.*?\\?\\>", "");
@@ -1027,8 +1025,6 @@ public class WsspWriter {
             } else {
                 return xml;
             }
-        } catch (UnsupportedEncodingException e) {
-            throw new PolicyAssertionException(null, e);
         } finally {
             ResourceUtils.closeQuietly(baos);
         }

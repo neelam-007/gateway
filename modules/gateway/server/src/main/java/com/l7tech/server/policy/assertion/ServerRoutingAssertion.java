@@ -61,10 +61,6 @@ import java.util.logging.Logger;
 public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> {
     private static final Logger sraLogger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
-    //- PUBLIC
-
-    public static final String ENCODING = "UTF-8";
-
     //- PROTECTED
 
     // instance

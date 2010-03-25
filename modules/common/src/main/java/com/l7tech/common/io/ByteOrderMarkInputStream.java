@@ -6,10 +6,12 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.BufferPool;
+import com.l7tech.util.Charsets;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 
 /**
  * An InputStream filter that will sniff and discard any XML Byte Order Mark at the beginning of the wrapped InputStream.
@@ -27,19 +29,11 @@ UnicodeLittleUnmarked   Sixteen-bit Unicode Transformation Format, little-endian
 UTF8                    Eight-bit Unicode Transformation Format
 UTF-16                  Sixteen-bit Unicode Transformation Format, byte order specified by a mandatory initial byte-order mark
 */
-    public static final String ASCII = "ASCII";
-    public static final String CP1252 = "Cp1252";
-    public static final String ISO8859_1 = "ISO8859_1";
-    public static final String UNICODE_BIG = "UnicodeBig";
-    public static final String UNICODE_BIG_UNMARKED = "UnicodeBigUnmarked";
-    public static final String UNICODE_LITTLE = "UnicodeLittle";
-    public static final String UNICODE_LITTLE_UNMARKED = "UnicodeLittleUnmarked";
-    public static final String UTF8 = "UTF8";
-    public static final String UTF16 = "UTF-16";  // mandatory initial byte-order mark
-
-    // Probably unsupported encodings, using best guess -- will let them take UnsupportedEncodingException later
-    public static final String UTF32 = "UTF-32";  // probably mandatory BOM
-    public static final String SCSU = "SCSU";     // Standard Compression Scheme for Unicode, pretty much only used inside Reuters
+    public static final Charset ASCII = Charsets.ASCII;
+    public static final Charset UNICODE_BIG_UNMARKED = Charsets.UTF16BE;
+    public static final Charset UNICODE_LITTLE_UNMARKED = Charsets.UTF16LE;
+    public static final Charset UTF8 = Charsets.UTF8;
+    public static final Charset UTF32 = Charsets.UTF32;  // probably mandatory BOM
 
     public static final int MAX_BOM_LENGTH = 4; // longest byte order mark is 4 bytes long (acutally UTF-7 can go up to 5, but who's counting)
 
@@ -48,7 +42,7 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
     private int pendingBytes = 0;        // If positive, fill reads from firstBlock instead of delegate
     private boolean pendingEof = false;  // If true, return EOF when pendingBytes < 1
     private boolean srippingBom = false;
-    private final String encoding;
+    private final Charset encoding;
 
     /**
      * Wrap the specified InputStream.  The start of the wrapped stream will be immediately sniffed for a Byte
@@ -84,10 +78,10 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
      * Get the encoding, if any, that was sniffed from the underlying stream's
      * byte order mark when this wrapper input stream was first created.
      *
-     * @return a Java encoding name (but not one guaranteed to be available on the current system), or null if
-     *         a recognized byte order mark was not found.
+     * @return a Java Charset, or null if a recognized byte order mark was not found or if the required Charset
+     *         is not available on this system.
      */
-    public String getEncoding() {
+    public Charset getEncoding() {
         return encoding;
     }
 
@@ -104,15 +98,16 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
     /**
      * Examine the bytes pointed to by offset and length and, if they form a valid Unicode Byte Order Mark, return
      * the corresponding Java encoding.
+     * @return the matched charset, or null
      */
-    private String setupEncoding() {
+    private Charset setupEncoding() {
         if (pendingBytes < 2) return null; // Not enough bytes to be a BOM
 
         final int byte1 = 0xFF & (int)firstBlock[0];
         final int byte2 = 0xFF & (int)firstBlock[1];
 
         final int skip;
-        final String encoding;
+        final Charset encoding;
         switch (byte1) {
 
             case 0xEF:
@@ -156,9 +151,9 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
                 if (byte2 != 0xFE || pendingBytes < 3 || (0xFF & firstBlock[2]) != 0xFF)
                     return null;
 
-                encoding = SCSU;
-                skip = 0; // do not strip BOM -- it's probably going to be needed by whoever tries to read this stuff
-                break;
+                // Standard Compression Scheme for Unicode (SCSU), only used within Reuters.  Not supported by Java
+                //encoding = SCSU;
+                return null;
 
             case 0x2B:
                 // Might be UTF-7

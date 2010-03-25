@@ -1,12 +1,13 @@
 package com.l7tech.server.log.syslog.impl;
 
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.Charset;
-
+import com.l7tech.util.Charsets;
+import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoderAdapter;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.ByteBuffer;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 /**
  * ProtocolEncoder for delimited text with a size limit.
@@ -85,5 +86,5 @@ class MinaSyslogTextEncoder extends ProtocolEncoderAdapter {
     //- PRIVATE
 
     private static final String ENCODER_PREFIX = MinaSyslogTextEncoder.class.getName() + ".encoder.";
-    private static final TextMessage DEFAULT_TEXT_MESSAGE = new TextMessage(Charset.forName("UTF-8"), "\r\n", 1024, null);
+    private static final TextMessage DEFAULT_TEXT_MESSAGE = new TextMessage(Charsets.UTF8, "\r\n", 1024, null);
 }

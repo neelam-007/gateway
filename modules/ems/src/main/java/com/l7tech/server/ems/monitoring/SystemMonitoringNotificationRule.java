@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
@@ -152,7 +153,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
                     encoder.writeObject(paramsProps);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
-                    paramsPropsXml = output.toString("UTF-8");
+                    paramsPropsXml = output.toString(Charsets.UTF8);
                 }
                 finally {
                     if(encoder!=null) encoder.close();

@@ -1,10 +1,10 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +20,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     }
 
     public ValueReferenceEntityHeader(ExternalEntityHeader owner, String propertyName) {
-        super(HexUtils.encodeBase64(propertyName.getBytes(Charset.forName("UTF-8"))) + ":" + owner.getExternalId(), owner);
+        super(HexUtils.encodeBase64(propertyName.getBytes(Charsets.UTF8)) + ":" + owner.getExternalId(), owner);
         setName(getName() + " : " + propertyName);
         Map<String,String> ownerProperties = owner.getExtraProperties();
         if (ownerProperties != null)

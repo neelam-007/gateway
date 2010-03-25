@@ -1,22 +1,15 @@
 package com.l7tech.wsdl;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
-import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SchemaUtil;
+import com.l7tech.util.*;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXParseException;
+import org.xml.sax.*;
 
 import javax.wsdl.xml.WSDLLocator;
 import javax.xml.parsers.DocumentBuilder;
@@ -380,29 +373,26 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      * Load a WSDL string from the given URL
      */
     private static String loadFromUrl(InputSource inputSource, URLConnection connection, InputStream in) throws IOException {
-        String encoding = inputSource.getEncoding();
+        Charset encoding = Charset.isSupported(inputSource.getEncoding()) ? Charset.forName(inputSource.getEncoding()) : null;
         in = new ByteOrderMarkInputStream(in);
         if (encoding == null) {
             encoding = ((ByteOrderMarkInputStream)in).getEncoding();
             if (encoding == null) {
                 if (connection instanceof HttpURLConnection) {
                     HttpURLConnection httpConn = (HttpURLConnection) connection;
-                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding().name();
+                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding();
                 } else {
-                    encoding = Charset.defaultCharset().name();
+                    encoding = Charset.defaultCharset();
                 }
             } else if (ByteOrderMarkInputStream.UTF8.equals(encoding)) {
                 // If BOM says UTF-8 it could be iso-8859-1 so check other info if available
                 if (connection instanceof HttpURLConnection) {
                     HttpURLConnection httpConn = (HttpURLConnection) connection;
-                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding().name();
+                    encoding = ContentTypeHeader.parseValue(httpConn.getContentType()).getEncoding();
                 } else {
-                    encoding = "UTF-8";
+                    encoding = Charsets.UTF8;
                 }
             }
-        }
-        if(!Charset.isSupported(encoding)) {
-            throw new IOException("Unsupported encoding '"+encoding+"'.");
         }
         byte[] data = IOUtils.slurpStream(new ByteLimitInputStream(in, 1024, MAX_DOCUMENT_SIZE));
         return new String(data, encoding);
@@ -433,17 +423,12 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      */
     private static String loadFromStream(InputSource inputSource, InputStream in) throws IOException {
         in = new ByteOrderMarkInputStream(in);
-        String encoding = inputSource.getEncoding();
+        Charset encoding = Charset.isSupported(inputSource.getEncoding()) ? Charset.forName(inputSource.getEncoding()) : null;
         if (encoding == null) {
             encoding = ((ByteOrderMarkInputStream)in).getEncoding();
             if (encoding == null) {
-                encoding = Charset.defaultCharset().name();
-            } else if (ByteOrderMarkInputStream.UTF8.equals(encoding)) {
-                encoding = "UTF-8";
+                encoding = Charset.defaultCharset();
             }
-        }
-        if(!Charset.isSupported(encoding)) {
-            throw new IOException("Unsupported encoding '"+encoding+"'.");
         }
         byte[] data = IOUtils.slurpStream(new ByteLimitInputStream(in, 1024, MAX_DOCUMENT_SIZE));
         return new String(data, encoding);

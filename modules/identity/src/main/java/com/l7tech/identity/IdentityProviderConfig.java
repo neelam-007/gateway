@@ -1,32 +1,19 @@
 package com.l7tech.identity;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.util.*;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Transient;
-import javax.persistence.InheritanceType;
-import javax.persistence.Inheritance;
-import javax.persistence.DiscriminatorType;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Lob;
+import java.beans.ExceptionListener;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.beans.ExceptionListener;
-
-import org.hibernate.annotations.Proxy;
+import java.util.logging.Logger;
 
 /**
  * Configuration of an Identity Provider object.
@@ -114,7 +101,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
                     encoder.writeObject(props);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
-                    propsXml = output.toString("UTF-8");
+                    propsXml = output.toString(Charsets.UTF8);
                 }
                 finally {
                     if(encoder!=null) encoder.close();
@@ -183,7 +170,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
                 encoder.writeObject(filteredProps);
                 encoder.close(); // writes closing XML tag
                 encoder = null;
-                return output.toString("UTF-8");
+                return output.toString(Charsets.UTF8);
             }
             finally {
                 if(encoder!=null) encoder.close();

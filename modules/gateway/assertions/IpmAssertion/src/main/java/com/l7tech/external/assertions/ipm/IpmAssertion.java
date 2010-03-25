@@ -7,15 +7,12 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -51,18 +48,13 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
      * @return the template string.  May be null.
      */
     public String template() {
-        try {
-            if (template != null)
-                return template;
-            if (templateb64 == null || templateb64.length() < 1) {
-                return null;
-            } else {
-                template = new String(HexUtils.decodeBase64(templateb64), "UTF-8");
-                return template;
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "bad template base 64: " + ExceptionUtils.getMessage(e), e);
+        if (template != null)
+            return template;
+        if (templateb64 == null || templateb64.length() < 1) {
             return null;
+        } else {
+            template = new String(HexUtils.decodeBase64(templateb64), Charsets.UTF8);
+            return template;
         }
     }
 

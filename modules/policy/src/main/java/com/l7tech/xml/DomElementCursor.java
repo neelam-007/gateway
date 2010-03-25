@@ -5,14 +5,15 @@
 
 package com.l7tech.xml;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.DomUtils;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathVariableFinder;
-import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.*;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -237,7 +238,7 @@ public class DomElementCursor extends ElementCursor {
     public String asString() throws IOException {
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
         XmlUtil.canonicalize(cur, baos);
-        return baos.toString("UTF-8");
+        return baos.toString(Charsets.UTF8);
     }
 
     public Element asDomElement(Document factory) {

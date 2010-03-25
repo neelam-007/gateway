@@ -827,7 +827,7 @@ public class GClient {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(selected);
-                setWsdl(Wsdl.newInstance(selected.toURI().toString(), new InputStreamReader(fis, "UTF-8")));
+                setWsdl(Wsdl.newInstance(selected.toURI().toString(), new InputStreamReader(fis, Charsets.UTF8)));
             }
             catch(Exception e) {
                 e.printStackTrace();

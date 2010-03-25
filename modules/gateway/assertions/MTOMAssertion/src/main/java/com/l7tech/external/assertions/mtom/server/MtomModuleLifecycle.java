@@ -1,23 +1,23 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.io.IOException;
-import java.net.URL;
-
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.event.system.LicenseEvent;
-import com.l7tech.server.event.system.Started;
-import com.l7tech.server.policy.PolicyCache;
-import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.Started;
+import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 
@@ -136,7 +136,7 @@ public class MtomModuleLifecycle implements ApplicationListener {
                 throw new IllegalStateException( "Missing resource '"+resource+"'." );                
             }
             byte[] bytes = IOUtils.slurpUrl( url );
-            return new String(bytes, "UTF-8");
+            return new String(bytes, Charsets.UTF8);
         } catch ( IOException ioe ) {
             throw ExceptionUtils.wrap( ioe );
         }

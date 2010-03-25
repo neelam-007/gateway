@@ -102,7 +102,6 @@ public class MessageProcessor {
     private static final int MAX_TRIES = 8;
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
-    public static final String ENCODING = "UTF-8";
 
     /**
      * Construct a Client Proxy MessageProcessor.

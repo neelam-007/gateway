@@ -96,7 +96,7 @@ public class Subscribe extends ESMMethod {
                 final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
                 try {
                     XmlUtil.nodeToOutputStreamWithXss4j(refParams, out);
-                    referenceParams = out.toString("UTF-8");
+                    referenceParams = out.toString(Charsets.UTF8);
                     if(referenceParams.length() > MAX_REFERENCE_PARAMS_SIZE)
                         throw new WsAddressingFault(new WsAddressingFault.WsaFaultDetail(
                             WsAddressingFault.WsaFaultDetailType.PROBLEM_HEADER_QNAME,

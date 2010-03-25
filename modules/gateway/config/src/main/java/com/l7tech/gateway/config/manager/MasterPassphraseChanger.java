@@ -1,19 +1,9 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Console;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -178,7 +168,7 @@ public class MasterPassphraseChanger {
             while ( (read = in.read()) != -1 ) {
                 baos.write( read );
             }
-            return new String(baos.toByteArray(), "UTF-8").trim();
+            return new String(baos.toByteArray(), Charsets.UTF8).trim();
         } finally {
             ResourceUtils.closeQuietly(in);
         }

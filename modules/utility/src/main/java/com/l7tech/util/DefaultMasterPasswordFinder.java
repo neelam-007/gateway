@@ -101,7 +101,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
             b ^= rand.nextInt();
             out[i] = b;
         }
-        return new String(out, "UTF-8");
+        return new String(out, Charsets.UTF8);
     }
 
     /**
@@ -119,7 +119,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
         if (dollarPos < 1 || dollarPos >= obfuscated.length() - 1)
             throw new IOException("Invalid obfuscated password");
         String saltString = obfuscated.substring(0, dollarPos);
-        return Long.parseLong(new String(HexUtils.decodeBase64(saltString), "UTF-8"));
+        return Long.parseLong(new String(HexUtils.decodeBase64(saltString), Charsets.UTF8));
     }
 
     public File getMasterPasswordFile() {

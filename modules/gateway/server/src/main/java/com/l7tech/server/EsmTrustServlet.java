@@ -562,7 +562,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         URL url = c.getResource(resourcePath);
         if (url == null)
             throw new MissingResourceException("Missing resource", c.getName(), resourcePath);
-        return new String(IOUtils.slurpUrl(url), "UTF-8");
+        return new String(IOUtils.slurpUrl(url), Charsets.UTF8);
     }
 
     @Override

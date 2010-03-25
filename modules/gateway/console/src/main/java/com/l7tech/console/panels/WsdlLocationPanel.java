@@ -1,30 +1,28 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
-import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
+import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.xml.DocumentReferenceProcessor;
-import com.l7tech.util.*;
-import com.l7tech.uddi.WsdlPortInfo;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.EntityResolver;
 
 import javax.net.ssl.SSLException;
 import javax.swing.*;
@@ -723,7 +721,7 @@ public class WsdlLocationPanel extends JPanel {
         try {
             bomis = new ByteOrderMarkInputStream(new URL(wsdlUrl).openStream());
             byte [] data = IOUtils.slurpStream(bomis);
-            return new String( data, bomis.getEncoding()==null ? "UTF-8" : bomis.getEncoding() );
+            return bomis.getEncoding() == null ? new String( data, Charsets.UTF8 ) : new String( data, bomis.getEncoding() );
         } finally {
             ResourceUtils.closeQuietly(bomis);
         }

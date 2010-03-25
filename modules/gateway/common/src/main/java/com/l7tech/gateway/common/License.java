@@ -373,7 +373,7 @@ public final class License implements Serializable {
         String eulaText = parseWildcardStringElement(ld, "eulatext");
         if ("*".equals(eulaText)) eulaText = null;
         if (eulaText != null && eulaText.trim().length() > 0) try {
-            eulaText = new String( IOUtils.uncompressGzip(HexUtils.decodeBase64(eulaText.trim(), true)), "UTF-8");
+            eulaText = new String( IOUtils.uncompressGzip(HexUtils.decodeBase64(eulaText.trim(), true)), Charsets.UTF8);
         } catch (IOException e) {
             throw new InvalidLicenseException("unable to decode eulatext contents", e);
         }

@@ -1,18 +1,18 @@
 package com.l7tech.gateway.common.jdbc;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.util.ResourceUtils;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import org.hibernate.annotations.Proxy;
-
-import java.util.*;
 import java.io.ByteArrayInputStream;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * This entity stores JDBC Connection Configuration.
@@ -131,7 +131,7 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
                     encoder.writeObject(additionalProps);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
-                    additionalPropsXml = output.toString("UTF-8");
+                    additionalPropsXml = output.toString(Charsets.UTF8);
                 }
                 finally {
                     if(encoder!=null) encoder.close();

@@ -3,11 +3,14 @@ package com.l7tech.xml.tarari.util;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
-import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ComparisonOperator;
 import com.l7tech.xml.xpath.FastXpath;
 
-import java.io.*;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -131,21 +134,19 @@ public class TarariXpathConverter {
 
         // Convert the xpath
         try {
-            PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
+            PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(out, Charsets.UTF8));
             XprParser parser = new XprParser(xprLexer);
             parser.setPrefixTab(nsmap);
             parser.setOutFile(outWriter);
             parser.mainModule();
             outWriter.flush();
 
-            return out.toString("UTF-8").trim();
+            return out.toString(Charsets.UTF8).trim();
 
         } catch (TokenStreamException e) {
             throw makeParseException(e);
         } catch (RecognitionException e) {
             throw makeParseException(e);
-        } catch (UnsupportedEncodingException e) {
-            throw (ParseException)new ParseException("Unsupported encoding: " + e.getMessage(), 0).initCause(e); // can't happen
         } finally {
             out.close();
         }

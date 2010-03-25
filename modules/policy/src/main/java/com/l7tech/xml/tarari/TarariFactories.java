@@ -5,12 +5,10 @@
 
 package com.l7tech.xml.tarari;
 
+import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.xml.SoftwareFallbackException;
 import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContextImpl;
-import com.l7tech.xml.tarari.TarariUtil;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.XmlParseException;
 import com.tarari.xml.XmlSource;
@@ -21,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 
 /**
  * Tarari hardware-accelerated SoapInfoFactory.
@@ -39,14 +38,14 @@ public class TarariFactories implements TarariMessageContextFactory {
 
             // Eat any recognized byte order mark and, if we do, sniff the encoding while we are at it
             ByteOrderMarkInputStream bomSniffingDog = new ByteOrderMarkInputStream(messageBody);
-            String enc = bomSniffingDog.getEncoding();
+            Charset enc = bomSniffingDog.getEncoding();
             if (enc == null || ByteOrderMarkInputStream.UTF8.equals(enc)) {
                 // We'll hope it's either ASCII or UTF-8, which Tarari can support natively
                 xmlSource = new XmlSource(bomSniffingDog);
             } else {
                 // It's an encoding that Tarari doesn't support, so we'll have to convert it on the fly
                 Reader reader = new InputStreamReader(bomSniffingDog, enc);
-                xmlSource = new XmlSource("", reader, true, enc);
+                xmlSource = new XmlSource("", reader, true, enc.name());
             }
 
             return new TarariMessageContextImpl(RaxDocument.createDocument(xmlSource));

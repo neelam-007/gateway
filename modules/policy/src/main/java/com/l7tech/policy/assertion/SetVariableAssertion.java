@@ -1,12 +1,14 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.policy.variable.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.*;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion to set a context variable, either built-in or user-defined.
@@ -97,7 +99,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
 
     public String expression() {
         try {
-            return new String(HexUtils.decodeBase64(_base64Expression, true), "UTF-8");
+            return new String(HexUtils.decodeBase64(_base64Expression, true), Charsets.UTF8);
         } catch (Exception e) {
             return _base64Expression;
         }

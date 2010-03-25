@@ -169,7 +169,7 @@ public class CertUtils {
      * @throws IOException if the base64 cannot be decoded.
      */
     public static byte[] csrPemToBinary(byte[] contents) throws IOException {
-        String str = new String(contents, "UTF-8").trim();
+        String str = new String(contents, Charsets.UTF8).trim();
         String b64 = null;
         Matcher matcher = PATTERN_NEW_CRL.matcher(str);
         if (matcher.find()) {

@@ -56,7 +56,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
     private static final String ID_FORMAT_CUSTOM_HASHED = "uuid:custom:scope:{0}:{1}";
 
-    private static final Charset UTF8 = Charset.forName( "UTF-8" );
+    private static final Charset UTF8 = Charsets.UTF8;
 
     private final Auditor auditor;
     private final MessageIdManager messageIdManager;

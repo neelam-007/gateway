@@ -3,12 +3,13 @@
  */
 package com.l7tech.external.assertions.esm.server;
 
-import com.l7tech.util.IOUtils;
+import com.l7tech.external.assertions.esm.EsmConstants;
 import com.l7tech.external.assertions.esm.EsmMetricsAssertion;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
-import com.l7tech.external.assertions.esm.EsmConstants;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -19,11 +20,10 @@ import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import static com.l7tech.server.wsdm.QoSMetricsService.*;
-import static com.l7tech.server.wsdm.subscription.SubscriptionNotifier.*;
-import com.l7tech.gateway.common.service.ServiceTemplate;
-import com.l7tech.gateway.common.service.ServiceType;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.context.ApplicationContext;
@@ -35,6 +35,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.wsdm.QoSMetricsService.*;
+import static com.l7tech.server.wsdm.subscription.SubscriptionNotifier.*;
 
 /** @author alex */
 public class EsmModuleApplicationListener implements ApplicationListener {
@@ -144,12 +147,14 @@ public class EsmModuleApplicationListener implements ApplicationListener {
         Map<String, String> esmNotifyPolicyTags = new HashMap<String, String>();
         Assertion allAss = new AllAssertion(Arrays.asList(new HttpRoutingAssertion("${esmNotificationUrl}")));
         String polXml;
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             WspWriter.writePolicy(allAss, baos);
-            polXml = baos.toString("UTF-8");
+            polXml = baos.toString(Charsets.UTF8);
         } catch (IOException e1) {
             throw new RuntimeException("Could not serialize the default policy for ESM subscription notifications.", e1);
+        } finally {
+            baos.close();
         }
 
         esmNotifyPolicyTags.put(EsmConstants.POLICY_TAG_ESM_NOTIFICATION, polXml);
@@ -228,7 +233,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
         logger.fine("loading wsdl resource: " + what);
 
         byte[] bytes = IOUtils.slurpUrl(getClass().getResource("resources/" + what));
-        return new String(bytes, "UTF-8");
+        return new String(bytes, Charsets.UTF8);
     }
 
     public String getDefaultPolicyXml(String serviceName) throws IOException {

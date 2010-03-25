@@ -562,7 +562,7 @@ public class XmlUtil extends DomUtils {
         final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
         try {
             nodeToOutputStream(node, out);
-            return out.toString("UTF-8");
+            return out.toString(Charsets.UTF8);
         } finally {
             out.close();
         }
@@ -592,7 +592,7 @@ public class XmlUtil extends DomUtils {
         final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
         try {
             nodeToFormattedOutputStream(node, out);
-            return out.toString("UTF-8");
+            return out.toString(Charsets.UTF8);
         } finally {
             out.close();
         }

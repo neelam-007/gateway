@@ -4,20 +4,21 @@
 
 package com.l7tech.policy.assertion.alert;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 
-import java.io.IOException;
 import java.util.Arrays;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * An assertion that sends an email base64message.
@@ -141,11 +142,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     public String messageString() {
-        try {
-            return new String(HexUtils.decodeBase64(base64message, true), "UTF-8");
-        } catch (IOException e) {
-            return base64message;
-        }
+        return new String(HexUtils.decodeBase64(base64message, true), Charsets.UTF8);
     }
 
     public void messageString(String text) {

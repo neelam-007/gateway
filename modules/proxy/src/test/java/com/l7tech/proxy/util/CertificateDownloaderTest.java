@@ -6,16 +6,19 @@
 
 package com.l7tech.proxy.util;
 
-import com.l7tech.common.http.*;
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.MockGenericHttpClient;
-
-import org.junit.Test;
+import com.l7tech.util.Charsets;
 import org.junit.Assert;
+import org.junit.Test;
 
-import java.net.URL;
 import java.io.IOException;
+import java.net.URL;
 import java.security.cert.X509Certificate;
 
 /**
@@ -88,7 +91,7 @@ public class CertificateDownloaderTest {
 
     private SimpleHttpClient getClient( final String body,
                                          final String checkValue ) throws IOException {
-        byte [] data = body.getBytes( "UTF-8" );
+        byte [] data = body.getBytes( Charsets.UTF8 );
         /*
           int status
         , HttpHeaders headers

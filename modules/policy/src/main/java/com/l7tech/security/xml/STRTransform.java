@@ -78,10 +78,10 @@ public class STRTransform extends Transform {
         BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
         Writer wr = null;
         try {
-            wr = new OutputStreamWriter(bo, "UTF-8");
+            wr = new OutputStreamWriter(bo, Charsets.UTF8);
             ExclusiveCanonicalizer.serializeSubset(ht, result, false, wr);
             wr.flush();
-            String cannond = new String(bo.toByteArray(), "UTF-8");
+            String cannond = new String(bo.toByteArray(), Charsets.UTF8);
             int firstElementEndIndex = cannond.indexOf('>');
             int xmlnsIndex = cannond.indexOf("xmlns=");
             if (xmlnsIndex < 0 || xmlnsIndex > firstElementEndIndex) {

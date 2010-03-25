@@ -473,7 +473,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                     EsmServletContainer.this.writeErrorPage( request, writer, code, errorMessage, isShowStacks() );
                 } else {
                     byte[] pageBytes = IOUtils.slurpStream( EsmApplication.class.getResourceAsStream("pages/EsmNotFound.html") );
-                    writer.write( new String(pageBytes, "UTF-8") );
+                    writer.write( new String(pageBytes, Charsets.UTF8) );
                 }
             }
         };

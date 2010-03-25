@@ -27,10 +27,7 @@ import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ISO8601Date;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.TestCase;
 import org.w3c.dom.Document;
@@ -101,7 +98,7 @@ public class WssInteropTestMessage extends TestCase {
         //DefaultKey ksu = (DefaultKey)ApplicationContexts.getProdApplicationContext().getBean("keystore");
         //X509Certificate recipCert = ksu.getSslCert();
 //        X509Certificate recipCert = TestDocuments.getWssInteropBobCert();
-        X509Certificate recipCert = CertUtils.decodeCert(LOCUTUS_CERT.getBytes("UTF-8"));
+        X509Certificate recipCert = CertUtils.decodeCert(LOCUTUS_CERT.getBytes(Charsets.UTF8));
         String recipCertPrint = CertUtils.getCertificateFingerprint(recipCert, CertUtils.ALG_SHA1, CertUtils.FINGERPRINT_BASE64);
 
         // Replace the KeyIdentifier thumbprint

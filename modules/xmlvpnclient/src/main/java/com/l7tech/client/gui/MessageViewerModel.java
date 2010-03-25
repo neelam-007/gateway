@@ -503,7 +503,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
-            appendMessage(new SavedTextMessage("Client Error", b.toString("UTF-8"), perMessageStorageSize));
+            appendMessage(new SavedTextMessage("Client Error", b.toString(Charsets.UTF8), perMessageStorageSize));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage("Client Error", t.getMessage(), perMessageStorageSize));
@@ -558,7 +558,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             p = new PrintStream(b, true, "UTF-8");
             error.printStackTrace(p);
             p.flush();
-            String mess = b.toString("UTF-8");
+            String mess = b.toString(Charsets.UTF8);
             appendMessage(new PolicyErrorMessage(POLICY_DOWNLOAD_ERROR, binding, mess));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);

@@ -1,5 +1,6 @@
 package com.l7tech.server.log.syslog.impl;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import org.apache.mina.common.IoFilter;
 import org.apache.mina.common.IoHandlerAdapter;
@@ -94,7 +95,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
         private final TextLineDecoder decoder;
 
         private SyslogCodecFactory() {
-            Charset charset = Charset.forName("UTF-8");
+            Charset charset = Charsets.UTF8;
             encoder = new MinaSyslogTextEncoder();
             decoder = new TextLineDecoder(charset, LineDelimiter.AUTO);
         }

@@ -1,11 +1,13 @@
 package com.l7tech.security.prov.rsa;
 
+import com.l7tech.util.Charsets;
+
+import java.io.ByteArrayInputStream;
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.Security;
-import java.security.Provider;
-import java.io.ByteArrayInputStream;
 
 /**
  *
@@ -36,7 +38,7 @@ public class RsaReproCertificateFactoryVersionBug {
 
     private static void generateAndPrint() throws Exception {
         CertificateFactory factory = CertificateFactory.getInstance( "X.509" );
-        Certificate cert = factory.generateCertificate( new ByteArrayInputStream(CERTIFICATE.getBytes( "UTF-8" )) );
+        Certificate cert = factory.generateCertificate( new ByteArrayInputStream(CERTIFICATE.getBytes( Charsets.UTF8 )) );
         System.out.println( factory.getProvider().getName() + ", version is : " + ((X509Certificate)cert).getVersion() );
     }
 }

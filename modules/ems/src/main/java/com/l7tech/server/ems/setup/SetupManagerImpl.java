@@ -23,6 +23,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -31,7 +32,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -56,6 +56,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Encapsulates behavior for initial setup of a new EMS instance.
@@ -364,7 +366,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
             StreamTokenizer tokenizer;
             try {
                 logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
-                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), "UTF-8") );
+                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), Charsets.UTF8) );
                 tokenizer.eolIsSignificant(false);
                 tokenizer.commentChar('-');
                 tokenizer.quoteChar('\'');

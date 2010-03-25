@@ -1,11 +1,12 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -29,9 +30,9 @@ public class SSGLoginFormServlet extends HttpServlet {
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         // The page of Login form
-        String page = new String( IOUtils.slurpUrl(SSGLoginFormServlet.class.getResource(getServletConfig().getInitParameter(LOGIN_PAGE))), "UTF-8");
+        String page = new String( IOUtils.slurpUrl(SSGLoginFormServlet.class.getResource(getServletConfig().getInitParameter(LOGIN_PAGE))), Charsets.UTF8);
         // The css style sheet for the login form
-        String css = new String(IOUtils.slurpUrl(SSGLoginFormServlet.class.getResource("/com/l7tech/server/resources/ssglogin.css")), "UTF-8");
+        String css = new String(IOUtils.slurpUrl(SSGLoginFormServlet.class.getResource("/com/l7tech/server/resources/ssglogin.css")), Charsets.UTF8);
         try {
             String username = "";
             // There are two types of login messages depend

@@ -7,18 +7,20 @@
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.util.*;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
-import java.sql.SQLException;
-
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Implemenation of the Restore public api
@@ -444,23 +446,18 @@ final class RestoreImpl implements Restore{
             } catch (IOException e) {
                 throw new RestoreException("Could not check the 5.0 backup for audits due to: " + e.getMessage());
             }
-            try {
-                final String startOfFile = new String(bytes, "UTF-8");
-                final int index = startOfFile.indexOf("INSERT INTO audit_");
-                if(index == -1){
-                    //see http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#ssgmigrate.sh
-                    //to understand this requirement - when isMigrate is true, missing audit data is ok
-                    final String msg = "No audit data found in image";
-                    if (isMigate) {
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                        return new ComponentResult(ComponentResult.Result.SUCCESS, msg);
-                    } else {
-                        return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
-                    }
+            final String startOfFile = new String(bytes, Charsets.UTF8);
+            final int index = startOfFile.indexOf("INSERT INTO audit_");
+            if(index == -1){
+                //see http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#ssgmigrate.sh
+                //to understand this requirement - when isMigrate is true, missing audit data is ok
+                final String msg = "No audit data found in image";
+                if (isMigate) {
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    return new ComponentResult(ComponentResult.Result.SUCCESS, msg);
+                } else {
+                    return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
                 }
-            } catch (UnsupportedEncodingException e) {
-                throw new RestoreException("Could not check the 5.0 backup for audits due to data problem: "
-                        + e.getMessage());
             }
         }
 

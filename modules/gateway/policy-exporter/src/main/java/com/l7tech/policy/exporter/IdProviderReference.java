@@ -1,28 +1,29 @@
 package com.l7tech.policy.exporter;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,11 +82,7 @@ public class IdProviderReference extends ExternalReference {
         output.providerName = getParamFromEl(el, NAME_EL_NAME);
         String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
         if (b64edProps != null) {
-            try {
-                output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true), "UTF-8");
-            } catch (IOException e) {
-                throw new InvalidDocumentFormatException("could not un-b64 the provider props");
-            }
+            output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true), Charsets.UTF8);
         } else output.idProviderConfProps = null;
         val = getParamFromEl(el, TYPEVAL_EL_NAME);
         if (val != null) {

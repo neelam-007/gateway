@@ -5,16 +5,17 @@
 
 package com.l7tech.xml;
 
-import com.l7tech.xml.tarari.TarariMessageContextImpl;
-import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.test.SystemPropertyPrerequisite;
 import com.l7tech.test.SystemPropertySwitchedRunner;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.InvalidDocumentFormatException;
-import org.xml.sax.SAXException;
-import org.junit.runner.RunWith;
-import org.junit.Test;
+import com.l7tech.xml.tarari.TarariMessageContextImpl;
 import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class ElementCursorTest {
                     throw new UnsatisfiedLinkError("No tarari hardware detected");
                 TarariMessageContextImpl tmci =
                         (TarariMessageContextImpl)mcf.
-                                makeMessageContext(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+                                makeMessageContext(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
                 return tmci.getElementCursor();
             } catch (IOException e) {
                 throw new SAXException(e);

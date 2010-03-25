@@ -1,22 +1,22 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
+import org.hibernate.annotations.Proxy;
+import org.mortbay.util.ajax.JSON;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
 import java.io.ByteArrayInputStream;
-
-import org.mortbay.util.ajax.JSON;
-import org.hibernate.annotations.Proxy;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Entity encapsulating all settings of a standard report
@@ -112,7 +112,7 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
                     encoder.writeObject(settingsProps);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
-                    settingsPropsXml = output.toString("UTF-8");
+                    settingsPropsXml = output.toString(Charsets.UTF8);
                 }
                 finally {
                     if(encoder!=null) encoder.close();
