@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.policy.JmsDynamicProperties;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
@@ -16,10 +15,9 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.util.Map;
 
 /**
- * POJO specifying one inbound Jms endpoint configured for the gateway.
+ * JmsEndpointConfig encapsulates all information necessary to use a JMS destination.
  *
  * @author: vchan
  */
@@ -76,8 +74,6 @@ public class JmsEndpointConfig {
                              final ApplicationContext appContext,
                              final JmsDynamicProperties dynamicProperties)
     {
-        super();
-
         // check if this is a template endpoint
         this.dynamic = endpoint.isTemplate();
         if (dynamic) {
@@ -90,14 +86,8 @@ public class JmsEndpointConfig {
             endpointClone.copyFrom(endpoint);
             this.endpoint = endpointClone;
 
-            try {
-                applyOverrides(dynamicProperties);
-            } catch (JmsConfigException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-
+            applyOverrides(dynamicProperties);
         } else {
-            
             this.conn = connection;
             this.endpoint = endpoint;
         }
@@ -143,38 +133,24 @@ public class JmsEndpointConfig {
      * @throws javax.jms.JMSException
      */
     Destination getResponseDestination(Message request, JmsBag bag) throws JMSException, NamingException {
-
-        // TODO: Fix the #*^&$*&^@ logging
         if (JmsReplyType.NO_REPLY.equals(getReplyType())) {
-
-//            _logger.finer("Returning NO_REPLY (null) for '" + toString() + "'");
             return null;
-
         } else if (JmsReplyType.AUTOMATIC.equals(getReplyType())) {
-
-//            _logger.finer("Returning AUTOMATIC '" + request.getJMSReplyTo() +
-//              "' for '" + toString() + "'");
             return request.getJMSReplyTo();
-
         } else if (JmsReplyType.REPLY_TO_OTHER.equals(getReplyType())) {
-
             // use bag's jndi context to lookup the the destination and create the sender
             Context jndiContext = bag.getJndiContext();
             String replyToQueueName = endpoint.getReplyToQueueName();
-//            _logger.fine("looking up destination name " + replyToQueueName);
             return (Destination)jndiContext.lookup(replyToQueueName);
-
         } else {
-
             // This should never occur!
             String msg = "Unknown JmsReplyType " + getReplyType().toString();
-//            _logger.severe(msg);
             throw new javax.jms.IllegalStateException(msg);
         }
     }
 
     /**
-     * Returns the endpoing display name.
+     * Returns the endpoint display name.
      *
      * @return String for the endpoint display name
      */
@@ -183,7 +159,7 @@ public class JmsEndpointConfig {
     }
 
     /**
-     * Returns the endpoing Id for the specific JMS endpoint.
+     * Returns the endpoint Id for the specific JMS endpoint.
      *
      * @return String for the endpoint display name
      */
@@ -226,11 +202,33 @@ public class JmsEndpointConfig {
         return dynamic;
     }
 
+    public void validate() throws JmsConfigException {
+        if ( conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()) ) {
+            throw new JmsConfigException( "Initial context factory class name is required" );
+        }
+
+        if (conn.getJndiUrl() == null || "".equals(conn.getJndiUrl())) {
+            throw new JmsConfigException( "JNDI URL is required" );
+        }
+
+        if (conn.getQueueFactoryUrl() == null || "".equals(conn.getQueueFactoryUrl())) {
+            throw new JmsConfigException( "Queue connection factory name is required" );
+        }
+
+        if (endpoint.getReplyType()==JmsReplyType.REPLY_TO_OTHER && (endpoint.getReplyToQueueName() == null || "".equals(endpoint.getReplyToQueueName()))) {
+            throw new JmsConfigException( "Reply to queue is required" );
+        }
+
+        if (endpoint.getDestinationName() == null || "".equals(endpoint.getDestinationName())) {
+            throw new JmsConfigException( "Destination queue name is required" );
+        }
+    }
+
     /**
      * Note: this could be a problem if the ctx var type is of Message rather than String
      */
-    private void applyOverrides(JmsDynamicProperties overrides) throws JmsConfigException {
-        //get all the empty fields and populate them with context variables.
+    private void applyOverrides( final JmsDynamicProperties overrides ) {
+        //get all the empty fields and populate them from the dynamic properties
         if (conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()))
             conn.setInitialContextFactoryClassname(overrides.getIcfName());
 
@@ -245,29 +243,5 @@ public class JmsEndpointConfig {
 
         if (endpoint.getDestinationName() == null || "".equals(endpoint.getDestinationName()))
             endpoint.setDestinationName(overrides.getDestQName());
-    }
-
-    private String getCtxVariableName(final String check) {
-
-        if (check != null && check.length() > 0) {
-
-            String[] vars = Syntax.getReferencedNames(check);
-            if (vars.length > 0) {
-                return vars[0];
-            }
-
-        }
-        return null;
-    }
-
-    private String getKeyValue(Map<String, Object> map, final String key, final String defaultValue) {
-
-        if (key != null) {
-            Object value = map.get(key.toLowerCase());
-            if (value != null) {
-                return value.toString();
-            }
-        }
-        return defaultValue;
     }
 }

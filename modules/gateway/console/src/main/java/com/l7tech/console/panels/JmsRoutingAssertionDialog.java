@@ -197,6 +197,11 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(samlExpiryInMinutesSpinner, "Ticket expiry"));
+        inputValidator.constrainTextFieldToBeNonEmpty( "Initial Context Factory class name", dynamicICF, null );
+        inputValidator.constrainTextFieldToBeNonEmpty( "JNDI URL", dynamicJndiUrl, null );
+        inputValidator.constrainTextFieldToBeNonEmpty( "Queue Connection Factory Name", dynamicQCF, null );
+        inputValidator.constrainTextFieldToBeNonEmpty( "Destination Queue Name", dynamicDestQueueName, null );
+        inputValidator.constrainTextFieldToBeNonEmpty( "Wait for Reply on specified queue", dynamicReplyToName, null );
 
         authSamlRadio.addChangeListener(new ChangeListener(){
             @Override
@@ -313,30 +318,35 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 Utilities.setEnabled(dynamicPropertiesPanel, true);
                 String destQName = ep.getDestinationName();
                 dynamicDestQueueName.setText(destQName);
+                dynamicDestQueueName.setCaretPosition( 0 );
                 if (destQName != null && !"".equals(destQName.trim())) {
                     dynamicDestQueueName.setEnabled(false);
                 }
 
                 String replyToQueueName = ep.getReplyToQueueName();
                 dynamicReplyToName.setText(replyToQueueName);
+                dynamicReplyToName.setCaretPosition( 0 );
                 if ( !isReplyToQueue(ep) || replyToQueueName != null && !"".equals(replyToQueueName.trim())) {
                     dynamicReplyToName.setEnabled(false);
                 }
 
                 String jndiUrl = conn.getJndiUrl();
                 dynamicJndiUrl.setText(jndiUrl);
+                dynamicJndiUrl.setCaretPosition( 0 );
                 if (jndiUrl != null && !"".equals(jndiUrl.trim())){
                     dynamicJndiUrl.setEnabled(false);
                 }
 
                 String icfClassName = conn.getInitialContextFactoryClassname();
                 dynamicICF.setText(icfClassName);
+                dynamicICF.setCaretPosition( 0 );
                 if (icfClassName != null && !"".equals(icfClassName.trim())) {
                     dynamicICF.setEnabled(false);
                 }
 
                 String qcfName = conn.getQueueFactoryUrl();
                 dynamicQCF.setText(qcfName);
+                dynamicQCF.setCaretPosition( 0 );
                 if (qcfName != null && !"".equals(qcfName.trim())) {
                     dynamicQCF.setEnabled(false);
                 }
@@ -353,21 +363,30 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
             if (selected != null) {
                 if (selected.getQueue().getEndpoint().getOid() == assertion.getEndpointOid()) {    
-                    if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null)
+                    if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null) {
                         dynamicJndiUrl.setText(assertion.getDynamicJmsRoutingProperties().getJndiUrl());
+                        dynamicJndiUrl.setCaretPosition( 0 );
+                    }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null)
+                    if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null) {
                         dynamicDestQueueName.setText(assertion.getDynamicJmsRoutingProperties().getDestQName());
+                        dynamicDestQueueName.setCaretPosition( 0 );
+                    }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null)
+                    if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null) {
                         dynamicReplyToName.setText(assertion.getDynamicJmsRoutingProperties().getReplytoQName());
+                        dynamicReplyToName.setCaretPosition( 0 );
+                    }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getIcfName() != null)
+                    if (assertion.getDynamicJmsRoutingProperties().getIcfName() != null) {
                         dynamicICF.setText(assertion.getDynamicJmsRoutingProperties().getIcfName());
+                        dynamicICF.setCaretPosition( 0 );
+                    }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getQcfName() != null)
+                    if (assertion.getDynamicJmsRoutingProperties().getQcfName() != null) {
                         dynamicQCF.setText(assertion.getDynamicJmsRoutingProperties().getQcfName());
-
+                        dynamicQCF.setCaretPosition( 0 );
+                    }
                 }
             }
         }

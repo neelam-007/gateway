@@ -130,19 +130,20 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
             // Get JMS Session
             while (true) {
-                try {
-                    if (markedForUpdate()) {
-                        try {
-                            logger.info("JMS information needs update, closing session (if open).");
+                if (markedForUpdate()) {
+                    try {
+                        logger.info("JMS information needs update, closing session (if open).");
 
-                            resetEndpointInfo();
-                        } finally {
-                            markUpdate(false);
-                        }
+                        resetEndpointInfo();
+                    } finally {
+                        markUpdate(false);
                     }
+                }
 
-                    // Get the current JmsEndpointConfig
-                    cfg = getEndpointConfig(dynamicPropsWithValues);
+                // Get the current JmsEndpointConfig
+                cfg = getEndpointConfig(dynamicPropsWithValues);
+
+                try {
                     jmsBag = getJmsBag(cfg);
                     jmsSession = jmsBag.getSession();
                     break; // if successful, no need for further retries
@@ -610,25 +611,39 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         return routedRequestConnection;
     }
 
-    private JmsEndpointConfig getEndpointConfig(JmsDynamicProperties ctxVariablesValues)
-        throws FindException
+    private JmsEndpointConfig getEndpointConfig( final JmsDynamicProperties jmsDynamicProperties ) throws FindException
     {
-        if (ctxVariablesValues == null && endpointConfig != null) {
+        if ( endpointConfig != null && !endpointConfig.isDynamic() ) {
             return endpointConfig;
         }
 
-        JmsEndpoint endpoint = getRoutedRequestEndpoint();
+        final JmsEndpoint endpoint = getRoutedRequestEndpoint();
         if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
 
-        JmsConnection conn = getRoutedRequestConnection(endpoint, auditor);
+        final JmsConnection conn = getRoutedRequestConnection(endpoint, auditor);
         if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
 
         // check for the need to use dynamic routing properties
-        if (ctxVariablesValues!= null) {
-            return new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring, ctxVariablesValues);
+        if ( endpoint.isTemplate() ) {
+            JmsEndpointConfig jmsEndpointConfig = new JmsEndpointConfig(
+                    conn,
+                    endpoint,
+                    jmsPropertyMapper,
+                    spring,
+                    jmsDynamicProperties!=null ? jmsDynamicProperties : new JmsDynamicProperties() );
+            validateEndpointConfig( jmsEndpointConfig );
+            return jmsEndpointConfig;
         } else {
-            endpointConfig = new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring);
-            return endpointConfig;
+            return endpointConfig = new JmsEndpointConfig(conn, endpoint, jmsPropertyMapper, spring);
+        }
+    }
+
+    private void validateEndpointConfig( final JmsEndpointConfig jmsEndpointConfig ) {
+        try {
+            jmsEndpointConfig.validate();
+        } catch ( JmsConfigException e ) {
+            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_TEMPLATE_ERROR, "invalid configuration; " + e.getMessage() );
+            throw new AssertionStatusException( AssertionStatus.FAILED );
         }
     }
 

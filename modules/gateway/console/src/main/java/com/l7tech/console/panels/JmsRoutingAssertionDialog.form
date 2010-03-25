@@ -266,6 +266,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <labelFor value="2a597"/>
               <text value="&amp;Initial Context Factory class name:"/>
             </properties>
           </component>
@@ -279,6 +280,7 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <labelFor value="44f13"/>
               <text value="JNDI &amp;URL:"/>
             </properties>
           </component>
@@ -303,6 +305,7 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <labelFor value="48192"/>
               <text value="Queue Connection &amp;Factory Name:"/>
             </properties>
           </component>
@@ -311,7 +314,8 @@
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Destination Queue Name:"/>
+              <labelFor value="15c52"/>
+              <text value="Destination &amp;Queue Name:"/>
             </properties>
           </component>
           <component id="b406c" class="javax.swing.JLabel">
@@ -319,7 +323,8 @@
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Wait for &amp;Reply on specified queue:"/>
+              <labelFor value="8d270"/>
+              <text value="&amp;Wait for Reply on specified queue:"/>
             </properties>
           </component>
           <component id="48192" class="javax.swing.JTextField" binding="dynamicQCF">
