@@ -109,13 +109,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private JTextField specifyUrlField;
     private JPanel globalURLTab;
 
-    //contains the full system id. The globalSchemaCombo box only has a truncated name at 128 chars
-    //always in sync with the model of globalSchemaCombo
-    private final List<String> schemaNamesUnmodified = new ArrayList<String>();
-    //never get items from the combo box. Instead get their index and look up that index in schemaNamesUnmodified
     private JComboBox globalSchemaCombo;
-    //used to ensure all items in the combo box are unique
-    private final UUID uuid = UUID.randomUUID();
     private JButton editGlobalXMLSchemasButton;
     private TargetMessagePanel targetMessagePanel;
 
@@ -301,27 +295,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                //this ensures the combo box continues to look like a normal combo box.
-                //getting the current rendered and delegating to it does not work correctly
-                BasicComboBoxRenderer.UIResource newRenderer = new BasicComboBoxRenderer.UIResource(){
-                    @Override
-                    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                        final Component renderedComp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                        if (renderedComp instanceof BasicComboBoxRenderer){
-                            //remove the index + uuid from the start of each string, which is used to guarantee their uniqueness
-                            BasicComboBoxRenderer label = (BasicComboBoxRenderer) renderedComp;
-                            String text = label.getText();
-                            final int uuidEndIndex = text.indexOf(uuid.toString());
-                            if(uuidEndIndex != -1){
-                                final int endIndex = uuidEndIndex + uuid.toString().length();
-                                label.setText(text.substring(endIndex));
-                            }
-                        }
-                        return renderedComp;
-                    }
-                };
-                globalSchemaCombo.setRenderer(newRenderer);
-
                 modelToView();
                 updateModeComponents();
             }
@@ -363,10 +336,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
             if (ri instanceof GlobalResourceInfo) {
                 GlobalResourceInfo gri = (GlobalResourceInfo)ri;
+                DefaultComboBoxModel model = (DefaultComboBoxModel)globalSchemaCombo.getModel();
+
                 boolean found = false;
-                for (int i = 0; i < schemaNamesUnmodified.size(); i++) {
-                    String comboBoxItem = schemaNamesUnmodified.get(i);
-                    if (gri.getId() != null && gri.getId().equals(comboBoxItem)) {
+                for (int i = 0; i < model.getSize(); i++) {
+                    StringHolder comboBoxItem = (StringHolder)model.getElementAt(i);
+                    if (gri.getId() != null && gri.getId().equals(comboBoxItem.getValue())) {
                         found = true;
                         globalSchemaCombo.setSelectedIndex(i);
                         break;
@@ -429,33 +404,65 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
         try {
             //before we update the model we need to remember what was the old selection for global schema
-            final int index = globalSchemaCombo.getSelectedIndex();
-            String previousSchemaSelection = (index < schemaNamesUnmodified.size())? null : schemaNamesUnmodified.get(index);
+            StringHolder previousItem = (StringHolder) globalSchemaCombo.getSelectedItem();
 
-            schemaNamesUnmodified.clear();
             Collection<SchemaEntry> allschemas = reg.getSchemaAdmin().findAllSchemas();
-            ArrayList<String> schemaNames = new ArrayList<String>();
+            ArrayList<StringHolder> schemaNames = new ArrayList<StringHolder>();
             if (allschemas != null) {
                 int i = 1;
                 for (SchemaEntry s : allschemas) {
-                    schemaNames.add(i + uuid.toString() + TextUtils.truncStringMiddleExact(s.getName(), 128));//128 is the old limit before it was extended to 4096
-                    schemaNamesUnmodified.add(s.getName());
+                    schemaNames.add(new StringHolder(s.getName(), 128));//128 is the old limit before it was extended to 4096
                     i++;
                 }
             }
-            schemaNames.add(NOTSET);
+            schemaNames.add(new StringHolder(NOTSET, 128));
 
-            globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[schemaNames.size()])));
+            globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new StringHolder[schemaNames.size()])));
 
             //set back the selected item if in the new list
-            if (previousSchemaSelection != null && schemaNamesUnmodified.contains(previousSchemaSelection)) {
-                final int newIndex = schemaNamesUnmodified.indexOf(previousSchemaSelection);
-                globalSchemaCombo.setSelectedIndex(newIndex);
+            if (previousItem != null && schemaNames.contains(previousItem)) {
+                globalSchemaCombo.setSelectedItem(previousItem);
             } else {
                 globalSchemaCombo.setSelectedItem(NOTSET);
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Cannot get global schemas", e);
+        }
+    }
+
+    private class StringHolder{
+        private final String value;
+        private final int maxSize;
+
+        private StringHolder(String value, int maxSize) {
+            this.value = value;
+            this.maxSize = maxSize;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return TextUtils.truncStringMiddleExact(value, maxSize);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            StringHolder that = (StringHolder) o;
+
+            if (!value.equals(that.value)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
         }
     }
 
@@ -753,8 +760,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } else if (globalSchemaCombo.getSelectedItem().equals(NOTSET)) {
             return false;
         }
-        final int index = globalSchemaCombo.getSelectedIndex();
-        gri.setId(schemaNamesUnmodified.get(index));
+        final StringHolder selectedItem = (StringHolder) globalSchemaCombo.getSelectedItem();
+        gri.setId(selectedItem.getValue());
         schemaValidationAssertion.setResourceInfo(gri);
         return true;
     }
