@@ -6,6 +6,7 @@ import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
@@ -254,7 +255,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                         if (endpoint.getDestinationName() == null || endpoint.getDestinationName().equals(""))
                             dynProps.setDestQName(dynamicDestQueueName.getText());
 
-                        if (endpoint.getReplyToQueueName() == null || endpoint.getReplyToQueueName().equals(""))
+                        if (isReplyToQueue(endpoint) && (endpoint.getReplyToQueueName() == null || endpoint.getReplyToQueueName().equals("")))
                             dynProps.setReplytoQName(dynamicReplyToName.getText());
 
                         if (conn.getJndiUrl() == null || conn.getJndiUrl().equals(""))
@@ -298,6 +299,10 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         });
     }
 
+    private boolean isReplyToQueue( final JmsEndpoint jmsEndpoint ) {
+        return jmsEndpoint.getReplyType()==JmsReplyType.REPLY_TO_OTHER;
+    }
+
     private void populateDynamicPropertyFields() {
         JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
         if (selected != null) {
@@ -314,7 +319,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
                 String replyToQueueName = ep.getReplyToQueueName();
                 dynamicReplyToName.setText(replyToQueueName);
-                if (replyToQueueName != null && !"".equals(replyToQueueName.trim())) {
+                if ( !isReplyToQueue(ep) || replyToQueueName != null && !"".equals(replyToQueueName.trim())) {
                     dynamicReplyToName.setEnabled(false);
                 }
 
