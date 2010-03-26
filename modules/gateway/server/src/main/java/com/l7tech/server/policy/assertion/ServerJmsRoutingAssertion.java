@@ -422,9 +422,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             throw e;
         } catch ( Throwable t ) {
             if (ExceptionUtils.causedBy(t, InvalidDestinationException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, "Caught unexpected Throwable in outbound JMS request processing: " + t.getMessage());
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, "Caught unexpected Throwable in outbound JMS request processing: " + ExceptionUtils.getMessage(t));
             } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing: " + ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t) );
             }
 
             closeBagDueToError(cfg, jmsBag);
