@@ -223,11 +223,11 @@ public class JMSEndpointReference extends ExternalReference {
                 // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QUEUE_EL_NAME and TOPIC_EL_NAME
                 if (jmsTuple.getKey().isMessageSource()) {
                     continue;
-                } else if (!jmsTuple.getValue().getJndiUrl().equals(jndiUrl)) {
+                } else if (!isMatch(jmsTuple.getValue().getJndiUrl(), jndiUrl)) {
                     continue;
-                } else if (!jmsTuple.getValue().getInitialContextFactoryClassname().equals(initialContextFactoryClassname)) {
+                } else if (!isMatch(jmsTuple.getValue().getInitialContextFactoryClassname(), initialContextFactoryClassname)) {
                     continue;
-                } else if (!jmsTuple.getValue().getQueueFactoryUrl().equals(queueFactoryUrl)) {
+                } else if (!isMatch(jmsTuple.getValue().getQueueFactoryUrl(), queueFactoryUrl)) {
                     continue;
                 }
                 // we have a partial match
@@ -263,6 +263,10 @@ public class JMSEndpointReference extends ExternalReference {
         }
 
         return false;
+    }
+
+    private boolean isMatch(String lvalue, String rvalue) {
+        return (lvalue == null || lvalue.isEmpty()) ? rvalue == null || rvalue.isEmpty() : lvalue.equals(rvalue);
     }
 
     @Override
