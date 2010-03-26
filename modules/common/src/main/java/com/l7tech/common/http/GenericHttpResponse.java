@@ -115,8 +115,8 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
             result.encoding = getDeclaredEncoding(bytes, Charsets.UTF16BE);
         } else if(bytes[0] == (byte)0x3c && bytes[1] == (byte)0x3f && bytes[2] == (byte)0x78 && bytes[3] == (byte)0x6d) {
             result.encoding = getDeclaredEncoding(bytes, Charsets.UTF8);
-        } else if(bytes[0] == (byte)0x4c && bytes[1] == (byte)0x6f && bytes[2] == (byte)0xa7 && bytes[3] == (byte)0x94) {
-            result.encoding = getDeclaredEncoding(bytes, Charsets.CP1047);
+        } else if(bytes[0] == (byte)0x4c && bytes[1] == (byte)0x6f && bytes[2] == (byte)0xa7 && bytes[3] == (byte)0x94 && Charset.isSupported("Cp1047")) {
+            result.encoding = getDeclaredEncoding(bytes, Charset.forName("Cp1047"));
         }
 
         return result;
