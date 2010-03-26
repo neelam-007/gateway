@@ -543,7 +543,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             msg = msg + ". Caused by '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e )) + "'";
             logger.log(Level.WARNING, msg , ExceptionUtils.getDebugException( e ));
         } else {
-            logger.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException( e ));
         }
         return new FindException(msg);
     }
