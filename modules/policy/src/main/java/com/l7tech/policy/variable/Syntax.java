@@ -100,8 +100,10 @@ public abstract class Syntax {
                 throw new IllegalStateException("Expecting 1 matching group, received: " + count);
             }
             String var = matcher.group(1);
-            if (var != null) var = var.trim();
-            vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
+            if (var != null) {
+                var = var.trim();
+                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
+            }
         }
         return vars.toArray(new String[0]);
     }
@@ -147,12 +149,15 @@ public abstract class Syntax {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+count);
             }
             String var = matcher.group(1);
-            if (var != null) var = var.trim();
-            final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
+            if (var != null) {
+                var = var.trim();
 
-            if (omitted && varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
+                final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
 
-            vars.add(omitted? varSyntax.remainingName : var);
+                if (omitted && varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
+
+                vars.add(omitted? varSyntax.remainingName : var);
+            }
         }
         return (String[]) vars.toArray(new String[0]);
     }

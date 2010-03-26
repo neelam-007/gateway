@@ -209,7 +209,9 @@ public class ManagedTimer extends Timer implements Background.TimerTaskWrapper {
             managedTimerTask = new ManagedTimerTaskWrapper(timerTask);
         }
 
-        managedTimerTask.scheduled(this);
+        if ( managedTimerTask != null ) {
+            managedTimerTask.scheduled(this);
+        }
 
         return managedTimerTask;
     }
