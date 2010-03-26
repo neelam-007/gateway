@@ -18,7 +18,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Holds information needed to route a message to an outbound JMS destination.
  */
-public class JmsRoutingAssertion extends RoutingAssertion implements UsesVariables{
+public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables {
     public static final int DEFAULT_TIMEOUT = 10000;
 
     /**
@@ -108,6 +108,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesVariabl
         responseJmsMessagePropertyRuleSet = ruleSet;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if(endpointOid != null) {
@@ -117,6 +118,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesVariabl
         }
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(oldEntityHeader.getType().equals(EntityType.JMS_ENDPOINT) && endpointOid != null &&
                 oldEntityHeader.getOid() == endpointOid && newEntityHeader.getType().equals(EntityType.JMS_ENDPOINT))
@@ -143,6 +145,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return meta;
     }
 
+    @Override
     public String[] getVariablesUsed() {
         if (dynamicJmsRoutingProperties != null) {
             String vars = dynamicJmsRoutingProperties.getFieldsAsVariables();
