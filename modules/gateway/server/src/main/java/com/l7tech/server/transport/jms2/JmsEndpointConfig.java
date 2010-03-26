@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.policy.JmsDynamicProperties;
-import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
 import org.springframework.context.ApplicationContext;
@@ -41,7 +40,7 @@ public class JmsEndpointConfig {
     /** String denoting the display name for an endpoint instance */
     private final String displayName;
     /** String identifier representing this JMS endpoint configuration  */
-    private String endpointIdentifier;
+    private JmsEndpointKey endpointKey;
 
     /**
      * Constructor.
@@ -78,24 +77,22 @@ public class JmsEndpointConfig {
         this.dynamic = endpoint.isTemplate();
         if (dynamic) {
             // clone the JmsConnection and JmsEndpoint beans since they will be overwritten
-            JmsConnection connClone = new JmsConnection();
-            connClone.copyFrom(connection);
-            this.conn = connClone;
+            final JmsConnection connCopy = new JmsConnection(connection, false);
+            final JmsEndpoint endpointCopy = new JmsEndpoint(endpoint, false);
 
-            JmsEndpoint endpointClone = new JmsEndpoint();
-            endpointClone.copyFrom(endpoint);
-            this.endpoint = endpointClone;
+            applyOverrides(connCopy, endpointCopy, dynamicProperties);
 
-            applyOverrides(dynamicProperties);
+            this.conn = new JmsConnection(connCopy, true);
+            this.endpoint = new JmsEndpoint(endpointCopy, true);
         } else {
-            this.conn = connection;
-            this.endpoint = endpoint;
+            this.conn = new JmsConnection(connection, true);
+            this.endpoint = new JmsEndpoint(endpoint, true);
         }
 
         this.propertyMapper = propertyMapper;
         this.appContext = appContext;
 
-        StringBuffer sb = new StringBuffer(getConnection().getJndiUrl()).append(SEPARATOR).append(getConnection().getName());
+        StringBuilder sb = new StringBuilder(getConnection().getJndiUrl()).append(SEPARATOR).append(getConnection().getName());
         this.displayName =  sb.toString();
     }
 
@@ -104,10 +101,20 @@ public class JmsEndpointConfig {
         return appContext;
     }
 
+    /**
+     * Get the (read only) JMS connection.
+     *
+     * @return The JMS connection.
+     */
     public JmsConnection getConnection() {
         return conn;
     }
 
+    /**
+     * Get the (read only) JMS endpoint.
+     *
+     * @return The JMS endpoint.
+     */
     public JmsEndpoint getEndpoint() {
         return endpoint;
     }
@@ -129,17 +136,18 @@ public class JmsEndpointConfig {
      * <li>If the ReplyType is {@link JmsReplyType#AUTOMATIC} but the
      * incoming request specified no ReplyTo queue.
      *
+     * @param request The message being replied to.
+     * @param jndiContext The JNDI Context to use.
      * @return The JMS Destination to which responses should be sent, possibly null.
      * @throws javax.jms.JMSException
      */
-    Destination getResponseDestination(Message request, JmsBag bag) throws JMSException, NamingException {
+    Destination getResponseDestination( final Message request, 
+                                        final Context jndiContext ) throws JMSException, NamingException {
         if (JmsReplyType.NO_REPLY.equals(getReplyType())) {
             return null;
         } else if (JmsReplyType.AUTOMATIC.equals(getReplyType())) {
             return request.getJMSReplyTo();
         } else if (JmsReplyType.REPLY_TO_OTHER.equals(getReplyType())) {
-            // use bag's jndi context to lookup the the destination and create the sender
-            Context jndiContext = bag.getJndiContext();
             String replyToQueueName = endpoint.getReplyToQueueName();
             return (Destination)jndiContext.lookup(replyToQueueName);
         } else {
@@ -159,26 +167,15 @@ public class JmsEndpointConfig {
     }
 
     /**
-     * Returns the endpoint Id for the specific JMS endpoint.
+     * Returns the endpoint key for the specific JMS endpoint.
      *
-     * @return String for the endpoint display name
+     * @return The key for this endpoint configuration
      */
-    public String getEndpointIdentifier() {
-
-        if (endpointIdentifier == null) {
-            StringBuffer sb = new StringBuffer().append(endpoint.getOid()).append("-").append(conn.getOid());
-
-            /*
-             * For dynamic endpoints, append the full JMS destination (JNDI, QName, and QCF)
-             */
-            if (isDynamic()) {
-                sb.append("-dest-").append(getDisplayName());
-                sb.append(SEPARATOR).append(getConnection().getQueueFactoryUrl()); // append QCF
-            }
-
-            endpointIdentifier = sb.toString();
+    public JmsEndpointKey getJmsEndpointKey() {
+        if ( endpointKey == null) {
+            endpointKey = new JmsEndpointKey( endpoint, conn );
         }
-        return endpointIdentifier;
+        return endpointKey;
     }
 
     /**
@@ -187,7 +184,6 @@ public class JmsEndpointConfig {
      * @return true if the endpoint JmsAcknowledgementType=ON_COMPLETE, false otherwise
      */
     public boolean isTransactional() {
-
         if (transactional == null)
             transactional = (this.endpoint.getAcknowledgementType() == JmsAcknowledgementType.ON_COMPLETION);
         return transactional;
@@ -225,23 +221,138 @@ public class JmsEndpointConfig {
     }
 
     /**
-     * Note: this could be a problem if the ctx var type is of Message rather than String
+     * Override empty template settings with values from the given dynamic properties.
      */
-    private void applyOverrides( final JmsDynamicProperties overrides ) {
+    private void applyOverrides( final JmsConnection jmsConnection,
+                                 final JmsEndpoint jmsEndpoint,
+                                 final JmsDynamicProperties overrides ) {
         //get all the empty fields and populate them from the dynamic properties
-        if (conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()))
-            conn.setInitialContextFactoryClassname(overrides.getIcfName());
+        if (jmsConnection.getInitialContextFactoryClassname() == null || "".equals(jmsConnection.getInitialContextFactoryClassname()))
+            jmsConnection.setInitialContextFactoryClassname(overrides.getIcfName());
 
-        if (conn.getJndiUrl() == null || "".equals(conn.getJndiUrl()))
-            conn.setJndiUrl(overrides.getJndiUrl());
+        if (jmsConnection.getJndiUrl() == null || "".equals(jmsConnection.getJndiUrl()))
+            jmsConnection.setJndiUrl(overrides.getJndiUrl());
 
-        if (conn.getQueueFactoryUrl() == null || "".equals(conn.getQueueFactoryUrl()))
-            conn.setQueueFactoryUrl(overrides.getQcfName());
+        if (jmsConnection.getQueueFactoryUrl() == null || "".equals(jmsConnection.getQueueFactoryUrl()))
+            jmsConnection.setQueueFactoryUrl(overrides.getQcfName());
 
-        if (endpoint.getReplyToQueueName() == null || "".equals(endpoint.getReplyToQueueName()))
-            endpoint.setReplyToQueueName(overrides.getReplytoQName());
+        if (jmsEndpoint.getReplyToQueueName() == null || "".equals(jmsEndpoint.getReplyToQueueName()))
+            jmsEndpoint.setReplyToQueueName(overrides.getReplytoQName());
 
-        if (endpoint.getDestinationName() == null || "".equals(endpoint.getDestinationName()))
-            endpoint.setDestinationName(overrides.getDestQName());
+        if (jmsEndpoint.getDestinationName() == null || "".equals(jmsEndpoint.getDestinationName()))
+            jmsEndpoint.setDestinationName(overrides.getDestQName());
+    }
+
+    public static final class JmsEndpointKey {
+        private final long jmsEndpointOid;
+        private final int jmsEndpointVersion;
+        private final long jmsConnectionOid;
+        private final int jmsConnectionVersion;
+        private final String initialContextFactoryClassname;
+        private final String jndiUrl;
+        private final String queueFactoryUrl;
+        private final String destinationQueue;
+        private final String replyToQueue;
+
+        private JmsEndpointKey( final JmsEndpoint endpoint,
+                                final JmsConnection connection ) {
+            this.jmsEndpointOid = endpoint.getOid();
+            this.jmsEndpointVersion = endpoint.getVersion();
+            this.jmsConnectionOid = connection.getOid();
+            this.jmsConnectionVersion = connection.getVersion();
+
+            if ( endpoint.isTemplate() ) {
+                this.initialContextFactoryClassname = connection.getInitialContextFactoryClassname();
+                this.jndiUrl = connection.getJndiUrl();
+                this.queueFactoryUrl = connection.getQueueFactoryUrl();
+                this.destinationQueue = endpoint.getDestinationName();
+                this.replyToQueue = endpoint.getReplyToQueueName();
+            } else {
+                this.initialContextFactoryClassname = null;
+                this.jndiUrl = null;
+                this.queueFactoryUrl = null;
+                this.destinationQueue = null;
+                this.replyToQueue = null;
+            }
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final JmsEndpointKey that = (JmsEndpointKey) o;
+
+            if ( jmsConnectionOid != that.jmsConnectionOid ) return false;
+            if ( jmsConnectionVersion != that.jmsConnectionVersion ) return false;
+            if ( jmsEndpointOid != that.jmsEndpointOid ) return false;
+            if ( jmsEndpointVersion != that.jmsEndpointVersion ) return false;
+            if ( destinationQueue != null ? !destinationQueue.equals( that.destinationQueue ) : that.destinationQueue != null )
+                return false;
+            if ( initialContextFactoryClassname != null ? !initialContextFactoryClassname.equals( that.initialContextFactoryClassname ) : that.initialContextFactoryClassname != null )
+                return false;
+            if ( jndiUrl != null ? !jndiUrl.equals( that.jndiUrl ) : that.jndiUrl != null ) return false;
+            if ( queueFactoryUrl != null ? !queueFactoryUrl.equals( that.queueFactoryUrl ) : that.queueFactoryUrl != null )
+                return false;
+            if ( replyToQueue != null ? !replyToQueue.equals( that.replyToQueue ) : that.replyToQueue != null )
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (jmsEndpointOid ^ (jmsEndpointOid >>> 32));
+            result = 31 * result + jmsEndpointVersion;
+            result = 31 * result + (int) (jmsConnectionOid ^ (jmsConnectionOid >>> 32));
+            result = 31 * result + jmsConnectionVersion;
+            result = 31 * result + (initialContextFactoryClassname != null ? initialContextFactoryClassname.hashCode() : 0);
+            result = 31 * result + (jndiUrl != null ? jndiUrl.hashCode() : 0);
+            result = 31 * result + (queueFactoryUrl != null ? queueFactoryUrl.hashCode() : 0);
+            result = 31 * result + (destinationQueue != null ? destinationQueue.hashCode() : 0);
+            result = 31 * result + (replyToQueue != null ? replyToQueue.hashCode() : 0);
+            return result;
+        }
+
+        /**
+         * Get a String representation of this key.
+         *
+         * <p>The representation should include all properties of the key.</p>
+         *
+         * @return The string representation.
+         */
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("JmsEndpointKey[");
+            sb.append(jmsEndpointOid);
+            sb.append(',');
+            sb.append(jmsEndpointVersion);
+            sb.append('-');
+            sb.append(jmsConnectionOid);
+            sb.append(',');
+            sb.append(jmsConnectionVersion);
+
+            /*
+             * For dynamic endpoints, append the full JMS destination (JNDI, QName, QCF, etc)
+             */
+            if ( initialContextFactoryClassname != null ) {
+                sb.append("-");
+                sb.append(initialContextFactoryClassname);
+                sb.append(',');
+                sb.append(jndiUrl);
+                sb.append(',');
+                sb.append(queueFactoryUrl);
+                sb.append(',');
+                sb.append(destinationQueue);
+                sb.append(',');
+                sb.append(replyToQueue);
+            }
+
+            sb.append("]");
+
+            return sb.toString();
+        }
     }
 }

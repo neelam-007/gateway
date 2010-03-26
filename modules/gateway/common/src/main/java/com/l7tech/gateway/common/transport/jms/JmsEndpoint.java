@@ -50,6 +50,14 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private boolean useMessageIdForCorrelation;
     private boolean isTemplate;
 
+    public JmsEndpoint(){
+    }
+
+    public JmsEndpoint( final JmsEndpoint jmsEndpoint, final boolean readOnly ){
+        copyFrom( jmsEndpoint );
+        if (readOnly) lock();
+    }
+
     public void copyFrom( JmsEndpoint other ) {
         setOid( other.getOid() );
         setVersion( other.getVersion() );
@@ -94,6 +102,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setUsername( String username ) {
+        checkLocked();
         _username = username;
     }
 
@@ -104,6 +113,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setPassword( String password ) {
+        checkLocked();
         _password = password;
     }
 
@@ -126,6 +136,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
      *         false if the endpoint is outbound (that is the gateway routes messages to the queue).
      */
     public void setMessageSource( boolean messageSource ) {
+        checkLocked();
         _messageSource = messageSource;
     }
 
@@ -134,6 +145,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
      * @param maxConcurrentRequests
      */
     public void setMaxConcurrentRequests( int maxConcurrentRequests ) {
+        checkLocked();
         _maxConcurrentRequests = maxConcurrentRequests;
     }
 
@@ -143,6 +155,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setConnectionOid(long conn) {
+        checkLocked();
         _connectionOid = conn;
     }
 
@@ -155,6 +168,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setDestinationName(String name) {
+        checkLocked();
         _destinationName = name;
     }
 
@@ -166,6 +180,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setFailureDestinationName(String name) {
+        checkLocked();
         _failureDestinationName = name;
     }
 
@@ -176,6 +191,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setAcknowledgementType(JmsAcknowledgementType acknowledgementType) {
+        checkLocked();
         _acknowledgementType = acknowledgementType;
     }
 
@@ -188,6 +204,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setReplyType(JmsReplyType replyType) {
+        checkLocked();
         _replyType = replyType;
     }
 
@@ -200,6 +217,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     /** @param replyTo Optional, set only if {@link #getReplyType} is {@link com.l7tech.gateway.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
     public void setReplyToQueueName(String replyTo) {
+        checkLocked();
         replyToQueueName = replyTo;
     }
 
@@ -210,6 +228,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
                                
     public void setOutboundMessageType(JmsOutboundMessageType outboundMessageType) {
+        checkLocked();
         if (outboundMessageType == null) outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
         this.outboundMessageType = outboundMessageType;
     }
@@ -220,6 +239,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setDisabled(boolean disabled) {
+        checkLocked();
         this.disabled = disabled;
     }
 
@@ -236,6 +256,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setUseMessageIdForCorrelation(boolean useMessageIdForCorrelation) {
+        checkLocked();
         this.useMessageIdForCorrelation = useMessageIdForCorrelation;
     }
 
@@ -263,6 +284,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setTemplate(boolean template) {
+        checkLocked();
         isTemplate = template;
     }
 }

@@ -260,7 +260,12 @@
         </constructor-arg>
         <constructor-arg ref="defaultKey"/>
     </bean>
-    
+
+    <bean id="jmsResourceManager" class="com.l7tech.server.transport.jms2.JmsResourceManager">
+        <constructor-arg index="0" value="JmsRoutingTest"/>
+        <constructor-arg index="1" ref="serverConfig"/>
+    </bean>
+
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerStub"/>
 
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerStub"/>

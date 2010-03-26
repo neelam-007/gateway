@@ -430,7 +430,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private boolean sendResponse(Message jmsRequestMsg, Message jmsResponseMsg, JmsBag bag, JmsEndpointConfig endpointCfg, AssertionStatus status ) {
         boolean sent = false;
         try {
-            Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, bag);
+            Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, bag.getJndiContext());
             if ( status != AssertionStatus.NONE ) {
                 // TODO send response to failure endpoint if defined
             }

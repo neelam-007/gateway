@@ -275,6 +275,14 @@
                                 <value>messageCacheDiskThreshold</value>
                             </list>
                         </entry>
+                        <entry key="jmsResourceManager">
+                            <list>
+                                <value>ioJmsConnectionCacheMaxAge</value>
+                                <value>ioJmsConnectionCacheMaxIdleTime</value>
+                                <value>ioJmsConnectionCacheSize</value>
+                            </list>
+                        </entry>
+
                     </map>
                 </constructor-arg>
             </bean>
@@ -811,6 +819,10 @@
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="defaultKey"/>
+    </bean>
+    <bean id="jmsResourceManager" class="com.l7tech.server.transport.jms2.JmsResourceManager">
+        <constructor-arg index="0" value="JmsRouting"/>
+        <constructor-arg index="1" ref="serverConfig"/>
     </bean>
 
     <!-- server side policy validator -->

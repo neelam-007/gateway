@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.transport.jms;
@@ -21,7 +19,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class JmsUtil {
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
@@ -58,6 +55,39 @@ public class JmsUtil {
     public static JmsBag connect(final JmsConnection connection,
                                  final PasswordAuthentication auth,
                                  final JmsPropertyMapper mapper,
+                                 final boolean transactional,
+                                 final int acknowledgeMode) throws JmsConfigException, JMSException, NamingException {
+        return connect( connection, auth, mapper, true, transactional, acknowledgeMode );
+    }
+
+    /**
+     * Establishes a connection to a JMS provider, returning the necessary {@link ConnectionFactory},
+     * {@link Connection} and {@link Session} (if requested) inside a {@link JmsBag}.
+     * <p/>
+     * The {@link Connection} that is returned will not have been started.
+     * <p/>
+     * The JmsBag should eventually be closed by the caller, since the {@link Connection} and {@link Session}
+     * objects inside are often pretty heavyweight.
+     * <p/>
+     * NOTE: If createSession is false then the returned JmsBag will contain a 
+     * null JMS Session.
+     *
+     * @param connection a {@link com.l7tech.gateway.common.transport.jms.JmsConnection} that encapsulates the information required
+     * to connect to a JMS provider.
+     * @param auth overrides the username and password from the connection if present.  May be null.
+     * @param mapper property mapper for initial context properties. May be null.
+     * @param createSession true to create a session, false to skip session creation.
+     * @param transactional True to create a transactional session
+     * @param acknowledgeMode The session acknowledgement mode (Session.AUTO_ACKNOWLEDGE) or 0 if transactional
+     * @return a {@link JmsBag} containing the resulting {@link ConnectionFactory}, {@link Connection} and {@link Session}.
+     * @throws JMSException
+     * @throws NamingException
+     * @throws JmsConfigException if no connection factory URL could be found for this connection
+     */
+    public static JmsBag connect(final JmsConnection connection,
+                                 final PasswordAuthentication auth,
+                                 final JmsPropertyMapper mapper,
+                                 final boolean createSession,
                                  final boolean transactional,
                                  final int acknowledgeMode)
             throws JmsConfigException, JMSException, NamingException
@@ -161,23 +191,27 @@ public class JmsUtil {
             if ( username != null && password != null ) {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
-                    sess = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection(username, password);
-                    sess = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     conn = connFactory.createConnection( username, password );
-                    sess = conn.createSession( transactional, acknowledgeMode );
                 }
             } else {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection();
-                    sess = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection();
-                    sess = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     conn = connFactory.createConnection( username, password );
+                }
+            }
+
+            if ( createSession ) {
+                if ( connFactory instanceof QueueConnectionFactory ) {
+                    sess = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
+                } else if ( connFactory instanceof TopicConnectionFactory ) {
+                    sess = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
+                } else {
                     sess = conn.createSession( transactional, acknowledgeMode );
                 }
             }
@@ -202,6 +236,25 @@ public class JmsUtil {
         }
     }
 
+    /**
+     * Connect to the given endpoint but do not create a JMS session.
+     *
+     * <p>NOTE: The JMS Session will be null in the returned JmsBag.</p>
+     *
+     * @param endpointCfg The endpoint configuration to use.
+     * @return The JMS Bag which will not have a JMS session
+     * @throws JmsConfigException If the configuration is invalid
+     * @throws JMSException If an error occurs
+     * @throws NamingException If a JNDI error occurs
+     */
+    public static JmsBag connect( final JmsEndpointConfig endpointCfg )
+        throws JmsConfigException, JMSException, NamingException
+    {
+        return connect(endpointCfg.getConnection(),
+                endpointCfg.getEndpoint().getPasswordAuthentication(),
+                endpointCfg.getPropertyMapper(),
+                false, false, Session.CLIENT_ACKNOWLEDGE);
+    }
 
     public static JmsBag connect(final JmsEndpointConfig endpointCfg,
                                  final boolean transactional,
@@ -211,7 +264,7 @@ public class JmsUtil {
         return connect(endpointCfg.getConnection(),
                 endpointCfg.getEndpoint().getPasswordAuthentication(),
                 endpointCfg.getPropertyMapper(),
-                transactional, acknowledgementMode);
+                true, transactional, acknowledgementMode);
     }
 
     private static void logit( Throwable t ) {

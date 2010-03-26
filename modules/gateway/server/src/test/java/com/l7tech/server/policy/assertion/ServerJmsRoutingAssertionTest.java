@@ -9,7 +9,6 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.transport.jms2.JmsConnectionManagerStub;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.message.Message;
@@ -206,8 +205,6 @@ public class ServerJmsRoutingAssertionTest {
         } finally {
             if (exec != null)
                 exec.shutdown();
-
-            JmsResourceManager.shutdown();
         }
     }
 
@@ -243,8 +240,6 @@ public class ServerJmsRoutingAssertionTest {
         } finally {
             if (exec != null)
                 exec.shutdown();
-
-            JmsResourceManager.shutdown();
         }
     }
 

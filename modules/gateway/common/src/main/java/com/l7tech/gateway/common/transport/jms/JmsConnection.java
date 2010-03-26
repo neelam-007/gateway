@@ -81,6 +81,14 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _properties;
     private boolean _providerTypeCustomized = true; // a flag indicating whether the provider type is customized or not.
 
+    public JmsConnection(){
+    }
+
+    public JmsConnection( final JmsConnection jmsConnection, final boolean readOnly ){
+        copyFrom( jmsConnection );
+        if (readOnly) lock();
+    }
+
     public void copyFrom( JmsConnection other ) {
         setOid( other.getOid() );
         setVersion( other.getVersion() );
@@ -115,6 +123,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setUsername( String username ) {
+        checkLocked();
         _username = username;
     }
 
@@ -125,6 +134,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setPassword( String password ) {
+        checkLocked();
         _password = password;
     }
 
@@ -136,6 +146,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setInitialContextFactoryClassname( String initialContextFactoryClassname ) {
+        checkLocked();
         _initialContextFactoryClassname = initialContextFactoryClassname;
     }
 
@@ -147,6 +158,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setJndiUrl(String jndiUrl) {
+        checkLocked();
         _jndiUrl = jndiUrl;
     }
 
@@ -157,6 +169,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setQueueFactoryUrl(String queueFactoryUrl) {
+        checkLocked();
         _queueFactoryUrl = queueFactoryUrl;
     }
 
@@ -167,6 +180,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setTopicFactoryUrl(String topicFactoryUrl) {
+        checkLocked();
         _topicFactoryUrl = topicFactoryUrl;
     }
 
@@ -177,6 +191,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setDestinationFactoryUrl( String destinationFactoryUrl ) {
+        checkLocked();
         _destinationFactoryUrl = destinationFactoryUrl;
     }
 
@@ -219,6 +234,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setProperties(String properties) {
+        checkLocked();
         _properties = properties;
     }
 
@@ -228,6 +244,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public void setProviderTypeCustomized(boolean providerTypeCustomized) {
+        checkLocked();
         _providerTypeCustomized = providerTypeCustomized;
     }
 }

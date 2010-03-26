@@ -44,7 +44,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
     }
 
     public void setName( String name ) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        checkLocked();
         _name = name;
     }
 
