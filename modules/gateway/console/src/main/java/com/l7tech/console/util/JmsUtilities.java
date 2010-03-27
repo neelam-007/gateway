@@ -8,6 +8,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -48,7 +49,21 @@ public class JmsUtilities {
         }
 
         public String toString() {
-            return queue.getEndpoint().getName() + " on " + queue.getConnection().getJndiUrl();
+            final StringBuilder builder = new StringBuilder();
+
+            final JmsEndpoint jmsEndpoint = queue.getEndpoint();
+            builder.append( TextUtils.truncStringMiddleExact( jmsEndpoint.getName(), 48 ) );
+            builder.append( " [" );
+            if ( jmsEndpoint.isTemplate() ) {
+                builder.append( "<template>" );   
+            } else {
+                builder.append( TextUtils.truncStringMiddleExact( jmsEndpoint.getDestinationName(), 32 ) );
+                builder.append( " on " );
+                builder.append( TextUtils.truncStringMiddleExact( queue.getConnection().getJndiUrl(), 32 ) );
+            }
+            builder.append( "]" );
+
+            return builder.toString();
         }
 
         public JmsAdmin.JmsTuple getQueue() {

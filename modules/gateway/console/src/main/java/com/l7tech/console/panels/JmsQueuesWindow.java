@@ -35,7 +35,7 @@ import java.util.regex.PatternSyntaxException;
  * @author mike
  */
 public class JmsQueuesWindow extends JDialog {
-    public static final int MESSAGE_SOURCE_COL = 2;
+    public static final int MESSAGE_SOURCE_COL = 3;
     private static final Logger logger = Logger.getLogger(JmsQueuesWindow.class.getName());
 
     private JButton closeButton;
@@ -53,13 +53,20 @@ public class JmsQueuesWindow extends JDialog {
     private FilterDirection filterDirection;
 
     private enum FilterTarget {
-        NAME("Name Contains"),
-        URL("URL Contains");
+        NAME("Name Contains", 0),
+        URL("JNDI URL Contains", 1),
+        QUEUE_NAME("Queue Name Contains", 2);
 
-        private String name;
+        private final String name;
+        private final int tableModelColumn;
 
-        private FilterTarget(String name) {
+        private FilterTarget( final String name, final int tableModelColumn) {
             this.name = name;
+            this.tableModelColumn = tableModelColumn;
+        }
+
+        private int getTableModelColumn() {
+            return tableModelColumn;
         }
 
         @Override
@@ -73,7 +80,7 @@ public class JmsQueuesWindow extends JDialog {
         IN("In"),
         OUT("Out");
 
-        private String name;
+        private final String name;
 
         private FilterDirection(String name) {
             this.name = name;
@@ -155,6 +162,7 @@ public class JmsQueuesWindow extends JDialog {
 
         JButton filterButton = new JButton("Filter");
         filterButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 filterTarget = (FilterTarget)filterTargetComboBox.getSelectedItem();
                 filterString = filterStringTextField.getText();
@@ -173,19 +181,24 @@ public class JmsQueuesWindow extends JDialog {
     private class JmsQueueTableModel extends AbstractTableModel {
         private List<JmsAdmin.JmsTuple> jmsQueues = JmsUtilities.loadJmsQueues(false);
 
+        @Override
         public int getColumnCount() {
-            return 3;
+            return 4;
         }
 
+        @Override
         public int getRowCount() {
             return getJmsQueues().size();
         }
 
+        @Override
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "URL";
+                    return "Name";
                 case 1:
+                    return "JNDI URL";
+                case 2:
                     return "Queue Name";
                 case MESSAGE_SOURCE_COL:
                     return "Direction";
@@ -193,15 +206,18 @@ public class JmsQueuesWindow extends JDialog {
             return "?";
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             JmsAdmin.JmsTuple i = getJmsQueues().get(rowIndex);
             JmsConnection conn = i.getConnection();
             JmsEndpoint end = i.getEndpoint();
             switch (columnIndex) {
                 case 0:
-                    return conn.getJndiUrl();
-                case 1:
                     return end.getName();
+                case 1:
+                    return conn.getJndiUrl();
+                case 2:
+                    return end.getDestinationName();
                 case MESSAGE_SOURCE_COL:
                     String direction_msg;
                     if (end.isMessageSource()) {
@@ -272,6 +288,7 @@ public class JmsQueuesWindow extends JDialog {
         if (removeButton == null) {
             removeButton = new JButton("Remove");
             removeButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     int viewRow = getJmsQueueTable().getSelectedRow();
                     if (viewRow >= 0) {
@@ -319,14 +336,16 @@ public class JmsQueuesWindow extends JDialog {
         if (addButton == null) {
             addButton = new JButton("Add");
             addButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
-                    final JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
-                    amew.pack();
-                    Utilities.centerOnScreen(amew);
-                    DialogDisplayer.display(amew, new Runnable() {
+                    final JmsQueuePropertiesDialog jmsQueuePropertiesDialog = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
+                    jmsQueuePropertiesDialog.pack();
+                    Utilities.centerOnScreen(jmsQueuePropertiesDialog);
+                    DialogDisplayer.display(jmsQueuePropertiesDialog, new Runnable() {
+                        @Override
                         public void run() {
-                            if (!amew.isCanceled()) {
-                                updateEndpointList(amew.getEndpoint());
+                            if (!jmsQueuePropertiesDialog.isCanceled()) {
+                                updateEndpointList(jmsQueuePropertiesDialog.getEndpoint());
                             }
                         }
                     });
@@ -341,6 +360,7 @@ public class JmsQueuesWindow extends JDialog {
             // In the QA function specification review, everyone liked the word, "Copy" instead of "Clone".
             cloneButton = new JButton("Copy");
             cloneButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
                     int viewRow = getJmsQueueTable().getSelectedRow();
                     if (viewRow >= 0) {
@@ -360,6 +380,7 @@ public class JmsQueuesWindow extends JDialog {
                             pd.pack();
                             Utilities.centerOnScreen(pd);
                             DialogDisplayer.display(pd, new Runnable() {
+                                @Override
                                 public void run() {
                                     if (! pd.isCanceled()) {
                                         updateEndpointList(pd.getEndpoint());
@@ -378,6 +399,7 @@ public class JmsQueuesWindow extends JDialog {
         if (closeButton == null) {
             closeButton = new JButton("Close");
             closeButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
                     JmsQueuesWindow.this.dispose();
                 }
@@ -390,6 +412,7 @@ public class JmsQueuesWindow extends JDialog {
         if (propertiesButton == null) {
             propertiesButton = new JButton("Properties");
             propertiesButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     showPropertiesDialog();
                 }
@@ -435,6 +458,7 @@ public class JmsQueuesWindow extends JDialog {
      */
     private Runnable refreshEndpointList(final JmsEndpoint selectedEndpoint) {
         return new Runnable() {
+            @Override
             public void run() {
                 updateEndpointList(selectedEndpoint);
             }
@@ -445,7 +469,9 @@ public class JmsQueuesWindow extends JDialog {
         if (jmsQueueTable == null) {
             jmsQueueTable = new JTable(getJmsQueueTableModel());
             jmsQueueTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            jmsQueueTable.getTableHeader().setReorderingAllowed( false );
             jmsQueueTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+                @Override
                 public void valueChanged(ListSelectionEvent e) {
                     enableOrDisableButtons();
                 }
@@ -466,7 +492,7 @@ public class JmsQueuesWindow extends JDialog {
 
         // Reset the sorter
         Utilities.setRowSorter(getJmsQueueTable(), getJmsQueueTableModel(),
-            new int[] {2, 1, 0}, new boolean[] {true, true, true}, new Comparator[] {null, null, null});
+            new int[] {0, 1, 2, 3}, new boolean[] {true, true, true, true}, new Comparator[] {null, null, null, null});
         TableRowSorter<JmsQueueTableModel> sorter = (TableRowSorter<JmsQueueTableModel>) getJmsQueueTable().getRowSorter();
 
         // Reset the filter
@@ -511,9 +537,9 @@ public class JmsQueuesWindow extends JDialog {
                 }
 
                 // Check the setting of FilterTarget (NAME or URL) by using regular expression pattern matching.
-                // If the filter string is not specified, then ignore the following chekcing.
-                if (filterString != null && !filterString.trim().isEmpty() && filterTarget != null) {
-                    int colIdx = 1 - filterTarget.ordinal(); // Since the index of FilterTarget.NAME is 0, but the index of Name column is 1.
+                // If the filter string is not specified, then ignore the following checking.
+                if (filterString != null && !filterString.trim().isEmpty() && filterTarget != null && pattern != null) {
+                    int colIdx = filterTarget.getTableModelColumn(); // Since the index of FilterTarget.NAME is 0, but the index of Name column is 1.
                     Matcher matcher = pattern.matcher(entry.getStringValue(colIdx));
                     canBeShown = canBeShown && matcher.find();
                 }
