@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.util.WsdlComposer;
@@ -7,7 +8,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -46,22 +46,21 @@ public class WsdlCreateWizard extends Wizard {
     private JButton buttonPreview;
     private WsdlComposer wsdlComposer;
 
-    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Set<WsdlComposer.WsdlHolder> originalWsdls, WsdlDependenciesResolver wsdlDepsResolver) throws WSDLException {
         super(parent, panel);
-        initialise(origWsdl, originalWsdls);
+        initialize(originalWsdls, wsdlDepsResolver);
     }
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) throws WSDLException {
-        super(parent, panel);
-        initialise(null, null);
+        this(parent, panel, null, null);
     }
 
-    private void initialise(Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    private void initialize(Set<WsdlComposer.WsdlHolder> originalWsdls, WsdlDependenciesResolver wsdlDepsResolver) throws WSDLException {
         setResizable(true);
-        setTitle(origWsdl == null?"Create WSDL Wizard":"Edit WSDL Wizard");
+        setTitle(wsdlDepsResolver == null?"Create WSDL Wizard":"Edit WSDL Wizard");
 
         // initialize the WSDL definition
-        initModel(origWsdl, originalWsdls);
+        initModel(originalWsdls, wsdlDepsResolver);
         collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
@@ -136,9 +135,9 @@ public class WsdlCreateWizard extends Wizard {
         super.finish(evt);
     }
 
-    private void initModel(Document origWsdl, Set<WsdlComposer.WsdlHolder> originalWsdls) throws WSDLException {
+    private void initModel(Set<WsdlComposer.WsdlHolder> originalWsdls, WsdlDependenciesResolver wsdlDepsResolver) throws WSDLException {
 
-        if (origWsdl == null) {
+        if (wsdlDepsResolver == null) {
             wsdlComposer = new WsdlComposer();
             wsdlComposer.setQName(new QName("NewService"));
             String tns = "http://tempuri.org/";
@@ -148,7 +147,7 @@ public class WsdlCreateWizard extends Wizard {
             wsdlComposer.addNamespace("soap", SOAP_NAME_SPACE);
             wsdlComposer.addNamespace(null, DEFAULT_NAME_SPACE);
         } else {
-            wsdlComposer = new WsdlComposer(origWsdl);
+            wsdlComposer = new WsdlComposer(wsdlDepsResolver);
         }
         
         if (originalWsdls != null && originalWsdls.size() != 0) {

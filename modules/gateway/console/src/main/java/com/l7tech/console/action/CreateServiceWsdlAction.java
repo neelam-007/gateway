@@ -13,6 +13,7 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlComposer;
+import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -57,7 +58,7 @@ import java.util.logging.Logger;
  */
 public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
-    private Document originalWsdl;
+    private WsdlDependenciesResolver wsdlDepsResolver;
     private Set<WsdlComposer.WsdlHolder> importedWsdls;
 
     public CreateServiceWsdlAction() {
@@ -107,8 +108,8 @@ public class CreateServiceWsdlAction extends SecureAction {
                     WsdlCreateOverviewPanel overviewPanel = new WsdlCreateOverviewPanel(defPanel);
                     Frame parent = TopComponents.getInstance().getTopParent();
                     Wizard wizard;
-                    if (originalWsdl != null)
-                        wizard = new WsdlCreateWizard(parent, overviewPanel, originalWsdl, importedWsdls);
+                    if (existingService != null)
+                        wizard = new WsdlCreateWizard(parent, overviewPanel, importedWsdls, wsdlDepsResolver);
                     else
                         wizard = new WsdlCreateWizard(parent, overviewPanel);
                     wizard.addWizardListener(wizardListener);
@@ -322,16 +323,16 @@ public class CreateServiceWsdlAction extends SecureAction {
      *
      * @param origService The original published service
      * @param editCallback Callback to use when editing
-     * @param origWsdl The original WSDL document (see note)
      * @param importedWsdls The original source WSDLs (not imports)
+     * @param wsdlDepsResolver: a resolver to resolve a WSDL with given WSDL dependencies and other related info.
      */
     public void setOriginalInformation(PublishedService origService,
                                        Functions.UnaryVoid<Document> editCallback,
-                                       Document origWsdl,
-                                       Set<WsdlComposer.WsdlHolder> importedWsdls) {
+                                       Set<WsdlComposer.WsdlHolder> importedWsdls,
+                                       WsdlDependenciesResolver wsdlDepsResolver) {
         this.existingService = origService;
         this.editCallback = editCallback;
-        this.originalWsdl = origWsdl;
         this.importedWsdls = importedWsdls;
+        this.wsdlDepsResolver = wsdlDepsResolver;
     }
 }

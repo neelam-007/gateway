@@ -14,6 +14,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlComposer;
+import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -875,14 +876,6 @@ public class ServicePropertiesDialog extends JDialog {
     private void editWsdl() {
         CreateServiceWsdlAction action = new CreateServiceWsdlAction();
         try {
-            Document dom = newWSDL;
-            if (dom == null) {
-                InputSource input = new InputSource();
-                input.setSystemId( subject.getWsdlUrl() );
-                input.setCharacterStream( new StringReader(subject.getWsdlXml()) );
-                dom = XmlUtil.parse(input, false);
-            }
-
             Collection<ServiceDocument> svcDocuments = newWsdlDocuments;
             if (svcDocuments == null) {
                 ServiceAdmin svcAdmin = Registry.getDefault().getServiceManager();
@@ -910,7 +903,11 @@ public class ServicePropertiesDialog extends JDialog {
                 }
             };
 
-            action.setOriginalInformation(subject, editCallback, dom, importedWsdls);
+            final WsdlDependenciesResolver wsdlDepsResolver = new WsdlDependenciesResolver(
+                newWSDL == null? subject.getWsdlUrl() : newWSDL.getBaseURI(),           // WSDL URI
+                newWSDL == null? subject.getWsdlXml() : XmlUtil.nodeToString(newWSDL),  // WSDL XML
+                svcDocuments);                                                          // Service Documents
+            action.setOriginalInformation(subject, editCallback, importedWsdls, wsdlDepsResolver);
             action.actionPerformed(null);
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot display new wsdl ", e);

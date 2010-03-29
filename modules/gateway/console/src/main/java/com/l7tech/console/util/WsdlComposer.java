@@ -36,33 +36,27 @@ public class WsdlComposer {
     private static final String DEFAULT_BINDING_STYLE = "rpc"; // default style for the wizard
     private static final String DEFAULT_BINDING_TRANSPORT_URI = "http://schemas.xmlsoap.org/soap/http";
 
-    private Document originalWsdlDoc;
     private Definition delegateWsdl;
-
     private WSDLFactory wsdlFactory;
     private ExtensionRegistry extensionRegistry;
+    private WsdlDependenciesResolver wsdlDepsResolver;
 
     private QName qname;
     private String targetNamespace;
     private Map<String, String> otherNamespaces;
-
     private Map<QName, Message> messagesToAdd;
-
     private PortType portType;
     private Binding binding;
     private Service service;
 
     private Map<WsdlHolder, Set<BindingOperation>> bindingOperationsToAdd;
-
     private Map<String, Operation> operationsToAdd;
-
     private Map<WsdlHolder, Types> typesMap;
     private Set<WsdlHolder> sourceWsdls;
     private Builder builder;
 
-
     public WsdlComposer() throws WSDLException {
-        initialise(null);
+        this(null);
     }
 
     /**
@@ -71,16 +65,15 @@ public class WsdlComposer {
      * <p>If the given wsdl uses imports then it MUST have been parsed in a way
      * that will have set the documents base URI. If this is not done then any
      * relative imports will fail.</p>
-     *
-     * @param origWsdl The WSDL DOM
+     * @param wsdlDepsResolver: a resolver to resolve a WSDL with given WSDL dependencies and other related info.
      * @throws WSDLException if wsdl error occurs.
      */
-    public WsdlComposer(Document origWsdl) throws WSDLException {
-        initialise(origWsdl);
+    public WsdlComposer(WsdlDependenciesResolver wsdlDepsResolver) throws WSDLException {
+        initialize(wsdlDepsResolver);
     }
 
-    private void initialise(Document wsdl) throws WSDLException {
-        originalWsdlDoc = wsdl;
+    private void initialize(WsdlDependenciesResolver wsdlDepsResolver) throws WSDLException {
+        this.wsdlDepsResolver = wsdlDepsResolver;
         wsdlFactory = WSDLFactory.newInstance();
         extensionRegistry = Wsdl.disableSchemaExtensions(wsdlFactory.newPopulatedExtensionRegistry());
 
@@ -105,10 +98,10 @@ public class WsdlComposer {
     }
 
     private void populateFromDefinition() throws WSDLException {
-        if (originalWsdlDoc == null)
+        if (wsdlDepsResolver == null)
             return;
 
-        Wsdl originalWsdl = Wsdl.newInstance(originalWsdlDoc.getDocumentElement().getBaseURI(), originalWsdlDoc);
+        Wsdl originalWsdl = wsdlDepsResolver.resolve();
         WsdlHolder originalWsdlHolder = new WsdlHolder( originalWsdl, "Original Wsdl" );
         addSourceWsdl( originalWsdlHolder );
 
@@ -880,14 +873,6 @@ public class WsdlComposer {
         return usedSources;
     }
 
-    public Document getOriginalWsdlDoc() {
-        return originalWsdlDoc;
-    }
-
-    public void setOriginalWsdlDoc(Document origWsdl) {
-        originalWsdlDoc = origWsdl;
-    }
-
     public Service getService() {
         return service;
     }
@@ -987,13 +972,12 @@ public class WsdlComposer {
         public Definition buildWsdl() throws IOException, SAXException, WSDLException {
             nsPrefixCounter = 0;
             Definition workingWsdl;
-            if (originalWsdlDoc == null) {
+            if (wsdlDepsResolver == null) {
                 workingWsdl = wsdlFactory.newDefinition();
-            }
-            else {
+            } else {
                 WSDLReader reader = wsdlFactory.newWSDLReader();
                 reader.setExtensionRegistry(extensionRegistry);
-                workingWsdl = reader.readWSDL(originalWsdlDoc.getDocumentURI(), originalWsdlDoc);
+                workingWsdl = wsdlDepsResolver.resolve().getDefinition();
                 workingWsdl.getImports().clear(); // imports are in-lined
             }
             buildDefinition(workingWsdl);
