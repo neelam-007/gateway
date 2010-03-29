@@ -358,7 +358,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
                     final String selector = getSelector( jmsOutboundRequest, cfg.getEndpoint() );
-                    final int timeout = assertion.getResponseTimeout();
+                    int timeout = assertion.getResponseTimeout();
+                    if (timeout < 0) {
+                        timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT, 10000);
+                    }
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
                     try {

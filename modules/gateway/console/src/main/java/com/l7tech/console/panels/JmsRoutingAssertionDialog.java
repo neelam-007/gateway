@@ -126,6 +126,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField dynamicQCF;
     private JTextField dynamicDestQueueName;
     private JTextField dynamicReplyToName;
+    private JTextField jmsResponseTimeout;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -202,6 +203,20 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue Connection Factory Name", dynamicQCF, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Destination Queue Name", dynamicDestQueueName, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Wait for Reply on specified queue", dynamicReplyToName, null );
+        inputValidator.constrainTextField(jmsResponseTimeout, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String uiResponseTimeout = jmsResponseTimeout.getText();
+                try {
+                    if (! uiResponseTimeout.isEmpty()) {
+                        Integer.parseInt(uiResponseTimeout);
+                    }
+                } catch (NumberFormatException e) {
+                    return "The value for the response timeout must be a valid number or empty.";
+                }
+                return null;
+            }
+        });
 
         authSamlRadio.addChangeListener(new ChangeListener(){
             @Override
@@ -287,6 +302,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
                 assertion.setRequestJmsMessagePropertyRuleSet(requestMsgPropsPanel.getData());
                 assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
+                String responseTimeoutOverride = jmsResponseTimeout.getText();
+                if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
+                    DialogDisplayer.showMessageDialog(JmsRoutingAssertionDialog.this,
+                        "Warning: responses may be lost if the JMS response timeout is greater than the HTTP response timeout configured for the client.", null);
+                    assertion.setResponseTimeout(Integer.valueOf(responseTimeoutOverride));
+                } else {
+                    assertion.setResponseTimeout(-1);
+                }
 
                 fireEventAssertionChanged(assertion);
                 wasOkButtonPressed = true;
@@ -434,6 +457,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
         responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
+        int responseTimeoutOverride = assertion.getResponseTimeout();
+        jmsResponseTimeout.setText(responseTimeoutOverride >=0 ? String.valueOf(responseTimeoutOverride) : "");
     }
 
     /**

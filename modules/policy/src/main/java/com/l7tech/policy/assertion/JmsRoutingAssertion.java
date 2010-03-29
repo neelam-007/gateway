@@ -19,7 +19,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Holds information needed to route a message to an outbound JMS destination.
  */
 public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables {
-    public static final int DEFAULT_TIMEOUT = 10000;
 
     /**
      * @return the OID of the JMS endpoint, or null if there isn't one.
@@ -166,7 +165,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
     private Long endpointOid = null;
     private String endpointName = null;
-    private int responseTimeout = DEFAULT_TIMEOUT;
+    private int responseTimeout = -1;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
     private JmsDynamicProperties dynamicJmsRoutingProperties;
