@@ -25,6 +25,9 @@ import java.util.UUID;
 
 /**
  * An external reference used by an exported policy.
+ *
+ * <p>Subclasses should implement equals and hashCode such that equivalent
+ * references on the source system are equal.</p>
  */
 public abstract class ExternalReference {
 

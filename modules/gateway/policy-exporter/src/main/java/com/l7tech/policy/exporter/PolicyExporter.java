@@ -12,7 +12,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
@@ -45,14 +44,14 @@ public class PolicyExporter {
 
     public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
         // do policy to xml
-        Document policydoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
+        Document policyDoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
         // go through each assertion and list external dependencies
         Collection<ExternalReference> refs = new ArrayList<ExternalReference>();
         traverseAssertionTreeForReferences(rootAssertion, refs);
         // add external dependencies to document
-        Element referencesEl = wrapExportReferencesToPolicyDocument(policydoc);
+        Element referencesEl = wrapExportReferencesToPolicyDocument(policyDoc);
         serializeReferences(referencesEl, refs.toArray(new ExternalReference[refs.size()]));
-        return policydoc;
+        return policyDoc;
     }
 
     private void serializeReferences(Element referencesEl, ExternalReference[] references) {
@@ -95,27 +94,13 @@ public class PolicyExporter {
      * Adds ExternalReference instances to refs collection in relation to the assertion
      * if applicable
      */
-    private void appendRelatedReferences(Assertion assertion, Collection<ExternalReference> refs) {
-        ExternalReference ref = null;
-        // create the appropriate reference if applicable
-        if (assertion instanceof IdentityAssertion) {
-            IdentityAssertion idassertion = (IdentityAssertion)assertion;
-            IdProviderReference idProviderRef = new IdProviderReference( finder, idassertion.getIdentityProviderOid());
+    private void appendRelatedReferences( final Assertion assertion,
+                                          final Collection<ExternalReference> refs ) {
 
-            if(idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal()) {
-                ref = new FederatedIdProviderReference( finder, idassertion.getIdentityProviderOid());
-            } else {
-                ref = idProviderRef;
-            }
-        } else if (assertion instanceof JmsRoutingAssertion) {
-            JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
-            if(jmsidass.getEndpointOid() != null) {
-                ref = new JMSEndpointReference( finder, jmsidass.getEndpointOid());
-            }
-        } else if (assertion instanceof CustomAssertionHolder) {
+        if ( assertion instanceof CustomAssertionHolder ) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
-            ref = new CustomAssertionReference( finder, cahAss.getCustomAssertion().getName());
-        } else if (assertion instanceof SchemaValidation) {
+            addReference( new CustomAssertionReference( finder, cahAss.getCustomAssertion().getName()), refs );
+        } else if ( assertion instanceof SchemaValidation ) {
             Document schema = null;
             SchemaValidation sva = (SchemaValidation) assertion;
             AssertionResourceInfo schemaResource = sva.getResourceInfo();
@@ -129,103 +114,89 @@ public class PolicyExporter {
                 }
             } else if (schemaResource instanceof GlobalResourceInfo) {
                 String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
-                ref = new ExternalSchemaReference( finder, globalSchemaName, null);
+                addReference( new ExternalSchemaReference( finder, globalSchemaName, null), refs);
             }
 
             // process external schema imports, if any
             if (schema != null) {
                 ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
                 for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                    ExternalSchemaReference esref = new ExternalSchemaReference( finder, unresolvedImport.name, unresolvedImport.tns);
-                    if (!refs.contains(esref)) {
-                        refs.add(esref);
-                    }
+                    addReference( new ExternalSchemaReference( finder, unresolvedImport.name, unresolvedImport.tns), refs );
                 }
             }
-        } else if (assertion instanceof PolicyReference) {
-            if(((PolicyReference)assertion).retrievePolicyGuid() == null) {
-                return;
-            }
-            
-            ref = new IncludedPolicyReference( finder, (PolicyReference) assertion);
+        }
 
-            if(!refs.contains(ref)) {
-                IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
-                Policy fragmentPolicy;
-                //bug 5316: if we are dealing with include assertions, we'll just get the policy fragment from the assertion.
-                if (assertion instanceof Include) {
-                    fragmentPolicy = ((PolicyReference) assertion).retrieveFragmentPolicy();
-                    //bug 5316: this is here to handle the scenario where if the policy was imported, added new policy
-                    //fragment and export it. The new added policy fragment needs to be created because it does not
-                    //exist in the assertion yet.
-                    if (fragmentPolicy == null) {
+        if (assertion instanceof PolicyReference) {
+            if(((PolicyReference)assertion).retrievePolicyGuid() != null) {
+                final IncludedPolicyReference includedReference = new IncludedPolicyReference( finder, (PolicyReference) assertion);
+                if( addReference( includedReference, refs ) ) {
+                    Policy fragmentPolicy;
+                    //bug 5316: if we are dealing with include assertions, we'll just get the policy fragment from the assertion.
+                    if (assertion instanceof Include) {
+                        fragmentPolicy = ((PolicyReference) assertion).retrieveFragmentPolicy();
+                        //bug 5316: this is here to handle the scenario where if the policy was imported, added new policy
+                        //fragment and export it. The new added policy fragment needs to be created because it does not
+                        //exist in the assertion yet.
+                        if (fragmentPolicy == null) {
+                            fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                        }
+                    } else {
                         fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
                     }
-                } else {
-                    fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
-                }
-                
-                try {
-                    traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
-                } catch(IOException e) {
-                    // Ignore and continue with the export
-                    logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getGuid() + ")");
-                }
-            }
-        } else if (assertion instanceof JdbcConnectionable) {
-            JdbcConnectionable connectionable = (JdbcConnectionable)assertion;
-            // Check if there exists a duplicate JDBC connection reference.
-            for (ExternalReference exRef: refs) {
-                if (exRef instanceof JdbcConnectionReference) {
-                    JdbcConnectionReference connRef = (JdbcConnectionReference)exRef;
-                    if (connRef.getConnectionName().equals(connectionable.getConnectionName())) return;
-                }
-            }
-            ref = new JdbcConnectionReference( finder, connectionable);
-        } else if(assertion instanceof UsesEntities) {
-            UsesEntities entitiesUser = (UsesEntities)assertion;
-            for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                ref = null;
-                if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                    ref = new IdProviderReference( finder, entityHeader.getOid());
-                } else if(entityHeader.getType().equals(EntityType.JMS_ENDPOINT)) {
-                    ref = new JMSEndpointReference( finder, entityHeader.getOid());
-                } else if(entityHeader.getType().equals(EntityType.TRUSTED_CERT)) {
-                    ref = new TrustedCertReference( finder, entityHeader.getOid());
-                }
 
-                if(ref != null && !refs.contains(ref)) {
-                    refs.add(ref);
-                }
-            }
-            // Since BridgeRoutingAssertion implements UsersEntities and also extends PrivateKeyable,
-            // so if it is a BridgeRoutingAssertion, we need to create private key reference for it in the next step.
-            if (! (assertion instanceof BridgeRoutingAssertion)) {
-                return;
-            }
-        }
-
-        if (assertion instanceof PrivateKeyable) {
-            PrivateKeyable keyable = (PrivateKeyable)assertion;
-            // Check if there exists a duplicate private key reference.
-            for (ExternalReference er: refs) {
-                if (er instanceof PrivateKeyReference) {
-                    PrivateKeyReference pkr = (PrivateKeyReference)er;
-                    if ((pkr.isDefaultKey() && keyable.isUsesDefaultKeyStore()) ||
-                        (!pkr.isDefaultKey() && pkr.getKeyAlias() != null && pkr.getKeyAlias().equals(keyable.getKeyAlias()))) {
-                        return;
+                    try {
+                        traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
+                    } catch(IOException e) {
+                        // Ignore and continue with the export
+                        logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getGuid() + ")");
                     }
                 }
             }
-            if (! keyable.isUsesDefaultKeyStore()) {
-                ref = new PrivateKeyReference( finder, keyable);
+        }
+
+        if ( assertion instanceof JdbcConnectionable ) {
+            final JdbcConnectionable connectionable = (JdbcConnectionable)assertion;
+            addReference( new JdbcConnectionReference( finder, connectionable), refs );
+        }
+
+        if( assertion instanceof UsesEntities ) {
+            final UsesEntities entitiesUser = (UsesEntities)assertion;
+            for( final EntityHeader entityHeader : entitiesUser.getEntitiesUsed() ) {
+                if( entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) ) {
+                    final IdProviderReference idProviderRef = new IdProviderReference( finder, entityHeader.getOid());
+
+                    if( idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal() ) {
+                        addReference( new FederatedIdProviderReference( finder, entityHeader.getOid()), refs);
+                    } else {
+                        addReference( idProviderRef, refs);
+                    }
+                } else if( entityHeader.getType().equals(EntityType.JMS_ENDPOINT) ) {
+                    addReference( new JMSEndpointReference( finder, entityHeader.getOid()), refs);
+                } else if( entityHeader.getType().equals(EntityType.TRUSTED_CERT) ) {
+                    addReference( new TrustedCertReference( finder, entityHeader.getOid()), refs);
+                }
             }
         }
 
-        // if an assertion was created and it's not already recorded, add it
-        if (ref != null && !refs.contains(ref)) {
-            refs.add(ref);
+        if ( assertion instanceof PrivateKeyable ) {
+            final PrivateKeyable keyable = (PrivateKeyable)assertion;
+            if ( !keyable.isUsesDefaultKeyStore() ) {
+                addReference( new PrivateKeyReference( finder, keyable), refs);
+            }
         }
+    }
+
+    private boolean addReference( final ExternalReference reference,
+                                  final Collection<ExternalReference> references ) {
+        boolean added = false;
+
+        // Add reference only if not already present
+        if ( !references.contains( reference ) ) {
+            references.add( reference );
+            added = true;
+        }
+
+        return added;
     }
 
     private Element wrapExportReferencesToPolicyDocument(Document originalPolicy) {
@@ -248,11 +219,11 @@ public class PolicyExporter {
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
-    public static boolean isExportedPolicy(Document doc) {
-        Element rootel = doc.getDocumentElement();
-        if (rootel == null || rootel.getNamespaceURI() == null) return false;
-        if (!rootel.getNamespaceURI().equals(ExporterConstants.EXPORTED_POL_NS)) return false;
-        if (!rootel.getLocalName().equals(ExporterConstants.EXPORTED_DOCROOT_ELNAME)) return false;
+    public static boolean isExportedPolicy( final Document doc ) {
+        Element documentElement = doc.getDocumentElement();
+        if (documentElement == null || documentElement.getNamespaceURI() == null) return false;
+        if (!documentElement.getNamespaceURI().equals(ExporterConstants.EXPORTED_POL_NS)) return false;
+        if (!documentElement.getLocalName().equals(ExporterConstants.EXPORTED_DOCROOT_ELNAME)) return false;
         return true;
     }
 }

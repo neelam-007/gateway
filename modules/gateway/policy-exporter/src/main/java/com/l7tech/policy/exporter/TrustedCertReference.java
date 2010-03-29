@@ -253,4 +253,22 @@ public class TrustedCertReference extends ExternalReference {
     public void setLocalizeIgnore() {
         localizeType = LocalizeAction.IGNORE;
     }
+
+    @SuppressWarnings({ "RedundantIfStatement" })
+    @Override
+    public boolean equals( final Object o ) {
+        if ( this == o ) return true;
+        if ( o == null || getClass() != o.getClass() ) return false;
+
+        final TrustedCertReference that = (TrustedCertReference) o;
+
+        if ( oid != that.oid ) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (oid ^ (oid >>> 32));
+    }
 }

@@ -213,4 +213,26 @@ public class PrivateKeyReference extends ExternalReference {
         return true;
     }
 
+    @SuppressWarnings({ "RedundantIfStatement" })
+    @Override
+    public boolean equals( final Object o ) {
+        if ( this == o ) return true;
+        if ( o == null || getClass() != o.getClass() ) return false;
+
+        final PrivateKeyReference that = (PrivateKeyReference) o;
+
+        if ( isDefaultKey != that.isDefaultKey ) return false;
+        if ( keystoreOid != that.keystoreOid ) return false;
+        if ( keyAlias != null ? !keyAlias.equals( that.keyAlias ) : that.keyAlias != null ) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = keyAlias != null ? keyAlias.hashCode() : 0;
+        result = 31 * result + (int) (keystoreOid ^ (keystoreOid >>> 32));
+        result = 31 * result + (isDefaultKey ? 1 : 0);
+        return result;
+    }
 }
