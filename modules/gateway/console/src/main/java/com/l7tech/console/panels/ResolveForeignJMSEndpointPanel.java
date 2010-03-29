@@ -91,7 +91,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         jmsConnection.setTopicFactoryUrl(foreignRef.getTopicFactoryUrl());
         jmsConnection.setDestinationFactoryUrl(foreignRef.getDestinationFactoryUrl());
         JmsEndpoint jmsEndpoint = new JmsEndpoint();
-        jmsEndpoint.setDestinationName(foreignRef.getEndpointName());
+        jmsEndpoint.setDestinationName(foreignRef.getDestinationName());
 
         final JmsQueuePropertiesDialog jqpd = JmsQueuePropertiesDialog.createInstance(this.getOwner(), jmsConnection, jmsEndpoint, false);
         jqpd.pack();
@@ -191,7 +191,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
 
     @Override
     public String getStepLabel() {
-        return "Unresolved JMS endpoint " + foreignRef.getEndpointName();
+        return "Unresolved JMS endpoint " + foreignRef.getDisplayName();
     }
 
     @Override

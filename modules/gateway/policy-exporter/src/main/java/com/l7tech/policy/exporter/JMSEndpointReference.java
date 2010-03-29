@@ -39,7 +39,7 @@ public class JMSEndpointReference extends ExternalReference {
             JmsEndpoint jmsEndpoint = getFinder().findEndpointByPrimaryKey(endpointOid);
             if (jmsEndpoint != null) {
                 name = jmsEndpoint.getName();
-                endpointName = jmsEndpoint.getDestinationName();
+                destinationName = jmsEndpoint.getDestinationName();
                 jmsConnection = getFinder().findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
             }
         } catch (RuntimeException e) {
@@ -70,12 +70,15 @@ public class JMSEndpointReference extends ExternalReference {
             output.oid = Long.parseLong(val);
         }
         output.name = getParamFromEl(el, NAME_EL_NAME);
-        output.endpointName = getParamFromEl(el, EPNAME_EL_NAME);
+        output.destinationName = getParamFromEl(el, DESTINATION_EL_NAME);
+        if ( output.destinationName == null ) {
+            output.destinationName = getParamFromEl(el, EPNAME_EL_NAME);
+        }
         output.initialContextFactoryClassname = getParamFromEl(el, CONTEXT_EL_NAME);
         output.jndiUrl = getParamFromEl(el, JNDI_EL_NAME);
         output.queueFactoryUrl = getParamFromEl(el, QUEUE_EL_NAME);
         output.topicFactoryUrl = getParamFromEl(el, TOPIC_EL_NAME);
-        output.destinationFactoryUrl = getParamFromEl(el, DESTINATION_EL_NAME);
+        output.destinationFactoryUrl = getParamFromEl(el, DESTINATIONURL_EL_NAME );
         return output;
     }
 
@@ -108,8 +111,8 @@ public class JMSEndpointReference extends ExternalReference {
         return name;
     }
 
-    public String getEndpointName() {
-        return endpointName;
+    public String getDestinationName() {
+        return destinationName;
     }
 
     public String getInitialContextFactoryClassname() {
@@ -161,9 +164,9 @@ public class JMSEndpointReference extends ExternalReference {
         addElement( refEl, JNDI_EL_NAME, jndiUrl );
         addElement( refEl, QUEUE_EL_NAME, queueFactoryUrl );
         addElement( refEl, TOPIC_EL_NAME, topicFactoryUrl );
-        addElement( refEl, DESTINATION_EL_NAME, destinationFactoryUrl );
+        addElement( refEl, DESTINATIONURL_EL_NAME, destinationFactoryUrl );
         addElement( refEl, NAME_EL_NAME, name );
-        addElement( refEl, EPNAME_EL_NAME, endpointName );
+        addElement( refEl, DESTINATION_EL_NAME, destinationName );
     }
 
     private void addElement( final Element parent,
@@ -178,30 +181,35 @@ public class JMSEndpointReference extends ExternalReference {
         }
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof JMSEndpointReference)) return false;
+    public String getDisplayName() {
+        String displayName = getName();
 
-        final JMSEndpointReference jmsEndpointReference = (JMSEndpointReference) o;
+        if ( displayName == null ) {
+            if ( getDestinationName() != null ) {
+                displayName = "queue name '" + getDestinationName() + "'";                
+            } else {
+                displayName = "Unknown";
+            }
+        }
 
-        if (destinationFactoryUrl != null ? !destinationFactoryUrl.equals(jmsEndpointReference.destinationFactoryUrl) : jmsEndpointReference.destinationFactoryUrl != null) return false;
-        if (initialContextFactoryClassname != null ? !initialContextFactoryClassname.equals(jmsEndpointReference.initialContextFactoryClassname) : jmsEndpointReference.initialContextFactoryClassname != null) return false;
-        if (jndiUrl != null ? !jndiUrl.equals(jmsEndpointReference.jndiUrl) : jmsEndpointReference.jndiUrl != null) return false;
-        if (queueFactoryUrl != null ? !queueFactoryUrl.equals(jmsEndpointReference.queueFactoryUrl) : jmsEndpointReference.queueFactoryUrl != null) return false;
-        //noinspection RedundantIfStatement
-        if (topicFactoryUrl != null ? !topicFactoryUrl.equals(jmsEndpointReference.topicFactoryUrl) : jmsEndpointReference.topicFactoryUrl != null) return false;
+        return displayName;
+    }
+
+    @Override
+    public boolean equals( final Object o ) {
+        if ( this == o ) return true;
+        if ( o == null || getClass() != o.getClass() ) return false;
+
+        final JMSEndpointReference that = (JMSEndpointReference) o;
+
+        if ( oid != that.oid ) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
-        int result;
-        result = (initialContextFactoryClassname != null ? initialContextFactoryClassname.hashCode() : 0);
-        result = 29 * result + (jndiUrl != null ? jndiUrl.hashCode() : 0);
-        result = 29 * result + (queueFactoryUrl != null ? queueFactoryUrl.hashCode() : 0);
-        result = 29 * result + (topicFactoryUrl != null ? topicFactoryUrl.hashCode() : 0);
-        result = 29 * result + (destinationFactoryUrl != null ? destinationFactoryUrl.hashCode() : 0);
-        return result;
+        return (int) (oid ^ (oid >>> 32));
     }
 
     /**
@@ -233,7 +241,7 @@ public class JMSEndpointReference extends ExternalReference {
                 // Try to discriminate using both the endpoint name and the queue name (queue name could be empty)
                 for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
                     if ( jmsTuple.getKey().getName().equals(name) &&
-                         isMatch(jmsTuple.getKey().getDestinationName(),endpointName) &&
+                         isMatch(jmsTuple.getKey().getDestinationName(), destinationName ) &&
                          permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
                         // WE HAVE A PERFECT MATCH!
                         logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
@@ -243,9 +251,9 @@ public class JMSEndpointReference extends ExternalReference {
                     }
                 }
                 // Try to discriminate using only the queue name
-                if ( !isMissing(endpointName) ) {
+                if ( !isMissing( destinationName ) ) {
                     for (Pair<JmsEndpoint,JmsConnection> jmsTuple : tempMatches) {
-                        if ( jmsTuple.getKey().getDestinationName().equals(endpointName) &&
+                        if ( jmsTuple.getKey().getDestinationName().equals( destinationName ) &&
                              permitMapping( getOid(), jmsTuple.getKey().getOid() )) {
                             // WE HAVE A PERFECT MATCH!
                             logger.fine("The local JMS endpoint was resolved from oid " + getOid() + " to " + jmsTuple.getKey().getOid());
@@ -325,7 +333,7 @@ public class JMSEndpointReference extends ExternalReference {
     private long oid;
     private long localEndpointId;
     private String name; // Added in 5.3, will be null in earlier exports
-    private String endpointName;
+    private String destinationName;
     private String initialContextFactoryClassname;
     private String jndiUrl;
     private String queueFactoryUrl;
@@ -335,10 +343,11 @@ public class JMSEndpointReference extends ExternalReference {
     public static final String REF_EL_NAME = "JMSConnectionReference";
     public static final String OID_EL_NAME = "OID";
     public static final String NAME_EL_NAME = "Name";
-    public static final String EPNAME_EL_NAME = "EndpointName";
+    public static final String DESTINATION_EL_NAME = "DestinationName";
+    public static final String EPNAME_EL_NAME = "EndpointName"; // used in pre 5.3 exports, value was the "Queue Name"
     public static final String CONTEXT_EL_NAME = "InitialContextFactoryClassname";
     public static final String JNDI_EL_NAME = "JndiUrl";
     public static final String QUEUE_EL_NAME = "QueueFactoryUrl";
     public static final String TOPIC_EL_NAME = "TopicFactoryUrl";
-    public static final String DESTINATION_EL_NAME = "DestinationFactoryUrl";
+    public static final String DESTINATIONURL_EL_NAME = "DestinationFactoryUrl";
 }
