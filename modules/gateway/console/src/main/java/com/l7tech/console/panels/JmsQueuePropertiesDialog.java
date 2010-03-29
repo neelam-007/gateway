@@ -774,7 +774,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.copyFrom(endpoint);
         String name = jmsEndpointDescriptiveName.getText();
         ep.setName(name);
-        ep.setTemplate(isTemplateQueue.isSelected());
+        ep.setTemplate(viewIsTemplate());
 
         String queueName = queueNameTextField.getText();
         ep.setDestinationName(queueName);
@@ -798,7 +798,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton);
         } else {
             configureEndpointReplyBehaviour(
-                    ep, isTemplateQueue.isSelected()?"Outbound Template":"Outbound",
+                    ep, viewIsTemplate()?"Outbound Template":"Outbound",
                     outboundReplyAutomaticRadioButton,
                     outboundReplyNoneRadioButton,
                     outboundReplySpecifiedQueueRadioButton,
@@ -1136,13 +1136,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
         enableOrDisableComponents();
     }
 
+    private boolean viewIsTemplate() {
+        return isTemplateQueue.isEnabled() && isTemplateQueue.isSelected();
+    }
+
     /**
      * Returns true iff. the form has enough information to construct a JmsConnection.
      * @return true iff. form has enough info to construct a JmsConnection
      */
     @SuppressWarnings({ "RedundantIfStatement" })
     private boolean validateForm() {
-        boolean isTemplate = isTemplateQueue.isSelected();
+        boolean isTemplate = viewIsTemplate();
         if (jmsEndpointDescriptiveName.getText().trim().length() == 0)
             return false;
         if (!isTemplate && queueNameTextField.getText().trim().length() == 0)
@@ -1235,7 +1239,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         isTemplateQueue.setEnabled(outboundRadioButton.isSelected());
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
-        testButton.setEnabled(valid);
+        testButton.setEnabled(valid && !viewIsTemplate());
         enableContentTypeControls();
     }
 
