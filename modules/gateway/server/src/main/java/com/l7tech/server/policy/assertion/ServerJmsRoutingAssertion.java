@@ -821,7 +821,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     if (updated) {
                         if (serverJmsRoutingAssertion.markUpdate(true) ) {
                             if (logger.isLoggable(Level.INFO)) {
-                                logger.log(Level.INFO, "Flagging JMS information for update [conn:{0}; epnt:{1}].",
+                                logger.log(Level.CONFIG, "Flagging JMS information for update [conn:{0}; epnt:{1}].",
                                     new Object[]{Long.toString(connection.getOid()), Long.toString(endpoint.getOid())});
                             }
                         }
