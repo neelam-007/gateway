@@ -27,13 +27,11 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gui.util.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
@@ -863,6 +861,10 @@ public class MainWindow extends JFrame implements SheetHolder {
                     public void run() {
                         if ( isApplet() ) {
                             AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                            if (applet == null) {
+                                log.warning("No applet currently attached");
+                                return;
+                            }
                             String sessionId = applet.getSessionID();
                             String host = applet.getHostAndPort();
                             if ( sessionId == null || host == null ) {
