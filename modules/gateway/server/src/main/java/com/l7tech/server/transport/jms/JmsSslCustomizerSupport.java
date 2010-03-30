@@ -107,7 +107,7 @@ public class JmsSslCustomizerSupport {
             try {
                 KeyManager[] keyManagers;
                 if ( keystoreIdStr==null && alias == null ) {
-                    keyManagers = new KeyManager[0];
+                    keyManagers = null;
                 } else {
                     SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keyId.left);
                     KeyManager keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());

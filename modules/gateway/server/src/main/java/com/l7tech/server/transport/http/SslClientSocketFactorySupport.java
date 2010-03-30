@@ -109,21 +109,19 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
     protected abstract X509TrustManager getTrustManager();
 
     protected KeyManager[] getDefaultKeyManagers() {
-        return new KeyManager[0];
+        return null;
     }
 
     protected SSLContext buildSSLContext() {
-        KeyManager[] keyManagers = getDefaultKeyManagers();
-        if ( keyManagers == null )
-            throw new IllegalStateException("KeyManagers must be set before first use");
+        final KeyManager[] keyManagers = getDefaultKeyManagers();
 
-        X509TrustManager trustManager = getTrustManager();
+        final X509TrustManager trustManager = getTrustManager();
         if ( trustManager == null )
             throw new IllegalStateException("TrustManager must be set before first use");
 
-        int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+        final int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
 
-        SSLContext context;
+        final SSLContext context;
         try {
             context = SSLContext.getInstance("TLS");
             context.init( keyManagers, new TrustManager[]{ trustManager }, null );
