@@ -624,13 +624,9 @@ public class WsdlLocationPanel extends JPanel {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "IO Error.", e1);
                                 dlg.setVisible(false);
-                                if (ExceptionUtils.causedBy(e1, SocketException.class)) {
-                                    JOptionPane.showMessageDialog(null,
-                                                                  "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
-                                                                  "'\n",
-                                                                  "Error",
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else if (ExceptionUtils.causedBy(e1, SSLException.class)) {
+                                if (ExceptionUtils.causedBy(e1, SocketException.class) ||
+                                    ExceptionUtils.causedBy(e1, SSLException.class) ||
+                                    ExceptionUtils.causedBy(e1, ByteLimitInputStream.DataSizeLimitExceededException.class)) {
                                     JOptionPane.showMessageDialog(null,
                                                                   "<html><center>Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +  "':</center>" +
                                                                   "<center>" + ExceptionUtils.getMessage(e1) + "</center></html>\n",
@@ -638,8 +634,8 @@ public class WsdlLocationPanel extends JPanel {
                                                                   JOptionPane.ERROR_MESSAGE);
                                 } else {
                                     JOptionPane.showMessageDialog(null,
-                                                                  "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
-                                                                  "'\n",
+                                                                  "<html><center>Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +  "':</center>" +
+                                                                  "<center>" + ExceptionUtils.getMessage(e1) + "</center></html>\n",
                                                                   "Error",
                                                                   JOptionPane.ERROR_MESSAGE);
                                 }

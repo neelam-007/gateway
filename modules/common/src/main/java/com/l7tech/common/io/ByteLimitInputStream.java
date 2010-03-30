@@ -78,7 +78,8 @@ public class ByteLimitInputStream extends PushbackInputStream {
         bytesRead += got;
         if (sizeLimit > 0 && bytesRead >= sizeLimit) {
             close();
-            throw new IOException("Unable to read stream: the specified maximum data size limit would be exceeded");
+            //noinspection ThrowableInstanceNeverThrown
+            throw new IOException("Unable to read stream: the specified maximum data size limit would be exceeded", new DataSizeLimitExceededException());
         }
     }
 
@@ -117,5 +118,9 @@ public class ByteLimitInputStream extends PushbackInputStream {
 
     public boolean markSupported() {
         return false;
+    }
+
+    public static class DataSizeLimitExceededException extends Exception {
+        public DataSizeLimitExceededException() {}
     }
 }
