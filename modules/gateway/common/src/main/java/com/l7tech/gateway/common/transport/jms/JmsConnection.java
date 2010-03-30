@@ -79,7 +79,6 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _username;
     private String _password;
     private String _properties;
-    private boolean _providerTypeCustomized = true; // a flag indicating whether the provider type is customized or not.
 
     public JmsConnection(){
     }
@@ -101,7 +100,6 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setUsername( other.getUsername() );
         setPassword( other.getPassword() );
         setProperties( other.getProperties() );
-        setProviderTypeCustomized(other.isProviderTypeCustomized());
     }
 
     @Override
@@ -236,15 +234,5 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public void setProperties(String properties) {
         checkLocked();
         _properties = properties;
-    }
-
-    @Column(name="provider_type_customized")
-    public boolean isProviderTypeCustomized() {
-        return _providerTypeCustomized;
-    }
-
-    public void setProviderTypeCustomized(boolean providerTypeCustomized) {
-        checkLocked();
-        _providerTypeCustomized = providerTypeCustomized;
     }
 }

@@ -15,7 +15,6 @@ import java.io.Serializable;
  * @version $Revision$
  */
 public class JmsProvider implements Serializable {
-    public final static String CUSTOM_LABEL = "(Custom)";
 
     private String _name;
     private String _initialContextFactoryClassname;
@@ -49,7 +48,6 @@ public class JmsProvider implements Serializable {
         c.setQueueFactoryUrl(getDefaultQueueFactoryUrl());
         c.setTopicFactoryUrl(getDefaultTopicFactoryUrl());
         c.setDestinationFactoryUrl(getDefaultDestinationFactoryUrl());
-        c.setProviderTypeCustomized(CUSTOM_LABEL.equals(_name));
         return c;
     }
 

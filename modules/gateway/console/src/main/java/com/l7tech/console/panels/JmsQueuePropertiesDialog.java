@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -108,6 +109,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
  	private JCheckBox specifyContentTypeCheckBox;
     private JCheckBox isTemplateQueue;
     private JTextField jmsEndpointDescriptiveName;
+    private JButton applyReset;
 
 
     private JmsConnection connection = null;
@@ -291,7 +293,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         outboundRadioButton.addItemListener( enableDisableListener );
 
 
-        initProviderComboBox();
+        initProviderReset();
 
         useJndiCredentialsCheckBox.addItemListener(new ItemListener() {
             @Override
@@ -512,7 +514,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         return svc;
     }
 
-    private void initProviderComboBox() {
+    private void initProviderReset() {
         JmsProvider[] providers;
         try {
             providers = Registry.getDefault().getJmsManager().getProviderList();
@@ -520,57 +522,49 @@ public class JmsQueuePropertiesDialog extends JDialog {
             throw new RuntimeException("Unable to obtain list of installed JMS provider types from Gateway", e);
         }
 
-        ProviderComboBoxItem[] items = new ProviderComboBoxItem[providers.length + 1];
-
-        // If we already have a connection, and it was using non-default provider settings,
-        // preserve it's old settings in a "Custom" provider
-        JmsProvider customProvider = new JmsProvider();
-        customProvider.setName(JmsProvider.CUSTOM_LABEL);
-        if (connection != null && connection.isProviderTypeCustomized()) {
-            customProvider.setDefaultDestinationFactoryUrl(connection.getDestinationFactoryUrl());
-            customProvider.setDefaultQueueFactoryUrl(connection.getQueueFactoryUrl());
-            customProvider.setDefaultTopicFactoryUrl(connection.getTopicFactoryUrl());
-            customProvider.setInitialContextFactoryClassname(connection.getInitialContextFactoryClassname());
-        } else {
-            customProvider.setDefaultDestinationFactoryUrl(null);
-            customProvider.setDefaultQueueFactoryUrl(null);
-            customProvider.setDefaultTopicFactoryUrl(null);
-            customProvider.setInitialContextFactoryClassname(null);
-        }
-        items[0] = new ProviderComboBoxItem(customProvider);
-
+        ProviderComboBoxItem[] items = new ProviderComboBoxItem[providers.length];
         for (int i = 0; i < providers.length; i++)
-            items[i + 1] = new ProviderComboBoxItem(providers[i]);
+            items[i] = new ProviderComboBoxItem(providers[i]);
 
         providerComboBox.setModel(new DefaultComboBoxModel(items));
-        providerComboBox.setSelectedIndex(0);
-        providerComboBox.addActionListener(new ActionListener() {
+        providerComboBox.setSelectedIndex(-1);
+        applyReset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onProviderChanged();
+                onProviderReset();
             }
         });
     }
 
-    private void onProviderChanged() {
+    private void onProviderReset() {
         final ProviderComboBoxItem providerItem = (ProviderComboBoxItem)providerComboBox.getSelectedItem();
         if (providerItem == null)
             return;
-        JmsProvider provider = providerItem.getProvider();
+        DialogDisplayer.showConfirmDialog(this,
+            "Current JMS queue properties will be overwritten",
+            "JMS Queue Reset Confirmation",
+            JOptionPane.OK_CANCEL_OPTION,
+            new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if (JOptionPane.OK_OPTION == option) {
+                        JmsProvider provider = providerItem.getProvider();
+                        // Queue connection factory name, defaulting to destination factory name
+                        String qcfName = (connection != null && providerMatchesConnection(provider, connection))?
+                                connection.getQueueFactoryUrl() : provider.getDefaultQueueFactoryUrl();
+                        if (qcfName == null || qcfName.length() < 1)
+                            qcfName = provider.getDefaultDestinationFactoryUrl();
+                        if (qcfName != null)
+                            qcfTextField.setText(qcfName);
 
-        // Queue connection factory name, defaulting to destination factory name
-        String qcfName = (connection != null && providerMatchesConnection(provider, connection))?
-                connection.getQueueFactoryUrl() : provider.getDefaultQueueFactoryUrl();
-        if (qcfName == null || qcfName.length() < 1)
-            qcfName = provider.getDefaultDestinationFactoryUrl();
-        if (qcfName != null)
-            qcfTextField.setText(qcfName);
+                        String icfName = provider.getInitialContextFactoryClassname();
+                        if (icfName != null)
+                            icfTextField.setText(icfName);
 
-        String icfName = provider.getInitialContextFactoryClassname();
-        if (icfName != null)
-            icfTextField.setText(icfName);
-
-        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
+                        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
+                    }
+                }
+            });
     }
 
     /**
@@ -663,7 +657,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (connection != null) {
             conn = new JmsConnection();
             conn.copyFrom(connection);
-            conn.setProviderTypeCustomized(connection.isProviderTypeCustomized() && providerComboBox.getSelectedIndex() <= 0);
         } else {
             final ProviderComboBoxItem providerItem = ((ProviderComboBoxItem)providerComboBox.getSelectedItem());
             if (providerItem == null) {
@@ -861,22 +854,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    private void selectProviderForConnection(JmsConnection connection) {
-        if (! connection.isProviderTypeCustomized()) {
-            int numProviders = providerComboBox.getModel().getSize();
-            for (int i = 0; i < numProviders; ++i) {
-                ProviderComboBoxItem item = (ProviderComboBoxItem)providerComboBox.getModel().getElementAt(i);
-                JmsProvider provider = item.getProvider();
-                if (providerMatchesConnection(provider, connection)) {
-                    providerComboBox.setSelectedItem(item);
-                    return;
-                }
-            }
-        }
-
-        providerComboBox.setSelectedIndex(0);
-    }
-
     private static class ComboItem implements Comparable {
         ComboItem(String name, long id) {
             serviceName = name;
@@ -936,7 +913,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             Properties props = connection.properties();
 
             // configure gui from connection
-            selectProviderForConnection(connection);
             qcfTextField.setText(connection.getQueueFactoryUrl());
             jndiUrlTextField.setText(connection.getJndiUrl());
             icfTextField.setText(connection.getInitialContextFactoryClassname());

@@ -76,9 +76,6 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-500302, 0, "upgrade.task.500302", "com.l7tech.server.upgrade.Upgrade52to53UpdateCommunitySchemas");
 
-ALTER TABLE jms_connection ADD COLUMN provider_type_customized tinyint(1) NOT NULL DEFAULT 1;
-UPDATE jms_connection SET provider_type_customized = 0; 
-
 --
 -- Reenable FK at very end of script
 --
