@@ -946,7 +946,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                       if ( isApplet() ) {
                           AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
-                          applet.invalidateSessionID();
+                          if (applet != null)
+                            applet.invalidateSessionID();
                       }
                   } catch (ActionVetoException e) {
                       // action vetoed
