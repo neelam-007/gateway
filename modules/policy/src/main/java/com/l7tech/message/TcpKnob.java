@@ -10,6 +10,7 @@ package com.l7tech.message;
  * Information about a message that arrived over TCP. This could be an inbound request (front side) or an inbound
  * response (back side)
  */
+@SuppressWarnings({"UnusedDeclaration"}) // Suppressed because apparently-unused methods are invoked reflectively by MessageSelector
 public interface TcpKnob extends MessageKnob {
     /**
      * @return  remote IPv4 or IPv6 address in conventional (dotted or colon) notation, or null if not known.
