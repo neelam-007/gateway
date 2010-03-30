@@ -26,15 +26,15 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(RateLimitAssertion.class.getName());
 
     private String counterName = "RateLimit-${request.clientid}";
-    private int maxRequestsPerSecond = 100;
+    private String maxRequestsPerSecond = "100";
     private boolean shapeRequests = false;
-    private int maxConcurrency = 0;
+    private String maxConcurrency = "0";
     private boolean hardLimit = false;
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(getCounterName());
+        return Syntax.getReferencedNames(getCounterName() + " " + getMaxRequestsPerSecond() + " " + getMaxConcurrency());
     }
 
     /**
@@ -52,14 +52,27 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         this.counterName = counterName;
     }
 
-    public int getMaxRequestsPerSecond() {
+    public String getMaxRequestsPerSecond() {
         return maxRequestsPerSecond;
     }
 
-    /** @param maxRequestsPerSecond the rate limit to enforce.  Must be positive. */
-    public void setMaxRequestsPerSecond(int maxRequestsPerSecond) {
-        if (maxRequestsPerSecond < 1) throw new IllegalArgumentException();
+    /**
+     * @param maxRequestsPerSecond String the rate limit to enforce.  Must be positive. The value may be a single context
+     *                             variable. If it is not the value must be parseable as an int and it's value must be greater than 1.
+     */
+    public void setMaxRequestsPerSecond(String maxRequestsPerSecond) {
+        final String errorMsg = validateMaxRequestsPerSecond(maxRequestsPerSecond);
+        if (errorMsg != null) throw new IllegalArgumentException(errorMsg);
+
         this.maxRequestsPerSecond = maxRequestsPerSecond;
+    }
+
+    /**
+     * Provided for backwards compatability for policies before bug5041 was fixed
+     * @param maxRequestsPerSecond int
+     */
+    public void setMaxRequestsPerSecond(int maxRequestsPerSecond) {
+        setMaxRequestsPerSecond(String.valueOf(maxRequestsPerSecond));
     }
 
     public boolean isShapeRequests() {
@@ -71,18 +84,31 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         this.shapeRequests = shapeRequests;
     }
 
-    public int getMaxConcurrency() {
+    public String getMaxConcurrency() {
         return maxConcurrency;
     }
 
     /**
-     * @param maxConcurrency maximum number of requests that may be in progress at once with this counter,
-     *                       or zero for no special limit.  Must be nonnegative.
+     * @param maxConcurrency String maximum number of requests that may be in progress at once for the counter configured by
+     *                       this instance of this assertion, or zero for no special limit. May either be an int value as a String
+     *                       or a single context variable. If the value is not a context variable, then the value must be parseable
+     *                       as an int and must be nonnegative.
      */
-    public void setMaxConcurrency(int maxConcurrency) {
-        if (maxConcurrency < 0) throw new IllegalArgumentException();
+    public void setMaxConcurrency(String maxConcurrency) {
+        final String errorMsg = validateMaxConcurrency(maxConcurrency);
+        if (errorMsg != null) throw new IllegalArgumentException(errorMsg);
+
         this.maxConcurrency = maxConcurrency;
     }
+
+    /**
+     * Provided for backwards compatability for policies before bug5041 was fixed
+     * @param maxConcurrency int
+     */
+    public void setMaxConcurrency(int maxConcurrency) {
+        setMaxConcurrency(String.valueOf(maxConcurrency));
+    }
+
 
     public boolean isHardLimit() {
         return hardLimit;
@@ -107,6 +133,50 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         this.hardLimit = hardLimit;
     }
 
+    public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {
+        final String[] referencedVars = Syntax.getReferencedNames(maxRequestsPerSecond);
+        if (referencedVars.length > 0) {
+            if (referencedVars.length != 1) {
+                return "Only a single context variable can be supplied for max requests per second.";
+            }
+            if (!maxRequestsPerSecond.trim().equals("${" + referencedVars[0] + "}")) {
+                return "If a context variable is supplied for maximum requests per second it must be a reference to exactly one context variable.";
+            }
+        } else {
+            final int maxRequests;
+            try {
+                maxRequests = Integer.parseInt(maxRequestsPerSecond);
+            } catch (NumberFormatException e) {
+                return "Invalid value for maximum requests per second.";
+            }
+            if (maxRequests < 1) return "Max requests per second cannot be less than 1.";
+        }
+
+        return null;
+    }
+
+    public static String validateMaxConcurrency(String maxConcurrency) {
+        final String[] referencedVars = Syntax.getReferencedNames(maxConcurrency);
+        if (referencedVars.length > 0) {
+            if (referencedVars.length != 1) {
+                return "Only a single context variable can be supplied for max concurrency.";
+            }
+            if (!maxConcurrency.trim().equals("${" + referencedVars[0] + "}")) {
+                return "If a context variable is supplied for maximum concurrency it must be a reference to exactly one context variable.";
+            }
+        } else {
+            final int maxConnurencyInt;
+            try {
+                maxConnurencyInt = Integer.parseInt(maxConcurrency);
+            } catch (NumberFormatException e) {
+                return "Invalid value for maximum concurrency";
+            }
+            if (maxConnurencyInt < 0) return "Max concurrency cannot be less than 0";
+        }
+
+        return null;
+    }
+    
     //
     // Metadata
     //
@@ -124,7 +194,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         public String getAssertionName( final RateLimitAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            int concurrency = assertion.getMaxConcurrency();
+            String concurrency = assertion.getMaxConcurrency();
             StringBuffer sb = new StringBuffer(baseName + ": ");
             sb.append(assertion.isHardLimit() ? "up to " : "average ");
             sb.append(assertion.getMaxRequestsPerSecond()).
@@ -135,7 +205,12 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
             String prettyName = PresetInfo.findCounterNameKey(counterName, null);
 
             sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
-            if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
+            if(Syntax.getReferencedNames(concurrency).length > 0){
+                sb.append(" (concurrency ").append(concurrency).append(")");
+            }else{
+                if (Integer.parseInt(concurrency) > 0) sb.append(" (concurrency ").append(concurrency).append(")");    
+            }
+
             return sb.toString();
         }
     };

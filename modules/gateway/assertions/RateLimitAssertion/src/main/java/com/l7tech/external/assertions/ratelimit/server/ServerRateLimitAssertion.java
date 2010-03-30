@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -67,6 +69,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         Background.scheduleRepeated(new TimerTask() {
             private long lastCheck = 0;
 
+            @Override
             public void run() {
                 long now = System.currentTimeMillis();
                 if (now - lastCheck > cleanerPeriod.get()) {
@@ -255,15 +258,27 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final String counterName = getConterName(context);
         final Counter counter = findCounter(counterName);
 
-        int maxConcurrency = findMaxConcurrency();
+        int maxConcurrency = 0;
+        try {
+            maxConcurrency = findMaxConcurrency(context);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.FAILED;
+        } catch (NumberFormatException e) {
+            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, rla.getMaxConcurrency(), "Integer");
+            return AssertionStatus.FAILED;
+        }
+
         if (maxConcurrency > 0) {
             // Enforce maximum concurrency for this counter
             final int newConcurrency = counter.concurrency.incrementAndGet();
             context.runOnClose(new Runnable() {
+                @Override
                 public void run() {
                     counter.concurrency.decrementAndGet();
                 }
@@ -276,7 +291,16 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
 
         boolean canSleep = rla.isShapeRequests();
-        long pps = findPointsPerSecond();
+        long pps;
+        try {
+            pps = findPointsPerSecond(context);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.FAILED;
+        } catch (NumberFormatException e) {
+            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, rla.getMaxRequestsPerSecond(), "Integer");
+            return AssertionStatus.FAILED;
+        }
 
         final long maxPoints = rla.isHardLimit() ? (POINTS_PER_REQUEST + (POINTS_PER_REQUEST / 2)) : pps;
 
@@ -366,12 +390,28 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
     }
 
-    private int findMaxConcurrency() {
-        return rla.getMaxConcurrency() / getClusterSize();
+    private int findMaxConcurrency(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
+        return getIntegerContextVariable(context, rla.getMaxConcurrency()) / getClusterSize();
     }
 
-    private long findPointsPerSecond() {
-        int rps = rla.getMaxRequestsPerSecond();
+    private int getIntegerContextVariable(PolicyEnforcementContext context, String variableName) throws NoSuchVariableException, NumberFormatException {
+        final String[] referencedVars = Syntax.getReferencedNames(variableName);
+        int intValue;
+        if(referencedVars.length > 0){
+            final Object varReferenced = context.getVariable(referencedVars[0]);
+            intValue = Integer.parseInt(varReferenced.toString());
+        }else{
+            intValue = Integer.parseInt(variableName);
+        }
+
+        return intValue;
+    }
+
+    private long findPointsPerSecond(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
+        int rps = getIntegerContextVariable(context, rla.getMaxRequestsPerSecond());
+
+        if (rps < 1) throw new IllegalStateException("Max requests per second cannot be less than 1");
+
         if (rps > MAX_REQUESTS_PER_SECOND)
             rps = MAX_REQUESTS_PER_SECOND; // Guard agaist overflow
         return rps * POINTS_PER_REQUEST / getClusterSize();

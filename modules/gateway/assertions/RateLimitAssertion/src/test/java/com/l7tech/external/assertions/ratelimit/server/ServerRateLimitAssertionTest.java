@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.util.TimeSource;
 import com.l7tech.common.TestDocuments;
@@ -136,8 +139,8 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
         rla.setCounterName("testConcurrencyLimit");
-        rla.setMaxConcurrency(10);
-        rla.setMaxRequestsPerSecond(10000);
+        rla.setMaxConcurrency("10");
+        rla.setMaxRequestsPerSecond("10000");
         ServerAssertion ass = makePolicy(rla);
 
         PolicyEnforcementContext pecs[] = new PolicyEnforcementContext[20];
@@ -189,11 +192,11 @@ public class ServerRateLimitAssertionTest {
     @BugNumber(8090)
     public void testSimpleFailLimitNoSleepNoBurst() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
-        rla.setMaxRequestsPerSecond(25);
+        rla.setMaxRequestsPerSecond("25");
         rla.setShapeRequests(false);
         rla.setHardLimit(true);
         rla.setCounterName("MyTestCounter-23423");
-        rla.setMaxConcurrency(0);
+        rla.setMaxConcurrency("0");
         ServerAssertion ass = makePolicy(rla);
 
         clock.sync();
@@ -211,11 +214,11 @@ public class ServerRateLimitAssertionTest {
     @BugNumber(8090)
     public void testSimpleFailLimitNoSleepNoBurst_moreIterations() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
-        rla.setMaxRequestsPerSecond(25);
+        rla.setMaxRequestsPerSecond("25");
         rla.setShapeRequests(false);
         rla.setHardLimit(true);
         rla.setCounterName("MyTestCounter-211-43636536");
-        rla.setMaxConcurrency(0);
+        rla.setMaxConcurrency("0");
         ServerAssertion ass = makePolicy(rla);
 
         final AtomicInteger successCount = new AtomicInteger(0);
@@ -256,11 +259,11 @@ public class ServerRateLimitAssertionTest {
 
             public void doRun() throws Exception {
                 RateLimitAssertion rla = new RateLimitAssertion();
-                rla.setMaxRequestsPerSecond(maxReqPerSec);
+                rla.setMaxRequestsPerSecond(String.valueOf(maxReqPerSec));
                 rla.setShapeRequests(false);
                 rla.setHardLimit(true);
                 rla.setCounterName("MyTestCounter-44-2923847");
-                rla.setMaxConcurrency(0);
+                rla.setMaxConcurrency("0");
                 ServerAssertion ass = makePolicy(rla);
 
                 // Only one ticker thread
@@ -313,7 +316,7 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
         rla.setCounterName("SimpleRateLimit");
-        rla.setMaxRequestsPerSecond(3);
+        rla.setMaxRequestsPerSecond("3");
         ServerAssertion ass = makePolicy(rla);
 
         clock.sync();
@@ -335,7 +338,7 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("testSimpleRateLimitWithSleep");
         int rps = 10;
-        rla.setMaxRequestsPerSecond(rps);
+        rla.setMaxRequestsPerSecond(String.valueOf(rps));
         rla.setShapeRequests(true);
         final ServerAssertion ass = makePolicy(rla);
         final int nreq = rps * 3;
@@ -371,7 +374,7 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("testHighRateLimitNoSleepSingleThread");
         int rps = 80220369; // 1 higher than highest safe value of 80220368
-        rla.setMaxRequestsPerSecond(rps);
+        rla.setMaxRequestsPerSecond(String.valueOf(rps));
         rla.setShapeRequests(false);
         rla.setHardLimit(false);
         final ServerAssertion ass = makePolicy(rla);
@@ -403,7 +406,7 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("testHighRateLimitNoSleepSingleThread");
         int rps = 80220369; // 1 higher than highest safe value of 80220368
-        rla.setMaxRequestsPerSecond(rps);
+        rla.setMaxRequestsPerSecond(String.valueOf(rps));
         rla.setShapeRequests(false);
         rla.setHardLimit(false);
         final ServerAssertion ass = makePolicy(rla);
@@ -433,7 +436,7 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("testHighRateLimitNoSleepMultiThread");
         int rps = 90000;
-        rla.setMaxRequestsPerSecond(rps);
+        rla.setMaxRequestsPerSecond(String.valueOf(rps));
         rla.setShapeRequests(false);
         rla.setHardLimit(false);
         final ServerAssertion ass = makePolicy(rla);
@@ -512,9 +515,9 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("test90kLimitSequentialNanos");
         rla.setHardLimit(true);
-        rla.setMaxConcurrency(0);
+        rla.setMaxConcurrency("0");
         rla.setShapeRequests(false);
-        rla.setMaxRequestsPerSecond(90000);
+        rla.setMaxRequestsPerSecond("90000");
 
         ServerAssertion ass = makePolicy(rla);
         PolicyEnforcementContext context;
@@ -629,8 +632,8 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
         rla.setCounterName("testSleepLimit_" + maxReqPerSecond + "_" + maxNodeConcurrency + "_" + postFailures);
-        rla.setMaxRequestsPerSecond(maxReqPerSecond);
-        rla.setMaxConcurrency(0);
+        rla.setMaxRequestsPerSecond(String.valueOf(maxReqPerSecond));
+        rla.setMaxConcurrency("0");
         rla.setShapeRequests(true);
         ServerAssertion ass = makePolicy(rla);
 
@@ -697,6 +700,37 @@ public class ServerRateLimitAssertionTest {
 
         assertTrue(isAllEquals(delayedResults, AssertionStatus.NONE));
     }
+
+    /**
+     * Test that pre bug fix 5041 policies can be successfull and correctly parsed
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(5041)
+    public void testRateLimitOldSupport() throws Exception{
+        //this xml uses an intValue property for MaxConcurrency and MaxRequestsPerSecond, which has been changed
+        //to a String. An int setter is provided for the backwards compatabilityss
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "   <L7p:RateLimit>\n" +
+                "      <L7p:CounterName stringValue=\"PRESET(bfff418adf8bb0a5)${request.clientid}\"/>\n" +
+                "      <L7p:MaxConcurrency intValue=\"23\"/>\n" +
+                "      <L7p:MaxRequestsPerSecond intValue=\"10076\"/>\n" +
+                "   </L7p:RateLimit>\n" +
+                "</wsp:Policy>";
+
+
+        AssertionRegistry tmf = new AssertionRegistry();
+        tmf.setApplicationContext(null);
+        WspConstants.setTypeMappingFinder(tmf);
+        WspReader wspReader = new WspReader(tmf);
+        tmf.registerAssertion(RateLimitAssertion.class);
+
+        final RateLimitAssertion rla = (RateLimitAssertion) wspReader.parseStrictly(xml, WspReader.INCLUDE_DISABLED);
+        assertTrue("Invalid maxConcurrency value expected '23' got '" + rla.getMaxConcurrency()+"'", rla.getMaxConcurrency().equals("23"));
+        assertTrue("Invalid maxRequestsPerSecond expected '10076' got '" + rla.getMaxRequestsPerSecond()+"'", rla.getMaxRequestsPerSecond().equals("10076"));
+    }
+
 
     private List<Future<AssertionStatus>> submitAll(ExecutorService es, List<Callable<AssertionStatus>> tasks) {
         List<Future<AssertionStatus>> ret = new ArrayList<Future<AssertionStatus>>();

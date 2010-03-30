@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.ratelimit.console;
 
-import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,7 +47,6 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         okButton.addActionListener(this);
         cancelButton.addActionListener(this);
 
-        maxRequestsPerSecondField.setDocument(new NumberField(5, 90000));
         maxRequestsPerSecondField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -55,13 +54,17 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         }));
 
-        concurrencyLimitField.setDocument(new NumberField(5, 90000));
         concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
 
         ActionListener concListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateConcurrencyEnableState();
+                final String errorMsg = RateLimitAssertion.validateMaxConcurrency(maxRequestsPerSecondField.getText());
+                if (errorMsg != null) {
+                    DialogDisplayer.showMessageDialog(RateLimitPropertiesDialog.this, errorMsg, "Invalid value", JOptionPane.ERROR_MESSAGE, null);
+                } else {
+                    updateConcurrencyEnableState();
+                }
             }
         };
         concurrencyLimitOnRb.addActionListener(concListener);
@@ -94,11 +97,23 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void updateConcurrencyEnableState() {
-        boolean e = concurrencyLimitOnRb.isSelected();
-        concurrencyLimitField.setEnabled(e);
-        if (e && getViewConcurrency() < 1)
+        boolean selected = concurrencyLimitOnRb.isSelected();
+        concurrencyLimitField.setEnabled(selected);
+
+        final String stringConcurrency = concurrencyLimitField.getText();
+        final String[] referencedVars = Syntax.getReferencedNames(stringConcurrency);
+        int concurrency = 0;
+        if(referencedVars.length == 0){
+            try {
+                concurrency = Integer.parseInt(stringConcurrency);
+            } catch (NumberFormatException e) {
+                concurrency = 0;//text field may have an invalid value, just reset to the default
+            }
+        }
+
+        if (selected && concurrency < 1 && referencedVars.length == 0) //set to 10 if value is enabled for the first time e.g. it's previous value was 0, which is the default
             concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
-        if (e) {
+        if (selected) {
             concurrencyLimitField.selectAll();
             concurrencyLimitField.requestFocusInWindow();
         }
@@ -124,22 +139,14 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
     }
 
-    private int getViewConcurrency() {
-        try {
-            return Integer.parseInt(concurrencyLimitField.getText());
-        } catch (NumberFormatException nfe) {
-            return 0;
-        }
-    }
-
     private boolean checkValidity() {
         String err = null;
 
         if (RateLimitAssertion.PresetInfo.PRESET_CUSTOM.equals(counterCb.getSelectedItem()) && counterNameField.getText().trim().length() < 1)
             err = "Custom rate limiter name must not be empty.";
 
-        if (getViewConcurrency() < 1)
-            err = "Concurrency limit must be positive.";
+        if(err == null) err = RateLimitAssertion.validateMaxConcurrency(concurrencyLimitField.getText());
+        if(err == null) err = RateLimitAssertion.validateMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
 
         if (err != null)
             DialogDisplayer.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -169,18 +176,26 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             counterNameField.setText("");
         }
 
-        maxRequestsPerSecondField.setText(String.valueOf(rla.getMaxRequestsPerSecond()));
+        maxRequestsPerSecondField.setText(rla.getMaxRequestsPerSecond());
 
         shapingOnRb.setSelected(rla.isShapeRequests());
         shapingOffRb.setSelected(!rla.isShapeRequests());
 
         burstTrafficCb.setSelected(!rla.isHardLimit());
 
-        int maxConc = rla.getMaxConcurrency();
-        boolean concLimit = maxConc > 0;
+        String maxConc = rla.getMaxConcurrency();
+        boolean concLimit = true;
+        if( Syntax.getReferencedNames(maxConc).length == 0){
+            //value must be numeric, no context variable referenced
+            final int maxConcInt = Integer.parseInt(maxConc);
+            if(maxConcInt > 0) concurrencyLimitField.setText(maxConc);
+            else concLimit = false;
+        }else{
+            concurrencyLimitField.setText(maxConc);
+        }
+
         concurrencyLimitOnRb.setSelected(concLimit);
         concurrencyLimitOffRb.setSelected(!concLimit);
-        if (concLimit) concurrencyLimitField.setText(String.valueOf(maxConc));
         updateConcurrencyEnableState();
         updateCounterNameEnableState();
     }
@@ -190,9 +205,9 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         String counterNameKey = (String)counterCb.getSelectedItem();
         String rawCounterName = RateLimitAssertion.PresetInfo.findRawCounterName(counterNameKey, uuid[0], counterNameField.getText().trim());
         rla.setCounterName(rawCounterName);
-        rla.setMaxRequestsPerSecond(Integer.parseInt(maxRequestsPerSecondField.getText()));
+        rla.setMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
         rla.setShapeRequests(shapingOnRb.isSelected());
-        rla.setMaxConcurrency(concurrencyLimitOnRb.isSelected() ? getViewConcurrency() : 0);
+        rla.setMaxConcurrency(concurrencyLimitOnRb.isSelected() ? concurrencyLimitField.getText() : "0");
         rla.setHardLimit(!burstTrafficCb.isSelected());
         return rla;
     }
