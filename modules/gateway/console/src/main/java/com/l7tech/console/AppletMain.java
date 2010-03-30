@@ -7,16 +7,14 @@ package com.l7tech.console;
 
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gui.util.SheetHolder;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.SaveErrorStrategy;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.ExceptionDialog;
-import com.l7tech.util.WeakSet;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.SaveErrorStrategy;
+import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.util.ExceptionUtils;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -29,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,7 +52,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     private static ApplicationContext applicationContext = null;
     private static SsmApplication application = null;
     private static JRootPane appletRootPane = null;
-    private static final WeakSet instances = new WeakSet();
+    private static final Map<AppletMain, Object> instances = Collections.synchronizedMap(new WeakHashMap<AppletMain, Object>());
 
     private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
@@ -61,7 +60,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     private String serviceUrl;
 
     public AppletMain() throws HeadlessException {
-        instances.add(this);
+        instances.put(this, null);
     }
 
     @Override
@@ -264,8 +263,8 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void notifyContentPaneStolen() {
-        for (Object instance : instances) {
-            final AppletMain applet = (AppletMain) instance;
+        Collection<AppletMain> applets = new ArrayList<AppletMain>(instances.keySet());
+        for (AppletMain applet : applets) {
             if (applet != null && this != applet) {
                 applet.replaceContentPaneWithPlaceholder();
             }
@@ -273,19 +272,24 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void replaceContentPaneWithPlaceholder() {
-        if (placeholderRootPane != null && getRootPane() == placeholderRootPane) return;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (placeholderRootPane != null && getRootPane() == placeholderRootPane) return;
 
-        placeholderRootPane = new JRootPane();
-        setRootPane(placeholderRootPane);
-        getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
+                placeholderRootPane = new JRootPane();
+                setRootPane(placeholderRootPane);
+                getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
 
-        Window window = SwingUtilities.getWindowAncestor(this);
-        if (window != null) {
-            window.invalidate();
-            window.pack();
-        }
-        getLayeredPane().updateUI();
-        validate();
+                Window window = SwingUtilities.getWindowAncestor(AppletMain.this);
+                if (window != null) {
+                    window.invalidate();
+                    window.pack();
+                }
+                getLayeredPane().updateUI();
+                validate();
+            }
+        });
     }
 
     private void initMainWindowContent() {
