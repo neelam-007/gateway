@@ -783,8 +783,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private static void setConnectorAttributes(Connector c, Map<String, Object> attrs) {
-        for (Map.Entry<String, Object> entry : attrs.entrySet())
-            c.setAttribute(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Object> entry : attrs.entrySet()) {
+            if ("enableLookups".equalsIgnoreCase(entry.getKey())) {
+                c.setEnableLookups(Boolean.valueOf(String.valueOf(entry.getValue())));
+            } else {
+                c.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     /**
