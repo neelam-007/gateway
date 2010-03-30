@@ -4,31 +4,30 @@ import com.jscape.inet.ftp.Ftp;
 import com.jscape.inet.ftp.FtpException;
 import com.jscape.inet.ftps.Ftps;
 import com.jscape.inet.ftps.FtpsCertificateVerifier;
-
-import com.l7tech.server.DefaultKey;
-import com.l7tech.gateway.common.transport.ftp.*;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.common.transport.ftp.FtpUtils;
+import com.l7tech.common.io.PermissiveX509TrustManager;
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.UnknownHostException;
-import java.security.KeyStore;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 
 /**
@@ -42,6 +41,7 @@ public class FtpClientUtils {
 
     private static final Logger logger = Logger.getLogger(FtpClientUtils.class.getName());
     private static final Random random = new Random(System.currentTimeMillis());
+    private static final SecureRandom secureRandom = new SecureRandom();
 
 
     private FtpClientUtils() {
@@ -98,21 +98,23 @@ public class FtpClientUtils {
             ftps.setFtpsCertificateVerifier(certificateVerifier);
         }
 
+        final SsgKeyEntry keyEntry;
         if (config.isUseClientCert()) {
             if (keyFinder == null)
                 throw new IllegalArgumentException("Authentication with client certificate requested, but (default) key finder was not provided.");
 
             try {
                 // Retrieves the private key and cert.
-                final SsgKeyEntry keyEntry = keyFinder.lookupKeyByKeyAlias(config.getClientCertAlias(), config.getClientCertId());
+                keyEntry = keyFinder.lookupKeyByKeyAlias(config.getClientCertAlias(), config.getClientCertId());
                 final X509Certificate[] certChain = keyEntry.getCertificateChain();
                 final PrivateKey privateKey = keyEntry.getPrivateKey();
 
-                // Creates a KeyStore object with a random password.
+                // Creates a fake in-memory KeyStore with a weakly-random passphrase.
                 final byte[] randomBytes = new byte[16];
                 random.nextBytes(randomBytes);
                 final String privateKeyPassword = HexUtils.encodeBase64(randomBytes);
-                final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                Provider keyprov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_KEYSTORE_PKCS12);
+                final KeyStore keyStore = keyprov == null ? KeyStore.getInstance("PKCS12") : KeyStore.getInstance("PKCS12", keyprov);
                 keyStore.load(null, null);
                 final String alias = "ftp";
                 keyStore.setKeyEntry(alias, privateKey, privateKeyPassword.toCharArray(), certChain);
@@ -128,12 +130,15 @@ public class FtpClientUtils {
                 }
                 throw new FtpException(msg.toString());
             }
+        } else {
+            keyEntry = null;
         }
 
         if (FtpSecurity.FTPS_EXPLICIT == config.getSecurity()) {
             // Try AUTH TLS first. If that fails, then try AUTH SSL.
             // We cannot use FEAT to check since not implemented by all FTP servers.
             try {
+                ftpsConfigureSslContext(ftps, keyEntry, trustManager);
                 ftpsConnect(ftps);  // Connects using AUTH TLS (default).
             } catch (FtpException e) {
                 if (e.getException() instanceof UnknownHostException) {
@@ -152,10 +157,13 @@ public class FtpClientUtils {
                 }
                 ftps.setConnectionType(Ftps.AUTH_SSL);
                 ftpsConnect(ftps);
+            } catch (GeneralSecurityException e) {
+                throw new FtpException("Unable to initialize TLS SSLContext: " + ExceptionUtils.getMessage(e), e);
             }
         } else {
             ftps.setConnectionType(Ftps.IMPLICIT_SSL);
             try {
+                ftpsConfigureSslContext(ftps, keyEntry, trustManager);
                 ftpsConnect(ftps);
             } catch (FtpException e) {
                 if (certificateVerifier != null) {
@@ -164,6 +172,8 @@ public class FtpClientUtils {
                     certificateVerifier.throwIfFailed();
                 }
                 throw e;
+            } catch (GeneralSecurityException e) {
+                throw new FtpException("Unable to initialize TLS SSLContext: " + ExceptionUtils.getMessage(e), e);
             }
         }
 
@@ -179,6 +189,29 @@ public class FtpClientUtils {
             throw e;
         }
         return ftps;
+    }
+
+    private static void ftpsConfigureSslContext(Ftps ftps, SsgKeyEntry keyEntry, TrustManager trustManager) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {
+        // Always use TLS 1.0 provider (SunJSSE) for outbound FTPS (Bug #8630)
+        Provider tlsProv = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10);
+        SSLContext sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
+
+        List<KeyManager> keymans = new ArrayList<KeyManager>();
+        if (keyEntry != null) {
+            keymans.add(new SingleCertX509KeyManager(keyEntry.getCertificateChain(), keyEntry.getPrivateKey() ));
+        }
+
+        List<TrustManager> trustmans = new ArrayList<TrustManager>();
+        if (trustManager != null) {
+            // TODO using the real trust manager here may cause validation to be done twice, but seems safer than not doing it
+            trustmans.add(trustManager);
+        } else {
+            trustmans.add(new PermissiveX509TrustManager());
+        }
+
+        sslContext.init(keymans.toArray(new KeyManager[keymans.size()]), trustmans.toArray(new TrustManager[trustmans.size()]), secureRandom);
+
+        ftps.setContext(sslContext);
     }
 
     /**
