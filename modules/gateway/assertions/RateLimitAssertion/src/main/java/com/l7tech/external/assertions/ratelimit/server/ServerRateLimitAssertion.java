@@ -398,8 +398,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         final String[] referencedVars = Syntax.getReferencedNames(variableName);
         int intValue;
         if(referencedVars.length > 0){
-            final Object varReferenced = context.getVariable(referencedVars[0]);
-            intValue = Integer.parseInt(varReferenced.toString());
+            final String stringValue = ExpandVariables.process(variableName, context.getVariableMap(referencedVars, auditor), auditor);
+            intValue = Integer.parseInt(stringValue);
         }else{
             intValue = Integer.parseInt(variableName);
         }

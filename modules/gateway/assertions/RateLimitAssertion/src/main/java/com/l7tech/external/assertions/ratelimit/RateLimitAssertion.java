@@ -134,7 +134,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     }
 
     public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {
-        final String[] referencedVars = Syntax.getReferencedNames(maxRequestsPerSecond);
+        final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxRequestsPerSecond);
         if (referencedVars.length > 0) {
             if (referencedVars.length != 1) {
                 return "Only a single context variable can be supplied for max requests per second.";
@@ -156,7 +156,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     }
 
     public static String validateMaxConcurrency(String maxConcurrency) {
-        final String[] referencedVars = Syntax.getReferencedNames(maxConcurrency);
+        final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxConcurrency);
         if (referencedVars.length > 0) {
             if (referencedVars.length != 1) {
                 return "Only a single context variable can be supplied for max concurrency.";
