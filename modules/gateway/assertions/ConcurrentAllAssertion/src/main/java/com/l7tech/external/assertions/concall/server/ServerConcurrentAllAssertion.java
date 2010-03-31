@@ -105,6 +105,15 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
+    public List<ServerAssertion> getEnabledChildren() {
+        List<ServerAssertion> ret = new ArrayList<ServerAssertion>();
+        for (ServerAssertion serverAssertion : getChildren()) {
+            if (serverAssertion.getAssertion().isEnabled())
+                ret.add(serverAssertion);
+        }
+        return ret;
+    }
+
     private static class KidContext {
         final ServerAssertion serverAssertion;
         final PolicyEnforcementContext context;
@@ -156,14 +165,11 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context, List<KidContext> contexts) throws IOException {
-        List<ServerAssertion> kids = getChildren();
+        List<ServerAssertion> kids = getEnabledChildren();
         assert kids.size() == varsUsed.size();
         Iterator<String[]> varsUsedIter = varsUsed.iterator();
         for (final ServerAssertion kid : kids) {
             final String[] varsUsedByKid = varsUsedIter.next();
-
-            if (! kid.getAssertion().isEnabled())
-                continue;
 
             final Map<String, Object> kidVarMap = context.getVariableMap(varsUsedByKid, auditor);
             final PolicyEnforcementContext kidPec = copyContext(context, kidVarMap);
@@ -211,11 +217,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         Iterator<String[]> varsSetIter = varsSet.iterator();
         for (KidContext kidContext : contexts) {
             final String[] varsSetByKid = varsSetIter.next();
-            ServerAssertion kid = kidContext.serverAssertion;
-
-            // If the assertion is disabled, then ignore it and continue to check the next assertion.
-            if (! kid.getAssertion().isEnabled())
-                continue;
+            assert kidContext.serverAssertion.getAssertion().isEnabled();
 
             try {
                 kidContext.actualResult = kidContext.futureResult.get();
@@ -231,10 +233,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         AssertionStatus result = AssertionStatus.FAILED;
         for (KidContext kidContext : contexts) {
             ServerAssertion kid = kidContext.serverAssertion;
-
-            // If the assertion is disabled, then ignore it and continue to check the next assertion.
-            if (kidContext.actualResult == null || !kid.getAssertion().isEnabled())
-                continue;
+            assert kid.getAssertion().isEnabled();
 
             KidResult kidResult = kidContext.actualResult;
             result = kidResult.assertionStatus;
@@ -328,7 +327,8 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static List<String[]> getVariablesSetByChildren(List<Assertion> kids) {
         List<String[]> setByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            setByKids.add(getVariablesSetIncludingDescendants(kid));
+            if (kid.isEnabled())
+                setByKids.add(getVariablesSetIncludingDescendants(kid));
         }
         return setByKids;
     }
@@ -351,7 +351,8 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static List<String[]> getVariablesUsedByChildren(List<Assertion> kids) {
         List<String[]> usedByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            usedByKids.add(getVariablesUsedIncludingDescendants(kid));
+            if (kid.isEnabled())
+                usedByKids.add(getVariablesUsedIncludingDescendants(kid));
         }
         return usedByKids;
     }
