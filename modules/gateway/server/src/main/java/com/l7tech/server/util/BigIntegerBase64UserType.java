@@ -44,7 +44,6 @@ public class BigIntegerBase64UserType implements UserType {
 
     @Override
     public Object nullSafeGet(ResultSet rs, String[] colNames, Object owner) throws HibernateException, SQLException {
-        assert colNames.length == 0;
         String s = rs.getString(colNames[0]);
         if (s == null || s.isEmpty()) return null;
         try {
