@@ -32,10 +32,23 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
         this(policyGetter, new HashSet<String>(), true, true);
     }
 
+    /**
+     * Create a translator that will use the specified policy getter to look up included policies.
+     *
+     * @param policyGetter service for looking up target policies referenced by Include assertions.  Required.
+     * @param includedPolicyGuids policy GUIDs already included on this thread, for detecting circular imports.  Required, but may be empty. 
+     * @param readOnly if true, replacement assertions will be returned directly, and Include assertions will not be modified.
+     *                 if false, Include assertions will have a copy of the replacement policy added to them, and the copy will be returned.
+     * @param inlineDisabled if true, disabled Include assertions will be replaced as though they were enabled.
+     *                       if false, disabled Include assertions will be ignored.
+     */
     public IncludeAssertionDereferenceTranslator(final GuidBasedEntityManager<Policy> policyGetter,
                                                  final Set<String> includedPolicyGuids,
                                                  final boolean readOnly,
-                                                 final boolean inlineDisabled ) {
+                                                 final boolean inlineDisabled )
+    {
+        if (includedPolicyGuids == null) throw new NullPointerException("includedPolicyGuids is required");
+        if (policyGetter == null) throw new NullPointerException("policyGetter is required");
         this.policyGetter = policyGetter;
         this.policyGuids = includedPolicyGuids;
         this.readOnly = readOnly;
