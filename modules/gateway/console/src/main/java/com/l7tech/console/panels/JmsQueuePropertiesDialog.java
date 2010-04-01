@@ -540,31 +540,67 @@ public class JmsQueuePropertiesDialog extends JDialog {
         final ProviderComboBoxItem providerItem = (ProviderComboBoxItem)providerComboBox.getSelectedItem();
         if (providerItem == null)
             return;
-        DialogDisplayer.showConfirmDialog(this,
-            "Current JMS queue properties will be overwritten",
-            "JMS Queue Reset Confirmation",
-            JOptionPane.OK_CANCEL_OPTION,
-            new DialogDisplayer.OptionListener() {
-                @Override
-                public void reportResult(int option) {
-                    if (JOptionPane.OK_OPTION == option) {
-                        JmsProvider provider = providerItem.getProvider();
-                        // Queue connection factory name, defaulting to destination factory name
-                        String qcfName = (connection != null && providerMatchesConnection(provider, connection))?
-                                connection.getQueueFactoryUrl() : provider.getDefaultQueueFactoryUrl();
-                        if (qcfName == null || qcfName.length() < 1)
-                            qcfName = provider.getDefaultDestinationFactoryUrl();
-                        if (qcfName != null)
-                            qcfTextField.setText(qcfName);
 
-                        String icfName = provider.getInitialContextFactoryClassname();
-                        if (icfName != null)
-                            icfTextField.setText(icfName);
-
-                        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
+        final JmsProvider provider = providerItem.getProvider();
+        if (connection == null) {
+            resetProvider(provider, true);
+        } else if (providerMatchesConnection(provider, connection)) {
+            // same provider "type", offer overwrite/don't overwrite/cancel choice
+            DialogDisplayer.showConfirmDialog(this,
+                "Overwrite current JMS queue properties?",
+                "JMS Queue Reset Confirmation",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        switch (option) {
+                            case JOptionPane.YES_OPTION:
+                                resetProvider(provider, true);
+                                break;
+                            case JOptionPane.NO_OPTION:
+                                resetProvider(provider, false);
+                                break;
+                            default:
+                                // cancel, don't do anything
+                        }
                     }
-                }
-            });
+                });
+
+        } else {
+            // different provider "type", just warn
+            DialogDisplayer.showConfirmDialog(this,
+                "Current JMS queue properties will be overwritten",
+                "JMS Queue Reset Confirmation",
+                JOptionPane.OK_CANCEL_OPTION,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (JOptionPane.OK_OPTION == option) {
+                            resetProvider(providerItem.getProvider(), true);
+                        }
+                    }
+                });
+        }
+    }
+
+    /**
+     * 
+     * @param provider
+     * @param overwrite
+     */
+    private void resetProvider(JmsProvider provider, boolean overwrite) {
+        // Queue connection factory name, defaulting to destination factory name
+        String qcfName = (connection != null && ! overwrite) ? connection.getQueueFactoryUrl() : provider.getDefaultQueueFactoryUrl();
+        if (qcfName == null || qcfName.length() < 1)
+            qcfName = provider.getDefaultDestinationFactoryUrl();
+        if (qcfName != null)
+            qcfTextField.setText(qcfName);
+
+        String icfName = provider.getInitialContextFactoryClassname();
+        if (icfName != null)
+            icfTextField.setText(icfName);
+
+        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
     }
 
     /**
@@ -978,7 +1014,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         } else {
             // No connection is set
-            providerComboBox.setSelectedIndex(0);
+            providerComboBox.setSelectedIndex(-1);
             qcfTextField.setText("");
             icfTextField.setText("");
             jndiUrlTextField.setText("");
