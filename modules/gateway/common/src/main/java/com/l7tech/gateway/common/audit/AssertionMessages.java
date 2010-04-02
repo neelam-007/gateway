@@ -290,6 +290,7 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_GLOBALREF_BROKEN                = m(5610, Level.WARNING, "Cannot validate schema because the global schema named {0} cannot be retrieved");
     public static final M SCHEMA_VALIDATION_NOT_XML                         = m(5611, Level.INFO, "{0} is not well-formed XML; cannot validate");
     public static final M SCHEMA_VALIDATION_VALIDATING                      = m(5612, Level.FINEST, "Validating {0}");
+    public static final M SCHEMA_VALIDATION_IO_ERROR                        = m(5613, Level.WARNING, "Cannot validate schema because schema information cannot be retrieved: {0}");
 
     // ServerTimeRange
     public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check");

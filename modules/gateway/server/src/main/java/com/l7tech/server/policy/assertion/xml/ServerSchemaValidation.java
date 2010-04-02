@@ -185,11 +185,20 @@ public class ServerSchemaValidation
                 } catch (MalformedURLException e) {
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaID);
                     return AssertionStatus.SERVER_ERROR;
+                } catch (IOException e) {
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaID + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    return AssertionStatus.SERVER_ERROR;
                 }
             } else {
                 Map vars = context.getVariableMap(varsUsed, auditor);
-                String schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-                ps = schemaManager.getSchemaByUrl(schemaUrl);
+                String schemaUrl = null;
+                try {
+                    schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
+                    ps = schemaManager.getSchemaByUrl(schemaUrl);
+                } catch (IOException e) {
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    return AssertionStatus.SERVER_ERROR;
+                }
             }
 
             SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
