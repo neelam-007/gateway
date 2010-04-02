@@ -14,6 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
@@ -128,6 +129,28 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             PolicyCacheEntry pce = cacheGet( policyOid );
             if( pce != null && pce.isValid() ) {
                 return pce.getPolicyMetadata();
+            }
+        } finally {
+            read.unlock();
+        }
+
+        return null;
+    }
+
+    @Override
+    public PolicyMetadata getPolicyMetadataByGuid(String guid) {
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            Long policyOid = guidToOidMap.get(guid);
+            if (policyOid != null) {
+                if( policyOid == Policy.DEFAULT_OID )
+                    throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
+                PolicyCacheEntry pce = cacheGet( policyOid );
+                if( pce != null && pce.isValid() ) {
+                    return pce.getPolicyMetadata();
+                }
             }
         } finally {
             read.unlock();
@@ -1112,6 +1135,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         boolean tarariWanted = false;
         boolean wssInPolicy = false;
         boolean multipartInPolicy = false;
+        Set<String> allVarsUsed = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, VariableMetadata> allVarsSet = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
         Iterator i = rootAssertion.preorderIterator();
         while( i.hasNext() ) {
             Assertion ass = (Assertion) i.next();
@@ -1124,6 +1149,16 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             } else if ( Assertion.isMultipart( ass ) && Assertion.isRequest( ass ) ) {
                 multipartInPolicy = true;
             }
+
+            if (ass instanceof UsesVariables) {
+                String[] vars = ((UsesVariables) ass).getVariablesUsed();
+                if (vars != null) allVarsUsed.addAll(Arrays.asList(vars));
+            }
+
+            if (ass instanceof SetsVariables) {
+                VariableMetadata[] vms = ((SetsVariables) ass).getVariablesSet();
+                mergeVariablesSet(allVarsSet, vms);
+            }
         }
 
         if( !( tarariWanted && wssInPolicy && multipartInPolicy ) ) {
@@ -1135,6 +1170,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     tarariWanted = tarariWanted || metadata.isTarariWanted();
                     wssInPolicy = wssInPolicy || metadata.isWssInPolicy();
                     multipartInPolicy = multipartInPolicy || metadata.isMultipart();
+                    String[] varsUsed = metadata.getVariablesUsed();
+                    if (varsUsed != null) allVarsUsed.addAll(Arrays.asList(varsUsed));
+                    mergeVariablesSet(allVarsSet, metadata.getVariablesSet());
                 }
             }
         }
@@ -1142,6 +1180,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final boolean metaTarariWanted = tarariWanted;
         final boolean metaWssInPolicy = wssInPolicy;
         final boolean metaMultipartInPolicy = multipartInPolicy;
+        final String[] metaVariablesUsed = allVarsUsed.toArray(new String[allVarsUsed.size()]);
+        final VariableMetadata[] metaVariablesSet = allVarsSet.values().toArray(new VariableMetadata[allVarsSet.values().size()]);
         return new PolicyMetadata() {
             @Override
             public boolean isTarariWanted() {
@@ -1157,7 +1197,25 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             public boolean isMultipart() {
                 return metaMultipartInPolicy;
             }
+
+            @Override
+            public String[] getVariablesUsed() {
+                return metaVariablesUsed;
+            }
+
+            @Override
+            public VariableMetadata[] getVariablesSet() {
+                return metaVariablesSet;
+            }
         };
+    }
+
+    private static void mergeVariablesSet(Map<String, VariableMetadata> allVarsSet, VariableMetadata[] vms) {
+        if (vms != null) {
+            for (VariableMetadata vm : vms) {
+                allVarsSet.put(vm.getName(), vm);
+            }
+        }
     }
 
     private void resetUnlicensed() {

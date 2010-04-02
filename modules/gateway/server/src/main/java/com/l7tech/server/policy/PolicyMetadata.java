@@ -1,11 +1,14 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.UsesVariables;
+
 /**
  * Metadata for a policy. 
  *
  * @author steve
  */
-public interface PolicyMetadata {
+public interface PolicyMetadata extends UsesVariables, SetsVariables {
 
     /**
      * Does at least one assertion in the policy strongly prefer to use Tarari?

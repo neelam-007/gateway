@@ -10,6 +10,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.ServerConfig;
@@ -17,6 +18,8 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
@@ -56,13 +59,14 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         this.beanFactory = beanFactory;
         this.eventPub = eventPub;
 
-        final List<Assertion> kids = assertion.getChildren();
+        final List<Assertion> kids = getEnabledImmediateChildAssertions(assertion);
         if (kids == null || kids.isEmpty()) {
             this.varsUsed = Collections.emptyList();
             this.varsSet = Collections.emptyList();
         } else {
-            this.varsUsed = Collections.unmodifiableList(getVariablesUsedByChildren(kids));
-            this.varsSet = Collections.unmodifiableList(getVariablesSetByChildren(kids));
+            PolicyCache policyCache = beanFactory == null ? null : (PolicyCache)beanFactory.getBean("policyCache");
+            this.varsUsed = Collections.unmodifiableList(getVariablesUsedByChildren(kids, policyCache));
+            this.varsSet = Collections.unmodifiableList(getVariablesSetByChildren(kids, policyCache));
         }
 
         // Initialize the executor if necessary
@@ -105,11 +109,20 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
-    public List<ServerAssertion> getEnabledChildren() {
+    public List<ServerAssertion> getEnabledImmediateChildServerAssertions() {
         List<ServerAssertion> ret = new ArrayList<ServerAssertion>();
         for (ServerAssertion serverAssertion : getChildren()) {
             if (serverAssertion.getAssertion().isEnabled())
                 ret.add(serverAssertion);
+        }
+        return ret;
+    }
+
+    public static List<Assertion> getEnabledImmediateChildAssertions(CompositeAssertion comp) {
+        List<Assertion> ret = new ArrayList<Assertion>();
+        for (Assertion assertion : comp.getChildren()) {
+            if (assertion.isEnabled())
+                ret.add(assertion);
         }
         return ret;
     }
@@ -130,10 +143,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Build copies of the context
-        final List<ServerAssertion> kids = getChildren();
+        final List<ServerAssertion> kids = getEnabledImmediateChildServerAssertions();
         final List<KidContext> contexts = new ArrayList<KidContext>(kids.size());
         try {
-            return doCheckRequest(context, contexts);
+            return doCheckRequest(kids, context, contexts);
         } finally {
             // Ensure all futures are either completed or canceled
             cleanupContexts(contexts);
@@ -164,8 +177,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
-    private AssertionStatus doCheckRequest(PolicyEnforcementContext context, List<KidContext> contexts) throws IOException {
-        List<ServerAssertion> kids = getEnabledChildren();
+    private AssertionStatus doCheckRequest(List<ServerAssertion> kids, PolicyEnforcementContext context, List<KidContext> contexts) throws IOException {
         assert kids.size() == varsUsed.size();
         Iterator<String[]> varsUsedIter = varsUsed.iterator();
         for (final ServerAssertion kid : kids) {
@@ -324,63 +336,79 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
     }
 
-    private static List<String[]> getVariablesSetByChildren(List<Assertion> kids) {
+    private static List<String[]> getVariablesSetByChildren(List<Assertion> kids, PolicyCache policyCache) {
         List<String[]> setByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            if (kid.isEnabled())
-                setByKids.add(getVariablesSetIncludingDescendants(kid));
+            assert kid.isEnabled();
+            Map<String, VariableMetadata> setvars = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(kid, makeVariableCollatingTranslator(policyCache));
+            setByKids.add(setvars.keySet().toArray(new String[setvars.keySet().size()]));
         }
         return setByKids;
     }
 
-    private static String[] getVariablesUsedIncludingDescendants(Assertion kid) {
-        Set<String> vars = new HashSet<String>();
-        gatherVariablesUsedRecursive(kid, vars);
-        return vars.toArray(new String[vars.size()]);
-    }
-
-    private static void gatherVariablesUsedRecursive(Assertion kid, Set<String> vars) {
-        if (kid instanceof CompositeAssertion) {
-            for (Assertion newKid : ((CompositeAssertion)kid).getChildren())
-                gatherVariablesUsedRecursive(newKid, vars);
-        } else if (kid instanceof UsesVariables) {
-            vars.addAll(Arrays.asList(((UsesVariables)kid).getVariablesUsed()));
-        }
-    }
-
-    private static List<String[]> getVariablesUsedByChildren(List<Assertion> kids) {
+    private static List<String[]> getVariablesUsedByChildren(List<Assertion> kids, PolicyCache policyCache) {
         List<String[]> usedByKids = new ArrayList<String[]>(kids.size());
         for (Assertion kid : kids) {
-            if (kid.isEnabled())
-                usedByKids.add(getVariablesUsedIncludingDescendants(kid));
+            assert kid.isEnabled();
+            String[] usedvars = PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(kid, makeVariableCollatingTranslator(policyCache));
+            usedByKids.add(usedvars);
         }
         return usedByKids;
     }
 
-    private static String[] getVariablesSetIncludingDescendants(Assertion kid) {
-        Set<String> vars = new HashSet<String>();
-        gatherVariablesSetRecursive(kid, vars);
-        return vars.toArray(new String[vars.size()]);
+    /**
+     * A translator that replaces Include assertions by a fake assertion that advertises that it uses and sets any variables
+     * used or set within the Include.  It gets this info by looking up policy metadata from the policy cache.
+     *
+     * @param policyCache the PolicyCache instance, for looking up policy metadata, or null.
+     * @return an AssertionTranslator that will replace Include assertions by a fake assertion that collates the fragments used and set variables.
+     */
+    private static AssertionTranslator makeVariableCollatingTranslator(final PolicyCache policyCache) {
+        return new AssertionTranslator() {
+            @Override
+            public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
+                if (sourceAssertion == null || !sourceAssertion.isEnabled() || !(sourceAssertion instanceof Include) || policyCache == null) {
+                    return sourceAssertion;
+                }
+
+                final String guid = ((Include) sourceAssertion).getPolicyGuid();
+                if (guid == null)
+                    return sourceAssertion;
+
+                PolicyMetadata meta = policyCache.getPolicyMetadataByGuid(guid);
+                if (meta == null) {
+                    return sourceAssertion;
+                }
+
+                return new VariableCollatingAssertion(meta.getVariablesUsed(), meta.getVariablesSet());
+            }
+
+            @Override
+            public void translationFinished(Assertion sourceAssertion) {
+            }
+        };
     }
 
-    private static void gatherVariablesSetRecursive(Assertion kid, Set<String> vars) {
-        if (kid instanceof CompositeAssertion) {
-            for (Assertion newKid : ((CompositeAssertion)kid).getChildren())
-                gatherVariablesSetRecursive(newKid, vars);
-        } else if (kid instanceof SetsVariables) {
-            final VariableMetadata[] metadataSet = ((SetsVariables) kid).getVariablesSet();
-            vars.addAll(metadataVarnames(metadataSet));
+    // A fake assertion whose only purpose is to advertise UsesVariables and SetsVariables on behalf of an include assertion
+    private static class VariableCollatingAssertion extends Assertion implements UsesVariables, SetsVariables {
+        final String[] variablesUsed;
+        final VariableMetadata[] variablesSet;
+
+        private VariableCollatingAssertion(String[] variablesUsed, VariableMetadata[] variablesSet) {
+            this.variablesUsed = variablesUsed;
+            this.variablesSet = variablesSet;
+        }
+
+        @Override
+        public String[] getVariablesUsed() {
+            return variablesUsed;
+        }
+
+        @Override
+        public VariableMetadata[] getVariablesSet() {
+            return variablesSet;
         }
     }
-
-    private static List<String> metadataVarnames(VariableMetadata[] metas) {
-        List<String> ret = new ArrayList<String>();
-        for (VariableMetadata meta : metas) {
-            ret.add(meta.getName());
-        }
-        return ret;
-    }
-
 
     /*
      * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals

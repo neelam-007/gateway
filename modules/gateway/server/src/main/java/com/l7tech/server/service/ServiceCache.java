@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
@@ -460,6 +461,10 @@ public class ServiceCache
                 public boolean isWssInPolicy() { return false; }
                 @Override
                 public boolean isMultipart() { return false; }
+                @Override
+                public String[] getVariablesUsed() { return new String[0]; }
+                @Override
+                public VariableMetadata[] getVariablesSet() { return new VariableMetadata[0]; }
             };
         }
 

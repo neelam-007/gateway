@@ -4,9 +4,13 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.InvalidPolicyException;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -17,10 +21,12 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.IOUtils;
 import org.junit.Before;
@@ -32,6 +38,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
@@ -47,6 +54,7 @@ public class ServerConcurrentAllAssertionTest {
     static DefaultListableBeanFactory beanFactory;
     static GenericApplicationContext applicationContext;
     static ConcurrentDetailCollectingAuditContext auditContext;
+    static PolicyCache policyCache;
 
 
     @BeforeClass
@@ -58,15 +66,50 @@ public class ServerConcurrentAllAssertionTest {
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager());
         auditContext = new ConcurrentDetailCollectingAuditContext();
         auditContext.logDetails = true;
+        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager())) {
+            {
+                PolicyManagerStub policyManager = new PolicyManagerStub( new Policy[0] );
+                setPolicyManager(policyManager);
+                setApplicationEventPublisher(new EventChannel());
+                onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
+            }
+
+            @Override
+            protected ServerAssertion buildServerPolicy(Policy policy) throws ServerPolicyInstantiationException, ServerPolicyException, InvalidPolicyException {
+                throw new ServerPolicyInstantiationException("stub");
+            }
+
+            @Override
+            protected void logAndAudit(AuditDetailMessage message, String[] params, Exception ex) {
+                log(message, params, ex);
+            }
+
+            @Override
+            protected void logAndAudit(AuditDetailMessage message, String... params) {
+                log(message, params, null);
+            }
+
+            void log(AuditDetailMessage message, String[] params, Exception ex) {
+                LogRecord record = new LogRecord(message.getLevel(), message.getMessage());
+                record.setParameters(params);
+                record.setThrown(ex);
+                record.setSourceClassName("");
+                record.setSourceMethodName("");
+                log.log(record);
+            }
+        };
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("serverConfig", ServerConfig.getInstance());
             put("policyFactory", serverPolicyFactory);
             put("auditContext", auditContext);
+            put("policyCache", policyCache);
         }});
         applicationContext = new GenericApplicationContext(beanFactory);
         serverPolicyFactory.setApplicationContext(applicationContext);
         applicationContext.addApplicationListener(new AuditDetailProcessingAuditListener(auditContext));
         applicationContext.refresh();
+
+
     }
 
     @Before

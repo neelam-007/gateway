@@ -6,6 +6,7 @@ package com.l7tech.policy.variable;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -16,6 +17,102 @@ import java.util.logging.Logger;
  */
 public final class PolicyVariableUtils {
     private static final Logger logger = Logger.getLogger(PolicyVariableUtils.class.getName());
+
+    /**
+     * Get the variables that may be set by this assertion itself, including any of its children (if composite)
+     * or include target (if Include, and a CurrentAssertionTranslator is available).
+     * <p/>
+     * This includes only descendants and does not include predecessor or successor assertions.
+     *
+     * @param assertion the assertion to examine, which might notably be one or more of SetsVariables, CompositeAssertion, or Include.  May be null.
+     * @return The Map of names to VariableMetadata, may be empty but never null.
+     */
+    public static Map<String, VariableMetadata> getVariablesSetByDescendantsAndSelf( final Assertion assertion ) {
+        return getVariablesSetByDescendantsAndSelf(assertion, CurrentAssertionTranslator.get());
+    }
+
+    /**
+     * Get the variables that may be set by this assertion itself, including any of its children (if composite)
+     * or include target (if Include, and a non-null assertionTranslator is provided).
+     *
+     * @param assertion the assertion to examine, which might notably be one or more of SetsVariable, CompositeAssertion, or Include.  May be null.
+     * @param assertionTranslator the assertion translator to use to process Include assertions within this assertion.  May be null.
+     * @return the variable metadata for this assertion and all of its descendants (if any).
+     */
+    public static Map<String, VariableMetadata> getVariablesSetByDescendantsAndSelf( final Assertion assertion, AssertionTranslator assertionTranslator ) {
+        final Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
+        collectRecursive(assertion, assertionTranslator, new Functions.UnaryVoid<Assertion>() {
+            @Override
+            public void call(Assertion assertion) {
+                if (assertion instanceof SetsVariables) {
+                    final VariableMetadata[] metadataSet = ((SetsVariables) assertion).getVariablesSet();
+                    for (VariableMetadata metadata : metadataSet) {
+                        vars.put(metadata.getName(), metadata);
+                    }
+                }
+            }
+        });
+        return vars;
+    }
+
+    /**
+     * Get the variables that may be used by this assertion itself, including any of its children (if composite)
+     * or include target (if Include, and a CurrentAssertionTranslator is available).
+     *
+     * @param assertion the assertion to examine, which might notably be one or more of SetsVariable, CompositeAssertion, or Include.  May be null.
+     * @return the variables used by this assertion and all of its descendants (if any).
+     */
+    public static String[] getVariablesUsedByDescendantsAndSelf( final Assertion assertion ) {
+        return getVariablesUsedByDescendantsAndSelf(assertion, CurrentAssertionTranslator.get());
+    }
+
+    /**
+     * Get the variables that may be used by this assertion itself, including any of its children (if composite)
+     * or include target (if Include, and a non-null assertionTranslator is provided).
+     *
+     * @param assertion the assertion to examine, which might notably be one or more of SetsVariable, CompositeAssertion, or Include.  May be null.
+     * @param assertionTranslator the assertion translator to use to process Include assertions within this assertion.  May be null.
+     * @return the variables used by this assertion and all of its descendants (if any).
+     */
+    public static String[] getVariablesUsedByDescendantsAndSelf( final Assertion assertion, AssertionTranslator assertionTranslator ) {
+        final Set<String> vars = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        collectRecursive(assertion, assertionTranslator, new Functions.UnaryVoid<Assertion>() {
+            @Override
+            public void call(Assertion assertion) {
+                if (assertion instanceof UsesVariables) {
+                    vars.addAll(Arrays.asList(((UsesVariables) assertion).getVariablesUsed()));
+                }
+            }
+        });
+        return vars.toArray(new String[vars.size()]);
+    }
+
+    private static void collectRecursive(Assertion assertion, AssertionTranslator assertionTranslator, Functions.UnaryVoid<Assertion> collector) {
+        if (assertion == null || !assertion.isEnabled())
+            return;
+
+        collector.call(assertion);
+
+        if (assertion instanceof CompositeAssertion) {
+            CompositeAssertion compositeAssertion = (CompositeAssertion) assertion;
+            for (Assertion kid : compositeAssertion.getChildren()) {
+                collectRecursive(kid, assertionTranslator, collector);
+            }
+        }
+
+        if (assertionTranslator != null && assertion instanceof Include) {
+            try {
+                Assertion translated = assertionTranslator.translate(assertion);
+                if (translated != assertion)
+                    collectRecursive(translated, assertionTranslator, collector);
+            } catch (PolicyAssertionException e) {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+            } finally {
+                assertionTranslator.translationFinished(assertion);
+            }
+        }
+    }
 
     /**
      * Get the variables (that may be) set before this assertions runs including those the supplied assertion sets.
@@ -81,7 +178,7 @@ public final class PolicyVariableUtils {
                     try {
                         Assertion translated = assertionTranslator.translate(ass);
                         NewPreorderIterator newPreorderIterator = new NewPreorderIterator(translated, assertionTranslator);
-                        while (newPreorderIterator.hasNext()) {
+                        if (ass != translated) while (newPreorderIterator.hasNext()) {
                             Assertion includedAssertion = newPreorderIterator.next();
                             if(includedAssertion.isEnabled() && includedAssertion instanceof SetsVariables){
                                 collectVariables((SetsVariables)includedAssertion, vars);

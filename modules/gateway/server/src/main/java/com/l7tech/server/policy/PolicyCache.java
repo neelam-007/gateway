@@ -158,6 +158,14 @@ public interface PolicyCache {
     PolicyMetadata getPolicyMetadata(long policyOid);
 
     /**
+     * Get the metadata of the given Policy.
+     *
+     * @param guid The GUID of the policy whose metadata is desired.
+     * @return The metadata for the policy or null if the policy is not valid or is not known.
+     */
+    PolicyMetadata getPolicyMetadataByGuid(String guid);
+
+    /**
      * Check if this policy cache is ready to use.
      *
      * @return false if this cache has not yet started.
