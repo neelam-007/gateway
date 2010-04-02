@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyValidationContext version="3331" id="123" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
-    <PolicyType>Include</PolicyType>
+<PolicyValidationContext version="3331" id="123" xmlns="http://ns.l7tech.com/2010/04/gateway-management" extendedAttribute="extension">
+    <PolicyType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Include</PolicyType>
     <Properties>
         <Property key="soap">
             <BooleanValue>true</BooleanValue>

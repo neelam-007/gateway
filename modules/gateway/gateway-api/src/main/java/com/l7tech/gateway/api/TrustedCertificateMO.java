@@ -1,11 +1,14 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -39,7 +42,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createTrustedCertificate()
  */
 @XmlRootElement(name="TrustedCertificate")
-@XmlType(name="TrustedCertificateType", propOrder={"name","certificateData","extensions","properties"})
+@XmlType(name="TrustedCertificateType", propOrder={"nameValue","certificateData","properties","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="trustedCertificates")
 public class TrustedCertificateMO extends AccessibleObject {
     
@@ -50,9 +53,9 @@ public class TrustedCertificateMO extends AccessibleObject {
      *
      * @return The name or null.
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -61,7 +64,7 @@ public class TrustedCertificateMO extends AccessibleObject {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -105,6 +108,26 @@ public class TrustedCertificateMO extends AccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
@@ -123,7 +146,7 @@ public class TrustedCertificateMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private String name;
+    private AttributeExtensibleString name;
     private CertificateData certificateData;
     private Map<String,Object> properties;
 }

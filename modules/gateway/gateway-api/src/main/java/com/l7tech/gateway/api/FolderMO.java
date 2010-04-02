@@ -1,12 +1,15 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -24,7 +27,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createFolder()
  */
 @XmlRootElement(name="Folder")
-@XmlType(name="FolderType", propOrder={"name", "extensions", "properties"})
+@XmlType(name="FolderType", propOrder={"nameValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="folders")
 public class FolderMO extends AccessibleObject {
 
@@ -37,9 +40,9 @@ public class FolderMO extends AccessibleObject {
      *
      * @return The name of the folder (may be null)
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -48,7 +51,7 @@ public class FolderMO extends AccessibleObject {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -94,6 +97,26 @@ public class FolderMO extends AccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
@@ -112,7 +135,7 @@ public class FolderMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private String name;
+    private AttributeExtensibleString name;
     private String folderId;
     private Map<String,Object> properties;
 }

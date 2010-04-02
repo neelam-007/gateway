@@ -8,10 +8,10 @@
               xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse</wsa:Action>
-        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">uuid:8f8457b9-a3f4-489c-8ead-a32a2837c3ef</wsa:MessageID>
-        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management">uuid:a107f7d6-fd4e-40c6-b124-8851a1de52af</wsa:RelatesTo>
-        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse</wsa:Action>
+        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">uuid:8f8457b9-a3f4-489c-8ead-a32a2837c3ef</wsa:MessageID>
+        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management">uuid:a107f7d6-fd4e-40c6-b124-8851a1de52af</wsa:RelatesTo>
+        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
     </env:Header>
     <env:Body/>
 </env:Envelope>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyExportResult xmlns="http://ns.l7tech.com/2010/01/gateway-management" id="1" version="1">
-    <Resource id="a" version="1" sourceUrl="http://blah" type="policyexport">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+<PolicyExportResult xmlns="http://ns.l7tech.com/2010/04/gateway-management" id="1" version="1" extendedAttribute="extension">
+    <Resource id="a" version="1" sourceUrl="http://blah" type="policyexport" extendedAttribute="extension">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;exp:Export Version="3.0"
     xmlns:L7p="http://www.layer7tech.com/ws/policy"
     xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;

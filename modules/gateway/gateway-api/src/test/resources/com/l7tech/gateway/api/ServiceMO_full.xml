@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Service xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="5" id="17268736">
-    <ServiceDetail version="5" id="17268736" folderId="21312">
-        <Name>Warehouse</Name>
-        <Enabled>true</Enabled>
+<Service xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="5" id="17268736" extendedAttribute="extension">
+    <ServiceDetail version="5" id="17268736" folderId="21312" extendedAttribute="extension">
+        <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Warehouse</Name>
+        <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
         <ServiceMappings>
-            <HttpMapping>
-                <UrlPattern>/waremulti</UrlPattern>
+            <HttpMapping extendedAttribute="extension">
+                <UrlPattern other:extendedAttribute="extension" xmlns:other="urn:othernamespace">/waremulti</UrlPattern>
                 <Verbs>
-                    <Verb>GET</Verb>
+                    <Verb other:extendedAttribute="extension" xmlns:other="urn:othernamespace">GET</Verb>
                     <Verb>POST</Verb>
                 </Verbs>
             </HttpMapping>
-            <SoapMapping>
-                <Lax>true</Lax>
+            <SoapMapping extendedAttribute="extension">
+                <Lax other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Lax>
             </SoapMapping>
         </ServiceMappings>
         <Properties>

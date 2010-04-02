@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -23,7 +24,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createResourceDocument()
  */
 @XmlRootElement(name="ResourceDocument")
-@XmlType(name="ResourceDocumentType", propOrder={"resource", "extensions", "properties"})
+@XmlType(name="ResourceDocumentType", propOrder={"resource", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="resources")
 public class ResourceDocumentMO extends AccessibleObject {
 
@@ -69,6 +70,17 @@ public class ResourceDocumentMO extends AccessibleObject {
     }
 
     //- PROTECTED
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override

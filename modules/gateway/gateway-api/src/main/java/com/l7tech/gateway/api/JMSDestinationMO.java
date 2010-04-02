@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -17,7 +18,7 @@ import java.util.List;
  * @see ManagedObjectFactory#createJMSDestination()
  */
 @XmlRootElement(name="JMSDestination")
-@XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extensions"})
+@XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jmsDestinations")
 public class JMSDestinationMO extends AccessibleObject {
 
@@ -80,6 +81,17 @@ public class JMSDestinationMO extends AccessibleObject {
     }
 
     //- PROTECTED
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override

@@ -1,6 +1,9 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -26,7 +29,7 @@ import java.util.Map;
  * @see ServiceMOAccessor#putServiceDetail(String, ServiceDetail)
  * @see ManagedObjectFactory#createServiceDetail()
  */
-@XmlType(name="ServiceDetailType", propOrder={"name","enabled","serviceMappings","extensions","properties"})
+@XmlType(name="ServiceDetailType", propOrder={"nameValue","enabledValue","serviceMappings","properties","extension","extensions"})
 @XmlSeeAlso({ServiceDetail.HttpMapping.class, ServiceDetail.SoapMapping.class})
 public class ServiceDetail {
 
@@ -97,9 +100,9 @@ public class ServiceDetail {
      *
      * @return The service name.
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -108,7 +111,7 @@ public class ServiceDetail {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -116,9 +119,9 @@ public class ServiceDetail {
      *
      * @return True if the service is enabled.
      */
-    @XmlElement(name="Enabled", required=true)
+    @XmlTransient
     public boolean getEnabled() {
-        return enabled;
+        return get(enabled, false);
     }
 
     /**
@@ -127,7 +130,7 @@ public class ServiceDetail {
      * @param enabled True to enable the service.
      */
     public void setEnabled( final boolean enabled ) {
-        this.enabled = enabled;
+        this.enabled = set(this.enabled,enabled);
     }
 
     /**
@@ -188,10 +191,10 @@ public class ServiceDetail {
      * @see ManagedObjectFactory#createHttpMapping()
      */
     @XmlRootElement(name="HttpMapping")
-    @XmlType(name="HttpServiceMappingType", propOrder={"urlPattern","verbs","extensions"})
+    @XmlType(name="HttpServiceMappingType", propOrder={"urlPatternValue","verbsValue","extensions"})
     public static class HttpMapping extends ServiceMapping {
-        private String urlPattern;
-        private List<String> verbs;
+        private AttributeExtensibleString urlPattern;
+        private List<AttributeExtensibleString> verbs;
         private List<Object> extensions;
         private Map<QName,Object> attributeExtensions;
 
@@ -209,9 +212,9 @@ public class ServiceDetail {
          *
          * @return The pattern or null.
          */
-        @XmlElement(name="UrlPattern")
+        @XmlTransient
         public String getUrlPattern() {
-            return urlPattern;
+            return get(urlPattern);
         }
 
         /**
@@ -220,7 +223,7 @@ public class ServiceDetail {
          * @param urlPattern The pattern to use.
          */
         public void setUrlPattern( final String urlPattern ) {
-            this.urlPattern = urlPattern;
+            this.urlPattern = set(this.urlPattern,urlPattern);
         }
 
         /**
@@ -236,10 +239,14 @@ public class ServiceDetail {
          *
          * @return The permitted verbs or null.
          */
-        @XmlElementWrapper(name="Verbs")
-        @XmlElement(name="Verb", required=true)
+        @XmlTransient
         public List<String> getVerbs() {
-            return verbs;
+            return verbs==null ? null : Functions.map( verbs, new Functions.Unary<String,AttributeExtensibleString>(){
+                @Override
+                public String call( final AttributeExtensibleString attributeExtensibleString ) {
+                    return get(attributeExtensibleString);
+                }
+            });
         }
 
         /**
@@ -248,6 +255,30 @@ public class ServiceDetail {
          * @param verbs The verbs to use.
          */
         public void setVerbs( final List<String> verbs ) {
+            this.verbs = verbs == null ? null : Functions.map( verbs, new Functions.Unary<AttributeExtensibleString,String>(){
+                @Override
+                public AttributeExtensibleString call( final String s ) {
+                    return set(null, s);
+                }
+            } );
+        }
+
+        @XmlElement(name="UrlPattern")
+        protected AttributeExtensibleString getUrlPatternValue() {
+            return urlPattern;
+        }
+
+        protected void setUrlPatternValue( final AttributeExtensibleString urlPattern ) {
+            this.urlPattern = urlPattern;
+        }
+
+        @XmlElementWrapper(name="Verbs")
+        @XmlElement(name="Verb", required=true)
+        protected List<AttributeExtensibleString> getVerbsValue() {
+            return verbs;
+        }
+
+        protected void setVerbsValue( final List<AttributeExtensibleString> verbs ) {
             this.verbs = verbs;
         }
 
@@ -276,9 +307,9 @@ public class ServiceDetail {
      * <p>This mapping should only be used for SOAP service.</p>
      */
     @XmlRootElement(name="SoapMapping")
-    @XmlType(name="SoapServiceMappingType",propOrder={"lax", "extensions"})
+    @XmlType(name="SoapServiceMappingType",propOrder={"laxValue", "extensions"})
     public static class SoapMapping extends ServiceMapping {
-        private boolean lax;
+        private AttributeExtensibleBoolean lax = new AttributeExtensibleBoolean(false);
         private List<Object> extensions;
         private Map<QName,Object> attributeExtensions;
 
@@ -293,9 +324,9 @@ public class ServiceDetail {
          *
          * @return True for lax resolution.
          */
-        @XmlElement(name="Lax")
+        @XmlTransient
         public boolean isLax() {
-            return lax;
+            return get(lax, false);
         }
 
         /**
@@ -304,6 +335,15 @@ public class ServiceDetail {
          * @param lax True for lax resolution.
          */
         public void setLax( final boolean lax ) {
+            this.lax = set(this.lax,lax);
+        }
+
+        @XmlElement(name="Lax", required=true)
+        protected AttributeExtensibleBoolean getLaxValue() {
+            return lax;
+        }
+
+        protected void setLaxValue( final AttributeExtensibleBoolean lax ) {
             this.lax = lax;
         }
 
@@ -328,6 +368,24 @@ public class ServiceDetail {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Enabled", required=true)
+    protected AttributeExtensibleBoolean getEnabledValue() {
+        return enabled;
+    }
+
+    protected void setEnabledValue( final AttributeExtensibleBoolean value ) {
+        this.enabled = value;
+    }
+
     @XmlAnyAttribute
     protected Map<QName, Object> getAttributeExtensions() {
         return attributeExtensions;
@@ -335,6 +393,15 @@ public class ServiceDetail {
 
     protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
         this.attributeExtensions = attributeExtensions;
+    }
+
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
     }
 
     @XmlAnyElement(lax=true)
@@ -356,11 +423,12 @@ public class ServiceDetail {
     private String id;
     private String folderId;
     private Integer version;
-    private String name;
-    private boolean enabled;
+    private AttributeExtensibleString name;
+    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private List<? extends ServiceMapping> serviceMappings;
     private Map<String,Object> properties;
     private Map<QName,Object> attributeExtensions;
+    private Extension extension;
     private List<Object> extensions;
     
 }

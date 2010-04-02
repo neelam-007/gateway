@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<JMSDestination xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="0" id="48037888">
-    <JMSDestinationDetails version="0" id="48037888">
-        <DestinationName>cn=VgateLoggingQ</DestinationName>
-        <Inbound>false</Inbound>
-        <Enabled>true</Enabled>
-        <Properties>
-            <Property key="replyType">
-                <StringValue>AUTOMATIC</StringValue>
+<JMSDestination xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="48037888" extendedAttribute="extension">
+    <JMSDestinationDetails version="0" id="48037888" extendedAttribute="extension">
+        <DestinationName other:extendedAttribute="extension" xmlns:other="urn:othernamespace">cn=VgateLoggingQ</DestinationName>
+        <Inbound other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Inbound>
+        <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
+        <Properties extendedAttribute="extension">
+            <Property key="replyType"  extendedAttribute="extension">
+                <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">AUTOMATIC</StringValue>
             </Property>
             <Property key="outbound.MessageType">
                 <StringValue>AUTOMATIC</StringValue>
             </Property>
             <Property key="useRequestCorrelationId">
-                <BooleanValue>false</BooleanValue>
+                <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</BooleanValue>
             </Property>
         </Properties>
     </JMSDestinationDetails>
-    <JMSConnection version="0" id="48005120">
+    <JMSConnection version="0" id="48005120" extendedAttribute="extension">
         <Properties>
             <Property key="jndi.initialContextFactoryClassname">
                 <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>
@@ -28,7 +28,7 @@
                 <StringValue>cn=VgateLoggingQCF</StringValue>
             </Property>
         </Properties>
-        <ContextPropertiesTemplate>
+        <ContextPropertiesTemplate  other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
             <Property key="com.l7tech.server.jms.prop.contentType.value">
                 <StringValue></StringValue>
             </Property>
@@ -39,5 +39,8 @@
                 <StringValue></StringValue>
             </Property>
         </ContextPropertiesTemplate>
+        <Extension extendedAttribute="extension">
+            <ExtendedProperty>extension</ExtendedProperty>
+        </Extension>
     </JMSConnection>
 </JMSDestination>

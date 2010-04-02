@@ -1,12 +1,17 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+import com.l7tech.gateway.api.impl.Extension;
+
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.namespace.QName;
@@ -17,7 +22,7 @@ import java.util.Map;
  * Encapsulates the result of policy validation.
  */
 @XmlRootElement(name="PolicyValidationResult")
-@XmlType(name="PolicyValidationResultType", propOrder={"status", "policyValidationMessages", "extensions"})
+@XmlType(name="PolicyValidationResultType", propOrder={"statusValue", "policyValidationMessages", "extension", "extensions"})
 public class PolicyValidationResult extends ManagedObject {
 
     //- PUBLIC
@@ -27,9 +32,9 @@ public class PolicyValidationResult extends ManagedObject {
      *
      * @return The validation status or null
      */
-    @XmlElement(name="ValidationStatus", required=true)
+    @XmlTransient
     public ValidationStatus getStatus() {
-        return status;
+        return get(status);
     }
 
     /**
@@ -38,7 +43,7 @@ public class PolicyValidationResult extends ManagedObject {
      * @param status The status to use.
      */
     public void setStatus( final ValidationStatus status ) {
-        this.status = status;
+        this.status = setNonNull( this.status==null ? new AttributeExtensibleValidationStatus() : this.status, status);
     }
 
     /**
@@ -64,6 +69,8 @@ public class PolicyValidationResult extends ManagedObject {
     /**
      * Status for policy validation.
      */
+    @XmlEnum(String.class)
+    @XmlType(name="ValidationStatusType")
     public enum ValidationStatus {
         /**
          * Policy validated without issue.
@@ -87,12 +94,13 @@ public class PolicyValidationResult extends ManagedObject {
      * <p>A validation message consists of a level, message and information to
      * identify the policy assertion to which the message relates.</p>
      */
-    @XmlType(name="PolicyValidationMessageType", propOrder={"assertionDetails", "message", "extensions"})
+    @XmlType(name="PolicyValidationMessageType", propOrder={"assertionDetails", "messageValue", "extension", "extensions"})
     public static class PolicyValidationMessage {
         private String level;
         private int assertionOrdinal;
         private List<AssertionDetail> assertionDetails;
-        private String message;
+        private AttributeExtensibleString message;
+        private Extension extension;
         private List<Object> extensions;
         private Map<QName,Object> attributeExtensions;
 
@@ -162,9 +170,9 @@ public class PolicyValidationResult extends ManagedObject {
          *
          * @return The message or null.
          */
-        @XmlElement(name="Message", required=true)
+        @XmlTransient
         public String getMessage() {
-            return message;
+            return get(message);
         }
 
         /**
@@ -173,7 +181,7 @@ public class PolicyValidationResult extends ManagedObject {
          * @param message The message to use.
          */
         public void setMessage( final String message ) {
-            this.message = message;
+            this.message = set(this.message,message);
         }
 
         @SuppressWarnings({ "RedundantIfStatement" })
@@ -206,6 +214,23 @@ public class PolicyValidationResult extends ManagedObject {
 
         protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
             this.attributeExtensions = attributeExtensions;
+        }
+
+        @XmlElement(name="Message", required=true)
+        protected AttributeExtensibleString getMessageValue() {
+            return message;
+        }
+
+        protected void setMessageValue( final AttributeExtensibleString message ) {
+            this.message = message;
+        }
+        @XmlElement(name="Extension")
+        protected Extension getExtension() {
+            return extension;
+        }
+
+        protected void setExtension( final Extension extension ) {
+            this.extension = extension;
         }
 
         @XmlAnyElement(lax=true)
@@ -269,7 +294,7 @@ public class PolicyValidationResult extends ManagedObject {
         }
 
         /**
-         * NOTE this does not work (related JAXB bug https://jaxb.dev.java.net/issues/show_bug.cgi?id=738) 
+         * 
          */
         @XmlAnyAttribute
         protected Map<QName, Object> getAttributeExtensions() {
@@ -283,8 +308,28 @@ public class PolicyValidationResult extends ManagedObject {
 
     //- PROTECTED
 
+    @XmlElement(name="ValidationStatus", required=true)
+    protected AttributeExtensibleValidationStatus getStatusValue() {
+        return status;
+    }
+
+    protected void setStatusValue( final AttributeExtensibleValidationStatus status ) {
+        this.status = status;
+    }
+
+    @XmlElement(name="Extension")
     @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
+    @Override
     protected List<Object> getExtensions() {
         return super.getExtensions();
     }
@@ -294,6 +339,22 @@ public class PolicyValidationResult extends ManagedObject {
         super.setExtensions( extensions );
     }
 
+    @XmlType(name="ValidationStatusPropertyType")
+    protected static class AttributeExtensibleValidationStatus extends AttributeExtensible<ValidationStatus> {
+        private ValidationStatus value;
+
+        @XmlValue
+        @Override
+        public ValidationStatus getValue() {
+            return value;
+        }
+
+        @Override
+        public void setValue( final ValidationStatus value ) {
+            this.value = value;
+        }
+    }
+
     //- PACKAGE
 
     PolicyValidationResult() {
@@ -301,6 +362,6 @@ public class PolicyValidationResult extends ManagedObject {
 
     //- PRIVATE
 
-    private ValidationStatus status;
+    private AttributeExtensibleValidationStatus status;
     private List<PolicyValidationMessage> policyValidationMessages;
 }

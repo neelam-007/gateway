@@ -1,11 +1,14 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -20,7 +23,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createJDBCConnection()
  */
 @XmlRootElement(name="JDBCConnection")
-@XmlType(name="JDBCConnectionType", propOrder={"name","enabled","extensions","properties"})
+@XmlType(name="JDBCConnectionType", propOrder={"nameValue","enabledValue","properties","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jdbcConnections")
 public class JDBCConnectionMO extends AccessibleObject {
 
@@ -31,9 +34,9 @@ public class JDBCConnectionMO extends AccessibleObject {
      *
      * @return The name (may be null)
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -42,7 +45,7 @@ public class JDBCConnectionMO extends AccessibleObject {
      * @param name The name to use
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -50,9 +53,9 @@ public class JDBCConnectionMO extends AccessibleObject {
      *
      * @return True if enabled.
      */
-    @XmlElement(name="Enabled", required=true)
+    @XmlTransient
     public boolean isEnabled() {
-        return enabled;
+        return get(enabled,false);
     }
 
     /**
@@ -61,7 +64,7 @@ public class JDBCConnectionMO extends AccessibleObject {
      * @param enabled True for enabled.
      */
     public void setEnabled( final boolean enabled ) {
-        this.enabled = enabled;
+        this.enabled = set(this.enabled,enabled);
     }
 
     /**
@@ -86,6 +89,35 @@ public class JDBCConnectionMO extends AccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Enabled", required=true)
+    protected AttributeExtensibleBoolean getEnabledValue() {
+        return enabled;
+    }
+
+    protected void setEnabledValue( final AttributeExtensibleBoolean value ) {
+        this.enabled = value;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+    
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
@@ -104,7 +136,7 @@ public class JDBCConnectionMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private String name;
-    private boolean enabled;
+    private AttributeExtensibleString name;
+    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private Map<String,Object> properties;
 }

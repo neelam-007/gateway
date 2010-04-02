@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ClusterProperty xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="4" id="20774913">
-    <Name>soap.roles</Name>
-    <Value>secure_span
+<ClusterProperty xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="4" id="20774913" extendedAttribute="extension">
+    <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">soap.roles</Name>
+    <Value other:extendedAttribute="extension" xmlns:other="urn:othernamespace">secure_span
 http://www.layer7tech.com/ws/policy
 http://tempuri.org/myactor4</Value>
-    <Properties>
-        <Property key="propertiesAreNotCurrentUsed">
-            <BooleanValue>true</BooleanValue>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
         </Property>
     </Properties>
 </ClusterProperty>

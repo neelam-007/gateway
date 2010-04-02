@@ -100,7 +100,7 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
                               final Wsdl wsdl,
                               final boolean soap,
                               final PolicyValidatorResult result ) {
-            if ( (wsdl == null) || (!"http://ns.l7tech.com/2010/01/gateway-management".equals(wsdl.getTargetNamespace())) ){
+            if ( (wsdl == null) || (!"http://ns.l7tech.com/2010/04/gateway-management".equals(wsdl.getTargetNamespace())) ){
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
                                    path,

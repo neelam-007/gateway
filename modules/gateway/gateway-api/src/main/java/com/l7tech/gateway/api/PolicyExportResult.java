@@ -1,5 +1,7 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
+
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -12,7 +14,7 @@ import java.util.List;
  * <p>The policy export result encapsulates an exported policy.</p>
  */
 @XmlRootElement(name="PolicyExportResult")
-@XmlType(name="PolicyExportResultType", propOrder={"resource","extensions"})
+@XmlType(name="PolicyExportResultType", propOrder={"resource","extension","extensions"})
 public class PolicyExportResult extends ManagedObject {
 
     //- PUBLIC
@@ -41,6 +43,17 @@ public class PolicyExportResult extends ManagedObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+    
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {

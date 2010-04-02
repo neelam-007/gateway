@@ -1,11 +1,14 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -20,7 +23,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createClusterProperty()
  */
 @XmlRootElement(name="ClusterProperty")
-@XmlType(name="ClusterPropertyType", propOrder={"name", "value", "extensions", "properties"})
+@XmlType(name="ClusterPropertyType", propOrder={"nameValue", "valueValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="clusterProperties")
 public class ClusterPropertyMO extends AccessibleObject {
 
@@ -31,9 +34,9 @@ public class ClusterPropertyMO extends AccessibleObject {
      *
      * @return The name (may be null)
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -42,7 +45,7 @@ public class ClusterPropertyMO extends AccessibleObject {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -50,9 +53,9 @@ public class ClusterPropertyMO extends AccessibleObject {
      *
      * @return The value (may be null)
      */
-    @XmlElement(name="Value", required=true)
+    @XmlTransient
     public String getValue() {
-        return value;
+        return get(value);
     }
 
     /**
@@ -61,7 +64,7 @@ public class ClusterPropertyMO extends AccessibleObject {
      * @param value The value to use.
      */
     public void setValue( final String value ) {
-        this.value = value;
+        this.value = set(this.value,value);
     }
 
     /**
@@ -86,6 +89,35 @@ public class ClusterPropertyMO extends AccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Value", required=true)
+    protected AttributeExtensibleString getValueValue() {
+        return value;
+    }
+
+    protected void setValueValue( final AttributeExtensibleString value ) {
+        this.value = value;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
@@ -104,7 +136,7 @@ public class ClusterPropertyMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private String name;
-    private String value;
+    private AttributeExtensibleString name;
+    private AttributeExtensibleString value;
     private Map<String,Object> properties;
 }

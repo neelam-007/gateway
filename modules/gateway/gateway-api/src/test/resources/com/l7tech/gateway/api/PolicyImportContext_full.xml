@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyImportContext version="2" id="1" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<PolicyImportContext version="2" id="1" xmlns="http://ns.l7tech.com/2010/04/gateway-management" extendedAttribute="extension">
     <Properties>
         <Property key="force">
             <BooleanValue>true</BooleanValue>
@@ -16,7 +16,7 @@
     &lt;/wsp:Policy&gt;
 &lt;/exp:Export&gt;</Resource>
     <PolicyReferenceInstructions>
-        <PolicyReferenceInstruction referenceType="com.l7tech.console.policy.exporter.IdProviderReference" referenceId="1" type="Delete"/>
-        <PolicyReferenceInstruction referenceType="com.l7tech.console.policy.exporter.PrivateKeyReference" referenceId="2:alias" type="Ignore"/>
+        <PolicyReferenceInstruction extendedAttribute="extension" referenceType="com.l7tech.console.policy.exporter.IdProviderReference" referenceId="1" type="Delete"/>
+        <PolicyReferenceInstruction extendedAttribute="extension" referenceType="com.l7tech.console.policy.exporter.PrivateKeyReference" referenceId="2:alias" type="Ignore"/>
     </PolicyReferenceInstructions>
 </PolicyImportContext>

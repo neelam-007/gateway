@@ -1,6 +1,10 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -11,6 +15,7 @@ import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -20,7 +25,7 @@ import java.util.Map;
  * The results of importing a policy document.
  */
 @XmlRootElement(name="PolicyImportResult")
-@XmlType(name="PolicyImportResultType", propOrder={"warnings", "importedPolicyReferences", "extensions"})
+@XmlType(name="PolicyImportResultType", propOrder={"warningsValue", "importedPolicyReferences", "extension", "extensions"})
 @XmlSeeAlso( PolicyImportContext.class)
 public class PolicyImportResult extends ManagedObject {
 
@@ -31,10 +36,14 @@ public class PolicyImportResult extends ManagedObject {
      *
      * @return The warnings or null.
      */
-    @XmlElementWrapper(name="Warnings")
-    @XmlElement(name="Warning", required=true)
+    @XmlTransient
     public List<String> getWarnings() {
-        return warnings;
+        return warnings==null ? null : Functions.map( warnings, new Functions.Unary<String,AttributeExtensibleString>(){
+            @Override
+            public String call( final AttributeExtensibleString attributeExtensibleString ) {
+                return get(attributeExtensibleString);
+            }
+        } );
     }
 
     /**
@@ -43,7 +52,12 @@ public class PolicyImportResult extends ManagedObject {
      * @param warnings The warnings to use.
      */
     public void setWarnings( final List<String> warnings ) {
-        this.warnings = warnings;
+        this.warnings = warnings == null ? null : Functions.map( warnings, new Functions.Unary<AttributeExtensibleString,String>(){
+            @Override
+            public AttributeExtensibleString call( final String s ) {
+                return set(null, s);
+            }
+        } );
     }
 
     /**
@@ -205,6 +219,7 @@ public class PolicyImportResult extends ManagedObject {
      * Type for imported policy references.
      */
     @XmlEnum(String.class)
+    @XmlType(name="ImportedPolicyReferenceTypeType")
     public enum ImportedPolicyReferenceType {
         /**
          * The referenced dependency was created during the import.
@@ -218,6 +233,27 @@ public class PolicyImportResult extends ManagedObject {
     }
 
     //- PROTECTED
+
+    @XmlElementWrapper(name="Warnings")
+    @XmlElement(name="Warning", required=true)
+    protected List<AttributeExtensibleString> getWarningsValue() {
+        return warnings;
+    }
+
+    protected void setWarningsValue( final List<AttributeExtensibleString> warnings ) {
+        this.warnings = warnings;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override
@@ -237,7 +273,7 @@ public class PolicyImportResult extends ManagedObject {
 
     //- PRIVATE
 
-    private List<String> warnings;
+    private List<AttributeExtensibleString> warnings;
     private List<ImportedPolicyReference> importedPolicyReferences;
 
 }

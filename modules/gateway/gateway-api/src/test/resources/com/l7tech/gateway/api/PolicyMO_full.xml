@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Policy xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="2" id="124092416">
-    <PolicyDetail version="2" id="124092416" guid="235120b9-08c0-4a3e-8510-77e1af603c6e" folderId="21312">
-        <Name>Log Request Message To Queue</Name>
-        <PolicyType>Include</PolicyType>
+<Policy xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="2" id="124092416" extendedAttribute="extension">
+    <PolicyDetail version="2" id="124092416" guid="235120b9-08c0-4a3e-8510-77e1af603c6e" folderId="21312" extendedAttribute="extension">
+        <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Log Request Message To Queue</Name>
+        <PolicyType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Include</PolicyType>
         <Properties>
             <Property key="revision">
-                <LongValue>3</LongValue>
+                <LongValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">3</LongValue>
             </Property>
             <Property key="soap">
                 <BooleanValue>false</BooleanValue>
@@ -13,7 +13,7 @@
         </Properties>
     </PolicyDetail>
     <Resources>
-        <ResourceSet tag="policy">
+        <ResourceSet tag="policy" extendedAttribute="extension">
             <Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
     &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;

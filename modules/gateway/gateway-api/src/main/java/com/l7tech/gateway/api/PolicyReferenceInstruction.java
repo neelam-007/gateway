@@ -1,8 +1,11 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
+
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlType;
@@ -16,7 +19,7 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createPolicyReferenceInstruction()
  */
-@XmlType(name="PolicyReferenceInstructionType", propOrder="extensions")
+@XmlType(name="PolicyReferenceInstructionType", propOrder={"extension","extensions"})
 public class PolicyReferenceInstruction {
 
     //- PUBLIC
@@ -124,6 +127,7 @@ public class PolicyReferenceInstruction {
      * Types for policy reference instructions.
      */
     @XmlEnum(String.class)
+    @XmlType(name="PolicyReferenceInstructionTypeType")
     public static enum PolicyReferenceInstructionType {
         /**
          * Delete assertions that use the referenced resource.
@@ -157,6 +161,15 @@ public class PolicyReferenceInstruction {
         this.attributeExtensions = attributeExtensions;
     }
 
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
+    }
+
     @XmlAnyElement(lax=true)
     protected List<Object> getExtensions() {
         return extensions;
@@ -178,6 +191,7 @@ public class PolicyReferenceInstruction {
     private String referenceId;
     private String mappedReferenceId;
     private String mappedName;
+    private Extension extension;
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 

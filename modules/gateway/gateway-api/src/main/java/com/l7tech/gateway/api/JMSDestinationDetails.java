@@ -1,11 +1,14 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
@@ -17,7 +20,7 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
-@XmlType(name="JMSDestinationDetailsType", propOrder={"destinationName", "inbound", "enabled", "extensions", "properties"})
+@XmlType(name="JMSDestinationDetailsType", propOrder={"destinationNameValue", "inboundValue", "enabledValue", "properties", "extension", "extensions"})
 public class JMSDestinationDetails {
 
     //- PUBLIC
@@ -68,9 +71,9 @@ public class JMSDestinationDetails {
      *
      * @return the name or null
      */
-    @XmlElement(name="DestinationName", required=true)
+    @XmlTransient
     public String getDestinationName() {
-        return destinationName;
+        return get(destinationName);
     }
 
     /**
@@ -79,7 +82,7 @@ public class JMSDestinationDetails {
      * @param destinationName The destination name to use.
      */
     public void setDestinationName( final String destinationName ) {
-        this.destinationName = destinationName;
+        this.destinationName = set(this.destinationName, destinationName);
     }
 
     /**
@@ -90,9 +93,9 @@ public class JMSDestinationDetails {
      *
      * @return True if the destination is inbound
      */
-    @XmlElement(name="Inbound", required=true)
+    @XmlTransient
     public boolean isInbound() {
-        return inbound;
+        return get(inbound, false);
     }
 
     /**
@@ -101,7 +104,7 @@ public class JMSDestinationDetails {
      * @param inbound True for an inbound destination.
      */
     public void setInbound( final boolean inbound ) {
-        this.inbound = inbound;
+        this.inbound = set(this.inbound,inbound);
     }
 
     /**
@@ -112,9 +115,9 @@ public class JMSDestinationDetails {
      *
      * @return True if enabled.
      */
-    @XmlElement(name="Enabled", required=true)
+    @XmlTransient
     public boolean isEnabled() {
-        return enabled;
+        return get(enabled,false);
     }
 
     /**
@@ -123,7 +126,7 @@ public class JMSDestinationDetails {
      * @param enabled True to enable.
      */
     public void setEnabled( final boolean enabled ) {
-        this.enabled = enabled;
+        this.enabled = set(this.enabled,enabled);
     }
 
     /**
@@ -148,6 +151,33 @@ public class JMSDestinationDetails {
 
     //- PROTECTED
 
+    @XmlElement(name="DestinationName", required=true)
+    protected AttributeExtensibleString getDestinationNameValue() {
+        return destinationName;
+    }
+
+    protected void setDestinationNameValue( final AttributeExtensibleString destinationName ) {
+        this.destinationName = destinationName;
+    }
+
+    @XmlElement(name="Inbound", required=true)
+    protected AttributeExtensibleBoolean getInboundValue() {
+        return inbound;
+    }
+
+    protected void setInboundValue( final AttributeExtensibleBoolean inbound ) {
+        this.inbound = inbound;
+    }
+
+    @XmlElement(name="Enabled", required=true)
+    protected AttributeExtensibleBoolean getEnabledValue() {
+        return enabled;
+    }
+
+    protected void setEnabledValue( final AttributeExtensibleBoolean enabled ) {
+        this.enabled = enabled;
+    }
+
     @XmlAnyAttribute
     protected Map<QName, Object> getAttributeExtensions() {
         return attributeExtensions;
@@ -155,6 +185,15 @@ public class JMSDestinationDetails {
 
     protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
         this.attributeExtensions = attributeExtensions;
+    }
+
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
     }
 
     @XmlAnyElement(lax=true)
@@ -175,10 +214,11 @@ public class JMSDestinationDetails {
 
     private String id;
     private Integer version;
-    private String destinationName;
-    private boolean inbound;
-    private boolean enabled;
+    private AttributeExtensibleString destinationName;
+    private AttributeExtensibleBoolean inbound = new AttributeExtensibleBoolean(false);
+    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private Map<String,Object> properties;
+    private Extension extension;
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 }

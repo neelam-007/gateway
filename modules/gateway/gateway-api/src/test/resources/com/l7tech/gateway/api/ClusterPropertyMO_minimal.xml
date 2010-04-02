@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ClusterProperty xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<ClusterProperty xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <Name>soap.roles</Name>
     <Value>secure_span
 http://www.layer7tech.com/ws/policy

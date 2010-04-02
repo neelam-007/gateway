@@ -2,8 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceHandler;
-
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.ValidationUtils;
+import com.l7tech.util.IOUtils;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -19,7 +21,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Result;
+import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -30,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -55,14 +60,15 @@ public class WsdlGenerator {
         }
 
         // Write XML Schemas
-        final Map<String, String> schemaResources = generateSchemas();
-        for ( Map.Entry<String,String> schemaEntry : schemaResources.entrySet() ) {
-            final File schemaFile = new File( outputDirectory, schemaEntry.getKey() );
+        final Source[] schemaSources = ValidationUtils.getSchemaSources();
+        for ( final Source source : schemaSources ) {
+            final String name = "schema1.xsd".equals( source.getSystemId() ) ? "gateway-management.xsd" : source.getSystemId();
+            final File schemaFile = new File( outputDirectory, name );
 
-            OutputStream out = null;
+            OutputStreamWriter out = null;
             try {
-                out = new FileOutputStream( schemaFile );
-                out.write( schemaEntry.getValue().getBytes("UTF-8") );
+                out = new OutputStreamWriter(new FileOutputStream( schemaFile ));
+                IOUtils.copyStream( ((StreamSource)source).getReader(), out );
             } finally {
                 close( out );
             }
@@ -147,34 +153,6 @@ public class WsdlGenerator {
         }
 
         return element;
-    }
-
-    /**
-     *
-     */
-    private static Map<String, String> generateSchemas() throws JAXBException, IOException {
-        final Map<String,String> schemaResources = new HashMap<String,String>();
-
-        final JAXBContext context = JAXBContext.newInstance( "com.l7tech.gateway.api" );
-        context.generateSchema( new SchemaOutputResolver(){
-            @Override
-            public Result createOutput( final String namespaceUri, final String suggestedFileName ) throws IOException {
-                final String systemId = ResourceHandler.MANAGEMENT_NAMESPACE.equals( namespaceUri ) ? "gateway-management.xsd" : suggestedFileName;
-                return new StreamResult( systemId ){
-                    {
-                        setWriter( new StringWriter(){
-                            @Override
-                            public void close() throws IOException {
-                                super.close();
-                                schemaResources.put( systemId, toString() );
-                            }
-                        } );
-                    }
-                };
-            }
-        } );
-
-        return schemaResources;
     }
 
     /**

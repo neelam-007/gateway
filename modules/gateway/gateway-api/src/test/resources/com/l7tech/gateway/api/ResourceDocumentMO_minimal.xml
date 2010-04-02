@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ResourceDocument xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<ResourceDocument xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <Resource type="xmlschema">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 &lt;xs:schema targetNamespace=&quot;urn:books&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
     &lt;xs:element name=&quot;book&quot;&gt;

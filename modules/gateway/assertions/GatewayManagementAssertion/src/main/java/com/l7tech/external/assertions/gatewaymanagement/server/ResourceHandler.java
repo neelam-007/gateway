@@ -73,7 +73,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
 
     //- PUBLIC
 
-    public static final String MANAGEMENT_NAMESPACE = "http://ns.l7tech.com/2010/01/gateway-management";
+    public static final String MANAGEMENT_NAMESPACE = "http://ns.l7tech.com/2010/04/gateway-management";
     public static final String MANAGEMENT_PREFIX = "l7";
 
     /**

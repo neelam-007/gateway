@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyValidationResult xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<PolicyValidationResult xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <ValidationStatus>OK</ValidationStatus>
 </PolicyValidationResult>

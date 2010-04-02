@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyImportContext xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<PolicyImportContext xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <Resource type="policyexport">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;exp:Export Version="3.0"
     xmlns:L7p="http://www.layer7tech.com/ws/policy"

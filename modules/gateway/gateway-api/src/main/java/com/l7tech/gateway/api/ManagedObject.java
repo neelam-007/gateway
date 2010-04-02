@@ -1,5 +1,7 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
+
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
@@ -74,6 +76,15 @@ public abstract class ManagedObject {
     }
 
     @XmlTransient
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
+    }
+
+    @XmlTransient
     protected List<Object> getExtensions() {
         return extensions;
     }
@@ -86,6 +97,7 @@ public abstract class ManagedObject {
 
     private String id;
     private Integer version;
+    private Extension extension;
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 }

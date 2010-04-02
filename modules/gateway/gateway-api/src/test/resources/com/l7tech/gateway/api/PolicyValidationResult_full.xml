@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<PolicyValidationResult version="0" id="asf" xmlns="http://ns.l7tech.com/2010/01/gateway-management">
-    <ValidationStatus>Warning</ValidationStatus>
+<PolicyValidationResult version="0" id="asf" xmlns="http://ns.l7tech.com/2010/04/gateway-management" extendedAttribute="extension">
+    <ValidationStatus other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Warning</ValidationStatus>
     <ValidationMessages>
-        <ValidationMessage level="Warning" assertionOrdinal="7">
+        <ValidationMessage level="Warning" assertionOrdinal="7" extendedAttribute="extension">
             <AssertionPath>
-                <Assertion position="3">Some assertion</Assertion>
+                <Assertion position="3" extendedAttribute="extension">Some assertion</Assertion>
             </AssertionPath>
-            <Message>Something wrong</Message>
+            <Message other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Something wrong</Message>
         </ValidationMessage>
         <ValidationMessage level="Warning" assertionOrdinal="9">
             <AssertionPath>

@@ -198,7 +198,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testInvalidInput() throws Exception {
         final String property =
-                "<ns9:ClusterP  roperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
+                "<ns9:ClusterP  roperty xmlns:ns9=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "  <ns9:Name>test.property</ns9:Name>\n" +
                 "  <ns9:Value>test value</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
@@ -216,7 +216,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testActionNotSupported() throws Exception {
         final String folder =
-                "<Folder xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\" version=\"0\" id=\"256704512\">\n" +
+                "<Folder xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"0\" id=\"256704512\">\n" +
                 "    <Name>Folder</Name>\n" +
                 "</Folder>";
         setResponse( "ActionNotSupportedResponse.xml" );
@@ -234,7 +234,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testPermissionDenied() {
         final String property =
-                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\" id=\"264372224\" version=\"0\">\n" +
+                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"264372224\" version=\"0\">\n" +
                 "  <ns9:Name>test.property</ns9:Name>\n" +
                 "  <ns9:Value>test value2</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
@@ -280,7 +280,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testCreate() throws Exception {
         final String property =
-                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\">\n" +
+                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "  <ns9:Name>test.property</ns9:Name>\n" +
                 "  <ns9:Value>test value</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
@@ -314,7 +314,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testPut() throws Exception {
         final String property =
-                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/01/gateway-management\" id=\"264372224\" version=\"0\">\n" +
+                "<ns9:ClusterProperty xmlns:ns9=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"264372224\" version=\"0\">\n" +
                 "  <ns9:Name>test.property</ns9:Name>\n" +
                 "  <ns9:Value>test value2</ns9:Value>\n" +
                 "</ns9:ClusterProperty>";
@@ -365,7 +365,7 @@ public class GatewayManagementClientTest {
         setResponse( "Service_ValidatePolicy_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
-                new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/01/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
+                new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
                 out,
                 out );
         int exitCode = gmc.run();

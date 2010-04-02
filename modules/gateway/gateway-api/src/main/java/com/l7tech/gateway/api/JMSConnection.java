@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.naming.InitialContext;
@@ -44,7 +45,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createJMSConnection()
  * @see javax.jms.ConnectionFactory ConnectionFactory
  */
-@XmlType(name="JMSConnectionType", propOrder={"extensions","properties","contextPropertiesTemplate"})
+@XmlType(name="JMSConnectionType", propOrder={"properties","contextPropertiesTemplate","extension","extensions"})
 public class JMSConnection {
 
     //- PUBLIC
@@ -138,6 +139,15 @@ public class JMSConnection {
         this.attributeExtensions = attributeExtensions;
     }
 
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
+    }
+
     @XmlAnyElement(lax=true)
     protected List<Object> getExtensions() {
         return extensions;
@@ -158,6 +168,7 @@ public class JMSConnection {
     private Integer version;
     private Map<String,Object> properties;
     private Map<String,Object> contextPropertiesTemplate;
+    private Extension extension;
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 }

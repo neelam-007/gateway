@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -19,7 +20,7 @@ import java.util.List;
  * @see ManagedObjectFactory#createPolicy()
  */
 @XmlRootElement(name="Policy")
-@XmlType(name="PolicyType", propOrder={"policyDetail", "extensions", "resourceSets"})
+@XmlType(name="PolicyType", propOrder={"policyDetail", "resourceSets", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="policies", accessorClassname="com.l7tech.gateway.api.impl.PolicyMOAccessorImpl")
 public class PolicyMO extends AccessibleObject {
 
@@ -105,6 +106,17 @@ public class PolicyMO extends AccessibleObject {
     }
 
     //- PROTECTED
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override

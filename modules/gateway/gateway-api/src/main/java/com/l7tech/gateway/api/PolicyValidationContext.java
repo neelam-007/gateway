@@ -1,11 +1,14 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -20,7 +23,7 @@ import java.util.Map;
  * <p>When validating a persistent policy no context information is required.</p>
  */
 @XmlRootElement(name="PolicyValidationContext")
-@XmlType(name="PolicyValidationContextType", propOrder={"policyType", "extensions", "properties", "resourceSets"})
+@XmlType(name="PolicyValidationContextType", propOrder={"policyTypeValue", "properties", "resourceSets", "extension", "extensions"})
 public class PolicyValidationContext extends ManagedObject {
 
     //- PUBLIC
@@ -32,9 +35,9 @@ public class PolicyValidationContext extends ManagedObject {
      *
      * @return The type or null.
      */
-    @XmlElement(name="PolicyType")
+    @XmlTransient
     public PolicyDetail.PolicyType getPolicyType() {
-        return policyType;
+        return get(policyType);
     }
 
     /**
@@ -43,7 +46,7 @@ public class PolicyValidationContext extends ManagedObject {
      * @param policyType The type to use.
      */
     public void setPolicyType( final PolicyDetail.PolicyType policyType ) {
-        this.policyType = policyType;
+        this.policyType = set(this.policyType,policyType);
     }
 
     /**
@@ -93,8 +96,28 @@ public class PolicyValidationContext extends ManagedObject {
 
     //- PROTECTED
 
+    @XmlElement(name="PolicyType")
+    protected AttributeExtensiblePolicyType getPolicyTypeValue() {
+        return policyType;
+    }
+
+    protected void setPolicyTypeValue( final AttributeExtensiblePolicyType policyType ) {
+        this.policyType = policyType;
+    }
+
+    @XmlElement(name="Extension")
     @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+    
     @XmlAnyElement(lax=true)
+    @Override
     protected List<Object> getExtensions() {
         return super.getExtensions();
     }
@@ -111,7 +134,7 @@ public class PolicyValidationContext extends ManagedObject {
 
     //- PRIVATE
 
-    private PolicyDetail.PolicyType policyType;
+    private AttributeExtensiblePolicyType policyType;
     private Map<String,Object> properties;
     private List<ResourceSet> resourceSets;
 }

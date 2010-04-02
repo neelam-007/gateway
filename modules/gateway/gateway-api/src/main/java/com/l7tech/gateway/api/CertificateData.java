@@ -1,9 +1,13 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
@@ -22,7 +26,7 @@ import java.util.Map;
  * @see java.security.cert.CertificateFactory#generateCertificate(java.io.InputStream) CertificateFactory.generateCertificate(InputStream)
  */
 @XmlRootElement(name="CertificateData")
-@XmlType(name="CertificateDataType",propOrder={"issuerName","serialNumber","subjectName","extensions","encoded"})
+@XmlType(name="CertificateDataType",propOrder={"issuerNameValue","serialNumberValue","subjectNameValue","encodedValue","extension","extensions"})
 public class CertificateData {
 
     //- PUBLIC
@@ -32,9 +36,9 @@ public class CertificateData {
      *
      * @return The issuer name or null if not set.
      */
-    @XmlElement(name="IssuerName")
+    @XmlTransient
     public String getIssuerName() {
-        return issuerName;
+        return get(issuerName);
     }
 
     /**
@@ -43,7 +47,7 @@ public class CertificateData {
      * @param issuerName The issuer name
      */
     public void setIssuerName( final String issuerName ) {
-        this.issuerName = issuerName;
+        this.issuerName = set(this.issuerName,issuerName);
     }
 
     /**
@@ -51,9 +55,9 @@ public class CertificateData {
      *
      * @return The serial number or null if not set.
      */
-    @XmlElement(name="SerialNumber")
+    @XmlTransient
     public BigInteger getSerialNumber() {
-        return serialNumber;
+        return get(serialNumber);
     }
 
     /**
@@ -62,7 +66,7 @@ public class CertificateData {
      * @param serialNumber The serial number
      */
     public void setSerialNumber( final BigInteger serialNumber ) {
-        this.serialNumber = serialNumber;
+        this.serialNumber = set(this.serialNumber,serialNumber);
     }
 
     /**
@@ -70,9 +74,9 @@ public class CertificateData {
      *
      * @return The subject name or null if not set
      */
-    @XmlElement(name="SubjectName")
+    @XmlTransient
     public String getSubjectName() {
-        return subjectName;
+        return get(subjectName);
     }
 
     /**
@@ -81,7 +85,7 @@ public class CertificateData {
      * @param subjectName The subject name
      */
     public void setSubjectName( final String subjectName ) {
-        this.subjectName = subjectName;
+        this.subjectName = set(this.subjectName,subjectName);
     }
 
     /**
@@ -89,9 +93,9 @@ public class CertificateData {
      *
      * @return The encoded certificate or null if not set
      */
-    @XmlElement(name="Encoded", required=true)
+    @XmlTransient
     public byte[] getEncoded() {
-        return encoded;
+        return get(encoded);
     }
 
     /**
@@ -100,10 +104,46 @@ public class CertificateData {
      * @param encoded The encoded bytes for the certificate.
      */
     public void setEncoded( final byte[] encoded ) {
-        this.encoded = encoded;
+        this.encoded = set(this.encoded,encoded);
     }
 
     //- PROTECTED
+
+    @XmlElement(name="IssuerName")
+    protected AttributeExtensibleString getIssuerNameValue() {
+        return issuerName;
+    }
+
+    protected void setIssuerNameValue( final AttributeExtensibleString issuerName ) {
+        this.issuerName = issuerName;
+    }
+
+    @XmlElement(name="SerialNumber")
+    protected AttributeExtensibleBigInteger getSerialNumberValue() {
+        return serialNumber;
+    }
+
+    protected void setSerialNumberValue( final AttributeExtensibleBigInteger serialNumber ) {
+        this.serialNumber = serialNumber;
+    }
+
+    @XmlElement(name="SubjectName")
+    protected AttributeExtensibleString getSubjectNameValue() {
+        return subjectName;
+    }
+
+    protected void setSubjectNameValue( final AttributeExtensibleString subjectName ) {
+        this.subjectName = subjectName;
+    }
+
+    @XmlElement(name="Encoded", required=true)
+    protected AttributeExtensibleByteArray getEncodedValue() {
+        return encoded;
+    }
+
+    protected void setEncodedValue( final AttributeExtensibleByteArray encoded ) {
+        this.encoded = encoded;
+    }
 
     @XmlAnyAttribute
     protected Map<QName, Object> getAttributeExtensions() {
@@ -112,6 +152,15 @@ public class CertificateData {
 
     protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
         this.attributeExtensions = attributeExtensions;
+    }
+
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
     }
 
     @XmlAnyElement(lax=true)
@@ -130,10 +179,11 @@ public class CertificateData {
 
     //- PRIVATE
 
-    private String issuerName;
-    private BigInteger serialNumber;
-    private String subjectName;
-    private byte[] encoded;
+    private AttributeExtensibleString issuerName;
+    private AttributeExtensibleBigInteger serialNumber;
+    private AttributeExtensibleString subjectName;
+    private AttributeExtensibleByteArray encoded;
+    private Extension extension;
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 

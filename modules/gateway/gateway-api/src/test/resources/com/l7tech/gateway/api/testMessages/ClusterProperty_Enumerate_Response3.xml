@@ -1,7 +1,7 @@
 <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
               xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
               xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
-              xmlns:ns9="http://ns.l7tech.com/2010/01/gateway-management"
+              xmlns:ns9="http://ns.l7tech.com/2010/04/gateway-management"
               xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
               xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
               xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
@@ -9,7 +9,7 @@
               xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
         <wsa:MessageID env:mustUnderstand="true">uuid:e59e1766-19ff-4ad1-8ddd-e8f45ca92606</wsa:MessageID>
         <wsa:RelatesTo>uuid:0211a5cd-09bc-4c8e-a2f7-e09e04331bfa</wsa:RelatesTo>
         <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>

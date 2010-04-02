@@ -1,14 +1,18 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +26,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createIdentityProvider()
  */
 @XmlRootElement(name="IdentityProvider")
-@XmlType(name="IdentityProviderType", propOrder={"name","identityProviderType","extensions","properties"})
+@XmlType(name="IdentityProviderType", propOrder={"nameValue","identityProviderTypeValue","properties","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="identityProviders")
 public class IdentityProviderMO extends AccessibleObject {
 
@@ -33,9 +37,9 @@ public class IdentityProviderMO extends AccessibleObject {
      *
      * @return The name (may be null)
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -44,7 +48,7 @@ public class IdentityProviderMO extends AccessibleObject {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -52,9 +56,9 @@ public class IdentityProviderMO extends AccessibleObject {
      *
      * @return The identity provider type (may be null)
      */
-    @XmlElement(name="IdentityProviderType", required=true)
+    @XmlTransient
     public IdentityProviderType getIdentityProviderType() {
-        return identityProviderType;
+        return get(identityProviderType);
     }
 
     /**
@@ -63,7 +67,9 @@ public class IdentityProviderMO extends AccessibleObject {
      * @param identityProviderType The type to use.
      */
     public void setIdentityProviderType( final IdentityProviderType identityProviderType ) {
-        this.identityProviderType = identityProviderType;
+        this.identityProviderType = setNonNull(
+                this.identityProviderType==null ? new AttributeExtensibleIdentityProviderType() : this.identityProviderType,
+                identityProviderType );
     }
 
     /**
@@ -90,7 +96,8 @@ public class IdentityProviderMO extends AccessibleObject {
      * Type for identity providers
      */
     @XmlEnum(String.class)
-    public enum IdentityProviderType {
+    @XmlType(name="IdentityProviderTypeType")
+    public enum IdentityProviderType { 
         /**
          * Gateway internal identity provider.
          */
@@ -109,6 +116,35 @@ public class IdentityProviderMO extends AccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="IdentityProviderType", required=true)
+    protected AttributeExtensibleIdentityProviderType getIdentityProviderTypeValue() {
+        return identityProviderType;
+    }
+
+    protected void setIdentityProviderTypeValue( final AttributeExtensibleIdentityProviderType identityProviderType ) {
+        this.identityProviderType = identityProviderType;
+    }
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
@@ -120,6 +156,22 @@ public class IdentityProviderMO extends AccessibleObject {
         super.setExtensions( extensions );
     }
 
+    @XmlType(name="IdentityProviderTypePropertyType")
+    protected static class AttributeExtensibleIdentityProviderType extends AttributeExtensible<IdentityProviderType> {
+        private IdentityProviderType value;
+
+        @XmlValue
+        @Override
+        public IdentityProviderType getValue() {
+            return value;
+        }
+
+        @Override
+        public void setValue( final IdentityProviderType value ) {
+            this.value = value;
+        }
+    }
+
     //- PACKAGE
 
     IdentityProviderMO() {
@@ -127,7 +179,7 @@ public class IdentityProviderMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private String name;
-    private IdentityProviderType identityProviderType;
+    private AttributeExtensibleString name;
+    private AttributeExtensibleIdentityProviderType identityProviderType;
     private Map<String,Object> properties;
 }

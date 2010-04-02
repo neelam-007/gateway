@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<TrustedCertificate xmlns="http://ns.l7tech.com/2010/01/gateway-management" version="4" id="37289985">
-    <Name>Alice</Name>
-    <CertificateData>
+<TrustedCertificate xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="4" id="37289985" extendedAttribute="extension">
+    <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Alice</Name>
+    <CertificateData extendedAttribute="extension">
         <IssuerName>CN=OASIS Interop Test CA,O=OASIS</IssuerName>
         <SerialNumber>68652640310044618358965661752471103641</SerialNumber>
         <SubjectName>CN=Alice,OU=OASIS Interop Test Cert,O=OASIS</SubjectName>

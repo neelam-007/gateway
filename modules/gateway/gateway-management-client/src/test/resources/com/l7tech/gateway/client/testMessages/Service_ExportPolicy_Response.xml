@@ -1,5 +1,5 @@
 <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
-              xmlns:l7="http://ns.l7tech.com/2010/01/gateway-management"
+              xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"
               xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
               xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
               xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
@@ -10,7 +10,7 @@
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer"
               xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://ns.l7tech.com/2010/01/gateway-management/services/ExportPolicyResponse</wsa:Action>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicyResponse</wsa:Action>
         <wsa:MessageID env:mustUnderstand="true">uuid:763b638f-d1eb-4417-9e13-b48257d0ff5f</wsa:MessageID>
         <wsa:RelatesTo>uuid:9423f10e-8505-40c0-9f78-3aa3eccd249b</wsa:RelatesTo>
         <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>

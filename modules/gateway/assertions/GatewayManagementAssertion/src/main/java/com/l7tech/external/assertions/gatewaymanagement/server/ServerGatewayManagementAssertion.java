@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
@@ -104,7 +103,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         this.auditor = context instanceof ApplicationContext ?
                 new Auditor( this, (ApplicationContext)context, logger ) :
                 new LogOnlyAuditor( logger );
-        this.assertion = assertion;
         this.agent = buildAgent();
         this.assertionContext = new XmlBeanFactory(new ClassPathResource(assertionContextResource, ServerGatewayManagementAssertion.class), context);
         this.assertionContext.preInstantiateSingletons();
@@ -115,7 +113,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     private static final Logger logger = Logger.getLogger(ServerGatewayManagementAssertion.class.getName());
 
     private final Auditor auditor;
-    private final GatewayManagementAssertion assertion;
     private final XmlBeanFactory assertionContext;
     private final WSManAgent agent;
 
@@ -344,7 +341,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         managementResponse.writeTo(os);
         final byte[] responseData = os.toByteArray();
-        httpResponseKnob.setHeader( HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(responseData.length) );
         if ( managementResponse.getHeader() != null && managementResponse.getAction() != null ) {
             response.initialize(
                     ContentTypeHeader.parseValue(ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action="+managementResponse.getAction()), 

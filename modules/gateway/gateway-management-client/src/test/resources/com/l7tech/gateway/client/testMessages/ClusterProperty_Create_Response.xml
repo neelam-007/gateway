@@ -8,16 +8,16 @@
               xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse</wsa:Action>
-        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">uuid:c4e57236-7f53-4b6c-81d1-bcff14222d90</wsa:MessageID>
-        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management">uuid:b8bf7192-e260-4f35-84ad-79d47224e72e</wsa:RelatesTo>
-        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse</wsa:Action>
+        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">uuid:c4e57236-7f53-4b6c-81d1-bcff14222d90</wsa:MessageID>
+        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management">uuid:b8bf7192-e260-4f35-84ad-79d47224e72e</wsa:RelatesTo>
+        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
     </env:Header>
     <env:Body>
-        <wxf:ResourceCreated xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management">
+        <wxf:ResourceCreated xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management">
             <wsa:Address env:mustUnderstand="true">http://localhost:8080/wsman/</wsa:Address>
             <wsa:ReferenceParameters>
-                <wsman:ResourceURI>http://ns.l7tech.com/2010/01/gateway-management/clusterProperties</wsman:ResourceURI>
+                <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI>
                 <wsman:SelectorSet>
                     <wsman:Selector Name="id">264372224</wsman:Selector>
                 </wsman:SelectorSet>

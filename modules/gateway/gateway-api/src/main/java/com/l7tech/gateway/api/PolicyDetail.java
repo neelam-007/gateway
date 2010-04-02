@@ -1,5 +1,7 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyAttribute;
@@ -8,6 +10,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
@@ -30,7 +33,7 @@ import java.util.Map;
  * @see PolicyMOAccessor#putPolicyDetail(String, PolicyDetail)
  * @see ManagedObjectFactory#createPolicyDetail()
  */
-@XmlType(name="PolicyDetailType", propOrder={"name","policyType","extensions","properties"})
+@XmlType(name="PolicyDetailType", propOrder={"nameValue","policyTypeValue","properties","extension","extensions"})
 public class PolicyDetail {
 
     //- PUBLIC
@@ -119,9 +122,9 @@ public class PolicyDetail {
      *
      * @return The name for the policy or null
      */
-    @XmlElement(name="Name", required=true)
+    @XmlTransient
     public String getName() {
-        return name;
+        return get(name);
     }
 
     /**
@@ -130,7 +133,7 @@ public class PolicyDetail {
      * @param name The name to use.
      */
     public void setName( final String name ) {
-        this.name = name;
+        this.name = set(this.name,name);
     }
 
     /**
@@ -138,9 +141,9 @@ public class PolicyDetail {
      *
      * @return The policy type or null.
      */
-    @XmlElement(name="PolicyType", required=true)
+    @XmlTransient
     public PolicyType getPolicyType() {
-        return policyType;
+        return get(policyType);
     }
 
     /**
@@ -149,7 +152,7 @@ public class PolicyDetail {
      * @param policyType The policy type to use.
      */
     public void setPolicyType( final PolicyType policyType ) {
-        this.policyType = policyType;
+        this.policyType = set(this.policyType, policyType);
     }
 
     /**
@@ -176,6 +179,7 @@ public class PolicyDetail {
      * Type for policies.
      */
     @XmlEnum(String.class)
+    @XmlType(name="PolicyTypeType")
     public enum PolicyType {
         /**
          * Policy Include Fragment
@@ -190,6 +194,24 @@ public class PolicyDetail {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="PolicyType", required=true)
+    protected AttributeExtensiblePolicyType getPolicyTypeValue() {
+        return policyType;
+    }
+
+    protected void setPolicyTypeValue( final AttributeExtensiblePolicyType policyType ) {
+        this.policyType = policyType;
+    }
+
     @XmlAnyAttribute
     protected Map<QName, Object> getAttributeExtensions() {
         return attributeExtensions;
@@ -197,6 +219,15 @@ public class PolicyDetail {
 
     protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
         this.attributeExtensions = attributeExtensions;
+    }
+
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
     }
 
     @XmlAnyElement(lax=true)
@@ -219,9 +250,10 @@ public class PolicyDetail {
     private String guid;
     private Integer version;
     private String folderId;
-    private String name;
-    private PolicyType policyType;
+    private AttributeExtensibleString name;
+    private AttributeExtensiblePolicyType policyType;
     private Map<String,Object> properties;
     private Map<QName,Object> attributeExtensions;
+    private Extension extension;
     private List<Object> extensions;
 }

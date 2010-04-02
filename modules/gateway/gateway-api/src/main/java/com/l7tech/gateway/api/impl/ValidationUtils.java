@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api.impl;
 
 import com.l7tech.gateway.api.ManagementRuntimeException;
+import com.l7tech.util.ResourceUtils;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -9,11 +10,16 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -46,7 +52,7 @@ public class ValidationUtils {
                                     @Override
                                     public void close() throws IOException {
                                         super.close();
-                                        sources.put( suggestedFileName, toString() );
+                                        sources.put( suggestedFileName, transform(toString()) );
                                     }
                                 } );
                             }
@@ -88,4 +94,22 @@ public class ValidationUtils {
 
     private static Schema schema;
     private static Map<String,String> schemaSources;
+
+    private static String transform( final String schema ) {
+        InputStream schemaIn = null;
+        try {
+            final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            final Transformer transformer = transformerFactory.newTransformer(
+                    new StreamSource( schemaIn = ValidationUtils.class.getResourceAsStream( "schema-transform.xsl" ) ) );
+            final StringWriter result = new StringWriter();
+            transformer.transform( new StreamSource(new StringReader(schema)), new StreamResult(result) );
+            return result.toString();
+        } catch ( TransformerConfigurationException e ) {
+            throw new ManagementRuntimeException("Unable to generate XML Schema", e);
+        } catch ( TransformerException e ) {
+            throw new ManagementRuntimeException("Unable to generate XML Schema", e);
+        } finally {
+            ResourceUtils.closeQuietly( schemaIn );
+        }
+    }
 }

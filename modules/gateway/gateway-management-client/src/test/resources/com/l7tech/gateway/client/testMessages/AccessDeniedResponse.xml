@@ -8,13 +8,13 @@
               xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
               xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <env:Header>
-        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>
-        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">uuid:5d78b6d4-d24a-4c05-9e6c-d2d3572818e9</wsa:MessageID>
-        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management">uuid:6900ca1f-a1ec-4617-84fe-87a9c3f3f7b0</wsa:RelatesTo>
-        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>
+        <wsa:MessageID xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">uuid:5d78b6d4-d24a-4c05-9e6c-d2d3572818e9</wsa:MessageID>
+        <wsa:RelatesTo xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management">uuid:6900ca1f-a1ec-4617-84fe-87a9c3f3f7b0</wsa:RelatesTo>
+        <wsa:To xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
     </env:Header>
     <env:Body>
-        <env:Fault xmlns:ns11="http://ns.l7tech.com/2010/01/gateway-management">
+        <env:Fault xmlns:ns11="http://ns.l7tech.com/2010/04/gateway-management">
             <env:Code>
                 <env:Value>env:Sender</env:Value>
                 <env:Subcode>

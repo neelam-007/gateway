@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
@@ -29,7 +30,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createPrivateKey()
  */
 @XmlRootElement(name="PrivateKey")
-@XmlType(name="PrivateKeyType",propOrder={"certificateChain","extensions","properties"})
+@XmlType(name="PrivateKeyType",propOrder={"certificateChain","properties","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="privateKeys")
 public class PrivateKeyMO extends AccessibleObject {
 
@@ -114,6 +115,17 @@ public class PrivateKeyMO extends AccessibleObject {
     }
 
     //- PROTECTED
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override

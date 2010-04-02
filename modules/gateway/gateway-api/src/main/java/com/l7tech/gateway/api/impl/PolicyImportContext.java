@@ -17,7 +17,7 @@ import java.util.Map;
  * 
  */
 @XmlRootElement(name="PolicyImportContext")
-@XmlType(name="PolicyImportContextType", propOrder={"properties", "resource", "policyReferenceInstructions", "extensions"})
+@XmlType(name="PolicyImportContextType", propOrder={"properties", "resource", "policyReferenceInstructions", "extension", "extensions"})
 public class PolicyImportContext extends ManagedObject {
 
     //- PUBLIC
@@ -53,8 +53,19 @@ public class PolicyImportContext extends ManagedObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Extension")
     @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
+
     @XmlAnyElement(lax=true)
+    @Override
     protected List<Object> getExtensions() {
         return super.getExtensions();
     }

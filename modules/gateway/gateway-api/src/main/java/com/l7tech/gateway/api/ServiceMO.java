@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,7 +19,7 @@ import java.util.List;
  * @see ManagedObjectFactory#createService()
  */
 @XmlRootElement(name="Service")
-@XmlType(name="ServiceType", propOrder={"serviceDetail", "extensions", "resourceSets"})
+@XmlType(name="ServiceType", propOrder={"serviceDetail", "resourceSets", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name="services", accessorClassname="com.l7tech.gateway.api.impl.ServiceMOAccessorImpl")
 public class ServiceMO extends AccessibleObject {
 
@@ -93,6 +94,17 @@ public class ServiceMO extends AccessibleObject {
     }
 
     //- PROTECTED
+
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    @Override
+    protected void setExtension( final Extension extension ) {
+        super.setExtension( extension );
+    }
 
     @XmlAnyElement(lax=true)
     @Override

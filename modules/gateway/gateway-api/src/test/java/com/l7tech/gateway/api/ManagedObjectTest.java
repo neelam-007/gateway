@@ -15,18 +15,18 @@ import org.w3c.dom.Document;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.transform.Result;
+import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
@@ -713,21 +713,20 @@ public class ManagedObjectTest {
 
     @Test
     public void testSchemaGeneration() throws Exception {
-        final Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
-
-        final StringWriter schemaWriter = new StringWriter();
-        context.generateSchema( new SchemaOutputResolver(){
-            @Override
-            public Result createOutput( final String namespaceUri, final String suggestedFileName ) throws IOException {
-                System.out.println(suggestedFileName);
-                StreamResult result = new StreamResult( schemaWriter );
-                result.setSystemId(suggestedFileName);
-                return result;
+        final Source[] sources = ValidationUtils.getSchemaSources();
+        for ( final Source source : sources ) {
+            OutputStreamWriter out = null;
+            try {
+                IOUtils.copyStream( ((StreamSource)source).getReader(), out = new OutputStreamWriter(System.out){
+                    @Override
+                    public void close() throws IOException {
+                        super.flush();
+                    }
+                } );
+            } finally {
+                ResourceUtils.closeQuietly( out );
             }
-        } );
-
-        System.out.println( schemaWriter.toString() );
+        }
     }
 
     @Test
@@ -768,7 +767,7 @@ public class ManagedObjectTest {
 
     //- PRIVATE
 
-    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/01/gateway-management";
+    private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/04/gateway-management";
 
     private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.unmodifiableCollection( Arrays.asList(
         ClusterPropertyMO.class,

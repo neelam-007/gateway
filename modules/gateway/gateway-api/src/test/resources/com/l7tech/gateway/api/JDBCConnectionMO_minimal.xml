@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<JDBCConnection xmlns="http://ns.l7tech.com/2010/01/gateway-management">
+<JDBCConnection xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <Name>My JDBC Connection</Name>
     <Enabled>true</Enabled>
 </JDBCConnection>

@@ -1,6 +1,9 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.impl.Extension;
+
 import javax.xml.bind.annotation.XmlAnyAttribute;
+import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -15,7 +18,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createResourceSet()
  */
 @XmlRootElement(name="ResourceSet")
-@XmlType(name="ResourceSetType", propOrder={"resources"})
+@XmlType(name="ResourceSetType", propOrder={"resources","extension","extensions"})
 public class ResourceSet {
 
     //- PUBLIC
@@ -93,6 +96,24 @@ public class ResourceSet {
         this.attributeExtensions = attributeExtensions;
     }
 
+    @XmlElement(name="Extension")
+    protected Extension getExtension() {
+        return extension;
+    }
+
+    protected void setExtension( final Extension extension ) {
+        this.extension = extension;
+    }
+
+    @XmlAnyElement(lax=true)
+    protected List<Object> getExtensions() {
+        return extensions;
+    }
+
+    protected void setExtensions( final List<Object> extensions ) {
+        this.extensions = extensions;
+    }
+
     //- PACKAGE
 
     ResourceSet() {
@@ -104,4 +125,6 @@ public class ResourceSet {
     private String rootUrl;
     private List<Resource> resources;
     private Map<QName,Object> attributeExtensions;
+    private Extension extension;
+    private List<Object> extensions;
 }
