@@ -37,8 +37,8 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
      *
      * @param policyGetter service for looking up target policies referenced by Include assertions.  Required.
      * @param includedPolicyGuids policy GUIDs already included on this thread, for detecting circular imports.  Required, but may be empty. 
-     * @param readOnly if true, replacement assertions will be returned directly, and Include assertions will not be modified.
-     *                 if false, Include assertions will have a copy of the replacement policy added to them, and the copy will be returned.
+     * @param readOnly if true, replacement assertions will be returned directly.
+     *                 if false, replacement assertions will be copied to allow safe modification.
      * @param inlineDisabled if true, disabled Include assertions will be replaced as though they were enabled.
      *                       if false, disabled Include assertions will be ignored.
      */
