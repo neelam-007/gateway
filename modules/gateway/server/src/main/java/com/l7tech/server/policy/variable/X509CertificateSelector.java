@@ -12,7 +12,7 @@ import java.security.cert.X509Certificate;
 public class X509CertificateSelector implements ExpandVariables.Selector<X509Certificate> {
 
     @Override
-    public Selection select(X509Certificate cert, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+    public Selection select(String contextName, X509Certificate cert, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
 
         X509CertificateAttributesExtractor extractor = new X509CertificateAttributesExtractor(cert);
 

@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 public abstract class Syntax {
     public static final String DEFAULT_MV_DELIMITER = ", ";
 
-    public final String remainingName;
     public static final String SYNTAX_PREFIX = "${";
     public static final String SYNTAX_SUFFIX = "}";
     public static final String REGEX_PREFIX = "(?:\\$\\{)";
@@ -27,13 +26,53 @@ public abstract class Syntax {
     public static final Pattern regexPattern = Pattern.compile(REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX);
     public static final Pattern oneVarPattern = Pattern.compile("^" + REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX + "$");
 
-    private Syntax(String name) {
-        this.remainingName = name;
+    private final String variableName;
+    private final String variableSelector;
+    private final boolean array;
+
+    private Syntax( final String variableName,
+                    final String variableSelector,
+                    final boolean array )  {
+        this.variableName = variableName;
+        this.variableSelector = variableSelector;
+        this.array = array;
     }
 
     /**
-     * Finds the longest period-delimited subname of the provided name that matches at least one of the known names
-     * in the provided Set, or null if no match can be found.
+     * Indicates that an array subscript was seen for the variable.
+     *
+     * @return true if the variable name is followed by an array subscript.
+     */
+    public boolean isArray() {
+        return array;
+    }
+
+    /**
+     * Get the name of the variable matched by this syntax.
+     *
+     * @return The variable name.
+     */
+    public String getVariableName() {
+        return variableName;
+    }
+
+    /**
+     * The full selector to use for this syntax.
+     *
+     * @return The variable selector.
+     */
+    public String getVariableSelector() {
+        return variableSelector;
+    }
+
+    /**
+     * Finds the longest period-delimited subname of the provided name that
+     * matches at least one of the known names in the provided Set, or null if
+     * no match can be found.
+     *
+     * <p>Note that the name must be a variable name after Syntax processing,
+     * i.e. it should not have an array suffix or delimiter specification.</p>
+     *
      * @param name the full name to search for (all leading and trailing spaces will be trimmed)
      * @param names the set of names to search within
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
@@ -43,15 +82,23 @@ public abstract class Syntax {
     }
 
     /**
-     * Finds the longest period-delimited subname of the provided name that matches at least one of the known names
-     * in the provided Set, or null if no match can be found.
+     * Finds the longest period-delimited subname of the provided name that
+     * matches at least one of the known names in the provided Set, or null if
+     * no match can be found.
+     *
+     * <p>Note that the name must be a variable name after Syntax processing,
+     * i.e. it should not have an array suffix or delimiter specification.</p>
+     *
      * @param name the full name to search for
      * @param names the set of names to search within
      * @param preserveCase whether to preserve the case of the provided variable name
      * @param trim whether to trim out trailing and leading spaces
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
      */
-    public static String getMatchingName(String name, Set names, boolean preserveCase, boolean trim) {
+    public static String getMatchingName( final String name,
+                                          final Set names,
+                                          final boolean preserveCase,
+                                          final boolean trim) {
         String mutateName = preserveCase ? name : name.toLowerCase();
         mutateName = trim ? mutateName.trim() : mutateName;
         final String lname = mutateName;
@@ -71,7 +118,7 @@ public abstract class Syntax {
         String format(Syntax syntax, Object o, SyntaxErrorHandler handler, boolean strict);
     }
 
-    private static final Set usefulToStringClasses = Collections.unmodifiableSet(new HashSet() {{
+    private static final Set<Class<?>> usefulToStringClasses = Collections.unmodifiableSet(new HashSet<Class<?>>() {{
         add(String.class);
         add(Number.class);
         add(Long.TYPE);
@@ -102,10 +149,10 @@ public abstract class Syntax {
             String var = matcher.group(1);
             if (var != null) {
                 var = var.trim();
-                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
+                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).getVariableName());
             }
         }
-        return vars.toArray(new String[0]);
+        return vars.toArray(new String[vars.size()]);
     }
 
     /**
@@ -141,7 +188,7 @@ public abstract class Syntax {
     private static String[] getReferencedNamesWithIndexedVars(String s, boolean omitted) throws VariableNameSyntaxException {
         if (s == null) throw new IllegalArgumentException();
 
-        ArrayList vars = new ArrayList();
+        List<String> vars = new ArrayList<String>();
         Matcher matcher = regexPattern.matcher(s);
         while (matcher.find()) {
             int count = matcher.groupCount();
@@ -154,45 +201,68 @@ public abstract class Syntax {
 
                 final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
 
-                if (omitted && varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
+                if (omitted && varSyntax.isArray())  continue;
 
-                vars.add(omitted? varSyntax.remainingName : var);
+                vars.add(omitted? varSyntax.getVariableName() : var);
             }
         }
-        return (String[]) vars.toArray(new String[0]);
+        return vars.toArray(new String[vars.size()]);
     }
 
     // TODO find out how to move this into Syntax subclasses
     public static Syntax parse(String rawName, final String delimiter) {
-        int ppos = rawName.indexOf("|");
+        final int ppos = rawName.indexOf("|");
         if (ppos == 0) throw new VariableNameSyntaxException("Variable names must not start with '|'");
         if (ppos > 0) {
-            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos), rawName.substring(ppos+1), true);
+            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos),null,false, rawName.substring(ppos+1), true);
         } else {
-            // Can't combine concatenation with subscript (yet -- 2D arrays?)
-            int lbpos = rawName.indexOf("[");
-            if (lbpos == 0) throw new VariableNameSyntaxException("Variable names must not start with '['");
-            if (lbpos > 0) {
-                int rbpos = rawName.indexOf("]", lbpos+1);
-                if (rbpos == 0) throw new VariableNameSyntaxException("Array subscript must not be empty");
-                if (rbpos > 0) {
-                    String ssub = rawName.substring(lbpos+1, rbpos);
-                    int subscript;
-                    try {
-                        subscript = Integer.parseInt(ssub);
-                    } catch (NumberFormatException e) {
-                        throw new VariableNameSyntaxException("Array subscript not an integer", e);
-                    }
-                    if (subscript < 0) throw new VariableNameSyntaxException("Array subscript must be positive");
-                    return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
-                } else throw new VariableNameSyntaxException("']' expected but not found");
+            final int lbpos = rawName.indexOf("[");
+            if (lbpos >= 0) {
+                validateArraySubscripts( rawName );
+                return new MultivalueDelimiterSyntax(rawName.substring( 0, lbpos ), rawName, true, delimiter, false);
             } else {
-                return new MultivalueDelimiterSyntax(rawName, delimiter, false);
+                return new MultivalueDelimiterSyntax(rawName, null, false, delimiter, false);
             }
         }
     }
 
-    public static final Formatter DEFAULT_FORMATTER = new Formatter() {
+    private static void validateArraySubscripts( final String rawName ) {
+        int leftBracketIndex = rawName.indexOf("[");
+        while ( leftBracketIndex >= 0 ) {
+            if (leftBracketIndex == 0) {
+                throw new VariableNameSyntaxException("Variable names must not start with '['");
+            }
+
+            final int rightBracketIndex = rawName.indexOf("]", leftBracketIndex+1);
+            if ( rightBracketIndex == leftBracketIndex + 1 ) throw new VariableNameSyntaxException("Array subscript must not be empty");
+            if ( rightBracketIndex > 0 ) {
+                final String subscriptText = rawName.substring(leftBracketIndex+1, rightBracketIndex);
+                final int subscript;
+                try {
+                    subscript = Integer.parseInt(subscriptText);
+                } catch (NumberFormatException e) {
+                    throw new VariableNameSyntaxException("Array subscript not an integer", e);
+                }
+                if ( subscript < 0 ) {
+                    throw new VariableNameSyntaxException("Array subscript must be positive");
+                }
+            } else {
+                throw new VariableNameSyntaxException("']' expected but not found");
+            }
+
+            leftBracketIndex = rawName.indexOf("[", rightBracketIndex + 1);
+        }
+    }
+
+    public static Formatter getFormatter( final Object object ) {
+        if ( object instanceof Element ) {
+            return ELEMENT_FORMATTER;
+        }
+        return DEFAULT_FORMATTER;
+    }
+
+    private static final Formatter DEFAULT_FORMATTER = new Formatter() {
+        @Override
         public String format(Syntax syntax, Object o, SyntaxErrorHandler handler, boolean strict) {
             if (o == null) return "";
 
@@ -207,10 +277,29 @@ public abstract class Syntax {
             }
 
             if (!ok) {
-                String message = handler.handleSuspiciousToString( syntax.remainingName, o.getClass().getName() );
+                String message = handler.handleSuspiciousToString( syntax.getVariableSelector(), o.getClass().getName() );
                 if (strict) throw new VariableNameSyntaxException( message );
             }
             return o.toString();
+        }
+    };
+
+    private static final Formatter ELEMENT_FORMATTER = new Formatter() {
+        @Override
+        public String format( final Syntax syntax, final Object o, final SyntaxErrorHandler handler, final boolean strict ) {
+            if ( !(o instanceof Element) ) return "";
+
+            try {
+                OutputFormat format = new OutputFormat();
+                format.setOmitXMLDeclaration(true);
+                XMLSerializer serializer = new XMLSerializer(format);
+                StringWriter writer = new StringWriter();
+                serializer.setOutputCharStream(writer);
+                serializer.serialize((Element)o);
+                return writer.toString();
+            } catch(IOException e) {
+                return "";
+            }
         }
     };
 
@@ -221,21 +310,15 @@ public abstract class Syntax {
         String handleBadVariable(String s, Throwable t);
     }
 
-    public abstract Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict);
     public abstract String format(Object[] values, Formatter formatter, SyntaxErrorHandler handler, boolean strict);
 
     private static class MultivalueDelimiterSyntax extends Syntax {
         private final String delimiter;
         private final boolean delimiterSpecified;
-        private MultivalueDelimiterSyntax(String name, String delimiter, boolean delimiterSpecified) {
-            super(name);
+        private MultivalueDelimiterSyntax(String name, String selector, boolean array, String delimiter, boolean delimiterSpecified) {
+            super(name,selector==null ? name : selector,array);
             this.delimiter = delimiter;
             this.delimiterSpecified = delimiterSpecified;
-        }
-
-        @Override
-        public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
-            return values;
         }
 
         @Override
@@ -243,88 +326,27 @@ public abstract class Syntax {
             if (values == null || values.length == 0) return "";
 
             // DOM Elements do not have a delimiter unless one was explicitly specified
-            if (values[0] instanceof Element) {
-                StringBuilder sb = new StringBuilder();
-                OutputFormat format = new OutputFormat();
-                format.setOmitXMLDeclaration(true);
-                XMLSerializer serializer = new XMLSerializer(format);
-                for (int i = 0; i < values.length; i++) {
-                    Element value = (Element)values[i];
-                    if (value != null) {
-                        try {
-                            StringWriter writer = new StringWriter();
-                            serializer.setOutputCharStream(writer);
-                            serializer.serialize(value);
-                            sb.append(writer.toString());
-
-                            if (delimiterSpecified && i < values.length - 1) {
-                                sb.append(delimiter);
-                            }
-                        } catch(IOException e) {
-                            // Skip to the next Element
-                        }
-                    }
-                }
-                return sb.toString();
+            final String valueDelimiter;
+            if (values[0] instanceof Element && !delimiterSpecified) {
+                valueDelimiter = "";
             } else {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < values.length; i++) {
-                    Object value = values[i];
-                    String formatted = value == null ? null : formatter.format(this, value, handler, strict);
-                    if (formatted != null) {
-                        if (delimiter.length() == 1 && formatted.contains(delimiter)) {
-                            formatted = formatted.replace("\\", "\\\\");
-                            formatted = formatted.replace(delimiter, "\\" + delimiter);
-                        }
-                        sb.append(formatted);
-                    }
-                    if (i < values.length-1) sb.append(delimiter);
-                }
-                return sb.toString();
-
+                valueDelimiter = delimiter;
             }
+
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                String formatted = value == null ? null : formatter.format(this, value, handler, strict);
+                if (formatted != null) {
+                    if (valueDelimiter.length() == 1 && formatted.contains(valueDelimiter)) {
+                        formatted = formatted.replace("\\", "\\\\");
+                        formatted = formatted.replace(valueDelimiter, "\\" + valueDelimiter);
+                    }
+                    sb.append(formatted);
+                }
+                if (i < values.length-1) sb.append(valueDelimiter);
+            }
+            return sb.toString();
         }
     }
-
-    private static class MultivalueArraySubscriptSyntax extends Syntax {
-        private final int subscript;
-        private MultivalueArraySubscriptSyntax(String name, int subscript) {
-            super(name);
-            this.subscript = subscript;
-        }
-
-        @Override
-        public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
-            if (subscript > values.length-1) {
-                String message = handler.handleSubscriptOutOfRange( subscript, remainingName, values.length );
-                if (strict)
-                    throw new VariableNameSyntaxException(message);
-                else
-                    return null;
-            }
-            return new Object[] { values[subscript] };
-        }
-
-        @Override
-        public String format(Object[] values, Formatter formatter, SyntaxErrorHandler handler, boolean strict) {
-            if (values == null || values.length != 1) return "";
-
-            if (values[0] instanceof Element) {
-                try {
-                    OutputFormat format = new OutputFormat();
-                    format.setOmitXMLDeclaration(true);
-                    XMLSerializer serializer = new XMLSerializer(format);
-                    StringWriter writer = new StringWriter();
-                    serializer.setOutputCharStream(writer);
-                    serializer.serialize((Element)values[0]);
-                    return writer.toString();
-                } catch(IOException e) {
-                    return "";
-                }
-            } else {
-                return formatter.format(this, values[0], handler, strict);
-            }
-        }
-    }
-
 }

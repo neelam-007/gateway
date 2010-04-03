@@ -3,9 +3,11 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
@@ -15,6 +17,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Functions;
 import org.w3c.dom.Document;
@@ -29,12 +32,13 @@ import java.util.*;
  * Extracts values by name from {@link Message}s.
  * @author alex
 */
-class MessageSelector implements ExpandVariables.Selector {
+class MessageSelector implements ExpandVariables.Selector<Message> {
     // NOTE: Variable names must be lower case
     private static final String HTTP_HEADER_PREFIX = "http.header.";
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
+    private static final String PARTS_NAME = "parts";
     private static final String ORIGINAL_MAINPART_NAME = "originalmainpart";
     private static final String SIZE_NAME = "size";
     private static final String CONTENT_TYPE = "contenttype";
@@ -87,26 +91,19 @@ class MessageSelector implements ExpandVariables.Selector {
     }});
 
     @Override
-    public Class getContextObjectClass() {
+    public Class<Message> getContextObjectClass() {
         return Message.class;
     }
 
     @Override
-    public Selection select(Object context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
-        Message message;
-        if (context instanceof Message) {
-            message = (Message) context;
-        } else {
-            throw new IllegalArgumentException(); 
-        }
-
+    public Selection select(String contextName, Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         final MessageAttributeSelector selector;
 
         final String lname = name.toLowerCase();
         String prefix = lname;
         int index = prefix.indexOf( '.' );
         if ( index > -1) prefix = prefix.substring( 0, index );
-        if ( !ArrayUtils.contains(getPrefixes(), prefix)) return null; // this check ensures prefixes are added to the list
+        if ( !ArrayUtils.contains(getPrefixes(), prefix) && !prefix.startsWith( "parts[" )) return null; // this check ensures prefixes are added to the list
 
         if (lname.startsWith(HTTP_HEADER_PREFIX))
             selector = singleHeaderSelector;
@@ -126,6 +123,8 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = contentTypeSelector;
         } else if (lname.equals(MAINPART_CONTENT_TYPE)) {
             selector = mainPartContentTypeSelector;
+        } else if (lname.startsWith(PARTS_NAME)) {
+            selector = partsSelector;
         } else if (lname.startsWith(WSS_PREFIX)) {
             selector = wssSelector;
         } else if (lname.equals(AUTH_USER_PASSWORD) || lname.equals(AUTH_USER_USERNAME)) {
@@ -147,7 +146,7 @@ class MessageSelector implements ExpandVariables.Selector {
                 if (servletAttrName != null) {
                     selector = new HttpServletAttributeSelector(servletAttrName);
                 } else {
-                    String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                    String msg = handler.handleBadVariable(name + " in " + message.getClass().getName());
                     if (strict) throw new IllegalArgumentException(msg);
                     return null;
                 }
@@ -162,6 +161,7 @@ class MessageSelector implements ExpandVariables.Selector {
         return new String[]{
                 "http",
                 "mainpart",
+                "parts",
                 "originalmainpart",
                 "wss",
                 "tcp",
@@ -364,6 +364,32 @@ class MessageSelector implements ExpandVariables.Selector {
         }
     };
 
+    private static final MessageAttributeSelector partsSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select( final Message message,
+                                 final String name,
+                                 final Syntax.SyntaxErrorHandler handler,
+                                 final boolean strict) {
+            final MimeKnob mk = message.getKnob(MimeKnob.class);
+            if (mk == null) {
+                // Message not yet initialized
+                return null;
+            }
+
+            try {
+                final List<PartInfo> partList = new ArrayList<PartInfo>();
+                for ( final PartInfo partInfo : mk ) {
+                    partList.add( partInfo );           
+                }
+                return new Selection(partList.toArray( new PartInfo[partList.size()] ), name.length() > PARTS_NAME.length() ? name.substring( PARTS_NAME.length() ): null);
+            } catch ( UncheckedIOException e ) {
+                String msg = handler.handleBadVariable("Unable to access message parts '"+ ExceptionUtils.getMessage( e ) +"'");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+        }
+    };
+
     private static final MessageAttributeSelector wssSelector = new MessageAttributeSelector() {
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -478,7 +504,7 @@ class MessageSelector implements ExpandVariables.Selector {
     private static class TcpKnobMessageAttributeSelector implements MessageAttributeSelector {
         private final Functions.Unary<Object, TcpKnob> tcpFieldGetter;
 
-        public TcpKnobMessageAttributeSelector(Functions.Unary<Object, TcpKnob> tcpFieldGetter) {
+        private TcpKnobMessageAttributeSelector(Functions.Unary<Object, TcpKnob> tcpFieldGetter) {
             this.tcpFieldGetter = tcpFieldGetter;
         }
 

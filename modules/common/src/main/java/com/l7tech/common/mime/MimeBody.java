@@ -1,7 +1,5 @@
  /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.mime;
@@ -634,7 +632,7 @@ public class MimeBody implements Iterable<PartInfo> {
     private boolean readUpToPartNoThrow(int ordinal) throws IOException {
         checkErrorIO();
 
-        if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
+        if (boundary == null) return false;
         while (partInfos.size() <= ordinal) {
             if (!moreParts) return false;
             stashCurrentPartBody();

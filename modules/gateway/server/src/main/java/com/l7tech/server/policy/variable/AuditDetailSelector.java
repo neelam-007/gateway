@@ -8,7 +8,7 @@ import com.l7tech.policy.variable.Syntax;
  */
 public class AuditDetailSelector implements ExpandVariables.Selector<AuditDetail> {
     @Override
-    public Selection select(AuditDetail detail, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+    public Selection select(String contextName, AuditDetail detail, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         if (detail == null)
             return null;
         if ("componentId".equalsIgnoreCase(name)) {

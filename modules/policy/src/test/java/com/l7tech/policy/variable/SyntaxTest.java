@@ -46,6 +46,18 @@ public class SyntaxTest {
         Assert.assertEquals("Correct referenced name found", "IDS", referencedNames[2]);
     }
 
+    @Test
+    public void testGetReferencedNames3d() throws SAXException {
+        final String varName = "${IDS[0][0][0]} ${TEST} ${IDS[1]}";
+        final String [] referencedNames = Syntax.getReferencedNames(varName);
+
+        Assert.assertEquals("Three values expected", 3, referencedNames.length);
+
+        Assert.assertEquals("Correct referenced name found", "IDS", referencedNames[0]);
+        Assert.assertEquals("Correct referenced name found", "TEST", referencedNames[1]);
+        Assert.assertEquals("Correct referenced name found", "IDS", referencedNames[2]);
+    }
+
     /**
      * This test is capturing the behaviour of getReferencedNames, where it applies no logic for selectors
      */
@@ -68,5 +80,25 @@ public class SyntaxTest {
         contextVarNames.add("var1");
         final String referencedName = Syntax.getMatchingName("var1.mainpart", contextVarNames);
         Assert.assertEquals("Invalid name found", "var1", referencedName);
+    }
+
+    @Test(expected=VariableNameSyntaxException.class)
+    public void testArraySyntaxSubscriptNotInt() {
+        Syntax.parse( "blah[i]", "," );
+    }
+
+    @Test(expected=VariableNameSyntaxException.class)
+    public void testArraySyntaxSubscriptEmpty() {
+        Syntax.parse( "blah[0][]", "," );
+    }
+
+    @Test(expected=VariableNameSyntaxException.class)
+    public void testArraySyntaxSubscriptNoClose() {
+        Syntax.parse( "blah[", "," );
+    }
+
+    @Test(expected=VariableNameSyntaxException.class)
+    public void testArraySyntaxSubscriptNegative() {
+        Syntax.parse( "blah[-34]", "," );
     }
 }

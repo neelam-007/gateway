@@ -142,6 +142,7 @@ public class BuiltinVariables {
 
         new VariableMetadata("request.http", true, false, null, false),
         new VariableMetadata("request.mainpart", false, false, null, false),
+        new VariableMetadata("request.parts", true, true, null, false),
         new VariableMetadata("request.wss", true, false, null, false),
         new VariableMetadata("request.username", false, false, null, false),
         new VariableMetadata("request.password", false, false, null, false),
@@ -152,6 +153,7 @@ public class BuiltinVariables {
 
         new VariableMetadata("response.http", true, false, null, false),
         new VariableMetadata("response.mainpart", false, false, null, false),
+        new VariableMetadata("response.parts", true, true, null, false),
         new VariableMetadata("response.wss", true, false, null, false),
         new VariableMetadata("response.password", false, false, null, false),
         new VariableMetadata("response.username", false, false, null, false),

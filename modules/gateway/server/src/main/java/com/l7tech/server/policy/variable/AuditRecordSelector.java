@@ -17,7 +17,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
     private static final Logger logger = Logger.getLogger(AuditRecordSelector.class.getName());
 
     @Override
-    public Selection select(AuditRecord auditRecord, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+    public Selection select(String contextName, AuditRecord auditRecord, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         if (auditRecord == null) {
             // Probably can't happen
             logger.warning("AuditRecordSelector: audit record is null");

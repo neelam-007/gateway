@@ -16,7 +16,7 @@ public class UserSelector implements ExpandVariables.Selector<User> {
     private static final String PREFIX_CERT = CERT + ".";
 
     @Override
-    public Selection select(User user, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+    public Selection select(String contextName, User user, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         if (name.startsWith(PREFIX_CERT) || name.equals(CERT)) {
             if (user instanceof LdapUser) {
                 LdapUser ldapUser = (LdapUser)user;
