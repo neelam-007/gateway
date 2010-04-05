@@ -7,15 +7,12 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsProvider;
+import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -29,22 +26,9 @@ public class JmsConnectionManagerImpl
         extends HibernateEntityManager<JmsConnection, EntityHeader>
         implements InitializingBean, JmsConnectionManager
 {
-    private final List<JmsProvider> _allProviders;
-
-    public JmsConnectionManagerImpl() {
-        // TODO make this real, eh?!!
-        JmsProvider tibcoEmsProvider = new JmsProvider("TIBCO EMS", "com.tibco.tibjms.naming.TibjmsInitialContextFactory", "QueueConnectionFactory");
-        JmsProvider mqSeriesOverLdapProvider = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "QueueConnectionFactory");
-        JmsProvider fioranoMQProvider = new JmsProvider("FioranoMQ", "fiorano.jms.runtime.naming.FioranoInitialContextFactory", "QueueConnectionFactory");
-        List<JmsProvider> list = new ArrayList<JmsProvider>();
-        list.add(tibcoEmsProvider);
-        list.add(mqSeriesOverLdapProvider);
-        list.add(fioranoMQProvider);
-        _allProviders = Collections.unmodifiableList(list);
-    }
-
-    public Collection<JmsProvider> findAllProviders() throws FindException {
-        return _allProviders;
+    @Override
+    public EnumSet<JmsProviderType> findAllProviders() throws FindException {
+        return EnumSet.allOf(JmsProviderType.class);
     }
 
 /*

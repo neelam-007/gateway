@@ -28,8 +28,8 @@ public class JmsAdminStub implements JmsAdmin {
         endpoints =  null;//StubDataStore.defaultStore().getJmsEndpoints();
     }
 
-    public JmsProvider[] getProviderList() {
-        return providers;
+    public EnumSet<JmsProviderType> getProviderTypes() {
+        return EnumSet.noneOf(JmsProviderType.class);
     }
 
     public synchronized JmsConnection[] findAllConnections() throws FindException {

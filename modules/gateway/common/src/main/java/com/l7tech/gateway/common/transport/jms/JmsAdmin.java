@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 
 /**
  * The SecureSpan Gateway's API for managaging JMS connections and endpoints.
@@ -42,15 +43,15 @@ public interface JmsAdmin {
     }
 
     /**
-     * Retrieves the array of {@link JmsProvider}s known to the SSG.  Note that a {@link JmsProvider} is only a
-     * container for a set of representative default settings, and the presence of a {@link JmsProvider} in this list
+     * Retrieves the array of {@link JmsProviderType}s known to the SSG.  Note that a {@link JmsProviderType} is only a
+     * container for a set of representative default settings, and the presence of a {@link JmsProviderType} in this list
      * does not guarantee that a particular JMS provider is supported by this SSG.
      *
-     * @return an array of {@link JmsProvider} records
+     * @return an EnumSet of {@link JmsProviderType} records
      * @throws FindException   if a database problem prevented the providers from being retrieved
      */
     @Transactional(readOnly=true)
-    JmsProvider[] getProviderList() throws FindException;
+    EnumSet<JmsProviderType> getProviderTypes() throws FindException;
 
     /**
      * Finds all {@link JmsConnection}s in the database.

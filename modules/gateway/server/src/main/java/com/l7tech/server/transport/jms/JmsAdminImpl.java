@@ -13,6 +13,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,9 +33,9 @@ public class JmsAdminImpl implements JmsAdmin {
         this.jmsPropertyMapper = jmsPropertyMapper;
     }
 
-    public JmsProvider[] getProviderList() throws FindException {
-        Collection<JmsProvider> providers = jmsConnectionManager.findAllProviders();
-        return providers.toArray(new JmsProvider[providers.size()]);
+    @Override
+    public EnumSet<JmsProviderType> getProviderTypes() throws FindException {
+        return jmsConnectionManager.findAllProviders();
     }
 
     /**
@@ -43,6 +44,7 @@ public class JmsAdminImpl implements JmsAdmin {
      * @return an array of transient {@link JmsConnection}s
      * @throws FindException
      */
+    @Override
     public JmsConnection[] findAllConnections() throws FindException {
         Collection<JmsConnection> found = jmsConnectionManager.findAll();
         if (found == null || found.size() < 1) return new JmsConnection[0];
@@ -55,6 +57,7 @@ public class JmsAdminImpl implements JmsAdmin {
         return results.toArray(new JmsConnection[results.size()]);
     }
 
+    @Override
     public JmsAdmin.JmsTuple[] findAllTuples() throws FindException {
         ArrayList<JmsTuple> result = new ArrayList<JmsTuple>();
         Collection<JmsConnection> connections = jmsConnectionManager.findAll();
@@ -74,20 +77,24 @@ public class JmsAdminImpl implements JmsAdmin {
      * @return the {@link JmsConnection} with the provided OID.
      * @throws FindException
      */
+    @Override
     public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
         return jmsConnectionManager.findByPrimaryKey(oid);
     }
 
+    @Override
     public JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException {
         return jmsEndpointManager.findByPrimaryKey(oid);
     }
 
+    @Override
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws FindException, UpdateException {
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
         endpoint.setMessageSource(isMessageSource);
     }
 
+    @Override
     public long saveConnection(JmsConnection connection) throws SaveException, VersionException {
         try {
             long oid = connection.getOid();
@@ -113,6 +120,7 @@ public class JmsAdminImpl implements JmsAdmin {
      * @return an array of {@link JmsEndpoint}s
      * @throws FindException
      */
+    @Override
     public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws FindException {
         return jmsEndpointManager.findEndpointsForConnection(connectionOid);
     }
@@ -125,6 +133,7 @@ public class JmsAdminImpl implements JmsAdmin {
      * @param connection JmsConnection settings to test.  Might not yet have an OID.
      * @throws JmsTestException if a test connection could not be established
      */
+    @Override
     public void testConnection(JmsConnection connection) throws JmsTestException {
         try {
             JmsUtil.connect(connection).close();
@@ -150,6 +159,7 @@ public class JmsAdminImpl implements JmsAdmin {
      * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
      */
+    @Override
     public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws FindException, JmsTestException {
         JmsBag bag = null;
         MessageConsumer jmsQueueReceiver = null;
@@ -257,6 +267,7 @@ public class JmsAdminImpl implements JmsAdmin {
         }
     }
 
+    @Override
     public long saveEndpoint(JmsEndpoint endpoint) throws SaveException, VersionException {
         try {
             long oid = endpoint.getOid();
@@ -277,10 +288,12 @@ public class JmsAdminImpl implements JmsAdmin {
         }
     }
 
+    @Override
     public void deleteEndpoint(long endpointOid) throws FindException, DeleteException {
         jmsEndpointManager.delete(endpointOid);
     }
 
+    @Override
     public void deleteConnection(long connectionOid) throws FindException, DeleteException {
         jmsConnectionManager.delete(connectionOid);
     }

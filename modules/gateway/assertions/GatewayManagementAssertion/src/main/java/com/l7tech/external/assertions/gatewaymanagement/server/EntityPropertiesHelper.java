@@ -76,6 +76,7 @@ class EntityPropertiesHelper {
             .put( "queueFactoryUrl", "queue.connectionFactoryName" )
             .put( "destinationFactoryUrl", "connectionFactoryName" )
             .put( "topicFactoryUrl", "topic.connectionFactoryName" )
+            .put("providerType", null)
             .unmodifiableMap() )
         .put( JmsEndpoint.class, MapBuilder.<String,String>builder()
             .put( "username", null )

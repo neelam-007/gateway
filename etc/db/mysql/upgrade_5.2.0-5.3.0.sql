@@ -76,6 +76,12 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-500302, 0, "upgrade.task.500302", "com.l7tech.server.upgrade.Upgrade52to53UpdateCommunitySchemas");
 
+ALTER TABLE jms_connection ADD COLUMN provider_type varchar(255) after properties;
+
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500303, 0, "upgrade.task.500303", "com.l7tech.server.upgrade.Upgrade52To53UpdateJmsProviderType");
+
 --
 -- Reenable FK at very end of script
 --

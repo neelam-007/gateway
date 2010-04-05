@@ -79,6 +79,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _username;
     private String _password;
     private String _properties;
+    private JmsProviderType _providerType;
 
     public JmsConnection(){
     }
@@ -100,6 +101,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setUsername( other.getUsername() );
         setPassword( other.getPassword() );
         setProperties( other.getProperties() );
+        setProviderType( other.getProviderType() );
     }
 
     @Override
@@ -234,5 +236,16 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public void setProperties(String properties) {
         checkLocked();
         _properties = properties;
+    }
+
+    @Column(name="provider_type")
+    @Enumerated(EnumType.STRING)
+    public JmsProviderType getProviderType() {
+        return _providerType;
+    }
+
+    public void setProviderType(JmsProviderType providerType) {
+        checkLocked();
+        this._providerType = providerType;
     }
 }

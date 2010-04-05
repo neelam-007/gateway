@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
@@ -12,6 +13,7 @@ import com.l7tech.gateway.common.transport.jms.JmsProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 
 /**
  * New Stubbed JmsConnectionManager for Jms-subsystem unit tests.
@@ -119,11 +121,11 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
     protected JmsProvider provider;
 
     public JmsConnectionManagerStub() {
-        createTestConnections(1);
+        createTestConnections();
     }
 
-    public Collection<JmsProvider> findAllProviders() throws FindException {
-        return createTestConnections(1);
+    public EnumSet<JmsProviderType> findAllProviders() throws FindException {
+        return EnumSet.noneOf(JmsProviderType.class);
     }
 
     public String getQueueProvider() {
@@ -164,7 +166,7 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         return getConnection((int) oid);
     }
 
-    protected Collection<JmsProvider> createTestConnections(int count) {
+    protected Collection<JmsProvider> createTestConnections() {
 
         Collection<JmsProvider> list = new ArrayList<JmsProvider>();
 

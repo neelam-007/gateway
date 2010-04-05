@@ -32,9 +32,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -177,23 +175,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
  	 	        }
  	 	    }
  	 	}
-    }
-
-    private static class ProviderComboBoxItem {
-        private JmsProvider provider;
-
-        private ProviderComboBoxItem(JmsProvider provider) {
-            this.provider = provider;
-        }
-
-        public JmsProvider getProvider() {
-            return provider;
-        }
-
-        @Override
-        public String toString() {
-            return provider.getName();
-        }
     }
 
     private JmsQueuePropertiesDialog(Frame parent) {
@@ -515,19 +496,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void initProviderReset() {
-        JmsProvider[] providers;
+        EnumSet<JmsProviderType> providerTypes;
         try {
-            providers = Registry.getDefault().getJmsManager().getProviderList();
+            providerTypes = Registry.getDefault().getJmsManager().getProviderTypes();
         } catch (Exception e) {
             throw new RuntimeException("Unable to obtain list of installed JMS provider types from Gateway", e);
         }
 
-        ProviderComboBoxItem[] items = new ProviderComboBoxItem[providers.length];
-        for (int i = 0; i < providers.length; i++)
-            items[i] = new ProviderComboBoxItem(providers[i]);
-
-        providerComboBox.setModel(new DefaultComboBoxModel(items));
+        providerComboBox.setModel(new DefaultComboBoxModel(providerTypes.toArray()));
         providerComboBox.setSelectedIndex(-1);
+        providerComboBox.addItemListener(enableDisableListener);
         applyReset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -537,14 +515,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void onProviderReset() {
-        final ProviderComboBoxItem providerItem = (ProviderComboBoxItem)providerComboBox.getSelectedItem();
-        if (providerItem == null)
+        final JmsProviderType providerType = (JmsProviderType) providerComboBox.getSelectedItem();
+        if (providerType == null)
             return;
 
-        final JmsProvider provider = providerItem.getProvider();
         if (connection == null) {
-            resetProvider(provider, true);
-        } else if (providerMatchesConnection(provider, connection)) {
+            resetProvider(providerType, true);
+        } else if (providerType == connection.getProviderType()) {
             // same provider "type", offer overwrite/don't overwrite/cancel choice
             DialogDisplayer.showConfirmDialog(this,
                 "Overwrite current JMS queue properties?",
@@ -555,10 +532,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     public void reportResult(int option) {
                         switch (option) {
                             case JOptionPane.YES_OPTION:
-                                resetProvider(provider, true);
+                                resetProvider(providerType, true);
                                 break;
                             case JOptionPane.NO_OPTION:
-                                resetProvider(provider, false);
+                                resetProvider(providerType, false);
                                 break;
                             default:
                                 // cancel, don't do anything
@@ -576,7 +553,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (JOptionPane.OK_OPTION == option) {
-                            resetProvider(providerItem.getProvider(), true);
+                            resetProvider(providerType, true);
                         }
                     }
                 });
@@ -588,19 +565,19 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * @param provider
      * @param overwrite
      */
-    private void resetProvider(JmsProvider provider, boolean overwrite) {
+    private void resetProvider(JmsProviderType providerType, boolean overwrite) {
         // Queue connection factory name, defaulting to destination factory name
-        String qcfName = (connection != null && ! overwrite) ? connection.getQueueFactoryUrl() : provider.getDefaultQueueFactoryUrl();
+        String qcfName = (connection != null && ! overwrite) ? connection.getQueueFactoryUrl() : providerType.getDefaultQueueFactoryUrl();
         if (qcfName == null || qcfName.length() < 1)
-            qcfName = provider.getDefaultDestinationFactoryUrl();
+            qcfName = providerType.getDefaultDestinationFactoryUrl();
         if (qcfName != null)
             qcfTextField.setText(qcfName);
 
-        String icfName = provider.getInitialContextFactoryClassname();
+        String icfName = providerType.getInitialContextFactoryClass();
         if (icfName != null)
             icfTextField.setText(icfName);
 
-        setExtraPropertiesPanels(provider, connection == null ? null : connection.properties() );
+        setExtraPropertiesPanels(providerType, connection == null ? null : connection.properties() );
     }
 
     /**
@@ -609,35 +586,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * @param provider              the provider type selected
      * @param extraProperties       data structure used by the sub panels to transmit settings
      */
-    private void setExtraPropertiesPanels(JmsProvider provider, Properties extraProperties) {
-        final String icfClassname = provider.getInitialContextFactoryClassname();
-        if ( "fiorano.jms.runtime.naming.FioranoInitialContextFactory".equals(icfClassname)) {
-            jndiExtraPropertiesPanel = new FioranoJndiExtraPropertiesPanel(extraProperties);
-            jndiExtraPropertiesOuterPanel.removeAll();  //clean out what's previous
+    private void setExtraPropertiesPanels(JmsProviderType providerType, Properties extraProperties) {
+        jndiExtraPropertiesPanel = getExtraPropertiesPanel(providerType.getJndiExtraPropertiesClass(), extraProperties);
+        jndiExtraPropertiesOuterPanel.removeAll();  //clean out what's previous
+        if (jndiExtraPropertiesPanel != null) {
             jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);    //set with new properties
-            queueExtraPropertiesPanel = null;
-            queueExtraPropertiesOuterPanel.removeAll(); //clean out what's previous
         }
-        else if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
-            jndiExtraPropertiesPanel = new TibcoEmsJndiExtraPropertiesPanel(extraProperties);
-            jndiExtraPropertiesOuterPanel.removeAll();
-            jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);
-            queueExtraPropertiesPanel = new TibcoEmsQueueExtraPropertiesPanel(extraProperties);
-            queueExtraPropertiesOuterPanel.removeAll();
+        queueExtraPropertiesPanel = getExtraPropertiesPanel(providerType.getQueueExtraPropertiesClass(), extraProperties);
+        queueExtraPropertiesOuterPanel.removeAll(); //clean out what's previous
+        if (queueExtraPropertiesPanel != null) {
             queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
-        } else if ("com.ibm.mq.jms.context.WMQInitialContextFactory".equals(icfClassname) ||
-                "com.sun.jndi.ldap.LdapCtxFactory".equals(icfClassname)) {
-            // TODO this casts too broad a net; we need to have an actual "provider type" enum.
-            jndiExtraPropertiesPanel = null;
-            jndiExtraPropertiesOuterPanel.removeAll();
-            queueExtraPropertiesPanel = new MQSeriesQueueExtraPropertiesPanel(extraProperties);
-            queueExtraPropertiesOuterPanel.removeAll();
-            queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
-        } else {
-            jndiExtraPropertiesPanel = null;
-            jndiExtraPropertiesOuterPanel.removeAll();
-            queueExtraPropertiesPanel = null;
-            queueExtraPropertiesOuterPanel.removeAll();
         }
 
         JRootPane rootPane = contentPane.getRootPane();
@@ -652,15 +610,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    /**
-     * @param provider      must not be <code>null</code>
-     * @param connection    must not be <code>null</code>
-     * @return <code>true</code> if the initial context factory class name in
-     *         <code>provider</code> and <code>connection</code> matches exactly
-     */
-    private static boolean providerMatchesConnection(JmsProvider provider, JmsConnection connection) {
-        return provider.getInitialContextFactoryClassname() != null &&
-          provider.getInitialContextFactoryClassname().equals(connection.getInitialContextFactoryClassname());
+    private JmsExtraPropertiesPanel getExtraPropertiesPanel(String extraPropertiesClass, Properties extraProperties) {
+        try {
+            return extraPropertiesClass == null ? null : (JmsExtraPropertiesPanel) Class.forName(extraPropertiesClass).getDeclaredConstructor(Properties.class).newInstance(extraProperties);
+        } catch (Exception e) {
+            DialogDisplayer.showMessageDialog(this, "Error getting default settings for provider: " + extraPropertiesClass, "JMS Extra Properties Error", JOptionPane.ERROR_MESSAGE, null);
+        }
+        return null;
     }
 
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
@@ -694,11 +650,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
             conn = new JmsConnection();
             conn.copyFrom(connection);
         } else {
-            final ProviderComboBoxItem providerItem = ((ProviderComboBoxItem)providerComboBox.getSelectedItem());
-            if (providerItem == null) {
+            final JmsProviderType providerType = ((JmsProviderType)providerComboBox.getSelectedItem());
+            if (providerType == null) {
                 conn = new JmsConnection();
             } else {
-                JmsProvider provider = providerItem.getProvider();
+                JmsProvider provider = providerType.createProvider();
                 // The flag providerTypeCustomized has been set during the JmsProvider creates a JMS connection.  Please see the method createConnection(...).
                 conn = provider.createConnection(queueNameTextField.getText(),
                   jndiUrlTextField.getText());
@@ -706,6 +662,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (conn.getName()==null || conn.getName().trim().length()==0)
                 conn.setName("Custom");
         }
+        conn.setProviderType((JmsProviderType) providerComboBox.getSelectedItem());
 
         Properties properties = new Properties();
         if (useJndiCredentialsCheckBox.isSelected()) {
@@ -953,6 +910,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             jndiUrlTextField.setText(connection.getJndiUrl());
             icfTextField.setText(connection.getInitialContextFactoryClassname());
 
+            providerComboBox.setSelectedItem(connection.getProviderType());
+
             String jndiUsername = props.getProperty(Context.SECURITY_PRINCIPAL);
             String jndiPassword = props.getProperty(Context.SECURITY_CREDENTIALS);
             useJndiCredentialsCheckBox.setSelected(jndiUsername != null || jndiPassword != null);
@@ -1177,8 +1136,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
+        if (providerComboBox.getSelectedIndex() == -1)
+            return false;
         return true;
-
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })
