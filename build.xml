@@ -1443,6 +1443,11 @@
     </target>
 
     <target name="deploy-nocheck" description="Deploy a development SSG, skipping the build (useful to deploy partial rebuild)" depends="deployconfig, package.manager.work, package.gateway.work, package.modules.work">
+        <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
+        <delete>
+            <fileset dir="${build.dir}/managerapplet/" includes="**/*.pack.gz"/>
+        </delete>
+
         <install-ssg-software dir="${dev.deploy.ssg.dir}"/>
     </target>
 
