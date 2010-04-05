@@ -4,6 +4,8 @@ import com.l7tech.policy.variable.Syntax;
 
 /**
  * Selector for arrays.
+ *
+ * <p>Selector that supports ".X" syntax for array access.</p>
  */
 class ArraySelector implements ExpandVariables.Selector<Object[]> {
 
@@ -15,17 +17,17 @@ class ArraySelector implements ExpandVariables.Selector<Object[]> {
                              final String name,
                              final Syntax.SyntaxErrorHandler handler,
                              final boolean strict ) {
-        int indexOffset = name.indexOf( ']' );
+        int indexOffset = name.indexOf( '.' );
 
-        if ( indexOffset < 2 || !name.startsWith( "[" )) {
-            String msg = handler.handleBadVariable( "Unable to process array subscript." );
+        if ( indexOffset < 1 ) {
+            String msg = handler.handleBadVariable( "Unable to process array selector." );
             if ( strict ) throw new IllegalArgumentException(msg);
         } else {
-            String indexText = name.substring( 1, indexOffset );
+            String indexText = name.substring( 0, indexOffset );
             String remainingName = name.substring( indexOffset+1 );
 
             try {
-                int index = Integer.parseInt( indexText );
+                int index = Integer.parseInt( indexText ) - 1; // selector is one based
                 if ( index < 0 || index >= context.length ) {
                     String msg = handler.handleSubscriptOutOfRange( index, contextName, context.length );
                     if ( strict ) throw new IllegalArgumentException(msg);
@@ -33,7 +35,7 @@ class ArraySelector implements ExpandVariables.Selector<Object[]> {
                     return new Selection(context[index], process(remainingName));
                 }
             } catch ( NumberFormatException nfe ) {
-                String msg = handler.handleBadVariable( "Unable to process array subscript '"+indexText+"'." );
+                String msg = handler.handleBadVariable( "Unable to process array selector '"+indexText+"'." );
                 if ( strict ) throw new IllegalArgumentException(msg);
             }
         }
@@ -54,6 +56,8 @@ class ArraySelector implements ExpandVariables.Selector<Object[]> {
         if ( name != null && !name.isEmpty() ) {
             if ( name.startsWith( "." )) {
                 processedName = name.substring( 1 );
+            } else {
+                processedName = name;
             }
         }
 

@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.Functions;
@@ -26,10 +25,6 @@ import java.util.regex.Matcher;
  * {@link ExpandVariables#process(String, Map, Audit)} method.
  */
 public final class ExpandVariables {
-    public static Object processSingleVariableAsObject(final String expr, final boolean multivalued, final Map<String,?> vars, final Audit audit) {
-        return processSingleVariableAsObject(expr, vars, audit, strict(), multivalued);
-    }
-
     public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit) {
         return processSingleVariableAsObject(expr, vars, audit, strict());
     }
@@ -43,14 +38,6 @@ public final class ExpandVariables {
     }
 
     public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit, final boolean strict) {
-        return processSingleVariableAsObject( expr, vars, audit, strict, false );
-    }
-
-    public static Object processSingleVariableAsObject( final String expr,
-                                                        final Map<String,?> vars,
-                                                        final Audit audit,
-                                                        final boolean strict,
-                                                        final boolean multivalued ) {
         if (expr == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.oneVarPattern.matcher(expr);
@@ -61,7 +48,7 @@ public final class ExpandVariables {
             final Object[] newVals = getAndFilter(vars, syntax, audit, strict);
             if (newVals == null || newVals.length == 0) return null;
             // TODO is it OK to return both an array and a single value for the same variable?
-            if (!multivalued && newVals.length == 1) return newVals[0];
+            if (newVals.length == 1) return newVals[0];
             return newVals;
         } else {
             return process(expr, vars, audit, strict);
@@ -177,9 +164,9 @@ public final class ExpandVariables {
     }});
 
     private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
-        String matchingName = Syntax.getMatchingName(syntax.getVariableName().toLowerCase(), vars.keySet());
+        String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
-            badVariable(syntax.getVariableName(), strict, audit);
+            badVariable(syntax.remainingName, strict, audit);
             return null;
         }
 
@@ -187,15 +174,12 @@ public final class ExpandVariables {
         final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
 
         Selector.Selection selection;
-        if (contextValue != null && !matchingName.toLowerCase().equals(syntax.getVariableSelector().toLowerCase().trim())) {
+        if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase().trim())) {
             // Get name suffix, it will be used to select a sub-value from the found object
-            assert(syntax.getVariableSelector().toLowerCase().startsWith(matchingName));
+            assert(syntax.remainingName.toLowerCase().startsWith(matchingName));
             final int len = matchingName.length();
-            String remainingName = syntax.getVariableSelector().substring(len);
-            if ( remainingName.startsWith(".")) {
-                remainingName = remainingName.substring( 1 );
-            }
-            selection = selectify(matchingName, contextValue, remainingName, handler, strict, syntax.isArray());
+            assert(syntax.remainingName.substring(len, len +1).equals("."));
+            selection = selectify(matchingName, contextValue, syntax.remainingName.substring(len+1), handler, strict);
         } else {
             selection = new Selector.Selection(contextValue);
         }
@@ -203,7 +187,7 @@ public final class ExpandVariables {
         // else the name already matches a known variable
 
         if (selection == null || selection == Selector.NOT_PRESENT) {
-            String msg = handler.handleBadVariable(syntax.getVariableSelector());
+            String msg = handler.handleBadVariable(syntax.remainingName);
             if (strict) throw new IllegalArgumentException(msg);
             return null;
         } else {
@@ -227,15 +211,14 @@ public final class ExpandVariables {
             vals = new Object[] {contextValue};
         }
 
-        return vals;
+        return syntax.filter(vals, handler, strict);
     }
 
     private static Selector.Selection selectify(final String contextObjectName,
                                                 final Object contextObject,
                                                 final String name,
                                                 final Syntax.SyntaxErrorHandler handler,
-                                                final boolean strict,
-                                                final boolean array) {
+                                                final boolean strict) {
         String contextName =  contextObjectName;
         Object contextValue = contextObject;
         String remainingName = name;
@@ -252,27 +235,17 @@ public final class ExpandVariables {
                 }
             }
 
-            final Selector.Selection selection;
-            if ( selector == null ) {
-                // Hack to allow backwards compatibility, some areas
-                // unwrap single entry arrays so we have to be prepared to ignore
-                // an array suffix for index zero on an object.
-                if ( array && remainingName.startsWith( "[0]." )) {
-                    selection = new Selector.Selection(contextValue, remainingName.substring( 4 ));        
-                } else if ( array && remainingName.equals( "[0]" )) {
-                    selection = new Selector.Selection(contextValue, null);        
-                } else {
-                    // No selector for values of this type; just return it and hope the caller can cope
-                    return new Selector.Selection(contextValue, remainingName);
-                }
-            } else {
-                selection = selector.select(contextName, contextValue, remainingName, handler, strict);
-                if (selection == null) {
-                    // This name is unknown to the selector
-                    String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextValue.getClass().getName()));
-                    if (strict) throw new IllegalArgumentException(msg);
-                    return Selector.NOT_PRESENT;
-                }
+            if (selector == null) {
+                // No selector for values of this type; just return it and hope the caller can cope
+                return new Selector.Selection(contextValue, remainingName);
+            }
+
+            final Selector.Selection selection = selector.select(contextName, contextValue, remainingName, handler, strict);
+            if (selection == null) {
+                // This name is unknown to the selector
+                String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextObject.getClass().getName()));
+                if (strict) throw new IllegalArgumentException(msg);
+                return Selector.NOT_PRESENT;
             }
 
             final String tempRemainder = selection.getRemainingName();
@@ -285,9 +258,9 @@ public final class ExpandVariables {
                 // The selector has selected a sub-object; loop with new remaining name and context object
                 String extraContextName = remainingName.substring( 0, remainingName.length() - selection.getRemainingName().length());
                 if ( extraContextName.endsWith( "." )) {
-                    extraContextName = extraContextName.substring( extraContextName.length() - 1 );
+                    extraContextName = extraContextName.substring( 0, extraContextName.length() - 1 );
                 }
-                if ( VariableMetadata.isNameValid( extraContextName )) {
+                if ( !contextName.endsWith( "." ) ) {
                     extraContextName = "." + extraContextName;    
                 }
                 contextName += extraContextName;
@@ -301,7 +274,6 @@ public final class ExpandVariables {
         throw new IllegalStateException("Unable to select " + name + " from " + contextObject.getClass().getName());
     }
 
-
     public static String process(String s, Map<String,?> vars, Audit audit) {
         return process(s, vars, audit, strict(), null);
     }
@@ -312,14 +284,14 @@ public final class ExpandVariables {
 
     /**
      * Process the input string and expand the variables using the supplied
-     * user variables map. If the varaible is not found in variables map
+     * user variables map. If the variable is not found in variables map
      * then the default variables map is consulted.
      *
      * @param s the input message as a message
-     * @param vars the caller supplied varialbes map that is consulted first
+     * @param vars the caller supplied variables map that is consulted first
      * @param audit an audit instance to catch warnings
      * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
-     * @return the message with expanded/resolved varialbes
+     * @return the message with expanded/resolved variables
      */
     public static String process(String s, Map<String,?> vars, Audit audit, boolean strict) {
         return process(s, vars, audit, strict, null);
@@ -327,17 +299,17 @@ public final class ExpandVariables {
 
     /**
      * Process the input string and expand the variables using the supplied
-     * user variables map. If the varaible is not found in variables map
+     * user variables map. If the variable is not found in variables map
      * then the default variables map is consulted.
      *
      * @param s              the input message as a message
-     * @param vars           the caller supplied varialbes map that is consulted first
+     * @param vars           the caller supplied variables map that is consulted first
      * @param audit          an audit instance to catch warnings
      * @param strict         true if failures to resolve variables should throw exceptions rather than log warnings. If a
      *                       variable referenced by s does not exist and strict is true then an unchecked
      *                       VariableNameSyntaxException will be throw
      * @param varLengthLimit the length limit of each replacement context variable value.
-     * @return the message with expanded/resolved varialbes
+     * @return the message with expanded/resolved variables
      */
     public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, final int varLengthLimit) {
         return process( s, vars, audit, strict, new Functions.Unary<String,String>(){
@@ -353,17 +325,17 @@ public final class ExpandVariables {
 
     /**
      * Process the input string and expand the variables using the supplied
-     * user variables map. If the varaible is not found in variables map
+     * user variables map. If the variable is not found in variables map
      * then the default variables map is consulted.
      *
      * @param s              the input message as a message
-     * @param vars           the caller supplied varialbes map that is consulted first
+     * @param vars           the caller supplied variables map that is consulted first
      * @param audit          an audit instance to catch warnings
      * @param strict         true if failures to resolve variables should throw exceptions rather than log warnings. If a
      *                       variable referenced by s does not exist and strict is true then an unchecked
      *                       VariableNameSyntaxException will be throw
      * @param valueFilter    A filter to call on each substituted value (or null for no filtering)
-     * @return the message with expanded/resolved varialbes
+     * @return the message with expanded/resolved variables
      */
     public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, Functions.Unary<String,String> valueFilter) {
         if (s == null) throw new IllegalArgumentException();

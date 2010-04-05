@@ -103,7 +103,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         String prefix = lname;
         int index = prefix.indexOf( '.' );
         if ( index > -1) prefix = prefix.substring( 0, index );
-        if ( !ArrayUtils.contains(getPrefixes(), prefix) && !prefix.startsWith( "parts[" )) return null; // this check ensures prefixes are added to the list
+        if ( !ArrayUtils.contains(getPrefixes(), prefix) ) return null; // this check ensures prefixes are added to the list
 
         if (lname.startsWith(HTTP_HEADER_PREFIX))
             selector = singleHeaderSelector;
@@ -381,7 +381,14 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 for ( final PartInfo partInfo : mk ) {
                     partList.add( partInfo );           
                 }
-                return new Selection(partList.toArray( new PartInfo[partList.size()] ), name.length() > PARTS_NAME.length() ? name.substring( PARTS_NAME.length() ): null);
+                String remainingName = null;
+                if ( name.length() > PARTS_NAME.length() ) {
+                    remainingName = name.substring( PARTS_NAME.length() );
+                    if ( remainingName.startsWith( "." )) {
+                        remainingName = remainingName.substring( 1 );
+                    }
+                }
+                return new Selection(partList.toArray( new PartInfo[partList.size()] ), remainingName);
             } catch ( UncheckedIOException e ) {
                 String msg = handler.handleBadVariable("Unable to access message parts '"+ ExceptionUtils.getMessage( e ) +"'");
                 if (strict) throw new IllegalArgumentException(msg);

@@ -89,7 +89,7 @@ public class SyntaxTest {
 
     @Test(expected=VariableNameSyntaxException.class)
     public void testArraySyntaxSubscriptEmpty() {
-        Syntax.parse( "blah[0][]", "," );
+        Syntax.parse( "blah[]", "," );
     }
 
     @Test(expected=VariableNameSyntaxException.class)

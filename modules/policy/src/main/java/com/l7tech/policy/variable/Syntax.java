@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 public abstract class Syntax {
     public static final String DEFAULT_MV_DELIMITER = ", ";
 
+    public final String remainingName;
     public static final String SYNTAX_PREFIX = "${";
     public static final String SYNTAX_SUFFIX = "}";
     public static final String REGEX_PREFIX = "(?:\\$\\{)";
@@ -26,43 +27,8 @@ public abstract class Syntax {
     public static final Pattern regexPattern = Pattern.compile(REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX);
     public static final Pattern oneVarPattern = Pattern.compile("^" + REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX + "$");
 
-    private final String variableName;
-    private final String variableSelector;
-    private final boolean array;
-
-    private Syntax( final String variableName,
-                    final String variableSelector,
-                    final boolean array )  {
-        this.variableName = variableName;
-        this.variableSelector = variableSelector;
-        this.array = array;
-    }
-
-    /**
-     * Indicates that an array subscript was seen for the variable.
-     *
-     * @return true if the variable name is followed by an array subscript.
-     */
-    public boolean isArray() {
-        return array;
-    }
-
-    /**
-     * Get the name of the variable matched by this syntax.
-     *
-     * @return The variable name.
-     */
-    public String getVariableName() {
-        return variableName;
-    }
-
-    /**
-     * The full selector to use for this syntax.
-     *
-     * @return The variable selector.
-     */
-    public String getVariableSelector() {
-        return variableSelector;
+    private Syntax(String name) {
+        this.remainingName = name;
     }
 
     /**
@@ -149,7 +115,7 @@ public abstract class Syntax {
             String var = matcher.group(1);
             if (var != null) {
                 var = var.trim();
-                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).getVariableName());
+                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
             }
         }
         return vars.toArray(new String[vars.size()]);
@@ -201,9 +167,9 @@ public abstract class Syntax {
 
                 final Syntax varSyntax = Syntax.parse(var, DEFAULT_MV_DELIMITER);
 
-                if (omitted && varSyntax.isArray())  continue;
+                if (omitted && varSyntax instanceof MultivalueArraySubscriptSyntax)  continue;
 
-                vars.add(omitted? varSyntax.getVariableName() : var);
+                vars.add(omitted? varSyntax.remainingName : var);
             }
         }
         return vars.toArray(new String[vars.size()]);
@@ -211,46 +177,31 @@ public abstract class Syntax {
 
     // TODO find out how to move this into Syntax subclasses
     public static Syntax parse(String rawName, final String delimiter) {
-        final int ppos = rawName.indexOf("|");
+        int ppos = rawName.indexOf("|");
         if (ppos == 0) throw new VariableNameSyntaxException("Variable names must not start with '|'");
         if (ppos > 0) {
-            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos),null,false, rawName.substring(ppos+1), true);
+            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos), rawName.substring(ppos+1), true);
         } else {
-            final int lbpos = rawName.indexOf("[");
-            if (lbpos >= 0) {
-                validateArraySubscripts( rawName );
-                return new MultivalueDelimiterSyntax(rawName.substring( 0, lbpos ), rawName, true, delimiter, false);
+            // Can't combine concatenation with subscript (yet -- 2D arrays?)
+            int lbpos = rawName.indexOf("[");
+            if (lbpos == 0) throw new VariableNameSyntaxException("Variable names must not start with '['");
+            if (lbpos > 0) {
+                int rbpos = rawName.indexOf("]", lbpos+1);
+                if (rbpos == 0) throw new VariableNameSyntaxException("Array subscript must not be empty");
+                if (rbpos > 0) {
+                    String ssub = rawName.substring(lbpos+1, rbpos);
+                    int subscript;
+                    try {
+                        subscript = Integer.parseInt(ssub);
+                    } catch (NumberFormatException e) {
+                        throw new VariableNameSyntaxException("Array subscript not an integer", e);
+                    }
+                    if (subscript < 0) throw new VariableNameSyntaxException("Array subscript must be positive");
+                    return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
+                } else throw new VariableNameSyntaxException("']' expected but not found");
             } else {
-                return new MultivalueDelimiterSyntax(rawName, null, false, delimiter, false);
+                return new MultivalueDelimiterSyntax(rawName, delimiter, false);
             }
-        }
-    }
-
-    private static void validateArraySubscripts( final String rawName ) {
-        int leftBracketIndex = rawName.indexOf("[");
-        while ( leftBracketIndex >= 0 ) {
-            if (leftBracketIndex == 0) {
-                throw new VariableNameSyntaxException("Variable names must not start with '['");
-            }
-
-            final int rightBracketIndex = rawName.indexOf("]", leftBracketIndex+1);
-            if ( rightBracketIndex == leftBracketIndex + 1 ) throw new VariableNameSyntaxException("Array subscript must not be empty");
-            if ( rightBracketIndex > 0 ) {
-                final String subscriptText = rawName.substring(leftBracketIndex+1, rightBracketIndex);
-                final int subscript;
-                try {
-                    subscript = Integer.parseInt(subscriptText);
-                } catch (NumberFormatException e) {
-                    throw new VariableNameSyntaxException("Array subscript not an integer", e);
-                }
-                if ( subscript < 0 ) {
-                    throw new VariableNameSyntaxException("Array subscript must be positive");
-                }
-            } else {
-                throw new VariableNameSyntaxException("']' expected but not found");
-            }
-
-            leftBracketIndex = rawName.indexOf("[", rightBracketIndex + 1);
         }
     }
 
@@ -277,7 +228,7 @@ public abstract class Syntax {
             }
 
             if (!ok) {
-                String message = handler.handleSuspiciousToString( syntax.getVariableSelector(), o.getClass().getName() );
+                String message = handler.handleSuspiciousToString( syntax.remainingName, o.getClass().getName() );
                 if (strict) throw new VariableNameSyntaxException( message );
             }
             return o.toString();
@@ -310,15 +261,21 @@ public abstract class Syntax {
         String handleBadVariable(String s, Throwable t);
     }
 
+    public abstract Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict);
     public abstract String format(Object[] values, Formatter formatter, SyntaxErrorHandler handler, boolean strict);
 
     private static class MultivalueDelimiterSyntax extends Syntax {
         private final String delimiter;
         private final boolean delimiterSpecified;
-        private MultivalueDelimiterSyntax(String name, String selector, boolean array, String delimiter, boolean delimiterSpecified) {
-            super(name,selector==null ? name : selector,array);
+        private MultivalueDelimiterSyntax(String name, String delimiter, boolean delimiterSpecified) {
+            super(name);
             this.delimiter = delimiter;
             this.delimiterSpecified = delimiterSpecified;
+        }
+
+        @Override
+        public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
+            return values;
         }
 
         @Override
@@ -349,4 +306,32 @@ public abstract class Syntax {
             return sb.toString();
         }
     }
+
+    private static class MultivalueArraySubscriptSyntax extends Syntax {
+        private final int subscript;
+        private MultivalueArraySubscriptSyntax(String name, int subscript) {
+            super(name);
+            this.subscript = subscript;
+        }
+
+        @Override
+        public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
+            if (subscript > values.length-1) {
+                String message = handler.handleSubscriptOutOfRange( subscript, remainingName, values.length );
+                if (strict)
+                    throw new VariableNameSyntaxException(message);
+                else
+                    return null;
+            }
+            return new Object[] { values[subscript] };
+        }
+
+        @Override
+        public String format(Object[] values, Formatter formatter, SyntaxErrorHandler handler, boolean strict) {
+            if (values == null || values.length != 1) return "";
+
+            return formatter.format(this, values[0], handler, strict);
+        }
+    }
+
 }

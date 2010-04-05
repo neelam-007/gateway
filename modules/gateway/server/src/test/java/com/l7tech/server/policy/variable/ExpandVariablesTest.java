@@ -11,8 +11,6 @@ import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.*;
@@ -160,16 +158,6 @@ public class ExpandVariablesTest {
             fail("Should have thrown--negative subscript");
         } catch (IllegalArgumentException e) {
         }
-    }
-
-    @Test
-    public void testMultivalueSubscriptWithSuffix() throws Exception {
-        Map<String, Object> vars = new HashMap<String, Object>() {{
-            put("details", new Object[] { new AuditDetail( Messages.EXCEPTION_INFO ) });
-        }};
-
-        String out1 = ExpandVariables.process("${details[0].messageId}", vars, audit, true);
-        assertEquals("Message identifier", out1, "5");
     }
 
     @Test @BugNumber(6455)
@@ -512,30 +500,52 @@ public class ExpandVariablesTest {
 
     @Test
     public void testMultivaluedElementVariableConcatenation() throws Exception {
-        final ApplicationContext spring = ApplicationContexts.getTestApplicationContext();
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
-        context.setVariable( "requestXpath.elements",  getBodyFirstChildChildElements( doc ));
-        final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
+        context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
+        final Element[] els = (Element[]) context.getVariable("elements");
         assertEquals(4, els.length);
 
-        final String what = ExpandVariables.process("${requestXpath.elements}", context.getVariableMap(new String[] { "requestXpath.elements" }, audit), audit, true);
+        final String what = ExpandVariables.process("${elements}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
         assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid><amount xsi:type=\"xsd:long\">1</amount><price xsi:type=\"xsd:float\">5.0</price><accountid xsi:type=\"xsd:long\">228</accountid>", what);
     }
 
     @Test
     public void testMultivaluedElementVariableConcatenationWithDelimiter() throws Exception {
-        final ApplicationContext spring = ApplicationContexts.getTestApplicationContext();
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
-        context.setVariable( "requestXpath.elements",  getBodyFirstChildChildElements( doc ));
-        final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
+        context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
+        final Element[] els = (Element[]) context.getVariable("elements");
         assertEquals(4, els.length);
 
-        final String what = ExpandVariables.process("${requestXpath.elements|,}", context.getVariableMap(new String[] { "requestXpath.elements" }, audit), audit, true);
+        final String what = ExpandVariables.process("${elements|,}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
         assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>,<amount xsi:type=\"xsd:long\">1</amount>,<price xsi:type=\"xsd:float\">5.0</price>,<accountid xsi:type=\"xsd:long\">228</accountid>", what);
+    }
+
+    @Test
+    public void testArrayElementVariableFormatting() throws Exception {
+        final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
+
+        context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
+        final Element[] els = (Element[]) context.getVariable("elements");
+        assertEquals(4, els.length);
+
+        final String what = ExpandVariables.process("${elements[0]}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
+        assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>", what);
+    }
+
+    @Test
+    public void testElementVariableFormatting() throws Exception {
+        final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
+
+        context.setVariable( "element", getBodyFirstChildChildElements( doc )[0]);
+
+        final String what = ExpandVariables.process("${element}", context.getVariableMap(new String[] { "element" }, audit), audit, true);
+        assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>", what);
     }
 
     @BugNumber(7664)
@@ -679,11 +689,21 @@ public class ExpandVariablesTest {
         final Map<String, Object> vars = new HashMap<String,Object>();
         vars.put("parts", new PartInfo[]{ new PartInfoMock(partBody) } );
 
-        assertEquals("parts[0].body", "test part content", ExpandVariables.process( "${parts[0].body}", vars, audit, true ));
-        assertEquals("parts[0].contentType", "text/plain", ExpandVariables.process( "${parts[0].contentType}", vars, audit, true ));
-        assertEquals("parts[0].header.test", "value", ExpandVariables.process( "${parts[0].header.test}", vars, audit, true ));
-        assertEquals("parts[0].header.test2", "", ExpandVariables.process( "${parts[0].header.test2}", vars, audit, false ));
-        assertEquals("parts[0].size", "17", ExpandVariables.process( "${parts[0].size}", vars, audit, true ));
+        assertEquals("parts.1.body", "test part content", ExpandVariables.process( "${parts.1.body}", vars, audit, true ));
+        assertEquals("parts.1.contentType", "text/plain", ExpandVariables.process( "${parts.1.contentType}", vars, audit, true ));
+        assertEquals("parts.1.header.test", "value", ExpandVariables.process( "${parts.1.header.test}", vars, audit, true ));
+        assertEquals("parts.1.header.test2", "", ExpandVariables.process( "${parts.1.header.test2}", vars, audit, false ));
+        assertEquals("parts.1.size", "17", ExpandVariables.process( "${parts.1.size}", vars, audit, true ));
+    }
+
+    @Test
+    public void testMessagePartInfoArraySelector() throws Exception {
+        final Map<String, Object> vars = new HashMap<String,Object>();
+        vars.put("message", new Message(XmlUtil.parse( "<content/>" )) );
+
+        assertEquals("message.parts.1.body", "<content/>", ExpandVariables.process( "${message.parts.1.body}", vars, audit, true ));
+        assertEquals("message.parts.1.contentType", "text/xml; charset=utf-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
+        assertEquals("message.parts.1.size", "10", ExpandVariables.process( "${message.parts.1.size}", vars, audit, true ));
     }
 
     private Map<String, String> nsmap() {
