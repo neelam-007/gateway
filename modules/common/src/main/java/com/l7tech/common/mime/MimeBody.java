@@ -10,6 +10,7 @@ import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.ResourceUtils;
  import com.l7tech.util.IOUtils;
  import com.l7tech.util.BufferPoolByteArrayOutputStream;
+ import com.l7tech.util.SyspropUtil;
 
  import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -45,6 +46,9 @@ public class MimeBody implements Iterable<PartInfo> {
     private static final int BLOCKSIZE = 4096;
 
     private static final AtomicLong firstPartXmlMaxBytes = new AtomicLong(0);
+
+    private static final long PREAMBLE_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
+    private static final long HEADERS_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
 
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
@@ -208,12 +212,19 @@ public class MimeBody implements Iterable<PartInfo> {
         this.mainInputStream.clearLimitNonFlagging();
 
         // Consume the headers of the first part.
-        MimeHeaders headers = MimeUtil.parseHeaders(mainInputStream);
-        final PartInfoImpl partInfo = new PartInfoImpl(partInfos.size(), headers);
-        partInfos.add(partInfo);
-        final String cid = partInfo.getContentId(true);
-        if (cid != null)
-            partInfosByCid.put(cid, partInfo);
+        final ByteLimitInputStream headersIn = new ByteLimitInputStream(mainInputStream, 32, HEADERS_MAX_SIZE);
+        try {
+            final MimeHeaders headers = MimeUtil.parseHeaders( headersIn );
+            final PartInfoImpl partInfo = new PartInfoImpl(partInfos.size(), headers);
+            partInfos.add(partInfo);
+            final String cid = partInfo.getContentId(true);
+            if (cid != null)
+                partInfosByCid.put(cid, partInfo);
+        } catch ( ByteLimitInputStream.DataSizeLimitExceededException e ) {
+            throw new IOException("Multipart message headers too large");
+        } finally {
+            headersIn.dispose();
+        }
 
     }
 
@@ -228,9 +239,16 @@ public class MimeBody implements Iterable<PartInfo> {
         if (boundary == null)
             throw new IllegalStateException("readInitialBoundary does not work on single-part messages");
         mainInputStream.unread("\r\n".getBytes()); // Fix problem reading initial boundary when there's no preamble
-        MimeBoundaryTerminatedInputStream preamble = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
-        NullOutputStream nowhere = new NullOutputStream();
-        IOUtils.copyStream(preamble, nowhere);
+        final MimeBoundaryTerminatedInputStream preamble = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
+        final NullOutputStream nowhere = new NullOutputStream();
+        final ByteLimitInputStream limitedPreamble = new ByteLimitInputStream(preamble, 32, PREAMBLE_MAX_SIZE);
+        try {
+            IOUtils.copyStream( limitedPreamble, nowhere );
+        } catch ( ByteLimitInputStream.DataSizeLimitExceededException e ) {
+            throw new IOException("Multipart message preamble too large");
+        } finally {
+            limitedPreamble.dispose();
+        }
         if (preamble.isLastPartProcessed()) {
             moreParts = false;  // just in case
             throw new IOException("Multipart message had zero parts");

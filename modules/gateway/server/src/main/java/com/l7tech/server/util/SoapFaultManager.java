@@ -230,9 +230,8 @@ public class SoapFaultManager implements ApplicationContextAware {
         AssertionStatus globalStatus = pec.getPolicyResult();
         ContentTypeHeader contentTypeHeader = ContentTypeHeader.XML_DEFAULT;
         if (globalStatus == null) {
-            // if this happens, it means a bug needs fixing where a path fails to set a value on the policy result
-            logger.severe("PolicyEnforcementContext.policyResult not set. Fallback on SERVER_ERROR");
-            globalStatus = AssertionStatus.SERVER_ERROR;
+            logger.fine("PolicyEnforcementContext.policyResult not set. Fallback on UNDEFINED");
+            globalStatus = AssertionStatus.UNDEFINED;
         }
         int level = faultLevelInfo.getLevel();
         switch ( level ) {

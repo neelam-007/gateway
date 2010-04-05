@@ -57,6 +57,7 @@ public class ByteLimitInputStream extends PushbackInputStream {
      *
      * @throws IOException if an error occurs.
      */
+    @Override
     public synchronized void close() throws IOException {
         try {
             super.close();
@@ -78,49 +79,57 @@ public class ByteLimitInputStream extends PushbackInputStream {
         bytesRead += got;
         if (sizeLimit > 0 && bytesRead >= sizeLimit) {
             close();
-            //noinspection ThrowableInstanceNeverThrown
-            throw new IOException("Unable to read stream: the specified maximum data size limit would be exceeded", new DataSizeLimitExceededException());
+            throw new DataSizeLimitExceededException("Unable to read stream: the specified maximum data size limit would be exceeded");
         }
     }
 
+    @Override
     public int read() throws IOException {
         int b = super.read();
         gotBytes(1);
         return b;
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int got = super.read(b, off, len);
         gotBytes(got);
         return got;
     }
 
+    @Override
     public long skip(long n) throws IOException {
         long got = super.skip(n);
         gotBytes(got);
         return got;
     }
 
+    @Override
     public void unread(byte[] b) throws IOException {
         super.unread(b);
         bytesRead -= b.length;
     }
 
+    @Override
     public void unread(byte[] b, int off, int len) throws IOException {
         super.unread(b, off, len);
         bytesRead -= len;
     }
 
+    @Override
     public void unread(int b) throws IOException {
         super.unread(b);
         bytesRead--;
     }
 
+    @Override
     public boolean markSupported() {
         return false;
     }
 
-    public static class DataSizeLimitExceededException extends Exception {
-        public DataSizeLimitExceededException() {}
+    public static class DataSizeLimitExceededException extends IOException {
+        public DataSizeLimitExceededException( final String message ) {
+            super( message );
+        }
     }
 }
