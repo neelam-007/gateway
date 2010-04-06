@@ -503,9 +503,24 @@ public class JmsQueuePropertiesDialog extends JDialog {
             throw new RuntimeException("Unable to obtain list of installed JMS provider types from Gateway", e);
         }
 
-        providerComboBox.setModel(new DefaultComboBoxModel(providerTypes.toArray()));
-        providerComboBox.setSelectedIndex(-1);
-        providerComboBox.addItemListener(enableDisableListener);
+        JmsProviderType[] providerTypeArray = new JmsProviderType[providerTypes.size() + 1];
+        System.arraycopy( providerTypes.toArray(new JmsProviderType[providerTypes.size()]), 0, providerTypeArray, 1, providerTypes.size() );
+        providerComboBox.setModel(new DefaultComboBoxModel(providerTypeArray));
+        providerComboBox.addItemListener( new ItemListener(){
+            @Override
+            public void itemStateChanged( final ItemEvent e ) {
+                setExtraPropertiesPanels((JmsProviderType)providerComboBox.getSelectedItem(), connection == null ? null : connection.properties() );                
+                enableDisableListener.itemStateChanged( e );
+            }
+        } );
+        providerComboBox.setRenderer( new TextListCellRenderer<JmsProviderType>( new Functions.Unary<String,JmsProviderType>(){
+            @Override
+            public String call( final JmsProviderType jmsProviderType ) {
+                return jmsProviderType == null ?
+                        "Generic JMS" :
+                        jmsProviderType.getName();
+            }
+        }, null, true ) );
         applyReset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -520,7 +535,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return;
 
         if (connection == null) {
-            resetProvider(providerType, true);
+            resetProviderProperties(providerType, true);
         } else if (providerType == connection.getProviderType()) {
             // same provider "type", offer overwrite/don't overwrite/cancel choice
             DialogDisplayer.showConfirmDialog(this,
@@ -532,10 +547,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     public void reportResult(int option) {
                         switch (option) {
                             case JOptionPane.YES_OPTION:
-                                resetProvider(providerType, true);
+                                resetProviderProperties(providerType, true);
                                 break;
                             case JOptionPane.NO_OPTION:
-                                resetProvider(providerType, false);
+                                resetProviderProperties(providerType, false);
                                 break;
                             default:
                                 // cancel, don't do anything
@@ -553,7 +568,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (JOptionPane.OK_OPTION == option) {
-                            resetProvider(providerType, true);
+                            resetProviderProperties(providerType, true);
                         }
                     }
                 });
@@ -563,7 +578,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * 
      */
-    private void resetProvider(JmsProviderType providerType, boolean overwrite) {
+    private void resetProviderProperties( final JmsProviderType providerType,
+                                          final boolean overwrite ) {
         // Queue connection factory name, defaulting to destination factory name
         String qcfName = (connection != null && ! overwrite) ? connection.getQueueFactoryUrl() : providerType.getDefaultQueueFactoryUrl();
         if (qcfName == null || qcfName.length() < 1)
@@ -574,8 +590,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         String icfName = providerType.getInitialContextFactoryClass();
         if (icfName != null)
             icfTextField.setText(icfName);
-
-        setExtraPropertiesPanels(providerType, connection == null ? null : connection.properties() );
     }
 
     /**
@@ -586,12 +600,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void setExtraPropertiesPanels( final JmsProviderType providerType,
                                            final Properties extraProperties ) {
-        jndiExtraPropertiesPanel = getExtraPropertiesPanel(providerType.getJndiExtraPropertiesClass(), extraProperties);
+        jndiExtraPropertiesPanel = providerType==null ?
+                null :
+                getExtraPropertiesPanel(providerType.getJndiExtraPropertiesClass(), extraProperties);
         jndiExtraPropertiesOuterPanel.removeAll();  //clean out what's previous
         if (jndiExtraPropertiesPanel != null) {
             jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);    //set with new properties
         }
-        queueExtraPropertiesPanel = getExtraPropertiesPanel(providerType.getQueueExtraPropertiesClass(), extraProperties);
+
+        queueExtraPropertiesPanel = providerType==null ?
+                null :
+                getExtraPropertiesPanel(providerType.getQueueExtraPropertiesClass(), extraProperties);
         queueExtraPropertiesOuterPanel.removeAll(); //clean out what's previous
         if (queueExtraPropertiesPanel != null) {
             queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);
@@ -654,7 +673,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 conn = new JmsConnection();
             } else {
                 JmsProvider provider = providerType.createProvider();
-                // The flag providerTypeCustomized has been set during the JmsProvider creates a JMS connection.  Please see the method createConnection(...).
                 conn = provider.createConnection(queueNameTextField.getText(),
                   jndiUrlTextField.getText());
             }
@@ -975,7 +993,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             setExtraPropertiesPanels( connection.getProviderType(), props );
         } else {
             // No connection is set
-            providerComboBox.setSelectedIndex(-1);
             qcfTextField.setText("");
             icfTextField.setText("");
             jndiUrlTextField.setText("");
@@ -1148,8 +1165,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
-        if (providerComboBox.getSelectedIndex() == -1)
-            return false;
         return true;
     }
 
@@ -1221,6 +1236,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         isTemplateQueue.setEnabled(outboundRadioButton.isSelected());
+        applyReset.setEnabled( providerComboBox.getSelectedItem() != null );
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
         testButton.setEnabled(valid && !viewIsTemplate());
