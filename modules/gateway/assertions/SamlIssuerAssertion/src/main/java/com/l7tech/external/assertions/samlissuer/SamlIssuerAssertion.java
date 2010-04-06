@@ -74,6 +74,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }

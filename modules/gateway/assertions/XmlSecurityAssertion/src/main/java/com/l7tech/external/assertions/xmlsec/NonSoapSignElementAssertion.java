@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.xmlsec;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 
@@ -64,6 +67,7 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return privateKeyableSupport.getNonDefaultKeystoreId();
     }

@@ -1,5 +1,9 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+
 import java.io.Serializable;
 
 /**
@@ -29,6 +33,7 @@ public class PrivateKeyableSupport implements PrivateKeyable, Serializable {
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }

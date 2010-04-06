@@ -57,6 +57,7 @@ public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariabl
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return data.getNonDefaultKeystoreId();
     }

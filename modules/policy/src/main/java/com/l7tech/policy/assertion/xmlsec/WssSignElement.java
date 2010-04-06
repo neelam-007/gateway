@@ -1,5 +1,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.policy.assertion.*;
@@ -47,6 +50,7 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }

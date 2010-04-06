@@ -301,6 +301,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
