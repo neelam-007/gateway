@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistentEntity;
@@ -63,14 +64,18 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         final JMSDestinationDetails jmsDetails = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetails.setId( jmsEndpoint.getId() );
         jmsDetails.setVersion( jmsEndpoint.getVersion() );
+        jmsDetails.setName( jmsEndpoint.getName() );
         jmsDetails.setDestinationName( jmsEndpoint.getDestinationName() );
         jmsDetails.setEnabled( !jmsEndpoint.isDisabled() );
+        jmsDetails.setTemplate( jmsEndpoint.isTemplate() );
         jmsDetails.setInbound( jmsEndpoint.isMessageSource() );
         jmsDetails.setProperties( getProperties( jmsEndpoint, JmsEndpoint.class ) );
 
         final JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
         jmsConnection.setId( jmsConnectionEntity.getId() );
         jmsConnection.setVersion( jmsConnectionEntity.getVersion() );
+        jmsConnection.setProviderType( providerType( jmsConnectionEntity.getProviderType() ) );
+        jmsConnection.setTemplate( jmsConnectionEntity.isTemplate() );
         jmsConnection.setProperties( getProperties( jmsConnectionEntity, JmsConnection.class ) );
         jmsConnection.setContextPropertiesTemplate( asProperties(jmsConnectionEntity.properties()) );
 
@@ -98,14 +103,21 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         }
 
         final JmsEndpoint jmsEndpoint = new JmsEndpoint();
-        jmsEndpoint.setName( jmsDestinationDetails.getDestinationName() );
+        jmsEndpoint.setName( jmsDestinationDetails.getName() );
         jmsEndpoint.setDestinationName( jmsDestinationDetails.getDestinationName() );
         jmsEndpoint.setDisabled( !jmsDestinationDetails.isEnabled() );
+        if ( jmsDestinationDetails.isTemplate() != null ) {
+            jmsEndpoint.setTemplate( jmsDestinationDetails.isTemplate() );   
+        }
         jmsEndpoint.setMessageSource( jmsDestinationDetails.isInbound() );
         setProperties( jmsEndpoint, jmsDestinationDetails.getProperties(), JmsEndpoint.class );
 
         final JmsConnection jmsConnection = new JmsConnection();
-        jmsConnection.setName( jmsDestinationDetails.getDestinationName() );
+        jmsConnection.setName( jmsDestinationDetails.getName() );
+        jmsConnection.setProviderType( providerType( jmsConnectionMO.getProviderType() ) );
+        if ( jmsConnectionMO.isTemplate() != null ) {
+            jmsConnection.setTemplate( jmsConnectionMO.isTemplate() );
+        }
         setIdentifier( jmsConnection, jmsConnectionMO.getId(), false );
         setVersion( jmsConnection, jmsConnectionMO.getVersion(), false );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
@@ -135,9 +147,10 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         }
 
         // Copy endpoint properties that allow update
-        oldJmsEndpoint.setName( newJmsEndpoint.getDestinationName() ); // Currently name is a copy of the destination name
+        oldJmsEndpoint.setName( newJmsEndpoint.getName() );
         oldJmsEndpoint.setDestinationName( newJmsEndpoint.getDestinationName() );
         oldJmsEndpoint.setDisabled( newJmsEndpoint.isDisabled() );
+        oldJmsEndpoint.setTemplate( newJmsEndpoint.isTemplate() );
         oldJmsEndpoint.setMessageSource( newJmsEndpoint.isMessageSource() );
         oldJmsEndpoint.setAcknowledgementType( newJmsEndpoint.getAcknowledgementType() );
         oldJmsEndpoint.setFailureDestinationName( newJmsEndpoint.getFailureDestinationName() );
@@ -149,6 +162,8 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         oldJmsEndpoint.setUseMessageIdForCorrelation( newJmsEndpoint.isUseMessageIdForCorrelation() );
 
         // Copy connection properties that allow update
+        oldJmsConnection.setProviderType( newJmsConnection.getProviderType() );
+        oldJmsConnection.setTemplate( newJmsConnection.isTemplate() );
         oldJmsConnection.setDestinationFactoryUrl( newJmsConnection.getDestinationFactoryUrl() );
         oldJmsConnection.setInitialContextFactoryClassname( newJmsConnection.getInitialContextFactoryClassname() );
         oldJmsConnection.setJndiUrl( newJmsConnection.getJndiUrl() );
@@ -215,6 +230,50 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
     //- PRIVATE
 
     private final JmsConnectionManager jmsConnectionManager;
+
+    private JmsProviderType providerType( final JMSConnection.JMSProviderType providerType ) throws InvalidResourceException {
+        JmsProviderType type = null;
+
+        if ( providerType != null ) {
+            switch ( providerType ) {
+                case TIBCO_EMS:
+                    type = JmsProviderType.Tibco;
+                    break;
+                case WebSphere_MQ:
+                    type = JmsProviderType.MQ;
+                    break;
+                case FioranoMQ:
+                    type = JmsProviderType.Fiorano;
+                    break;
+                default:
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid provider type '"+providerType+"'" );
+            }
+        }
+
+        return type;
+    }
+
+    private JMSConnection.JMSProviderType providerType( final JmsProviderType providerType ) throws ResourceAccessException {
+        JMSConnection.JMSProviderType type = null;
+
+        if ( providerType != null ) {
+            switch ( providerType ) {
+                case Tibco:
+                    type = JMSConnection.JMSProviderType.TIBCO_EMS;
+                    break;
+                case MQ:
+                    type = JMSConnection.JMSProviderType.WebSphere_MQ;
+                    break;
+                case Fiorano:
+                    type = JMSConnection.JMSProviderType.FioranoMQ;
+                    break;
+                default:
+                    throw new ResourceAccessException( "Invalid provider type '"+providerType+"'" );
+            }
+        }
+
+        return type;
+    }
 
     private Map<String, Object> asProperties( final Properties properties ) {
         final Map<String,Object> propMap = new HashMap<String,Object>();

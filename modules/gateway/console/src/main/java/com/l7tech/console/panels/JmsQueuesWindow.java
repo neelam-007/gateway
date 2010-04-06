@@ -224,7 +224,7 @@ public class JmsQueuesWindow extends JDialog {
                         if (end.isDisabled()) direction_msg = "Inbound (Un-monitored)";
                         else direction_msg = "Inbound (Monitored)";
                     } else {
-                        if (end.isTemplate()) direction_msg = "Outbound (Template)";
+                        if (end.isTemplate() || conn.isTemplate()) direction_msg = "Outbound (Template)";
                         else direction_msg = "Outbound from Gateway";
                     }
                     return direction_msg;

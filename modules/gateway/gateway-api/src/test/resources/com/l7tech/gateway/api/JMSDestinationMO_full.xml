@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <JMSDestination xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="48037888" extendedAttribute="extension">
     <JMSDestinationDetails version="0" id="48037888" extendedAttribute="extension">
+        <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">VGate Logging Queue</Name>
         <DestinationName other:extendedAttribute="extension" xmlns:other="urn:othernamespace">cn=VgateLoggingQ</DestinationName>
         <Inbound other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Inbound>
         <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
+        <Template other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Template>
         <Properties extendedAttribute="extension">
             <Property key="replyType"  extendedAttribute="extension">
                 <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">AUTOMATIC</StringValue>
@@ -17,6 +19,8 @@
         </Properties>
     </JMSDestinationDetails>
     <JMSConnection version="0" id="48005120" extendedAttribute="extension">
+        <ProviderType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TIBCO EMS</ProviderType>
+        <Template other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Template>
         <Properties>
             <Property key="jndi.initialContextFactoryClassname">
                 <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>

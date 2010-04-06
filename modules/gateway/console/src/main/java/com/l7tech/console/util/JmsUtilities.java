@@ -54,7 +54,7 @@ public class JmsUtilities {
             final JmsEndpoint jmsEndpoint = queue.getEndpoint();
             builder.append( TextUtils.truncStringMiddleExact( jmsEndpoint.getName(), 48 ) );
             builder.append( " [" );
-            if ( jmsEndpoint.isTemplate() ) {
+            if ( queue.isTemplate() ) {
                 builder.append( "<template>" );   
             } else {
                 builder.append( TextUtils.truncStringMiddleExact( jmsEndpoint.getDestinationName(), 32 ) );

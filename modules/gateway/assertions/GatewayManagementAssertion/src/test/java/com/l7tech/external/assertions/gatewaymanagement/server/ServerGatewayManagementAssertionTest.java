@@ -48,6 +48,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -260,6 +261,7 @@ public class ServerGatewayManagementAssertionTest {
         String payload =
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
                 "        <DestinationName>QueueName</DestinationName>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
@@ -278,8 +280,80 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Properties>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        String expectedId = "2";
-        doCreate( resourceUri, payload, expectedId );
+        doCreate( resourceUri, payload, "2", "3" );
+    }
+
+    @Test
+    public void testCreateTemplateJMSDestination() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload =
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "        <Template>true</Template>\n" +
+                "    </JMSDestinationDetails>\n" +
+                "    <JMSConnection>\n" +
+                "        <ProviderType>TIBCO EMS</ProviderType>" +
+                "        <Template>true</Template>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreate( resourceUri, payload, "2", "3"  );
+    }
+
+    @Test
+    public void testCreateTemplateJMSDestinationFailDestination() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload = // payload with missing destination name
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "        <Template>false</Template>\n" +
+                "    </JMSDestinationDetails>\n" +
+                "    <JMSConnection>\n" +
+                "        <Template>true</Template>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreateFail( resourceUri, payload, "wxf:InvalidRepresentation" );
+    }
+
+    @Test
+    public void testCreateTemplateJMSDestinationFailConnection() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload = // payload with missing JMS connection properties
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "        <Template>true</Template>\n" +
+                "    </JMSDestinationDetails>\n" +
+                "    <JMSConnection>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreateFail( resourceUri, payload, "wxf:InvalidRepresentation" );
+    }
+
+    @Test
+    public void testCreateTemplateJMSDestinationFailConnectionProviderType() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload = // payload invalid JMS provider type
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "        <Template>true</Template>\n" +
+                "    </JMSDestinationDetails>\n" +
+                "    <JMSConnection>\n" +
+                "        <ProviderType>bad</ProviderType>" +
+                "        <Template>true</Template>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreateFail( resourceUri, payload, "wsman:SchemaValidationError" );
     }
 
     @Test
@@ -1019,7 +1093,7 @@ public class ServerGatewayManagementAssertionTest {
 
     private void doCreate( final String resourceUri,
                            final String payload,
-                           final String expectedId ) throws Exception {
+                           final String... expectedIds ) throws Exception {
 
         final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
 
@@ -1031,7 +1105,26 @@ public class ServerGatewayManagementAssertionTest {
         final Element selectorSet = XmlUtil.findExactlyOneChildElementByName(refParameters, NS_WS_MANAGEMENT, "SelectorSet");
         final Element selector = XmlUtil.findExactlyOneChildElementByName(selectorSet, NS_WS_MANAGEMENT, "Selector");
 
-        assertEquals("Identifier ", expectedId, XmlUtil.getTextValue(selector));
+        assertTrue("Identifier in " + Arrays.asList( expectedIds ), ArrayUtils.containsIgnoreCase( expectedIds, XmlUtil.getTextValue(selector)));
+    }
+
+    private void doCreateFail( final String resourceUri,
+                               final String payload,
+                               final String faultSubcode ) throws Exception {
+
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", MessageFormat.format( message, resourceUri, payload ));
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element faultElement = XmlUtil.findExactlyOneChildElementByName(soapBody, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Fault");
+        final Element codeElement = XmlUtil.findExactlyOneChildElementByName(faultElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Code");
+        final Element subcodeElement = XmlUtil.findExactlyOneChildElementByName(codeElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
+        final Element valueElement = XmlUtil.findExactlyOneChildElementByName(subcodeElement, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+
+        final String code = XmlUtil.getTextValue( valueElement );
+
+        assertEquals("SOAP Fault subcode", faultSubcode, code);
     }
 
     private Document processRequest( final String action,
@@ -1044,38 +1137,38 @@ public class ServerGatewayManagementAssertionTest {
         final Message response = new Message();
 
         final MockServletContext servletContext = new MockServletContext();
-        final MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
-        final MockHttpServletResponse hresponse = new MockHttpServletResponse();
+        final MockHttpServletRequest httpServletRequest = new MockHttpServletRequest(servletContext);
+        final MockHttpServletResponse httpServletResponse = new MockHttpServletResponse();
 
         servletContext.setContextPath( "/" );
 
-        hrequest.setMethod("POST");
-        hrequest.setContentType(contentType);
-        hrequest.addHeader("Content-Type", contentType);
-        hrequest.setRemoteAddr("127.0.0.1");
-        hrequest.setServerName( "127.0.0.1" );
-        hrequest.setRequestURI("/wsman");
-        hrequest.setContent(message.getBytes("UTF-8"));
+        httpServletRequest.setMethod("POST");
+        httpServletRequest.setContentType(contentType);
+        httpServletRequest.addHeader("Content-Type", contentType);
+        httpServletRequest.setRemoteAddr("127.0.0.1");
+        httpServletRequest.setServerName( "127.0.0.1" );
+        httpServletRequest.setRequestURI("/wsman");
+        httpServletRequest.setContent(message.getBytes("UTF-8"));
 
-        final HttpRequestKnob reqKnob = new HttpServletRequestKnob(hrequest);
+        final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
         request.attachHttpRequestKnob(reqKnob);
 
-        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
+        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(httpServletResponse);
         response.attachHttpResponseKnob(respKnob);
 
         PolicyEnforcementContext context = null; 
         try {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-            final ServerGatewayManagementAssertion swma = new ServerGatewayManagementAssertion(
+            final ServerGatewayManagementAssertion managementAssertion = new ServerGatewayManagementAssertion(
                     new GatewayManagementAssertion(), beanFactory, "testGatewayManagementContext.xml" );
 
-            // fake user auth
+            // fake user authentication
             context.getDefaultAuthenticationContext().addAuthenticationResult( new AuthenticationResult(
                     new UserBean("admin"),
                     new HttpBasicToken("admin", "".toCharArray()), null, false)
             );
 
-            swma.checkRequest( context );
+            managementAssertion.checkRequest( context );
 
             Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
 

@@ -153,6 +153,7 @@ public class ManagedObjectTest {
         jmsDestinationDetails.setId( "1" );
         jmsDestinationDetails.setVersion( 0 );
         jmsDestinationDetails.setEnabled( true );
+        jmsDestinationDetails.setName( "queue" );
         jmsDestinationDetails.setDestinationName( "queue" );
         jmsDestinationDetails.setInbound( false );
         jmsDestinationDetails.setProperties( Collections.<String,Object>singletonMap( "p1", "" ) );

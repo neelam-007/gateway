@@ -78,6 +78,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _destinationFactoryUrl;
     private String _username;
     private String _password;
+    private boolean _template;
     private String _properties;
     private JmsProviderType _providerType;
 
@@ -93,6 +94,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setOid( other.getOid() );
         setVersion( other.getVersion() );
         setName( other.getName() );
+        setTemplate( other.isTemplate() );
         setInitialContextFactoryClassname( other.getInitialContextFactoryClassname() );
         setJndiUrl( other.getJndiUrl() );
         setQueueFactoryUrl( other.getQueueFactoryUrl() );
@@ -138,9 +140,9 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _password = password;
     }
 
-    @NotNull
+    @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=255)
-    @Column(name="factory_classname", nullable=false, length=255)
+    @Column(name="factory_classname", length=255)
     public String getInitialContextFactoryClassname() {
         return _initialContextFactoryClassname;
     }
@@ -150,9 +152,9 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _initialContextFactoryClassname = initialContextFactoryClassname;
     }
 
-    @NotNull
+    @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=255)
-    @Column(name="jndi_url", nullable=false, length=255)
+    @Column(name="jndi_url", length=255)
     public String getJndiUrl() {
         return _jndiUrl;
     }
@@ -193,6 +195,16 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public void setDestinationFactoryUrl( String destinationFactoryUrl ) {
         checkLocked();
         _destinationFactoryUrl = destinationFactoryUrl;
+    }
+
+    @Column(name="is_template")
+    public boolean isTemplate() {
+        return _template;
+    }
+
+    public void setTemplate(final boolean template) {
+        checkLocked();
+        _template = template;
     }
 
     public Properties properties() {
@@ -248,4 +260,10 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         checkLocked();
         this._providerType = providerType;
     }
+    
+    /**
+     * Standard validation group with additional constraints for non-templates.
+     */
+    public interface StandardValidationGroup {}    
+    
 }

@@ -35,7 +35,6 @@ import java.util.logging.Logger;
  * @author <a href="mailto:mlyons@layer7-tech.com">Mike Lyons</a>
  * @version 1.0
  */
-@SuppressWarnings( { "UnnecessaryUnboxing", "UnnecessaryBoxing" } )
 public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     //- PUBLIC
@@ -131,7 +130,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
     /**
-     * notfy the listeners
+     * notify the listeners
      *
      * @param a the assertion
      */
@@ -267,10 +266,10 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     JmsEndpoint endpoint = item.getQueue().getEndpoint();
                     JmsConnection conn = item.getQueue().getConnection();
 
-                    assertion.setEndpointOid(new Long(endpoint.getOid()));
+                    assertion.setEndpointOid(endpoint.getOid());
                     assertion.setEndpointName(endpoint.getName());
                     JmsDynamicProperties dynProps = null;
-                    if (endpoint.isTemplate()) {
+                    if ( item.getQueue().isTemplate() ) {
                         dynProps = new JmsDynamicProperties();
                         if (endpoint.getDestinationName() == null || endpoint.getDestinationName().equals(""))
                             dynProps.setDestQName(dynamicDestQueueName.getText());
@@ -294,7 +293,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
                 if (assertion.isAttachSamlSenderVouches()) {
                     assertion.setSamlAssertionVersion("1.1".equals(samlVersionComboBox.getSelectedItem()) ? 1 : 2);
-                    assertion.setSamlAssertionExpiry(((Integer)samlExpiryInMinutesSpinner.getValue()).intValue());
+                    assertion.setSamlAssertionExpiry((Integer)samlExpiryInMinutesSpinner.getValue());
                 } else {
                     assertion.setSamlAssertionVersion(1);
                     assertion.setSamlAssertionExpiry(5);
@@ -337,12 +336,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             JmsEndpoint ep = selected.getQueue().getEndpoint();
             JmsConnection conn = selected.getQueue().getConnection();
 
-            if (ep.isTemplate()) {
+            if ( selected.getQueue().isTemplate() ) {
                 Utilities.setEnabled(dynamicPropertiesPanel, true);
-                String destQName = ep.getDestinationName();
-                dynamicDestQueueName.setText(destQName);
+                String destinationName = ep.getDestinationName();
+                dynamicDestQueueName.setText(destinationName);
                 dynamicDestQueueName.setCaretPosition( 0 );
-                if (destQName != null && !"".equals(destQName.trim())) {
+                if (destinationName != null && !"".equals(destinationName.trim())) {
                     dynamicDestQueueName.setEnabled(false);
                 }
 
@@ -434,7 +433,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (expiry == 0) {
             expiry = 5;
         }
-        samlExpiryInMinutesSpinner.setValue(new Integer(expiry));
+        samlExpiryInMinutesSpinner.setValue(expiry);
         samlVersionComboBox.setSelectedItem(assertion.getSamlAssertionVersion()==1 ? "1.1" : "2.0");
         authNoneRadio.setSelected(!assertion.isAttachSamlSenderVouches());
         authSamlRadio.setSelected(assertion.isAttachSamlSenderVouches());
@@ -446,7 +445,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         try {
             JmsEndpoint serviceEndpoint = null;
             if (endpointOid != null) {
-                serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid.longValue());
+                serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid);
             }
             JmsUtilities.selectEndpoint(getQueueComboBox(), serviceEndpoint);
             applyDynamicAssertionPropertyOverrides();
@@ -462,18 +461,18 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     }
 
     /**
-     * A subpanel to configure JMS message property propagation in either request
+     * A sub-panel to configure JMS message property propagation in either request
      * or response routing.
      *
      * @since SecureSpan 4.0
      * @author rmak
      */
     public class JmsMessagePropertiesPanel extends JPanel {
-        public static final String PASS_THRU = "<original value>";
+        public static final String PASS_THROUGH = "<original value>";
 
         @SuppressWarnings( { "UnusedDeclaration" } )
         private JPanel mainPanel;       // Not used but required by IntelliJ IDEA.        
-        private JRadioButton passThruAllRadioButton;
+        private JRadioButton passThroughAllRadioButton;
         private JRadioButton customizeRadioButton;
         private JPanel customPanel;
         private JTable customTable;
@@ -484,7 +483,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         private DefaultTableModel customTableModel;
 
         public JmsMessagePropertiesPanel() {
-            passThruAllRadioButton.addActionListener(new ActionListener() {
+            passThroughAllRadioButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     Utilities.setEnabled(customPanel, false);
@@ -575,10 +574,10 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             removeButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
-                    int[] selectedrows = customTable.getSelectedRows();
-                    if (selectedrows != null && selectedrows.length > 0) {
-                        for (int i = selectedrows.length - 1; i >= 0; --i) {
-                            customTableModel.removeRow(selectedrows[i]);
+                    int[] selectedRows = customTable.getSelectedRows();
+                    if (selectedRows != null && selectedRows.length > 0) {
+                        for (int i = selectedRows.length - 1; i >= 0; --i) {
+                            customTableModel.removeRow(selectedRows[i]);
                         }
                     }
                 }
@@ -599,7 +598,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
          */
         public void setData(JmsMessagePropertyRuleSet ruleSet) {
             if (ruleSet == null || ruleSet.isPassThruAll()) {
-                passThruAllRadioButton.doClick();
+                passThroughAllRadioButton.doClick();
             } else {
                 customizeRadioButton.doClick();
                 for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
@@ -618,7 +617,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             for (int row = 0; row < numRows; ++ row) {
                 rules[row] = rowToData(row);
             }
-            return new JmsMessagePropertyRuleSet(passThruAllRadioButton.isSelected(), rules);
+            return new JmsMessagePropertyRuleSet( passThroughAllRadioButton.isSelected(), rules);
         }
 
         private void editSelectedRow() {
@@ -641,7 +640,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             final String name = rule.getName();
             String value;
             if (rule.isPassThru()) {
-                value = PASS_THRU;
+                value = PASS_THROUGH;
             } else {
                 value = rule.getCustomPattern();
             }
@@ -652,16 +651,16 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             final TableModel model = customTable.getModel();
             final String name = (String)model.getValueAt(row, 0);
             final String value = (String)model.getValueAt(row, 1);
-            boolean passThru;
+            boolean passThrough;
             String pattern;
-            if (PASS_THRU.equals(value)) {
-                passThru = true;
+            if ( PASS_THROUGH.equals(value)) {
+                passThrough = true;
                 pattern = null;
             } else {
-                passThru = false;
+                passThrough = false;
                 pattern = value;
             }
-            return new JmsMessagePropertyRule(name, passThru, pattern);
+            return new JmsMessagePropertyRule(name, passThrough, pattern);
         }
 
         private Set<String> getExistingNames() {

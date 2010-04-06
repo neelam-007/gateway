@@ -72,7 +72,12 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     protected final void validate( final Object bean, final Class<?>... groups ) throws InvalidResourceException {
         if ( !VALIDATION_ENABLED ) return;
 
-        final Set<ConstraintViolation<Object>> violations = validator.validate( bean, groups );
+        Class[] groupClasses = groups;
+        if ( groupClasses == null || groupClasses.length == 0 ) {
+            groupClasses = propertiesHelper.getValidationGroups( bean );    
+        }
+
+        final Set<ConstraintViolation<Object>> violations = validator.validate( bean, groupClasses );
         if ( !violations.isEmpty() ) {
             final StringBuilder validationReport = new StringBuilder();
             boolean first = true;

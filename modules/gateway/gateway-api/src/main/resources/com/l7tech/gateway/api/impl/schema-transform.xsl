@@ -44,7 +44,8 @@
                                        @name = 'LongValueType' or
                                        @name = 'ValidationStatusPropertyType' or
                                        @name = 'IdentityProviderTypePropertyType' or
-                                       @name = 'PolicyTypePropertyType']">
+                                       @name = 'PolicyTypePropertyType' or
+                                       @name = 'JMSProviderTypePropertyType']">
         <xs:complexType name="{@name}">
             <xs:simpleContent>
                 <xs:extension base="{xs:restriction/@base}">

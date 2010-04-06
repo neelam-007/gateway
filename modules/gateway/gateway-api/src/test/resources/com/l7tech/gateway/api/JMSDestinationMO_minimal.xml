@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <JMSDestination xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <JMSDestinationDetails>
+        <Name>VGate Logging Queue</Name>
         <DestinationName>cn=VgateLoggingQ</DestinationName>
         <Inbound>false</Inbound>
         <Enabled>true</Enabled>

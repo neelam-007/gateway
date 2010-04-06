@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.Policy;
 import com.l7tech.security.cert.TrustedCert;
 
+import javax.validation.groups.Default;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,6 +66,24 @@ class EntityPropertiesHelper {
         }
     }
 
+    public Class[] getValidationGroups( final Object bean ) {
+        Class[] groups = new Class[]{ Default.class };
+
+        if ( bean instanceof JmsEndpoint ) {
+            JmsEndpoint endpoint = (JmsEndpoint) bean;
+            if ( !endpoint.isTemplate() ) {
+                groups = new Class[]{ Default.class, JmsEndpoint.StandardValidationGroup.class };
+            }
+        } else if ( bean instanceof JmsConnection ) {
+            JmsConnection connection = (JmsConnection) bean;
+            if ( !connection.isTemplate() ) {
+                groups = new Class[]{ Default.class, JmsConnection.StandardValidationGroup.class };
+            }
+        }
+
+        return groups;
+    }
+
     //- PRIVATE
 
     private static final Map<Class<? extends Entity>,Map<String,String>> PROPERTY_MAP = MapBuilder.<Class<? extends Entity>,Map<String,String>>builder()
@@ -76,7 +95,6 @@ class EntityPropertiesHelper {
             .put( "queueFactoryUrl", "queue.connectionFactoryName" )
             .put( "destinationFactoryUrl", "connectionFactoryName" )
             .put( "topicFactoryUrl", "topic.connectionFactoryName" )
-            .put("providerType", null)
             .unmodifiableMap() )
         .put( JmsEndpoint.class, MapBuilder.<String,String>builder()
             .put( "username", null )
@@ -146,8 +164,9 @@ class EntityPropertiesHelper {
             "id",
             "name",
             "oid",
-            "providerTypeCustomized",
-            "properties"
+            "properties",
+            "providerType",
+            "template"
         ) ) )
         .put( JmsEndpoint.class, Collections.unmodifiableCollection( Arrays.asList(
             "oid",

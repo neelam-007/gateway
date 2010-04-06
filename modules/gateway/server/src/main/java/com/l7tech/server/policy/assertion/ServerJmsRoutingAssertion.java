@@ -672,7 +672,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
 
         // check for the need to use dynamic routing properties
-        if ( endpoint.isTemplate() ) {
+        if ( endpoint.isTemplate() || conn.isTemplate() ) {
             JmsEndpointConfig jmsEndpointConfig = new JmsEndpointConfig(
                     conn,
                     endpoint,

@@ -74,7 +74,7 @@ public class JmsEndpointConfig {
                              final JmsDynamicProperties dynamicProperties)
     {
         // check if this is a template endpoint
-        this.dynamic = endpoint.isTemplate();
+        this.dynamic = endpoint.isTemplate() || connection.isTemplate();
         if (dynamic) {
             // clone the JmsConnection and JmsEndpoint beans since they will be overwritten
             final JmsConnection connCopy = new JmsConnection(connection, false);
@@ -261,7 +261,7 @@ public class JmsEndpointConfig {
             this.jmsConnectionOid = connection.getOid();
             this.jmsConnectionVersion = connection.getVersion();
 
-            if ( endpoint.isTemplate() ) {
+            if ( endpoint.isTemplate() || connection.isTemplate() ) {
                 this.initialContextFactoryClassname = connection.getInitialContextFactoryClassname();
                 this.jndiUrl = connection.getJndiUrl();
                 this.queueFactoryUrl = connection.getQueueFactoryUrl();

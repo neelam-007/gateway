@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
-@XmlType(name="JMSDestinationDetailsType", propOrder={"destinationNameValue", "inboundValue", "enabledValue", "properties", "extension", "extensions"})
+@XmlType(name="JMSDestinationDetailsType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "properties", "extension", "extensions"})
 public class JMSDestinationDetails {
 
     //- PUBLIC
@@ -64,7 +64,26 @@ public class JMSDestinationDetails {
     }
 
     /**
-     * Get the destination name (required)
+     * Get the name for this destination.
+     *
+     * @return The name (may be null)
+     */
+    @XmlTransient
+    public String getName() {
+        return get(name);
+    }
+
+    /**
+     * Set the name for this destination.
+     *
+     * @param name The name to use.
+     */
+    public void setName( final String name ) {
+        this.name = set(this.name,name);
+    }
+
+    /**
+     * Get the destination name (required for non templates)
      *
      * <p>The destination name is used to look up the JMS destination in the JNDI
      * context.</p>
@@ -130,6 +149,25 @@ public class JMSDestinationDetails {
     }
 
     /**
+     * Flag for a template destination.
+     *
+     * @return True if this is a template (may be null)
+     */
+    @XmlTransient
+    public Boolean isTemplate() {
+        return get(template);
+    }
+
+    /**
+     * Set the template flag for the destination.
+     *
+     * @param template True for a template (may be null)
+     */
+    public void setTemplate( final Boolean template ) {
+        this.template = set(this.template,template);
+    }
+
+    /**
      * Get the properties for the destination.
      *
      * @return The properties or null
@@ -151,7 +189,16 @@ public class JMSDestinationDetails {
 
     //- PROTECTED
 
-    @XmlElement(name="DestinationName", required=true)
+    @XmlElement(name="Name",required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="DestinationName")
     protected AttributeExtensibleString getDestinationNameValue() {
         return destinationName;
     }
@@ -176,6 +223,15 @@ public class JMSDestinationDetails {
 
     protected void setEnabledValue( final AttributeExtensibleBoolean enabled ) {
         this.enabled = enabled;
+    }
+
+    @XmlElement(name="Template")
+    protected AttributeExtensibleBoolean getTemplateValue() {
+        return template;
+    }
+
+    protected void setTemplateValue( final AttributeExtensibleBoolean template ) {
+        this.template = template;
     }
 
     @XmlAnyAttribute
@@ -214,9 +270,11 @@ public class JMSDestinationDetails {
 
     private String id;
     private Integer version;
+    private AttributeExtensibleString name;
     private AttributeExtensibleString destinationName;
     private AttributeExtensibleBoolean inbound = new AttributeExtensibleBoolean(false);
     private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
+    private AttributeExtensibleBoolean template;
     private Map<String,Object> properties;
     private Extension extension;
     private List<Object> extensions;

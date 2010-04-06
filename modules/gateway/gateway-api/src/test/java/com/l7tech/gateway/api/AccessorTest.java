@@ -652,7 +652,7 @@ public class AccessorTest {
     private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/04/gateway-management";
     private static Functions.UnaryVoid<Addressing> validationCallback;
     private static final Queue<Object> responseObjects = new ArrayDeque<Object>();
-    private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.api.logTestMessages", true );
+    private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.api.logTestMessages", false );
 
     private static void setResponse( final String... responseFileNames ) {
         responseObjects.clear();

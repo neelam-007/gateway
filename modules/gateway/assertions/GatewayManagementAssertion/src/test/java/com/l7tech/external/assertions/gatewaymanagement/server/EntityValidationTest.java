@@ -5,6 +5,8 @@ import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsProviderType;
+import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import org.junit.Test;
@@ -152,6 +154,20 @@ public class EntityValidationTest {
 
         jmsEndpoint.setFailureDestinationName( string(129, 'a') );
         invalid( jmsEndpoint, "long failure queue name" );
+
+        jmsEndpoint.setFailureDestinationName( null );
+
+        // Test template
+        jmsEndpoint.setTemplate( true );
+        valid( jmsEndpoint, "basic template" );
+
+        jmsEndpoint.setDestinationName( null );
+        valid( jmsEndpoint, "template null destination name" );
+
+        jmsEndpoint.setDestinationName( "name" );
+        jmsEndpoint.setReplyType( JmsReplyType.REPLY_TO_OTHER );
+        jmsEndpoint.setReplyToQueueName( null );
+        valid( jmsEndpoint, "template reply to queue name" );
     }
     
     @Test
@@ -176,6 +192,12 @@ public class EntityValidationTest {
         invalid( jmsConnection, "long name" );
 
         jmsConnection.setName( "name" );
+
+        // Test provider type
+        jmsConnection.setProviderType( JmsProviderType.Tibco );
+        valid( jmsConnection, "non null provider type" );
+
+        jmsConnection.setProviderType( null );
 
         // Test JNDI url
         jmsConnection.setJndiUrl( null );
@@ -273,6 +295,23 @@ public class EntityValidationTest {
 
         jmsConnection.setTopicFactoryUrl( string(256, 'a') );
         invalid( jmsConnection, "long topic factory url" );
+
+        jmsConnection.setTopicFactoryUrl( null );
+
+        // Test template
+        jmsConnection.setTemplate( true );
+        valid( jmsConnection, "basic template" );
+
+        jmsConnection.setJndiUrl( null );
+        valid( jmsConnection, "template null jndiUrl" );
+
+        jmsConnection.setJndiUrl( "ldap://host" );
+        jmsConnection.setInitialContextFactoryClassname( null );
+        valid( jmsConnection, "template null initial context classname" );
+
+        jmsConnection.setInitialContextFactoryClassname( "some.Class" );
+        jmsConnection.setQueueFactoryUrl( null );
+        valid( jmsConnection, "template null queue factory url" );
     }
 
     @Test
@@ -501,16 +540,17 @@ public class EntityValidationTest {
 
     //- PRIVATE
 
+    private final EntityPropertiesHelper helper = new EntityPropertiesHelper();
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     private void valid( final Object entity, final String description ) {
-        final Set<ConstraintViolation<Object>> violations = validator.validate( entity );
+        final Set<ConstraintViolation<Object>> violations = validator.validate( entity, helper.getValidationGroups(entity) );
 
         assertEquals( "Validation errors for " + description, Collections.<ConstraintViolation<Object>>emptySet(), violations );
     }
 
     private void invalid( final Object entity, final String description ) {
-        final Set<ConstraintViolation<Object>> violations = validator.validate( entity );
+        final Set<ConstraintViolation<Object>> violations = validator.validate( entity, helper.getValidationGroups(entity) );
 
         assertTrue( "Expected validation error(s) for " + description, !violations.isEmpty() );
     }

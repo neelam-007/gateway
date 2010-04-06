@@ -15,7 +15,7 @@ import java.io.Serializable;
 import java.util.EnumSet;
 
 /**
- * The SecureSpan Gateway's API for managaging JMS connections and endpoints.
+ * The SecureSpan Gateway's API for managing JMS connections and endpoints.
  */
 @Secured
 @Administrative
@@ -25,17 +25,34 @@ public interface JmsAdmin {
      * Holds a tuple of ({@link JmsConnection}, {@link JmsEndpoint}).
      */
     public static final class JmsTuple implements Serializable {
-        public JmsTuple(JmsConnection conn, JmsEndpoint end) {
-            this.connection = conn;
-            this.endpoint = end;
+        public JmsTuple( final JmsConnection jmsConnection,
+                         final JmsEndpoint jmsEndpoint ) {
+            if ( jmsConnection == null ) throw new IllegalArgumentException("jmsConnection is required");
+            if ( jmsEndpoint == null ) throw new IllegalArgumentException("jmsEndpoint is required");
+            this.connection = jmsConnection;
+            this.endpoint = jmsEndpoint;
         }
 
+        /**
+         * Get the JmsConnection.
+         *
+         * @return The connection (never null)
+         */
         public JmsConnection getConnection() {
             return connection;
         }
 
+        /**
+         * Get the JmsEndpoint.
+         *
+         * @return The endpoint (never null)
+         */
         public JmsEndpoint getEndpoint() {
             return endpoint;
+        }
+
+        public boolean isTemplate() {
+            return connection.isTemplate() || endpoint.isTemplate();
         }
 
         private final JmsConnection connection;

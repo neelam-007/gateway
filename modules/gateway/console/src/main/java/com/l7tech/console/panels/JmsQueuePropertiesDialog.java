@@ -562,8 +562,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     /**
      * 
-     * @param provider
-     * @param overwrite
      */
     private void resetProvider(JmsProviderType providerType, boolean overwrite) {
         // Queue connection factory name, defaulting to destination factory name
@@ -583,10 +581,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
     /**
      * Inserts sub panels for extra settings according to the provider type selected.
      *
-     * @param provider              the provider type selected
+     * @param providerType          the provider type selected
      * @param extraProperties       data structure used by the sub panels to transmit settings
      */
-    private void setExtraPropertiesPanels(JmsProviderType providerType, Properties extraProperties) {
+    private void setExtraPropertiesPanels( final JmsProviderType providerType,
+                                           final Properties extraProperties ) {
         jndiExtraPropertiesPanel = getExtraPropertiesPanel(providerType.getJndiExtraPropertiesClass(), extraProperties);
         jndiExtraPropertiesOuterPanel.removeAll();  //clean out what's previous
         if (jndiExtraPropertiesPanel != null) {
@@ -664,6 +663,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
         conn.setProviderType((JmsProviderType) providerComboBox.getSelectedItem());
 
+        conn.setTemplate(viewIsTemplate());        
+
         Properties properties = new Properties();
         if (useJndiCredentialsCheckBox.isSelected()) {
             properties.setProperty(Context.SECURITY_PRINCIPAL, jndiUsernameTextField.getText());
@@ -720,9 +721,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
  	 	    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, "");
  	 	}
 
-        conn.setJndiUrl(jndiUrlTextField.getText());
-        conn.setInitialContextFactoryClassname(icfTextField.getText());
-        conn.setQueueFactoryUrl(qcfTextField.getText());
+        conn.setJndiUrl(getTextOrNull(jndiUrlTextField));
+        conn.setInitialContextFactoryClassname(getTextOrNull(icfTextField));
+        conn.setQueueFactoryUrl(getTextOrNull(qcfTextField));
         if (jndiExtraPropertiesPanel != null) {
             properties.putAll(jndiExtraPropertiesPanel.getProperties());
         }
@@ -761,9 +762,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         String name = jmsEndpointDescriptiveName.getText();
         ep.setName(name);
         ep.setTemplate(viewIsTemplate());
-
-        String queueName = queueNameTextField.getText();
-        ep.setDestinationName(queueName);
+        ep.setDestinationName(getTextOrNull(queueNameTextField));
         
         JmsAcknowledgementType type = (JmsAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
 
@@ -838,7 +837,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setReplyToQueueName(null);
         } else if (specifiedButton.isSelected()) {
             ep.setReplyType(JmsReplyType.REPLY_TO_OTHER);
-            final String t = specifiedField.getText();
+            final String t = getTextOrNull(specifiedField);
             ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
             if (!isTemplate && (t == null || t.length() == 0) ) throw new IllegalStateException(what + " Specified Queue name must be set");
             ep.setReplyToQueueName(t);
@@ -902,7 +901,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         boolean isHardWired = false;
         long hardWiredId = 0;
         loadContentTypesModel();
-        if (connection != null) {
+        if ( connection != null ) {
+            isTemplateQueue.setSelected(connection.isTemplate());
+
             Properties props = connection.properties();
 
             // configure gui from connection
@@ -971,6 +972,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
             specifyContentTypeCheckBox.setSelected(shouldSelect);
 
+            setExtraPropertiesPanels( connection.getProviderType(), props );
         } else {
             // No connection is set
             providerComboBox.setSelectedIndex(-1);
@@ -1034,7 +1036,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
         if (endpoint != null) {
-            isTemplateQueue.setSelected(endpoint.isTemplate());
+            if ( endpoint.isTemplate() ) {
+                isTemplateQueue.setSelected(true); // template if either endpoint or connection are templates
+            }
             jmsEndpointDescriptiveName.setText(endpoint.getName());
             JmsAcknowledgementType type = endpoint.getAcknowledgementType();
             if (type != null) {
@@ -1109,6 +1113,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private boolean viewIsTemplate() {
         return isTemplateQueue.isEnabled() && isTemplateQueue.isSelected();
+    }
+
+    /**
+     * Get the text from the given field, null if empty.
+     */
+    private static String getTextOrNull( final JTextField textField ) {
+        final String text = textField.getText();
+        return (text == null || text.trim().isEmpty()) ? null : text;
     }
 
     /**

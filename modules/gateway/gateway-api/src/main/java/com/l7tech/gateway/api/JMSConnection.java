@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 import com.l7tech.gateway.api.impl.Extension;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
@@ -8,7 +9,11 @@ import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlEnum;
+import javax.xml.bind.annotation.XmlEnumValue;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -19,16 +24,16 @@ import java.util.Map;
  *
  * <p> The following properties can be set:
  * <ul>
- *   <li><code>jndi.initialContextFactoryClassname</code> (required): The fully qualified
+ *   <li><code>jndi.initialContextFactoryClassname</code> (required for non templates): The fully qualified
  *       Java class name of the JNDI initial context factory (see
  *       {@link javax.naming.Context#INITIAL_CONTEXT_FACTORY INITIAL_CONTEXT_FACTORY})</li>
- *   <li><code>jndi.providerUrl</code> (required): URL to identify the JNDI service provider
+ *   <li><code>jndi.providerUrl</code> (required for non templates): URL to identify the JNDI service provider
  *       (see {@link javax.naming.Context#PROVIDER_URL PROVIDER_URL})</li>
  *   <li><code>username</code>: The connection username (see
  *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection})</li>
  *   <li><code>password</code>: The connection password (see
  *       {@link javax.jms.ConnectionFactory#createConnection( String, String ) createConnection})</li>
- *   <li><code>queue.connectionFactoryName</code> (required): The name to lookup the queue connection
+ *   <li><code>queue.connectionFactoryName</code> (required for non templates): The name to lookup the queue connection
  *       factory in the initial JNDI context.</li>
  * </ul>
  * </p>
@@ -45,7 +50,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createJMSConnection()
  * @see javax.jms.ConnectionFactory ConnectionFactory
  */
-@XmlType(name="JMSConnectionType", propOrder={"properties","contextPropertiesTemplate","extension","extensions"})
+@XmlType(name="JMSConnectionType", propOrder={"providerTypeValue", "templateValue", "properties","contextPropertiesTemplate","extension","extensions"})
 public class JMSConnection {
 
     //- PUBLIC
@@ -89,6 +94,44 @@ public class JMSConnection {
     }
 
     /**
+     * Get the provider type for the connection.
+     *
+     * @return The provider type or null.
+     */
+    @XmlTransient
+    public JMSProviderType getProviderType() {
+        return get(providerType);
+    }
+
+    /**
+     * Set the provider type for the connection.
+     *
+     * @param providerType The provider type to use (may be null)
+     */
+    public void setProviderType( final JMSProviderType providerType ) {
+        this.providerType = setNonNull( this.providerType==null ? new AttributeExtensibleJMSProviderType() : this.providerType, providerType );
+    }
+
+    /**
+     * Flag for a template connection.
+     *
+     * @return True if this is a template (may be null)
+     */
+    @XmlTransient
+    public Boolean isTemplate() {
+        return get(template);
+    }
+
+    /**
+     * Set the template flag for the connection.
+     *
+     * @param template True for a template (may be null)
+     */
+    public void setTemplate( final Boolean template ) {
+        this.template = set(this.template,template);
+    }
+
+    /**
      * Get the properties for the connection.
      *
      * @return The properties map or null
@@ -128,7 +171,48 @@ public class JMSConnection {
         this.contextPropertiesTemplate = contextPropertiesTemplate;
     }
 
+    /**
+     * Types for JMS providers.
+     */
+    @XmlEnum(String.class)
+    @XmlType(name="JMSProviderTypeType")
+    public enum JMSProviderType {
+
+        /**
+         * Type for TIBCO EMS.
+         */
+        @XmlEnumValue("TIBCO EMS") TIBCO_EMS,
+
+        /**
+         * Type for WebSphere MQ over LDAP.
+         */
+        @XmlEnumValue("WebSphere MQ over LDAP") WebSphere_MQ,
+
+        /**
+         * Type for FioranoMQ.
+         */
+        @XmlEnumValue("FioranoMQ") FioranoMQ;
+    }
+
     //- PROTECTED
+
+    @XmlElement(name="ProviderType")
+    protected AttributeExtensibleJMSProviderType getProviderTypeValue() {
+        return providerType;
+    }
+
+    protected void setProviderTypeValue( final AttributeExtensibleJMSProviderType providerType ) {
+        this.providerType = providerType;
+    }
+
+    @XmlElement(name="Template")
+    protected AttributeExtensibleBoolean getTemplateValue() {
+        return template;
+    }
+
+    protected void setTemplateValue( final AttributeExtensibleBoolean template ) {
+        this.template = template;
+    }
 
     @XmlAnyAttribute
     protected Map<QName, Object> getAttributeExtensions() {
@@ -157,6 +241,22 @@ public class JMSConnection {
         this.extensions = extensions;
     }
 
+    @XmlType(name="JMSProviderTypePropertyType")
+    protected static class AttributeExtensibleJMSProviderType extends AttributeExtensible<JMSProviderType> {
+        private JMSProviderType value;
+
+        @XmlValue
+        @Override
+        public JMSProviderType getValue() {
+            return value;
+        }
+
+        @Override
+        public void setValue( final JMSProviderType value ) {
+            this.value = value;
+        }
+    }
+
     //- PACKAGE
 
     JMSConnection() {
@@ -166,6 +266,8 @@ public class JMSConnection {
 
     private String id;
     private Integer version;
+    private AttributeExtensibleJMSProviderType providerType;
+    private AttributeExtensibleBoolean template;
     private Map<String,Object> properties;
     private Map<String,Object> contextPropertiesTemplate;
     private Extension extension;

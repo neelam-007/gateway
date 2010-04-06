@@ -25,9 +25,7 @@ import org.hibernate.annotations.Proxy;
 
 /**
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
- *
- * Persistent.
-  */
+ */
 @XmlRootElement
 @Entity
 @Proxy(lazy=false)
@@ -48,7 +46,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private JmsOutboundMessageType outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
     private boolean disabled;
     private boolean useMessageIdForCorrelation;
-    private boolean isTemplate;
+    private boolean template;
 
     public JmsEndpoint(){
     }
@@ -160,9 +158,9 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
-    @NotNull
+    @NotNull(groups=StandardValidationGroup.class)
     @Size(min=1,max=128)
-    @Column(name="destination_name", nullable=false, length=128)
+    @Column(name="destination_name", length=128)
     public String getDestinationName() {
         return _destinationName;
     }
@@ -260,6 +258,16 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         this.useMessageIdForCorrelation = useMessageIdForCorrelation;
     }
 
+    @Column(name="is_template")
+    public boolean isTemplate() {
+        return template;
+    }
+
+    public void setTemplate(final boolean template) {
+        checkLocked();
+        this.template = template;
+    }
+
     @Override
     public String toString() {
         return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
@@ -278,13 +286,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         throw new IllegalArgumentException("May only compare JmsEndpoint to other JmsEndpoints");
     }
 
-    @Column(name="is_template")
-    public boolean isTemplate() {
-        return isTemplate;
-    }
-
-    public void setTemplate(boolean template) {
-        checkLocked();
-        isTemplate = template;
-    }
+    /**
+     * Standard validation group with additional constraints for non-templates.
+     */
+    public interface StandardValidationGroup {}
 }
