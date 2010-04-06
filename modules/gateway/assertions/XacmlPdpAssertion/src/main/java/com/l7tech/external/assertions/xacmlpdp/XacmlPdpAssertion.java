@@ -171,16 +171,16 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
 
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES, new String[] {
-                "Maximum number of cached policies loaded from URLs (Integer)",
+                "Maximum number of cached policies loaded from URLs (Integer). Requires gateway restart.",
                 "100"
         });
         props.put(CPROP_XACML_POLICY_CACHE_MAX_AGE, new String[] {
-                "Maximum age to cache a downloaded policy before checking to see if it has been updated (Milliseconds)",
+                "Maximum age to cache a downloaded policy before checking to see if it has been updated (Milliseconds). Requires gateway restart.",
                 "300000"
         });
 
         props.put(XACML_PDP_MAX_DOWNLOAD_SIZE, new String[]{
-                "Maximum size in bytes of a XACML policy document download, or 0 for unlimited (Integer)",
+                "Maximum size in bytes of a XACML policy document download, or 0 for unlimited (Integer).",
                 "${documentDownload.maxSize}" } );
 
         meta.put(CLUSTER_PROPERTIES, props);
