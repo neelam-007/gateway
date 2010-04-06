@@ -771,10 +771,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 try {
                     if (systemId == null) {
                         String resolvedSystemId = generateURN(namespaceURI);
-                        if (! globalSchemasByUrl.containsKey(resolvedSystemId)) {
-                            throw new CausedIOException("No systemId, cannot resolve resource");
-                        } else {
+                        if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
                             systemId = resolvedSystemId;
+                        } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
+                            systemId = namespaceURI;
+                        } else {
+                            throw new CausedIOException("No systemId, cannot resolve resource");
                         }
                     }
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
@@ -916,10 +918,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 try {
                     if (systemId == null) {
                         String resolvedSystemId = generateURN(namespaceURI);
-                        if (! globalSchemasByUrl.containsKey(resolvedSystemId)) {
-                            throw new CausedIOException("No systemId, cannot resolve resource");
-                        } else {
+                        if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
                             systemId = resolvedSystemId;
+                        } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
+                            systemId = namespaceURI;
+                        } else {
+                            throw new CausedIOException("No systemId, cannot resolve resource");
                         }
                     }
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
