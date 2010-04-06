@@ -583,7 +583,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
             String url = assertion.getProtectedServiceUrl();
             if(url != null){
                 if(url.startsWith("https")) assertionName.append("S");
-                assertionName.append(" to ").append(url);
+                if (!url.trim().isEmpty()) assertionName.append(" to ").append(url);
             }
             return AssertionUtils.decorateName(assertion, assertionName.toString());
         }

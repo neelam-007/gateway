@@ -609,18 +609,21 @@ public class PathValidator {
     }
 
     private void processHttpRouting(HttpRoutingAssertion a) {
-        String url = a.getProtectedServiceUrl();
-        if (url == null) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              bundle.getString("routing.emptyurl"), null));
-        } else {
-            // only do this if the url has no context variables
-            if (url.indexOf("${") < 0) {
-                try {
-                    new URL(url);
-                } catch (MalformedURLException e) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      bundle.getString("routing.malformedurl"), null));
+        // If  the option "Use multiple URLs" is chosen, then we don't care what the main URL.is.
+        if (a.getCustomURLs() == null) {
+            String url = a.getProtectedServiceUrl();
+            if (url == null) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                    bundle.getString("routing.emptyurl"), null));
+            } else {
+                // only do this if the url has no context variables
+                if (url.indexOf("${") < 0) {
+                    try {
+                        new URL(url);
+                    } catch (MalformedURLException e) {
+                        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                            bundle.getString("routing.malformedurl"), null));
+                    }
                 }
             }
         }

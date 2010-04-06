@@ -598,19 +598,22 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         // check url before accepting
         String url = urlPanel.getText();
         boolean bad = false;
-        if (url == null || url.length() < 1) {
-            url = "<empty>";
-            bad = true;
-        }
-        try {
-            new URL(url);
-        } catch (MalformedURLException e1) {
-            bad = true;
-            // check if the url has context variables
-            if (url.indexOf("${") > -1) {
-                // a url may appear to be malformed simply because it relies
-                // on the runtime resolution of a context variable
-                bad = false;
+        // If the option "Use multiple URLs" is chosen, then we don't care what the main URL.is.
+        if (! ipListPanel.isURLsEnabled()) {
+            if (url == null || url.length() < 1) {
+                url = "<empty>";
+                bad = true;
+            }
+            try {
+                new URL(url);
+            } catch (MalformedURLException e1) {
+                bad = true;
+                // check if the url has context variables
+                if (url.indexOf("${") > -1) {
+                    // a url may appear to be malformed simply because it relies
+                    // on the runtime resolution of a context variable
+                    bad = false;
+                }
             }
         }
         if (bad) {
