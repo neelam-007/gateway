@@ -80,6 +80,9 @@ public class CreatePolicyAction extends SecureAction {
                     if (!(policy.getType() == PolicyType.INTERNAL)) {
                         String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                         policy.setXml( xml );
+                    } else if (policy.getXml() == null) {
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
+                        policy.setXml( xml );
                     }
                     policy.setFolder(((RootNode)root).getFolder());
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
