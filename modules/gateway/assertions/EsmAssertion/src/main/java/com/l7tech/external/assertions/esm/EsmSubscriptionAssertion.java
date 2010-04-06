@@ -1,6 +1,10 @@
 package com.l7tech.external.assertions.esm;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -17,7 +21,7 @@ import java.util.logging.Logger;
 
 /** User: megery */
 @SuppressWarnings({ "serial" })
-public class EsmSubscriptionAssertion extends Assertion implements UsesVariables, PolicyReference {
+public class EsmSubscriptionAssertion extends Assertion implements UsesVariables, UsesEntities, PolicyReference {
     protected static final Logger logger = Logger.getLogger(EsmSubscriptionAssertion.class.getName());
     private String notificationPolicyGuid;
     private transient Policy notificationPolicy;    
@@ -99,6 +103,23 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.OPTIONAL, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        GuidEntityHeader header = new GuidEntityHeader(notificationPolicyGuid, EntityType.POLICY, null, null, null);
+        header.setGuid( notificationPolicyGuid ); // MigrationManagerImpl.resolveHeader() should fill in the rest of the details
+        return new EntityHeader[] {
+            header
+        };
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if (!(newEntityHeader instanceof PolicyHeader)) throw new IllegalArgumentException("newEntityHeader is not a PolicyHeader");
+
+        notificationPolicyGuid = ((GuidEntityHeader) newEntityHeader).getGuid();
     }
 
     public static class Validator implements AssertionValidator {
