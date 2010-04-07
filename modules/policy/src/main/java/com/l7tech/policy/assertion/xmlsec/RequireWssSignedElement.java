@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -39,6 +40,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public RequireWssSignedElement(XpathExpression xpath) {
         super( TargetMessageType.REQUEST, false );
         setXpathExpression(xpath);
+        setAcceptedDigestAlgorithms(SupportedSignatureMethods.getDigestNames());
     }
 
     @Override
@@ -109,6 +111,24 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         }
     }
 
+    public boolean acceptsDigest(String digestAlgorithmName) {
+        return acceptedDigests.contains(digestAlgorithmName);
+    }
+
+    public void setAcceptedDigestAlgorithms(String[] accepted) {
+        if (accepted != null) {
+            HashSet<String> acceptedDigests = new HashSet<String>();
+            for (String digest : accepted) {
+                acceptedDigests.addAll(SupportedSignatureMethods.getDigestAliases(digest));
+            }
+            this.acceptedDigests = acceptedDigests;
+        }
+    }
+
+    public String[] getAcceptedDigestAlgorithms() {
+        return acceptedDigests == null ? new String[0] : acceptedDigests.toArray(new String[acceptedDigests.size()]);
+    }
+
     final static String baseName = "Require Signed Element";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssSignedElement>(){
@@ -160,6 +180,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     private String variablePrefix;
     private String signedElementsVariable;
     private IdentityTarget identityTarget;
+    private Set<String> acceptedDigests;
 
     private boolean isSetVariables() {
         return variablePrefix != null && variablePrefix.length() > 0;        

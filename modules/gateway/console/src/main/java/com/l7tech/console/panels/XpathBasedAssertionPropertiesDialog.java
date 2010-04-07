@@ -145,6 +145,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JRadioButton encIssuerSerialReferenceRadioButton;
     private JPanel encryptionResponseConfigPanel;
     private JRadioButton encSkiReferenceRadioButton;
+    private JPanel signaturesAceptedPanel;
+    private JCheckBox acceptSha1;
+    private JCheckBox acceptSha256;
+    private JCheckBox acceptSha384;
+    private JCheckBox acceptSha512;
+    private List<JCheckBox> acceptedDigestCheckboxes;
     private final boolean showHardwareAccelStatus;
     private boolean wasOk = false;
 
@@ -556,6 +562,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         initializeEncryptionConfig();
         initializeResponseEncryptionConfig();
+        initializeRequireSignatureConfig();
         initializeResponseSignatureConfig();
         setModal(true);
         namespaceButton.addActionListener(new ActionListener() {
@@ -632,6 +639,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                     } else {
                         ((RequireWssSignedElement)assertion).setVariablePrefix( null );
                     }
+                    ((RequireWssSignedElement)assertion).setAcceptedDigestAlgorithms(collectAcceptedDigests());
                 }
 
                 if (assertion instanceof ResponseXpathAssertion) {
@@ -777,6 +785,26 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         setTitle(title);
     }
 
+    private void initializeRequireSignatureConfig() {
+        acceptedDigestCheckboxes = new ArrayList<JCheckBox>();
+        if (assertion instanceof RequireWssSignedElement) {
+            signaturesAceptedPanel.setVisible(true);
+            acceptSha1.setText(SupportedSignatureMethods.RSA_SHA1.getDigestAlgorithmName());
+            acceptedDigestCheckboxes.add(acceptSha1);
+            acceptSha256.setText(SupportedSignatureMethods.RSA_SHA256.getDigestAlgorithmName());
+            acceptedDigestCheckboxes.add(acceptSha256);
+            acceptSha384.setText(SupportedSignatureMethods.RSA_SHA384.getDigestAlgorithmName());
+            acceptedDigestCheckboxes.add(acceptSha384);
+            acceptSha512.setText(SupportedSignatureMethods.RSA_SHA512.getDigestAlgorithmName());
+            acceptedDigestCheckboxes.add(acceptSha512);
+            for(JCheckBox digest : acceptedDigestCheckboxes) {
+                digest.setSelected(((RequireWssSignedElement)assertion).acceptsDigest(digest.getText()));
+            }
+        } else {
+            signaturesAceptedPanel.setVisible(false);
+        }
+    }
+
     private void initializeResponseSignatureConfig() {
         if (!(assertion instanceof WssSignElement)) {
             signatureResponseConfigPanel.setVisible(false);
@@ -888,6 +916,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             requestWssConfidentiality.setXEncAlgorithmList(xencAlgorithmList);
         }
         return true;
+    }
+
+    private String[] collectAcceptedDigests() {
+        List<String> result = new ArrayList<String>();
+        for(JCheckBox maybeAccepted : acceptedDigestCheckboxes) {
+            if (maybeAccepted.isSelected()) result.add(maybeAccepted.getText());
+        }
+        return result.toArray(new String[result.size()]);
     }
 
     private void collectResponseSignatureConfig() {

@@ -24,4 +24,11 @@ public interface SignedElement extends ParsedElement {
      * @return the signature Element.
      */
     Element getSignatureElement();
+
+    /**
+     * Get the signing algorithm used with this signed element.
+     *
+     * @return the signature algorithm identifier
+     */
+    String getSignatureAlgorithmId();
 }

@@ -1931,6 +1931,7 @@ public class WssProcessorImpl implements WssProcessor {
             final SamlAssertion samlToken = SamlAssertion.newInstance(securityTokenElement, securityTokenResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
+                final String signatureAlgorithmId = DsigUtil.findSigAlgorithm(samlToken.getEmbeddedIssuerSignature());
 
                 class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
                     public EmbeddedSamlSignatureToken() {
@@ -1970,6 +1971,11 @@ public class WssProcessorImpl implements WssProcessor {
                             @Override
                             public Element asElement() {
                                 return samlToken.asElement();
+                            }
+
+                            @Override
+                            public String getSignatureAlgorithmId() {
+                                return signatureAlgorithmId;
                             }
                         };
 
@@ -2210,7 +2216,7 @@ public class WssProcessorImpl implements WssProcessor {
                     elementCovered = targetElement;
                 }
                 // make reference to this element
-                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered, sigElement);
+                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered, sigElement, DsigUtil.findSigAlgorithm(sigElement));
                 elementsThatWereSigned.add(signedElement);
                 signingSecurityToken.addSignedElement(signedElement);
             } else {
@@ -2317,11 +2323,13 @@ public class WssProcessorImpl implements WssProcessor {
         private final SigningSecurityToken signingToken;
         private final Element element;
         private final Element signatureElement;
+        private final String signatureAlgorithmId;
 
-        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement) {
+        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement, String signatureAlgorithmId) {
             this.signingToken = signingToken;
             this.element = element;
             this.signatureElement = signatureElement;
+            this.signatureAlgorithmId = signatureAlgorithmId;
         }
 
         @Override
@@ -2337,6 +2345,11 @@ public class WssProcessorImpl implements WssProcessor {
         @Override
         public Element getSignatureElement() {
             return signatureElement;
+        }
+
+        @Override
+        public String getSignatureAlgorithmId() {
+            return signatureAlgorithmId;
         }
     }
 

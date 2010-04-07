@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.*;
+import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
@@ -14,6 +15,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Arrays;
@@ -85,7 +88,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                         wssResults,
                         new ParsedElement[0], // we validate that the right elements are signed elsewhere
                         requireCredentialSigningToken
-                    );
+                    ) &&
+                    isAcceptedSignatureDigestAlgorithms(elements);
         }
 
         return valid;
@@ -109,10 +113,24 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                        assertion.getIdentityTarget(),
                        wssResults,
                        elementsToCheck.toArray(new ParsedElement[elementsToCheck.size()])
-                   );
+                   ) &&
+                   isAcceptedSignatureDigestAlgorithms(elements);
         }
 
         return valid;
+    }
+
+    private boolean isAcceptedSignatureDigestAlgorithms(ParsedElement[] elements) {
+        for(ParsedElement pe : elements) {
+            if (pe instanceof SignedElement) {
+                SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromSignatureAlgorithm(((SignedElement) pe).getSignatureAlgorithmId());
+                if ( ! assertion.acceptsDigest(sigMethod.getDigestAlgorithmName()) ) {
+                    logger.log(Level.INFO, "Digest algorithm not accepted: " + sigMethod.getDigestAlgorithmName());
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override

@@ -354,6 +354,15 @@ public class DsigUtil {
         }
     }
 
+    public static String findSigAlgorithm(Element sigElement) throws SignatureException {
+        try {
+            Element sigMethod = findSigMethod(sigElement);
+            return sigMethod.getAttribute("Algorithm");
+        } catch (InvalidDocumentFormatException e) {
+            throw new SignatureException(e);
+        }
+    }
+
     private static Element findSigMethod(Element sigElement) throws InvalidDocumentFormatException {
         if (sigElement == null) throw new IllegalArgumentException("need sigElement");
         Element signedInfo = DomUtils.findExactlyOneChildElementByName(sigElement, SoapUtil.DIGSIG_URI, "SignedInfo");
