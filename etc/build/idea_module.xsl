@@ -4,6 +4,7 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <!-- Parameters for customizing options -->
+    <xsl:param name="build"/> <!-- file containing ANT build for module -->
     <xsl:param name="data"/> <!-- file containing ivy dependency report -->
     <xsl:param name="modulemeta"/> <!-- Javadoc URLs etc for libraries -->
     <xsl:param name="source">false</xsl:param>
@@ -18,11 +19,26 @@
     <xsl:variable name="ivy-module-report" select="document($data)/modules"/>
     <xsl:variable name="modulemetadoc" select="document($modulemeta)"/>
     <xsl:variable name="idea-modules" select="/module/component[@name = 'NewModuleRootManager']"/>
+    <xsl:variable name="build-properties" select="document($build)/project"/>
 
     <!-- Process the main module component -->
     <xsl:template match="/module/component[@name = 'NewModuleRootManager']">
         <!-- copy existing -->
         <xsl:copy>
+            <xsl:if test="$build-properties/property[@name = 'module.compile.source']">
+                <xsl:choose>
+                    <xsl:when test="$build-properties/property[@name = 'module.compile.source' and @value = '1.3']">
+                        <xsl:attribute name="LANGUAGE_LEVEL">JDK_1_3</xsl:attribute>
+                    </xsl:when>
+                    <xsl:when test="$build-properties/property[@name = 'module.compile.source' and @value = '1.4']">
+                        <xsl:attribute name="LANGUAGE_LEVEL">JDK_1_4</xsl:attribute>
+                    </xsl:when>
+                    <xsl:when test="$build-properties/property[@name = 'module.compile.source' and @value = '1.5']">
+                        <xsl:attribute name="LANGUAGE_LEVEL">JDK_1_5</xsl:attribute>
+                    </xsl:when>
+                </xsl:choose>
+            </xsl:if>
+
             <xsl:apply-templates select="*[local-name() != 'content' and local-name() != 'orderEntry']|@*|text()|processing-instruction()|comment()"/>
 
             <content url="file://$MODULE_DIR$">
