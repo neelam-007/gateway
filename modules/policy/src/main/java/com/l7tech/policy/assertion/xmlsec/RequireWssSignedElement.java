@@ -117,7 +117,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
 
     public void setAcceptedDigestAlgorithms(String[] accepted) {
         if (accepted != null) {
-            HashSet<String> acceptedDigests = new HashSet<String>();
+            Set<String> acceptedDigests = new LinkedHashSet<String>();
             for (String digest : accepted) {
                 acceptedDigests.addAll(SupportedSignatureMethods.getDigestAliases(digest));
             }

@@ -60,6 +60,11 @@ public class ServerWsAddressingAssertionTest {
                     public Element getSignatureElement() {
                         return null;
                     }
+
+                    @Override
+                    public String getSignatureAlgorithmId() {
+                        return null;
+                    }
                 });
             }
             node = node.getNextSibling();
