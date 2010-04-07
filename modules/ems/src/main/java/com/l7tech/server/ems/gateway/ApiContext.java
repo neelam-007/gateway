@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.gateway;
 
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -19,6 +20,7 @@ import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicReference;
@@ -177,6 +179,12 @@ public abstract class ApiContext {
         policy.setConnectionTimeout( connectionTimeout );
         policy.setReceiveTimeout( readTimeout );
         hc.setTlsClientParameters(new TLSClientParameters() {
+            @Override
+            public String getJsseProvider() {
+                final Provider provider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10);
+                return provider == null ? null : provider.getName();
+            }
+
             @Override
             public TrustManager[] getTrustManagers() {
                 return new TrustManager[] { new X509TrustManager() {
