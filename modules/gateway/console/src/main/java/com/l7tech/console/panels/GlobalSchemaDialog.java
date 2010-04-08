@@ -455,8 +455,7 @@ public class GlobalSchemaDialog extends JDialog {
     private void remove() {
         SchemaEntry schemasToBeDeleted = globalSchemas.get(schemaTable.getSelectedRow());
         Object[] options = {"Remove", "Cancel"};
-        String message = "Are you sure you want to remove the selected schema?\n" + schemasToBeDeleted.getName() +
-                "\nThis action cannot be undone.";
+        String message = "Are you sure you want to remove the selected schema?\n" + schemasToBeDeleted.getName();
 
         final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
         final Object object;
