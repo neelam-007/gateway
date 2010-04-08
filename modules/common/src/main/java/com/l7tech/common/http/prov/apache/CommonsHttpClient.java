@@ -257,6 +257,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             case DELETE:
                 httpMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile()));
                 break;
+            case HEAD:
+                httpMethod = new HeadMethod(encodePathAndQuery(targetUrl.getFile()));
+                break;
             default:
                 throw new IllegalStateException("Method " + method + " not supported");
         }
