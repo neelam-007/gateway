@@ -63,6 +63,12 @@ public class ClientRequestWssIntegrity extends ClientDomXpathBasedAssertion<Requ
             // We must have credentials to get the private key
             DecorationRequirements wssReqs = context.getWssRequirements(data);
             wssReqs.getElementsToSign().addAll(elements);
+
+            String[] digs = data.getAcceptedDigestAlgorithms();
+            if (digs != null && digs.length > 0) {
+                wssReqs.setSignatureMessageDigest(digs[0]);
+            }
+
             return AssertionStatus.NONE;
         } catch (JaxenException e) {
             throw new PolicyAssertionException(data, "ClientRequestWssIntegrity: " +
