@@ -55,7 +55,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
-    private static final int OLD_DERIVED_KEY_LENGTH = 16;
+    private static final int OLD_DERIVED_KEY_LENGTH = SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultDerivedKeyLengthInBytes", 32);
 
     private static final Random rand = new SecureRandom();
 
@@ -577,31 +577,16 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session == null)
             throw new DecoratorException("Encryption is requested with SecureConversationSession, but session is null");
         DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
-        XencUtil.XmlEncKey encKey;
-        if (derivedKeyToken.derivedKey.length == 32) {
-            encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, derivedKeyToken.derivedKey);
-        } else if (derivedKeyToken.derivedKey.length == 16) {
-            encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, derivedKeyToken.derivedKey);
-        } else {
-            throw new DecoratorException("unexpected key length");
-        }
+        XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey);
 
         String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
-        if (derivedKeyToken.derivedKey.length == 32) {
-            addEncryptedReferenceList(c,
-                                      securityHeader,
-                                      xencDesiredNextSibling,
-                                      elementsToEncrypt,
-                                      encKey,
-                                      KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
-        } else {
-            addEncryptedReferenceList(c,
-                                      securityHeader,
-                                      xencDesiredNextSibling,
-                                      elementsToEncrypt,
-                                      encKey,
-                                      KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
-        }
+        String valueTypeUri = c.nsf.getWsscNs().equals(SoapConstants.WSSC_NAMESPACE2) ? SoapConstants.VALUETYPE_DERIVEDKEY2 : SoapConstants.VALUETYPE_DERIVEDKEY;
+        addEncryptedReferenceList(c,
+                                  securityHeader,
+                                  xencDesiredNextSibling,
+                                  elementsToEncrypt,
+                                  encKey,
+                                  KeyInfoDetails.makeUriReference(dktId, valueTypeUri));
     }
 
     private SignatureInfo processGeneratedEncryptedKeySigningToken( final Context c,

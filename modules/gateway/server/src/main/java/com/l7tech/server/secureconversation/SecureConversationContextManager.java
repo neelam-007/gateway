@@ -1,11 +1,12 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.util.SyspropUtil;
 
 import java.security.SecureRandom;
 import java.util.Collection;
@@ -84,7 +85,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
             tmp = generateNewSecret(32);
         } else {
-            tmp = generateNewSecret(16);
+            tmp = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
         }
         final byte[] sharedSecret = tmp;
         String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();

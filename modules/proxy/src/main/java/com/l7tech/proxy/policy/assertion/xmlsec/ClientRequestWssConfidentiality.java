@@ -31,7 +31,6 @@ import java.util.logging.Logger;
  * <br/><br/>
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
- * $Id$
  */
 public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertion<RequireWssEncryptedElement> {
     private static final Logger log = Logger.getLogger(ClientRequestWssConfidentiality.class.getName());
@@ -70,9 +69,9 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
             wssReqs.getElementsToEncrypt().addAll(elements);
             if (data.getXEncAlgorithm() !=null) {
                 wssReqs.setEncryptionAlgorithm(data.getXEncAlgorithm());
-                if (data.getKeyEncryptionAlgorithm() != null) {
-                    wssReqs.setKeyEncryptionAlgorithm(data.getKeyEncryptionAlgorithm());
-                }
+            }
+            if (data.getKeyEncryptionAlgorithm() != null) {
+                wssReqs.setKeyEncryptionAlgorithm(data.getKeyEncryptionAlgorithm());
             }
             return AssertionStatus.NONE;
         } catch (JaxenException e) {

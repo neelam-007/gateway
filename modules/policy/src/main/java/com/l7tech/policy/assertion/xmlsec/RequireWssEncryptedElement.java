@@ -1,20 +1,20 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.validator.ValidatorFlag;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.xml.xpath.XpathExpression;
 
-import java.util.List;
-import java.util.Set;
-import java.util.EnumSet;
+import java.util.*;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Enforces the XML security on the message elements or entire message
  * 
- * @author flascell<br/>
+ * @author flascell
  * @version Aug 27, 2003<br/>
  */
 public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
@@ -33,40 +33,40 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
      * @return the encrytion algorithm with the highest preference.
      */
     public String getXEncAlgorithm() {
-        // It is guranteed that xEncAlgorithmWithHighestPref is the one with highest preference, since the
-        // methods setXEncAlgorithm and setXEncAlgorithmList always update the new  xEncAlgorithmWithHighestPref.
-        return xEncAlgorithmWithHighestPref;
+        return xEncAlgorithmList == null || xEncAlgorithmList.isEmpty() ? XencUtil.AES_128_CBC : xEncAlgorithmList.iterator().next();
     }
 
     public List<String> getXEncAlgorithmList() {
-        return xEncAlgorithmList;
+        return xEncAlgorithmList == null ? null : new ArrayList<String>(xEncAlgorithmList);
     }
 
     /**
      * Set the xml encryption algorithm with the highest preference.
-     * @param xEncAlgorithm
+     * @param xEncAlgorithm the algorithm URI to set as highest-preference.  Required.
      */
     public void setXEncAlgorithm(String xEncAlgorithm) {
         if (xEncAlgorithm == null) throw new IllegalArgumentException();
-        if (xEncAlgorithmList != null) {
-            // Add the algorithm into the list if the algorithm is not in the list.
-            if (! xEncAlgorithmList.contains(xEncAlgorithm)) xEncAlgorithmList.add(xEncAlgorithm);
-            // Update the encryption algorithm with the highest preference
-            xEncAlgorithmWithHighestPref = findAlgWithHighestPreference();
+        if (xEncAlgorithmList == null) {
+            // Set list to single algorithm
+            initXEncAlgorithmList(Arrays.asList(xEncAlgorithm));
         } else {
-            xEncAlgorithmWithHighestPref = xEncAlgorithm;
+            // Bring preferred algorithm to front of list
+            xEncAlgorithmList.remove(xEncAlgorithm);
+            initXEncAlgorithmList(Arrays.asList(ArrayUtils.unshift(xEncAlgorithmList.toArray(new String[xEncAlgorithmList.size()]), xEncAlgorithm)));
         }
     }
 
     /**
      * Update the encryption algorithm list.  It is important to update the algorithm with the highest preference.
-     * @param newList
+     * @param newList the new list of algorithms to use.  Required.
      */
     public void setXEncAlgorithmList(List<String> newList) {
         if (newList == null) throw new IllegalArgumentException();
-        xEncAlgorithmList = newList;
-        // Update the encryption algorithm with the highest preference
-        xEncAlgorithmWithHighestPref = findAlgWithHighestPreference();
+        initXEncAlgorithmList(newList);
+    }
+
+    private void initXEncAlgorithmList(Collection<String> newList) {
+        xEncAlgorithmList = new LinkedHashSet<String>(newList);
     }
 
     public String getKeyEncryptionAlgorithm() {
@@ -118,29 +118,6 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
         return meta;
     }
 
-    private String findAlgWithHighestPreference() {
-        if (xEncAlgorithmList.isEmpty()) {
-            xEncAlgorithmWithHighestPref = XencUtil.AES_128_CBC;
-            xEncAlgorithmList.add(XencUtil.AES_128_CBC);
-            return XencUtil.AES_128_CBC;
-        }
-
-        if (xEncAlgorithmList.contains(XencUtil.AES_128_CBC)) {
-            return XencUtil.AES_128_CBC;
-        } else if (xEncAlgorithmList.contains(XencUtil.AES_192_CBC)) {
-            return XencUtil.AES_192_CBC;
-        }
-         else if (xEncAlgorithmList.contains(XencUtil.AES_256_CBC)) {
-            return XencUtil.AES_256_CBC;
-        }
-         else if (xEncAlgorithmList.contains(XencUtil.TRIPLE_DES_CBC)) {
-            return XencUtil.TRIPLE_DES_CBC;
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
-    
-    private String xEncAlgorithmWithHighestPref = XencUtil.AES_128_CBC; // The encryption algorithm wiht the highese preference
     private String xencKeyAlgorithm;
-    private List<String> xEncAlgorithmList; // Store all encrption algorithms user chose
+    private Set<String> xEncAlgorithmList; // Store all encrption algorithms user chose
 }
