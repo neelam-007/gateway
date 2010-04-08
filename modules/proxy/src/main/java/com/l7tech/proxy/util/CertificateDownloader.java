@@ -84,7 +84,7 @@ public class CertificateDownloader {
         logger.fine("Gateway certificate discovery service returned status " + result.getStatus() + " " + (ctype == null ? "(no Content-Type)" : ctype.toString()));
 
         if (result.getStatus() != 200) {
-            String msg = new String(certBytes, 0, Math.min(certBytes.length, 400), ctype == null ? Charsets.UTF8 : ctype.getEncoding());
+            String msg = new String(certBytes, 0, Math.min(certBytes.length, 900), ctype == null ? Charsets.UTF8 : ctype.getEncoding());
             throw new IOException("Gateway certificate discovery service returned an unexpected error: " + msg);
         }
         X509Certificate cert = CertUtils.decodeCert(certBytes);
