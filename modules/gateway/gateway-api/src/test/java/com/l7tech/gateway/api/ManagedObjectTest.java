@@ -149,7 +149,7 @@ public class ManagedObjectTest {
 
     @Test
     public void testJMSDestinationSerialization() throws Exception {
-        final JMSDestinationDetails jmsDestinationDetails = ManagedObjectFactory.createJMSDestinationDetails();
+        final JMSDestinationDetail jmsDestinationDetails = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDestinationDetails.setId( "1" );
         jmsDestinationDetails.setVersion( 0 );
         jmsDestinationDetails.setEnabled( true );
@@ -167,21 +167,21 @@ public class ManagedObjectTest {
         final JMSDestinationMO jmsDestination = ManagedObjectFactory.createJMSDestination();
         jmsDestination.setId( "1" );
         jmsDestination.setVersion( 0 );
-        jmsDestination.setJmsDestinationDetails( jmsDestinationDetails );
+        jmsDestination.setJmsDestinationDetail( jmsDestinationDetails );
         jmsDestination.setJmsConnection( jmsConnection );
 
         final JMSDestinationMO roundTripped = roundTrip( jmsDestination );
         assertEquals("id", "1", roundTripped.getId());
         assertEquals("version", Integer.valueOf( 0 ), roundTripped.getVersion());
-        assertNotNull("details", roundTripped.getJmsDestinationDetails());
+        assertNotNull("details", roundTripped.getJmsDestinationDetail());
         assertNotNull("connection", roundTripped.getJmsConnection());
         
-        assertEquals("details id", "1", roundTripped.getJmsDestinationDetails().getId());
-        assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsDestinationDetails().getVersion());
-        assertEquals("details enabled", true, roundTripped.getJmsDestinationDetails().isEnabled());
-        assertEquals("details destination name", "queue", roundTripped.getJmsDestinationDetails().getDestinationName());
-        assertEquals("details inbound", false, roundTripped.getJmsDestinationDetails().isInbound());
-        assertEquals("details properties",Collections.<String,Object>singletonMap( "p1", "" ), roundTripped.getJmsDestinationDetails().getProperties());
+        assertEquals("details id", "1", roundTripped.getJmsDestinationDetail().getId());
+        assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsDestinationDetail().getVersion());
+        assertEquals("details enabled", true, roundTripped.getJmsDestinationDetail().isEnabled());
+        assertEquals("details destination name", "queue", roundTripped.getJmsDestinationDetail().getDestinationName());
+        assertEquals("details inbound", false, roundTripped.getJmsDestinationDetail().isInbound());
+        assertEquals("details properties",Collections.<String,Object>singletonMap( "p1", "" ), roundTripped.getJmsDestinationDetail().getProperties());
 
         assertEquals("details id", "1", roundTripped.getJmsConnection().getId());
         assertEquals("details version", Integer.valueOf( 0 ), roundTripped.getJmsConnection().getVersion());

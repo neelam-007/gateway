@@ -4,12 +4,13 @@ FolderMO
 IdentityProviderMO
 JDBCConnectionMO
 JMSConnection
-JMSDestinationDetails
+JMSDestinationDetail
 JMSDestinationMO
 PolicyDetail
 PolicyExportResult
 PolicyImportResult
 PolicyMO
+PolicyReferenceInstruction
 PolicyValidationContext
 PolicyValidationResult
 PrivateKeyMO

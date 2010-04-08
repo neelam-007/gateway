@@ -98,6 +98,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
 
         policyRes.setId( policy.getId() );
+        policyRes.setGuid( policy.getGuid() );
         policyRes.setPolicyDetail( policyDetail );
         final List<ResourceSet> resourceSets = new ArrayList<ResourceSet>();
         policyRes.setResourceSets( resourceSets );

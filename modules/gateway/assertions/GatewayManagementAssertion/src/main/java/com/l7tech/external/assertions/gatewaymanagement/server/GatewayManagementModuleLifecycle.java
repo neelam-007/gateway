@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +40,6 @@ import java.util.logging.Logger;
 /**
  * Module initialization for the GatewayManagementAssertion module.
  */
-@SuppressWarnings({"serial"})
 public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     //- PUBLIC
@@ -88,6 +88,42 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         if ( event instanceof LicenseEvent) {
             handleLicenceEvent();
         }
+    }
+
+    //- PACKAGE
+
+    static ServiceTemplate createServiceTemplate() {
+        ServiceTemplate template = null;
+
+        try {
+            String url = FAKE_URL_PREFIX + "gateway-management.wsdl";
+
+            final WsdlEntityResolver entityResolver = new WsdlEntityResolver(true);
+            final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+            final Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
+                @Override
+                public String resolve(final String resourceUrl) throws IOException {
+                    String resource = resourceUrl;
+                    if ( resource.startsWith(FAKE_URL_PREFIX) ) {
+                        resource = resourceUrl.substring(FAKE_URL_PREFIX.length());
+                    }
+                    String content = loadMyResource( resource, entityResolver );
+                    return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, entityResolver.failOnMissing(), false, true);
+                }
+            } );
+
+            final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
+                    ResourceTrackingWSDLLocator.toWSDLResources(url, contents, false, false, false);
+
+            final List<ServiceDocument> svcDocs = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
+
+            String policyContents = getDefaultPolicyXml();
+            template = new ServiceTemplate("Gateway Management Service", "/wsman", contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, null);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
+        }
+
+        return template;
     }
 
     //- PRIVATE
@@ -142,40 +178,6 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         unregisterService(serviceTemplate);
     }
 
-    private ServiceTemplate createServiceTemplate() {
-        ServiceTemplate template = null;
-
-        try {
-            String url = FAKE_URL_PREFIX + "gateway-management.wsdl";
-
-            final WsdlEntityResolver entityResolver = new WsdlEntityResolver(true);
-            final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-            final Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
-                @Override
-                public String resolve(final String resourceUrl) throws IOException {
-                    String resource = resourceUrl;
-                    if ( resource.startsWith(FAKE_URL_PREFIX) ) {
-                        resource = resourceUrl.substring(FAKE_URL_PREFIX.length());
-                    }
-                    String content = loadMyResource( resource, entityResolver );
-                    return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, entityResolver.failOnMissing(), false, true);
-                }
-            } );
-
-            final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
-                    ResourceTrackingWSDLLocator.toWSDLResources(url, contents, false, false, false);
-
-            final List<ServiceDocument> svcDocs = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
-
-            String policyContents = getDefaultPolicyXml();
-            template = new ServiceTemplate("Gateway Management Service", "/wsman", contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, null);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
-        }
-
-        return template;
-    }
-
     private void registerService( final ServiceTemplate svcTemplate ) {
         if (svcTemplate == null) return;
 
@@ -190,7 +192,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         serviceTemplateManager.unregister(svcTemplate);
     }
 
-    private String loadMyResource( final String resource, final EntityResolver resolver ) throws IOException {
+    private static String loadMyResource( final String resource, final EntityResolver resolver ) throws IOException {
         byte[] bytes = null;
 
         InputSource in = null;
@@ -216,15 +218,18 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
             logger.fine("Loading WSDL resource '" + resource + "' as '" + resourcePath +"'.");
 
-            bytes = IOUtils.slurpUrl(getClass().getResource("serviceTemplate/" + resourcePath));
+            final String resourceName = "serviceTemplate/" + resourcePath;
+            final URL resourceUrl = GatewayManagementModuleLifecycle.class.getResource(resourceName);
+            if ( resourceUrl == null ) {
+                throw new IOException( "Missing resource '"+resourceName+"'" );
+            }
+            bytes = IOUtils.slurpUrl( resourceUrl );
         }
 
         return HexUtils.decodeUtf8(bytes);
     }
 
-
-
-    private String getDefaultPolicyXml() throws IOException {
+    private static String getDefaultPolicyXml() throws IOException {
         final AuthenticationAssertion authenticationAssertion = new AuthenticationAssertion();
         authenticationAssertion.setIdentityProviderOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID );
         final Assertion allAss = new AllAssertion( Arrays.asList(

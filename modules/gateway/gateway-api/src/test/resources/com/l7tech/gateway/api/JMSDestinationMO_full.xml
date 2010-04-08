@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <JMSDestination xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="48037888" extendedAttribute="extension">
-    <JMSDestinationDetails version="0" id="48037888" extendedAttribute="extension">
+    <JMSDestinationDetail version="0" id="48037888" extendedAttribute="extension">
         <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">VGate Logging Queue</Name>
         <DestinationName other:extendedAttribute="extension" xmlns:other="urn:othernamespace">cn=VgateLoggingQ</DestinationName>
         <Inbound other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Inbound>
@@ -17,7 +17,7 @@
                 <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</BooleanValue>
             </Property>
         </Properties>
-    </JMSDestinationDetails>
+    </JMSDestinationDetail>
     <JMSConnection version="0" id="48005120" extendedAttribute="extension">
         <ProviderType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TIBCO EMS</ProviderType>
         <Template other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Template>
@@ -25,7 +25,7 @@
             <Property key="jndi.initialContextFactoryClassname">
                 <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>
             </Property>
-            <Property key="jndi.url">
+            <Property key="jndi.providerUrl">
                 <StringValue>ldap://127.0.0.1/cn=uat,cn=wmqjndi</StringValue>
             </Property>
             <Property key="queue.connectionFactoryName">

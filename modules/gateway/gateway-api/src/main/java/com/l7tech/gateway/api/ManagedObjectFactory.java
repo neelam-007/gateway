@@ -194,8 +194,8 @@ public class ManagedObjectFactory {
      *
      * @return The new instance.
      */
-    public static JMSDestinationDetails createJMSDestinationDetails() {
-        return new JMSDestinationDetails();
+    public static JMSDestinationDetail createJMSDestinationDetails() {
+        return new JMSDestinationDetail();
     }
 
     /**

@@ -32,6 +32,12 @@ public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry,Entity
 
     @Override
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
-        return Collections.emptySet();
+        final SchemaEntry schema = findByUniqueName( schemaName );
+        return schema == null ? Collections.<SchemaEntry>emptyList() : Collections.singletonList( schema );
+    }
+
+    @Override
+    public Class<? extends Entity> getImpClass() {
+        return SchemaEntry.class;
     }
 }

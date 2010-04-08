@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -22,6 +23,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -78,6 +80,19 @@ import javax.xml.soap.SOAPConstants;
 public class ServerGatewayManagementAssertionTest {
 
     //- PUBLIC
+
+    @Test
+    public void testServiceTemplate() {
+        // This test is only expected to work if the WSDL has been built / packaged
+        if ( GatewayManagementModuleLifecycle.class.getResource("serviceTemplate/gateway-management.wsdl") != null ) {
+            final ServiceTemplate template = GatewayManagementModuleLifecycle.createServiceTemplate();
+            assertNotNull("Service template null", template);
+            assertNotNull("Policy xml null", template.getDefaultPolicyXml());
+            assertEquals("Default URI", "/wsman", template.getDefaultUriPrefix());
+        } else {
+            System.out.println("Test skipped, module not packaged.");
+        }
+    }
 
     @Test
     public void testIdentify() throws Exception {
@@ -260,12 +275,12 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
         String payload =
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
                 "        <Name>QueueName</Name>\n" +
                 "        <DestinationName>QueueName</DestinationName>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
-                "    </JMSDestinationDetails>\n" +
+                "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <Properties>\n" +
                 "            <Property key=\"jndi.initialContextFactoryClassname\">\n" +
@@ -288,12 +303,12 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
         String payload =
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
                 "        <Name>QueueName</Name>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
                 "        <Template>true</Template>\n" +
-                "    </JMSDestinationDetails>\n" +
+                "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <ProviderType>TIBCO EMS</ProviderType>" +
                 "        <Template>true</Template>\n" +
@@ -307,12 +322,12 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
         String payload = // payload with missing destination name
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
                 "        <Name>QueueName</Name>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
                 "        <Template>false</Template>\n" +
-                "    </JMSDestinationDetails>\n" +
+                "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <Template>true</Template>\n" +
                 "    </JMSConnection>\n" +
@@ -325,12 +340,12 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
         String payload = // payload with missing JMS connection properties
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
                 "        <Name>QueueName</Name>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
                 "        <Template>true</Template>\n" +
-                "    </JMSDestinationDetails>\n" +
+                "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
@@ -342,12 +357,12 @@ public class ServerGatewayManagementAssertionTest {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
         String payload = // payload invalid JMS provider type
                 "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <JMSDestinationDetails version=\"0\" id=\"48037888\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
                 "        <Name>QueueName</Name>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
                 "        <Template>true</Template>\n" +
-                "    </JMSDestinationDetails>\n" +
+                "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <ProviderType>bad</ProviderType>" +
                 "        <Template>true</Template>\n" +
@@ -379,12 +394,12 @@ public class ServerGatewayManagementAssertionTest {
                 "<ResourceDocument xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "    <Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema targetNamespace=\"urn:books2\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</Resource>\n" +
                 "</ResourceDocument>";
-        String expectedId = "2";
+        String expectedId = "3";
         doCreate( resourceUri, payload, expectedId );
     }
 
     @Test
-    public void testPut() throws Exception {
+    public void testPutClusterProperty() throws Exception {
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:ClusterProperty id=\"1\" version=\"0\"><n1:Name>test</n1:Name><n1:Value>value2</n1:Value></n1:ClusterProperty>  </s:Body></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
@@ -394,6 +409,117 @@ public class ServerGatewayManagementAssertionTest {
         final Element value = XmlUtil.findExactlyOneChildElementByName(clusterProperty, NS_GATEWAY_MANAGEMENT, "Value");
 
         assertEquals("Property value", "value2", XmlUtil.getTextValue(value));
+    }
+
+    @Test
+    public void testPutJmsDestination() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+              "    <l7:JMSDestination id=\"1\" version=\"0\">\n" +
+              "        <l7:JMSDestinationDetail id=\"1\" version=\"0\">\n" +
+              "            <l7:Name>Test Endpoint 1</l7:Name>\n" +
+              "            <l7:DestinationName>Test Endpoint</l7:DestinationName>\n" +
+              "            <l7:Inbound>false</l7:Inbound>\n" +
+              "            <l7:Enabled>true</l7:Enabled>\n" +
+              "            <l7:Template>false</l7:Template>\n" +
+              "            <l7:Properties>\n" +
+              "                <l7:Property key=\"replyType\">\n" +
+              "                    <l7:StringValue>AUTOMATIC</l7:StringValue>\n" +
+              "                </l7:Property>\n" +
+              "                <l7:Property key=\"outbound.MessageType\">\n" +
+              "                    <l7:StringValue>AUTOMATIC</l7:StringValue>\n" +
+              "                </l7:Property>\n" +
+              "                <l7:Property key=\"useRequestCorrelationId\">\n" +
+              "                    <l7:BooleanValue>false</l7:BooleanValue>\n" +
+              "                </l7:Property>\n" +
+              "            </l7:Properties>\n" +
+              "        </l7:JMSDestinationDetail>\n" +
+              "        <l7:JMSConnection id=\"1\" version=\"0\">\n" +
+              "            <l7:Template>false</l7:Template>\n" +
+              "            <l7:Properties>\n" +
+              "                <l7:Property key=\"jndi.initialContextFactoryClassname\">\n" +
+              "                    <l7:StringValue>com.context.Classname</l7:StringValue>\n" +
+              "                </l7:Property>\n" +
+              "                <l7:Property key=\"jndi.providerUrl\">\n" +
+              "                    <l7:StringValue>ldap://jndi</l7:StringValue>\n" +
+              "                </l7:Property>\n" +
+              "                <l7:Property key=\"queue.connectionFactoryName\">\n" +
+              "                    <l7:StringValue>qcf</l7:StringValue>\n" +
+              "                </l7:Property>\n" +
+              "            </l7:Properties>\n" +
+              "            <l7:ContextPropertiesTemplate/>\n" +
+              "        </l7:JMSConnection>\n" +
+              "    </l7:JMSDestination>\n" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element jmsDestination = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "JMSDestination");
+        final Element jmsDestinationDetail = XmlUtil.findExactlyOneChildElementByName(jmsDestination, NS_GATEWAY_MANAGEMENT, "JMSDestinationDetail");
+        final Element jmsDestinationDetailName = XmlUtil.findExactlyOneChildElementByName(jmsDestinationDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("JMS destination id", "1", jmsDestination.getAttribute( "id" ));
+        assertEquals("JMS destination version", "0", jmsDestination.getAttribute( "version" ));
+        assertEquals("JMS destination detail id", "1", jmsDestinationDetail.getAttribute( "id" ));
+        assertEquals("JMS destination detail version", "0", jmsDestinationDetail.getAttribute( "version" ));
+        assertEquals("JMS destination detail name", "Test Endpoint 1", XmlUtil.getTextValue(jmsDestinationDetailName));
+    }
+
+    @Test
+    public void testPutPolicy() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Policy id=\"1\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
+                "    <l7:PolicyDetail id=\"1\" guid=\"c4ca4238-a0b9-3382-8dcc-509a6f75849b\" version=\"0\">\n" +
+                "        <l7:Name>Test Policy 1</l7:Name>\n" +
+                "        <l7:PolicyType>Include</l7:PolicyType>\n" +
+                "        <l7:Properties>\n" +
+                "            <l7:Property key=\"revision\">\n" +
+                "                <l7:LongValue>0</l7:LongValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"soap\">\n" +
+                "                <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "            </l7:Property>\n" +
+                "        </l7:Properties>\n" +
+                "    </l7:PolicyDetail>\n" +
+                "    <l7:Resources>\n" +
+                "        <l7:ResourceSet tag=\"policy\">\n" +
+                "            <l7:Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;&lt;wsp:All wsp:Usage=\"Required\"&gt;&lt;L7p:AuditAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</l7:Resource>\n" +
+                "        </l7:ResourceSet>\n" +
+                "    </l7:Resources>\n" +
+                "</l7:Policy>\n" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element policy = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Policy");
+        final Element policyDetail = XmlUtil.findExactlyOneChildElementByName(policy, NS_GATEWAY_MANAGEMENT, "PolicyDetail");
+        final Element policyDetailName = XmlUtil.findExactlyOneChildElementByName(policyDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Policy id", "1", policy.getAttribute( "id" ));
+        assertEquals("Policy version", "0", policy.getAttribute( "version" ));
+        assertEquals("Policy detail id", "1", policyDetail.getAttribute( "id" ));
+        assertEquals("Policy detail version", "0", policyDetail.getAttribute( "version" ));
+        assertEquals("Policy detail name", "Test Policy 1", XmlUtil.getTextValue(policyDetailName));
+    }
+
+    @Test
+    public void testPutResourceDocument() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/resources</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "    <l7:ResourceDocument id=\"1\" version=\"0\">\n" +
+                "        <l7:Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</l7:Resource>\n" +
+                "    </l7:ResourceDocument>\n" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element resourceDocument = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "ResourceDocument");
+        final Element resource = XmlUtil.findExactlyOneChildElementByName(resourceDocument, NS_GATEWAY_MANAGEMENT, "Resource");
+
+        assertEquals("Resource document id", "1", resourceDocument.getAttribute( "id" ));
+        assertEquals("Resource document version", "0", resourceDocument.getAttribute( "version" ));
+        assertEquals("Resource document resource sourceUrl", "books2.xsd", resource.getAttribute( "sourceUrl" ));
     }
 
     @Test
@@ -703,6 +829,233 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testPolicyImportWithReferences() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References>\n" +
+                        "        &lt;IDProviderReference RefType=\"com.l7tech.console.policy.exporter.IdProviderReference\">\n" +
+                        "            &lt;OID&gt;-2&lt;/OID&gt;\n" +
+                        "            &lt;Name&gt;Internal Identity Provider&lt;/Name&gt;\n" +
+                        "            &lt;TypeVal&gt;2&lt;/TypeVal&gt;\n" +
+                        "        &lt;/IDProviderReference&gt;\n" +
+                        "        &lt;JdbcConnectionReference RefType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\"&gt;\n" +
+                        "            &lt;ConnectionName&gt;Test Connection&lt;/ConnectionName&gt;\n" +
+                        "            &lt;DriverClass&gt;d&lt;/DriverClass&gt;\n" +
+                        "            &lt;JdbcUrl&gt;j&lt;/JdbcUrl&gt;\n" +
+                        "            &lt;UserName&gt;u&lt;/UserName&gt;\n" +
+                        "        &lt;/JdbcConnectionReference&gt;\n" +
+                        "        &lt;ExternalSchema\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" schemaLocation=\"books_refd.xsd\"/&gt;\n" +
+                        "        &lt;IncludedPolicyReference\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\"\n" +
+                        "            guid=\"886ece03-a64c-4c17-93cf-ce49e7265daa\" included=\"true\"\n" +
+                        "            name=\"Imported Policy Include Fragment\" soap=\"false\" type=\"INCLUDE_FRAGMENT\"&gt;\n" +
+                        "            &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "                &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "                    &lt;L7p:AuditDetailAssertion&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"Policy Fragment: Imported Policy Include Fragment\"/&gt;\n" +
+                        "                    &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                        "                &lt;/wsp:All&gt;\n" +
+                        "            &lt;/wsp:Policy&gt;\n" +
+                        "        &lt;/IncludedPolicyReference&gt;\n" +
+                        "        &lt;TrustedCertificateReference RefType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"&gt;\n" +
+                        "            &lt;OID&gt;2&lt;/OID&gt;\n" +
+                        "            &lt;CertificateName&gt;Bob&lt;/CertificateName&gt;\n" +
+                        "            &lt;CertificateIssuerDn&gt;CN=OASIS Interop Test CA, O=OASIS&lt;/CertificateIssuerDn&gt;\n" +
+                        "            &lt;CertificateSerialNum&gt;127901500862700997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
+                        "        &lt;/TrustedCertificateReference&gt;\n" +
+                        "        &lt;JMSConnectionReference RefType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"&gt;\n" +
+                        "            &lt;OID&gt;1&lt;/OID&gt;\n" +
+                        "            &lt;InitialContextFactoryClassname&gt;com.context.Classname&lt;/InitialContextFactoryClassname&gt;\n" +
+                        "            &lt;JndiUrl&gt;ldap://jndi&lt;/JndiUrl&gt;\n" +
+                        "            &lt;QueueFactoryUrl&gt;qcf&lt;/QueueFactoryUrl&gt;\n" +
+                        "            &lt;TopicFactoryUrl/&gt;\n" +
+                        "            &lt;DestinationFactoryUrl/&gt;\n" +
+                        "            &lt;Name&gt;Test Endpoint&lt;/Name&gt;\n" +
+                        "            &lt;DestinationName&gt;Test Endpoint&lt;/DestinationName&gt;\n" +
+                        "        &lt;/JMSConnectionReference&gt;\n" +
+                        "        &lt;PrivateKeyReference RefType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"&gt;\n" +
+                        "            &lt;IsDefaultKey&gt;false&lt;/IsDefaultKey&gt;\n" +
+                        "            &lt;KeystoreOID&gt;2&lt;/KeystoreOID&gt;\n" +
+                        "            &lt;KeyAlias&gt;alice&lt;/KeyAlias&gt;\n" +
+                        "        &lt;/PrivateKeyReference&gt;\n" +
+                        "    &lt;/exp:References&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:AuditAssertion/&gt;\n" +
+                        "            &lt;L7p:Authentication&gt;\n" +
+                        "                &lt;L7p:IdentityProviderOid longValue=\"-2\"/&gt;\n" +
+                        "            &lt;/L7p:Authentication&gt;\n" +
+                        "            &lt;L7p:JdbcQuery&gt;\n" +
+                        "                &lt;L7p:ConnectionName stringValue=\"Test Connection\"/&gt;\n" +
+                        "                &lt;L7p:SqlQuery stringValue=\"SELECT 1\"/&gt;\n" +
+                        "            &lt;/L7p:JdbcQuery&gt;\n" +
+                        "            &lt;L7p:SchemaValidation&gt;\n" +
+                        "                &lt;L7p:ResourceInfo globalResourceInfo=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Id stringValue=\"books_refd.xsd\"/&gt;\n" +
+                        "                &lt;/L7p:ResourceInfo&gt;\n" +
+                        "                &lt;L7p:Target target=\"REQUEST\"/&gt;\n" +
+                        "            &lt;/L7p:SchemaValidation&gt;\n" +
+                        "            &lt;L7p:Include&gt;\n" +
+                        "                &lt;L7p:PolicyGuid stringValue=\"886ece03-a64c-4c17-93cf-ce49e7265daa\"/&gt;\n" +
+                        "            &lt;/L7p:Include&gt;\n" +
+                        "            &lt;L7p:WsSecurity&gt;\n" +
+                        "                &lt;L7p:RecipientTrustedCertificateOid longValue=\"2\"/&gt;\n" +
+                        "            &lt;/L7p:WsSecurity&gt;\n" +
+                        "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
+                        "                &lt;L7p:EndpointName stringValue=\"Test Endpoint\"/&gt;\n" +
+                        "                &lt;L7p:EndpointOid boxedLongValue=\"1\"/&gt;\n" +
+                        "                &lt;L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:RequestJmsMessagePropertyRuleSet&gt;\n" +
+                        "                &lt;L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:ResponseJmsMessagePropertyRuleSet&gt;\n" +
+                        "            &lt;/L7p:JmsRoutingAssertion&gt;\n" +
+                        "            &lt;L7p:WssSignElement&gt;\n" +
+                        "                &lt;L7p:KeyAlias stringValue=\"alice\"/&gt;\n" +
+                        "                &lt;L7p:NonDefaultKeystoreId longValue=\"2\"/&gt;\n" +
+                        "                &lt;L7p:UsesDefaultKeyStore booleanValue=\"false\"/&gt;\n" +
+                        "            &lt;/L7p:WssSignElement&gt;\n" +
+                        "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource></PolicyImportContext></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
+        final Element importedPolicyRef = XmlUtil.findExactlyOneChildElementByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
+
+        assertEquals("Imported policy ref GUID", "886ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
+        assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+    }
+
+    @Test
+    public void testPolicyImportWithInstructions() throws Exception {
+        final String message =
+                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:d0f59849-9eaa-4027-8b2e-f5ec2dfc1f9d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body><PolicyImportContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><Properties/><Resource type=\"policyexport\">&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\n" +
+                        "&lt;exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "    &lt;exp:References>\n" +
+                        "        &lt;IDProviderReference RefType=\"com.l7tech.console.policy.exporter.IdProviderReference\">\n" +
+                        "            &lt;OID&gt;200&lt;/OID&gt;\n" +
+                        "            &lt;Name&gt;Internal Identity Provider&lt;/Name&gt;\n" +
+                        "            &lt;TypeVal&gt;2&lt;/TypeVal&gt;\n" +
+                        "        &lt;/IDProviderReference&gt;\n" +
+                        "        &lt;JdbcConnectionReference RefType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\"&gt;\n" +
+                        "            &lt;ConnectionName&gt;Invalid Connection&lt;/ConnectionName&gt;\n" +
+                        "            &lt;DriverClass&gt;invalid&lt;/DriverClass&gt;\n" +
+                        "            &lt;JdbcUrl&gt;invalid&lt;/JdbcUrl&gt;\n" +
+                        "            &lt;UserName&gt;invalid&lt;/UserName&gt;\n" +
+                        "        &lt;/JdbcConnectionReference&gt;\n" +
+                        "        &lt;ExternalSchema\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" schemaLocation=\"invalid.xsd\" targetNamespace=\"urn:invalid\"/&gt;\n" +
+                        "        &lt;IncludedPolicyReference\n" +
+                        "            RefType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\"\n" +
+                        "            guid=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" included=\"true\"\n" +
+                        "            name=\"Imported Policy Include Fragment\" soap=\"false\" type=\"INCLUDE_FRAGMENT\"&gt;\n" +
+                        "            &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "                &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "                    &lt;L7p:AuditDetailAssertion&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"Policy Fragment: Imported Policy Include Fragment\"/&gt;\n" +
+                        "                        &lt;L7p:Detail stringValue=\"This extra assertion makes the policy conflict\"/&gt;\n" +
+                        "                    &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                        "                &lt;/wsp:All&gt;\n" +
+                        "            &lt;/wsp:Policy&gt;\n" +
+                        "        &lt;/IncludedPolicyReference&gt;\n" +
+                        "        &lt;TrustedCertificateReference RefType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"&gt;\n" +
+                        "            &lt;OID&gt;129630208&lt;/OID&gt;\n" +
+                        "            &lt;CertificateName&gt;Invalid&lt;/CertificateName&gt;\n" +
+                        "            &lt;CertificateIssuerDn&gt;CN=Invalid&lt;/CertificateIssuerDn&gt;\n" +
+                        "            &lt;CertificateSerialNum&gt;997089151460209364726264&lt;/CertificateSerialNum&gt;\n" +
+                        "        &lt;/TrustedCertificateReference&gt;\n" +
+                        "        &lt;JMSConnectionReference RefType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"&gt;\n" +
+                        "            &lt;OID&gt;33&lt;/OID&gt;\n" +
+                        "            &lt;InitialContextFactoryClassname&gt;com.context.OtherClassname&lt;/InitialContextFactoryClassname&gt;\n" +
+                        "            &lt;JndiUrl&gt;ldap://host/&lt;/JndiUrl&gt;\n" +
+                        "            &lt;QueueFactoryUrl&gt;qcf2&lt;/QueueFactoryUrl&gt;\n" +
+                        "            &lt;TopicFactoryUrl/&gt;\n" +
+                        "            &lt;DestinationFactoryUrl/&gt;\n" +
+                        "            &lt;Name&gt;Invalid Test Endpoint&lt;/Name&gt;\n" +
+                        "            &lt;DestinationName&gt;Invalid Test Endpoint&lt;/DestinationName&gt;\n" +
+                        "        &lt;/JMSConnectionReference&gt;\n" +
+                        "        &lt;PrivateKeyReference RefType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"&gt;\n" +
+                        "            &lt;IsDefaultKey&gt;false&lt;/IsDefaultKey&gt;\n" +
+                        "            &lt;KeystoreOID&gt;2&lt;/KeystoreOID&gt;\n" +
+                        "            &lt;KeyAlias&gt;invalid&lt;/KeyAlias&gt;\n" +
+                        "        &lt;/PrivateKeyReference&gt;\n" +
+                        "    &lt;/exp:References&gt;\n" +
+                        "    &lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;\n" +
+                        "        &lt;wsp:All wsp:Usage=\"Required\"&gt;\n" +
+                        "            &lt;L7p:AuditAssertion/&gt;\n" +
+                        "            &lt;L7p:Authentication&gt;\n" +
+                        "                &lt;L7p:IdentityProviderOid longValue=\"200\"/&gt;\n" +
+                        "            &lt;/L7p:Authentication&gt;\n" +
+                        "            &lt;L7p:JdbcQuery&gt;\n" +
+                        "                &lt;L7p:ConnectionName stringValue=\"Invalid Connection\"/&gt;\n" +
+                        "                &lt;L7p:SqlQuery stringValue=\"SELECT 1\"/&gt;\n" +
+                        "            &lt;/L7p:JdbcQuery&gt;\n" +
+                        "            &lt;L7p:SchemaValidation&gt;\n" +
+                        "                &lt;L7p:ResourceInfo globalResourceInfo=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Id stringValue=\"invalid.xsd\"/&gt;\n" +
+                        "                &lt;/L7p:ResourceInfo&gt;\n" +
+                        "                &lt;L7p:Target target=\"REQUEST\"/&gt;\n" +
+                        "            &lt;/L7p:SchemaValidation&gt;\n" +
+                        "            &lt;L7p:Include&gt;\n" +
+                        "                &lt;L7p:PolicyGuid stringValue=\"006ece03-a64c-4c17-93cf-ce49e7265daa\"/&gt;\n" +
+                        "            &lt;/L7p:Include&gt;\n" +
+                        "            &lt;L7p:WsSecurity&gt;\n" +
+                        "                &lt;L7p:RecipientTrustedCertificateOid longValue=\"129630208\"/&gt;\n" +
+                        "            &lt;/L7p:WsSecurity&gt;\n" +
+                        "            &lt;L7p:JmsRoutingAssertion&gt;\n" +
+                        "                &lt;L7p:EndpointName stringValue=\"Invalid Test Endpoint\"/&gt;\n" +
+                        "                &lt;L7p:EndpointOid boxedLongValue=\"33\"/&gt;\n" +
+                        "                &lt;L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:RequestJmsMessagePropertyRuleSet&gt;\n" +
+                        "                &lt;L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\"&gt;\n" +
+                        "                    &lt;L7p:Rules jmsMessagePropertyRuleArray=\"included\"/&gt;\n" +
+                        "                &lt;/L7p:ResponseJmsMessagePropertyRuleSet&gt;\n" +
+                        "            &lt;/L7p:JmsRoutingAssertion&gt;\n" +
+                        "            &lt;L7p:WssSignElement&gt;\n" +
+                        "                &lt;L7p:KeyAlias stringValue=\"invalid\"/&gt;\n" +
+                        "                &lt;L7p:NonDefaultKeystoreId longValue=\"2\"/&gt;\n" +
+                        "                &lt;L7p:UsesDefaultKeyStore booleanValue=\"false\"/&gt;\n" +
+                        "            &lt;/L7p:WssSignElement&gt;\n" +
+                        "        &lt;/wsp:All&gt;\n" +
+                        "    &lt;/wsp:Policy&gt;\n" +
+                        "&lt;/exp:Export&gt;\n" +
+                        "</Resource>\n" +
+                        "<PolicyReferenceInstructions>\n" +
+                        "    <PolicyReferenceInstruction type=\"Map\"    referenceType=\"com.l7tech.console.policy.exporter.IdProviderReference\"     referenceId=\"200\" mappedReferenceId=\"-2\"/>\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JdbcConnectionReference\" referenceId=\"syn:7dffbacb-72ba-3848-84d5-4a86247eb67e\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Delete\" referenceType=\"com.l7tech.console.policy.exporter.ExternalSchemaReference\" referenceId=\"syn:e69a8c36-66c6-3f0b-ba67-74749c1c62b5\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Rename\" referenceType=\"com.l7tech.console.policy.exporter.IncludedPolicyReference\" referenceId=\"006ece03-a64c-4c17-93cf-ce49e7265daa\" mappedName=\"Renamed Imported Policy Include Fragment\"/>\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.TrustedCertReference\"    referenceId=\"129630208\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.JMSEndpointReference\"    referenceId=\"33\" />\n" +
+                        "    <PolicyReferenceInstruction type=\"Ignore\" referenceType=\"com.l7tech.console.policy.exporter.PrivateKeyReference\"     referenceId=\"2:invalid\" />\n" +
+                        "</PolicyReferenceInstructions>\n" +
+                        "</PolicyImportContext></env:Body></env:Envelope>";
+
+        final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element importResult = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        final Element importedPolicyRefs = XmlUtil.findExactlyOneChildElementByName(importResult, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReferences");
+        final Element importedPolicyRef = XmlUtil.findExactlyOneChildElementByName(importedPolicyRefs, NS_GATEWAY_MANAGEMENT, "ImportedPolicyReference");
+
+        assertEquals("Imported policy ref GUID", "006ece03-a64c-4c17-93cf-ce49e7265daa", importedPolicyRef.getAttribute( "guid" ));
+        assertEquals("Imported policy ref type", "Created", importedPolicyRef.getAttribute( "type" ));
+    }
+
+    @Test
     public void testPolicyValidate() throws Exception {
         final String message =
                 "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\"><env:Header><wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy</wsa:Action><wsa:ReplyTo><wsa:Address env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsa:MessageID env:mustUnderstand=\"true\">uuid:61dcea28-f545-4b0f-9436-0e8b59f4370d</wsa:MessageID><wsa:To env:mustUnderstand=\"true\">http://localhost:8080/wsman</wsa:To><wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsman:OperationTimeout>P0Y0M0DT0H5M0.000S</wsman:OperationTimeout><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet></env:Header><env:Body/></env:Envelope>";
@@ -964,22 +1317,25 @@ public class ServerGatewayManagementAssertionTest {
 
     @SuppressWarnings({"serial"})
     private static void init() throws Exception {
+        new AssertionRegistry(); // causes type mappings to be installed for assertions
         Folder rootFolder = folder(-5002, null, "Root Node");
         beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
-                cert(1, "Alice", TestDocuments.getWssInteropAliceCert()) ) );
+                cert(1, "Alice", TestDocuments.getWssInteropAliceCert()),
+                cert(2, "Bob", TestDocuments.getWssInteropBobCert()) ) );
         beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager(
                 prop(1, "testProp1", "testValue1"),
                 prop(2, "testProp2", "testValue2"),
                 prop(3, "testProp3", "testValue3")));
         beanFactory.addBean( "schemaEntryManager", new SchemaEntryManagerStub(
-                schema(1,"books.xsd", "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>")) );
+                schema(1,"books.xsd", "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>"),
+                schema(2,"books_refd.xsd", "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>")) );
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
                 folder(1, rootFolder, "Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
                 provider(-2, IdentityProviderType.INTERNAL, "Internal Identity Provider") ) );
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
-                jmsConnection(1, "Test Endpoint", "com.context.Classname", "qcf") ));
+                jmsConnection(1, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi") ));
         beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
                 jmsEndpoint(1, 1, "Test Endpoint") ));
         beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
@@ -1034,15 +1390,21 @@ public class ServerGatewayManagementAssertionTest {
         final JdbcConnection connection = new JdbcConnection();
         connection.setOid( oid );
         connection.setName( name );
+
+        // props must be non empty for resolution during import
+        connection.setDriverClass( "d" );
+        connection.setJdbcUrl( "j" );
+        connection.setUserName( "u" );
         return connection;
     }
 
-    private static JmsConnection jmsConnection( final long oid, final String name, final String contextClassname, final String queueFactory) {
+    private static JmsConnection jmsConnection( final long oid, final String name, final String contextClassname, final String queueFactory, final String jndiUrl) {
         final JmsConnection connection = new JmsConnection();
         connection.setOid( oid );
         connection.setName( name );
         connection.setQueueFactoryUrl( queueFactory );
         connection.setInitialContextFactoryClassname( contextClassname );
+        connection.setJndiUrl( jndiUrl );
         return connection;
     }
 
@@ -1058,6 +1420,7 @@ public class ServerGatewayManagementAssertionTest {
     private static Policy policy( final long oid, final PolicyType type, final String name, final boolean soap, final String policyXml ) {
         final Policy policy = new Policy( type, name, policyXml, soap);
         policy.setOid( oid );
+        policy.setGuid( UUID.nameUUIDFromBytes( Long.toString(oid).getBytes() ).toString() );
         return policy;
     }
 

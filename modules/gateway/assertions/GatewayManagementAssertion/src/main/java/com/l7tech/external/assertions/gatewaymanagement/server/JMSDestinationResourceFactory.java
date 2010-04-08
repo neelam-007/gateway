@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.JMSConnection;
-import com.l7tech.gateway.api.JMSDestinationDetails;
+import com.l7tech.gateway.api.JMSDestinationDetail;
 import com.l7tech.gateway.api.JMSDestinationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -61,7 +61,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         final JmsEndpoint jmsEndpoint = jmsEntityBag.getJmsEndpoint();
         final JmsConnection jmsConnectionEntity = jmsEntityBag.getJmsConnection();
 
-        final JMSDestinationDetails jmsDetails = ManagedObjectFactory.createJMSDestinationDetails();
+        final JMSDestinationDetail jmsDetails = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetails.setId( jmsEndpoint.getId() );
         jmsDetails.setVersion( jmsEndpoint.getVersion() );
         jmsDetails.setName( jmsEndpoint.getName() );
@@ -81,7 +81,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
 
         final JMSDestinationMO jmsDestination = ManagedObjectFactory.createJMSDestination();
         jmsDestination.setId( jmsEndpoint.getId() );
-        jmsDestination.setJmsDestinationDetails( jmsDetails );
+        jmsDestination.setJmsDestinationDetail( jmsDetails );
         jmsDestination.setJmsConnection( jmsConnection );
 
         return jmsDestination;
@@ -93,7 +93,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected jms destination");
 
         final JMSDestinationMO jmsDestination = (JMSDestinationMO) resource;
-        final JMSDestinationDetails jmsDestinationDetails = jmsDestination.getJmsDestinationDetails();
+        final JMSDestinationDetail jmsDestinationDetails = jmsDestination.getJmsDestinationDetail();
         final JMSConnection jmsConnectionMO = jmsDestination.getJmsConnection();
         if ( jmsDestinationDetails == null ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing details");

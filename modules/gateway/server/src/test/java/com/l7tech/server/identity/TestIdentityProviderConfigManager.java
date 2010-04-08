@@ -21,10 +21,6 @@ public class TestIdentityProviderConfigManager
         super( entitiesIn );
     }
 
-    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
     @Override
     public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
         // No-op for stub mode

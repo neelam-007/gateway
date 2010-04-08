@@ -20,8 +20,8 @@ import java.util.Map;
  *
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
-@XmlType(name="JMSDestinationDetailsType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "properties", "extension", "extensions"})
-public class JMSDestinationDetails {
+@XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "properties", "extension", "extensions"})
+public class JMSDestinationDetail {
 
     //- PUBLIC
 
@@ -263,7 +263,7 @@ public class JMSDestinationDetails {
 
     //- PACKAGE
 
-    JMSDestinationDetails() {        
+    JMSDestinationDetail() {
     }
 
     //- PRIVATE

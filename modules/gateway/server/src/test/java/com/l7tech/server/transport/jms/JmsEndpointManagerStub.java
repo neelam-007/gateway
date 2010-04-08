@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 
 import java.util.Collection;
 
@@ -27,8 +28,13 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEn
     }
 
     @Override
-    public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
-        throw new UnsupportedOperationException();
+    public JmsEndpoint[] findEndpointsForConnection(final long connectionOid) throws FindException {
+        return Functions.grep( findAll(), new Functions.Unary<Boolean,JmsEndpoint>(){
+            @Override
+            public Boolean call( final JmsEndpoint jmsEndpoint ) {
+                return jmsEndpoint.getConnectionOid() == connectionOid;
+            }
+        } ).toArray( new JmsEndpoint[0] );
     }
 
     @Override

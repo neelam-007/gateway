@@ -18,7 +18,7 @@ import java.util.List;
  * @see ManagedObjectFactory#createJMSDestination()
  */
 @XmlRootElement(name="JMSDestination")
-@XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetails","jmsConnection","extension","extensions"})
+@XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetail","jmsConnection","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jmsDestinations")
 public class JMSDestinationMO extends AccessibleObject {
 
@@ -28,8 +28,8 @@ public class JMSDestinationMO extends AccessibleObject {
     public Integer getVersion() {
         Integer version = null;
 
-        if ( jmsDestinationDetails != null ) {
-            version = jmsDestinationDetails.getVersion();
+        if ( jmsDestinationDetail != null ) {
+            version = jmsDestinationDetail.getVersion();
         }
 
         return version;
@@ -37,8 +37,8 @@ public class JMSDestinationMO extends AccessibleObject {
 
     @Override
     public void setVersion( final Integer version ) {
-        if ( jmsDestinationDetails != null ) {
-            jmsDestinationDetails.setVersion( version );
+        if ( jmsDestinationDetail != null ) {
+            jmsDestinationDetail.setVersion( version );
         }
     }
 
@@ -47,18 +47,18 @@ public class JMSDestinationMO extends AccessibleObject {
      *
      * @return The details or null
      */
-    @XmlElement(name="JMSDestinationDetails", required=true)
-    public JMSDestinationDetails getJmsDestinationDetails() {
-        return jmsDestinationDetails;
+    @XmlElement(name="JMSDestinationDetail", required=true)
+    public JMSDestinationDetail getJmsDestinationDetail() {
+        return jmsDestinationDetail;
     }
 
     /**
      * Set the destination details
      *
-     * @param jmsDestinationDetails The details to use.
+     * @param jmsDestinationDetail The details to use.
      */
-    public void setJmsDestinationDetails( final JMSDestinationDetails jmsDestinationDetails ) {
-        this.jmsDestinationDetails = jmsDestinationDetails;
+    public void setJmsDestinationDetail( final JMSDestinationDetail jmsDestinationDetail ) {
+        this.jmsDestinationDetail = jmsDestinationDetail;
     }
 
     /**
@@ -111,6 +111,6 @@ public class JMSDestinationMO extends AccessibleObject {
 
     //- PRIVATE
 
-    private JMSDestinationDetails jmsDestinationDetails;
+    private JMSDestinationDetail jmsDestinationDetail;
     private JMSConnection jmsConnection;
 }

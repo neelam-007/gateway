@@ -87,7 +87,7 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
     //- PRIVATE
 
     private static final Boolean ALLOW_SYSTEM_UPDATES = SyspropUtil.getBoolean( "com.l7tech.externa.assertions.gatewaymanagement.schemaSystemUpdatable", false );
-    private static final Boolean TNS_REQUIRED = SyspropUtil.getBoolean( "com.l7tech.externa.assertions.gatewaymanagement.schemaTNSRequired", true );
+    private static final Boolean TNS_REQUIRED = SyspropUtil.getBoolean( "com.l7tech.externa.assertions.gatewaymanagement.schemaTNSRequired", false );
 
     private String getTns( final String contents ) throws InvalidResourceException {
         String tns;

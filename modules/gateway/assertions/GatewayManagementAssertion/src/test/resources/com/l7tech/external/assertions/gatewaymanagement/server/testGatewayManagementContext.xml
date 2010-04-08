@@ -24,7 +24,22 @@
                 <property name="staticMethod" value="com.l7tech.policy.wsp.WspReader.getDefault"/>
             </bean>            
         </constructor-arg>
-        <constructor-arg index="3"><null/></constructor-arg>
+        <constructor-arg index="3">
+            <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
+                <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
+                <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
+                <constructor-arg index="2"><null/></constructor-arg>
+                <constructor-arg index="3" ref="identityProviderConfigManager"/>
+                <constructor-arg index="4"><bean class="com.l7tech.server.identity.IdentityProviderFactory"><constructor-arg index="0" ref="identityProviderConfigManager"/></bean></constructor-arg>
+                <constructor-arg index="5" ref="jdbcConnectionManager"/>
+                <constructor-arg index="6" ref="jmsConnectionManager"/>
+                <constructor-arg index="7" ref="jmsEndpointManager"/>
+                <constructor-arg index="8" ref="policyManager"/>
+                <constructor-arg index="9" ref="schemaEntryManager"/>
+                <constructor-arg index="10" ref="ssgKeyStoreManager"/>
+                <constructor-arg index="11" ref="trustedCertManager"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="entityResourceFactoryParent" abstract="true">
