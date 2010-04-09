@@ -19,11 +19,14 @@ import java.io.File;
  */
 public class RpmUpdatePatchTask implements PatchTask {
 
+    public static final String RPM_OPTIONS_ENTRY = "rpm_options";
+
     @Override
     public void runPatch(String resourceDirEntry) throws Exception {
         File tempDir = null;
         Exception toThrow = null;
         try {
+            String rpmOptions = PatchMain.readResource(this.getClass(), resourceDirEntry + RPM_OPTIONS_ENTRY);
             String rpmFileList = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
 
             // extract RPMs from patch
@@ -45,7 +48,7 @@ public class RpmUpdatePatchTask implements PatchTask {
                 }
             }
 
-            String commandLine = "/bin/rpm -U --force " + extractedRpmList;
+            String commandLine = "/bin/rpm " + rpmOptions + " " + extractedRpmList;
             ProcResult result = ProcUtils.exec(commandLine);
             if (result.getExitStatus() != 0) {
                 byte[] output = result.getOutput();

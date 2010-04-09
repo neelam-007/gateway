@@ -41,7 +41,7 @@ public class PatchBuilder {
     private static void printUsage() {
         System.out.println("Usage: " + PatchBuilder.class.getSimpleName() + " <options>");
         for (Option o : Option.values()) {
-            System.out.println("\t" + o.getCommandLineArg() + " " + o.getSyntax() + "\n\t\t" + (o.isRequired() ? "Required." : "Optional.") + o.getDescription() + "\n");
+            System.out.println("\t" + o.getCommandLineArg() + " " + o.getSyntax() + "\n\t\t" + (o.isRequired() ? "Required. " : "Optional. ") + o.getDescription() + "\n");
         }
     }
 
@@ -253,27 +253,24 @@ public class PatchBuilder {
                 }
             }},
 
-        RPM_UPDATE("-rpm-update", "<rpm_file|file_with_rpm_file_names>", false, "Updates the specified RPM package, or the packages listed, one per line, in the specified file.") {
+        RPM_UPDATE("-rpm-update", "<rpm_file|file_with_rpm_file_names>", false, "Updates the specified RPM package, or the packages listed one per line in the specified file.") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
                 return extractOneArgumentOption(args, config, this);
             }
             @Override
             public void update(PatchSpec spec, BuilderConfig config) {
-                if ( ! config.hasOption(this)) return;
-                for (final String rpmFileOrList : config.options.get(this)) {
-                    List<String> rpmList = rpmFileOrList.toLowerCase().endsWith(".rpm") ? new ArrayList<String>() {{ add(rpmFileOrList); }} : rpmList(rpmFileOrList);
-                    List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
-                    resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(concat(rpmList, "\n").getBytes())));
-                    resources.addAll(Functions.map(rpmList, new Functions.Unary<PatchSpecEntry, String>() {
-                            @Override
-                            public PatchSpecEntry call(String rpmFileName) {
-                                return new PatchSpecFileEntry(rpmFileName, rpmFileName);
-                            }
-                        }));
-                    Class<? extends PatchTask> taskClass = RpmUpdatePatchTask.class;
-                    PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
-                }
+                rpmUpdate(this, "-U --force", spec, config);
+            }},
+
+        RPM_FRESHEN("-rpm-freshen", "<rpm_file|file_with_rpm_file_names>", false, "Updates the specified RPM package, or the packages listed one per line in the specified file, only if they are already installed.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                return extractOneArgumentOption(args, config, this);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                rpmUpdate(this, "-F --force", spec, config);
             }},
 
         FILE_UPDATE("-file-update", "<target_file_path> <file>", false, "Updates the specified file with the provided replacement.") {
@@ -342,7 +339,7 @@ public class PatchBuilder {
             }
         },
 
-        SCRIPT("-script", "<shell_script", false, "Executes the supplied shell script using the bash interpreter on the gateway") {
+        SCRIPT("-script", "<shell_script>", false, "Executes the supplied shell script using the bash interpreter on the gateway") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
                 return extractOneArgumentOption(args, config, this);
@@ -397,6 +394,24 @@ public class PatchBuilder {
                 /* no spec update */
             }},
         ;
+
+        private static void rpmUpdate(Option patcherOption, String rpmOption, PatchSpec spec, BuilderConfig config) {
+            if ( ! config.hasOption(patcherOption)) return;
+            for (final String rpmFileOrList : config.options.get(patcherOption)) {
+                List<String> rpmList = rpmFileOrList.toLowerCase().endsWith(".rpm") ? new ArrayList<String>() {{ add(rpmFileOrList); }} : rpmList(rpmFileOrList);
+                List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                resources.add(new PatchSpecStreamEntry(RpmUpdatePatchTask.RPM_OPTIONS_ENTRY, new ByteArrayInputStream(rpmOption.getBytes())));
+                resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(concat(rpmList, "\n").getBytes())));
+                resources.addAll(Functions.map(rpmList, new Functions.Unary<PatchSpecEntry, String>() {
+                        @Override
+                        public PatchSpecEntry call(String rpmFileName) {
+                            return new PatchSpecFileEntry(rpmFileName, rpmFileName);
+                        }
+                    }));
+                Class<? extends PatchTask> taskClass = RpmUpdatePatchTask.class;
+                PatchTaskBuilderUtils.addTask(spec, taskClass, resources.toArray(new PatchSpecEntry[resources.size()]));
+            }
+        }
 
         private static String concat(List<String> strings, String delimiter) {
             StringBuilder result = new StringBuilder();
