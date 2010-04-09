@@ -436,6 +436,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             case DELETE:
                 routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
                 return HttpMethod.DELETE;
+            case HEAD:
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+                return HttpMethod.HEAD;
             default:
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, requestMethod.name());
                 return HttpMethod.POST;
