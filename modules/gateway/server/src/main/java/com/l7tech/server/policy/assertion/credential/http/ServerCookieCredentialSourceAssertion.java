@@ -39,12 +39,16 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
     protected LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
         HttpRequestKnob hrk = request.getHttpRequestKnob();
         HttpCookie[] cookies = hrk.getCookies();
-        for (HttpCookie cookie : cookies) {
+        for ( final HttpCookie cookie : cookies ) {
             if (cookieName.equalsIgnoreCase(cookie.getCookieName())) {
-                String cookieValue = cookie.getCookieValue();
-                //String login = "cookie-" + cookieName + "-" + HexUtils.encodeBase64(cookieValue.getBytes("UTF-8"), true);
-                auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
-                return LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(null, cookieValue.toCharArray()), CookieCredentialSourceAssertion.class);
+                final String cookieValue = cookie.getCookieValue();
+                if ( cookieValue != null && cookieValue.length() > 0 ) {
+                    auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
+                    return LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(null, cookieValue.toCharArray()), CookieCredentialSourceAssertion.class);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND_EMPTY, cookieName);
+                    return null;
+                }
             }
         }
 
