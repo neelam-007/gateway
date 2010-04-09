@@ -23,9 +23,24 @@ public interface ClusterInfoManager {
 
     void updateSelfStatus( ClusterNodeInfo selfCI ) throws UpdateException;
 
-    void deleteNode(String nodeid) throws DeleteException;
+    /**
+     * Delete a node.
+     *
+     * @param nodeid The identifier of the node to delete.
+     * @return The name of the deleted node.
+     * @throws DeleteException If an error occurs.
+     */
+    String deleteNode(String nodeid) throws DeleteException;
 
-    void renameNode(String nodeid, String newnodename) throws UpdateException;
+    /**
+     * Rename a node.
+     *
+     * @param nodeid The identifier of the node to rename.
+     * @param newName The new name for the node.
+     * @return The old name for the node.
+     * @throws UpdateException If an error occurs.
+     */
+    String renameNode(String nodeid, String newName) throws UpdateException;
 
     void updateSelfUptime() throws UpdateException;
 

@@ -25,30 +25,40 @@ public class ClusterInfoManagerStub implements ClusterInfoManager {
         cnf.setBootTime(System.currentTimeMillis());
     }
 
+    @Override
     public String thisNodeId() {
         return "TestNode";
     }
 
+    @Override
     public void updateSelfStatus(double avgLoad) throws UpdateException {
     }
 
+    @Override
     public void updateSelfStatus(ClusterNodeInfo selfCI) throws UpdateException {
     }
 
-    public void deleteNode(String nodeid) throws DeleteException {
+    @Override
+    public String deleteNode(String nodeid) throws DeleteException {
+        return null;
     }
 
-    public void renameNode(String nodeid, String newnodename) throws UpdateException {
+    @Override
+    public String renameNode(String nodeid, String newName) throws UpdateException {
+        return null;
     }
 
+    @Override
     public void updateSelfUptime() throws UpdateException {
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
         return Collections.emptyList();
     }
 
+    @Override
     public ClusterNodeInfo getSelfNodeInf() {
         return cnf;
     }

@@ -15,6 +15,10 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
+import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.admin.Deleted;
+import com.l7tech.server.event.admin.PersistenceEvent;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
@@ -25,6 +29,9 @@ import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,10 +48,10 @@ import java.security.KeyStoreException;
  * User: flascell<br/>
  * Date: Jan 2, 2004<br/>
  */
-public class ClusterStatusAdminImp implements ClusterStatusAdmin {
+public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationContextAware {
     /**
      * Constructs the new cluster status admin implementation.
-     * On constructir change update the spring bean definition
+     * On constructor change update the spring bean definition
      */
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
@@ -144,7 +151,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      */
     @Override
     public void changeNodeName(String nodeid, String newName) throws UpdateException {
-        clusterInfoManager.renameNode(nodeid, newName);
+        String oldName = clusterInfoManager.renameNode(nodeid, newName);
+        EntityChangeSet changes = new EntityChangeSet(new String[]{"name"}, new Object[]{oldName}, new Object[]{newName});
+        publishEvent(new Updated<ClusterNodeInfo>( clusterNodeInfo( nodeid, newName ), changes ));
     }
 
     /**
@@ -159,7 +168,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     @Override
     public void removeStaleNode(String nodeid) throws DeleteException {
         logger.info("removing stale node: " + nodeid);
-        clusterInfoManager.deleteNode(nodeid);
+        String name = clusterInfoManager.deleteNode(nodeid);
         serviceUsageManager.clear(nodeid);
 
         // Bugzilla #842 - remote exception (outofmemory) is thrown by the server side in the
@@ -167,6 +176,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         // a huge volumn of rows. For this reason, we don't clean up the log records here and rely on
         // the housekeeping script to remove the old records periodically.
         //ServerLogHandler.cleanAllRecordsForNode((HibernatePersistenceContext)context, nodeid);
+
+        publishEvent(new Deleted<ClusterNodeInfo>( clusterNodeInfo( nodeid, name ) ));
     }
 
     /**
@@ -432,6 +443,26 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                 }
             };
 
+    private ClusterNodeInfo clusterNodeInfo( final String nodeid, final String name ) {
+        final ClusterNodeInfo node = new ClusterNodeInfo();
+        node.setNodeIdentifier( nodeid );
+        node.setName( name );
+        return node;
+    }
+
+    private void publishEvent( final PersistenceEvent pe ) {
+        final ApplicationContext context = this.context;
+        if ( context != null ) {
+            context.publishEvent( pe );
+        }
+    }
+
+    @Override
+    public void setApplicationContext( final ApplicationContext context ) throws BeansException {
+        this.context = context;
+    }
+
+    private ApplicationContext context;
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;

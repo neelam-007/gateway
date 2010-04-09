@@ -114,7 +114,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     @Override
-    public void deleteNode(String nodeid) throws DeleteException {
+    public String deleteNode(String nodeid) throws DeleteException {
         ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
         if (node == null) {
             String msg = "that node cannot be retrieved";
@@ -131,22 +131,25 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             throw new DeleteException(msg);
         }
 
+        final String name = node.getName();
         try {
             getHibernateTemplate().delete(node);
         }  catch (HibernateException e) {
             String msg = "error deleting cluster status";
             logger.log(Level.WARNING, msg, e);
-        }
+        }        
+        return name;
     }
 
     @Override
-    public void renameNode(String nodeid, String newnodename) throws UpdateException {
+    public String renameNode(String nodeid, String newnodename) throws UpdateException {
         ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
         if (node == null) {
             String msg = "that node cannot be retrieved";
             logger.log(Level.WARNING, msg);
             throw new UpdateException(msg);
         }
+        final String oldName = node.getName();
         node.setName(newnodename);
         try {
             updateSelfStatus(node);
@@ -155,6 +158,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
+        return oldName;
     }
 
     /**
