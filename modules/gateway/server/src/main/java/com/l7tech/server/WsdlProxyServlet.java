@@ -87,6 +87,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
 
+    private static final String NAMESPACE_WSDL = "http://schemas.xmlsoap.org/wsdl/";
+    private static final String NAMESPACE_WSDL_SOAP_1_1 = "http://schemas.xmlsoap.org/wsdl/soap/";
+    private static final String NAMESPACE_WSDL_SOAP_1_2 = "http://schemas.xmlsoap.org/wsdl/soap12/";
+
+    private static final String ELEMENT_ADDRESS = "address";
+    private static final String ELEMENT_BINDING = "binding";
+    private static final String ELEMENT_PORT = "port";
+    private static final String ELEMENT_SERVICE = "service";
+
+    private static final String ATTR_LOCATION = "location";
+    private static final String ATTR_NAME = "name";
+    private static final String ATTR_TARGET_NAMESPACE = "targetNamespace";
+
     private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
     private FilterManager clientPolicyFilterManager;
@@ -523,25 +536,94 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return nameBuilder.toString();
     }
 
-    private void substituteSoapAddressURL(Document wsdl, URL newURL) {
-        // get http://schemas.xmlsoap.org/wsdl/ 'port' element
-        NodeList portlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "port");
-        for (int i = 0; i < portlist.getLength(); i++) {
-            Element portel = (Element)portlist.item(i);
-            // get child http://schemas.xmlsoap.org/wsdl/soap/ 'address'
-            //noinspection unchecked
-            List<Element> addresses = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap/", "address");
+    /**
+     * Update the address for existing ports, create service and ports if necessary.
+     *
+     * @param wsdl The WSDL document
+     * @param newURL The address location to use
+     * @param serviceId The identifier for the service (should only be passed for the top level WSDL, not for dependencies)
+     */
+    private void addOrUpdateEndpoints( final Document wsdl,
+                                       final URL newURL,
+                                       final Long serviceId ) {
+        final String location = newURL.toString();
+        final NodeList portList = wsdl.getElementsByTagNameNS( NAMESPACE_WSDL, ELEMENT_PORT );
+
+        boolean updatedAddress = false;
+        for (int i = 0; i < portList.getLength(); i++) {
+            final Element portElement = (Element)portList.item(i);
+            final List<Element> addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_1, ELEMENT_ADDRESS );
+
             // change the location attribute with new URL
-            for (Object address1 : addresses) {
-                Element address = (Element) address1;
-                address.setAttribute("location", newURL.toString());
+            for ( final Element address : addresses ) {
+                updatedAddress = true;
+                address.setAttribute( ATTR_LOCATION, location);
             }
 
-            // and for soap12 (this is better than just leaving the protected service url in there)
-            List addressesToRemove = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap12/", "address");
-            for (Object anAddressesToRemove : addressesToRemove) {
-                Element address = (Element) anAddressesToRemove;
-                address.setAttribute("location", newURL.toString());
+            // and for soap12
+            final List<Element> soap12Addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_2, ELEMENT_ADDRESS );
+            for ( final Element address : soap12Addresses ) {
+                updatedAddress = true;
+                address.setAttribute( ATTR_LOCATION, location);
+            }
+        }
+
+        if ( !updatedAddress && serviceId != null ) {
+            final byte[] serviceRandom = serviceId.toString().getBytes();
+            addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_1, "soap", serviceRandom );
+            addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_2, "soap12", serviceRandom );
+        }
+    }
+
+    /**
+     * Add endpoints for the given binding NS adding a service if required.
+     *
+     * @param wsdl The WSDL document
+     * @param location The endpoint address
+     * @param bindingNs The binding namespace
+     * @param bindingPrefix The preferred prefix for the binding namespace
+     * @param serviceRandom Data for generation of a repeatable random identifier for the service name
+     */
+    private void addEndpointsForHttpBindings( final Document wsdl,
+                                              final String location,
+                                              final String bindingNs,
+                                              final String bindingPrefix,
+                                              final byte[] serviceRandom ) {
+        final NodeList bindingList = wsdl.getElementsByTagNameNS( bindingNs, ELEMENT_BINDING );
+        final String targetNamespace = wsdl.getDocumentElement().getAttribute( ATTR_TARGET_NAMESPACE );
+
+        if ( targetNamespace.isEmpty() ) return;
+
+        for ( int i = 0; i < bindingList.getLength(); i++)  {
+            final Element bindingElement = (Element) bindingList.item(i);
+            final Element wsdlBindingElement = (Element) bindingElement.getParentNode();
+            final String bindingName = wsdlBindingElement.getAttribute( ATTR_NAME );
+            final String soapPrefix = bindingElement.getPrefix() == null ? bindingPrefix : bindingElement.getPrefix();
+            final String wsdlPrefix = wsdlBindingElement.getPrefix() == null ? "wsdl" : bindingElement.getPrefix();
+
+            if ( !bindingName.isEmpty() ) {
+                Element serviceElement = XmlUtil.findFirstChildElementByName( wsdl.getDocumentElement(), NAMESPACE_WSDL, ELEMENT_SERVICE );
+
+                final Set<String> portNames = new HashSet<String>();
+                if ( serviceElement == null ) {
+                    serviceElement = XmlUtil.createAndAppendElementNS( wsdl.getDocumentElement(), ELEMENT_SERVICE, NAMESPACE_WSDL, wsdlPrefix );
+                    serviceElement.setAttribute( ATTR_NAME, "Service-" + UUID.nameUUIDFromBytes( serviceRandom ).toString() );
+                } else {
+                    for ( Element svcElement : XmlUtil.findChildElementsByName( wsdl.getDocumentElement(), NAMESPACE_WSDL, ELEMENT_SERVICE )) {
+                        for ( Element portElement : XmlUtil.findChildElementsByName( svcElement, NAMESPACE_WSDL, ELEMENT_PORT )) {
+                            portNames.add( portElement.getAttribute( ATTR_NAME ));
+                        }
+                    }
+                }
+
+                if ( !portNames.contains( bindingName ) ) {
+                    final Element portElement = XmlUtil.createAndAppendElementNS( serviceElement, ELEMENT_PORT, NAMESPACE_WSDL, wsdlPrefix );
+                    portElement.setAttribute( ATTR_NAME, bindingName );
+                    portElement.setAttribute( ELEMENT_BINDING, XmlUtil.getOrCreatePrefixForNamespace( portElement, targetNamespace, "tns" )+ ":" + bindingName );
+
+                    final Element addressElement = XmlUtil.createAndAppendElementNS( portElement, ELEMENT_ADDRESS, bindingNs, soapPrefix );
+                    addressElement.setAttribute( ATTR_LOCATION, location );
+                }
             }
         }
     }
@@ -617,6 +699,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                                           final AuthenticationResult[] results) throws IOException {
         final boolean enableImportProxy = svc.isInternal() || proxyRequired(svc) || serverConfig.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
         final Collection<ServiceDocument> documents;
+        Long serviceId = null;
         Document wsdlDoc = null;
         try {
             documents = enableImportProxy ?
@@ -637,6 +720,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     return;
                 }
             } else {
+                serviceId = svc.getOid();
                 wsdlDoc = parse(svc.getWsdlUrl(), svc.getWsdlXml());
             }
         } catch (SAXException e) {
@@ -712,7 +796,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         rewriteReferences(svc.getId(), wsdlDoc, documents, wsdlProxyUrl);
-        substituteSoapAddressURL(wsdlDoc, ssgurl);
+        addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId);
         addSecurityPolicy(wsdlDoc, svc);
 
         // output the wsdl
