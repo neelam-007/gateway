@@ -381,7 +381,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
-        methods.removeAll(Arrays.asList(HttpMethod.HEAD, HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
+        methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
         requestMethodComboBox.setModel(new DefaultComboBoxModel(methods.toArray()));
         Utilities.enableGrayOnDisabled(requestMethodComboBox);
         final ActionListener requestMethodListener = new ActionListener() {

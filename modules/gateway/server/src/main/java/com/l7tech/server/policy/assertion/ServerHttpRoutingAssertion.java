@@ -569,7 +569,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 });
             }
 
-            boolean readOk = readResponse(context, routedResponse, routedResponseDestination);
+            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
@@ -702,11 +702,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @param context           the policy enforcement context
      * @param routedResponse    response from back end
      * @param destination       the destination message object to copy <code>routedResponse</code> into
+     * @param wasHeadMethod     true if the HTTP method used for the request was "HEAD"
      * @return <code>false</code> if error reading <code>routedResponse</code> or it is an error response
      */
     private boolean readResponse(final PolicyEnforcementContext context,
                                  final GenericHttpResponse routedResponse,
-                                 final Message destination) {
+                                 final Message destination,
+                                 final boolean wasHeadMethod) {
         boolean responseOk = true;
         try {
             final int status = routedResponse.getStatus();
@@ -755,7 +757,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
                 if (responseStream == null) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
+                    if (!wasHeadMethod)
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
                     destination.initialize(stashManager, outerContentType, responseStream);

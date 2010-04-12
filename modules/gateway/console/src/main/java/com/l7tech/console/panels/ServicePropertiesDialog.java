@@ -18,20 +18,19 @@ import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -74,6 +73,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox putCheck;
     private JCheckBox postCheck;
     private JCheckBox deleteCheck;
+    private JCheckBox headCheck;
     private JPanel wsdlPanel;
     private JButton resetWSDLButton;
     private JButton helpButton;
@@ -196,6 +196,9 @@ public class ServicePropertiesDialog extends JDialog {
         }
         if (methods.contains(HttpMethod.DELETE)) {
             deleteCheck.setSelected(true);
+        }
+        if (methods.contains(HttpMethod.HEAD)) {
+            headCheck.setSelected(true);
         }
 
         if (!subject.isSoap()) {
@@ -620,6 +623,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(putCheck);
         enableIfHasUpdatePermission(postCheck);
         enableIfHasUpdatePermission(deleteCheck);
+        enableIfHasUpdatePermission(headCheck);
         enableIfHasUpdatePermission(disableRadio);
         enableIfHasUpdatePermission(enableRadio);
         enableIfHasUpdatePermission(laxResolutionCheckbox);
@@ -706,7 +710,7 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected()) {
+        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected()) {
             int res = JOptionPane.showConfirmDialog(this, "Because no HTTP methods are selected, this service will " +
                                                           "not be accessible through HTTP. Are you sure you want to " +
                                                           "do this?", "Warning", JOptionPane.YES_NO_OPTION);
@@ -732,6 +736,9 @@ public class ServicePropertiesDialog extends JDialog {
         }
         if (deleteCheck.isSelected()) {
             methods.add(HttpMethod.DELETE);
+        }
+        if (headCheck.isSelected()) {
+            methods.add(HttpMethod.HEAD);
         }
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());
