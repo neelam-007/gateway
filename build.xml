@@ -35,7 +35,7 @@
 
     <!-- project classpath -->
     <path id="project.classpath">
-        <fileset dir="lib/repository">
+        <fileset dir="lib/repository/bouncycastle">
             <!--
               include bc provider before tarari_jce_provider since that
               contains old copies of the bc classes.
@@ -48,25 +48,6 @@
     <path id="project.classpath.fortest">
         <path refid="project.classpath"/>
     </path>
-
-    <!--
-      Classpath for Idea form compiler
-    -->
-    <path id="uidesigner.classpath">
-        <fileset dir="lib/tools">
-            <include name="jdom.jar"/>
-            <include name="asm.jar"/>
-            <include name="asm-commons.jar"/>
-            <include name="javac2.jar"/>
-        </fileset>
-    </path>
-
-    <!--
-      Task definition for Idea form compiler
-    -->
-    <taskdef name="javac2t"
-             classname="com.intellij.ant.Javac2"
-             classpathref="uidesigner.classpath"/>
 
     <!--
       Task definition for Pack 200
@@ -89,49 +70,12 @@
              classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
              classpath="lib/tools/findbugs-ant.jar"/>
 
-    <macrodef name="javac2">
-        <attribute name="srcdir"/>
-        <attribute name="destdir"/>
-        <attribute name="debug" default="on"/>
-        <attribute name="target" default="1.5"/>
-        <attribute name="source" default="1.5"/>
-        <attribute name="optimize" default="on"/>
-        <attribute name="classpathref" default="project.classpath"/>
-        <attribute name="include" default="**/*.form"/>
-        <sequential>
-            <javac2t
-                    srcdir="@{srcdir}"
-                    destdir="@{destdir}"
-                    debug="@{debug}"
-                    target="@{target}"
-                    optimize="@{optimize}"
-                    source="@{source}"
-                    classpathref="@{classpathref}">
-                <include name="@{include}"/>
-            </javac2t>
-        </sequential>
-    </macrodef>
-
     <!--
       Task definition for XmlBeans
     -->
     <taskdef name="xmlbeancompiler"
              classname="org.apache.xmlbeans.impl.tool.XMLBean"
              classpath="lib/xbean.jar:lib/jsr173_1.0_api.jar"/>
-
-    <!--
-      Classpath for obfuscation
-    -->
-    <path id="zelix.classpath">
-        <fileset dir="lib/tools">
-            <include name="ZKM.jar"/>
-        </fileset>
-    </path>
-
-    <!--
-      Task definition for class file obfuscation
-    -->
-    <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
 
     <!--
       Classpath for svn
@@ -238,6 +182,8 @@
             <equals arg1="${database.type}" arg2="mysql"/>
         </condition>
 
+        <property  name="project.module.includes" value="*/build.xml,*/*/build.xml,*/*/*/build.xml"/>
+
         <!-- modules excluded from a production build -->
         <property name="project.module.excludes" value="skunkworks/build.xml"/>
 
@@ -336,28 +282,28 @@
 
     <target name="build-module-list" unless="build-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
+            <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path" pathid="build-path.text"/>
     </target>
 
     <target name="build-module-list-idea-module" if="module" depends="init-core">
         <ivy:buildlist root="${module}" reference="module-build-all-path" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml"/>
+            <fileset dir="modules" includes="${project.module.includes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-all-path" pathid="build-all-path.text"/>
     </target>
 
     <target name="build-module-list-idea" unless="module" depends="build-module-list-idea-module">
         <ivy:buildlist reference="module-build-all-path" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml"/>
+            <fileset dir="modules" includes="${project.module.includes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-all-path" pathid="build-all-path.text"/>
     </target>
 
     <target name="build-module-list-all" unless="build-all-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-all-path" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml"/>
+            <fileset dir="modules" includes="${project.module.includes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-all-path" pathid="build-all-path.text"/>
     </target>
@@ -986,22 +932,22 @@
         <mkdir dir="${build.reports}/ivy"/>
         <mkdir dir="${build.reports}/teamcity"/>
         
-        <ivy:resolve file="modules/gateway/server/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/gateway/server/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/gateway/console/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/gateway/console/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="manager_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/xmlvpnclient/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/xmlvpnclient/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="xmlvpnclient_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/ems/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/ems/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="ems_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/gateway/config/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/gateway/config/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_config_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/gateway/processcontroller/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve file="modules/gateway/processcontroller/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_processcontroller_dependencies.html" graph="false"/>
 
         <echoxml file="${build.reports}/ivy/index.html">
@@ -1036,7 +982,7 @@
         <mkdir dir="${build.dir}/layer7libs"/>
         
         <!-- Get production modular assertions -->
-        <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client" log="quiet"/>
+        <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client" log="quiet" checkIfChanged="false"/>
         <ivy:retrieve conf="module,module-client" pattern="${build.dir}/layer7libs/[artifact]-[revision].[ext]"/>
 
         <copy todir="${build.dir}/layer7libs" flatten="true">
@@ -1121,7 +1067,7 @@
     <target name="clean.test" depends="init-core">
         <delete>
             <fileset dir="${src.root}/modules">
-                <include name="**/build/reports/tests/*"/>
+                <include name="*/build/reports/tests/*,*/*/build/reports/tests/*,*/*/*/build/reports/tests/*"/>
             </fileset>
         </delete>
         <delete includeEmptyDirs="true">
@@ -1336,7 +1282,7 @@
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist leaf="${module}" reference="module-build-path-single" onMissingDescriptor="skip" onlydirectdep="true">
-            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
+            <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
@@ -1351,7 +1297,7 @@
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
+            <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
@@ -1367,7 +1313,7 @@
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip" restartFrom="${module}">
-            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
+            <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
@@ -1566,7 +1512,7 @@
     -->
     <target name="package.gateway.checkrequired">
         <uptodate property="package.gateway.notrequired">
-            <srcfiles dir="." includes="modules/*/src/main/java/**/*, etc/**/*, modules/gateway/*/src/main/java/**/*, modules/gateway/assertions/*/src/main/java/**/*, modules/**/ivy.xml, modules/**/build.xml"/>
+            <srcfiles dir="." excludes="etc/JAXB_OutputXML/**/*" includes="etc/**/*, modules/*/src/main/java/**/*, modules/gateway/*/src/main/java/**/*, modules/gateway/assertions/*/src/main/java/**/*, modules/*/ivy.xml, modules/*/*/ivy.xml, modules/*/*/*/ivy.xml, modules/*/build.xml, modules/*/*/build.xml, modules/*/*/*/build.xml"/>
             <mapper type="merge" to="${build.dir}/gateway/Gateway.jar"/>
         </uptodate>
         <condition property="compile.forms.notrequired">
@@ -1639,7 +1585,7 @@
 
     <target name="package.modules" depends="package.jars, package.modules.work"/>
     <target name="package.modules.work" unless="package.jars.notrequired">
-        <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client,module-optional" log="quiet"/>
+        <ivy:resolve file="modules/gateway/production/ivy.xml" showprogress="false" transitive="false" conf="module,module-client,module-optional" log="quiet" checkIfChanged="false"/>
 
         <delete dir="${build.dir}/modules"/>
         <mkdir dir="${build.dir}/modules"/>
@@ -1773,7 +1719,7 @@
             depends="package.skunkworks"> 
         <mkdir dir="build/signer/lib"/>
 
-        <ivy:resolve resolveId="signer.deps" file="modules/gateway/console/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:resolve resolveId="signer.deps" file="modules/gateway/console/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:retrieve resolveId="signer.deps" pattern="build/signer/lib/[artifact]-[revision].[ext]" type="jar"/>
 
         <delete>
@@ -2224,7 +2170,7 @@
         <move file="${build.dir}/gatewayconfig/ssgbackup_noninstall.sh" tofile="${build.dir}/gatewayconfig/ssgbackup.sh" />
         <move file="${build.dir}/gatewayconfig/backuputilitylogging_noninstall.properties" tofile="${build.dir}/gatewayconfig/backuputilitylogging.properties" />
 
-        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet" checkIfChanged="false"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
 
         <!--Jar file SSGBackupOnlyUtility.jar is used to backup a pre 5.1 SSG. Pre 5.1 the backup utilitiy did not backup
@@ -2272,7 +2218,7 @@
         <chmod file="${build.dir}/backup/ssgrestore.sh" perm="755"/>
         <chmod file="${build.dir}/backup/ssgmigrate.sh" perm="755"/>
 
-        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet" checkIfChanged="false"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
 
@@ -2310,7 +2256,7 @@
             </fileset>
         </copy>
 
-        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet" checkIfChanged="false"/>
         <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-gateway-config" conf="default" pattern="${build.dir}/configwizard/lib/[artifact]-[revision].[ext]"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
@@ -3417,7 +3363,7 @@
             </fileset>
         </copy>
 
-        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-ems-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-ems-config" showprogress="false" conf="default" log="quiet" checkIfChanged="false"/>
         <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-ems-config" conf="default" pattern="${build.dir}/emsconfigwizard/lib/[artifact]-[revision].[ext]"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-ems-config" revision="latest.integration" property="module.ems.config.version"/>

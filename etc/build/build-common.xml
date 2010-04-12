@@ -79,7 +79,8 @@
     <presetdef name="ivy-resolve">
         <ivy:resolve file="${ivy.file}"
                      showprogress="false"
-                     log="quiet"/>
+                     log="quiet"
+                     checkIfChanged="false"/>
     </presetdef>
 
     <!--
@@ -616,6 +617,6 @@
     <!--
     -->
     <target name="clean" description="Clean the project">
-        <delete includeemptydirs="true" dir="${build.dir}"/>
+        <delete dir="${build.dir}"/>
     </target>
 </project>
