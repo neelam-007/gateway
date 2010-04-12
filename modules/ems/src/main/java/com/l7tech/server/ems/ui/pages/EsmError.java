@@ -14,7 +14,7 @@ import java.io.StringWriter;
  */
 @RequiredPermissionSet()
 @Administrative(licensed=false,authenticated=false)
-public class EsmError extends EsmStandardWebPage {
+public class EsmError extends WebPage {
 
     //- PUBLIC
 
