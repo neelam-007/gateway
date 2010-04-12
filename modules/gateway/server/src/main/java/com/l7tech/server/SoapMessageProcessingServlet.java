@@ -226,8 +226,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
-                SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-                if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+                final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
@@ -310,7 +309,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } catch (Throwable e) {
             // if the policy throws AND the stealth flag is set, drop connection
-            if (context.isStealthResponseMode()) {
+            final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
+            if ( faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION ) {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
                                        "Instructing valve to drop connection completely.",
                                        e);
@@ -386,6 +386,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    private SoapFaultLevel getSoapFaultLevel( final PolicyEnforcementContext context ) {
+        SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+        if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+        return faultLevelInfo;
+    }
+
     private void initCookies(Cookie[] cookies, PolicyEnforcementContext context) {
         if(cookies!=null) {
             for (Cookie cookie : cookies) {
@@ -438,8 +444,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             responseStream = hresp.getOutputStream();
             hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
-            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+            final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
                 if (shouldSendBackPolicyUrl(context)) {
                     PublishedService pserv = context.getService();
@@ -482,8 +487,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
             hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
-            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+            final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
                 if (shouldSendBackPolicyUrl(context)) {
                     PublishedService pserv = context.getService();
