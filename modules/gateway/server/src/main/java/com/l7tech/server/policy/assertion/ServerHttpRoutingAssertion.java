@@ -234,6 +234,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } catch (WSDLException we) {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                 return AssertionStatus.FAILED;
+            } catch (MalformedURLException mue) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
+                return AssertionStatus.FAILED;
             }
 
             Message requestMessage = getRequestMessage(context);
