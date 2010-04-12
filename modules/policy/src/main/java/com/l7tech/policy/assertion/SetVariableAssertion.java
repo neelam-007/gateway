@@ -50,6 +50,15 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
 
     private transient VariableMetadata _meta;   // just for caching
 
+    public SetVariableAssertion() {
+    }
+
+    public SetVariableAssertion(String variableToSet, String stringValue) {
+        this._variableToSet = variableToSet;
+        setDataType(DataType.STRING);
+        setExpression(stringValue);
+    }
+
     public String getVariableToSet() {
         return _variableToSet;
     }

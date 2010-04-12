@@ -11,10 +11,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.InvalidPolicyException;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.AuditDetailAssertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -28,6 +25,7 @@ import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -315,5 +313,22 @@ public class ServerConcurrentAllAssertionTest {
         } finally {
             ServerConcurrentAllAssertion.resetAssertionExecutor(64, 32, 64);
         }
+    }
+
+    @Test
+    @BugNumber(8669)
+    public void testReadOnlyBuiltinVariable() throws Exception {
+        ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+            new SetVariableAssertion("date", "${gateway.time}")
+        ));
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
+        // Run all requests concurrently
+        AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), context.getVariable("date").toString().substring(0, 4));
     }
 }

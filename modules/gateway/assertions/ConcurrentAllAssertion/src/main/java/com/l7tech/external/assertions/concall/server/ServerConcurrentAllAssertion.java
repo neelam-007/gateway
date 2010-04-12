@@ -278,16 +278,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             String name = entry.getKey();
             Object value = entry.getValue();
 
-            try {
-                if (value instanceof String) {
-                    dest.setVariable(name, value);
-                } else if (value instanceof Message) {
-                    dest.setVariable(name, cloneMessageBody((Message)value));
-                }
-            } catch (VariableNotSettableException e) {
-                if (logger.isLoggable(Level.FINE))
-                    logger.log(Level.FINE, "Unable to set non-settable variable: " + name);
-                // Ignore it and fallthrough    
+            if (value instanceof String) {
+                safeSetVariable(dest, name, value);
+            } else if (value instanceof Message) {
+                safeSetVariable(dest, name, cloneMessageBody((Message)value));
             }
         }
     }
@@ -314,13 +308,23 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             Object value = entry.getValue();
 
             if (value instanceof String) {
-                ret.setVariable(name, value);
+                safeSetVariable(ret, name, value);
             } else if (value instanceof Message) {
-                ret.setVariable(name, cloneMessageBody((Message)value));
+                safeSetVariable(ret, name, cloneMessageBody((Message)value));
             }
         }
 
         return ret;
+    }
+
+    private static void safeSetVariable(PolicyEnforcementContext ctx, String name, Object value) {
+        try {
+            ctx.setVariable(name, value);
+        } catch (VariableNotSettableException e) {
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Unable to set non-settable variable: " + name);
+            // Ignore it and fallthrough
+        }
     }
 
     static Message cloneMessageBody(Message source) throws IOException {
