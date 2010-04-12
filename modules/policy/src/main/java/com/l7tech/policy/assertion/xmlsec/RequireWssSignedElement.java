@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -40,7 +40,8 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public RequireWssSignedElement(XpathExpression xpath) {
         super( TargetMessageType.REQUEST, false );
         setXpathExpression(xpath);
-        setAcceptedDigestAlgorithms(SupportedSignatureMethods.getDigestNames());
+        List<String> allDigestIds = SupportedDigestMethods.getAlgorithmIds();
+        setAcceptedDigestAlgorithms(allDigestIds.toArray(new String[allDigestIds.size()]));
     }
 
     @Override
@@ -111,15 +112,19 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         }
     }
 
-    public boolean acceptsDigest(String digestAlgorithmName) {
-        return acceptedDigests.contains(digestAlgorithmName);
+    /**
+     * @param digestAlgorithmId message digest algorithm identifier
+     * @return true if the provided digest algorithm is accepted by this assertion, false otherwise 
+     */
+    public boolean acceptsDigest(String digestAlgorithmId) {
+        return acceptedDigests.contains(digestAlgorithmId);
     }
 
     public void setAcceptedDigestAlgorithms(String[] accepted) {
         if (accepted != null) {
             Set<String> acceptedDigests = new LinkedHashSet<String>();
             for (String digest : accepted) {
-                acceptedDigests.addAll(SupportedSignatureMethods.getDigestAliases(digest));
+                acceptedDigests.add(SupportedDigestMethods.fromAlgorithmId(digest).getIdentifier()); // make sure it's supported
             }
             this.acceptedDigests = acceptedDigests;
         }
@@ -143,7 +148,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
             return (decorate)? AssertionUtils.decorateName(assertion, name): baseName;
         }
     };
-    
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -164,12 +169,12 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         });
         meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
             put(WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping.getExternalName(),
-                WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping);            
+                WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping);
         }});
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
-        
+
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.XpathBasedAssertionValidator");
 
         return meta;
@@ -183,7 +188,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     private Set<String> acceptedDigests;
 
     private boolean isSetVariables() {
-        return variablePrefix != null && variablePrefix.length() > 0;        
+        return variablePrefix != null && variablePrefix.length() > 0;
     }
 
     private String prefixVariable( final String variableName ) {

@@ -2,60 +2,48 @@ package com.l7tech.security.xml;
 
 import java.util.*;
 
+import static com.l7tech.security.xml.SupportedDigestMethods.*;
+
 /**
  * All supported crypto algorithms used in the gateway for XML/message based security.  Along with each algorithm
- * identifier is the corresponding message digest identifier.  This enum should be the only place in the code
+ * identifier is the corresponding {@link SupportedDigestMethods}.  These two enums should be the only place in the code
  * where we hardcode the signing/hash algorithm identifier strings.
  *
  * User: vchan
+ *
+ * @see com.l7tech.security.xml.SupportedDigestMethods
  */
 public enum SupportedSignatureMethods {
 
     /** RSA with SHA-1 (defaults from XSS4J) */
-    RSA_SHA1("RSA", "SHA-1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
+    RSA_SHA1("RSA", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SHA1),
     /** DSA with SHA-1 (defaults from XSS4J) */
-    DSA_SHA1("DSA", "SHA-1", "http://www.w3.org/2000/09/xmldsig#dsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
+    DSA_SHA1("DSA", "http://www.w3.org/2000/09/xmldsig#dsa-sha1", SHA1),
     /** HMAC with SHA-1 (defaults from XSS4J) */
-    HMAC_SHA1("SecretKey", "SHA-1", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
+    HMAC_SHA1("SecretKey", "http://www.w3.org/2000/09/xmldsig#hmac-sha1", SHA1),
     /** RSA with SHA-256 extension*/
-    RSA_SHA256("RSA", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
+    RSA_SHA256("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", SHA256),
     /** RSA with SHA-384 extension*/
-    RSA_SHA384("RSA", "SHA-384", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#sha384"),
+    RSA_SHA384("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", SHA384),
     /** RSA with SHA-512 extension*/
-    RSA_SHA512("RSA", "SHA-512", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", "http://www.w3.org/2001/04/xmlenc#sha512"),
+    RSA_SHA512("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512", SHA512),
     /** ECDSA with SHA-1 (Suite-B crypto support) */
-    ECDSA_SHA1("EC", "SHA-1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", "http://www.w3.org/2000/09/xmldsig#sha1"),
+    ECDSA_SHA1("EC", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", SHA1),
     /** ECDSA with SHA-256 (Suite-B crypto support) */
-    ECDSA_SHA256("EC", "SHA-256", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256", "http://www.w3.org/2001/04/xmlenc#sha256"),
+    ECDSA_SHA256("EC", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256", SHA256),
     /** ECDSA with SHA-384 (Suite-B crypto support) */
     // rfc#4051 stated URI is actually from "dsigmore" rather than "dsig": http://www.w3.org/2001/04/xmldsig-more#sha384
-    ECDSA_SHA384("EC", "SHA-384", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#sha384"),
+    ECDSA_SHA384("EC", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384", SHA384),
     /** ECDSA with SHA-512 (Suite-B crypto support) */
-    ECDSA_SHA512("EC", "SHA-512", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512", "http://www.w3.org/2001/04/xmlenc#sha512")
+    ECDSA_SHA512("EC", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512", SHA512)
     ;
-
-    private static final Map<String, List<String>> digestAliases = new HashMap<String, List<String>>() {{
-        put("SHA", Arrays.asList("SHA-1", "SHA1", "SHA"));
-        put("SHA1", Arrays.asList("SHA-1", "SHA1", "SHA"));
-        put("SHA-1", Arrays.asList("SHA-1", "SHA1", "SHA"));
-        put("SHA224", Arrays.asList("SHA-224", "SHA224"));
-        put("SHA-224", Arrays.asList("SHA-224", "SHA224"));
-        put("SHA256", Arrays.asList("SHA-256", "SHA256"));
-        put("SHA-256", Arrays.asList("SHA-256", "SHA256"));
-        put("SHA384", Arrays.asList("SHA-384", "SHA384"));
-        put("SHA-384", Arrays.asList("SHA-384", "SHA384"));
-        put("SHA512", Arrays.asList("SHA-512", "SHA512"));
-        put("SHA-512", Arrays.asList("SHA-512", "SHA512"));
-    }};
 
     /** The key algorithm name, ie "RSA" or "EC", for public or private keys, or "SecretKey" for secret keys. */
     private String keyAlg;
-    /** The digest algorithm, ie "SHA-1" or "SHA-256". */
-    private String digestAlg;
     /** The signing algorithm identifier */
     private final String algorithmIdentifier;
-    /** The corresponding message digest identifier */
-    private final String messageDigestIdentifier;
+    /** The corresponding message digest method */
+    private final SupportedDigestMethods digestMethod;
     /** This UI display name. */
     private final String displayName;
 
@@ -65,12 +53,11 @@ public enum SupportedSignatureMethods {
      * @param algId the algorithm id
      * @param msgDigestId the message digest id
      */
-    private SupportedSignatureMethods(String keyAlg, String digestAlg, String algId, String msgDigestId) {
+    private SupportedSignatureMethods(String keyAlg, String algId, SupportedDigestMethods digestMethod) {
         this.keyAlg = keyAlg;
-        this.digestAlg = digestAlg;
         this.algorithmIdentifier = algId;
-        this.messageDigestIdentifier = msgDigestId;
-        this.displayName = keyAlg + " / " + digestAlg;
+        this.digestMethod = digestMethod;
+        this.displayName = keyAlg + " / " + digestMethod.getCanonicalName();
     }
 
     /**
@@ -84,7 +71,7 @@ public enum SupportedSignatureMethods {
      * @return the message digest algorithm name, ie "SHA-1" or "SHA-256" etc.  Never null.
      */
     public String getDigestAlgorithmName() {
-        return digestAlg;
+        return digestMethod.getCanonicalName();
     }
 
     /**
@@ -102,7 +89,7 @@ public enum SupportedSignatureMethods {
      * @return string
      */
     public String getMessageDigestIdentifier() {
-        return messageDigestIdentifier;
+        return digestMethod.getIdentifier();
     }
 
     /**
@@ -137,7 +124,7 @@ public enum SupportedSignatureMethods {
         if (keyAlgorithm == null) throw new IllegalArgumentException("keyAlgorithm is required");
         if (messageDigestAlgorithm == null) throw new IllegalArgumentException("messageDigestAlgorithm is required");
         for (SupportedSignatureMethods m : SupportedSignatureMethods.values()) {
-            if (m.keyAlg != null && m.keyAlg.equalsIgnoreCase(keyAlgorithm) && m.digestAlg != null && m.digestAlg.equalsIgnoreCase(messageDigestAlgorithm))
+            if (keyAlgorithm.equalsIgnoreCase(m.keyAlg) && messageDigestAlgorithm.equalsIgnoreCase(m.getDigestAlgorithmName()))
                 return m;
         }
         return null;
@@ -154,7 +141,7 @@ public enum SupportedSignatureMethods {
     public static SupportedSignatureMethods fromKeyAlg(String keyAlgorithm) {
         if (keyAlgorithm == null) throw new IllegalArgumentException("keyAlgorithm is required");
         for (SupportedSignatureMethods m : SupportedSignatureMethods.values()) {
-            if (m.keyAlg != null && m.keyAlg.equalsIgnoreCase(keyAlgorithm) && m.digestAlg != null)
+            if (keyAlgorithm.equalsIgnoreCase(m.keyAlg) && m.getDigestAlgorithmName() != null)
                 return m;
         }
         return null;
@@ -188,24 +175,5 @@ public enum SupportedSignatureMethods {
                 ECDSA_SHA256,
                 ECDSA_SHA384,
                 ECDSA_SHA512);
-    }
-
-    /**
-     * Get a collection of known aliases for the specified JCE digest algorithm name.
-     *
-     * @param digest a digest algorithm name, ie "SHA-1".  Required.
-     * @return  a collection of recognized aliases for the specified digest, ie { "SHA-1", "SHA1", "SHA" }, or null.
-     */
-    public static List<String> getDigestAliases(String digest) {
-        return digestAliases.get(digest.toUpperCase());
-    }
-
-    /**
-     * Get list of digest algorithm names that it would be reasonable to offer in a GUI for selecting a signature and digest method.
-     *
-     * @return an array of canonical algorithm names (ie, { "SHA-1", "SHA-256" } ).  Never null or empty.
-     */
-    public static String[] getDigestNames() {
-        return new String[] { "SHA-1", "SHA-256", "SHA-384", "SHA-512" };
     }
 }

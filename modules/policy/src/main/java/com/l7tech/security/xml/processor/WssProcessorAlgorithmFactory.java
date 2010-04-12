@@ -5,10 +5,7 @@ import com.ibm.xml.dsig.SignatureMethod;
 import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.l7tech.security.xml.AttachmentCompleteTransform;
-import com.l7tech.security.xml.AttachmentContentTransform;
-import com.l7tech.security.xml.STRTransform;
-import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.security.xml.*;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Node;
@@ -55,9 +52,9 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
 
         String enabledDigestStr = SyspropUtil.getStringCached(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
         String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
-        enabledDigestSet = new HashSet<String>(Arrays.asList(enabledDigests));
+        enabledDigestSet = new HashSet<String>();
         for (String digest : enabledDigests) {
-            Collection<String> aliases = SupportedSignatureMethods.getDigestAliases(digest);
+            Collection<String> aliases = SupportedDigestMethods.getAliases(digest);
             if (aliases != null)
                 enabledDigestSet.addAll(aliases);
         }

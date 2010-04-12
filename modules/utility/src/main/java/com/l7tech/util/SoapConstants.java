@@ -110,6 +110,7 @@ public class SoapConstants {
     public static final String SIGNATURE_EL_NAME = "Signature";
     public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
     public static final String REFERENCE_EL_NAME = "Reference";
+    public static final String REFERENCE_DIGEST_METHOD_EL_NAME = "DigestMethod";
     public static final String SECURITY_CONTEXT_TOK_EL_NAME = "SecurityContextToken";
     public static final String SECURITYTOKENREFERENCE_EL_NAME = "SecurityTokenReference";
     public static final String BINARYSECURITYTOKEN_EL_NAME = "BinarySecurityToken";
@@ -188,7 +189,7 @@ public class SoapConstants {
      */
     public static final String SOAP_ENVELOPE_XPATH = "/" + SOAP_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
     public static final String SOAP_1_2_ENVELOPE_XPATH = "/" + SOAP_1_2_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
-    
+
     /**
      * soap body xpath '/soapenv:Envelope/soapenv:Body'
      */
@@ -202,5 +203,5 @@ public class SoapConstants {
 
 
     public static final String FC_CLIENT = "Client";
-    public static final String FC_SERVER = "Server";    
+    public static final String FC_SERVER = "Server";
 }

@@ -65,6 +65,11 @@ public class ServerWsAddressingAssertionTest {
                     public String getSignatureAlgorithmId() {
                         return null;
                     }
+
+                    @Override
+                    public String[] getDigestAlgorithmIds() {
+                        return null;
+                    }
                 });
             }
             node = node.getNextSibling();
@@ -137,7 +142,7 @@ public class ServerWsAddressingAssertionTest {
         swsaa.setVariables(properties, elements, ADDRESSING_NAMESPACE_200408, new Functions.BinaryVoid<String,Object>(){
             @Override
             public void call(String name, Object value) {
-                varMap.put(name,value);   
+                varMap.put(name,value);
             }
         });
 

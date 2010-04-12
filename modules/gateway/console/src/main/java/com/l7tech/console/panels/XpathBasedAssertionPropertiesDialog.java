@@ -41,6 +41,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.xml.KeyReference;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.security.xml.XencAlgorithm;
 import com.l7tech.util.*;
@@ -241,7 +242,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
     private boolean shouldShowHardwareAccelStatus(XpathBasedAssertion xpathBasedAssertion) {
         return xpathBasedAssertion instanceof RequestXpathAssertion || xpathBasedAssertion instanceof ResponseXpathAssertion;
-    }    
+    }
 
     private void construct(final XpathBasedAssertion assertion, final ActionListener okListener, final boolean readOnly) {
         okActionListener = okListener;
@@ -291,7 +292,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         signatureResponseConfigPanel.setVisible(isSignature);
         signatureDigestAlgorithmPanel.setVisible(isSignature);
         if (isSignature) {
-            String[] digests = SupportedSignatureMethods.getDigestNames();
+            String[] digests = SupportedDigestMethods.getDigestNames();
             digests = ArrayUtils.unshift(digests, "Automatic");
             signatureDigestComboBox.setModel(new DefaultComboBoxModel(digests));
         }
@@ -337,7 +338,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
         requiredNamespaces.put(SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
         requiredNamespaces.put(SoapConstants.SOAP_1_2_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-        
+
         for ( String prefix : requiredNamespaces.keySet() ) {
             if ( !namespaces.containsKey(prefix) ) {
                 namespaces.put( prefix, requiredNamespaces.get(prefix) );
@@ -798,7 +799,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             acceptSha512.setText(SupportedSignatureMethods.RSA_SHA512.getDigestAlgorithmName());
             acceptedDigestCheckboxes.add(acceptSha512);
             for(JCheckBox digest : acceptedDigestCheckboxes) {
-                digest.setSelected(((RequireWssSignedElement)assertion).acceptsDigest(digest.getText()));
+                digest.setSelected(((RequireWssSignedElement)assertion).acceptsDigest(SupportedDigestMethods.fromAlias(digest.getText()).getIdentifier()));
             }
         } else {
             signaturesAceptedPanel.setVisible(false);
@@ -921,7 +922,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private String[] collectAcceptedDigests() {
         List<String> result = new ArrayList<String>();
         for(JCheckBox maybeAccepted : acceptedDigestCheckboxes) {
-            if (maybeAccepted.isSelected()) result.add(maybeAccepted.getText());
+            if (maybeAccepted.isSelected())
+                result.add(SupportedDigestMethods.fromAlias(maybeAccepted.getText()).getIdentifier());
         }
         return result.toArray(new String[result.size()]);
     }
@@ -937,7 +939,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } else if (skiReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.SKI.getName());
         } else if (issuerSerialReferenceRadioButton.isSelected()) {
-            rwssi.setKeyReference(KeyReference.ISSUER_SERIAL.getName());            
+            rwssi.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
         }
         if (0 == signatureDigestComboBox.getSelectedIndex()) {
             rwssi.setDigestAlgorithmName(null);

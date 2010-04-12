@@ -31,4 +31,11 @@ public interface SignedElement extends ParsedElement {
      * @return the signature algorithm identifier
      */
     String getSignatureAlgorithmId();
+
+    /**
+     * Get the digest algorithms used for this signed element.
+     *
+     * @return the digest algorithm identifiers
+     */
+    String[] getDigestAlgorithmIds();
 }

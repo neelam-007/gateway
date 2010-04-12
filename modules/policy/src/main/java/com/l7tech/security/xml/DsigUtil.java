@@ -16,6 +16,7 @@ import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -28,7 +29,10 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.l7tech.security.xml.SupportedDigestMethods.*;
 
 /**
  * Utility class to help with XML digital signatures.
@@ -132,21 +136,18 @@ public class DsigUtil {
      * Given a signer private key and a digest algorithm, returns the appropriate signature method enum.
      *
      * @param senderSigningKey  the private key that is to be used to create the signature.  Required.
-     * @param messageDigestAlgorithm  the message digest algorithm, ie "SHA-1".  Required.
+     * @param messageDigestAlgorithm  the message digest algorithm name, ie "SHA-1".  Required.
      * @param allowDigestFallback if true, and no signature method is available with the specified key type and digest, we will fall back to SHA-1 as the digest if possible.
      *                            if false, we will fail and throw SignatureException rather than falling back to SHA-1.
      * @return an instance of SupportedSignatureMethods encoding the signature method to use.  Never null.
      * @throws SignatureException if the combination of private key type and message digest is not supported.
      */
     public static SupportedSignatureMethods getSignatureMethodForSignerPrivateKey(Key senderSigningKey, String messageDigestAlgorithm, boolean allowDigestFallback) throws SignatureException {
-        if (messageDigestAlgorithm == null)
-            messageDigestAlgorithm = getDefaultMessageDigest(senderSigningKey.getAlgorithm());
-
-        if (messageDigestAlgorithm != null) {
-            // Use canonical name of digest algorithm (ie, "SHA-384" rather than "SHA384")
-            List<String> digestAliases = SupportedSignatureMethods.getDigestAliases(messageDigestAlgorithm);
-            if (digestAliases != null && !digestAliases.isEmpty())
-                messageDigestAlgorithm = digestAliases.get(0);
+        SupportedDigestMethods messageDigest;
+        try {
+            messageDigest = SupportedDigestMethods.fromAlias(messageDigestAlgorithm);
+        } catch (IllegalArgumentException e) {
+            messageDigest = getDefaultMessageDigest(senderSigningKey.getAlgorithm());
         }
 
         String keyAlg;
@@ -160,7 +161,7 @@ public class DsigUtil {
         else
             throw new NullPointerException("senderSigningKey is required");
 
-        SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromKeyAndMessageDigest(keyAlg, messageDigestAlgorithm);
+        SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromKeyAndMessageDigest(keyAlg, messageDigest.getCanonicalName());
         if (sigMethod != null)
             return sigMethod;
 
@@ -171,7 +172,7 @@ public class DsigUtil {
                 return sigMethod;
         }
 
-        throw new SignatureException("No signature method available for key type " + keyAlg + " and message digest " + messageDigestAlgorithm);
+        throw new SignatureException("No signature method available for key type " + keyAlg + " and message digest " + messageDigest.getCanonicalName());
     }
 
     /**
@@ -357,10 +358,31 @@ public class DsigUtil {
     public static String findSigAlgorithm(Element sigElement) throws SignatureException {
         try {
             Element sigMethod = findSigMethod(sigElement);
-            return sigMethod.getAttribute("Algorithm");
+            String sigAlg = sigMethod.getAttribute("Algorithm");
+            if (sigAlg == null) throw new SignatureException("Algorithm attribute not specified for SignatureMethod");
+            return sigAlg;
         } catch (InvalidDocumentFormatException e) {
             throw new SignatureException(e);
         }
+    }
+
+    public static String[] findDigestAlgorithms(Element sigElement) throws SignatureException {
+        List<String> result = new ArrayList<String>();
+        result.add(SupportedSignatureMethods.fromSignatureAlgorithm(findSigAlgorithm(sigElement)).getMessageDigestIdentifier());
+
+        try {
+            Element signedInfo = DomUtils.findExactlyOneChildElementByName(sigElement, SoapUtil.DIGSIG_URI, "SignedInfo");
+            for(Element reference : DomUtils.findChildElementsByName(signedInfo, SoapUtil.DIGSIG_URI, SoapConstants.REFERENCE_EL_NAME)) {
+                Element digestMethod = DomUtils.findExactlyOneChildElementByName(reference, SoapUtil.DIGSIG_URI, SoapConstants.REFERENCE_DIGEST_METHOD_EL_NAME);
+                String digestAlg = digestMethod.getAttribute("Algorithm");
+                if (digestAlg == null) throw new SignatureException("Algorithm attribute not specified for reference DigestMethod");
+                result.add(digestAlg);
+            }
+        } catch (InvalidDocumentFormatException e) {
+            throw new SecurityException(e);
+        }
+
+        return result.toArray(new String[result.size()]);
     }
 
     private static Element findSigMethod(Element sigElement) throws InvalidDocumentFormatException {
@@ -414,19 +436,19 @@ public class DsigUtil {
     public static SupportedSignatureMethods getSignatureMethod(final PrivateKey signingKey) throws SignatureException {
         final String keyAlg = signingKey.getAlgorithm();
         final boolean usingEcc = signingKey instanceof ECPrivateKey || "EC".equals(keyAlg);
-        final String md = getDefaultMessageDigest(usingEcc ? "EC" : keyAlg);
+        final SupportedDigestMethods md = getDefaultMessageDigest(usingEcc ? "EC" : keyAlg);
 
         SupportedSignatureMethods signaturemethod;
         if (signingKey instanceof RSAPrivateKey || "RSA".equals(keyAlg)) {
-            if ("SHA-256".equals(md))
+            if (SHA256 == md)
                 signaturemethod = SupportedSignatureMethods.RSA_SHA256;
             else
                 signaturemethod = SupportedSignatureMethods.RSA_SHA1;
 
         } else if (usingEcc) {
-            if ("SHA-256".equals(md))
+            if (SHA256 == md)
                 signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
-            else if ("SHA-512".equals(md))
+            else if (SHA512 == md)
                 signaturemethod = SupportedSignatureMethods.ECDSA_SHA512;
             else
                 // SHA-384 is the chosen default for GD
@@ -451,13 +473,17 @@ public class DsigUtil {
      *
      * @return the default digest algorithm, defaulting to "SHA-1".  Never null.
      */
-    public static String getDefaultMessageDigest() {
+    public static SupportedDigestMethods getDefaultMessageDigest() {
         return getDefaultMessageDigest("RSA");
     }
 
-    static String getDefaultMessageDigest(String keyAlg) {
+    static SupportedDigestMethods getDefaultMessageDigest(String keyAlg) {
         if ("DSA".equals(keyAlg))
-            return "SHA-1"; // Currently the only supported DSA signature method is SHA1withDSA, so it's always the default digest for this key type
-        return SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", "EC".equals(keyAlg) ? "SHA-384" : "SHA-1");
+            return SHA1; // Currently the only supported DSA signature method is SHA1withDSA, so it's always the default digest for this key type
+        try {
+            return SupportedDigestMethods.fromAlias(SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", null));
+        } catch (IllegalArgumentException e) {
+            return "EC".equals(keyAlg) ? SHA384 : SHA1;
+        }
     }
 }

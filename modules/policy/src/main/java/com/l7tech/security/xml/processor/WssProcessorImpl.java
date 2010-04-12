@@ -193,7 +193,7 @@ public class WssProcessorImpl implements WssProcessor {
      *
      * <p>This setting is "false" by default, but should be set to "true" if
      * messages are expected to contain multiple signatures that cover the
-     * timestamp.</p> 
+     * timestamp.</p>
      *
      * @param permitMultipleTimestampSignatures True to permit multiple signatures covering the timestamp.
      */
@@ -216,7 +216,7 @@ public class WssProcessorImpl implements WssProcessor {
      * Flag for controlling how signature confirmation validation is performed.
      *
      * When set to true:
-     * all WSS 1.1 signature confirmation checks are performed 
+     * all WSS 1.1 signature confirmation checks are performed
      * all checks are also performed on responses that are detected as using WSS 1.1 (not just on the ones that correspond to requests marked as requiring WSS 1.1)
      *
      * When set to false, the following conditions will not cause validation to fail:
@@ -710,7 +710,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
         return false;
     }
-    
+
     private XmlSecurityToken findSecurityContextTokenBySessionId(String refUri) {
         Collection tokens = securityTokens;
         for (Object o : tokens) {
@@ -723,7 +723,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private KerberosSigningSecurityToken findKerberosSigningSecurityTokenBySha1( final String sha1, 
+    private KerberosSigningSecurityToken findKerberosSigningSecurityTokenBySha1( final String sha1,
                                                                                  final Element securityTokenReference ) {
         KerberosSigningSecurityToken kerberosSigningSecurityToken = null;
 
@@ -1932,6 +1932,7 @@ public class WssProcessorImpl implements WssProcessor {
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
                 final String signatureAlgorithmId = DsigUtil.findSigAlgorithm(samlToken.getEmbeddedIssuerSignature());
+                final String[] digestAlgorithmIds = DsigUtil.findDigestAlgorithms(samlToken.getEmbeddedIssuerSignature());
 
                 class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
                     public EmbeddedSamlSignatureToken() {
@@ -1976,6 +1977,11 @@ public class WssProcessorImpl implements WssProcessor {
                             @Override
                             public String getSignatureAlgorithmId() {
                                 return signatureAlgorithmId;
+                            }
+
+                            @Override
+                            public String[] getDigestAlgorithmIds() {
+                                return digestAlgorithmIds;
                             }
                         };
 
@@ -2131,7 +2137,7 @@ public class WssProcessorImpl implements WssProcessor {
             }
         });
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
-        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);        
+        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
@@ -2216,7 +2222,9 @@ public class WssProcessorImpl implements WssProcessor {
                     elementCovered = targetElement;
                 }
                 // make reference to this element
-                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered, sigElement, DsigUtil.findSigAlgorithm(sigElement));
+                final SignedElement signedElement = new SignedElementImpl(
+                    signingSecurityToken, elementCovered, sigElement,
+                    DsigUtil.findSigAlgorithm(sigElement), DsigUtil.findDigestAlgorithms(sigElement) );
                 elementsThatWereSigned.add(signedElement);
                 signingSecurityToken.addSignedElement(signedElement);
             } else {
@@ -2258,7 +2266,7 @@ public class WssProcessorImpl implements WssProcessor {
         signingCertToken = new X509BinarySecurityTokenImpl(certificate, bst);
         return signingCertToken;
     }
-    
+
     private InetAddress getClientInetAddress( final Message message ) {
         InetAddress clientAddress = null;
 
@@ -2324,12 +2332,14 @@ public class WssProcessorImpl implements WssProcessor {
         private final Element element;
         private final Element signatureElement;
         private final String signatureAlgorithmId;
+        private final String[] digestAlgorithmIds;
 
-        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement, String signatureAlgorithmId) {
+        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement, String signatureAlgorithmId, String[] digestAlgorithmsIds) {
             this.signingToken = signingToken;
             this.element = element;
             this.signatureElement = signatureElement;
             this.signatureAlgorithmId = signatureAlgorithmId;
+            this.digestAlgorithmIds = digestAlgorithmsIds;
         }
 
         @Override
@@ -2350,6 +2360,11 @@ public class WssProcessorImpl implements WssProcessor {
         @Override
         public String getSignatureAlgorithmId() {
             return signatureAlgorithmId;
+        }
+
+        @Override
+        public String[] getDigestAlgorithmIds() {
+            return digestAlgorithmIds;
         }
     }
 

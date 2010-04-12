@@ -83,15 +83,10 @@
                 </wsse:SecurityToken>
                 <L7p:RequireWssSignedElement>
                     <L7p:AcceptedDigestAlgorithms stringArrayValue="included">
-                        <L7p:item stringValue="SHA-1"/>
-                        <L7p:item stringValue="SHA1"/>
-                        <L7p:item stringValue="SHA"/>
-                        <L7p:item stringValue="SHA-256"/>
-                        <L7p:item stringValue="SHA256"/>
-                        <L7p:item stringValue="SHA-384"/>
-                        <L7p:item stringValue="SHA384"/>
-                        <L7p:item stringValue="SHA-512"/>
-                        <L7p:item stringValue="SHA512"/>
+                        <L7p:item stringValue="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                        <L7p:item stringValue="http://www.w3.org/2001/04/xmldsig-more#sha384"/>
+                        <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha512"/>
                     </L7p:AcceptedDigestAlgorithms>
                 </L7p:RequireWssSignedElement>
                 <L7p:RequireWssEncryptedElement/>

@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.*;
-import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
@@ -123,10 +122,11 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
     private boolean isAcceptedSignatureDigestAlgorithms(ParsedElement[] elements) {
         for(ParsedElement pe : elements) {
             if (pe instanceof SignedElement) {
-                SupportedSignatureMethods sigMethod = SupportedSignatureMethods.fromSignatureAlgorithm(((SignedElement) pe).getSignatureAlgorithmId());
-                if ( ! assertion.acceptsDigest(sigMethod.getDigestAlgorithmName()) ) {
-                    logger.log(Level.INFO, "Digest algorithm not accepted: " + sigMethod.getDigestAlgorithmName());
-                    return false;
+                for(String digestId : ((SignedElement)pe).getDigestAlgorithmIds()) {
+                    if ( ! assertion.acceptsDigest(digestId) ) {
+                        logger.log(Level.INFO, "Digest algorithm not accepted: " + digestId);
+                        return false;
+                    }
                 }
             }
         }
@@ -140,7 +140,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
 
     /**
      * Validate confirmation and add signature confirmation elements to collection if not null.
-     */    
+     */
     private boolean isValidSignatureConfirmation( final Message message,
                                                   final ProcessorResult wssResults,
                                                   final Collection<ParsedElement> signatureConfirmationElementHolder ) {
@@ -150,7 +150,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         if ( signatureConfirmationElementHolder != null && signatureConfirmationValidation.getValue() != null ) {
             signatureConfirmationElementHolder.addAll(signatureConfirmationValidation.getValue());
         }
-        
+
         return signatureConfirmationValidation.getKey();
     }
 
@@ -184,7 +184,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                     X509SigningSecurityToken x509Token = (X509SigningSecurityToken) token;
                     setVariable( context, RequireWssSignedElement.VAR_TOKEN_ELEMENT, x509Token.asElement() );
                     setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES, x509Token.getMessageSigningCertificate() );
-                } 
+                }
             }
         }
     }
