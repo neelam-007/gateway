@@ -47,7 +47,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * @param inputStream the stream to wrap
      * @param readTimeout the timeout for a blocked read in milliseconds
      * @param timeBeforeRateCheck the time to wait before checking minimum transfer rate
-     * @param minRate the minimum acceptable transfer rate in kB (Kilobytes), 0 for no limit
+     * @param minRate the minimum acceptable transfer rate in bytes, 0 for no limit
      * @throws IOException if the given stream is null
      */
     public TimeoutInputStream(InputStream inputStream, long readTimeout, long timeBeforeRateCheck, int minRate) throws IOException {
@@ -188,8 +188,8 @@ public class TimeoutInputStream extends ServletInputStream {
      *
      */
     @Override
-    public synchronized void mark(int readlimit) {
-        in.mark(readlimit);
+    public synchronized void mark(int readLimit) {
+        in.mark(readLimit);
     }
 
     /**
@@ -221,6 +221,12 @@ public class TimeoutInputStream extends ServletInputStream {
         bin.markReadComplete();
     }
 
+    public static final class TimeoutIOException extends IOException {
+        private TimeoutIOException() {
+            super("Stream timeout");
+        }
+    }
+
     //- PROTECTED
 
     /**
@@ -228,7 +234,12 @@ public class TimeoutInputStream extends ServletInputStream {
      */
     protected final void enterBlocking() throws IOException {
         acquireLock();
-        checkTimeout();
+        try {
+            checkTimeout();
+        } catch ( IOException ioe ) {
+            releaseLock();
+            throw ioe;
+        }
         if(isOuterLock()) {
             bin.enter();
         }
@@ -361,7 +372,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * Check for timeout, throw if necessary
      */
     private void checkTimeout() throws IOException {
-        if(bin.isTimedOut()) throw new IOException("Stream timeout");
+        if(bin.isTimedOut()) throw new TimeoutIOException();
     }
 
     /**
@@ -463,7 +474,7 @@ public class TimeoutInputStream extends ServletInputStream {
 
         void markTimedOut() {
             synchronized (lock) {
-                readComplete = true;
+                timedOut = true;
             }
         }
 
@@ -485,18 +496,18 @@ public class TimeoutInputStream extends ServletInputStream {
             flags[0] = false;
             flags[1] = false;
 
-            long bytesRead;
-            boolean cleared;
-            synchronized(lock) {
-                bytesRead = this.bytesRead;
-                cleared = this.cleared;
-            }
-
             if(minDataRate > 0) {
+                long bytesRead;
+                boolean cleared;
+                synchronized(lock) {
+                    bytesRead = this.bytesRead;
+                    cleared = this.cleared;
+                }
+
                 long activeTime = timeNow - streamStartTime;
-                if(activeTime > minSlowTime) {
+                if( activeTime > minSlowTime && activeTime > 1000 ) {
                     // we have enough data to make a rate check valid
-                    int bytesPerSecond = (int)(bytesRead / activeTime);
+                    int bytesPerSecond = (int)(bytesRead / (activeTime / 1000));
                     if(bytesPerSecond < minDataRate) {
                         flags[0] = true;
                         flags[1] = cleared;
