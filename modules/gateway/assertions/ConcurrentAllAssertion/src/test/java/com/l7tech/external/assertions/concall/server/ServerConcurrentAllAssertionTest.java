@@ -117,6 +117,8 @@ public class ServerConcurrentAllAssertionTest {
 
     @Test
     public void testConcurrentExecution() throws Exception {
+        Assertion disabledAssertion = new TrueAssertion();
+        disabledAssertion.setEnabled(false);
         ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
                 new AllAssertion(Arrays.asList(
                         new DelayedCopyVariableAssertion(2000L, "source1", "dest1")
@@ -129,6 +131,7 @@ public class ServerConcurrentAllAssertionTest {
                         new DelayedCopyVariableAssertion(2000L, "source3", "dest3"),
                         new TrueAssertion()
                 )),
+                disabledAssertion,
                 new OneOrMoreAssertion(Arrays.asList(
                         new FalseAssertion(),
                         new DelayedCopyVariableAssertion(2000L, "source4", "dest4"),
