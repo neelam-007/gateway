@@ -1,62 +1,55 @@
-package com.l7tech.skunkworks.luna;
+package com.l7tech.tools.pkcs11;
 
-import sun.security.pkcs11.wrapper.CK_ATTRIBUTE;
-import sun.security.pkcs11.wrapper.PKCS11;
-import sun.security.pkcs11.wrapper.PKCS11Constants;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
+import sun.security.pkcs11.wrapper.*;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.text.MessageFormat;
 
 /**
- *
+ * Accesses the Luna via raw PKCS#11 (well, through the Sun wrapper class) to do various things.
  */
-public class Pkcs11DestroyAllObjects {
+public class LunaRawPkcs11 {
+
     /** PKCS#11 wrapper */
     public final PKCS11 p;
 
     /** Our session handle */
     public final long s;
 
-    public Pkcs11DestroyAllObjects(String libPath, char[] tokenPin) throws IOException, PKCS11Exception {
+    public LunaRawPkcs11(String libPath, char[] tokenPin) throws IOException, PKCS11Exception {
         // Log into the token
         p = PKCS11.getInstance(libPath, "C_GetFunctionList", null, false);
-        s = p.C_OpenSession(1, PKCS11Constants.CKF_SERIAL_SESSION, new Object(), null);
+        CK_NOTIFY notify = new CK_NOTIFY() {
+            public void CK_NOTIFY(long a, long b, Object o) throws PKCS11Exception {
+                System.out.println(MessageFormat.format("CK_NOTIFY: {0} {1} {2}", a, b, o));
+            }
+        };
+        s = p.C_OpenSession(1, PKCS11Constants.CKF_SERIAL_SESSION, new Object(), notify);
         p.C_Login(s, PKCS11Constants.CKU_USER, tokenPin);
     }
 
-    public Pkcs11DestroyAllObjects() throws IOException, PKCS11Exception {
+    public LunaRawPkcs11() throws IOException, PKCS11Exception {
         this(getLibPath(), getTokenPin());
     }
 
     public static void main(String[] args) throws Exception {
-        boolean confirm = true;
-        if (args.length > 0) {
-            if (args[0].contains("h") || args[0].contains("?")) {
-                usage();
-            } else if (args[0].equalsIgnoreCase("--noconfirm")) {
-                confirm = false;
-            }
-        }
+        if (args.length < 1) usage();
 
-        Pkcs11DestroyAllObjects p = new Pkcs11DestroyAllObjects();
-
-        if (confirm) {
-            p.doInfo();
-            p.doList();
-            System.out.print("\nAre you sure you wish to destroy all the above objects?\nIf so, type 'proceed' to continue\n> ");
-            System.out.flush();
-            String line = new BufferedReader(new InputStreamReader(System.in)).readLine();
-            System.out.println();
-            if (!("proceed".equals(line))) {
-                System.out.println("Cancelled.");
-                System.exit(3);
-            }
-        }
-
-        p.doDeleteAllObjectsWithoutConfirmation();
+        new LunaRawPkcs11().executeCommand(args);
     }
+
+    private void executeCommand(String[] args) throws PKCS11Exception {
+        String command = args[0];
+        if ("info".equalsIgnoreCase(command))
+            doInfo();
+        else if ("list".equalsIgnoreCase(command))
+            doList();
+        else if ("deleteAllObjectsWithoutConfirmation".equalsIgnoreCase(command))
+            doDeleteAllObjectsWithoutConfirmation();
+        else
+            usage();
+    }
+
 
     /**
      * Show token info.
@@ -93,6 +86,7 @@ public class Pkcs11DestroyAllObjects {
         }
     }
 
+
     /**
      * Delete all objects in the token without further confirmation.
      *
@@ -114,7 +108,8 @@ public class Pkcs11DestroyAllObjects {
 
     private static void usage() {
         System.out.println(
-                "Usage: java -Dcom.l7tech.lunaLibraryPath=/path/to/cryptoki.dll -Dcom.l7tech.lunaPin=tH3S-HpW3-sCFK-p7E9 Pkcs11DestroyAllObjects [--noconfirm]\n\n");
+                "Usage: LunaRawPkcs11 <command>\n\n" +
+                "Available commands: \n  info\n  list\n  deleteAllObjectsWithoutConfirmation\n\n");
         System.exit(1);
     }
 

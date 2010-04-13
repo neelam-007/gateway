@@ -1,4 +1,4 @@
-package com.l7tech.skunkworks.luna;
+package com.l7tech.tools.pkcs11;
 
 import org.junit.*;
 import sun.security.pkcs11.wrapper.PKCS11;
