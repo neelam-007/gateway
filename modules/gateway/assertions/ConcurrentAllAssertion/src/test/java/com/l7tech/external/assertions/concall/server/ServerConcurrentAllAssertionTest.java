@@ -124,6 +124,7 @@ public class ServerConcurrentAllAssertionTest {
                 new AllAssertion(Arrays.asList(
                         new DelayedCopyVariableAssertion(2000L, "source2", "dest2")
                 )),
+                new CommentAssertion("blah"),
                 new AllAssertion(Arrays.asList(
                         new DelayedCopyVariableAssertion(2000L, "source3", "dest3"),
                         new TrueAssertion()
