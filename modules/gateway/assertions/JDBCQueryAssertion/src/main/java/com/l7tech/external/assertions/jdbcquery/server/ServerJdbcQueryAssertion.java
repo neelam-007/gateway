@@ -95,9 +95,10 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Get values of these context variables and then store these values into the parameter list, params.
         // params will be used in the PreparedStatement to set up values.
-        String[] vars = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
-        for (String var: vars) {
-            String value = ExpandVariables.process("${" + var + "}", context.getVariableMap(vars, auditor), auditor);
+        final String[] varsWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
+        final String[] varsWithoutIndex = assertion.getVariablesUsed();
+        for (final String varWithIndex: varsWithIndex) {
+            String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, auditor), auditor);
             params.add(value);
         }
 
