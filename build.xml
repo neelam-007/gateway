@@ -78,6 +78,20 @@
              classpath="lib/xbean.jar:lib/jsr173_1.0_api.jar"/>
 
     <!--
+      Classpath for obfuscation
+    -->
+    <path id="zelix.classpath">
+        <fileset dir="lib/tools">
+            <include name="ZKM.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+      Task definition for class file obfuscation
+    -->
+    <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
+
+    <!--
       Classpath for svn
     -->
     <path id= "svnant.classpath"  >
