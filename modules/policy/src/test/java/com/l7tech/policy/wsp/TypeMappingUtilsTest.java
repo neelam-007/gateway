@@ -6,6 +6,7 @@
  */
 package com.l7tech.policy.wsp;
 
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import org.junit.Test;
 import org.junit.Assert;
 

@@ -48,6 +48,18 @@ public class CompositeAssertionMapping implements TypeMapping {
                 throw new InvalidPolicyTreeException("No TypeMapping found for class " + kidClass);
             tm.freeze(wspWriter, new TypedReference(kidClass, kid), element);
         }
+
+        //serialize the comment property - only property which will be serialized see bug 8653
+        if(object.target instanceof Assertion){
+            Assertion assertion = (Assertion) object.target;
+            if(assertion.getAssertionComment() != null){
+                final TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(Assertion.Comment.class, wspWriter);
+                if(tm != null){
+                    //should never be null
+                    tm.freeze(wspWriter, new TypedReference(Assertion.Comment.class, assertion.getAssertionComment()), element );
+                }
+            }
+        }
     }
 
     protected void populateObject(CompositeAssertion cass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -56,9 +68,13 @@ public class CompositeAssertionMapping implements TypeMapping {
         List<Element> kids = TypeMappingUtils.getChildElements(source);
         for (Element kid : kids) {
             TypedReference tr = WspConstants.typeMappingObject.thaw(kid, visitor);
-            if (!(tr.target instanceof Assertion))
-                throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null or invalid child");
-            convertedKids.add((Assertion)tr.target);
+            if(tr.target instanceof Assertion.Comment){
+                cass.setAssertionComment((Assertion.Comment) tr.target);                
+            }else{
+                if (!(tr.target instanceof Assertion))
+                    throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null or invalid child");
+                convertedKids.add((Assertion)tr.target);
+            }
         }
         cass.setChildren(convertedKids);
     }

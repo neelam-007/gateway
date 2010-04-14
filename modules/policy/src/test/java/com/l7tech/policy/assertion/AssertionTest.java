@@ -11,9 +11,11 @@ import java.io.ByteArrayInputStream;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.AllAssertions;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import org.junit.Test;
 import org.junit.Assert;
@@ -180,4 +182,36 @@ public class AssertionTest {
         Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.contains(rootAssertion, FalseAssertion.class, true));
         Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.find(rootAssertion, FalseAssertion.class, true) != null);
     }
+
+    @Test
+    @BugNumber(8653)
+    public void testSimplifyRemovesComments() throws Exception{
+        AllAssertion root = new AllAssertion();
+        final HttpBasic httpBasic = new HttpBasic();
+        httpBasic.setAssertionComment(new Assertion.Comment("comment"));
+        root.addChild(httpBasic);
+        AllAssertion all = new AllAssertion();
+        all.setAssertionComment(new Assertion.Comment("comment"));
+
+        final AuditAssertion audit = new AuditAssertion();
+        audit.setAssertionComment(new Assertion.Comment("comment"));
+        all.addChild(audit);
+
+        root.addChild(all);
+
+        final Assertion assertion = Assertion.simplify(root, true, false);
+        checkCommentsAreNull(assertion);
+    }
+
+    private void checkCommentsAreNull(Assertion assertion){
+        Assert.assertNull("Comment should have been removed", assertion.getAssertionComment());
+        if(assertion instanceof CompositeAssertion){
+            CompositeAssertion comp = (CompositeAssertion) assertion;
+            final List<Assertion> children = comp.getChildren();
+            for (Assertion child : children) {
+                checkCommentsAreNull(child);
+            }
+        }
+    }
+    
 }

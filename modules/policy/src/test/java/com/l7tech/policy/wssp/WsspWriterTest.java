@@ -94,7 +94,7 @@ public class WsspWriterTest {
     private String prefilter(String l7policy) throws IOException {
         Assertion assertion = WspReader.getDefault().parseStrictly(l7policy, WspReader.Visibility.omitDisabled);
         assertion = new ClientAssertionFilter().filter(assertion);
-        assertion = Assertion.simplify(assertion, true);
+        assertion = Assertion.simplify(assertion, true, false);
         logger.info("Filtered and simplified policy: " + assertion);
         return WspWriter.getPolicyXml(assertion);
     }

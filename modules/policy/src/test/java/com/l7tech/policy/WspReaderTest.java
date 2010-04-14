@@ -862,7 +862,7 @@ public class WspReaderTest {
     @Test
     public void testOneEnabledOneDisabled() throws Exception {
         Assertion got = WspReader.getDefault().parseStrictly(ONE_DISABLED_ONE_ENABLED, OMIT_DISABLED);
-        got = Assertion.simplify(got, true);
+        got = Assertion.simplify(got, true, false);
         assertTrue("Should simplify down to TrueAssertion, the only one that was enabled", got instanceof TrueAssertion);
     }
     

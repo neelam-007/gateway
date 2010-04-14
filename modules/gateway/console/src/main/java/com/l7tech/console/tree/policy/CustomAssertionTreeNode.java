@@ -49,7 +49,8 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         if (name == null) {
             name = "Unspecified custom assertion (class '" + ca.getClass() + "'";
         }
-        return name;
+
+        return (decorate) ? DefaultAssertionPolicyNode.addCommentToDisplayText(cha, name) : name;
     }
 
     /**

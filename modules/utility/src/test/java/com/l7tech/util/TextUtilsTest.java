@@ -200,4 +200,37 @@ public class TextUtilsTest extends TestCase {
         actual = TextUtils.truncStringMiddleExact(s,9);
         assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
     }
+
+    public void testTruncateEnd(){
+
+        String s = "1234";
+        String expected = TextUtils.truncateStringAtEnd(s,2);
+        assertTrue("String equals to s should be returned, expected: "+s+", actual was: " + expected, s.equals(expected));
+
+        expected = TextUtils.truncateStringAtEnd(s,10);
+        assertTrue("String equals to s should be returned", s.equals(expected));
+
+        s = "1234567890";
+
+        expected = "1...";
+        String actual = TextUtils.truncateStringAtEnd(s,4);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "123...";
+        actual = TextUtils.truncateStringAtEnd(s,6);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "1234...";
+        actual = TextUtils.truncateStringAtEnd(s,7);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "12345...";
+        actual = TextUtils.truncateStringAtEnd(s,8);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "123456...";
+        actual = TextUtils.truncateStringAtEnd(s,9);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+    }
+
 }

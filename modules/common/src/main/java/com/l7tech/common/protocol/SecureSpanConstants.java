@@ -275,6 +275,13 @@ public class SecureSpanConstants {
          * Eg. &inline=no
          */
         public static final String PARAM_INLINE = "inline";
+
+        /**
+         * Parameter to request that comments are included. Must have a value of yes (any case)
+         * By default comments are not included.
+         * Only applies when a full doc download is applicable.
+         */
+        public static final String PARAM_INCLUDE_COMMENTS = "comments";
     }
 
     /**

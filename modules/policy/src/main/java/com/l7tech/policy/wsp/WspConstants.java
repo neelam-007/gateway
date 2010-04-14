@@ -151,6 +151,8 @@ public class WspConstants {
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
         new BasicTypeMapping(BigInteger.class, "bigIntegerValue"),
 
+        new BeanTypeMapping(Assertion.Comment.class, "assertionComment"),
+
         // Typesafe enumerations
         new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),
         new WspEnumTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod"),

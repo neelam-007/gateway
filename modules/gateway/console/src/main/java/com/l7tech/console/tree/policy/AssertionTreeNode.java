@@ -28,6 +28,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -135,6 +136,12 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return assertion;
     }
 
+    /**
+     * Obtain the name to display in the policy editor, validator warnings pane and assertion pallete tree.
+     * @param decorate should only be true when the name will be displayed in the policy window. No comments
+     * should ever be added to the return string when decorate is false.
+     * @return String representation of the assertion contained within the TreeNode
+     */
     abstract public String getName(boolean decorate);
 
     /**
@@ -221,8 +228,23 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                     }
                 }
             }
+
+            final Assertion.Comment comment = ass.getAssertionComment();
+            if(comment != null){
+                if(sb.length() > 0) sb.append("<br>");
+                String text = " " + comment.getComment();
+
+                text = text.replaceAll("<", "&lt;");
+                text = text.replaceAll(">", "&gt;");
+                text = text.replaceAll("/", "&#47;");
+                text = TextUtils.breakOnMultipleLines(text, 100, "<br> ");
+                
+                sb.append(text);
+            }
+
             if (sb.length() > 0) {
                 sb.insert(0, "<html>");
+                sb.append("</html>");
                 return sb.toString();
             } else {
                 return null;
@@ -328,6 +350,10 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 } else {
                     list.add(new EnableAssertionAction(this));
                 }
+
+                list.add( new AddEditDeleteCommentAction(this));
+                if(assertion.getAssertionComment() != null) list.add(new AddEditDeleteCommentAction(this, true));
+
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get current service or policy", e);

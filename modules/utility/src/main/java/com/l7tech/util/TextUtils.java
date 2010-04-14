@@ -89,8 +89,22 @@ public class TextUtils {
 
     /**
      * breaks a string in multiple lines based on the max length of each line
+     * @param input String to break up into multiple lines
+     * @param maxlinelength int max line length. Note this will not break continuous lines. A space must be found to
+     * break a line.
      */
     public static String breakOnMultipleLines(String input, int maxlinelength) {
+        return breakOnMultipleLines(input, maxlinelength, "\n");
+    }
+
+    /**
+     * breaks a string in multiple lines based on the max length of each line
+     * @param input String to break up into multiple lines
+     * @param maxlinelength int max line length. Note this will not break continuous lines. A space must be found to
+     * break a line.
+     * @param breakCharacters String to insert when ever a line should be broken
+     */
+    public static String breakOnMultipleLines(String input, int maxlinelength, String breakCharacters) {
         input = input.trim();
         if (input.length() <= maxlinelength) return input;
         StringBuffer output = new StringBuffer();
@@ -100,19 +114,19 @@ public class TextUtils {
             if (tmp < 0) break;
             int lastspace = tmp;
             while (true) if ((lastspace - pos) > maxlinelength) {
-                output.append(input.substring(pos, lastspace)).append("\n");
+                output.append(input.substring(pos, lastspace)).append(breakCharacters);
                 pos = lastspace + 1;
                 break;
             } else if (tmp < 0 && lastspace > 0) {
-                output.append(input.substring(pos, lastspace)).append("\n");
+                output.append(input.substring(pos, lastspace)).append(breakCharacters);
                 pos = lastspace + 1;
                 break;
             } else if ((tmp - pos) == maxlinelength) {
-                output.append(input.substring(pos, tmp)).append("\n");
+                output.append(input.substring(pos, tmp)).append(breakCharacters);
                 pos = tmp + 1;
                 break;
             } else if ((tmp - pos) > maxlinelength && (lastspace - pos) < maxlinelength) {
-                output.append(input.substring(pos, lastspace)).append("\n");
+                output.append(input.substring(pos, lastspace)).append(breakCharacters);
                 pos = lastspace + 1;
                 break;
             } else {
@@ -454,6 +468,31 @@ public class TextUtils {
         }
 
         return new String(strChar); 
+    }
+
+    /**
+     * Truncate the string at the end by adding '...' characters.
+     *
+     * @param s String to truncate
+     * @param maxSize Maximum size, ignore if less than 4
+     * @return truncated String if the length of s is > than maxSize with '...' added if it was truncated,
+     * otherwise s is returned.
+     */
+    public static String truncateStringAtEnd(String s, int maxSize){
+
+        if (s == null || s.length() <= maxSize) return s;
+
+        //4 is used as we will have a start and 3 '.'s at the end
+        if (s.length() < 4 || maxSize < 4) {
+            return s;
+        }
+
+        char [] strChar = new char[maxSize - 3];
+        for (int i = 0; i < strChar.length; i++) {
+            strChar[i] = s.charAt(i);
+        }
+
+        return new String(strChar) + "...";
     }
 
     /**

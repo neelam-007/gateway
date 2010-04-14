@@ -74,8 +74,11 @@ import java.util.logging.Logger;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
-    private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+
     public static final String POLICYNAME_PROPERTY = "policy.name";
+    public static final String SHOW_COMMENTS = "COMMENTS.SHOWSTATE";
+
+    private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
 
     private static final String PROP_PREFIX = "com.l7tech.console";
@@ -665,6 +668,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 JButton buttonUDDIImport = new JButton(getUDDIImportAction());
                 this.add(buttonUDDIImport);
             }
+
+            JButton showComments = new JButton();
+            showComments.setAction(getHideShowCommentAction(showComments));
+            this.add(showComments);
+
         }
 
         private void setSaveButtonsEnabled(boolean enabled) {
@@ -1654,6 +1662,70 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
         }
         return simpleExportPolicyAction;
+    }
+
+    public Action getHideShowCommentAction(final JButton button){
+
+        return new SecureAction(null) {
+            @Override
+            protected void performAction() {
+                final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+                final String showState = preferences.getString(SHOW_COMMENTS);
+                final boolean shown = Boolean.parseBoolean(showState);
+                //shown = true means the button should say 'Hide'
+
+                if(shown) preferences.putProperty(SHOW_COMMENTS, "false");
+                else preferences.putProperty(SHOW_COMMENTS, "true");
+
+                button.setText(getName());
+
+                //update the tree so that the comment is displayed correctly
+                //this should not cause the 'Save and Activate' or 'Save' buttons to become activated as there is no
+                //actual change to the assertions, we are just updating the display of comments
+                JTree tree = TopComponents.getInstance().getPolicyTree();
+                if (tree != null) {
+                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                    updateNode((AssertionTreeNode) model.getRoot(), model);
+                    
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
+
+            }
+
+            private void updateNode(AssertionTreeNode node, PolicyTreeModel model){
+                final Assertion assertion = node.asAssertion();
+                if(assertion.getAssertionComment() != null){
+                    model.nodeChanged(node);
+                }
+
+                final int childCount = node.getChildCount();
+                if(childCount < 1) return;
+                for(int i = 0; i < childCount; i++){
+                    updateNode((AssertionTreeNode) node.getChildAt(i), model);
+                }
+            }
+
+            @Override
+            public String getName() {
+
+                final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+                final String showState = preferences.getString(SHOW_COMMENTS);
+                final boolean shown = Boolean.parseBoolean(showState);
+
+                if(shown){
+                    return "Hide Comments";
+                }else{
+                    return "Show Comments";    
+                }
+            }
+
+            @Override
+            protected String iconResource() {
+                return "com/l7tech/console/resources/About16.gif";
+            }
+        };
+
     }
 
     public Action getUDDIImportAction() {

@@ -41,6 +41,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
     private boolean enabled = true;
+    private Comment assertionComment;
 
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
@@ -74,6 +75,14 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Comment getAssertionComment() {
+        return assertionComment;
+    }
+
+    public void setAssertionComment(Comment comment) {
+        this.assertionComment = comment;
     }
 
     /**
@@ -388,21 +397,6 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
-     * Simplify any children of this assertion.  For a leaf assertion, this takes no action.
-     * For a composite assertion, this calls {@link #simplify(Assertion, boolean)} on each child reference and removes
-     * any assertions that turn out empty.
-     * <p/>
-     * Note that this method might result in an empty composite assertion.
-     * <p/>
-     * To simplify this assertion itself, call the static method {@link #simplify(Assertion, boolean)} on this
-     * assertion.  This can't be an instance method since it might need to change ie. a composite assertion
-     * into a leaf assertion.
-     */
-    void simplify() {
-        // Leaf assertions have nothing to do here
-    }
-
-    /**
      * Run the given translator on the given assertion and all children.
      *
      * @param assertion The assertion to translate
@@ -429,6 +423,21 @@ public abstract class Assertion implements Cloneable, Serializable {
         translator.translationFinished(assertion);
 
         return translated;
+    }
+
+    /**
+     * Simplify any children of this assertion.  For a leaf assertion, this takes no action.
+     * For a composite assertion, this calls {@link #simplify(Assertion,boolean,boolean)} on each child reference and removes
+     * any assertions that turn out empty.
+     * <p/>
+     * Note that this method might result in an empty composite assertion.
+     * <p/>
+     * To simplify this assertion itself, call the static method {@link #simplify(Assertion,boolean,boolean)} on this
+     * assertion.  This can't be an instance method since it might need to change ie. a composite assertion
+     * into a leaf assertion.
+     */
+    void simplify() {
+        // Leaf assertions have nothing to do here
     }
 
     /**
@@ -462,10 +471,15 @@ public abstract class Assertion implements Cloneable, Serializable {
      *                          You can gain some performance by passing recurseChildren as false when you are
      *                          building a policy from the bottom up -- this will avoid needlessly resimplifying
      *                          the already-simplified bits as you assemble the policy.
+     * @param includeComments boolean, if true then comments will be left on Assertions
      * @return the simplified reference, possibly null if the policy contained nothing but empty composite assertions.
      */
-    public static Assertion simplify(Assertion in, boolean recurseChildren) {
+    public static Assertion simplify(Assertion in, boolean recurseChildren, boolean includeComments) {
         while (in instanceof CompositeAssertion) {
+            if(!includeComments){
+                in.setAssertionComment(null); // comments are only returned when explicitly asked for    
+            }
+
             CompositeAssertion comp = (CompositeAssertion)in;
             List kids = comp.getChildren();
             if (kids.size() < 1)
@@ -474,6 +488,9 @@ public abstract class Assertion implements Cloneable, Serializable {
             if (recurseChildren) {
                 for (Iterator i = kids.iterator(); i.hasNext();) {
                     Assertion assertion = (Assertion)i.next();
+                    if(!includeComments){
+                        assertion.setAssertionComment(null); // comments are only returned when explicitly asked for
+                    }
                     assertion.simplify();
                 }
             }
@@ -847,6 +864,42 @@ public abstract class Assertion implements Cloneable, Serializable {
     private void readObject( final ObjectInputStream in ) throws ClassNotFoundException, IOException {
         ObjectInputStream.GetField fields = in.readFields();
         enabled = fields.get("enabled", true);
+    }
+
+    public static class Comment implements Serializable{
+
+        public final static String COMMENT_ALIGN = "COMMENT.ALIGN";
+
+        public final static String RIGHT_ALIGN = "Right";
+        public final static String LEFT_ALIGN = "Left";
+
+        private String comment;
+        private Map<String, String> properties;
+
+        public Comment() {
+        }
+
+        public Comment(String comment) {
+            this.comment = comment;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
+        public String getComment() {
+            return comment;
+        }
+
+        public Map<String, String> getProperties() {
+            if(properties == null) properties = new HashMap<String, String>();
+            
+            return properties;
+        }
+
+        public void setProperties(Map<String, String> properties) {
+            this.properties = properties;
+        }
     }
 }
 

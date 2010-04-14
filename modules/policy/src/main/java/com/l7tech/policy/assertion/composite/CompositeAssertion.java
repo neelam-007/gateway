@@ -180,7 +180,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     void simplify() {
         List<Assertion> newKids = new ArrayList<Assertion>();
         for ( Assertion assertion : children ) {
-            assertion = simplify( assertion, true );
+            assertion = simplify( assertion, true, false);
             if ( assertion != null )
                 newKids.add( assertion );
         }

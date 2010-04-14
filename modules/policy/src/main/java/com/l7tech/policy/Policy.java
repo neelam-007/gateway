@@ -303,16 +303,17 @@ public class Policy extends NamedEntityImp implements HasFolder {
      * have a parent.</p>
      *
      * @param assertion The assertion to simplify (must not be null)
+     * @param includeComments boolean, if true then comments will be left on Assertions
      * @return The simplified assertion (which is always the given assertion)
      * @throws IllegalArgumentException if the given assertion has a parent
-     * @see Assertion#simplify(Assertion,boolean) Assertion.simplify
+     * @see Assertion#simplify(com.l7tech.policy.assertion.Assertion,boolean,boolean) Assertion.simplify
      */
-    public static Assertion simplify( final Assertion assertion ) {
+    public static Assertion simplify(final Assertion assertion, boolean includeComments) {
         if (assertion == null) throw new IllegalArgumentException("assertion must not be null");
         if (!(assertion instanceof AllAssertion)) throw new IllegalArgumentException("assertion must be AllAssertion");
         if (assertion.getParent() != null) throw new IllegalArgumentException("assertion has a parent");
 
-        Assertion simplified = Assertion.simplify( assertion, true );
+        Assertion simplified = Assertion.simplify( assertion, true, includeComments);
         if ( simplified != assertion ) {
             // then we may need to re-add to the root
             if ( simplified.getParent() != assertion ) {

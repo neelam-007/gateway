@@ -76,7 +76,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         } else {
             sb.append(policy.getName());
         }
-        return sb.toString();
+        return DefaultAssertionPolicyNode.addCommentToDisplayText(assertion, sb.toString());
     }
 
     @Override

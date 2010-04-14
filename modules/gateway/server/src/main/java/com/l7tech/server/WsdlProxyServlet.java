@@ -638,7 +638,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             Assertion assertion = policyPathBuilder.inlineIncludes(wspReader.parsePermissively(svc.getPolicy().getXml(), WspReader.OMIT_DISABLED), null, false);
             if (assertion == null)
                 return;
-            Assertion rootassertion = Policy.simplify(assertion);
+            Assertion rootassertion = Policy.simplify(assertion, false);
 
             //we should ignore wssp assertion if the wssp assertion is disabled
             WsspAssertion wsspAssertion = Assertion.find(rootassertion, WsspAssertion.class, true);

@@ -94,7 +94,7 @@ public class WspWriterTest extends TestCase {
     }
 
     /**
-     * @return  An one or more assertion that contains all assertsion (all disabled)
+     * @return  A 'one or more' assertion that contains all assertions disabled
      */
     private Assertion makeAllDisabledAssertions() {
         List<Assertion> allAssertions = new ArrayList<Assertion>();
@@ -129,6 +129,11 @@ public class WspWriterTest extends TestCase {
     /**
      * Tests that all disabled assertions are written to XML correctly.
      *
+     * Note: if this test fails due to the CustomAssertion assertion, it is most likely a change happened to either the class
+     * CustomAssertionHolder or it's superclass Assertion. Any change in these classes which affects serilization will
+     * cause a new base64 to be computed. The expected value comes from a static resource file which needs to be
+     * updated manually if any change happens to the mentioned classes.
+     *
      * @throws Exception
      */
     public void testWritePolicyForAllDisabledAssertions() throws Exception {
@@ -144,6 +149,11 @@ public class WspWriterTest extends TestCase {
     /**
      * Tests that all enabled assertions are written to XML correctly.
      *
+     * Note: if this test fails due to the CustomAssertion assertion, it is most likely a change happened to either the class
+     * CustomAssertionHolder or it's superclass Assertion. Any change in these classes which affects serilization will
+     * cause a new base64 to be computed. The expected value comes from a static resource file which needs to be
+     * updated manually if any change happens to the mentioned classes.
+     *
      * @throws Exception
      */
     public void testWritePolicyForAllEnabledAssertions() throws Exception {
@@ -156,6 +166,14 @@ public class WspWriterTest extends TestCase {
         assertEquals("Policy with enabled assertions.", readPolicyFile(ALL_ENABLED_ASSERTIONS_POLICY), policyXml);
     }
 
+    /**
+     * Note: if this test fails due to the CustomAssertion assertion, it is most likely a change happened to either the class
+     * CustomAssertionHolder or it's superclass Assertion. Any change in these classes which affects serilization will
+     * cause a new base64 to be computed. The expected value comes from a static resource file which needs to be
+     * updated manually if any change happens to the mentioned classes.
+     *
+     * @throws Exception
+     */
     public void testWritePolicy() throws Exception {
         Assertion policy = makeTestPolicy();
 

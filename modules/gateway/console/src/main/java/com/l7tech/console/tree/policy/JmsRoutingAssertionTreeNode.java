@@ -42,7 +42,8 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
             return assertionName + " (Not Yet Specified)" + actor;
         }
         String endpointName = endpointName();
-        return assertionName +" Queue " + (endpointName == null ? "(unnamed)" : endpointName) + actor;
+
+        return addCommentToDisplayText(assertion, assertionName + " Queue " + (endpointName == null ? "(unnamed)" : endpointName) + actor);
     }
 
     /**

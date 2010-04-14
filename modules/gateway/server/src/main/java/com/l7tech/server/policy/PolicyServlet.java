@@ -150,7 +150,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
                 try {
                     boolean allowDisabled = systemAllowsDisabledServiceDownloads(servletRequest);
-                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true, allowDisabled));
+                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true, allowDisabled, false));
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
                     sendExceptionFault(context, ise, servletResponse);
@@ -204,7 +204,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         return (PolicyService)getApplicationContext().getBean("policyService");
     }
 
-    protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes, final boolean allowDisabled ) {
+    protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes, final boolean allowDisabled, final boolean includeComments) {
         return new PolicyService.PolicyGetter() {
             @Override
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
@@ -217,15 +217,15 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
 
                     return new PolicyService.ServiceInfo() {
-                        // if not processing then initialize with the service policy, else we'll process it when required 
-                        private Assertion policy = inlineIncludes ? null : servicePolicy;
+                        // if not processing then initialize with the service policy, else we'll process it when required
+                        private Assertion policy = inlineIncludes ? null : Policy.simplify(servicePolicy, includeComments);
 
                         @Override
                         public synchronized Assertion getPolicy() throws PolicyAssertionException {
                             // process if not already initialized
                             if (policy == null) {
                                 try {
-                                    policy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null, false));
+                                    policy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null, false), includeComments);
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e); // Not possible on server side (hopefully)
                                 }
@@ -263,6 +263,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
         String fullDoc = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC);
         String inline = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_INLINE);
+        String includeComments = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_INCLUDE_COMMENTS);
 
         // See if it's actually a certificate download request
         if (getCert != null) {
@@ -294,10 +295,18 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         boolean isFullDoc = false;
         if (fullDoc != null && fullDoc.length() > 0) {
-            isFullDoc = "yes".equals(fullDoc) || "Yes".equals(fullDoc) || "YES".equals(fullDoc) || Boolean.parseBoolean(fullDoc);
+            isFullDoc = "yes".equalsIgnoreCase(fullDoc) || Boolean.parseBoolean(fullDoc);
             logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC + " was " + fullDoc);
             if (isFullDoc)
                 logger.finest("Will passthrough and return full policy document");
+        }
+
+        boolean isIncludeComments = false;
+        if (includeComments != null && includeComments.length() > 0) {
+            isIncludeComments = "yes".equalsIgnoreCase(includeComments) || Boolean.parseBoolean(fullDoc);
+            logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_INCLUDE_COMMENTS + " was " + includeComments);
+            if (isIncludeComments)
+                logger.finest("Will include comments with full policy document");
         }
 
         //check for inline setting
@@ -324,10 +333,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isInline, allowDisabled), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isInline, allowDisabled, isIncludeComments && isFullDoc), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isInline, allowDisabled), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isInline, allowDisabled, isIncludeComments && isFullDoc), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)

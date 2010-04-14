@@ -51,8 +51,8 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
 
     public String getName(final boolean decorate) {
         final String name = "Authenticate against " + idProviderName();
-        if(decorate) return decorateName(name);
-        else return name;
+
+        return (decorate) ? DefaultAssertionPolicyNode.addCommentToDisplayText(assertion, decorateName(name)) : name;
     }
 
     @Override
