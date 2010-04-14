@@ -102,9 +102,9 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         int maxLhsComment = getMaxLhsCommentLength();
 
         if (style != null && style.equals(Assertion.Comment.LEFT_ALIGN)) {
-            return TextUtils.truncateStringAtEnd(comment.getComment(), maxLhsComment) + " " + displayText;
+            return "<html><font color=\"gray\">" + TextUtils.truncateStringAtEnd(comment.getComment(), maxLhsComment) + "</font>&nbsp;" + displayText + "</html>";
         } else {
-            return displayText + " " + TextUtils.truncateStringAtEnd(comment.getComment(), maxRhsComment);
+            return "<html>" + displayText + "&nbsp;<font color=\"gray\">" + TextUtils.truncateStringAtEnd(comment.getComment(), maxRhsComment) + "</font></html>";
         }
     }
 
