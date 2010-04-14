@@ -85,12 +85,15 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
      */
     private void createJMSPressed() {
         JmsConnection jmsConnection = new JmsConnection();
+        jmsConnection.setTemplate(foreignRef.isConnectionTemplate());
         jmsConnection.setInitialContextFactoryClassname(foreignRef.getInitialContextFactoryClassname());
         jmsConnection.setJndiUrl(foreignRef.getJndiUrl());
         jmsConnection.setQueueFactoryUrl(foreignRef.getQueueFactoryUrl());
         jmsConnection.setTopicFactoryUrl(foreignRef.getTopicFactoryUrl());
         jmsConnection.setDestinationFactoryUrl(foreignRef.getDestinationFactoryUrl());
         JmsEndpoint jmsEndpoint = new JmsEndpoint();
+        jmsEndpoint.setName(foreignRef.getName());
+        jmsEndpoint.setTemplate(foreignRef.isEndpointTemplate());
         jmsEndpoint.setDestinationName(foreignRef.getDestinationName());
 
         final JmsQueuePropertiesDialog jqpd = JmsQueuePropertiesDialog.createInstance(this.getOwner(), jmsConnection, jmsEndpoint, false);

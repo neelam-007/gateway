@@ -40,6 +40,7 @@ public class JMSEndpointReference extends ExternalReference {
             if (jmsEndpoint != null) {
                 name = jmsEndpoint.getName();
                 destinationName = jmsEndpoint.getDestinationName();
+                endpointTemplate = jmsEndpoint.isTemplate();
                 jmsConnection = getFinder().findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
             }
         } catch (RuntimeException e) {
@@ -50,6 +51,7 @@ public class JMSEndpointReference extends ExternalReference {
             jmsConnection = null;
         }
         if (jmsConnection != null) {
+            connectionTemplate = jmsConnection.isTemplate();
             initialContextFactoryClassname = jmsConnection.getInitialContextFactoryClassname();
             jndiUrl = jmsConnection.getJndiUrl();
             queueFactoryUrl = jmsConnection.getQueueFactoryUrl();
@@ -70,6 +72,8 @@ public class JMSEndpointReference extends ExternalReference {
             output.oid = Long.parseLong(val);
         }
         output.name = getParamFromEl(el, NAME_EL_NAME);
+        output.connectionTemplate = Boolean.parseBoolean(getParamFromEl(el, CONNECTION_TEMPLATE_EL_NAME));
+        output.endpointTemplate = Boolean.parseBoolean(getParamFromEl(el, ENDPOINT_TEMPLATE_EL_NAME));
         output.destinationName = getParamFromEl(el, DESTINATION_EL_NAME);
         if ( output.destinationName == null ) {
             output.destinationName = getParamFromEl(el, EPNAME_EL_NAME);
@@ -109,6 +113,14 @@ public class JMSEndpointReference extends ExternalReference {
      */
     public String getName() {
         return name;
+    }
+
+    public boolean isConnectionTemplate() {
+        return connectionTemplate;
+    }
+
+    public boolean isEndpointTemplate() {
+        return endpointTemplate;
     }
 
     public String getDestinationName() {
@@ -160,6 +172,8 @@ public class JMSEndpointReference extends ExternalReference {
         referencesParentElement.appendChild(refEl);
 
         addElement( refEl, OID_EL_NAME, Long.toString(oid) );
+        addElement( refEl, CONNECTION_TEMPLATE_EL_NAME, Boolean.toString(connectionTemplate));
+        addElement( refEl, ENDPOINT_TEMPLATE_EL_NAME, Boolean.toString(endpointTemplate));
         addElement( refEl, CONTEXT_EL_NAME, initialContextFactoryClassname );
         addElement( refEl, JNDI_EL_NAME, jndiUrl );
         addElement( refEl, QUEUE_EL_NAME, queueFactoryUrl );
@@ -333,6 +347,8 @@ public class JMSEndpointReference extends ExternalReference {
     private long oid;
     private long localEndpointId;
     private String name; // Added in 5.3, will be null in earlier exports
+    private boolean connectionTemplate;
+    private boolean endpointTemplate;
     private String destinationName;
     private String initialContextFactoryClassname;
     private String jndiUrl;
@@ -342,6 +358,8 @@ public class JMSEndpointReference extends ExternalReference {
     private LocalizeAction localizeType = null;
     public static final String REF_EL_NAME = "JMSConnectionReference";
     public static final String OID_EL_NAME = "OID";
+    public static final String CONNECTION_TEMPLATE_EL_NAME = "ConnectionTemplate";
+    public static final String ENDPOINT_TEMPLATE_EL_NAME = "EndpointTemplate";
     public static final String NAME_EL_NAME = "Name";
     public static final String DESTINATION_EL_NAME = "DestinationName";
     public static final String EPNAME_EL_NAME = "EndpointName"; // used in pre 5.3 exports, value was the "Queue Name"
