@@ -234,9 +234,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 if(sb.length() > 0) sb.append("<br>");
                 String text = " " + comment.getComment();
 
-                text = text.replaceAll("<", "&lt;");
-                text = text.replaceAll(">", "&gt;");
-                text = text.replaceAll("/", "&#47;");
+                text = text.replaceAll("(^|[^<])/", "&#47;"); //replace any '/' characters so they display correctly in a pop up, don't replace them if they are preceeded
+                //by '<' which allows any html tags to continue to work in the mouse overs
                 text = TextUtils.breakOnMultipleLines(text, 100, "<br> ");
                 
                 sb.append(text);
