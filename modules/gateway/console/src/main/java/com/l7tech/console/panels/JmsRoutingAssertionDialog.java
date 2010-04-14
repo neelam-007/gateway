@@ -385,33 +385,37 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem) getQueueComboBox().getSelectedItem();
             if (selected != null) {
                 if (selected.getQueue().getEndpoint().getOid() == assertion.getEndpointOid()) {    
-                    if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null) {
+                    if (assertion.getDynamicJmsRoutingProperties().getJndiUrl() != null && isDynamic(dynamicJndiUrl) ) {
                         dynamicJndiUrl.setText(assertion.getDynamicJmsRoutingProperties().getJndiUrl());
                         dynamicJndiUrl.setCaretPosition( 0 );
                     }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null) {
+                    if (assertion.getDynamicJmsRoutingProperties().getDestQName() != null && isDynamic(dynamicDestQueueName) ) {
                         dynamicDestQueueName.setText(assertion.getDynamicJmsRoutingProperties().getDestQName());
                         dynamicDestQueueName.setCaretPosition( 0 );
                     }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null) {
+                    if (assertion.getDynamicJmsRoutingProperties().getReplytoQName() != null && isDynamic(dynamicReplyToName) ) {
                         dynamicReplyToName.setText(assertion.getDynamicJmsRoutingProperties().getReplytoQName());
                         dynamicReplyToName.setCaretPosition( 0 );
                     }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getIcfName() != null) {
+                    if (assertion.getDynamicJmsRoutingProperties().getIcfName() != null && isDynamic(dynamicICF) ) {
                         dynamicICF.setText(assertion.getDynamicJmsRoutingProperties().getIcfName());
                         dynamicICF.setCaretPosition( 0 );
                     }
 
-                    if (assertion.getDynamicJmsRoutingProperties().getQcfName() != null) {
+                    if (assertion.getDynamicJmsRoutingProperties().getQcfName() != null && isDynamic(dynamicQCF) ) {
                         dynamicQCF.setText(assertion.getDynamicJmsRoutingProperties().getQcfName());
                         dynamicQCF.setCaretPosition( 0 );
                     }
                 }
             }
         }
+    }
+
+    private boolean isDynamic( final JTextField textField ) {
+        return textField.getText()==null || textField.getText().isEmpty();
     }
 
     private JmsUtilities.QueueItem[] loadQueueItems() {

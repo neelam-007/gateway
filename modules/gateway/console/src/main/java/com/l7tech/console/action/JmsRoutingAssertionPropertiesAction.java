@@ -58,6 +58,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeActionWithMetaSuppo
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                node.setUserObject( node.getUserObject() ); // gives the node the opportunity to update cached info
                 model.assertionTreeNodeChanged((AssertionTreeNode)node);
             } else {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");

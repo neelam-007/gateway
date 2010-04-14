@@ -2,12 +2,10 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
-import com.l7tech.console.action.JmsRoutingAssertionPropertiesAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
@@ -23,7 +21,9 @@ import java.util.Arrays;
  */
 public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsRoutingAssertion> {
 
-    public JmsRoutingAssertionTreeNode(JmsRoutingAssertion assertion) {
+    //- PUBLIC
+
+    public JmsRoutingAssertionTreeNode( final JmsRoutingAssertion assertion ) {
         super(assertion);
     }
 
@@ -31,7 +31,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      * @return the node name that is displayed
      */
     @Override
-    public String getName(final boolean decorate) {
+    public String getName( final boolean decorate ) {
         final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
         final String assertionName = ass.meta().get(AssertionMetadata.SHORT_NAME).toString();
         if(!decorate) return assertionName;
@@ -41,17 +41,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
         if (ass.getEndpointOid() == null) {
             return assertionName + " (Not Yet Specified)" + actor;
         }
-        String endpointName;
-        try {
-            JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
-            if(endpoint != null) {
-                endpointName = endpoint.getName();
-            } else {
-                endpointName = ass.getEndpointName();
-            }
-        } catch(FindException e) {
-            endpointName = ass.getEndpointName();
-        }
+        String endpointName = endpointName();
         return assertionName +" Queue " + (endpointName == null ? "(unnamed)" : endpointName) + actor;
     }
 
@@ -61,6 +51,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
      * 
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>(Arrays.asList(super.getActions()));
 
@@ -78,6 +69,42 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
             }
         }
         
-        return list.toArray(new Action[]{});
+        return list.toArray(new Action[list.size()]);
+    }
+
+    @Override
+    public void setUserObject( final Object userObject ) {
+        invalidateCachedInfo();
+        super.setUserObject( userObject );
+    }
+
+    //- PRIVATE
+
+    private String endpointName;
+
+    private String endpointName() {
+        String endpointName = this.endpointName;
+
+        if ( endpointName == null ) {
+            final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
+            try {
+                JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
+                if(endpoint != null) {
+                    endpointName = endpoint.getName();
+                } else {
+                    endpointName = ass.getEndpointName();
+                }
+            } catch(FindException e) {
+                endpointName = ass.getEndpointName();
+            }
+
+            this.endpointName = endpointName;
+        }
+
+        return endpointName;
+    }
+
+    private void invalidateCachedInfo() {
+        endpointName = null;
     }
 }
