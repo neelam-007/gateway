@@ -1,12 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.exporter.JMSEndpointReference;
 
 import javax.swing.*;
@@ -105,7 +105,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                 populateQueueSelector();
 
                 if(!jqpd.isCanceled() && jqpd.getEndpoint().getOid() > 0) {
-                    queueSelector.setSelectedItem(jqpd.getEndpoint().getName());
+                    JmsUtilities.selectEndpoint(queueSelector, jqpd.getEndpoint().getOid());
                     changeRadio.setSelected(true);
                     queueSelector.setEnabled(true);
                 }
@@ -117,41 +117,19 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (changeRadio.isSelected()) {
-            Long newEndpointId = getEndpointIdFromName(queueSelector.getSelectedItem().toString());
-            if (newEndpointId == null) {
+            JmsUtilities.QueueItem queueItem = (JmsUtilities.QueueItem) queueSelector.getSelectedItem();
+            if (queueItem == null || queueItem.getQueue() == null || queueItem.getQueue().getEndpoint() == null) {
                 // this cannot happen
-                logger.severe("Could not get provider from name " + queueSelector.getSelectedItem().toString());
+                logger.severe("No provider selected");
                 return false;
             }
-            foreignRef.setLocalizeReplace(newEndpointId.longValue());
+            foreignRef.setLocalizeReplace(queueItem.getQueue().getEndpoint().getOid());
         } else if (deleteRadio.isSelected()) {
             foreignRef.setLocalizeDelete();
         } else if (ignoreRadio.isSelected()) {
             foreignRef.setLocalizeIgnore();
         }
         return true;
-    }
-
-    private Long getEndpointIdFromName(String name) {
-        JmsAdmin admin = Registry.getDefault().getJmsManager();
-        if (admin == null) {
-            logger.severe("Cannot get the JMSAdmin");
-            return null;
-        }
-        try {
-            JmsAdmin.JmsTuple[] tuples = admin.findAllTuples();
-            for (int i = 0; i < tuples.length; i++) {
-                if (tuples[i].getEndpoint().getName().equals(name)) {
-                    long newOid = tuples[i].getEndpoint().getOid();
-                    logger.info("the oid of the chosen jms endpoint is " + newOid);
-                    return newOid;
-                }
-            }
-        } catch (FindException e) {
-            logger.severe("Error geting tuples");
-        }
-        logger.severe("The endpoint name " + name + " did not match any endpoint name.");
-        return null;
     }
 
     private void populateQueueSelector() {
@@ -162,16 +140,10 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         }
 
         DefaultComboBoxModel model = new DefaultComboBoxModel();
-        try {
-            JmsAdmin.JmsTuple[] tuples = admin.findAllTuples();
-            for (int i = 0; i < tuples.length; i++) {
-                if (!tuples[i].getEndpoint().isMessageSource()) {
-                    model.addElement(tuples[i].getEndpoint().getName());
-                }
+        for (JmsUtilities.QueueItem queueItem : JmsUtilities.loadQueueItems()) {
+            if (!queueItem.getQueue().getEndpoint().isMessageSource()) {
+                model.addElement(queueItem);
             }
-        } catch (FindException e) {
-            logger.severe("Error geting tuples");
-            return;
         }
         queueSelector.setModel(model);
         if (model.getSize() < 1) {
@@ -199,8 +171,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
 
     @Override
     public boolean canFinish() {
-        if (hasNextPanel()) return false;
-        return true;
+        return ! hasNextPanel();
     }
 
     private JMSEndpointReference foreignRef;
