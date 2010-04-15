@@ -99,15 +99,6 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private CustomAssertion customAssertion;
     private Category category;
     private String descriptionText;
-//    private String test = "hello";
-//
-//    public String getTest() {
-//        return test;
-//    }
-//
-//    public void setTest(String test) {
-//        this.test = test;
-//    }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
