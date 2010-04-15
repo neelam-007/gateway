@@ -308,58 +308,53 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 returnFault(context, hrequest, hresponse, status);
             }
         } catch (Throwable e) {
+            if (e instanceof PolicyAssertionException) {
+                if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                    // Unlicensed assertion; suppress stack trace (Bug #5499)
+                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e));
+                } else if (ExceptionUtils.causedBy(e, DecoratorException.class)) {
+                    DecoratorException decoratorException =
+                            ExceptionUtils.getCauseIfCausedBy(e, DecoratorException.class);
+                    logger.log(Level.WARNING,
+                            ExceptionUtils.getMessage(e) + ": " + ExceptionUtils.getMessage(decoratorException),
+                            ExceptionUtils.getDebugException(e));
+                }  else {
+                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
+                }
+            } else if (e instanceof PolicyVersionException) {
+                logger.log(Level.INFO, "Request referred to an outdated version of policy");
+            } else if (e instanceof MethodNotAllowedException) {
+                logger.warning(ExceptionUtils.getMessage(e));
+            } else if (e instanceof MessageProcessingSuspendedException) {
+                auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, ExceptionUtils.getMessage(e));
+            } else if (e instanceof IOException &&
+                       e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
+                logger.warning("Client closed connection.");
+                return; // cannot send a response
+            } else if (e instanceof MessageResponseIOException) {
+                // already audited, custom fault sent below (unless stealth mode)
+            } else if (e instanceof IOException) {
+                logger.log(Level.WARNING, "I/O error while processing message: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
+                auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
+            } else {
+                logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
+            }
+
             // if the policy throws AND the stealth flag is set, drop connection
             final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
             if ( faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION ) {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                       "Instructing valve to drop connection completely.",
-                                       e);
+                                       "Instructing valve to drop connection completely.");
                 hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 return;
             }
+            
             try {
-                if (e instanceof PolicyAssertionException) {
-                    if (ExceptionUtils.causedBy(e, LicenseException.class)) {
-                        // Unlicensed assertion; suppress stack trace (Bug #5499)
-                        logger.log(Level.SEVERE, e.getMessage());
-                    } else if (ExceptionUtils.causedBy(e, DecoratorException.class)) {
-                        DecoratorException decoratorException =
-                                ExceptionUtils.getCauseIfCausedBy(e, DecoratorException.class);
-                        logger.log(Level.WARNING,
-                                ExceptionUtils.getMessage(e) + ": " + ExceptionUtils.getMessage(decoratorException),
-                                ExceptionUtils.getDebugException(e));
-                    }  else {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                    }
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (e instanceof PolicyVersionException) {
-                    String msg = "Request referred to an outdated version of policy";
-                    logger.log(Level.INFO, msg);
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (e instanceof NoSuchPartException) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (e instanceof MethodNotAllowedException) {
-                    logger.warning(e.getMessage());
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (e instanceof MessageProcessingSuspendedException) {
-                    auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, e.getMessage());
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (e instanceof IOException &&
-                           e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
-                    logger.warning("Client closed connection.");
-                } else if (e instanceof MessageResponseIOException) {
+                if (e instanceof MessageResponseIOException) {
                     sendExceptionFault(context, e.getMessage(), null, hrequest, hresponse, status);
-                } else if (e instanceof IOException) {
-                    logger.log(Level.WARNING, "I/O error while processing message: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
-                } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
-                    auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else {
-                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
-                    //? if (e instanceof Error) throw (Error)e;
                     sendExceptionFault(context, e, hrequest, hresponse, status);
                 }
             } catch (SAXException e1) {
