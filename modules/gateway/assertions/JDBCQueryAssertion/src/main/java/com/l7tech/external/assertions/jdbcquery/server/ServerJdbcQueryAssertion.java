@@ -85,7 +85,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return AssertionStatus.NONE;
     }
 
-    private String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context) {
+    String getQueryStatementWithoutContextVariables(String query, List<Object> params, PolicyEnforcementContext context) {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         if ( Syntax.getReferencedNames(query).length == 0) {

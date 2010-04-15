@@ -317,6 +317,8 @@
 
     <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerStub"/>
 
+    <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerStub"/>
+
     <bean id="serviceDocumentManager" class="com.l7tech.server.service.ServiceDocumentManagerStub"/> 
 
     <bean id="wsdlStrategyServiceDocumentsInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
