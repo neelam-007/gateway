@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="com.intellij"
 		module="forms_rt"
-		revision="7.0.1"
+		revision="9.0.1"
 		status="release"
-		publication="20080707125035"
+		publication="20100414121451"
 		default="true"
 	/>
 	<configurations>

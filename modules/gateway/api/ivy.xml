@@ -12,6 +12,8 @@
               extends="runtime,master"/>
         <conf name="master"
               description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="master-unsigned"
+              description="Contains only the unsigned artifact published by this module itself, with no transitive dependencies"/>
         <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
         <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
         <conf name="test" description="The dependency required for building/running tests only."
@@ -19,6 +21,13 @@
         <conf name="optional" description="Contains all optional dependencies"/>
     </configurations>
     <publications>
+        <!--
+          The API jar contains some classes from the same package as classes in 
+          the policy module, this means that using the signed API jar can cause
+          build problems. It is preferable to use the unsigned jar for building
+          and to use the signed jar only as a distributable.
+        -->
+        <artifact name="layer7-api-unsigned" type="jar" ext="jar" conf="master-unsigned"/>
         <artifact name="layer7-api" type="jar" ext="jar" conf="master"/>
     </publications>
     <dependencies>

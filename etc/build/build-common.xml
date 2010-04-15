@@ -29,6 +29,7 @@
 
     <property name="jar.sign.pattern" value="*.jar"/>
     <property name="jar.file" value="${build.dir}/${ant.project.name}.jar"/>
+    <property name="jar.file.unsigned" value="${build.dir}/${ant.project.name}-unsigned.jar"/>
     <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.jar"/>
     <property name="main.class.name" value="${ant.project.name}.Main"/>
 
@@ -39,6 +40,7 @@
     <property name="module.compile.target" value="1.6"/>
     <property name="module.compile.optimize" value="off"/>
     <property name="module.compile.excludes" value=""/>
+    <property name="module.forms.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
     <property name="module.package.root" value="."/>
     <property name="module.source.allow.properties" value="false"/>
@@ -147,9 +149,11 @@
                 debug="on"
                 source="${module.compile.source}"
                 target="${module.compile.target}"
+                failonerror="true"
                 optimize="on"
                 >
             <include name="**/*.form"/>
+            <exclude name="${module.forms.excludes}"/> 
         </javac2t>
     </presetdef>
 
@@ -509,7 +513,9 @@
         </jar>
     </target>
     <target name="package.sign" if="module.sign">
+        <copy file="${jar.file}" tofile="${jar.file.unsigned}.tmp"/>
         <sign-jar/>
+        <move file="${jar.file.unsigned}.tmp" tofile="${jar.file.unsigned}"/>
     </target>
     <target name="package" depends="version, compile, package.work, package.custom.post, package.sign" description="Package this project">
     </target>
@@ -575,7 +581,7 @@
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project in the Ivy repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     conf="default, master, compile, runtime, optional, core, client"
+                     conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
                      pubrevision="${version}"
                      status="release"

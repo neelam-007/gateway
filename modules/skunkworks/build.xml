@@ -3,6 +3,7 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
     <property name="module.source.allow.properties" value="true"/>
+    <property name="module.forms.excludes" value="**/StockQuoteFrame.form"/> <!-- Netbeans form file-->
 
     <import file="../../etc/build/build-common.xml"/>
 
