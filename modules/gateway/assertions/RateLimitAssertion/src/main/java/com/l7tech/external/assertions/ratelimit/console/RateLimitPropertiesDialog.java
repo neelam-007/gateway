@@ -145,7 +145,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         if (RateLimitAssertion.PresetInfo.PRESET_CUSTOM.equals(counterCb.getSelectedItem()) && counterNameField.getText().trim().length() < 1)
             err = "Custom rate limiter name must not be empty.";
 
-        if(err == null) err = RateLimitAssertion.validateMaxConcurrency(concurrencyLimitField.getText());
+        if(err == null && concurrencyLimitOnRb.isSelected()) err = RateLimitAssertion.validateMaxConcurrency(concurrencyLimitField.getText());
         if(err == null) err = RateLimitAssertion.validateMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
 
         if (err != null)
