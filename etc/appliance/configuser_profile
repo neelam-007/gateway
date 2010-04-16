@@ -554,14 +554,13 @@ uploadPatch() {
         echo "Please wait while the patch is uploaded ..."
         ($PATCHTOOL upload $whichone)
         ERR=$?
-        clear;
         if [ $ERR -ne 0 ] ; then
             echo ""
-            confirmedMessage "There was an error while uploading the patch"
+            confirmedMessage "There was an error while uploading the patch."
             return 0
         else
             echo ""
-            confirmedMessage "The patch was uploaded successfully."
+            confirmedMessage ""
             return 0
         fi
     else
@@ -578,14 +577,13 @@ installPatch() {
     echo "Please wait while the patch is installed ..."
     ($PATCHTOOL install $patchinfo)
     ERR=$?
-    clear;
     if [ $ERR -ne 0 ] ; then
         echo ""
-        confirmedMessage "There was an error while installing the patch"
+        confirmedMessage "There was an error while installing the patch."
         return 0
     else
         echo ""
-        confirmedMessage "The patch was installed successfully."
+        confirmedMessage ""
         return 0
     fi
 }
@@ -598,14 +596,13 @@ deletePatch() {
     echo "Please wait while the patch is deleted ..."
     ($PATCHTOOL delete $patchinfo)
     ERR=$?
-    clear;
     if [ $ERR -ne 0 ] ; then
         echo ""
-        confirmedMessage "There was an error while deleting the patch"
+        confirmedMessage "There was an error while deleting the patch."
         return 0
     else
         echo ""
-        confirmedMessage "The patch was successfully deleted."
+        confirmedMessage ""
         return 0
     fi
 }
@@ -812,7 +809,7 @@ doPatchList() {
     old=$IFS
 IFS='
 '
-    REGISTEREDPATCHES=(`$PATCHTOOL list`)
+    REGISTEREDPATCHES=(`$PATCHTOOL list "::id::description::state::last_mod"`)
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     clear;

@@ -59,8 +59,13 @@ public class PatchCli {
             logger.log(Level.INFO, "Running patch action: " + patchAction.name());
             Collection<PatchStatus> result = patchAction.call(api);
             if (result != null && ! result.isEmpty()) {
+                boolean isError = false;
                 for(PatchStatus status : result) {
                     System.out.println(status.toString(patchAction.getOutputFormat()));
+                    isError = isError || PatchStatus.State.ERROR.name().equals(status.getField(PatchStatus.Field.STATE));
+                }
+                if (patchAction.isReportStatusErrors()) {
+                    System.out.println(isError ? "There were errors during the patch operation." : "Patch operation completed successfully.");
                 }
             } else {
                 System.out.println("No patches have been uploaded.");
@@ -115,6 +120,7 @@ public class PatchCli {
             final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
             clientPolicy.setConnectionTimeout(PATCH_API_CONNECT_TIMEOUT);
             clientPolicy.setReceiveTimeout(PATCH_API_RECEIVE_TIMEOUT);
+            System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
             return new CxfUtils.ApiBuilder(patchAction.getTarget()).clientPolicy(clientPolicy)
                 //.inInterceptor(new LoggingInInterceptor())
@@ -178,7 +184,7 @@ public class PatchCli {
                 final PatchStatus status = api.deletePackageArchive(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.", true) {
+        STATUS("<patch_id>", "Returns the status of the patch represented by the provided ID on the gateway.", true, false) {
             @Override
             void extractActionArguments(List<String> args) {
                 this.argument = extractOneStringActionArgument(args);
@@ -188,7 +194,7 @@ public class PatchCli {
                 final PatchStatus status = api.getStatus(getArgument());
                 return new ArrayList<PatchStatus>() {{ add(status); }};
             }},
-        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"") {
+        LIST("[output_format]", "Returns a list of the patches and their statuses on the gateway. Status fields to be replaced by their value are preceded and followed by a colon, for example: \"Patch ID=:id:, status is :state:\"", false, false) {
             @Override
             void extractActionArguments(List<String> args) {
                 if (! args.isEmpty() && args.size() > 1) {
@@ -222,6 +228,10 @@ public class PatchCli {
 
         public boolean isHidden() {
             return hidden;
+        }
+
+        public boolean isReportStatusErrors() {
+            return reportStatusErrors;
         }
 
         public static PatchAction fromArgs(List<String> argList) {
@@ -264,14 +274,16 @@ public class PatchCli {
         private final String syntax;
         private final String description;
         private final boolean hidden;
+        private final boolean reportStatusErrors;
 
         private PatchAction(String syntax, String description) {
-            this(syntax, description, false);
+            this(syntax, description, false, true);
         }
-        private PatchAction(String syntax, String description, boolean hidden) {
+        private PatchAction(String syntax, String description, boolean hidden, boolean reportStatusErrors) {
             this.syntax = syntax;
             this.description = description;
             this.hidden = hidden;
+            this.reportStatusErrors = reportStatusErrors;
         }
 
         private static String extractOneStringActionArgument(List<String> args) {

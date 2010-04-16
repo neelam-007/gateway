@@ -66,6 +66,10 @@ public class PatchStatus {
             }};
 
 
+        /**
+         * @param value the field value
+         * @return a user-friendly string encapsulating the value, suitable for display
+         */
         public abstract String displayValue(String value);
         Field(boolean required) {
             this.required = required;
@@ -164,11 +168,18 @@ public class PatchStatus {
         } else {
             StringBuilder output = new StringBuilder();
             String[] format = outputFormat.split(FORMAT_DELIMITER);
+            boolean displayValue = false;
+            boolean firstToken = true;
             for(String token : format) {
                 try {
-                    output.append(getField(Field.valueOf(token.toUpperCase())));
+                    Field field = Field.valueOf(token.toUpperCase());
+                    String value = getField(field);
+                    output.append(displayValue ? field.displayValue(value) : value);
                 } catch (Exception e) {
                     output.append(token);
+                } finally {
+                    displayValue = ! firstToken && token.isEmpty(); // don't use displayValue() for a ":" on the first position
+                    firstToken = false;
                 }
             }
             return output.toString();
