@@ -204,12 +204,18 @@ public class SchemaEntryManagerImpl
 
         long res = super.save(newSchema);
 
+        boolean success = false;
         try {
-            compileAndCache(res, newSchema);
+            compileAndCache(res, newSchema, true);
+            success = true;
         } catch (IOException e) {
             throw new SaveException("Schema document imports remote document that is missing or invalid: " + ExceptionUtils.getMessage(e), e);
         } catch (SAXException e) {
             throw new SaveException("Invalid schema document: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            if (!success) {
+                invalidateCompiledSchema( res );            
+            }
         }
         return res;
     }
@@ -223,13 +229,39 @@ public class SchemaEntryManagerImpl
 
         super.update(schemaEntry);
 
+        boolean success = false;
         try {
-            compileAndCache(schemaEntry.getOid(), schemaEntry);
+            compileAndCache(schemaEntry.getOid(), schemaEntry, true);
+            success = true;
         } catch (IOException e) {
             throw new UpdateException("Schema document imports missing or invalid remote document", e);
         } catch (SAXException e) {
             throw new UpdateException("Invalid schema document", e);
+        } finally {
+            if ( !success ) {
+                restore( oid );
+            }
         }
+    }
+
+    private void restore( final long oid ) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior( TransactionTemplate.PROPAGATION_REQUIRES_NEW );
+        template.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                try {
+                    final SchemaEntry schemaEntry = findByPrimaryKey( oid );
+                    if ( schemaEntry != null ) {
+                        compileAndCache(schemaEntry.getOid(), schemaEntry, false);
+                    }
+                } catch ( Exception e ) {
+                    logger.log( Level.WARNING,
+                            "Unable to restore cached schema after invalid update for schema #"+oid+", due to "+ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
+                } 
+            }
+        });
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -292,14 +324,15 @@ public class SchemaEntryManagerImpl
         String systemId = getSystemId( oid, entry );
         String schemaString = entry.getSchema();
         if (schemaString == null) schemaString = "";
+
+        synchronized(this) {
+            systemIdsByOid.put(oid, systemId);
+        }
+
         schemaManager.registerSchema(systemId, schemaString);
 
         if ( validate ) {
             validateCachedSchema( systemId );
-        }
-
-        synchronized(this) {
-            systemIdsByOid.put(oid, systemId);
         }
     }
 
