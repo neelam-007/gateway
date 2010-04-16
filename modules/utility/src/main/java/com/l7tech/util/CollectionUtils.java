@@ -4,7 +4,6 @@
 package com.l7tech.util;
 
 import java.util.Iterator;
-import java.util.Set;
 
 public final class CollectionUtils {
     private static final Functions.Unary<String,Object> defaultStringer = new Functions.Unary<String, Object>() {
@@ -46,5 +45,42 @@ public final class CollectionUtils {
 
     public static <T> String mkString(Iterable<T> iterable, String prefix, String delimiter, String suffix) {
         return mkString(iterable, prefix, delimiter, suffix, (Functions.Unary<String,T>) defaultStringer);
+    }
+
+    /**
+     * Get an iterable for all the given iterables.
+     *
+     * @param iterables The iterables to iterate
+     * @return An iterable that iterates all the given iterables.
+     */
+    public static <T> Iterable<T> iterable( final Iterable<T>... iterables ) {
+        return new Iterable<T>() {
+            @Override
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    private Iterator<T> currentIterator;
+                    private int iterableIndex = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        while ( (currentIterator == null || !currentIterator.hasNext()) && iterableIndex < iterables.length ) {
+                            currentIterator = iterables[iterableIndex++].iterator();
+                        }
+                        return currentIterator != null && currentIterator.hasNext();
+                    }
+
+                    @Override
+                    public T next() {
+                        hasNext(); // ensure advance to next iterator if required
+                        return currentIterator.next();
+                    }
+
+                    @Override
+                    public void remove() {
+                        currentIterator.remove();
+                    }
+                };
+            }
+        };
     }
 }

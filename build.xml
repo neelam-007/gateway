@@ -1323,7 +1323,7 @@
     -->
     <target name="modulet" description="Run a target on a single module (use with -Dmodule=... -Dtarget=...)" depends="prepare.base">
         <fail unless="module">module is a required property (the module to package)</fail>
-        <fail unless="target">target is a required property (the target to run)</fail>
+        <property name="target" value="package"/>
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip" restartFrom="${module}">

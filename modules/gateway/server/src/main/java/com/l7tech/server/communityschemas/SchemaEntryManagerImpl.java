@@ -39,6 +39,7 @@ public class SchemaEntryManagerImpl
         extends HibernateEntityManager<SchemaEntry, EntityHeader>
         implements SchemaEntryManager
 {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
 
     private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
@@ -61,9 +62,9 @@ public class SchemaEntryManagerImpl
     @Override
     protected void initDao() throws Exception {
         super.initDao();
-        Collection<SchemaEntry> schemaEntries = findAll();
-        for (SchemaEntry entry : schemaEntries) {
-            long oid = entry.getOid();
+        final Collection<SchemaEntry> schemaEntries = findAll();
+        for ( final SchemaEntry entry : schemaEntries ) {
+            final long oid = entry.getOid();
             try {
                 compileAndCache(oid, entry, false);
             } catch (SAXException e) {
@@ -73,8 +74,8 @@ public class SchemaEntryManagerImpl
             }
         }
 
-        for (SchemaEntry entry : schemaEntries) {
-            long oid = entry.getOid();
+        for ( final SchemaEntry entry : schemaEntries ) {
+            final long oid = entry.getOid();
             try {
                 validateCachedSchema( getSystemId( oid, entry ) );
             } catch (SAXException e) {
@@ -162,7 +163,7 @@ public class SchemaEntryManagerImpl
             @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria q = session.createCriteria(getImpClass());
-                q.add(Restrictions.eq("tns", tns));
+                q.add(Restrictions.eq("tns", tns==null ? "" : tns));
                 return q.list();
             }});
 
@@ -196,7 +197,7 @@ public class SchemaEntryManagerImpl
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     @Override
-    public long save(SchemaEntry newSchema) throws SaveException {
+    public long save( final SchemaEntry newSchema ) throws SaveException {
         long oid = newSchema.getOid();
         if (SOAP11_SCHEMA_OID == oid || SOAP12_SCHEMA_OID == oid || XMLNS_SCHEMA_OID == oid)
             throw new SaveException("Internal schema cannot be saved");
@@ -215,7 +216,7 @@ public class SchemaEntryManagerImpl
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     @Override
-    public void update(SchemaEntry schemaEntry) throws UpdateException {
+    public void update( final SchemaEntry schemaEntry ) throws UpdateException {
         long oid = schemaEntry.getOid();
         if (SOAP11_SCHEMA_OID == oid || SOAP12_SCHEMA_OID == oid || XMLNS_SCHEMA_OID == oid)
             throw new UpdateException("Internal schema cannot be updated");
@@ -443,7 +444,6 @@ public class SchemaEntryManagerImpl
     private static final String SOAP12_SCHEMA = "<!-- Schema defined in the SOAP Version 1.2 Part 1 specification\n" +
         "     Recommendation:\n" +
         "     http://www.w3.org/TR/2003/REC-soap12-part1-20030624/\n" +
-        "     $Id$\n" +
         "\n" +
         "     Copyright (C)2003 W3C(R) (MIT, ERCIM, Keio), All Rights Reserved.\n" +
         "     W3C viability, trademark, document use and software licensing rules\n" +

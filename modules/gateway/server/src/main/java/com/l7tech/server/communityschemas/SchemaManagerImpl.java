@@ -10,25 +10,28 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.util.*;
+import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -54,7 +57,7 @@ import java.util.regex.Pattern;
 public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
-    private static class CacheConf {
+    private static class CacheConfiguration {
         private final int maxCacheAge;
         private final int maxCacheEntries;
         private final int hardwareRecompileLatency;
@@ -63,7 +66,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         private final long maxSchemaSize;
         private final boolean softwareFallback;
 
-        CacheConf(ServerConfig serverConfig) {
+        CacheConfiguration(ServerConfig serverConfig) {
             maxCacheAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
             maxCacheEntries = Math.max( 1, serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100) );
             hardwareRecompileLatency = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
@@ -77,19 +80,16 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     private final ServerConfig serverConfig;
-    private final AtomicReference<CacheConf> conf;
+    private final AtomicReference<CacheConfiguration> cacheConfigurationReference;
     private final HttpClientFactory httpClientFactory;
-
-    /** This LSInput will be returned to indicate "Resource not resolved, and don't try to get it over the network unless you know what you are doing" */
-    public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(false);
 
     /**
      * The latest version of every currently-known schema, by URL.  This includes SchemaEntry and policy assertion
-     * statis schemas, as well as transient schemas that were loaded from the network.
+     * static schemas, as well as transient schemas that were loaded from the network.
      * <p/>
-     * Superseded schema versions are removed from this hashmap (and the handle from the hashmap is closed).
+     * Superseded schema versions are removed from this map (and the handle from the map is closed).
      * A superseded schema's claim to its TNS will be released when its last user handle closes'.
      * <p/>
      * For the transient schemas loaded from the network, a periodic task removes URLs whose schemas have not
@@ -168,11 +168,13 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
        Constructor
 
     */
-    public SchemaManagerImpl(ServerConfig serverConfig, HttpClientFactory httpClientFactory, Timer timer) {
+    public SchemaManagerImpl( final ServerConfig serverConfig,
+                              final HttpClientFactory httpClientFactory,
+                              Timer timer) {
         if (serverConfig == null || httpClientFactory == null) throw new NullPointerException();
         this.serverConfig = serverConfig;
         this.httpClientFactory = httpClientFactory;
-        this.conf = new AtomicReference<CacheConf>();
+        this.cacheConfigurationReference = new AtomicReference<CacheConfiguration>();
         this.httpStringCache = new AtomicReference<HttpObjectCache<String>>();
 
         if (timer == null)
@@ -183,8 +185,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     private synchronized void updateCacheConfiguration() {
-        conf.set(new CacheConf(serverConfig));
-        HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
+        cacheConfigurationReference.set(new CacheConfiguration(serverConfig));
+        final HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
             @Override
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                 String response = responseSource.getString(true);
@@ -203,10 +205,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             this.hardwareReloadTask = null;
         }
 
-        GenericHttpClientFactory hcf = wrapHttpClientFactory(httpClientFactory, conf.get().maxSchemaSize);
+        final GenericHttpClientFactory hcf = wrapHttpClientFactory(httpClientFactory, cacheConfigurationReference.get().maxSchemaSize);
 
-        httpStringCache.set(new HttpObjectCache<String>(conf.get().maxCacheEntries,
-                                                      conf.get().maxCacheAge,
+        httpStringCache.set(new HttpObjectCache<String>( cacheConfigurationReference.get().maxCacheEntries,
+                                                      cacheConfigurationReference.get().maxCacheAge,
                                                       hcf,
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST,
@@ -218,7 +220,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 cacheCleanup();
             }
         };
-        maintenanceTimer.schedule(cacheCleanupTask, 4539, conf.get().maxCacheAge * 2 + 263);
+        maintenanceTimer.schedule(cacheCleanupTask, 4539, cacheConfigurationReference.get().maxCacheAge * 2 + 263);
 
         if (tarariSchemaHandler != null) {
             hardwareReloadTask = new SafeTimerTask() {
@@ -227,12 +229,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                     maybeRebuildHardwareCache();
                 }
             };
-            maintenanceTimer.schedule(hardwareReloadTask, 1000, conf.get().hardwareRecompileLatency);
+            maintenanceTimer.schedule(hardwareReloadTask, 1000, cacheConfigurationReference.get().hardwareRecompileLatency);
         }
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
+    public void propertyChange(final PropertyChangeEvent evt) {
         logger.info("Rebuilding schema cache due to change in cache configuration");
         try {
             updateCacheConfiguration();
@@ -275,8 +277,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                     }
 
                     @Override
-                    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
-                        request.addParameter(paramName, paramValue);
+                    public void addParameter(String name, String value) throws IllegalArgumentException, IllegalStateException {
+                        request.addParameter(name, value);
                     }
 
                     @Override
@@ -328,15 +330,15 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *
      * @param url  the URL that was just successfully downloaded.  Must not be null.
      */
-    private void onUrlDownloaded(String url) {
-        SchemaHandle old = schemasBySystemId.remove(url);
+    private void onUrlDownloaded(final String url) {
+        final SchemaHandle old = schemasBySystemId.remove(url);
         if (old != null) {
             schemasRecentlySuperseded.put(url, 1);
             deferredCloseHandle(old);
         }
     }
 
-    private synchronized void deferredCloseHandle(SchemaHandle handle) {
+    private synchronized void deferredCloseHandle( final SchemaHandle handle ) {
         handlesNeedingClosed.put(handle, null);
     }
 
@@ -347,26 +349,24 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         // Do some cache maintenance.  We'll decide what to do while holding the read lock;
         // then, we'll grab the write lock and do it.
-        Map<String, SchemaHandle> urlsToRemove = new HashMap<String, SchemaHandle>();
-
-        final long maxCacheEntries;
+        final Map<String, SchemaHandle> urlsToRemove = new HashMap<String, SchemaHandle>();
 
         cacheLock.readLock().lock();
         try {
-            maxCacheEntries = conf.get().maxCacheEntries + globalSchemasByUrl.size();
+            final long maxCacheEntries = cacheConfigurationReference.get().maxCacheEntries + globalSchemasByUrl.size();
 
             // First, if the cache is too big, throw out the least-recently-used schemas until it isn't.
             long extras = schemasBySystemId.size() - maxCacheEntries;
             if (extras > 0) {
-                List<SchemaHandle> handles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
+                final List<SchemaHandle> handles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
                 extras = maxCacheEntries - handles.size();
                 // Have to double check in case one went away while we were copying out of the map
                 if (extras > 0) {
                     Collections.sort(handles, new Comparator<SchemaHandle>() {
                         @Override
                         public int compare(SchemaHandle left, SchemaHandle right) {
-                            CompiledSchema leftCs = left.getTarget();
-                            CompiledSchema rightCs = right.getTarget();
+                            final CompiledSchema leftCs = left.getTarget();
+                            final CompiledSchema rightCs = right.getTarget();
 
                             if (leftCs == null && rightCs == null) return 0;
                             if (leftCs == null) return -1;
@@ -378,8 +378,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                             if (rightCs.isTransientSchema() && !leftCs.isTransientSchema())
                                 return 1;
 
-                            Long leftTime = leftCs.getLastUsedTime();
-                            Long rightTime = rightCs.getLastUsedTime();
+                            final Long leftTime = leftCs.getLastUsedTime();
+                            final Long rightTime = rightCs.getLastUsedTime();
                             return leftTime.compareTo(rightTime);
                         }
                     });
@@ -393,22 +393,19 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             }
 
             // Then scan for any duplicate-TNS-causers that haven't been used in a while
-            long now = System.currentTimeMillis();
-            long maxAge = conf.get().maxCacheAge * 4;
-            for (SchemaHandle schemaHandle : schemasBySystemId.values()) {
-                CompiledSchema schema = schemaHandle.getTarget();
+            final long now = System.currentTimeMillis();
+            final long maxAge = cacheConfigurationReference.get().maxCacheAge * 4;
+            for (final SchemaHandle schemaHandle : schemasBySystemId.values()) {
+                final CompiledSchema schema = schemaHandle.getTarget();
                 if (schema != null && schema.isTransientSchema()) {
-                    long lastUsed = schema.getLastUsedTime();
-                    long useAge = now - lastUsed;
+                    final long lastUsed = schema.getLastUsedTime();
+                    final long useAge = now - lastUsed;
                     if (useAge > maxAge) {
                         // It hasn't been used in a while.  Is it contributing to a TNS conflict?
-                        String schemaTns = schema.getTargetNamespace();
-                        if (schemaTns == null) continue;
-                        Map<CompiledSchema,Object> tnsUsers = tnsCache.get(schemaTns);
-                        if (tnsUsers == null || tnsUsers.size() < 2) continue;
-
-                        // It is Part Of The Problem.  Throw it out until someone wants it again.
-                        urlsToRemove.put(schema.getSystemId(), schemaHandle);
+                        if ( schema.isConflictingTns() ) {
+                            // It is Part Of The Problem.  Throw it out until someone wants it again.
+                            urlsToRemove.put(schema.getSystemId(), schemaHandle);
+                        }
                     }
                 }
             }
@@ -419,9 +416,9 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         // Now remove em
         cacheLock.writeLock().lock();
         try {
-            for (Map.Entry<String, SchemaHandle> entry : urlsToRemove.entrySet()) {
-                String url = entry.getKey();
-                SchemaHandle handle = entry.getValue();
+            for (final Map.Entry<String, SchemaHandle> entry : urlsToRemove.entrySet()) {
+                final String url = entry.getKey();
+                final SchemaHandle handle = entry.getValue();
 
                 // Make sure it didn't get replaced while we were waiting for the write lock
                 SchemaHandle old = schemasBySystemId.get(url);
@@ -439,8 +436,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         closeDeferred();
 
         // Now run through and touch all the source strings, to make sure we keep up-to-date
-        for (SchemaHandle schemaHandle : schemasBySystemId.values()) {
-            CompiledSchema schema = schemaHandle.getTarget();
+        for (final SchemaHandle schemaHandle : schemasBySystemId.values()) {
+            final CompiledSchema schema = schemaHandle.getTarget();
             if (schema != null) {
                 final String url = schema.getSystemId();
                 try {
@@ -467,6 +464,16 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     /**
+     * Get the target namespace for the schema
+     *
+     * @param schema The schema
+     * @return The target namespace (never null, may be empty)
+     */
+    private String getTargetNamespace( final CompiledSchema schema ) {
+        return schema.getTargetNamespace() == null ? "" : schema.getTargetNamespace();
+    }
+
+    /**
      * Close any handles whose closes were deferred.  Caller must not hold any locks (the monitor or cacheLock).
      */
     private void closeDeferred() {
@@ -480,32 +487,33 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         logger.log(Level.FINE, "Schema cache closing {0} unused schema handles", deferredClose.size());
 
         // Processed deferred closes while owning no locks
-        for (SchemaHandle handle : deferredClose)
+        for (final SchemaHandle handle : deferredClose)
             if (handle != null) handle.close();
     }
 
     /* Caller must hold at least the read lock. */
-    private static void visitAllParentsRecursive(CompiledSchema schema, Set<CompiledSchema> visited) {
+    private static void visitAllParentsRecursive( final CompiledSchema schema,
+                                                  final Set<CompiledSchema> visited) {
         if (visited.contains(schema)) return;
         visited.add(schema);
-        Set<CompiledSchema> exps = schema.getExports();
-        for (CompiledSchema parent : exps) {
+        Set<CompiledSchema> exports = schema.getExports();
+        for (final CompiledSchema parent : exports) {
             if (parent != null) visitAllParentsRecursive(parent, visited);
         }
     }
 
     /* Caller must hold at least the read lock. */
-    private void getParents(String url, Set<CompiledSchema> collected) {
-        Collection<SchemaHandle> allHandles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
-        for (SchemaHandle schemaHandle : allHandles) {
+    private void getParents( final String url, final Set<CompiledSchema> collected ) {
+        final Collection<SchemaHandle> allHandles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
+        for (final SchemaHandle schemaHandle : allHandles) {
             final CompiledSchema schema = schemaHandle.getTarget();
             if (schema == null) continue;
-            Collection<SchemaHandle> imports = schema.getImports().values();
-            for (SchemaHandle handle : imports) {
-                final CompiledSchema impSchema = handle.getTarget();
-                if (impSchema == null) continue;
-                if (url.equals(impSchema.getSystemId())) {
-                    visitAllParentsRecursive(impSchema, collected);
+            final Collection<SchemaHandle> dependencies = schema.getDependencies().values();
+            for (final SchemaHandle handle : dependencies) {
+                final CompiledSchema depSchema = handle.getTarget();
+                if (depSchema == null) continue;
+                if (url.equals(depSchema.getSystemId())) {
+                    visitAllParentsRecursive(depSchema, collected);
                 }
             }
         }
@@ -516,17 +524,17 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *         This is a new handle duped just for the caller; caller must close it when they are finished with it.
      */
     @Override
-    public SchemaHandle getSchemaByUrl(String url) throws IOException, SAXException {
+    public SchemaHandle getSchemaByUrl( final String url ) throws IOException, SAXException {
         cacheLock.readLock().lock();
         try {
-            SchemaHandle ret = getSchemaByUrlNoCompile(url);
+            final SchemaHandle ret = getSchemaByUrlNoCompile(url);
             if (ret != null) return ret;
         } finally {
             cacheLock.readLock().unlock();
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
-        String schemaDoc = getSchemaStringForUrl(url, url, true).getStringData();
+        final String schemaDoc = getSchemaStringForUrl(url, url, true).getStringData();
         assert schemaDoc != null;
 
         // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
@@ -538,7 +546,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         cacheLock.writeLock().lock();
         try {
             // See if anyone else got it while we were waiting for the compiler mutex
-            SchemaHandle ret = getSchemaByUrlNoCompile(url);
+            final SchemaHandle ret = getSchemaByUrlNoCompile(url);
             if (ret != null) return ret;
 
             return compileAndCache(url, schemaDoc);
@@ -557,10 +565,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *         If a handle is returned, it will be a new handle duped just for the caller.
      *         Caller must close the handle when they are finished with it.
      */
-    private SchemaHandle getSchemaByUrlNoCompile(String url) {
-        SchemaHandle handle = schemasBySystemId.get(url);
+    private SchemaHandle getSchemaByUrlNoCompile( final String url ) {
+        final SchemaHandle handle = schemasBySystemId.get(url);
         if (handle != null) {
-            CompiledSchema schema = handle.getTarget();
+            final CompiledSchema schema = handle.getTarget();
             if (schema != null) return schema.ref();
         }
         return null;
@@ -576,10 +584,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * @param policyOk      if true, urls of the form "policy:whatever" will be allowed.  This should be allowed
      *                      only if this is a top-level fetch; otherwise, policies can import each others static schemas,
      *                      possibly in violation of access control partitions.
-     * @return as LSInput that contians both StringData and a SystemId.  Never null.
+     * @return as LSInput that contains both StringData and a SystemId.  Never null.
      * @throws IOException  if schema text could not be fetched for the specified URL.
      */
-    private LSInput getSchemaStringForUrl(String baseUrl, String url, boolean policyOk) throws IOException {
+    private LSInput getSchemaStringForUrl( final String baseUrl,
+                                           String url,
+                                           final boolean policyOk) throws IOException {
         if (!policyOk && url.trim().toLowerCase().startsWith("policy:"))
             throw new IOException("Schema URL not permitted in this context: " + url);
 
@@ -597,7 +607,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             return makeLsInput(url, schemaDoc);
 
         // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
-        AbstractUrlObjectCache.FetchResult<String> result =
+        final AbstractUrlObjectCache.FetchResult<String> result =
                 httpStringCache.get().fetchCached(url, HttpObjectCache.WAIT_LATEST);
 
         schemaDoc = result.getUserObject();
@@ -605,7 +615,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             return makeLsInput(url, schemaDoc);
 
         // Check for errors we should report
-        IOException e = result.getException();
+        final IOException e = result.getException();
         if (e != null)
             throw new CausedIOException("Unable to download remote schema " + describeResource(baseUrl, url) +  " : " + ExceptionUtils.getMessage(e), e);
 
@@ -614,8 +624,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     /** @return an LSInput that contains StringData and a SystemId. */
-    private LSInput makeLsInput(String url, String schemaDoc) {
-        LSInputImpl lsi =  new LSInputImpl();
+    private LSInput makeLsInput(final String url, final String schemaDoc) {
+        final LSInputImpl lsi =  new LSInputImpl();
         lsi.setStringData(schemaDoc);
         lsi.setSystemId(url);
         return lsi;
@@ -629,14 +639,13 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *
      * @param newSchema the schema for which to maybe enable hardware.
      */
-    private void maybeEnableHardwareForNewSchema(CompiledSchema newSchema) {
+    private void maybeEnableHardwareForNewSchema(final CompiledSchema newSchema) {
         if (newSchema == null) return;
         // Try to enable all children bottom-up
-        for (SchemaHandle child : newSchema.getImports().values())
+        for (final SchemaHandle child : newSchema.getDependencies().values())
             maybeEnableHardwareForNewSchema(child.getTarget());
 
-        String tns = newSchema.getTargetNamespace();
-        if (tns == null || tns.length() < 1) return;
+        final String tns = getTargetNamespace(newSchema);
 
         // The new CompiledSchema has a TNS, and may be hardware-accelerated if no other schema current has the same TNS.
         Map<CompiledSchema, Object> compiledSchemasWithThisTns = tnsCache.get(tns);
@@ -646,23 +655,40 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         }
 
         compiledSchemasWithThisTns.put(newSchema, null);
-        if (compiledSchemasWithThisTns.size() == 2) {
+        if ( conflictingTns(compiledSchemasWithThisTns.keySet()) ) {
             // We're the first duplicate; disable hardware for all known CompiledSchemas with this tns
-            logger.log(Level.INFO, "A second schema was found with targetNamespace {0}; neither is now eligible for hardware acceleration", tns);
+            logger.log(Level.INFO, "Multiple schema found for targetNamespace {0}; none are now eligible for hardware acceleration", tns);
             for (CompiledSchema schema : compiledSchemasWithThisTns.keySet()) {
-                schema.setUniqueTns(false);
+                schema.setConflictingTns(true);
                 hardwareDisable(schema);
             }
-            return;
-        }
-
-        if (compiledSchemasWithThisTns.size() == 1) {
-            newSchema.setUniqueTns(true);
+        } else if ( !compiledSchemasWithThisTns.isEmpty() ) {
+            newSchema.setConflictingTns(false);
             maybeHardwareEnable(newSchema, false, false, new HashSet<CompiledSchema>());
-        } else if (compiledSchemasWithThisTns.isEmpty()) {
+        } else {
             logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
             tnsCache.remove(tns);
         }
+    }
+
+    /**
+     * A target namespace conflicts if there are multiple non-dependency schemas using it.
+     */
+    private boolean conflictingTns( final Collection<CompiledSchema> schemas ) {
+        boolean duplicate = false;
+
+        if ( schemas.size() > 1 ) {
+            int count = 0;
+            for ( final CompiledSchema schema : schemas ) {
+                if ( !schema.isInclude() && ++count > 1 ) {
+                    break;
+                }
+            }
+
+            duplicate = count > 1;
+        }
+
+        return duplicate;
     }
 
     Lock getReadLock() {
@@ -670,26 +696,30 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     @Override
-    public void registerSchema(String globalUrl, String schemadoc) {
-        if (schemadoc == null) throw new NullPointerException("A schema must be provided");
-        String old = globalSchemasByUrl.put(globalUrl, schemadoc);
+    public void registerSchema( final String globalUrl,
+                                final String schemaDoc ) {
+        if (schemaDoc == null) throw new NullPointerException("A schema must be provided");
+        String old = globalSchemasByUrl.put(globalUrl, schemaDoc);
         if (old != null)
             onUrlDownloaded(globalUrl);
     }
 
     @Override
-    public void unregisterSchema(String globalUrl) {
+    public void unregisterSchema(final String globalUrl) {
         String old = globalSchemasByUrl.remove(globalUrl);
         if (old != null)
             onUrlDownloaded(globalUrl);
     }
 
-    private String describeResource(String baseURI, String url) {
+    private String describeResource( final String baseURI, final String url ) {
         return describeResource(baseURI, url, null, null);
     }
 
-    private String describeResource(String baseURI, String systemId, String publicId, String namespaceURI) {
-        String description = null;
+    private String describeResource( final String baseURI,
+                                     final String systemId,
+                                     final String publicId,
+                                     final String namespaceURI ) {
+        final String description;
 
         if (systemId != null) {
             String resourceUrl = systemId;
@@ -727,10 +757,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         return description;
     }
 
-    private static class UnresolveableException extends RuntimeException {
+    private static class UnresolvableException extends RuntimeException {
         private final String resourceDescription;
 
-        public UnresolveableException(Throwable cause, String resourceDescription) {
+        private UnresolvableException(Throwable cause, String resourceDescription) {
             super(cause);
             this.resourceDescription = resourceDescription;
         }
@@ -748,19 +778,20 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     /**
      * Analyze the specified schema, including fetching remote references if necessary, to produce
      * an up-to-date and comprehensive set of all dependent schemas.  If this returns,
-     * all child and gradchild (etc) schema strings will be hot in the httpStringCache.
+     * all child and grandchild (etc) schema strings will be hot in the httpStringCache.
      *
-     * @param systemId
-     * @param schemadoc
-     * @return the imports directly or indirectly used by this schema.  Never null.
+     * @param systemId The system identifier for the schema document
+     * @param schemaDoc The schema document
+     * @return the dependencies directly or indirectly used by this schema.  Never null.
      * @throws SAXException if a schema is not valid
      * @throws IOException if a remote schema cannot be fetched
      */
-    private Set<String> precacheSchemaDependencies(String systemId, String schemadoc) throws SAXException, IOException {
-        final Set<String> imports = new HashSet<String>();
+    private Set<String> preCacheSchemaDependencies( final String systemId,
+                                                    final String schemaDoc ) throws SAXException, IOException {
+        final Set<String> dependencies = new HashSet<String>();
 
         SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-        LSResourceResolver lsrr = new LSResourceResolver() {
+        LSResourceResolver resolver = new LSResourceResolver() {
             @Override
             public LSInput resolveResource(String type,
                                            String namespaceURI,
@@ -781,27 +812,26 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                     }
                     LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
                     assert lsi != null;
-                    imports.add(lsi.getSystemId());
+                    dependencies.add(lsi.getSystemId());
                     return lsi;
                 } catch (IOException e) {
-                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 }
             }
         };
-        sf.setResourceResolver(lsrr);
+        sf.setResourceResolver(resolver);
 
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes(Charsets.UTF8));
-            sf.newSchema(new StreamSource(bais, systemId)); // populates imports as side-effect
-            return imports;
+            sf.newSchema(new StreamSource(new StringReader(schemaDoc), systemId)); // populates dependencies as side-effect
+            return dependencies;
         } catch (RuntimeException e) {
-            UnresolveableException unres = (UnresolveableException)ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema for resource " + unres.getResourceDescription(), unres.getCause());
+            UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
+            if (exception != null) throw new CausedIOException("Unable to resolve remote sub-schema for resource " + exception.getResourceDescription(), exception.getCause());
             throw e;
         }
     }
 
-    private String generateURN(String namespace) {
+    private String generateURN( final String namespace ) {
         StringBuilder sb = new StringBuilder();
         sb.append("urn:uuid:");
         sb.append(UUID.nameUUIDFromBytes(namespace.getBytes(Charsets.UTF8)).toString());
@@ -819,7 +849,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *                                   or is absolute but uses a protocol other than "http" or "https"
      * @throws MalformedURLException if relative is absolute and uses an unknown protocol
      */
-    private String computeEffectiveUrl(String base, String relative) throws MalformedURLException {
+    private String computeEffectiveUrl( final String base, final String relative ) throws MalformedURLException {
         if (base == null || relative == null) throw new NullPointerException();
 
         // First check if the "relative" uri is in fact absolute, in which case we avoid
@@ -827,8 +857,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         try {
             final URI relativeUri = new URI(relative);
             if (relativeUri.isAbsolute()) {
-                final String proto = relativeUri.getScheme();
-                if (!proto.equals("http") && !proto.equals("https"))
+                final String scheme = relativeUri.getScheme();
+                if (!scheme.equals("http") && !scheme.equals("https"))
                     throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
                 return relativeUri.toURL().toExternalForm();
             }
@@ -839,8 +869,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         final URL baseUrl = new URL(base);
 
-        final String proto = baseUrl.getProtocol();
-        if (!proto.equals("http") && !proto.equals("https"))
+        final String protocol = baseUrl.getProtocol();
+        if (!protocol.equals("http") && !protocol.equals("https"))
             throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
 
         return new URL(baseUrl, relative).toExternalForm();
@@ -851,19 +881,19 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * Caller must hold the write lock.
      *
      * @param systemId
-     * @param schemadoc
+     * @param schemaDoc
      * @return a new handle, duped just for the caller.  Caller must close it when they are finished with it.
      * @throws SAXException
      */
-    private SchemaHandle compileAndCache(String systemId, String schemadoc)
+    private SchemaHandle compileAndCache( final String systemId, final String schemaDoc )
             throws SAXException, IOException
     {
-        // Do initial parse and get deps (strings are all hot in the HTTP cache after this)
-        precacheSchemaDependencies(systemId, schemadoc);
+        // Do initial parse and get dependencies (strings are all hot in the HTTP cache after this)
+        preCacheSchemaDependencies(systemId, schemaDoc);
 
         invalidateParentsOfRecentlySupersededSchemas();
 
-        return compileAndCacheRecursive(systemId, schemadoc, new HashSet<String>());
+        return compileAndCacheRecursive(systemId, schemaDoc, new HashSet<String>());
     }
 
     /** Caller must hold the write lock. */
@@ -888,103 +918,138 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * that any remote schemas are hot in the cache, and any schemas that are in need of a recompile due to
      * changed remote schemas have already been invalidated and removed from schemasBySystemId.
      * <p/>
-     * This will recursively compile the imported schemas.
+     * This will recursively compile the schemas dependencies.
      * <p/>
      * Caller must hold the write lock.
      *
      * @param systemId    systemId of the schema being compiled. required
-     * @param schemadoc   a String containing the schema XML
+     * @param schemaDoc   a String containing the schema XML
      * @param seenSystemIds  the set of system IDs seen since the current top-level compile began
      * @return a SchemaHandle to a new CompiledSchema instance, already duplicated for the caller.  Caller must close
      *         this handle when they are finished with it.
      */
-    private SchemaHandle compileAndCacheRecursive(String systemId, String schemadoc, final Set<String> seenSystemIds) throws SAXException, IOException {
+    private SchemaHandle compileAndCacheRecursive( final String systemId,
+                                                   final String schemaDoc,
+                                                   final Set<String> seenSystemIds ) throws SAXException, IOException {
         if (seenSystemIds.contains(systemId)) {
-            //remove this exception and replace with patch to log circular imports
-            //throw new SAXException("Circular imports detected.  Schema sets with circular imports are not currently supported.");
             logger.info("Circular import detected.");
             return null;
         }
 
         seenSystemIds.add(systemId);
 
-        // Reparse, building up CompiledSchema instances as needed from the bottom up
-        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+        // Re-parse, building up CompiledSchema instances as needed from the bottom up
+        final SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+
+        final Document schema = XmlUtil.stringToDocument(schemaDoc);
+        final Set<String> includes = new HashSet<String>();
+        final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
+        schemaReferenceProcessor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
+            @Override
+            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+                if ( !"import".equals(node.getLocalName()) ) {
+                    includes.add( referenceUrl );
+                }
+                return null;
+            }
+        } );
 
         final Map<String,SchemaHandle> directImports = new HashMap<String,SchemaHandle>();
-        final LSResourceResolver lsrr = new LSResourceResolver() {
+        final Map<String,SchemaHandle> directIncludes = new HashMap<String,SchemaHandle>();
+        final LSResourceResolver resolver = new LSResourceResolver() {
             @Override
-            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+            public LSInput resolveResource( final String type,
+                                            final String namespaceURI,
+                                            final String publicId,
+                                            final String systemId,
+                                            final String baseURI) {
+                if ( !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(type) ) {
+                    throw new UnresolvableException(null, describeResource(baseURI, systemId, publicId, namespaceURI));
+                }
+
+                Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
                 try {
-                    if (systemId == null) {
-                        String resolvedSystemId = generateURN(namespaceURI);
-                        if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
-                            systemId = resolvedSystemId;
-                        } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
-                            systemId = namespaceURI;
-                        } else {
-                            throw new CausedIOException("No systemId, cannot resolve resource");
-                        }
-                    }
-                    LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
-                    assert lsi != null;
-
-                    SchemaHandle handle = schemasBySystemId.get(lsi.getSystemId());
-
-                    if (handle == null) {
-                        // Have to compile a new one
-                        handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData(), seenSystemIds);
-                    } else {
-                        // Can't give it away while it remains in the cache -- need to dupe it (Bug #2926)
-                        handle = handle.getCompiledSchema().ref();
-                    }
-
-                    //if handle is null, there was a circular import.
-                    if ( handle != null ) {
-                        directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
-                        return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
-                    }
-                    return null;
-
+                    return resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap );
                 } catch (IOException e) {
-                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 } catch (SAXException e) {
-                    throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 }
             }
         };
-        sf.setResourceResolver(lsrr);
+        sf.setResourceResolver(resolver);
 
+        boolean success = false;
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes(Charsets.UTF8));
-            Schema softwareSchema = sf.newSchema(new StreamSource(bais, systemId));
-            String tns = XmlUtil.getSchemaTNS(schemadoc);
-            Element mangledElement = DomUtils.normalizeNamespaces(XmlUtil.stringToDocument(schemadoc).getDocumentElement());
-            String mangledDoc = XmlUtil.nodeToString(mangledElement);
-            CompiledSchema newSchema =
-                    new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this,
-                            directImports, true, conf.get().softwareFallback);
-            for (SchemaHandle directImport : directImports.values()) {
-                final CompiledSchema impSchema = directImport.getCompiledSchema();
+            final Schema softwareSchema = sf.newSchema(new StreamSource(new StringReader(schemaDoc), systemId));
+            final String tns = XmlUtil.getSchemaTNS(schemaDoc);
+            final Element mangledElement = DomUtils.normalizeNamespaces(schema.getDocumentElement());
+            final String mangledDoc = XmlUtil.nodeToString(mangledElement);
+            final CompiledSchema newSchema =
+                    new CompiledSchema(tns, systemId, schemaDoc, mangledDoc, softwareSchema, this,
+                            directImports, directIncludes, true, cacheConfigurationReference.get().softwareFallback);
+            for ( final SchemaHandle directDependency : CollectionUtils.iterable(directImports.values(), directIncludes.values()) ) {
+                final CompiledSchema impSchema = directDependency.getCompiledSchema();
                 if (impSchema == null) continue;
                 impSchema.addExport(newSchema);
             }
 
-            SchemaHandle cacheRef = newSchema.ref(); // make a handle for the cache
-            SchemaHandle old = schemasBySystemId.put(newSchema.getSystemId(), cacheRef);
+            final SchemaHandle cacheRef = newSchema.ref(); // make a handle for the cache
+            final SchemaHandle old = schemasBySystemId.put(newSchema.getSystemId(), cacheRef);
             if (old != null) deferredCloseHandle(old);
             maybeEnableHardwareForNewSchema(newSchema);
+            success = true;
             return newSchema.ref(); // make a handle for the caller
 
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
         } catch (XmlUtil.BadSchemaException e) {
             throw new SAXException("Unable to parse Schema", e);
         } catch (RuntimeException e) {
-            UnresolveableException unres = (UnresolveableException) ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema for resource " + unres.getResourceDescription(), unres.getCause());
+            UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
+            if (exception != null) throw new CausedIOException("Unable to resolve remote sub-schema for resource " + exception.getResourceDescription(), exception.getCause());
             throw e;
+        } finally {
+            if ( !success ) {
+                for (SchemaHandle impHandle : CollectionUtils.iterable(directImports.values(), directIncludes.values())) {
+                    impHandle.close();
+                }
+            }
         }
+    }
+
+    private LSInput resolveSchema( final String namespaceURI,
+                                   String systemId,
+                                   final String baseURI,
+                                   final Set<String> seenSystemIds,
+                                   final Map<String, SchemaHandle> dependencyMap ) throws IOException, SAXException {
+        if (systemId == null) {
+            String resolvedSystemId = generateURN(namespaceURI);
+            if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
+                systemId = resolvedSystemId;
+            } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
+                systemId = namespaceURI;
+            } else {
+                throw new CausedIOException("No systemId, cannot resolve resource");
+            }
+        }
+        LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
+        assert lsi != null;
+
+        SchemaHandle handle = schemasBySystemId.get(lsi.getSystemId());
+
+        if (handle == null) {
+            // Have to compile a new one
+            handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData(), seenSystemIds);
+        } else {
+            // Can't give it away while it remains in the cache -- need to dupe it (Bug #2926)
+            handle = handle.getCompiledSchema().ref();
+        }
+
+        //if handle is null, there was a circular dependency.
+        if ( handle != null ) {
+            dependencyMap.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
+            return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
+        }
+        return null;
     }
 
     /**
@@ -995,11 +1060,11 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * Caller must NOT hold the write lock.  Caller will typically be either and end user thread,
      * the cache cleanup thread, or a finalizer thread.
      */
-    void closeSchema(CompiledSchema schema) {
+    void closeSchema( final CompiledSchema schema ) {
         reportCacheContents();
 
         logger.log(Level.FINE, "Closing {0}", schema);
-        String tns = schema.getTargetNamespace();
+        final String tns = getTargetNamespace(schema);
 
         cacheLock.writeLock().lock();
         try {
@@ -1011,22 +1076,18 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 schemasRecentlySuperseded.put(schema.getSystemId(), 1);
             }
 
-            if (tns == null || tns.length() < 1) return;
-
             // The schema had a TNS, and might have been relevant to hardware
             hardwareDisable(schema);
             Map<CompiledSchema, Object> schemas = tnsCache.get(tns);
             if (schemas == null) return;
             schemas.remove(schema);
-            if (schemas.size() == 1) {
-                // Survivor gets hardware privileges
+            if ( !conflictingTns( schemas.keySet() ) ) {
+                // Survivors get hardware privileges
                 if (logger.isLoggable(Level.INFO))
-                    logger.log(Level.INFO, "Sole remaining schema with tns {0} is now eligible for hardware acceleration", String.valueOf(schema.getTargetNamespace()));
-                Iterator<CompiledSchema> i = schemas.keySet().iterator();
+                    logger.log(Level.INFO, "Remaining schemas with tns \"{0}\" are now eligible for hardware acceleration", tns);
                 // Unlikely to throw ConcurrentModificationException, since all finalizers use this method and take out the write lock
-                if (i.hasNext()) {
-                    CompiledSchema survivingSchema = i.next();
-                    survivingSchema.setUniqueTns(true);
+                for ( CompiledSchema survivingSchema : schemas.keySet() ) {
+                    survivingSchema.setConflictingTns(false);
                     maybeHardwareEnable(survivingSchema, true, true, new HashSet<CompiledSchema>());
                 }
             }
@@ -1041,10 +1102,11 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * @param schema the schema whose roots to find.  Must not be null.
      * @param foundRoots a Set to which found roots will be added.  Must not be null.
      */
-    private void getRoots(CompiledSchema schema, Set<CompiledSchema> foundRoots) {
-        Set<CompiledSchema> exps = schema.getExports();
+    private void getRoots( final CompiledSchema schema,
+                           final Set<CompiledSchema> foundRoots ) {
+        Set<CompiledSchema> exports = schema.getExports();
         boolean haveExport = false;
-        for (CompiledSchema parent : exps) {
+        for (CompiledSchema parent : exports) {
             if (parent == null) continue;
             haveExport = true;
             getRoots(parent, foundRoots);
@@ -1052,12 +1114,15 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (!haveExport) foundRoots.add(schema);
     }
 
-    private void reportNode(CompiledSchema schema, Set<CompiledSchema> visited, StringBuilder sb, String indent) {
+    private void reportNode( final CompiledSchema schema,
+                             final Set<CompiledSchema> visited,
+                             final StringBuilder sb,
+                             final String indent) {
         visited.add(schema);
         sb.append(indent).append(schema);
         for (int i = indent.length(); i < 14; ++i) sb.append(" ");
         sb.append(schema.getTnsGen()).append("\n");
-        Map<String,SchemaHandle> kids = schema.getImports();
+        Map<String,SchemaHandle> kids = schema.getDependencies();
         for (SchemaHandle schemaHandle : kids.values()) {
             CompiledSchema kid = schemaHandle.getTarget();
             if (kid != null)
@@ -1107,7 +1172,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             for (Map.Entry<String, Map<CompiledSchema, Object>> entry : tnsCache.entrySet()) {
                 String tns = entry.getKey();
                 Map<CompiledSchema,Object> ss = entry.getValue();
-                if (tns == null || tns.length() < 1 || ss == null || ss.isEmpty()) continue;
+                if (tns == null || ss == null || ss.isEmpty()) continue;
                 sb.append("  TNS:").append(tns).append("\n");
                 for (CompiledSchema schema : ss.keySet()) {
                     if (schema == null) continue;
@@ -1127,31 +1192,32 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * Check if this schema can be hardware-enabled
      * Caller must hold write lock.
      */
-    private boolean maybeHardwareEnable(CompiledSchema schema, boolean notifyParents, boolean notifyChildren, Set<CompiledSchema> visited) {
+    private boolean maybeHardwareEnable( final CompiledSchema schema,
+                                         final boolean notifyParents,
+                                         final boolean notifyChildren,
+                                         final Set<CompiledSchema> visited ) {
         // Short-circuit if we know we have no work to do
         if (tarariSchemaHandler == null) return false;
         boolean notYetVisited = visited.add(schema);
         assert notYetVisited;
-        if (!schema.isUniqueTns()) return false;
+        if (schema.isConflictingTns()) return false;
         if (schema.isRejectedByTarari()) return false;
         if (schema.isHardwareEligible()) return false;
-        String tns = schema.getTargetNamespace();
-        if (tns == null || tns.length() < 1) return false;
 
         // Check that all children are loaded
-        Map<String,SchemaHandle> imports = schema.getImports();
-        for (SchemaHandle directImport : imports.values()) {
+        Map<String,SchemaHandle> dependencies = schema.getDependencies();
+        for (SchemaHandle directImport : dependencies.values()) {
             final CompiledSchema cs = directImport.getTarget();
             if (cs == null) continue;
             if (visited.contains(cs)) continue; // prevent infinite downwards and upwards recursion
             if (!cs.isHardwareEligible()) {
                 if (!notifyChildren) {
-                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports is not already hardware eligible", schema);
+                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its dependencies is not already hardware eligible", schema);
                     return false;
                 }
 
                 if (!maybeHardwareEnable(cs, notifyParents, true, visited)) {
-                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports could not be made hardware eligible", schema);
+                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its dependencies could not be made hardware eligible", schema);
                     return false;
                 }
             }
@@ -1159,7 +1225,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         // Schedule the actual hardware load for this schema
         scheduleLoadHardware(schema);
-        logger.log(Level.INFO, "Schema with targetNamespace {0} is eligible for hardware acceleration", tns);
+        logger.log(Level.INFO, "Schema with targetNamespace \"{0}\" is eligible for hardware acceleration", getTargetNamespace(schema));
         schema.setHardwareEligible(true);
 
         if (notifyParents) {
@@ -1180,18 +1246,18 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *
      * @param schema  the schema that is now waiting to load into hardware
      */
-    private void scheduleLoadHardware(CompiledSchema schema) {
+    private void scheduleLoadHardware( final CompiledSchema schema ) {
         schemasWaitingToLoad.put(schema, null);
 
         final long now = System.currentTimeMillis();
         if (firstSchemaEligibilityTime == 0)
             firstSchemaEligibilityTime = now;
         lastSchemaEligibilityTime = now;
-        scheduleOneShotRebuildCheck(conf.get().hardwareRecompileMinAge);
+        scheduleOneShotRebuildCheck( cacheConfigurationReference.get().hardwareRecompileMinAge);
     }
 
     /** Schedule a one-shot call to maybeRebuildHardwareCache(), delay ms from now. */
-    private void scheduleOneShotRebuildCheck(long delay) {
+    private void scheduleOneShotRebuildCheck( final long delay ) {
         if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
         if (maintenanceTimer != null) {
             SafeTimerTask task = new SafeTimerTask() {
@@ -1217,9 +1283,9 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (schemasWaitingToLoad.size() < 1)
             return false;
 
-        int hardwareRecompileLatency = conf.get().hardwareRecompileLatency;
-        int hardwareRecompileMinAge = conf.get().hardwareRecompileMinAge;
-        int hardwareRecompileMaxAge = conf.get().hardwareRecompileMaxAge;
+        int hardwareRecompileLatency = cacheConfigurationReference.get().hardwareRecompileLatency;
+        int hardwareRecompileMinAge = cacheConfigurationReference.get().hardwareRecompileMinAge;
+        int hardwareRecompileMaxAge = cacheConfigurationReference.get().hardwareRecompileMaxAge;
 
         final long beforeTime = System.currentTimeMillis();
 
@@ -1236,7 +1302,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (firstSchemaEligibilityTime > 0) {
             final long ageOfOldestSchema = beforeTime - firstSchemaEligibilityTime;
             if (ageOfOldestSchema > hardwareRecompileMaxAge) {
-                logger.log(Level.FINER,  "Hardware eligible schema has been awaiting reload for {0} ms -- forcing hardware schema cache reload now");
+                logger.log(Level.FINER,  "Hardware eligible schema has been awaiting reload for {0} ms -- forcing hardware schema cache reload now", ageOfOldestSchema);
                 forceReload = true;
             }
         }
@@ -1286,7 +1352,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         final long beforeTime = logger.isLoggable(Level.FINE) ? System.currentTimeMillis() : 0;
 
         // Produce list of schemas sorted so that includes appear before the schemas that include them
-        LinkedHashMap<String, CompiledSchema> forHardware = new LinkedHashMap<String, CompiledSchema>();
+        HashMap<String, CompiledSchema> forHardware = new HashMap<String, CompiledSchema>();
         Set<CompiledSchema> alreadyAdded = new HashSet<CompiledSchema>();
 
         for (SchemaHandle handle : schemasBySystemId.values()) {
@@ -1298,8 +1364,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         if (logger.isLoggable(Level.INFO)) logger.info("Rebuilding hardware schema cache: loading " + forHardware.size() + " eligible schemas (" + schemasWaitingToLoad.size() + " new)");
 
-        //noinspection unchecked
-        Map<? extends TarariSchemaSource,Exception> failedSchemas =
+        Map<TarariSchemaSource,Exception> failedSchemas =
                 tarariSchemaHandler.setHardwareSchemas(forHardware);
 
         lastHardwareRecompileTime = System.currentTimeMillis(); // get time again after
@@ -1311,7 +1376,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             CompiledSchema schema = (CompiledSchema)entry.getKey();
             Exception error = entry.getValue();
             if (logger.isLoggable(Level.WARNING))
-                logger.log(Level.WARNING, "Schema for target namespace \"" + schema.getTargetNamespace() + "\" cannot be hardware accelerated: " + ExceptionUtils.getMessage(error));
+                logger.log(Level.WARNING, "Schema for target namespace \"" + getTargetNamespace(schema) + "\" cannot be hardware accelerated: " + ExceptionUtils.getMessage(error));
             hardwareDisable(schema);
         }
 
@@ -1319,48 +1384,55 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         firstSchemaEligibilityTime = 0;
     }
 
-    /** Recursively populate linkedhashmap of hardware-eligible schemas ordered so that includes come before their includers. */
-    private void putAllHardwareEligibleSchemasDepthFirst(Set<CompiledSchema> alreadyAdded,
-                                                         LinkedHashMap<String, CompiledSchema> schemas,
-                                                         CompiledSchema schema)
+    /** Recursively populate linked hash map of hardware-eligible schemas ordered so that includes come before their dependents. */
+    private void putAllHardwareEligibleSchemasDepthFirst( final Set<CompiledSchema> alreadyAdded,
+                                                          final HashMap<String, CompiledSchema> schemas,
+                                                          final CompiledSchema schema )
     {
-        Map<String,SchemaHandle> imports = schema.getImports();
-        for (SchemaHandle imp : imports.values()) {
+        Map<String,SchemaHandle> dependencies = schema.getDependencies();
+        for (SchemaHandle imp : dependencies.values()) {
             final CompiledSchema impSchema = imp.getTarget();
             if (impSchema == null) continue;
             putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, schemas, impSchema);
         }
 
         if (schema.isHardwareEligible() && !alreadyAdded.contains(schema))
-            schemas.put(schema.getTargetNamespace(), schema);
+            schemas.put(schema.getSystemId(), schema);
     }
 
     /**
      * Caller must hold write lock
      */
-    private void hardwareDisable(CompiledSchema schema) {
+    private void hardwareDisable( final CompiledSchema schema ) {
+        hardwareDisable( schema, false );
+    }
+
+    /**
+     * Caller must hold write lock
+     */
+    private void hardwareDisable( final CompiledSchema schema, final boolean closing ) {
         if (tarariSchemaHandler == null) return;
 
-        if (logger.isLoggable(Level.INFO))
-            logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema with tns {0}",
-                       String.valueOf(schema.getTargetNamespace()));
+        if (!closing && logger.isLoggable(Level.INFO))
+            logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema {0}",
+                       String.valueOf(schema.getSystemId()));
 
         schemasWaitingToLoad.remove(schema);
         schema.setHardwareEligible(false);
         // Any schemas that import this schema must be hardware-disabled now
         for (CompiledSchema export : schema.getExports())
-            if (export != null) hardwareDisable(export);
+            if (export != null) hardwareDisable(export, closing);
     }
 
-    private static ThreadLocal<Pattern[]> tlUrlWhitelist = new ThreadLocal<Pattern[]>();
+    private static ThreadLocal<Pattern[]> tlUrlWhiteList = new ThreadLocal<Pattern[]>();
 
-    Pattern[] getThreadLocalUrlWhitelist() {
-        Pattern[] cur = tlUrlWhitelist.get();
+    Pattern[] getThreadLocalUrlWhiteList() {
+        Pattern[] cur = tlUrlWhiteList.get();
         return cur == null ? new Pattern[0] : cur;
     }
 
-    void setThreadLocalUrlWhitelist(Pattern[] urlWhitelist) {
-        tlUrlWhitelist.set(urlWhitelist);
+    void setThreadLocalUrlWhiteList( final Pattern[] urlWhiteList ) {
+        tlUrlWhiteList.set(urlWhiteList);
     }
 }
 

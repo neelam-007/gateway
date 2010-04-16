@@ -34,7 +34,8 @@ public final class SchemaHandle extends Handle<CompiledSchema> {
         getCompiledSchema().validateElements(elementsToValidate, errorHandler);
     }
 
-    /** Overridden in order to open up acces to this to the current package. */
+    /** Overridden in order to open up access to this to the current package. */
+    @Override
     protected CompiledSchema getTarget() {
         return super.getTarget();
     }

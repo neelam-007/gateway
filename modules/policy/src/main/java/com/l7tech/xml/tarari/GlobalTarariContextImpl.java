@@ -21,6 +21,8 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -63,6 +65,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
      */
+    @Override
     public void compileAllXpaths() {
         logger.fine("compiling xpath expressions");
         tarariLock.writeLock().lock();
@@ -146,14 +149,17 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         return compilerGeneration;
     }
 
+    @Override
     public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
         return new TarariCompiledXpath(compilableXpath, this);
     }
 
+    @Override
     public TarariCompiledStylesheet compileStylesheet(String stylesheet) throws ParseException {
         return new TarariCompiledStylesheetImpl(stylesheet);
     }
 
+    @Override
     public FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
         try {
             return TarariXpathConverter.convertToFastXpath(namespaceMap, xpathToSimplify);
@@ -213,7 +219,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         }
     }
 
-    public Map setHardwareSchemas(final LinkedHashMap hardwareSchemas)
+    public static void main( String[] args ) throws Exception {
+        System.out.println(new URI("file://host/asdf").resolve( "e#blah" ));        
+    }
+
+    @Override
+    public Map<TarariSchemaSource,Exception>  setHardwareSchemas( final HashMap<String,? extends TarariSchemaSource> hardwareSchemas )
     {
         tarariLock.writeLock().lock();
         try {
@@ -226,22 +237,59 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
             final Set<TarariSchemaSource> triedLoading = new HashSet<TarariSchemaSource>();
             SchemaLoader.setSchemaResolver(new SchemaResolver() {
-                public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
-                    TarariSchemaSource schema = (TarariSchemaSource)hardwareSchemas.get(namespaceUri);
-                    if (schema == null) {
-                        logger.log(Level.WARNING, "Target namespace not in hardware schema closure: {0}", namespaceUri);
+                @Override
+                public byte[] resolveSchema( final String namespaceUri,
+                                             final String locationHint,
+                                             final String baseUri) {
+                    logger.log( Level.FINE, "Resolving schema ns:{0} loc:{1} base:{2}", new String[]{namespaceUri, locationHint, baseUri} );
+
+                    // Find by raw location
+                    String systemId = locationHint;
+                    TarariSchemaSource schema = systemId!=null ?
+                            namespaceFilter(hardwareSchemas.get(systemId), namespaceUri) :
+                            null;
+
+                    // Find by resolved location
+                    if ( schema == null && locationHint != null && baseUri != null ) {
+                        try {
+                            URI location = new URI(baseUri).resolve(locationHint);
+                            systemId = location.toString();
+
+                            schema = systemId!=null ?
+                                    namespaceFilter(hardwareSchemas.get(systemId), namespaceUri) :
+                                    null;
+                        } catch ( URISyntaxException e ) {
+                            logger.log(Level.WARNING, "Error resolving schema location {0} against {1} due to {2}", new Object[]{locationHint, baseUri, ExceptionUtils.getMessage( e )});
+                        }
+                    }
+
+                    // Find by namespace
+                    if ( schema == null ) {
+                        for ( final TarariSchemaSource source : hardwareSchemas.values() ) {
+                            if ( (namespaceUri != null && namespaceUri.equals( source.getTargetNamespace() ) ) ||
+                                 (namespaceUri == null && source.getTargetNamespace()==null )  ) {
+                                systemId = source.getSystemId();
+                                schema = source;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ( schema == null ) {
+                        logger.log(Level.WARNING, "Dependency not in hardware schema closure, system id: {0}, tns: {1}", new String[]{systemId, namespaceUri});
                         return new byte[0];
                     }
+
+                    logger.log( Level.FINE, "Loading schema as dependency {0}", systemId );
                     triedLoading.add(schema);
                     return schema.getNamespaceNormalizedSchemaDocument();
                 }
             });
 
             // Now load them all
-            for (Object entry : hardwareSchemas.entrySet()) {
-                TarariSchemaSource schema = (TarariSchemaSource)((Map.Entry)entry).getValue();
+            for ( final TarariSchemaSource schema : hardwareSchemas.values() ) {
 
-                if (schema.isLoaded() || schema.isRejectedByTarari()) {
+                if (schema.isLoaded() || schema.isRejectedByTarari() || schema.isInclude()) {
                     // This schema was already either loaded or rejected while loading another schema.
                     continue;
                 }
@@ -252,6 +300,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
                 Exception failure = null;
                 try {
+                    logger.fine( "Loading schema " + systemId );
                     SchemaLoader.loadSchema(new ByteArrayInputStream(bytes), systemId);
                 } catch (IOException e) {
                     failure = e;
@@ -279,6 +328,20 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         }
     }
 
+    /**
+     * Return the given schema source if it matches the provided namespace.
+     *
+     * @param tarariSchemaSource The schema source to filter (may be null)
+     * @param namespaceUri The desired namespace (may be null)
+     * @return The schema source or null
+     */
+    private TarariSchemaSource namespaceFilter( final TarariSchemaSource tarariSchemaSource, final String namespaceUri ) {
+        return namespaceUri == null || namespaceUri.equals( tarariSchemaSource.getTargetNamespace() ) ?
+                tarariSchemaSource :
+                null ;
+    }
+
+    @Override
     public boolean validate(TarariMessageContext tmc) throws SAXException {
         long before = 0;
         boolean result = false;
@@ -286,7 +349,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         try {
             if (logger.isLoggable(Level.FINE)) {
                 before = System.currentTimeMillis();
-                logger.fine("Validing message in hardware");
+                logger.fine("Validating message in hardware");
             }
 
             result = ((TarariMessageContextImpl)tmc).getRaxDocument().validate();
@@ -302,7 +365,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         }
     }
 
-
     /**
      * Builds the initial {@link Xpaths}
      */
@@ -314,7 +376,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         int ursStart = xpaths0.size() + 1; // 1-based arrays
         int[] uriIndices = new int[SoapConstants.ENVELOPE_URIS.size()+1];
         for (int i = 0; i < SoapConstants.ENVELOPE_URIS.size(); i++) {
-            String uri = (String) SoapConstants.ENVELOPE_URIS.get(i);
+            String uri = SoapConstants.ENVELOPE_URIS.get(i);
             String nsXpath = TarariUtil.NS_XPATH_PREFIX + uri + TarariUtil.NS_XPATH_SUFFIX;
             //noinspection unchecked
             xpaths0.add(nsXpath);

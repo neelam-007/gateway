@@ -14,9 +14,9 @@ public interface SchemaManager {
      * previously-existing global schema at this global URL.
      *
      * @param globalUrl  a real or pseudo-URL, ie: "policy:123".  Must not be null.
-     * @param schemadoc  the schema document to associate with this URL.  Must not be null.
+     * @param schemaDoc  the schema document to associate with this URL.  Must not be null.
      */
-    void registerSchema(String globalUrl, String schemadoc);
+    void registerSchema(String globalUrl, String schemaDoc);
 
     /**
      * Remove any previously-registered schema document at the specified URL.

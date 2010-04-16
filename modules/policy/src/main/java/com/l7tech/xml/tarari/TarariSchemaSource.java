@@ -15,10 +15,19 @@ public interface TarariSchemaSource {
     /** @return the systemId of the schema. */
     String getSystemId();
 
+    /**
+     * Get the target namespace.
+     *
+     * @return The target namespace or null for none
+     */
+    String getTargetNamespace();
+
     boolean isRejectedByTarari();
 
     /** Notify that the hardware does not like this schema XML and should not be asked to load it again. */
     void setRejectedByTarari(boolean rejectedByTarari);
+
+    boolean isInclude();
 
     boolean isLoaded();
 

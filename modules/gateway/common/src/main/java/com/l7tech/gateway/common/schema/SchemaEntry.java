@@ -17,14 +17,14 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * A row in the communityschema table. These xml schemas are meant to define additional
+ * A row in the community schema table. These xml schemas are meant to define additional
  * elements that are potentially common to more than one services such as envelope schemas
  * and schemas for stuff that end up in soap headers.
  * <p/>
  * All imports from a schema, which are successfully imported, are also added to the community_schemas table
  * (includes are not)
  * <p/>
- * The name is unqiue, however this is enforced by the name_hash property
+ * The name is unique, however this is enforced by the name_hash property
  *
  * @author flascelles@layer7-tech.com
  * @author darmstrong
@@ -47,7 +47,7 @@ public class SchemaEntry extends NamedEntityImp {
      * Set the name of the schema. This is known as a 'system id' in the SSM, and can often be a URL value, from where
      * an imported schema originated
      *  
-     * @param name required. Cannot be null, but can be the emtpy String
+     * @param name required. Cannot be null, but can be the empty String
      */
     @Override
     public void setName(String name) {
@@ -74,6 +74,10 @@ public class SchemaEntry extends NamedEntityImp {
         this.schema = schema;
     }
 
+    public boolean hasTns() {
+        return tns!=null && !tns.isEmpty();
+    }
+
     @Size(min = 0, max = 128)
     @Column(name = "tns", length = 128)
     public String getTns() {
@@ -88,7 +92,7 @@ public class SchemaEntry extends NamedEntityImp {
         }
     }
 
-    @Column(name = "system")
+    @Transient
     public boolean isSystem() {
         return system;
     }

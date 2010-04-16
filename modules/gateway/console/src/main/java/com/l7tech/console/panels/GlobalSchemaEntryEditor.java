@@ -51,15 +51,15 @@ import java.util.logging.Logger;
 public class GlobalSchemaEntryEditor extends JDialog {
     private final Logger logger = Logger.getLogger(GlobalSchemaEntryEditor.class.getName());
     private JPanel xmlDisplayPanel;
-    private JTextField schemanametxt;
-    private JButton helpbutton;
-    private JButton cancelbutton;
-    private JButton okbutton;
+    private JTextField schemaNameTextField;
+    private JButton helpButton;
+    private JButton cancelButton;
+    private JButton okButton;
     private JPanel mainPanel;
     private XMLContainer xmlContainer;
     private UIAccessibility uiAccessibility;
     private SchemaEntry subject;
-    private boolean dataloaded = false;
+    private boolean dataLoaded = false;
     public boolean success = false;
     private JButton uploadFromURLBut;
     private JButton uploadFromFileBut;
@@ -70,7 +70,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         this.subject = subject;
         this.canEdit = canEditEntry;
         initialize();
-        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xml pad
     }
 
     private void initialize() {
@@ -123,51 +123,58 @@ public class GlobalSchemaEntryEditor extends JDialog {
         // support Enter and Esc keys
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.setEnterAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         // button callbacks
-        helpbutton.addActionListener(new ActionListener() {
+        helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
-        cancelbutton.addActionListener(new ActionListener() {
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
-        okbutton.addActionListener(new ActionListener() {
+        okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
 
         uploadFromURLBut.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 uploadFromURL();
             }
         });
 
         uploadFromFileBut.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 uploadFromFile();
             }
         });
 
-        schemanametxt.setDocument(new FilterDocument(EntityUtil.getMaxFieldLength(SchemaEntry.class, "getName", 4096), new FilterDocument.Filter() {
+        schemaNameTextField.setDocument(new FilterDocument(EntityUtil.getMaxFieldLength(SchemaEntry.class, "getName", 4096), new FilterDocument.Filter() {
+                                                                @Override
                                                                 public boolean accept(String str) {
-                                                                    if (str == null) return false;
-                                                                    return true;
+                                                                    return str != null;
                                                                 }
                                                             }));
         enableReadOnlyIfNeeded();
 
         this.addWindowListener(new WindowAdapter() {
+            @Override
             public void windowOpened(WindowEvent e) {
-                if (!dataloaded) {
+                if (!dataLoaded ) {
                     resetData();
                 }
             }
@@ -175,11 +182,12 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void uploadFromURL() {
-        final OkCancelDialog dlg = new OkCancelDialog(this, "Load Schema From URL",
+        final OkCancelDialog dlg = new OkCancelDialog<String>(this, "Load Schema From URL",
                                                 true, new UrlPanel("Enter URL to read XML Schema from", null));
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 String url = (String)dlg.getValue();
                 if (url != null) {
@@ -189,16 +197,16 @@ public class GlobalSchemaEntryEditor extends JDialog {
         });
     }
 
-    private void readFromUrl(String urlstr) {
-        if (urlstr == null || urlstr.length() < 1) {
+    private void readFromUrl(String url) {
+        if (url == null || url.length() < 1) {
             displayError("A URL was not provided", null);
             return;
         }
         // compose input source
         try {
-            new URL(urlstr);
+            new URL(url);
         } catch (MalformedURLException e) {
-            displayError(urlstr + " is not a valid url", null);
+            displayError(url + " is not a valid url", null);
             return;
         }
 
@@ -212,7 +220,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
 
         final String schemaXml;
         try {
-            schemaXml = schemaAdmin.resolveSchemaTarget(urlstr);
+            schemaXml = schemaAdmin.resolveSchemaTarget(url);
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
@@ -224,7 +232,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         try {
             doc = XmlUtil.parse(schemaXml);
         } catch (SAXException e) {
-            displayError("No XML at " + urlstr, null);
+            displayError("No XML at " + url, null);
             return;
         }
 
@@ -241,20 +249,15 @@ public class GlobalSchemaEntryEditor extends JDialog {
             }
             uiAccessibility.getEditor().setText(printedSchema);
         } else {
-            displayError("No XML Schema could be parsed from " + urlstr, null);
+            displayError("No XML Schema could be parsed from " + url, null);
         }
     }
 
     private boolean docIsSchema(Document doc) {
         Element rootEl = doc.getDocumentElement();
 
-        if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getLocalName())) {
-            return false;
-        }
-        if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
-            return false;
-        }
-        return true;
+        return SchemaValidation.TOP_SCHEMA_ELNAME.equals( rootEl.getLocalName() ) &&
+               SchemaValidation.W3C_XML_SCHEMA.equals( rootEl.getNamespaceURI() );
     }
 
     private void displayError(String msg, String title) {
@@ -264,6 +267,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
 
     private void uploadFromFile() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doUpload(fc);
             }
@@ -288,7 +292,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         try {
             doc = XmlUtil.parse(fis);
         } catch (SAXException e) {
-            displayError("No XML at " + filename, null);
+            displayError("Error parsing schema from " + filename + " : " + ExceptionUtils.getMessage( e ), null);
             logger.log(Level.FINE, "cannot parse " + filename, e);
             return;
         } catch (IOException e) {
@@ -309,8 +313,8 @@ public class GlobalSchemaEntryEditor extends JDialog {
                 return;
             }
             uiAccessibility.getEditor().setText(printedSchema);
-            if (schemanametxt.getText() == null || schemanametxt.getText().length() < 1) {
-                schemanametxt.setText(dlg.getSelectedFile().getName());
+            if ( schemaNameTextField.getText() == null || schemaNameTextField.getText().length() < 1) {
+                schemaNameTextField.setText(dlg.getSelectedFile().getName());
             }
         } else {
             displayError("An XML Schema could not be read from " + filename, null);
@@ -341,15 +345,16 @@ public class GlobalSchemaEntryEditor extends JDialog {
             }
 
             // make sure there is a name captioned
-            String systemId = schemanametxt.getText();
-            if (systemId == null || systemId.length() < 1) {
+            String systemId = schemaNameTextField.getText();
+            if (systemId == null || systemId.trim().length() < 1) {
                 JOptionPane.showMessageDialog(this, "You must provide a system id (name) for this schema to be referenced by another schema.",
                                                     "Invalid Schema",
                                                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            
             // save it
-            subject.setName(systemId);
+            subject.setName(systemId.trim());
             subject.setSchema(contents);
             subject.setTns(tns);
             success = true;
@@ -358,17 +363,17 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void resetData() {
-        schemanametxt.setText(subject.getName());
+        schemaNameTextField.setText(subject.getName());
         String xml = subject.getSchema();
         if (xml != null) {
             uiAccessibility.getEditor().setText(xml);
             uiAccessibility.getEditor().setLineNumber(1);
         }
-        dataloaded = true;
+        dataLoaded = true;
     }
 
     private void enableReadOnlyIfNeeded() {
-        schemanametxt.setEditable(canEdit);
+        schemaNameTextField.setEditable(canEdit);
         uploadFromFileBut.setEnabled(canEdit);
         uploadFromURLBut.setEnabled(canEdit);
         xmlContainer.setEditable(canEdit);

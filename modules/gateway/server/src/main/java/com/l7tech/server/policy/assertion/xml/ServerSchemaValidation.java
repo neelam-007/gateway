@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
@@ -54,11 +55,11 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private ResourceGetter<String> resourceGetter;
-    private String registeredGlobalSchemaUrl;
+    private final ResourceGetter<String> resourceGetter;
+    private final String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
-    private String globalSchemaID = null;
+    private final String globalSchemaID;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
@@ -71,7 +72,11 @@ public class ServerSchemaValidation
         if (resourceInfo instanceof GlobalResourceInfo) {
             // no voodoo necessary, the community schemas are automatically loaded by the schema manager
             globalSchemaID = ((GlobalResourceInfo)resourceInfo).getId();
+            resourceGetter = null;
+            registeredGlobalSchemaUrl = null;
             return;
+        } else {
+            globalSchemaID = null;           
         }
 
         if (resourceInfo instanceof MessageUrlResourceInfo)
@@ -93,14 +98,17 @@ public class ServerSchemaValidation
             registeredGlobalSchemaUrl = null;
 
         final ResourceObjectFactory<String> rof = new ResourceObjectFactory<String>() {
+            @Override
             public String createResourceObject( final String resourceContent ) {
                 return resourceContent;
             }
+            @Override
             public void closeResourceObject( final String resourceObject ) {
             }
         };
 
         final UrlResolver<String> urlResolver = new UrlResolver<String>() {
+            @Override
             public String resolveUrl(String url) {
                 return url;
             }
@@ -113,10 +121,11 @@ public class ServerSchemaValidation
     /**
      * Validates the soap envelope's body's child against the schema
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         TargetMessageType target = assertion.getTarget();
         final Message msg;
-        final String targetDesc;
+        final String targetDescription;
         if (target == null) {
             // Backward compatibility: decide which document to act upon based on routing status
             final RoutingStatus routing = context.getRoutingStatus();
@@ -129,11 +138,11 @@ public class ServerSchemaValidation
                 msg = context.getResponse();
                 target = TargetMessageType.RESPONSE;
             }
-            targetDesc = target.name().toLowerCase();
+            targetDescription = target.name().toLowerCase();
         } else {
             try {
                 msg = context.getTargetMessage(assertion, true);
-                targetDesc = assertion.getTargetName();
+                targetDescription = assertion.getTargetName();
             } catch (NoSuchVariableException e) {
                 auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getOtherTargetMessageVariable());
                 return AssertionStatus.FAILED;
@@ -141,11 +150,11 @@ public class ServerSchemaValidation
         }
 
         if (!msg.isXml()) {
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_NOT_XML, targetDesc);
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_NOT_XML, targetDescription);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATING, targetDesc);
+        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATING, targetDescription);
         AssertionStatus status = validateMessage(msg, context);
         if (status == AssertionStatus.BAD_REQUEST) {
             switch (target) {
@@ -205,17 +214,17 @@ public class ServerSchemaValidation
             SAXException validationException = null;
 
             if (assertion.isApplyToArguments()) {
-                final Document soapmsg;
+                final Document soapMessage;
 
-                soapmsg = xmlKnob.getDocumentReadOnly();
+                soapMessage = xmlKnob.getDocumentReadOnly();
                 final Element[] elementsToValidate;
                 try {
                     Element[] result;
-                    if ( SoapUtil.isSoapMessage(soapmsg)) {
+                    if ( SoapUtil.isSoapMessage(soapMessage)) {
                         logger.finest("validating against the body 'arguments'");
-                        result = getBodyArguments(soapmsg);
+                        result = getBodyArguments(soapMessage);
                     } else {
-                        result = new Element[]{soapmsg.getDocumentElement()};
+                        result = new Element[]{soapMessage.getDocumentElement()};
                     }
                     elementsToValidate = result;
                 } catch ( InvalidDocumentFormatException e) {
@@ -305,27 +314,19 @@ public class ServerSchemaValidation
     /**
      * Goes one level deeper than getRequestBodyChild
      */
-    private static Element[] getBodyArguments(Document soapenvelope) throws InvalidDocumentFormatException {
+    private static Element[] getBodyArguments(Document soapMessage) throws InvalidDocumentFormatException {
         // first, get the body
-        Element bodyel = SoapUtil.getBodyElement(soapenvelope);
+        final Element bodyElement = SoapUtil.getBodyElement(soapMessage);
         // then, get the body's first child element
-        NodeList bodychildren = bodyel.getChildNodes();
-        Element bodyFirstElement = null;
-        for (int i = 0; i < bodychildren.getLength(); i++) {
-            Node child = bodychildren.item(i);
-            if (child instanceof Element) {
-                bodyFirstElement = (Element) child;
-                break;
-            }
-        }
+        final Element bodyFirstElement = bodyElement == null ? null : XmlUtil.findFirstChildElement( bodyElement );
         if (bodyFirstElement == null) {
             throw new InvalidDocumentFormatException("The soap body does not have a child element as expected");
         }
         // construct a return output for each element under the body first child
-        NodeList maybearguments = bodyFirstElement.getChildNodes();
+        NodeList maybeArguments = bodyFirstElement.getChildNodes();
         ArrayList<Element> argumentList = new ArrayList<Element>();
-        for (int i = 0; i < maybearguments.getLength(); i++) {
-            Node child = maybearguments.item(i);
+        for (int i = 0; i < maybeArguments.getLength(); i++) {
+            Node child = maybeArguments.item(i);
             if (child instanceof Element) {
                 argumentList.add((Element) child);
             }
@@ -347,6 +348,7 @@ public class ServerSchemaValidation
         return old;
     }
 
+    @Override
     public void close() {
         if (setClosed()) return;
         if (resourceGetter != null) resourceGetter.close();

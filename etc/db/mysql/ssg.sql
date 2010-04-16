@@ -698,7 +698,6 @@ CREATE TABLE community_schemas (
   name varchar(4096) NOT NULL,
   tns varchar(128) default '',
   schema_xml mediumtext,
-  system tinyint(1) NOT NULL default 0,
   name_hash varchar(128) NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE KEY csnmh_idx (name_hash)

@@ -67,8 +67,7 @@ INSERT INTO cluster_properties
 -- bug 8417
 --
 ALTER TABLE community_schemas DROP INDEX csnm_idx;
-ALTER TABLE community_schemas MODIFY COLUMN name varchar(4096) NOT NULL;
-ALTER TABLE community_schemas ADD COLUMN name_hash varchar(128) NOT NULL;
+ALTER TABLE community_schemas MODIFY COLUMN name varchar(4096) NOT NULL, DROP COLUMN system, ADD COLUMN name_hash varchar(128) NOT NULL after schema_xml;
 -- to support upgrade task and the creation of the csnmh_idx index
 UPDATE community_schemas SET name_hash = name;
 ALTER TABLE community_schemas ADD UNIQUE KEY csnmh_idx (name_hash);

@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.tarari;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
@@ -8,8 +9,6 @@ import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.XmlSource;
-
-import com.l7tech.util.IOUtils;
 
 /**
  * Utility for testing tarari schema validation.
@@ -30,9 +29,17 @@ public class TarariSchemaTest {
         SchemaLoader.unloadAllSchemas();
 
         SchemaLoader.setSchemaResolver(new SchemaResolver() {
+            @Override
             public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
                 try {
-                    return IOUtils.slurpFile(new File(locationHint));
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    FileInputStream fin = new FileInputStream(locationHint);
+                    byte[] block = new byte[1024];
+                    int read;
+                    while ( (read = fin.read( block ) ) >= 0 ) {
+                        byteArrayOutputStream.write( block, 0, read );
+                    }
+                    return byteArrayOutputStream.toByteArray();
                 }
                 catch (IOException ioe) {
                     ioe.printStackTrace();

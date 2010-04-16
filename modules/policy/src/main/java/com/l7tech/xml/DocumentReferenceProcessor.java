@@ -37,6 +37,18 @@ public class DocumentReferenceProcessor {
     }
 
     /**
+     * Create a DocumentReferenceProcessor for XML Schema resources only.
+     *
+     * @return the XML Schema aware DocumentReferenceProcessor.
+     */
+    public static DocumentReferenceProcessor schemaProcessor() {
+        final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
+        processor.typeRegistry.clear();
+        processor.typeRegistry.put( SchemaReferenceTypeProcessor.SCHEMA_NAMESPACE, new SchemaReferenceTypeProcessor() );
+        return processor;
+    }
+
+    /**
      * Add a ReferenceTypeProcessor for the given namespace.
      *
      * @param namespace The namespace of the ReferenceTypeProcessor to add.

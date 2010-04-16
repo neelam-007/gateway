@@ -16,7 +16,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="aad60" class="javax.swing.JButton" binding="closebutton">
+          <component id="aad60" class="javax.swing.JButton" binding="closeButton">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -24,7 +24,7 @@
               <text value="Close"/>
             </properties>
           </component>
-          <component id="42024" class="javax.swing.JButton" binding="helpbutton">
+          <component id="42024" class="javax.swing.JButton" binding="helpButton">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -55,7 +55,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="e33fe" class="javax.swing.JButton" binding="addbutton">
+              <component id="e33fe" class="javax.swing.JButton" binding="addButton">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -63,7 +63,7 @@
                   <text value="Add"/>
                 </properties>
               </component>
-              <component id="34b98" class="javax.swing.JButton" binding="editbutton">
+              <component id="34b98" class="javax.swing.JButton" binding="editButton">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -71,7 +71,7 @@
                   <text value="Edit"/>
                 </properties>
               </component>
-              <component id="5706c" class="javax.swing.JButton" binding="removebutton">
+              <component id="5706c" class="javax.swing.JButton" binding="removeButton">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>

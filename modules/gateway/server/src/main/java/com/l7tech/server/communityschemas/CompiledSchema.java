@@ -40,7 +40,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
-    private final String targetNamespace;
+    private final String targetNamespace; // could be null
     private final String systemId;
     private final String schemaDocument;
     private final byte[] namespaceNormalizedSchemaDocument;
@@ -48,29 +48,32 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final String tnsGen;
     private final boolean transientSchema; // if true, this schema was pulled down over the network and should be discarded when it hasn't been used for a while
     private final Map<String, SchemaHandle> imports; // Full URL -> Handles of schemas that we import directly
+    private final Map<String, SchemaHandle> includes; // Full URL -> Handles of schemas that we include/redefine directly
+    private final Map<String, SchemaHandle> dependencies; // Full URL -> Handles of schemas that we depend on directly
     private final Map<String, Reference<CompiledSchema>> exports = new WeakHashMap<String, Reference<CompiledSchema>>();
     private final Schema softwareSchema;
     private final boolean softwareFallback;
 
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
-    private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
-    private boolean hardwareEligible = false;  // true while (and only while) all this schemas imports are themselves hardwareEligible AND this schema has a unique tns.
+    private boolean conflictingTns = true; // false when we notice that this tns does not conflict
+    private boolean hardwareEligible = false;  // true while (and only while) all this schemas dependencies are themselves hardwareEligible AND this schema has a non-conflicting tns.
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
     private long lastUsedTime = System.currentTimeMillis();
 
-    CompiledSchema(String targetNamespace,
-                   String systemId,
-                   String schemaDocument,
-                   String namespaceNormalizedSchemaDocument,
-                   Schema softwareSchema,
-                   SchemaManagerImpl manager,
-                   Map<String, SchemaHandle> imports,
-                   boolean transientSchema,
-                   boolean fallback)
+    CompiledSchema( final String targetNamespace,
+                    final String systemId,
+                    final String schemaDocument,
+                    final String namespaceNormalizedSchemaDocument,
+                    final Schema softwareSchema,
+                    final SchemaManagerImpl manager,
+                    final Map<String, SchemaHandle> imports,
+                    final Map<String, SchemaHandle> includes,
+                    final boolean transientSchema,
+                    final boolean fallback )
     {
         if (softwareSchema == null ||
                 schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
-                imports == null || manager == null || systemId == null)
+                imports == null || includes == null || manager == null || systemId == null)
             throw new NullPointerException();
 
         this.transientSchema = transientSchema;
@@ -81,6 +84,10 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument.getBytes(Charsets.UTF8);
         this.manager = manager;
         this.imports = imports;
+        this.includes = includes;
+        this.dependencies = new HashMap<String,SchemaHandle>();
+        this.dependencies.putAll( imports ); // If an import and include have the same system identifier they must be the same schema
+        this.dependencies.putAll( includes );
         this.tnsGen = "{" + nextSystemIdGeneration(systemId) + "} " + systemId;
         this.softwareFallback = fallback;
     }
@@ -95,6 +102,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return gen;
     }
 
+    @Override
     public SchemaHandle ref() {
         return super.ref();
     }
@@ -103,10 +111,12 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return transientSchema;
     }
 
-    String getTargetNamespace() {
+    @Override
+    public String getTargetNamespace() {
         return targetNamespace;
     }
 
+    @Override
     public String getSystemId() {
         return systemId;
     }
@@ -115,24 +125,41 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return schemaDocument;
     }
 
+    @Override
+    public boolean isInclude() {
+        boolean included = false;
+        boolean imported = false;
+        for ( final CompiledSchema schema : getExports() ) {
+            if ( schema.includes.containsKey( systemId ) ) {
+                included = true;
+            } else {
+                imported = true;
+            }            
+        }
+        return included && !imported;
+    }
+
+    @Override
     public byte[] getNamespaceNormalizedSchemaDocument() {
         return namespaceNormalizedSchemaDocument;
     }
 
+    @Override
     public boolean isRejectedByTarari() {
         return rejectedByTarari;
     }
 
+    @Override
     public void setRejectedByTarari(boolean rejectedByTarari) {
         this.rejectedByTarari = rejectedByTarari;
     }
 
-    boolean isUniqueTns() {
-        return uniqueTns;
+    boolean isConflictingTns() {
+        return conflictingTns;
     }
 
-    void setUniqueTns(boolean uniqueTns) {
-        this.uniqueTns = uniqueTns;
+    void setConflictingTns(boolean conflictingTns ) {
+        this.conflictingTns = conflictingTns;
     }
 
     boolean isHardwareEligible() {
@@ -143,10 +170,12 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.hardwareEligible = hardwareEligible;
     }
 
+    @Override
     public boolean isLoaded() {
         return loaded;
     }
 
+    @Override
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
     }
@@ -164,11 +193,11 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         if (isClosed()) throw new IllegalStateException("CompiledSchema has already been closed");
         TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
         boolean isSoap = msg.isSoap();
-        TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+        TarariKnob tk = msg.getKnob(TarariKnob.class);
         TarariMessageContext tmc = tk == null ? null : tk.getContext();
         boolean tryHardware = true;
 
-        if (schemaHandler == null || tk == null || tmc == null || (targetNamespace == null || targetNamespace.length() < 1))
+        if (schemaHandler == null || tk == null || tmc == null)
             tryHardware = false;
 
         setLastUsedTime();
@@ -176,7 +205,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         final Lock readLock = manager.getReadLock();
         readLock.lock();
         try {
-            if (tryHardware && isHardwareEligible() && isLoaded()) {
+            if (tryHardware && isHardwareEligible() && isLoaded() && !isInclude()) {
 
                 // Do it in Tarari
                 try {
@@ -203,7 +232,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
                 }
             }
             // Hardware impossible or inappropriate in this case, or was tried and failed
-            /* FALLTHROUGH and do it in softare */
+            /* FALLTHROUGH and do it in software */
 
         } finally {
             readLock.unlock();
@@ -220,7 +249,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     /**
      * Assert message validates with Tarari.  Throws on failure.  Returns normally on success.
-     * Caller must hvae checked that schema is currently loaded while holding the read lock,
+     * Caller must have checked that schema is currently loaded while holding the read lock,
      * and must still hold the read lock.
      */
     private void validateMessageWithTarari(TarariSchemaHandler schemaHandler,
@@ -242,8 +271,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         // Success
     }
 
-    Map<String, SchemaHandle> getImports() {
-        return imports;
+    Map<String, SchemaHandle> getDependencies() {
+        return dependencies;
     }
 
     void addExport(CompiledSchema schema) {
@@ -251,6 +280,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     }
 
     /**
+     * Get the set of schemas that depend on this schema.
+     *
      * @return a set of this schema's current exports.  Caller should avoid retaining references to the CompiledSchemas found within.
      */
     Set<CompiledSchema> getExports() {
@@ -266,27 +297,21 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     /**
      * Caller must hold the read lock.
-     *
-     * @param msg
-     * @param soap
-     * @param errorHandler
-     * @throws SAXException
-     * @throws IOException
      */
     private void validateMessageDom(Message msg, boolean soap, SchemaValidationErrorHandler errorHandler) throws SAXException, IOException {
         final Document doc = msg.getXmlKnob().getDocumentReadOnly();
         Element[] elements;
         if (soap) {
-            Element bodyel;
+            Element bodyElement;
             try {
-                bodyel = SoapUtil.getBodyElement(doc);
+                bodyElement = SoapUtil.getBodyElement(doc);
             } catch ( InvalidDocumentFormatException e) {
                 throw new SAXException("No SOAP Body found", e); // Highly unlikely
             }
-            NodeList bodychildren = bodyel.getChildNodes();
+            NodeList bodyChildren = bodyElement.getChildNodes();
             ArrayList<Element> children = new ArrayList<Element>();
-            for (int i = 0; i < bodychildren.getLength(); i++) {
-                Node child = bodychildren.item(i);
+            for (int i = 0; i < bodyChildren.getLength(); i++) {
+                Node child = bodyChildren.item(i);
                 if (child instanceof Element) {
                     children.add((Element) child);
                 }
@@ -351,7 +376,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
      * Validate the specified elements.
      *
      * @param elementsToValidate  elements to validate.   Must not be null or empty.
-     * @param errorHandler  error handler for accumlating errors.  Must not be null.
+     * @param errorHandler  error handler for accumulating errors.  Must not be null.
      * @throws IOException   if an input element could not be read.
      * @throws SAXException  if at least one element was found to be invalid.  Contains the very first validation error;
      *                       the error handler will have been told about this and any subsequent errors.
@@ -369,11 +394,6 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     /**
      * Caller must hold the read lock.
-     *
-     * @param elementsToValidate
-     * @param errorHandler
-     * @throws IOException
-     * @throws SAXException
      */
     private void doValidateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         if (isClosed()) throw new IllegalStateException();
@@ -410,20 +430,25 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         return tnsGen;
     }
 
-    // Overridden to open up access to the communityschemas package, specifically SchemaManagerImpl
+    // Overridden to open up access to the community schemas package, specifically SchemaManagerImpl
+    @Override
     protected boolean isClosed() {
         return super.isClosed();
     }
 
+    @Override
     protected void doClose() {
-        // Close imported references
-        for (SchemaHandle impHandle : imports.values())
+        // Close dependencies
+        for (SchemaHandle impHandle : dependencies.values())
             impHandle.close();
+        dependencies.clear();
         imports.clear();
+        includes.clear();
         exports.clear();
         manager.closeSchema(this);
     }
 
+    @Override
     protected SchemaHandle createHandle() {
         return new SchemaHandle(this);
     }
