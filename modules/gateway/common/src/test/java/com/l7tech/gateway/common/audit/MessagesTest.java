@@ -11,11 +11,9 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
 
 /**
- * @author $Author$
- * @version $Revision$
+ *
  */
 public class MessagesTest extends TestCase {
 
@@ -33,7 +31,7 @@ public class MessagesTest extends TestCase {
      * test that all message formats are acceptable
      */
     public void testMessageText() {
-        for(int i=0; i<MESSAGE_MAX_ID; i++) {
+        for(int i=-1000; i<MESSAGE_MAX_ID; i++) {
             AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(i);
             String messageText = message==null ? null : message.getMessage();
             if(messageText!=null) {

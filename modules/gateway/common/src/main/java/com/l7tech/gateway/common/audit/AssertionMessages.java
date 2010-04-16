@@ -564,7 +564,7 @@ public class AssertionMessages extends Messages {
     public static final M NO_SUCH_VARIABLE       = m(-6, Level.FINE, "No such variable: {0}");
     public static final M VARIABLE_IS_NULL       = m(-7, Level.FINE, "Variable exists but has no value: {0}");
     public static final M VARIABLE_NOTSET        = m(-8, Level.WARNING, "Variable cannot be set: {0}");
-    public static final M VARIABLE_INVALID_VALUE = m(-9, Level.FINE, "Variable '{0}' should be of type '{1}'");
+    public static final M VARIABLE_INVALID_VALUE = m(-9, Level.FINE, "Variable ''{0}'' should be of type ''{1}''");
 
     public static final M WSI_BSP_REQUEST_NON_SOAP       = m(7600, Level.INFO, "Request not SOAP; unable to check for WS-I Basic Security Profile compliance");
     public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, false, true, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");
