@@ -141,9 +141,9 @@ public class ServerConcurrentAllAssertionTest {
         ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
 
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
-        context.setVariable("source1", "var content 1");
+        context.setVariable("source1", new String[] { "var content 1-1", "var content 1-2" });
         context.setVariable("source2", "var content 2");
-        context.setVariable("source3", "var content 3");
+        context.setVariable("source3", new Short[] { 3, 4, 5 });
         context.setVariable("source4", "var content 4");
 
         // Run all requests concurrently
@@ -154,9 +154,9 @@ public class ServerConcurrentAllAssertionTest {
 
         assertTrue("Should have taken less than 4 seconds if it ran concurrently", after - before < 4000L);
 
-        assertEquals("var content 1", context.getVariable("dest1"));
+        assertTrue(Arrays.equals(new String[] { "var content 1-1", "var content 1-2" }, (Object[])context.getVariable("dest1")));
         assertEquals("var content 2", context.getVariable("dest2"));
-        assertEquals("var content 3", context.getVariable("dest3"));
+        assertTrue(Arrays.equals(new Short[] { 3, 4, 5 }, (Object[])context.getVariable("dest3")));
         assertEquals("var content 4", context.getVariable("dest4"));
 
         try {
@@ -165,6 +165,19 @@ public class ServerConcurrentAllAssertionTest {
         } catch (NoSuchVariableException e) {
             // Ok
         }
+    }
+
+    @Test
+    public void testMultiValuedVariableNotStringNotSafeToCopy() throws Exception {
+        ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+            new DelayedCopyVariableAssertion(0L, "source1", "dest1")
+        ));
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("source1", new Date[] {new Date(), new Date() });
+        AssertionStatus result = sass.checkRequest(context);
+        assertTrue("Should fail to copy arrays containing non-primitive non-Strings which it doesn't know how to copy", !AssertionStatus.NONE.equals(result));
+        // TODO split this into two more test cases, a success and a failure, when the code is changed to support copying arrays of any Cloneable type
     }
 
     @Test

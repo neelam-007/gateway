@@ -9,6 +9,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  *
@@ -44,7 +45,10 @@ public class ServerDelayedCopyVariableAssertion extends AbstractServerAssertion<
             return value;
         } else if (value instanceof Message) {
             return ServerConcurrentAllAssertion.cloneMessageBody((Message)value);
-        } else
+        } else if (value instanceof Object[]) {
+            Object[] objects = (Object[]) value;
+            return Arrays.copyOf(objects, objects.length);
+        }
             throw new AssertionStatusException("Value must be either a String or a Message; actual value type: " + value.getClass());
     }
 }

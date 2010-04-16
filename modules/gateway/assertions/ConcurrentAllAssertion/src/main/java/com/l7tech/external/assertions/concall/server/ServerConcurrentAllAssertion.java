@@ -278,11 +278,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             String name = entry.getKey();
             Object value = entry.getValue();
 
-            if (value instanceof String) {
-                safeSetVariable(dest, name, value);
-            } else if (value instanceof Message) {
-                safeSetVariable(dest, name, cloneMessageBody((Message)value));
-            }
+            copyValue(dest, name, value);
         }
     }
 
@@ -307,14 +303,41 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             String name = entry.getKey();
             Object value = entry.getValue();
 
-            if (value instanceof String) {
-                safeSetVariable(ret, name, value);
-            } else if (value instanceof Message) {
-                safeSetVariable(ret, name, cloneMessageBody((Message)value));
-            }
+            copyValue(ret, name, value);
         }
 
         return ret;
+    }
+
+    private static void copyValue(PolicyEnforcementContext ret, String name, Object value) throws IOException {
+        if (value == null) {
+            safeSetVariable(ret, name, null);
+        } else if (value instanceof String) {
+            safeSetVariable(ret, name, value);
+        } else if (value instanceof Message) {
+            safeSetVariable(ret, name, cloneMessageBody((Message)value));
+        } else if (value instanceof Object[]) {
+            Class<?> elementType = value.getClass().getComponentType();
+            if (isSafeToCopyArrayOf(elementType)) {
+                Object[] arr = ((Object[])value);
+                safeSetVariable(ret, name, Arrays.copyOf(arr, arr.length));
+            } else {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Variable named " + name + " has unsupported type: " + value.getClass());
+            }
+        } else {
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Variable named " + name + " has unsupported type: " + value.getClass());
+        }
+    }
+
+    private static boolean isSafeToCopyArrayOf(Class<?> elementType) {
+        // We know we can safely copy with Arrays.copyOf(Object[]) arrays of primitive types (int, char, byte, short, double, etc),
+        // arrays of String, and arrays of boxed primitive types (Integer, Character, Byte, Short, Double, etc).
+        // We recognized boxed primitive types by checking for subclasses of java.lang.Number that are in the java.lang package.
+        return elementType.isPrimitive() ||
+               String.class.equals(elementType) ||
+               (Number.class.isAssignableFrom(elementType) && elementType.getPackage().equals(Integer.class.getPackage()));
     }
 
     private static void safeSetVariable(PolicyEnforcementContext ctx, String name, Object value) {
