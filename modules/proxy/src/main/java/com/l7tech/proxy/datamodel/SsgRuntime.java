@@ -26,10 +26,13 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +48,10 @@ public class SsgRuntime {
     public static final String SSGPROP_STRIPHEADER = "response.security.stripHeader"; // "always", "when_processed", "secure_span", or "lazy"; default "always"
     public static final String SSGPROP_DEFAULT_SECURITY_ACTOR = "wss.decorator.defaultSecurityActor";
     public static final String SSGPROP_SECURITY_MUSTUNDERSTAND = "wss.decorator.mustUnderstand";
-    
+
+    // True if there is a pending request to flush the global SSL session context
+    private static final AtomicBoolean sslSessionFlushRequired = new AtomicBoolean(false);
+
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 
@@ -463,7 +469,7 @@ public class SsgRuntime {
             final ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
             final X509TrustManager trustManager = getTrustManager();
             try {
-                return sslContext = CurrentSslPeer.doWithSslPeer(ssg, new Callable<SSLContext>() {
+                sslContext = CurrentSslPeer.doWithSslPeer(ssg, new Callable<SSLContext>() {
                     @Override
                     public SSLContext call() throws Exception {
                         String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER);
@@ -474,6 +480,8 @@ public class SsgRuntime {
                         return sslContext;
                     }
                 });
+                maybeFlushAllSslSessions(sslContext);
+                return sslContext;
             } catch (RuntimeException e) {
                 if (ExceptionUtils.causedBy(e, CredentialsRequiredException.class))
                     throw e;
@@ -483,6 +491,12 @@ public class SsgRuntime {
                 log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e); // shouldn't happen
             }
+        }
+    }
+
+    private static void maybeFlushAllSslSessions(SSLContext sslContext) {
+        if (sslSessionFlushRequired.getAndSet(false)) {
+            flushAllSslSessions(sslContext);
         }
     }
 
@@ -499,17 +513,21 @@ public class SsgRuntime {
         resetSslContext();
     }
 
-    private void flushAllSslSessions(SSLContext sslContext) {
+    private static void flushAllSslSessions(SSLContext sslContext) {
         SSLSessionContext sc = sslContext.getClientSessionContext();
+        if (sc == null)
+            return;
         List<byte[]> idlist = new ArrayList<byte[]>();
         Enumeration<byte[]> ids = sc.getIds();
         while (ids.hasMoreElements()) {
             idlist.add(ids.nextElement());
         }
         for (byte[] bytes : idlist) {
-            SSLSession sess = sc.getSession(bytes);
-            if (sess != null)
-                sess.invalidate();
+            if (bytes != null) {
+                SSLSession sess = sc.getSession(bytes);
+                if (sess != null)
+                    sess.invalidate();
+            }
         }
     }
 
@@ -517,7 +535,7 @@ public class SsgRuntime {
     public void resetSslContext()
     {
         synchronized (ssg) {
-            flushAllSslSessions(getSslContext()); // Create one if necessary -- need to access SSL-J global session state, not reset by creating a new SSLContext
+            sslSessionFlushRequired.set(true);
             keyStore(null);
             trustStore(null);
             setCachedPrivateKey(null);
