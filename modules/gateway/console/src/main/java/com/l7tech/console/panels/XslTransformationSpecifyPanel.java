@@ -14,7 +14,6 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceAdminPublic;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -272,7 +271,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
         final String xslString;
         try {
-            xslString = serviceAdmin.resolveUrlTarget(urlstr, ServiceAdminPublic.DownloadDocumentType.XSL);
+            xslString = serviceAdmin.resolveUrlTarget(urlstr, ServiceAdmin.DownloadDocumentType.XSL);
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             xslDialog.displayError(resources.getString("error.urlnocontent") + " '" + urlstr+"'. " +

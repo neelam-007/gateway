@@ -16,8 +16,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
@@ -32,9 +35,90 @@ import java.util.Set;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured
 @Administrative
-public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
+public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+    enum DownloadDocumentType {WSDL, SCHEMA, XSL, MOD_ASS}
+
+    /**
+     * Retrieve all available published services.
+     *
+     * @return array of entity headers for all existing published services.  May be empty but never null.
+     * @throws FindException   if there was a problem accessing the requested information.
+     */
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    ServiceHeader[] findAllPublishedServices() throws FindException;
+
+    /**
+     * Overloaded findAllPublishedServices to all caller to explicitly choose whether aliases are returned in
+     * the results or not. This is the only findAll method which will return aliases
+     * @param includeAliases true if the returned array should contain aliases
+     * @return ServiceHeader []. If includeAliases is true then this array can contain aliases. Call isAlias
+     * on each ServiceHeader to determine if it is an alias.
+     * @throws FindException
+     */
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException;
+
+    /**
+     * Retrieve a specified published service given its service ID.
+     *
+     * @param oid the unique identifier of the service
+     * @return the requested {@link PublishedService}, or null if no service with that service ID was found
+     * @throws FindException   if there was a problem accessing the requested information.
+     */
+    @Secured(stereotype=MethodStereotype.FIND_ENTITY)
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    PublishedService findServiceByID(String oid) throws FindException;
+
+    /**
+     * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager
+     * can get at services that are 'hidden' behind the gateway.
+     * This is meant to be used when a service is originally published.
+     * <p/>
+     * URL may be http or https with or without client auth, and may contain authentication information
+     *
+     * @param url the url that the gateway will use to resolve the wsdl document. this may contain
+     *            userinfo type credentials
+     * @return the contents resolved by this url
+     * @throws java.io.IOException           thrown on I/O error accessing the WSDL url
+     * @throws java.net.MalformedURLException thrown on malformed WSDL url
+     */
+    @Transactional(propagation = SUPPORTS)
+    String resolveWsdlTarget(String url) throws IOException;
+
+    /**
+     * Get a document from a URL.
+     * <p/>
+     * URL may be http or https with or without client auth, and may contain authentication information
+     *
+     * @param url                    String URL to download the document from
+     * @param maxSizeClusterProperty cluster property which will limit the maximum size of the document at the url. Required
+     * @return the contents resolved by this url
+     * @throws IOException           thrown on I/O error accessing the WSDL url
+     * @throws java.net.MalformedURLException thrown on malformed WSDL url
+     */
+    @Transactional(propagation = SUPPORTS)
+    String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException;
+
+    /**
+     * Get a document from a URL.
+     * <p/>
+     * URL may be http or https with or without client auth, and may contain authentication information
+     *
+     * @param url                    String URL to download the document from
+     * @param docType                DownloadDocumentType type of document, which will govern it's max download size
+     * @return the contents resolved by this url
+     * @throws IOException           thrown on I/O error accessing the WSDL url
+     * @throws java.net.MalformedURLException thrown on malformed WSDL url
+     */
+    @Transactional(propagation = SUPPORTS)
+    String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException;
 
     /**
      * Retrieve all available service documents for the given published service.

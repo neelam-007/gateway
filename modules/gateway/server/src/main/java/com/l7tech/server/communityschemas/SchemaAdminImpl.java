@@ -6,7 +6,7 @@
  */
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.gateway.common.service.ServiceAdminPublic;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -74,6 +74,6 @@ public class SchemaAdminImpl implements SchemaAdmin {
 
     @Override
     public String resolveSchemaTarget(String url) throws IOException {
-        return serviceDocumentResolver.resolveDocumentTarget(url, ServiceAdminPublic.DownloadDocumentType.SCHEMA);
+        return serviceDocumentResolver.resolveDocumentTarget(url, ServiceAdmin.DownloadDocumentType.SCHEMA);
     }
 }

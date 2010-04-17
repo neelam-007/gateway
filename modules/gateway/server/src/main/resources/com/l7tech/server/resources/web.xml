@@ -46,11 +46,6 @@
     </filter>
 
     <filter>
-        <filter-name>adminWebService</filter-name>
-        <filter-class>com.l7tech.server.admin.ws.AdminWebServiceFilter</filter-class>
-    </filter>
-
-    <filter>
         <filter-name>remotingFilter</filter-name>
         <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
     </filter>
@@ -96,11 +91,6 @@
     <filter-mapping>
         <filter-name>namespace</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>adminWebService</filter-name>
-        <url-pattern>/ssg/admin/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
@@ -260,6 +250,10 @@
     <servlet>
         <servlet-name>CXFServlet</servlet-name>
         <display-name>CXF Servlet</display-name>
+        <init-param>
+            <param-name>hide-service-list-page</param-name>
+            <param-value>true</param-value>
+        </init-param>
         <servlet-class>
             org.apache.cxf.transport.servlet.CXFServlet
         </servlet-class>

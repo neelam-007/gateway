@@ -7,9 +7,6 @@ import javax.servlet.ServletInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 
-/**
- * Extracted from {@link com.l7tech.server.admin.ws.AdminWebServiceFilter}.
-*/
 public class DelegatingServletInputStream extends ServletInputStream {
     private final InputStream is;
 
@@ -17,14 +14,17 @@ public class DelegatingServletInputStream extends ServletInputStream {
         this.is = is;
     }
 
+    @Override
     public int read() throws IOException {
         return is.read();
     }
 
+    @Override
     public int read(byte b[]) throws IOException {
         return is.read(b);
     }
 
+    @Override
     public int read(byte b[], int off, int len) throws IOException {
         return is.read(b, off, len);
     }

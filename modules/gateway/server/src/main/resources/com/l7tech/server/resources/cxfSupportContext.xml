@@ -17,20 +17,6 @@
 
     <bean id="org.apache.cxf.bus.spring.Jsr250BeanPostProcessor" class="java.lang.Object"/>
 
-    <!-- Public Admin API -->
-    <simple:server id="serviceAdminWS"
-                   xmlns:tns="http://ns.l7tech.com/SecureSpan/admin/service/0.1"
-                   serviceClass="com.l7tech.gateway.common.service.ServiceAdminPublic"
-                   address="/Service"
-                   serviceName="tns:Service">
-        <simple:serviceBean>
-            <ref bean="serviceAdmin"/>
-        </simple:serviceBean>
-        <simple:dataBinding>
-            <bean class="org.apache.cxf.aegis.databinding.AegisDatabinding" />
-        </simple:dataBinding>
-    </simple:server>
-
     <bean id="cxf" class="org.apache.cxf.bus.extension.ExtensionManagerBus"/>
 
     <!-- Process Controller -->

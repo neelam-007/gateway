@@ -3,7 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.service.ServiceAdminPublic;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.util.HttpClientFactory;
@@ -22,15 +22,15 @@ public class ServiceDocumentResolver {
     }
 
     public String resolveWsdlTarget(String url) throws IOException {
-        return resolveDocumentTarget(url, ServiceAdminPublic.DownloadDocumentType.WSDL);
+        return resolveDocumentTarget(url, ServiceAdmin.DownloadDocumentType.WSDL);
     }
 
 
-    public String resolveDocumentTarget(String url, ServiceAdminPublic.DownloadDocumentType docType) throws IOException {
+    public String resolveDocumentTarget(String url, ServiceAdmin.DownloadDocumentType docType) throws IOException {
         return resolveDocumentTarget(url, docType, null);
     }
 
-    public String resolveDocumentTarget(String url, ServiceAdminPublic.DownloadDocumentType docType, String modAssClusterProperty) throws IOException {
+    public String resolveDocumentTarget(String url, ServiceAdmin.DownloadDocumentType docType, String modAssClusterProperty) throws IOException {
         final ServerConfig serverConfig = ServerConfig.getInstance();
 
         final int maxSize;
