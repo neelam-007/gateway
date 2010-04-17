@@ -54,10 +54,13 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final Schema softwareSchema;
     private final boolean softwareFallback;
 
+    // These properties are synchronized by the schema manager
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
     private boolean conflictingTns = true; // false when we notice that this tns does not conflict
     private boolean hardwareEligible = false;  // true while (and only while) all this schemas dependencies are themselves hardwareEligible AND this schema has a non-conflicting tns.
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
+    private boolean loadedAsInclude = false;  // true while (and only while) this schema is loaded on the hardware as an include
+
     private long lastUsedTime = System.currentTimeMillis();
 
     CompiledSchema( final String targetNamespace,
@@ -178,6 +181,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     @Override
     public void setLoaded(boolean loaded) {
         this.loaded = loaded;
+        this.loadedAsInclude = loaded && isInclude();
     }
 
     /**
@@ -205,7 +209,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         final Lock readLock = manager.getReadLock();
         readLock.lock();
         try {
-            if (tryHardware && isHardwareEligible() && isLoaded() && !isInclude()) {
+            if (tryHardware && isHardwareEligible() && isLoaded() && !loadedAsInclude) {
 
                 // Do it in Tarari
                 try {

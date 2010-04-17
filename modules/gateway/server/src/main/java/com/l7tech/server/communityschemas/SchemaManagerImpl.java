@@ -44,7 +44,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Creates and manages all in-memory instances of {@link CompiledSchema}, including uploading them to hardware
@@ -66,22 +65,22 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         private final long maxSchemaSize;
         private final boolean softwareFallback;
 
-        CacheConfiguration(ServerConfig serverConfig) {
-            maxCacheAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
-            maxCacheEntries = Math.max( 1, serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100) );
-            hardwareRecompileLatency = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
-            hardwareRecompileMinAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
-            hardwareRecompileMaxAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
-            maxSchemaSize = serverConfig.getLongProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+        CacheConfiguration(Config config) {
+            maxCacheAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
+            maxCacheEntries = Math.max( 1, config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100) );
+            hardwareRecompileLatency = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
+            hardwareRecompileMinAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
+            hardwareRecompileMaxAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
+            maxSchemaSize = config.getLongProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
             
             // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
-            softwareFallback = !("false".equals(serverConfig.getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK)));
+            softwareFallback = !("false".equals(config.getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK, "true")));
         }
     }
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final AtomicReference<CacheConfiguration> cacheConfigurationReference;
-    private final HttpClientFactory httpClientFactory;
+    private final GenericHttpClientFactory httpClientFactory;
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(false);
 
@@ -140,7 +139,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private final Map<SchemaHandle, Object> handlesNeedingClosed = new WeakHashMap<SchemaHandle, Object>();
 
     /** Bean that handles Tarari hardware reloads for us, null if no Tarari. */
-    private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
+    private final TarariSchemaHandler tarariSchemaHandler;
 
     private long lastHardwareRecompileTime = 0;
     private long lastSchemaEligibilityTime = 0;
@@ -163,17 +162,20 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         protected abstract void doRun();
     }
 
-    /*
-
-       Constructor
-
-    */
-    public SchemaManagerImpl( final ServerConfig serverConfig,
+    public SchemaManagerImpl( final Config config,
                               final HttpClientFactory httpClientFactory,
-                              Timer timer) {
-        if (serverConfig == null || httpClientFactory == null) throw new NullPointerException();
-        this.serverConfig = serverConfig;
+                              final Timer timer ) {
+        this( config, httpClientFactory, timer, TarariLoader.getSchemaHandler() );
+    }
+
+    SchemaManagerImpl( final Config config,
+                       final GenericHttpClientFactory httpClientFactory,
+                       Timer timer,
+                       final TarariSchemaHandler tarariSchemaHandler ) {
+        if (config == null || httpClientFactory == null) throw new NullPointerException();
+        this.config = config;
         this.httpClientFactory = httpClientFactory;
+        this.tarariSchemaHandler = tarariSchemaHandler;
         this.cacheConfigurationReference = new AtomicReference<CacheConfiguration>();
         this.httpStringCache = new AtomicReference<HttpObjectCache<String>>();
 
@@ -185,7 +187,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     private synchronized void updateCacheConfiguration() {
-        cacheConfigurationReference.set(new CacheConfiguration(serverConfig));
+        cacheConfigurationReference.set(new CacheConfiguration(config));
         final HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
             @Override
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
@@ -243,7 +245,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         }
     }
 
-    private GenericHttpClientFactory wrapHttpClientFactory(final HttpClientFactory httpClientFactory, final long maxResponseSize) {
+    private GenericHttpClientFactory wrapHttpClientFactory(final GenericHttpClientFactory httpClientFactory, final long maxResponseSize) {
         return new GenericHttpClientFactory() {
             @Override
             public GenericHttpClient createHttpClient() {
@@ -1077,7 +1079,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             }
 
             // The schema had a TNS, and might have been relevant to hardware
-            hardwareDisable(schema);
+            hardwareDisable(schema, true);
             Map<CompiledSchema, Object> schemas = tnsCache.get(tns);
             if (schemas == null) return;
             schemas.remove(schema);
@@ -1272,14 +1274,16 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
     /**
      * Check if hardware cache should be rebuilt right now.
+     *
      * Caller must hold either the read lock or write lock.
-     * If schemasWaitingToLoad is non-empty, this method may still return false (postponing the rebuild), but
+     *
+     * If schemasWaitingToLoad is non-empty, this method may still return false (postponing the rebuild)
      *
      * @return true if the hardware cache should be rebuilt immediately.
      *         false if the hardware cache does not need to be rebuilt at this time.  If there are schemas
      *         waiting to be rebuilt, a new schema check is scheduled occur in the near future.
      */
-    private boolean shouldRebuildNow() {
+    boolean shouldRebuildNow() {
         if (schemasWaitingToLoad.size() < 1)
             return false;
 
@@ -1323,7 +1327,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     /**
      * Called periodically to see if it is time to rebuild the hardware schema cache.
      */
-    private void maybeRebuildHardwareCache() {
+    void maybeRebuildHardwareCache() {
         // Do an initial fast check to see if there is anything to do, before getting the concurrency-killing write lock
         cacheLock.readLock().lock();
         try {
@@ -1424,15 +1428,5 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             if (export != null) hardwareDisable(export, closing);
     }
 
-    private static ThreadLocal<Pattern[]> tlUrlWhiteList = new ThreadLocal<Pattern[]>();
-
-    Pattern[] getThreadLocalUrlWhiteList() {
-        Pattern[] cur = tlUrlWhiteList.get();
-        return cur == null ? new Pattern[0] : cur;
-    }
-
-    void setThreadLocalUrlWhiteList( final Pattern[] urlWhiteList ) {
-        tlUrlWhiteList.set(urlWhiteList);
-    }
 }
 
