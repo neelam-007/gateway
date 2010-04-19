@@ -33,7 +33,7 @@ import java.util.Set;
  * @see ServiceHeader
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured
+@Secured(types=EntityType.SERVICE)
 @Administrative
 public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
