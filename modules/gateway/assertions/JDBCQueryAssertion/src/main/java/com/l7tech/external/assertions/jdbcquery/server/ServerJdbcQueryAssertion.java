@@ -109,7 +109,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         return query;
     }
 
-    private int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context) throws SQLException {
+    int setContextVariables(SqlRowSet resultSet, PolicyEnforcementContext context) throws SQLException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         Map<String, String> namingMap = assertion.getNamingMap();

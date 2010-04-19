@@ -1,5 +1,7 @@
 package com.l7tech.server.jdbc;
 
+import org.springframework.jdbc.support.rowset.SqlRowSet;
+
 import java.util.List;
 
 /**
@@ -21,4 +23,11 @@ public interface JdbcQueryingManager {
      *         a SqlRowSet representing disconnected java.sql.ResultSet data (the result of a select statement).
      */
     Object performJdbcQuery(String connectionName, String query, int maxRecords, List<Object> preparedStmtParams);
+
+    /**
+     *  Get a result set (SqlRowSet object) from the mock JDBC database.
+     *
+     * @return a SqlRowSet object containing mock data.
+     */
+    SqlRowSet getMockSqlRowSet();
 }

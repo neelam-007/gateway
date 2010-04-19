@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.l7tech.util.ExceptionUtils;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 /**
  * An implementation of the interface performing a JDBC query by using a JDBC connection from a connection pool. 
@@ -92,5 +93,16 @@ public class JdbcQueryingManagerImpl implements JdbcQueryingManager {
                 return ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e));
             }
         }
+    }
+
+    /**
+     *  Get a result set (SqlRowSet object) from the mock JDBC database.
+     * Note: this method is only for testing purpose, so it returns null in this class.
+     *
+     * @return a SqlRowSet object containing mock data.
+     */
+    @Override
+    public SqlRowSet getMockSqlRowSet() {
+        return null;
     }
 }
