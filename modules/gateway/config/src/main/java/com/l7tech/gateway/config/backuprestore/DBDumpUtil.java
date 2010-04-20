@@ -321,11 +321,13 @@ class DBDumpUtil {
                     break;
                 case Types.LONGVARBINARY: // medium blob
                     final byte[] tmpBytes = resultSet.getBytes(i);
-                    if (tmpBytes != null) {
+                    if (tmpBytes == null) {
+                        insertStatementToRecord.append("NULL");
+                    } else if ( tmpBytes.length == 0 ) {
+                        insertStatementToRecord.append("x''");
+                    } else {
                         insertStatementToRecord.append("0x");
                         insertStatementToRecord.append(HexUtils.hexDump(tmpBytes));
-                    } else {
-                        insertStatementToRecord.append("NULL");
                     }
                     if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                     break;

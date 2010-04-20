@@ -167,7 +167,7 @@ class DatabaseRestorer {
                             //make sure it's an audit statement, as the main_backup.sql contains everything
                             if(!doesAffectsTables(tmp, Arrays.asList("audit")) && !tmp.startsWith("SET")) continue;
                         }
-                        stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
+                        stmt.executeUpdate(fixSql(tmp.substring(0, tmp.length() - 1)));
                     }else {
                         throw new SQLException("unexpected statement " + tmp);
                     }
@@ -417,7 +417,7 @@ class DatabaseRestorer {
                         if (isMigrate && doesAffectsTables(tmp, omitTablesList)) {
                             logger.finest("SQL statement: '" + tmp + "' was not executed.");
                         } else {
-                            stmt.executeUpdate(fixUnescapedBackslash(tmp.substring(0, tmp.length() - 1)));
+                            stmt.executeUpdate(fixSql(tmp.substring(0, tmp.length() - 1)));
                             //if its a migrate, we need to know if we modified cluster properties table
                             if(isMigrate && !didUpdateClusterProperties){
                                 didUpdateClusterProperties = isClusterPropertyStatement(tmp);
@@ -459,6 +459,23 @@ class DatabaseRestorer {
         }
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "Done", verbose, printStream);
         return didUpdateClusterProperties;
+    }
+
+    private static String fixSql( final String sql ) {
+        return fixUnescapedBackslash( fixEmptyHex( sql ) );
+    }
+
+    /**
+     * Fix exports broken due to bug 8675. 
+     */
+    private static String fixEmptyHex( final String sql ) {
+        String fixed = sql;
+
+        if ( sql.contains( "0x," )) {
+            fixed = fixed.replace( "0x,", "x''," );
+        }
+
+        return fixed;
     }
 
     /** bug 8183:
