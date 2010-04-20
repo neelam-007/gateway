@@ -915,17 +915,22 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         @Override
         public void doRun() {
             if ( coordinator.clusterMaster.isMaster() ) {
-                new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                AuditContextUtils.doAsSystem(new Runnable() {
                     @Override
-                    protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
-                        try {
-                            coordinator.checkBusinessServiceStatus();
-                        } catch (ObjectModelException ome) {
-                            logger.log( Level.WARNING, "Error updating business services status.", ome );
-                            transactionStatus.setRollbackOnly();
-                        }
+                    public void run() {
+                        new TransactionTemplate(coordinator.transactionManager).execute(new TransactionCallbackWithoutResult() {
+                            @Override
+                            protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                                try {
+                                    coordinator.checkBusinessServiceStatus();
+                                } catch (ObjectModelException ome) {
+                                    logger.log(Level.WARNING, "Error updating business services status.", ome);
+                                    transactionStatus.setRollbackOnly();
+                                }
+                            }
+                        });
                     }
-                } );
+                });
             }
         }
     }
