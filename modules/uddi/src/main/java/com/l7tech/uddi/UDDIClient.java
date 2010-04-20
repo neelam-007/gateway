@@ -1,6 +1,5 @@
 package com.l7tech.uddi;
 
-import com.l7tech.common.uddi.guddiv3.BusinessService;
 import com.l7tech.util.Triple;
 
 import java.io.Closeable;
@@ -138,13 +137,17 @@ public interface UDDIClient extends Closeable {
 
     /**
      * Get a binding key for the given service.
-     * 
-     * @param uddiServiceKey The key for the service
+     * <p/>
+     * This should be used to retrieve a bindingKey for a subscription notification service published by a gateway.
+     * The bindingKey returned will be the first found which contains an accessPoint element with a value who's protocol
+     * element matches one in schemePreference.
+     *
+     * @param uddiServiceKey   The key for the service
      * @param schemePreference Schemes in preference order or null/empty for any
      * @return The binding key or null
      * @throws UDDIException if an error occurs
      */
-    String getBindingKeyForService( String uddiServiceKey, Collection<String> schemePreference ) throws UDDIException;
+    String getBindingKeyForService(String uddiServiceKey, Collection<String> schemePreference) throws UDDIException;
 
     /**
      * Publish policy to UDDI.

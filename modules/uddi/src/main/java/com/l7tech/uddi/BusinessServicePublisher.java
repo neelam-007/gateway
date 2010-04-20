@@ -31,6 +31,14 @@ public class BusinessServicePublisher implements Closeable {
     private long serviceOid;
 
     /**
+     * Only off interest when an overwritten service is being updated. This is the set of BindingTemplates added
+     * to the overwritten service. Used when deleting the Overwritten service
+     * This property will be empty when an entire wsdl is published, only avaialble when either a bindingTemplate
+     * is being published or a service is being overwritten. 
+     */
+    private Set<String> publishedBindingTemplates = new HashSet<String>();
+
+    /**
      * Create a new BusinessServicePublisher.
      *
      * @param wsdl WSDL to publish to UDDI
@@ -56,12 +64,16 @@ public class BusinessServicePublisher implements Closeable {
      * the same published service. There is more than one bindingTemplate published if the cluster defines a https
      * endpoint in addition to a http endpoint. Note: that as many endpoints will be created as supplied in allEndpointPairs
      * <p/>
-     * See UDDIUtilities.validateAllEndpointPairs(allEndpointPairs) for validation of allEndpointPairs
-     *
-     * Any previously published endpoints with the same publishedHostname and this.serviceOid will be deleted first
-     *
      * Provides best effort commit / rollback. If any UDDIException occurs during the published an attempt to roll back
      * any previously published tModels and bindingTemplates will be made.
+     * <p/>
+     * When a previously published BindingTemplate is no longer applicable, e.g. a listener was removed, then it will be
+     * deleted from UDDI. publishedBindingKeys is the set of bindingTemplate keys which were published the last time
+     * the gateway checked the UDDI Registry. It's possible that based on gateway configuration changes, that some of
+     * the previously published bindingTemplates are no longer required in UDDI. 
+     *
+     * <p/>
+     * See UDDIUtilities.validateAllEndpointPairs(allEndpointPairs) for validation of allEndpointPairs
      *
      * @param serviceKey               String serviceKey of the owning BusinessService
      * @param wsdlPortName             String wsdl:port local name of the wsdl:port to publish as a bindingTemplate to UDDI
@@ -69,57 +81,150 @@ public class BusinessServicePublisher implements Closeable {
      *                                 if no wsdl:port by the name of wsdlPortName is found in the gateway's WSDL, then the first implementing wsdl:port
      *                                 of this binding local name, and namespace if defined, will be published to UDDI.
      * @param wsdlPortBindingNamespace String namespace of the above wsdl:binding. Can be null. Cannot be the empty string
-     * @param publishedHostname        String external hostname of the publishing cluster. Cannot be null or empty
-     * @param allEndpointPairs         Collection<Pair<String, String>>. Required. All endpoints to publish bindingTemplates for
+     * @param previousEndpointPairs    Collection&lt;EndpointPair&gt; The collection of endpoint pairs which were used to
+     *                                 previously publish the endpoint for the current service to an original service in UDDI. Can be null or empty. Only
+     *                                 the endpoint URL is used here, the WSDL URL is not required. Used to find the applicable set of bindingTemplates
+     *                                 when reusing bindingKeys. This is only required to support the upgrade from Pandora to Maytag
+     *                                 This is used to find existing bindingTemplates and to delete them when this publish is performing a republish.
+     * @param allEndpointPairs         Collection&lt;EndpointPair&gt; Required. All endpoints to publish bindingTemplates for
+     * @param publishedBindingKeys     Set &lt;String&gt; Can be null. The set of previously published bindingKeys for this service.
+     *                                 This is used to know when a bindingTemplate needs to be deleted e.g. after a listener was removed
      * @param removeOthers             boolean, if true all other endpoints will be removed
-     * @throws UDDIException any problems searching / updating UDDI
+     * @return Set&lt;String&gt; The set of BindingTemplate bindingKeys which were published for the supplied endpoints
+     * @throws UDDIException any problems searching / updating / deleting from / to UDDI
      */
-    public void publishBindingTemplate(
+    public Set<String> publishBindingTemplate(
             final String serviceKey,
             final String wsdlPortName,
             final String wsdlPortBinding,
             final String wsdlPortBindingNamespace,
-            final String publishedHostname,
-            final Collection<Pair<String, String>> allEndpointPairs,
+            final Collection<EndpointPair> previousEndpointPairs,
+            final Collection<EndpointPair> allEndpointPairs,
+            final Set<String> publishedBindingKeys,
             final boolean removeOthers) throws UDDIException {
-        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
-        if(wsdlPortName == null || wsdlPortName.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
-        if(wsdlPortBinding == null || wsdlPortBinding.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortBinding cannot be null or empty");
-        if(wsdlPortBindingNamespace == null || wsdlPortBindingNamespace.trim().isEmpty()) throw new IllegalArgumentException("wsdlPortBindingNamespace cannot be null or empty");
-        if(publishedHostname == null || publishedHostname.trim().isEmpty()) throw new IllegalArgumentException("publishedHostname cannot be null or empty");
+        if (serviceKey == null || serviceKey.trim().isEmpty())
+            throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        if (wsdlPortName == null || wsdlPortName.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
+        if (wsdlPortBinding == null || wsdlPortBinding.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortBinding cannot be null or empty");
+        if (wsdlPortBindingNamespace == null || wsdlPortBindingNamespace.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortBindingNamespace cannot be null or empty");
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
-        //Delete any existing bindings for the given publishedHostname and serviceOid
-        deleteGatewayBindingTemplates(serviceKey, publishedHostname);
+        final Pair<List<BindingTemplate>, List<TModel>> publishedTemplateAndModels = publishEndPointToExistingService(serviceKey,
+                wsdlPortName,
+                wsdlPortBinding,
+                wsdlPortBindingNamespace,
+                allEndpointPairs,
+                previousEndpointPairs,
+                publishedBindingKeys,
+                removeOthers);
 
-        publishEndPointToExistingService(serviceKey, wsdlPortName, wsdlPortBinding, wsdlPortBindingNamespace, allEndpointPairs, removeOthers);
+        final List<BindingTemplate> bindingTemplates = publishedTemplateAndModels.left;
+        final Set<String> justPublishedBindingKeys = new HashSet<String>();
+        for (BindingTemplate bindingTemplate : bindingTemplates) {
+            justPublishedBindingKeys.add(bindingTemplate.getBindingKey());
+        }
+
+        //if an endpoint previous published by the gateway no longer applies (e.g. a listener was removed) then we need
+        // to delete it from UDDI
+        if (publishedBindingKeys != null) {
+            Set<String> bindingTemplatesToDelete = new HashSet<String>();
+
+            for (String publishedBindingKey : publishedBindingKeys) {
+                if (!justPublishedBindingKeys.contains(publishedBindingKey)) {
+                    bindingTemplatesToDelete.add(publishedBindingKey);
+                }
+            }
+
+            if (!bindingTemplatesToDelete.isEmpty()) {
+                deleteGatewayBindingTemplates(serviceKey, null, bindingTemplatesToDelete);
+            }
+        }
+
+        return justPublishedBindingKeys;
     }
 
     /**
      * Delete all gateway endpoints contained by a BusinessService
+     * Delete bindingTemplates either with the Collection of previous end point pairs (to support Pandora->Maytag) or
+     * preferably delete via the persisted bindingKeys in persistedBindingKeys
      * <p/>
-     * A gateway endpoint is defined as any bindingTemplate in UDDI which contains an accessPoint with an endPoint value                                     n
-     * containing both the supplied publishedHostname and the serviceOid of a published service
+     * If persistedBindingKeys is not supplied, then any bindingTemplate found in the BusinessService with the supplied
+     * serviceKey, will be deleted if it's accessPoint has a useType of 'endPoint' and a URL value which either equals
+     * an endPointUrl from any EndpointPair in previousEndpointPairs, or partially matches it ignoring the protocol and
+     * port number (for Pandora support)
+     * <p/>
+     * In Pandora a gateway endpoint was defined as any bindingTemplate in UDDI which contains an accessPoint with an endPoint value
+     * containing both the supplied publishedHostname and the serviceOid of a published service. This support is maintained
+     * so that after an upgrade bindingTemplates are not orphaned in UDDI.
      *
-     * @param serviceKey String serviceKey of a BusinessService from which to delete gateway bindingTemplates. Required
-     * @param publishedHostname String external hostname of the cluster
+     * @param serviceKey            String serviceKey of a BusinessService from which to delete gateway bindingTemplates. Required
+     * @param previousEndpointPairs Collection&lt;EndpointPair&gt; The collection of endpoint pairs which were used to
+     *                              previously publish the endpoint for the current service to an original service in UDDI.
+     *                              Can be null / empty when persistedBindingKeys is not. Only the endpoint URL is used here, the WSDL URL is not required.
+     *                              This is used to find existing bindingTemplates and to delete them when this publish is performing a republish.
+     * @param persistedBindingKeys  Set&lt;String&gt; Can be null / empty when previousEndpointPairs is not
      * @throws UDDIException any problems searching / updating UDDI
      */
-    public void deleteGatewayBindingTemplates(final String serviceKey, final String publishedHostname) throws UDDIException {
-        if(serviceKey == null || serviceKey.trim().isEmpty()) throw new IllegalArgumentException("serviceKey cannot be null or empty");
-        if(publishedHostname == null || publishedHostname.trim().isEmpty()) throw new IllegalArgumentException("publishedHostname cannot be null or empty");        
+    public void deleteGatewayBindingTemplates(final String serviceKey,
+                                              final Set<EndpointPair> previousEndpointPairs,
+                                              final Set<String> persistedBindingKeys) throws UDDIException {
+        if (serviceKey == null || serviceKey.trim().isEmpty())
+            throw new IllegalArgumentException("serviceKey cannot be null or empty");
 
-        final BusinessService bs = jaxWsUDDIClient.getBusinessService(serviceKey);
-        final BindingTemplates bindingTemplates = bs.getBindingTemplates();
+        boolean haveKeys = persistedBindingKeys != null && !persistedBindingKeys.isEmpty();
+        boolean haveEndpoints = previousEndpointPairs != null && !previousEndpointPairs.isEmpty();
+
+        if (!(haveKeys || haveEndpoints)) {
+            throw new IllegalArgumentException("To delete BindingTemplates either published endpoints or the set of bindingKeys must be supplied");
+        }
+
+        final BusinessService businessService = jaxWsUDDIClient.getBusinessService(serviceKey);
+
+        final BindingTemplates bindingTemplates = businessService.getBindingTemplates();
         if (bindingTemplates != null && !bindingTemplates.getBindingTemplate().isEmpty()) {
+            outer:
             for (BindingTemplate bt : bindingTemplates.getBindingTemplate()) {
-                final AccessPoint accessPoint = bt.getAccessPoint();
-                if (!accessPoint.getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.USE_TYPE_END_POINT)) continue;
+                if (haveKeys) {
+                    if (persistedBindingKeys.contains(bt.getBindingKey())) {
+                        logger.log(Level.FINE, "bindingTemplate with persisted key '" + bt.getBindingKey() + "' will be deleted");
+                        uddiClient.deleteBindingTemplate(bt.getBindingKey());
+                    }
+                } else {
+                    final AccessPoint accessPoint = bt.getAccessPoint();
+                    //SSG published this endpoint, therefore we are strict with this requirement
+                    if (!accessPoint.getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.USE_TYPE_END_POINT))
+                        continue;
 
-                final String endPoint = accessPoint.getValue();
-                if (endPoint.indexOf(publishedHostname) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
-                    uddiClient.deleteBindingTemplate(bt.getBindingKey());
+                    final String endPoint = accessPoint.getValue();
+
+                    //look for exact match
+                    for (EndpointPair previousEndpointPair : previousEndpointPairs) {
+                        if (endPoint.equalsIgnoreCase(previousEndpointPair.getEndPointUrl())) {
+                            logger.log(Level.INFO, "bindingTemplate with key '" + bt.getBindingKey() + "' will be deleted");
+                            uddiClient.deleteBindingTemplate(bt.getBindingKey());
+                            continue outer;
+                        }
+                    }
+
+//                    if (previousEndpointPairs == null) continue;
+                    //Pandora -> Maytag support, in Pandora only a hostname was used to delete the bindingTemplate, keep in this support
+                    for (EndpointPair previousEndpointPair : previousEndpointPairs) {
+                        String hostName = previousEndpointPair.getEndPointUrl();
+                        if (hostName == null) continue;
+
+                        hostName = hostName.substring(hostName.indexOf("://") + 3, hostName.length());
+
+                        if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
+                            logger.log(Level.INFO, "bindingTemplate with key '" + bt.getBindingKey() + "' will be deleted");
+                            uddiClient.deleteBindingTemplate(bt.getBindingKey());
+                            continue outer;
+                        }
+                    }
+                    logger.log(Level.FINEST, "BindingTemplate with key '" + bt.getBindingKey() + "' and accessPoint '" + endPoint + "' was not deleted");
                 }
             }
         }
@@ -136,15 +241,14 @@ public class BusinessServicePublisher implements Closeable {
      *
      * @param serviceKey       String serviceKey of a BusinessService to overwrite. Required.
      * @param businessKey      Stirng businessKey which owns the BusinessService identified by serviceKey. Required
-     * @param allEndpointPairs Collection<Pair<String, String>>. Required. All endpoints to publish bindingTemplates for
-     * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of services published
-     *         as a result of this publish / update operation
+     * @param allEndpointPairs Collection&lt;EndpointPair&gt; Required. All endpoints to publish bindingTemplates for
+     * @return Set&lt;String&gt; The set of bindingKeys published for the overwritten service
      * @throws UDDIException any problems searching / updating UDDI
      */
-    public Pair<Set<String>, Set<UDDIBusinessService>> overwriteServiceInUDDI(
+    public Set<String> overwriteServiceInUDDI(
             final String serviceKey,
             final String businessKey,
-            final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
+            final Collection<EndpointPair> allEndpointPairs) throws UDDIException {
         if (serviceKey == null || serviceKey.trim().isEmpty())
             throw new IllegalArgumentException("serviceKey cannot be null or empty");
         if (businessKey == null || businessKey.trim().isEmpty())
@@ -210,7 +314,14 @@ public class BusinessServicePublisher implements Closeable {
 
         serviceNameToWsdlNameMap.put(overwriteService.getName().get(0).getValue(), serviceNameAndNameSpace.left);
         //true here means that we will keep any existing bindings found on the BusinessService
-        return publishToUDDI(serviceKeys, pairToUseList, serviceNameToWsdlNameMap, true, null);
+        publishToUDDI(serviceKeys,
+                pairToUseList,
+                serviceNameToWsdlNameMap,
+                true,
+                null,
+                allEndpointPairs);
+
+        return getPublishedBindingTemplates();
     }
 
     /**
@@ -228,11 +339,11 @@ public class BusinessServicePublisher implements Closeable {
      *                                 to make sure we only publish a single service from the WSDL. The first serviceKey found in publishedServiceKeys is then
      *                                 assumed to be the serviceKey of the overwritten service.
      * @param registrySpecificMetaData if not null, the registry specific meta data will be added appropriately to each applicable UDDI entity published
-     * @param allEndpointPairs         Collection<Pair<String, String>> all endpoints which should be published to UDDI
+     * @param allEndpointPairs         Collection&lt;EndpointPair&gt; all endpoints which should be published to UDDI
      *                                 as distinct endpoints for each service published. This means that a single wsdl:port may have more than one
-     *                                 bindingTemplate in UDDI. The left side of each pair is String URL which will become the value of the 'endPoint'
-     *                                 in the accessPoint element of a bindingTemplate. The right hand side of each pair is a String WSDL URL.
-     *                                 This will be included in every tModel published to UDDI as an overviewURL.
+     *                                 bindingTemplate in UDDI. The endPointURL of each EndpointPair is String URL which will become the value of the 'endPoint'
+     *                                 in the accessPoint element of a bindingTemplate. The wsdlURL of each EndpointPair is the String WSDL URL,
+     *                                 this will be included in every tModel published to UDDI as an overviewURL.
      * @return Pair Left side: Set of serviceKeys which should be deleted. Right side: set of BusinessServices published
      *         as a result of this publish / update operation
      * @throws UDDIException any problems searching / updating UDDI or with data model
@@ -242,7 +353,7 @@ public class BusinessServicePublisher implements Closeable {
             final Set<String> publishedServiceKeys,
             final boolean isOverwriteUpdate,
             final UDDIRegistrySpecificMetaData registrySpecificMetaData,
-            final Collection<Pair<String, String>> allEndpointPairs) throws UDDIException {
+            final Collection<EndpointPair> allEndpointPairs) throws UDDIException {
 
         if (businessKey == null || businessKey.trim().isEmpty())
             throw new IllegalArgumentException("businessKey cannot be null or empty");
@@ -276,12 +387,16 @@ public class BusinessServicePublisher implements Closeable {
 
         final Map<String, String> serviceToWsdlServiceName = modelConverter.getServiceNameToWsdlServiceNameMap();
 
-        return publishToUDDI(publishedServiceKeys, wsdlBusinessServicesToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate, registrySpecificMetaData);
+        return publishToUDDI(publishedServiceKeys, wsdlBusinessServicesToDependentTModels, serviceToWsdlServiceName, isOverwriteUpdate, registrySpecificMetaData, allEndpointPairs);
     }
 
     @Override
     public void close() throws IOException {
         uddiClient.close();
+    }
+
+    public Set<String> getPublishedBindingTemplates() {
+        return publishedBindingTemplates;
     }
 
     //- PROTECTED
@@ -310,14 +425,26 @@ public class BusinessServicePublisher implements Closeable {
         }
     }
 
+    /**
+     *
+     * @return A pair of List &lt;BindingTemplate&gt; and List &lt;TModel&gt;. The left side is the list of BindingTemplates
+     * which were published to UDDI and the right side is their published dependent tModels. Not all may have just been
+     * published for the first time, as if an update was carried out for an individual bindingTemplate, then it's
+     * bindingKey was reused. When this happens then the dependent tModels's tModelKeys are also reused.
+     * @throws UDDIException
+     */
     Pair<List<BindingTemplate>, List<TModel>> publishEndPointToExistingService(
             final String serviceKey,
             final String wsdlPortName,
             final String wsdlPortBinding,
             final String wsdlPortBindingNamespace,
-            final Collection<Pair<String, String>> allEndpointPairs,
+            final Collection<EndpointPair> allEndpointPairs,
+            final Collection<EndpointPair> previousEndpointPairs, 
+            Set<String> publishedBindingKeys,
             final boolean removeOthers)
             throws UDDIException {
+
+        if(publishedBindingKeys == null) publishedBindingKeys = new HashSet<String>();
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
         final Pair<List<BindingTemplate>, Map<String, TModel>> bindingToModels;
@@ -336,20 +463,58 @@ public class BusinessServicePublisher implements Closeable {
         //Get the service
         final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
-        final List<BusinessService> foundServices = jaxWsUDDIClient.getBusinessServices(serviceKeys, false);
-        if (foundServices.isEmpty())
-            throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
-        final BusinessService businessService = foundServices.get(0);
 
-        final Set<String> allOtherBindingKeys;
+        final UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(jaxWsUDDIClient);
+        final List<Pair<BusinessService, Map<String, TModel>>>
+                uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
+
+        if (uddiServicesToDependentModels.isEmpty())
+            throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
+        final Pair<BusinessService, Map<String, TModel>> serviceMapPair = uddiServicesToDependentModels.iterator().next();
+        final BusinessService businessService = serviceMapPair.left;
+        final Map<String, TModel> publishedTModels = serviceMapPair.right;
+
+        final Set<String> allOtherBindingKeys;//all binding keys currently on the service , some may have been previously published by the gateway
+        final List<BindingTemplate> bindingTemplates;//same as above except the actual BindingTemplate objects
         if (businessService.getBindingTemplates() != null) {
-            final List<BindingTemplate> bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
+            bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
             allOtherBindingKeys = new HashSet<String>();
             for (BindingTemplate template : bindingTemplates) {
                 allOtherBindingKeys.add(template.getBindingKey());
             }
         } else {
             allOtherBindingKeys = Collections.emptySet();
+            bindingTemplates = Collections.emptyList();
+        }
+
+        //applicableTemplates is the list of bindingTemplates which the Gateway has published. With this list we
+        //can ensure that the same template being published again can reuse an existing key
+        List<BindingTemplate> applicableTemplates = new ArrayList<BindingTemplate>();
+        //has this endpoint already been published?
+        if(!publishedBindingKeys.isEmpty()){
+            //with persisted keys, we just want to see if any of our keys have been removed
+            //if one of our bindingKeys has been removed, we don't need to do anything
+            for (BindingTemplate publishedTemplate : bindingTemplates) {
+                if(publishedBindingKeys.contains(publishedTemplate.getBindingKey())){
+                    applicableTemplates.add(publishedTemplate);
+                }
+            }
+        }else{
+            //fall back on Pandora method - try to match based on endpoint / hostname
+//            deleteGatewayBindingTemplates(businessService, previousEndpointPairs);
+            applicableTemplates.addAll(getApplicableBindingTemplates(businessService, previousEndpointPairs));
+        }
+
+        final List<BindingTemplate> toPublishTemplates = bindingToModels.left;
+        final Map<String, TModel> toPublishTModels = bindingToModels.right;
+        final Set<String> updateKeysSoFar = new HashSet<String>();
+        for (BindingTemplate toPublishTemplate : toPublishTemplates) {
+            updateTemplate(toPublishTemplate,
+                    applicableTemplates,
+                    allEndpointPairs,
+                    toPublishTModels,
+                    publishedTModels,
+                    updateKeysSoFar);
         }
 
         final Map<String, TModel> tModelsToPublish = bindingToModels.right;
@@ -384,6 +549,10 @@ public class BusinessServicePublisher implements Closeable {
             //remove other bindings?
             if (removeOthers) {
                 logger.log(Level.FINE, "Deleting other bindingTemplates");
+                for(BindingTemplate bt: bindingToModels.left){
+                    //remove any bindings the gateway has published
+                    allOtherBindingKeys.remove(bt.getBindingKey());
+                }
                 uddiClient.deleteBindingTemplateFromSingleService(allOtherBindingKeys);
             }
 
@@ -423,27 +592,72 @@ public class BusinessServicePublisher implements Closeable {
      * @return List of TModels which were successfully published
      * @throws UDDIException any exception publishing the tmodels
      */
-    List<TModel> publishDependentTModels(final Map<String, TModel> dependentTModels,
+    void publishDependentTModels(final Map<String, TModel> dependentTModels,
                                          final UDDIUtilities.TMODEL_TYPE tmodelType,
                                          final Set<Pair<String, BusinessService>> allPublishedServicesSoFar) throws UDDIException {
-        final List<TModel> publishedTModels = new ArrayList<TModel>();
         try {
             for (Map.Entry<String, TModel> entrySet : dependentTModels.entrySet()) {
                 final TModel tModel = entrySet.getValue();
                 //only publish the type were currently interested in
                 if (UDDIUtilities.getTModelType(tModel, true) != tmodelType) continue;
-                final boolean published = jaxWsUDDIClient.publishTModel(tModel);
-                if (published) publishedTModels.add(tModel);
+                jaxWsUDDIClient.publishTModel(tModel);
             }
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Exception publishing tModels: " + e.getMessage());
             handleUDDIRollback(dependentTModels.values(), allPublishedServicesSoFar);
             throw e;
         }
-        return Collections.unmodifiableList(publishedTModels);
     }
 
     //- PRIVATE
+
+    /**
+     * Based on the prevoiusly published endpoints, find the list of applicable BindingTemplates which were published
+     * by a gateway
+     *
+     */
+    private List<BindingTemplate> getApplicableBindingTemplates(final BusinessService businessService,
+                                                                final Collection<EndpointPair> previousEndpointPairs) throws UDDIException {
+        final List<BindingTemplate> applicableTemplates = new ArrayList<BindingTemplate>();
+
+        if (previousEndpointPairs == null || previousEndpointPairs.isEmpty()) {
+            return applicableTemplates;
+        }
+
+        final BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        if (bindingTemplates != null && !bindingTemplates.getBindingTemplate().isEmpty()) {
+            outer:
+            for (BindingTemplate bt : bindingTemplates.getBindingTemplate()) {
+                final AccessPoint accessPoint = bt.getAccessPoint();
+                if (!accessPoint.getUseType().equalsIgnoreCase(WsdlToUDDIModelConverter.USE_TYPE_END_POINT)) continue;
+
+                final String endPoint = accessPoint.getValue();
+
+                //look for exact match
+                for (EndpointPair previousEndpointPair : previousEndpointPairs) {
+                    if (endPoint.equalsIgnoreCase(previousEndpointPair.getEndPointUrl())) {
+                        applicableTemplates.add(bt);
+                        continue outer;
+                    }
+                }
+
+                if (previousEndpointPairs == null) continue;
+                //Pandora -> Maytag support, in Pandora only a hostname was used to delete the bindingTemplate, keep in this support
+                for (EndpointPair previousEndpointPair : previousEndpointPairs) {
+                    String hostName = previousEndpointPair.getEndPointUrl();
+                    if (hostName == null) continue;
+
+                    hostName = hostName.substring(hostName.indexOf("://") + 3, hostName.length());
+
+                    if (endPoint.indexOf(hostName) != -1 && endPoint.indexOf(SecureSpanConstants.SERVICE_FILE + Long.toString(serviceOid)) != -1) {
+                        applicableTemplates.add(bt);
+                        continue outer;
+                    }
+                }
+            }
+        }
+        return applicableTemplates;
+    }
 
     /**
      * Extract out the real wsdl:service name and namespace if applicable from the supplied BusinessService.
@@ -549,6 +763,7 @@ public class BusinessServicePublisher implements Closeable {
      * @param isOverwriteUpdate        if true, if a previously published BusinessService is found, along with
      *                                 it's serviceKey, any bindings it has will also be preserved
      * @param registrySpecificMetaData if not null, the registry specific meta data will be added appropriately to each uddi piece of infomation published
+     * @param allEndpointPairs Collection&lt;EndpointPair&gt; Required. All endpoints to publish bindingTemplates for
      * @return Pair of two String sets. The left side is a Set of serviceKeys which represent the previously published BusinessService which are no longer required and have
      *         been deleted from the UDDI Registry. The right side is a Set of UDDIBusinessServices representing every published BusinessService for the WSDL.
      * @throws UDDIException any problems querying / updating the UDDI Registry
@@ -558,7 +773,8 @@ public class BusinessServicePublisher implements Closeable {
             final List<Pair<BusinessService, Map<String, TModel>>> wsdlServiceNameToDependentTModels,
             final Map<String, String> serviceToWsdlServiceName,
             final boolean isOverwriteUpdate,
-            final UDDIRegistrySpecificMetaData registrySpecificMetaData) throws UDDIException {
+            final UDDIRegistrySpecificMetaData registrySpecificMetaData,
+            final Collection<EndpointPair> allEndpointPairs) throws UDDIException {
         if (publishedServiceKeys == null) throw new NullPointerException("publishedServiceKeys cannot be null");
         if (wsdlServiceNameToDependentTModels == null)
             throw new NullPointerException("wsdlServiceNameToDependentTModels cannot be null");
@@ -576,33 +792,34 @@ public class BusinessServicePublisher implements Closeable {
         final List<Pair<BusinessService, Map<String, TModel>>>
                 uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
 
-        final List<BusinessService> uddiPreviouslyPublishedServices = new ArrayList<BusinessService>();
-        for (Pair<BusinessService, Map<String, TModel>> aServiceToItsModels : uddiServicesToDependentModels) {
-            uddiPreviouslyPublishedServices.add(aServiceToItsModels.left);
-        }
-
         //map to look up existing services
         final Map<String, BusinessService> uddiPreviouslyPublishedServiceMap = new HashMap<String, BusinessService>();
-        for (BusinessService bs : uddiPreviouslyPublishedServices) {
-            final String uniqueKey = getUniqueKeyForService(bs);
-            uddiPreviouslyPublishedServiceMap.put(uniqueKey, bs);
+        final Map<String, Map<String, TModel>> uddiPreviouslyTModelsForService = new HashMap<String, Map<String, TModel>>();
+
+        for (Pair<BusinessService, Map<String, TModel>> aServiceToItsModels : uddiServicesToDependentModels) {
+            final String uniqueKey = getUniqueKeyForService(aServiceToItsModels.left);
+            uddiPreviouslyPublishedServiceMap.put(uniqueKey, aServiceToItsModels.left);
+            uddiPreviouslyTModelsForService.put(uniqueKey, aServiceToItsModels.right);
         }
 
         //create a map to look up the services from the wsdl to publish
         final Map<String, BusinessService> wsdlServicesToPublish = new HashMap<String, BusinessService>();
+        final Map<String, Map<String, TModel>> tModelsForServiceToPublish = new HashMap<String, Map<String, TModel>>();
         for (Pair<BusinessService, Map<String, TModel>> serviceToModels : wsdlServiceNameToDependentTModels) {
             BusinessService bs = serviceToModels.left;
             final String uniqueKey = getUniqueKeyForService(bs);
             wsdlServicesToPublish.put(uniqueKey, bs);
+            tModelsForServiceToPublish.put(uniqueKey, serviceToModels.right);
         }
 
         //find which services already exist, and reuse their serviceKeys if found
         //also need to know which BusinessServices to delete
 
-        final Set<String> deleteSet = new HashSet<String>();
+        final Set<String> servicesToDelete = new HashSet<String>();
 
         //for overwrite - we keep non soap/http bindings. for these bindings, do not delete any tmodels they reference
-        final Map<String, TModel> uddiNonSoapBindingTmodels = new HashMap<String, TModel>();
+        //for an update which simply updated URLs, do not delete these tModels either
+        final Set<String> tModelsNotToDelete = new HashSet<String>();
 
         for (Map.Entry<String, BusinessService> entry : uddiPreviouslyPublishedServiceMap.entrySet()) {
             final BusinessService uddiPublishedService = entry.getValue();
@@ -612,7 +829,15 @@ public class BusinessServicePublisher implements Closeable {
             //a wsdl:service from a wsdl will always produce the same name, see WsdlToUDDIModelConverter
             if (wsdlServicesToPublish.containsKey(uniquePublishedSvcName)) {
                 final BusinessService businessService = wsdlServicesToPublish.get(uniquePublishedSvcName);
-                businessService.setServiceKey(uddiPublishedService.getServiceKey());
+
+                final Set<String> tModelsToKeep = transferKeys(businessService,
+                        uddiPublishedService,
+                        allEndpointPairs,
+                        tModelsForServiceToPublish.get(uniquePublishedSvcName),
+                        uddiPreviouslyTModelsForService.get(uniquePublishedSvcName));
+
+                tModelsNotToDelete.addAll(tModelsToKeep);
+                
                 if (isOverwriteUpdate) {
                     if (businessService.getBindingTemplates() == null)
                         businessService.setBindingTemplates(new BindingTemplates());
@@ -623,32 +848,52 @@ public class BusinessServicePublisher implements Closeable {
                             getBindingsToDeleteAndKeep(uddiPublishedService.getBindingTemplates().getBindingTemplate(),
                                     uddiServicesToDependentModels.iterator().next().right);
 
-                    //all tmodels from uddi for this service
-                    final Map<String, TModel> keepTModelMap = uddiServicesToDependentModels.iterator().next().right;
-
-                    //only keep the bindings where are not soap / http
+                    //only keep the bindings which are not soap / http - add them onto the BusinessService created from the WSDLll
                     for (BindingTemplate bt : uddiPublishedService.getBindingTemplates().getBindingTemplate()) {
                         if (!deleteAndKeep.right.contains(bt.getBindingKey())) continue;
                         businessService.getBindingTemplates().getBindingTemplate().add(bt);
                         for (TModelInstanceInfo infos : bt.getTModelInstanceDetails().getTModelInstanceInfo()) {
-                            uddiNonSoapBindingTmodels.put(infos.getTModelKey(), keepTModelMap.get(infos.getTModelKey()));
+                            tModelsNotToDelete.add(infos.getTModelKey());
                         }
                     }
                 }
             } else {
-                deleteSet.add(uddiPublishedService.getServiceKey());
+                servicesToDelete.add(uddiPublishedService.getServiceKey());
             }
         }
 
         final Set<Pair<String, BusinessService>> newlyPublishedServices =
                 publishServicesToUDDI(Collections.unmodifiableCollection(wsdlServiceNameToDependentTModels), registrySpecificMetaData);
+
+        if (isOverwriteUpdate) {
+            //obtain the set of bindingTemplates published
+            //todo this redownloading could be avoided, we have this information locally
+            final List<Pair<BusinessService, Map<String, TModel>>>
+                    overwrittenService = serviceDownloader.getBusinessServiceModels(publishedServiceKeys);
+            final Pair<BusinessService, Map<String, TModel>> serviceMapPair = overwrittenService.iterator().next();
+
+            final Map<String, Set<String>> bindingAndTModelKeys = UDDIUtilities.getAllBindingAndTModelKeys(serviceMapPair.left);
+            for (Map.Entry<String, Set<String>> entry : bindingAndTModelKeys.entrySet()) {
+                for (String tModelKey : entry.getValue()) {
+                    final TModel model = serviceMapPair.right.get(tModelKey);
+                    final UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(model, false);
+                    if(tModelType != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
+                    //we removed all non soap + http bindings already. So any found were added by the gateway
+                    if(isSoapAndHttpBinding(model)){
+                        publishedBindingTemplates.add(entry.getKey());
+                    }
+                }
+            }
+        }
+
         //NOTE - No UDDI interaction below here should cause a UDDIException to be thrown
+        //The publish has been successful. Any delete failures below should just be logged
 
         //find out what tModels need to be deleted
         //do this after initial update, so we have valid references
-        if (!deleteSet.isEmpty()) {
+        if (!servicesToDelete.isEmpty()) {
             logger.log(Level.FINE, "Attemping to delete BusinessServices no longer referenced by Gateway's WSDL");
-            for (String deleteKey : deleteSet) {
+            for (String deleteKey : servicesToDelete) {
                 try {
                     uddiClient.deleteBusinessServiceByKey(deleteKey);
                 } catch (UDDIException e) {
@@ -661,21 +906,23 @@ public class BusinessServicePublisher implements Closeable {
         for (Pair<BusinessService, Map<String, TModel>> aServiceToItsModel : uddiServicesToDependentModels) {
             final BusinessService bs = aServiceToItsModel.left;
             //if a service was deleted, so were its tmodels
-            if (deleteSet.contains(bs.getServiceKey())) continue;
+            if (servicesToDelete.contains(bs.getServiceKey())) continue;
 
-            //we will delete every tModel the service used to reference, as new ones have been created for it
+            //we will delete every tModel previously published which may no longer be applicable
             //if we get here it's because the service is still in UDDI
             final Set<String> oldTModels = new HashSet<String>();
             for (TModel tModel : aServiceToItsModel.right.values()) {
-                //don't delete any tmodels we left after taking over a service
-                if (uddiNonSoapBindingTmodels.containsKey(tModel.getTModelKey())) continue;
+                //don't delete any tmodels we left after taking over a service or any tModels whose keys were reused
+                if (tModelsNotToDelete.contains(tModel.getTModelKey())) continue;
                 oldTModels.add(tModel.getTModelKey());
             }
-            try {
-                logger.log(Level.FINE, "Deleting old tmodels no longer referenced by business service with serviceKey: " + bs.getServiceKey());
-                uddiClient.deleteTModel(oldTModels);
-            } catch (UDDIException e) {
-                logger.log(Level.WARNING, "Could not delete old tModels from UDDI: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            if(!oldTModels.isEmpty()){
+                try {
+                    logger.log(Level.FINE, "Deleting old tmodels no longer referenced by business service with serviceKey: " + bs.getServiceKey());
+                    uddiClient.deleteTModel(oldTModels);
+                } catch (UDDIException e) {
+                    logger.log(Level.WARNING, "Could not delete old tModels from UDDI: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
             }
         }
 
@@ -686,7 +933,9 @@ public class BusinessServicePublisher implements Closeable {
             final UDDIBusinessService uddiBs = new UDDIBusinessService(
                     bs.getName().get(0).getValue(),
                     bs.getServiceKey(),
-                    serviceToWsdlServiceName.get(wsdlServiceName), UDDIUtilities.extractNamespace(bs));
+                    serviceToWsdlServiceName.get(wsdlServiceName),
+                    UDDIUtilities.extractNamespace(bs),
+                    UDDIUtilities.getAllBindingAndTModelKeys(bs));
 
             newlyCreatedSet.add(uddiBs);
         }
@@ -701,17 +950,179 @@ public class BusinessServicePublisher implements Closeable {
         //these are the keys we asked for
         for (String s : publishedServiceKeys) {
             //and these are they keys we got - uddiServicesToDependentModels
-            if (!receivedFromUDDISet.contains(s)) keysDeletedViaUDDI.add(s);
+            if (!receivedFromUDDISet.contains(s)) {
+                keysDeletedViaUDDI.add(s);
+            }
         }
-        deleteSet.addAll(keysDeletedViaUDDI);
+        servicesToDelete.addAll(keysDeletedViaUDDI);
 
-        return new Pair<Set<String>, Set<UDDIBusinessService>>(Collections.unmodifiableSet(deleteSet), Collections.unmodifiableSet(newlyCreatedSet));
+        return new Pair<Set<String>, Set<UDDIBusinessService>>(Collections.unmodifiableSet(servicesToDelete), Collections.unmodifiableSet(newlyCreatedSet));
     }
 
     private String getUniqueKeyForService(BusinessService bs) {
         final String nameSpace = UDDIUtilities.extractNamespace(bs);
         final String serviceName = bs.getName().get(0).getValue();
         return (nameSpace == null) ? serviceName : serviceName + "_" + nameSpace;
+    }
+
+    //updates internal state of toPublish BusinessService and toPublishTModels
+    private Set<String> transferKeys(
+            final BusinessService toPublish,
+            final BusinessService published,
+            final Collection<EndpointPair> toPublishEndpoints,
+            Map<String, TModel> toPublishTModels,
+            Map<String, TModel> publishedTModels) {
+
+        toPublish.setServiceKey(published.getServiceKey());
+
+        final Set<String> tModelsToKeep = new HashSet<String>();
+
+        if (published.getBindingTemplates() == null) return tModelsToKeep;
+        if (published.getBindingTemplates().getBindingTemplate() == null) return tModelsToKeep;
+        if (published.getBindingTemplates().getBindingTemplate().isEmpty()) return tModelsToKeep;
+
+        List<BindingTemplate> toPublishTemplates = toPublish.getBindingTemplates().getBindingTemplate();
+
+        final Set<String> updateKeysSoFar = new HashSet<String>();
+        for (BindingTemplate toPublishTemplate : toPublishTemplates) {
+            tModelsToKeep.addAll(updateTemplate( toPublishTemplate,
+                    published.getBindingTemplates().getBindingTemplate(),
+                    toPublishEndpoints,
+                    toPublishTModels,
+                    publishedTModels,
+                    updateKeysSoFar));
+        }
+
+        return Collections.unmodifiableSet(tModelsToKeep);
+    }
+
+    /**
+     * See if a BindingTemplate being published is already published, in which case it's key can be reused.
+     * A template matches if it implements the same wsdl:port
+     *
+     * @param updateKeysSoFar Set&lt;String&gt; all keys used so far. Helps avoid the case where two endpoints in
+     * toPublishEndpoints have the same scheme, in which case we could accidently give two bindingTemplates the same
+     * key. First in wins. Right now there is only http + https, but in theory there could be multiple of both
+     * @return Set&lt;String&gt; each String is a tModelKey, which was updated, so should not be deleted by the caller
+     */
+    private Set<String> updateTemplate(final BindingTemplate toPublishTemplate,
+                                       final List<BindingTemplate> allPublishedTemplates,
+                                       final Collection<EndpointPair> toPublishEndpoints,
+                                       final Map<String, TModel> toPublishTModels,
+                                       final Map<String, TModel> publishedTModels,
+                                       final Set<String> updateKeysSoFar) {
+
+        final TModel toPublishWsdlPortType = getImplementedWsdlPortType(toPublishTemplate, toPublishTModels);
+
+        final Pair<TModel, String> toPublishBindingAndWsdlPort = getImplementedWsdlPortAndBinding(toPublishTemplate, toPublishTModels);
+        //Any tModels which get updated will be returned in this set so they do not get deleted
+        final Set<String> tModelsToKeep = new HashSet<String>();
+        if (toPublishBindingAndWsdlPort == null) return tModelsToKeep;
+
+        final String toPublishWsdlPort = toPublishBindingAndWsdlPort.right;
+        final String bindingNamespace = UDDIUtilities.extractNamespace(toPublishBindingAndWsdlPort.left);
+        final String bindingName = toPublishBindingAndWsdlPort.left.getName().getValue();
+
+        for (BindingTemplate publishedTemplate : allPublishedTemplates) {
+            if(updateKeysSoFar.contains(publishedTemplate.getBindingKey())) continue;
+
+            final Pair<TModel, String> publishedBindingTModelAndWsdlPort = getImplementedWsdlPortAndBinding(publishedTemplate, publishedTModels);
+            if (publishedBindingTModelAndWsdlPort == null) continue;
+            
+            //ignore non soap + http bindings - important for overwritten services
+            if(!isSoapAndHttpBinding(publishedBindingTModelAndWsdlPort.left)) continue;
+            
+            final String publishedWsdlPort = publishedBindingTModelAndWsdlPort.right;
+            if (publishedWsdlPort == null) continue;
+
+            //check the wsdl:port s are the same
+            if (!publishedWsdlPort.equals(toPublishWsdlPort)) continue;
+
+            final String publishedBindingNamespace = UDDIUtilities.extractNamespace(publishedBindingTModelAndWsdlPort.left);
+            final String publishedBindingName = publishedBindingTModelAndWsdlPort.left.getName().getValue();
+
+            //check the binding implements the same wsdl:binding - name and namespace
+            if(!new Pair<String, String>(bindingNamespace, bindingName).equals(
+                    new Pair<String, String>(publishedBindingNamespace, publishedBindingName))) continue;
+
+            //check that the to publish and published bindings implement the same wsdl:portType
+            final TModel publishedWsdlPortTModel = getImplementedWsdlPortType(publishedTemplate, publishedTModels);
+            if(!toPublishWsdlPortType.getName().getValue().equals(publishedWsdlPortTModel.getName().getValue())) continue;
+
+            final String publishedUseType = publishedTemplate.getAccessPoint().getUseType();
+            if(publishedUseType == null || !publishedUseType.equals("endPoint")) continue;
+            
+            final String publishEndpoint = toPublishTemplate.getAccessPoint().getValue();
+            final String publishedEndpoint = publishedTemplate.getAccessPoint().getValue();
+
+            if (EndpointPair.getScheme(publishEndpoint) != EndpointPair.getScheme(publishedEndpoint)) continue;
+
+            //we have a match, copy keys
+            toPublishTemplate.setBindingKey(publishedTemplate.getBindingKey());
+            updateKeysSoFar.add(publishedTemplate.getBindingKey());
+            //the toPublishTemplate already has the correct endpoint value
+
+            //update the tModels
+            for (EndpointPair endpoint : toPublishEndpoints) {
+                if(endpoint.getEndPointUrl().equals(publishEndpoint)){
+                    updateWsdlUrl(toPublishBindingAndWsdlPort.left, endpoint.getWsdlUrl());
+                    toPublishBindingAndWsdlPort.left.setTModelKey(publishedBindingTModelAndWsdlPort.left.getTModelKey());
+                    tModelsToKeep.add(publishedBindingTModelAndWsdlPort.left.getTModelKey());
+                    updateWsdlUrl(toPublishWsdlPortType, endpoint.getWsdlUrl());
+                    toPublishWsdlPortType.setTModelKey(publishedWsdlPortTModel.getTModelKey());
+                    tModelsToKeep.add(publishedWsdlPortTModel.getTModelKey());
+                    break;
+                }
+            }
+            break;//to get here we have updated the bindingTemplate, no need to look further
+            //todo perhaps just update the map to point at the published models, which will preserve any existing categoryBag references
+        }
+        return Collections.unmodifiableSet(tModelsToKeep);
+    }
+
+    private void updateWsdlUrl(TModel tModel, String wsdlUrl){
+
+        final List<OverviewDoc> overviewDoc = tModel.getOverviewDoc();
+        if(overviewDoc == null || overviewDoc.isEmpty()) return; //should never be, but can in theory be null
+
+        for (OverviewDoc doc : overviewDoc) {
+            final OverviewURL overviewUrl = doc.getOverviewURL();
+            if(overviewUrl.getUseType() == null || !overviewUrl.getUseType().equals("wsdlInterface")) continue;
+            overviewUrl.setValue(wsdlUrl);
+            break;
+        }
+    }
+
+    /**
+     * Return the implementing wsdl:portType of this bindingTemplate, if found. Null otherwise
+     */
+    private TModel getImplementedWsdlPortType(BindingTemplate bindingTemplate, Map<String, TModel> applicableTModels){
+        final List<TModelInstanceInfo> tModelInstanceInfo = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
+        for (TModelInstanceInfo instanceInfo : tModelInstanceInfo) {
+            //this must be found
+            final TModel tModel = applicableTModels.get(instanceInfo.getTModelKey());
+            final UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel, false);
+            if (tModelType != null && tModelType == UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE) {
+                return tModel;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Return the TModel for the implemented wsdl:binding and the name of the implemented wsdl:port
+     */
+    private Pair<TModel, String> getImplementedWsdlPortAndBinding(BindingTemplate bindingTemplate, Map<String, TModel> applicableTModels){
+        final List<TModelInstanceInfo> tModelInstanceInfo = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
+        for (TModelInstanceInfo instanceInfo : tModelInstanceInfo) {
+            //this must be found
+            final TModel tModel = applicableTModels.get(instanceInfo.getTModelKey());
+            final UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(tModel, false);
+            if (tModelType != null && tModelType == UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) {
+                return new Pair<TModel, String> (tModel, instanceInfo.getInstanceDetails().getInstanceParms());
+            }
+        }
+        return null;
     }
 
     /**
@@ -737,7 +1148,6 @@ public class BusinessServicePublisher implements Closeable {
      * @throws UDDIException any problems updating / querying UDDI
      */
     private Set<Pair<String, BusinessService>> publishServicesToUDDI(
-            
             final Collection<Pair<BusinessService, Map<String, TModel>>> serviceNameToDependentTModels,
             final UDDIRegistrySpecificMetaData registrySpecificMetaData) throws UDDIException {
 
@@ -899,8 +1309,8 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
-     * Get all the bindingTemplates which should be removed. Any template which implements a wsdl:binding
-     * with soap / http should be returned
+     * Get all the bindingTemplates which should be kept and removed. Any template which implements a wsdl:binding
+     * with soap / http should be returned in the delete set.
      *
      * @param templates           List of BindingTemplates from which to determine which should be removed
      * @param allDependentTModels Every single tmodel keyed by it's tModelKey which the owning BusinessService is
@@ -965,6 +1375,13 @@ public class BusinessServicePublisher implements Closeable {
         return new Pair<Set<String>, Set<String>>(bindingKeysToDelete, bindingKeysToKeep);
     }
 
+    //Only call with a TModel which is known to represent a wsdl:binding
+    private boolean isSoapAndHttpBinding(TModel bindingTModel){
+        boolean protocolIsSoap = UDDIUtilities.isSoapBinding(bindingTModel);
+        boolean transportIsHttp = UDDIUtilities.isHttpBinding(bindingTModel);
+
+        return protocolIsSoap && transportIsHttp;
+    }
     /**
      * Try to delete a tModel published to UDDI. Will not throw a UDDIException
      * @param tModelKey String tModelKey to delete

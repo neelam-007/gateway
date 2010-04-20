@@ -1,16 +1,9 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.uddi.UDDIException;
-import com.l7tech.uddi.UDDIClient;
-import com.l7tech.uddi.UDDINetworkException;
-import com.l7tech.uddi.UDDIBusinessService;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.Config;
-import com.l7tech.util.Triple;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.uddi.*;
+import com.l7tech.util.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.UDDISystemEvent;
@@ -117,6 +110,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         loadUDDIRegistries(false);
         final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);
         timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
+        timer.schedule(new CheckPublishedEndpointsTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
     @Override
@@ -196,6 +190,16 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
             } else if ( UDDIServiceControl.class.equals(entityInvalidationEvent.getEntityClass()) ) {
                 timer.schedule( new BusinessServiceStatusTimerTask(this), 0 );
+            } else if (ClusterProperty.class.equals(entityInvalidationEvent.getEntityClass())){
+                final Object source = entityInvalidationEvent.getSource();
+                if(source instanceof ClusterProperty){
+                    ClusterProperty cp = (ClusterProperty) source;
+                    if (cp.getName().equals("cluster.hostname") ||
+                            cp.getName().equals("cluster.httpPort") ||
+                            cp.getName().equals("cluster.httpsport")) {
+                            timer.schedule(new CheckPublishedEndpointsTimerTask(this), 0);
+                    }
+                }
             }
 
         } else if ( applicationEvent instanceof ReadyForMessages && clusterMaster.isMaster() ) {
@@ -397,8 +401,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     }
 
     /**
-     * Consumer of the Queue proxiedPublishedServices which queues all service oids which are potential candidates
-     * requiring update of UDDI. This method will check their hash of their WSDL to see if an update is actually necessary 
+     * Check if a Published Service needs to be republished to UDDI following a local WSDL change
      *
      * @throws ObjectModelException
      */
@@ -475,6 +478,31 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     }
 
     /**
+     * See if we need to update UDDI following a change which may have caused the external endpoints for a cluster /
+     * gateway to have changed
+     * @throws ObjectModelException
+     */
+    private void checkPublishedEndpoints() throws ObjectModelException{
+        final boolean autoRepublish = ServerConfig.getInstance().getBooleanProperty("uddi.autorepublish", true);
+        if(!autoRepublish) return;
+
+        final Collection<UDDIProxiedServiceInfo> infoCollection = uddiProxiedServiceInfoManager.findAll();
+        for (UDDIProxiedServiceInfo serviceInfo : infoCollection) {
+            final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(serviceInfo.getOid());
+            if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED){
+
+                final Set<EndpointPair> allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
+                final Set<EndpointPair> persistedEndpoints = serviceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
+                if(!persistedEndpoints.equals(allEndpointPairs)){
+                    logger.log(Level.INFO, "Setting service #(" + serviceInfo.getPublishedServiceOid()+") to republish to UDDI following change to external endpoints");
+                    publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+                    uddiPublishStatusManager.update(publishStatus);
+                }
+            }
+        }
+    }
+
+    /**
      * Ensures that the buiness service status reflects the current configuration.
      */
     private void checkBusinessServiceStatus() throws ObjectModelException {
@@ -532,13 +560,14 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             }
         }
 
+        final boolean autoRepublish = ServerConfig.getInstance().getBooleanProperty("uddi.autorepublish", true);
         // Update / create service status
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {
                 final long publishedServiceOid = proxiedServiceInfo.getPublishedServiceOid();
                 final long uddiRegistryOid = proxiedServiceInfo.getUddiRegistryOid();
                 final boolean isMetricsEnabled = proxiedServiceInfo.isMetricsEnabled();
-                final boolean isPublishWsPolicyEnabled = proxiedServiceInfo.isPublishWsPolicyEnabled();
+                final boolean isPublishWsPolicyEnabled = proxiedServiceInfo.isPublishWsPolicyEnabled() && autoRepublish;
                 final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
                         proxiedServiceInfo.getPublishedServiceOid(),
                         proxiedServiceInfo.isPublishWsPolicyFull(),
@@ -569,7 +598,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             final String serviceKey = origService.getUddiServiceKey();
             final String serviceName = origService.getUddiServiceName();
             final boolean isMetricsEnabled = origService.isMetricsEnabled();
-            final boolean isPublishWsPolicyEnabled = origService.isPublishWsPolicyEnabled();
+            final boolean isPublishWsPolicyEnabled = origService.isPublishWsPolicyEnabled() && autoRepublish;
             final String wsPolicyUrl = uddiHelper.getExternalPolicyUrlForService(
                     origService.getPublishedServiceOid(),
                     origService.isPublishWsPolicyFull(),
@@ -900,6 +929,41 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
             }
         }
     }
+
+    /**
+     * Republish any published Business Services and bindingTemplates to UDDI
+     */
+    private static final class CheckPublishedEndpointsTimerTask extends ManagedTimerTask {
+        private final UDDICoordinator coordinator;
+
+        CheckPublishedEndpointsTimerTask(final UDDICoordinator coordinator) {
+            this.coordinator = coordinator;
+        }
+
+        @Override
+        public void doRun() {
+            if ( coordinator.clusterMaster.isMaster() ) {
+                AuditContextUtils.doAsSystem( new Runnable(){
+                    @Override
+                    public void run() {
+                        new TransactionTemplate(coordinator.transactionManager).execute( new TransactionCallbackWithoutResult(){
+                            @Override
+                            protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                                try {
+                                    coordinator.checkPublishedEndpoints();
+                                    coordinator.checkBusinessServiceStatus();
+                                } catch (ObjectModelException ome) {
+                                    logger.log( Level.WARNING, "Error checking published endpoints for local changes", ome );
+                                    transactionStatus.setRollbackOnly();
+                                }
+                            }
+                        } );
+                    }
+                });
+            }
+        }
+    }
+
 
     private static final class PublishedProxyMaintenanceTimerTask extends ManagedTimerTask {
         private final UDDICoordinator coordinator;

@@ -473,9 +473,9 @@ public class UDDIUtilities {
 
     /**
      * allEndpointPairs must not be null or empty, and all left sides must be unique.
-     * @param allEndpointPairs Pair<String, String> collection of gateway external url to wsdl pairs
+     * @param allEndpointPairs Collection&lt;EndpointPair&gt; collection of gateway external url and wsdl endpoints
      */
-    static void validateAllEndpointPairs(final Collection<Pair<String, String>> allEndpointPairs){
+    static void validateAllEndpointPairs(final Collection<EndpointPair> allEndpointPairs){
         if (allEndpointPairs == null) throw new NullPointerException("allEndpointPairs cannot be null");
 
         if (allEndpointPairs.isEmpty()) throw new IllegalArgumentException("allEndpointPairs cannot be empty");
@@ -483,14 +483,14 @@ public class UDDIUtilities {
         //validate no two endpoints are the same
         Set<String> gatewayUrls = new HashSet<String>();
 
-        for (Pair<String, String> anEndpointPair : allEndpointPairs) {
-            if (anEndpointPair.left == null || anEndpointPair.left.trim().isEmpty())
+        for (EndpointPair anEndpointPair : allEndpointPairs) {
+            if (anEndpointPair.getEndPointUrl() == null || anEndpointPair.getEndPointUrl().trim().isEmpty())
                 throw new IllegalArgumentException("The value of any pair's left value must not be null or empty");
-            if (anEndpointPair.right == null || anEndpointPair.right.trim().isEmpty())
+            if (anEndpointPair.getWsdlUrl() == null || anEndpointPair.getWsdlUrl().trim().isEmpty())
                 throw new IllegalArgumentException("The value of any pair's right value must not be null or empty");
 
-            if(gatewayUrls.contains(anEndpointPair.left)) throw new IllegalArgumentException("All external gateway URLs must be unique");
-            gatewayUrls.add(anEndpointPair.left);
+            if(gatewayUrls.contains(anEndpointPair.getEndPointUrl())) throw new IllegalArgumentException("All external gateway URLs must be unique");
+            gatewayUrls.add(anEndpointPair.getEndPointUrl());
         }
     }
 
@@ -696,7 +696,7 @@ public class UDDIUtilities {
             final String wsdlPortName,
             final String wsdlPortBinding,
             final String wsdlPortBindingNamespace,
-            final Collection<Pair<String, String>> allEndpointPairs)
+            final Collection<EndpointPair> allEndpointPairs)
             throws PortNotFoundException,
             WsdlToUDDIModelConverter.MissingWsdlReferenceException,
             WsdlToUDDIModelConverter.NonSoapWsdlPortException,
@@ -840,6 +840,32 @@ public class UDDIUtilities {
             }
         }
         return false;
+    }
+
+    /**
+     * Get all BindingTemplates and each tModel each BindingTemplate references
+     */
+    static Map<String, Set<String>> getAllBindingAndTModelKeys(BusinessService service){
+        Map<String, Set<String>> allKeys = new HashMap<String, Set<String>>();
+
+        final BindingTemplates bindingTemplates = service.getBindingTemplates();
+        if(bindingTemplates == null) return allKeys;
+
+        final List<BindingTemplate> templates = bindingTemplates.getBindingTemplate();
+        if(templates == null) return allKeys;
+
+        for (BindingTemplate template : templates) {
+            Set<String> tModelKeys = new HashSet<String>();
+            final TModelInstanceDetails modelInstanceDetails = template.getTModelInstanceDetails();
+            final List<TModelInstanceInfo> tModelInstanceInfo = modelInstanceDetails.getTModelInstanceInfo();
+            for (TModelInstanceInfo instanceInfo : tModelInstanceInfo) {
+                tModelKeys.add(instanceInfo.getTModelKey());
+            }
+
+            allKeys.put(template.getBindingKey(), tModelKeys);
+        }
+
+        return allKeys;
     }
 
     //- PRIVATE

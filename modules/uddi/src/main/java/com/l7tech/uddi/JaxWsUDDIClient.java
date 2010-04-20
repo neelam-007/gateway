@@ -52,14 +52,12 @@ interface JaxWsUDDIClient {
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
 
     /**
-     * Publish a tModel. The tModel MUST NOT have been published before to UDDI. This is not a publish / update method.
-     * This method is ONLY for publishing for the first time.
+     * Publish a tModel.
      *
-     * @param tModelToPublish TModel to publish. It's tModelKey property must be null.
-     * @return true if the TModel was published, false otherwise.
+     * @param tModelToPublish TModel to publish.
      * @throws UDDIException any problems publishing to UDDI
      */
-    boolean publishTModel(final TModel tModelToPublish) throws UDDIException;
+    void publishTModel(final TModel tModelToPublish) throws UDDIException;
 
     /**
      * Retrieve the tModel with the supplied key
@@ -80,8 +78,8 @@ interface JaxWsUDDIClient {
     /**
      * Get the BusinessService for the supplied key
      * @param serviceKey String serviceKey of BusinessService to get. Required
-     * @return BusinessService, can be null if not found
-     * @throws UDDIException if problem searching UDDI
+     * @return BusinessService, never null as an exception is thrown if the business service is not found.
+     * @throws UDDIException if problem searching UDDI or if the serviceKey is not known to the UDDI Registry
      */
     BusinessService getBusinessService(final String serviceKey) throws UDDIException;
 

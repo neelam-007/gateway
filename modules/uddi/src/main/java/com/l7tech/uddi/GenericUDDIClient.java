@@ -45,12 +45,14 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException {
         if(bindingTemplate == null) throw new NullPointerException("bindingTemplate cannot be null");
 
+        final boolean isUpdate = bindingTemplate.getBindingKey() != null;
+        
         SaveBinding saveBinding = new SaveBinding();
         saveBinding.setAuthInfo(getAuthToken());
         saveBinding.getBindingTemplate().add(bindingTemplate);
         try {
             BindingDetail bindingDetail = getPublishPort().saveBinding(saveBinding);
-            logger.log(Level.FINE, "Saved bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
+            logger.log(Level.FINE, "Published" + ((isUpdate) ? " updated" : "") + " bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
                     " with serviceKey: " + bindingTemplate.getServiceKey());
             final String bindingKey =  bindingDetail.getBindingTemplate().get(0).getBindingKey();
             bindingTemplate.setBindingKey(bindingKey);
@@ -68,12 +70,13 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     public boolean publishBusinessService(final BusinessService businessService) throws UDDIException {
         if(businessService == null) throw new NullPointerException("businessService cannot be null");
         final String preSaveKey = businessService.getServiceKey();
+        final boolean isUpdate = preSaveKey != null;
 
         SaveService saveService = buildSaveService( getAuthToken(), businessService );
         try {
             ServiceDetail serviceDetail = getPublishPort().saveService(saveService);
             businessService.setServiceKey(serviceDetail.getBusinessService().get(0).getServiceKey());
-            logger.log(Level.FINE, "Saved BusinessService with key: " + businessService.getServiceKey());
+            logger.log(Level.FINE, "Published" + ((isUpdate) ? " updated" : "") + " BusinessService with key: " + businessService.getServiceKey());
             //Caller has to make this happen by reusing serviceKeys when logically correct
             return preSaveKey == null;
         } catch (DispositionReportFaultMessage drfm) {
@@ -84,13 +87,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
     }
 
     @Override
-    public boolean publishTModel(TModel tModelToPublish) throws UDDIException {
+    public void publishTModel(TModel tModelToPublish) throws UDDIException {
         if(tModelToPublish == null) throw new NullPointerException("tModelToPublish cannot be null");
 
-        if(tModelToPublish.getTModelKey() != null){
-            throw new IllegalArgumentException("Only new tModels can be published. tModel already has a non null key of: " + tModelToPublish.getTModelKey());
-        }
-        
+        final boolean isUpdate = tModelToPublish.getTModelKey() != null;
+
         UDDIPublicationPortType uddiPublicationPortType = getPublishPort();
         SaveTModel saveTModel = new SaveTModel();
         saveTModel.setAuthInfo(getAuthToken());
@@ -99,8 +100,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             TModelDetail tModelDetail = uddiPublicationPortType.saveTModel(saveTModel);
             TModel saved = tModelDetail.getTModel().get(0);
             tModelToPublish.setTModelKey(saved.getTModelKey());
-            logger.log(Level.FINE, "Published tModel to UDDI with key: " + tModelToPublish.getTModelKey());
-            return true;
+            logger.log(Level.FINE, "Published" + ((isUpdate) ? " updated" : "") + " tModel to UDDI with key: " + tModelToPublish.getTModelKey());
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error publishing TModel", drfm);
         } catch (RuntimeException e) {
@@ -204,7 +204,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      * Retrieve the BusinessService with the supplied key
      *
      * @param serviceKey String serviceKey of the BusinessService to get
-     * @return BusinessService of the supplied key. Null if not found
+     * @return BusinessService of the supplied key. Never null
      * @throws UDDIException if any problem retireving the BusinessService from the UDDI registry
      */
     @Override
@@ -217,7 +217,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         try {
             ServiceDetail serviceDetail = getInquirePort().getServiceDetail(getServiceDetail);
             List<BusinessService> services = serviceDetail.getBusinessService();
-            if(services.isEmpty()) return null;
+            if(services.isEmpty()) throw new UDDIException("No BusinessService found for serviceKey: " + serviceKey);//should never happen as exception will be thrown already
             return services.get(0);
         } catch (DispositionReportFaultMessage drfm) {
             throw buildFaultException("Error getting business service", drfm);
@@ -373,6 +373,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if(bindingKey == null || bindingKey.trim().isEmpty()) throw new IllegalArgumentException("bindingKey cannot be null or empty");
         Set<String> deleteSet = new HashSet<String>();
         deleteSet.add(bindingKey);
+        logger.log(Level.FINE, "Deleting bindingTemplate with key: " + bindingKey);
         deleteBindingTemplateFromSingleService(deleteSet);
     }
 
@@ -395,7 +396,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     }
                 }
                 if(wsdlNameToUse == null) return null;
-                uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(), bs.getServiceKey(), wsdlNameToUse, UDDIUtilities.extractNamespace(bs));
+                uddiBs = new UDDIBusinessService(bs.getName().get(0).getValue(), 
+                        bs.getServiceKey(),
+                        wsdlNameToUse,
+                        UDDIUtilities.extractNamespace(bs),
+                        UDDIUtilities.getAllBindingAndTModelKeys(bs));
             }else{
                 uddiBs = null;
             }
@@ -466,7 +471,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
             if(wsdlLocalName == null || wsdlLocalName.trim().isEmpty()) {
                 logger.log(Level.FINE, "BusinessService with serviceKey: " + bs.getServiceKey() + "does not have a keyedReference for the wsdl:service localname. Ignoring");
             }else{
-                businessServices.add(new UDDIBusinessService(uddiServiceName, bs.getServiceKey(), wsdlLocalName, namespace));
+                businessServices.add(new UDDIBusinessService(uddiServiceName,
+                        bs.getServiceKey(),
+                        wsdlLocalName,
+                        namespace,
+                        UDDIUtilities.getAllBindingAndTModelKeys(bs)));
             }
         }
         return businessServices;
@@ -1158,7 +1167,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
 
         //for systinet, if accessPoint.getUseType is null, we will just use the url value
-        //checking for version 2 implementations of techinca note - supporting "http" aswell for oracle
+        //checking for version 2 implementations of techincal note - supporting "http" aswell for oracle
         if (bindingTemplate.getTModelInstanceDetails() == null ||
                 accessPoint == null ||
                 (accessPoint.getUseType() != null &&
@@ -1471,6 +1480,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
                                 if ( bindingKey == null ) {
                                     // fall back to "http" useType.
+                                    //for any service we publish this will not be required as we always publish attribute useType="endPoint"
                                     for ( BindingTemplate bindingTemplate : bindingTemplateList ) {
                                         if ( bindingTemplate.getAccessPoint() != null &&
                                              (scheme==null || bindingTemplate.getAccessPoint().getValue().toLowerCase().startsWith( scheme+":" )) &&

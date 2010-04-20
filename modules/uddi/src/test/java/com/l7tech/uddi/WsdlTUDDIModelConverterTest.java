@@ -32,7 +32,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -62,10 +62,10 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final String gatewayURHttps = "https://localhost:8080/3828382";
-        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+        EndpointPair endpointPairHttps = new EndpointPair(gatewayURHttps, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -95,10 +95,10 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final String gatewayURHttps = "https://localhost:8080/3828382";
-        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+        EndpointPair endpointPairHttps = new EndpointPair(gatewayURHttps, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -128,7 +128,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
@@ -153,7 +153,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final String targetNameSpace = wsdl.getTargetNamespace();
 
@@ -233,7 +233,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -254,7 +254,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
         
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -272,7 +272,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -292,7 +292,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");
@@ -312,7 +312,7 @@ public class WsdlTUDDIModelConverterTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, "uddi:uddi_business_key");

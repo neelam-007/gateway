@@ -115,9 +115,8 @@ public class WsdlToUDDIModelConverter {
      * elements are defined. In this case an exception will be thrown.
      * <p/>
      *
-     * @param allEndpointPairs     Collection<Pair<String, String>> A bindingTemplate will be created for each pair in this
-     *                             collection. The left hand side is the external gateway url for service for the endpoint and the right hand side
-     *                             is the WSDL URL for the service. More than one Pair is included if the cluster defines more than one http(s) listener.
+     * @param allEndpointPairs     Collection&lt;EndpointPair&gt; A bindingTemplate will be created for each EndpointPair in this
+     *                             collection. More than one Pair is included if the cluster defines more than one http(s) listener.
      *                             Cannot be null or empty. Each String value is validated to be not null and not empty.
      * @param prependToServiceName String if not null this value will be prepended to the start of the name property for
      *                             each BusinessService created. The name property of each created BusinessService will be the corresponding
@@ -130,7 +129,7 @@ public class WsdlToUDDIModelConverter {
      *          wsdl:service definitions due to each wsdl:service containing references to bindings which either themselves
      *          don't exist or reference wsdl:portType elements which dont exist. This means we cannot do any conversion.
      */
-    public void convertWsdlToUDDIModel(final Collection<Pair<String, String>> allEndpointPairs,
+    public void convertWsdlToUDDIModel(final Collection<EndpointPair> allEndpointPairs,
                                        final String prependToServiceName,
                                        final String appendToServiceName) throws MissingWsdlReferenceException {
 
@@ -189,7 +188,7 @@ public class WsdlToUDDIModelConverter {
 
     private void createUddiBusinessService(final BusinessService businessService,
                                            final Service wsdlService,
-                                           final Collection<Pair<String, String>> allEndpointPairs,
+                                           final Collection<EndpointPair> allEndpointPairs,
                                            final String prependToServiceName,
                                            final String appendToServiceName) throws MissingWsdlReferenceException {
         final String serviceName = wsdlService.getQName().getLocalPart();
@@ -272,7 +271,7 @@ public class WsdlToUDDIModelConverter {
 
     List<BindingTemplate> createUddiBindingTemplate(final Map<String, TModel> serviceToTModels,
                                                     final Port wsdlPort,
-                                                    final Collection<Pair<String, String>> allEndpointPairs)
+                                                    final Collection<EndpointPair> allEndpointPairs)
             throws MissingWsdlReferenceException, NonSoapWsdlPortException, NonHttpBindingException {
 
         List<ExtensibilityElement> elements = wsdlPort.getExtensibilityElements();
@@ -312,8 +311,8 @@ public class WsdlToUDDIModelConverter {
             throw new NonHttpBindingException("wsdl:port does not implement a binding which has '" + HTTP_SCHEMAS_SOAP_HTTP + "' as it's transport URI");
 
         List<BindingTemplate> allTemplates = new ArrayList<BindingTemplate>();
-        for(Pair<String, String> anEndpointPair: allEndpointPairs){
-            allTemplates.add(getBindingTemplateForEndpoint(serviceToTModels, wsdlPort, anEndpointPair.left, anEndpointPair.right));
+        for(EndpointPair anEndpointPair: allEndpointPairs){
+            allTemplates.add(getBindingTemplateForEndpoint(serviceToTModels, wsdlPort, anEndpointPair.getEndPointUrl(), anEndpointPair.getWsdlUrl()));
         }
 
         return Collections.unmodifiableList(allTemplates);

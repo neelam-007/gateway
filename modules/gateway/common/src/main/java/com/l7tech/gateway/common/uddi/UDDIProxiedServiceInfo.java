@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -7,10 +8,20 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.CascadeType;
 
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.*;
 
+import java.beans.ExceptionListener;
+import java.io.ByteArrayInputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //todo UDDIProxiedServiceInfo contains both runtime and configuration data. Need to be refactored.
 /**
@@ -28,6 +39,16 @@ import java.util.HashSet;
 public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     public static final String ATTR_SERVICE_OID = "publishedServiceOid";
+
+    /**
+     * Collection<EndpointPair>. Do not modify (without adding an upgrade sql / task), used in upgrade 5.2 -> 5.3 script
+     */
+    public static final String ALL_ENDPOINT_PAIRS_KEY = "ALL_ENDPOINT_PAIRS_KEY";
+
+    /**
+     * Key to get the Set<String> of all bindingKeys published. Only exists when the type is ENDPOINT
+     */
+    public static final String ALL_BINDING_TEMPLATE_KEYS = "ALL_BINDING_TEMPLATE_KEYS";
 
     public enum PublishType{
         /**
@@ -50,22 +71,37 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public UDDIProxiedServiceInfo() {
     }
 
-    public static UDDIProxiedServiceInfo getEndPointPublishInfo(final long publishedServiceOid,
-                                                                final long uddiRegistryOid,
-                                                                final String uddiBusinessKey,
-                                                                final String uddiBusinessName,
-                                                                final String wsdlHash,
-                                                                final String publishedHostname,
-                                                                final boolean removeOtherBindings) {
-
+    private static UDDIProxiedServiceInfo getUDDIProxiedServiceInfo(final long publishedServiceOid,
+                                                                    final long uddiRegistryOid,
+                                                                    final String uddiBusinessKey,
+                                                                    final String uddiBusinessName,
+                                                                    final String wsdlHash,
+                                                                    final PublishType publishType) {
         final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
         info.setPublishedServiceOid(publishedServiceOid);
         info.setUddiRegistryOid(uddiRegistryOid);
         info.setUddiBusinessKey(uddiBusinessKey);
         info.setUddiBusinessName(uddiBusinessName);
-        info.setPublishType(PublishType.ENDPOINT);
         info.setWsdlHash(wsdlHash);
-        info.setPublishedHostname(publishedHostname);
+        info.setPublishType(publishType);
+        return info;
+    }
+
+    public static UDDIProxiedServiceInfo getEndPointPublishInfo(final long publishedServiceOid,
+                                                                final long uddiRegistryOid,
+                                                                final String uddiBusinessKey,
+                                                                final String uddiBusinessName,
+                                                                final String wsdlHash,
+                                                                final boolean removeOtherBindings) {
+
+        final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
+                publishedServiceOid,
+                uddiRegistryOid,
+                uddiBusinessKey,
+                uddiBusinessName,
+                wsdlHash,
+                PublishType.ENDPOINT);
+
         info.setRemoveOtherBindings(removeOtherBindings);
         return info;
     }
@@ -75,18 +111,16 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                     final String uddiBusinessKey,
                                                                     final String uddiBusinessName,
                                                                     final String wsdlHash,
-                                                                    final String publishedHostname,
-                                                                    final boolean updateProxyOnLocalChange
-    ) {
+                                                                    final boolean updateProxyOnLocalChange) {
 
-        final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
-        info.setPublishedServiceOid(publishedServiceOid);
-        info.setUddiRegistryOid(uddiRegistryOid);
-        info.setUddiBusinessKey(uddiBusinessKey);
-        info.setUddiBusinessName(uddiBusinessName);
-        info.setPublishType(PublishType.PROXY);
-        info.setWsdlHash(wsdlHash);
-        info.setPublishedHostname(publishedHostname);
+        final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
+                publishedServiceOid,
+                uddiRegistryOid,
+                uddiBusinessKey,
+                uddiBusinessName,
+                wsdlHash,
+                PublishType.PROXY);
+
         info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
@@ -96,17 +130,16 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                              final String uddiBusinessKey,
                                                                              final String uddiBusinessName,
                                                                              final String wsdlHash,
-                                                                             final String publishedHostname,
                                                                              final boolean updateProxyOnLocalChange) {
 
-        final UDDIProxiedServiceInfo info = new UDDIProxiedServiceInfo();
-        info.setPublishedServiceOid(publishedServiceOid);
-        info.setUddiRegistryOid(uddiRegistryOid);
-        info.setUddiBusinessKey(uddiBusinessKey);
-        info.setUddiBusinessName(uddiBusinessName);
-        info.setPublishType(PublishType.OVERWRITE);
-        info.setWsdlHash(wsdlHash);
-        info.setPublishedHostname(publishedHostname);
+        final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
+                publishedServiceOid,
+                uddiRegistryOid,
+                uddiBusinessKey,
+                uddiBusinessName,
+                wsdlHash,
+                PublishType.OVERWRITE);
+
         info.setUpdateProxyOnLocalChange(updateProxyOnLocalChange);
         return info;
     }
@@ -226,15 +259,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.publishType = publishType;
     }
 
-    @Column(name = "published_hostname", updatable = false)
-    public String getPublishedHostname() {
-        return publishedHostname;
-    }
-
-    public void setPublishedHostname(String publishedHostname) {
-        this.publishedHostname = publishedHostname;
-    }
-
     @Column(name = "publish_wspolicy_enabled")
     public boolean isPublishWsPolicyEnabled() {
         return publishWsPolicyEnabled;
@@ -280,8 +304,80 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         this.removeOtherBindings = removeOtherBindings;
     }
 
+    /**
+     * Persistence of serialized value with Hibernate. To get the unserialized value, call getProperty
+     */
+    @Column(name="properties", length=Integer.MAX_VALUE)
+    @Lob
+    public String getSerializedProps() throws java.io.IOException {
+        if (propsXml == null) {
+            // if no props, return empty string
+            if (props.size() < 1) {
+                propsXml = "";
+            } else {
+                BufferPoolByteArrayOutputStream output = null;
+                java.beans.XMLEncoder encoder = null;
+                try {
+                    output = new BufferPoolByteArrayOutputStream();
+                    encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
+                    encoder.setExceptionListener( new ExceptionListener() {
+                        @Override
+                        public void exceptionThrown( final Exception e ) {
+                            logger.log( Level.WARNING, "Error storing properties '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                        }
+                    });
+                    encoder.writeObject(props);
+                    encoder.close(); // writes closing XML tag
+                    encoder = null;
+                    propsXml = output.toString("UTF-8");
+                }
+                finally {
+                    if(encoder!=null) encoder.close();
+                    ResourceUtils.closeQuietly(output);
+                }
+            }
+        }
+
+        return propsXml;
+    }
+
+    /**
+     * Persistence of serialized value with Hibernate. To get the unserialized value, call getProperty
+     */
+    public void setSerializedProps(String serializedProps) {
+        propsXml = serializedProps;
+        if (serializedProps == null || serializedProps.length() < 2) {
+            props.clear();
+        } else {
+            ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
+            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in, null, new ExceptionListener() {
+                @Override
+                public void exceptionThrown( final Exception e ) {
+                    logger.log( Level.WARNING, "Error loading properties '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                }
+            });
+            //noinspection unchecked
+            props = (Map<String, Object>) decoder.readObject();
+        }
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    public <T> T getProperty(String name) {
+        return (T)props.get(name);
+    }
+
+    public void setProperty(String name, Object value) {
+        if ( value == null ) {
+            props.remove( name );
+        } else {
+            props.put(name, value);
+        }
+        propsXml = null;
+    }
+
     // PRIVATE
 
+    private static final Logger logger = Logger.getLogger(UDDIProxiedServiceInfo.class.getName());
     /**
      * Which published service this proxied service was published for
      */
@@ -301,7 +397,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     /**
      * Name of the Business Entity. Persisted to show in the UI
-     * //todo we should probably just retrieve this as required
      */
     private String uddiBusinessName;
 
@@ -324,15 +419,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
 
     private PublishType publishType;
 
-    /**
-     * This field is the hostname which was used when publishing information to UDDI. This is used when publishing
-     * bindingTemplates. To find if a business service contains binding templates published by the ssg, the hostname
-     * of the bindingTemplates accesspoint in combination with the oid of the published service are compared.
-     * The bindingKey is no longer persisted as we can publish more than one bindingTemplate for a service, http and
-     * https. 
-     */
-    private String publishedHostname;
-
     private boolean publishWsPolicyEnabled;
 
     private boolean publishWsPolicyFull;
@@ -342,5 +428,14 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     private String wsdlHash;
 
     private boolean removeOtherBindings;
+
+    private String propsXml;
+
+    /**
+     * props is backed by propsXml, which is persisted. This property is populated with the unserialized value of
+     * propsXml. Runtime values are added to this property, which will be serialized and persisted via propsXml when
+     * this entity is saved.
+     */
+    private Map<String, Object> props = new HashMap<String, Object>();
 }
 

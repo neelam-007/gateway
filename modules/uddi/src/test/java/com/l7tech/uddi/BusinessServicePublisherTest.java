@@ -11,6 +11,8 @@ import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.util.Pair;
 import com.l7tech.test.BugNumber;
 
+import javax.xml.bind.JAXB;
+import java.io.InputStream;
 import java.util.*;
 
 public class BusinessServicePublisherTest {
@@ -28,7 +30,7 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
@@ -71,10 +73,10 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final String gatewayURHttps = "https://localhost:8080/3828382";
-        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayWsdlUrl, gatewayURHttps);
+        EndpointPair endpointPairHttps = new EndpointPair(gatewayWsdlUrl, gatewayURHttps);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
@@ -116,10 +118,10 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final String gatewayURHttps = "https://localhost:8080/3828382";
-        Pair<String, String> endpointPairHttps = new Pair<String, String>(gatewayURHttps, gatewayWsdlUrl);
+        EndpointPair endpointPairHttps = new EndpointPair(gatewayURHttps, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
         final String businessKey = "uddi:uddi_business_key";
@@ -142,7 +144,7 @@ public class BusinessServicePublisherTest {
         final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader( "com/l7tech/uddi/SpaceOrderofBattleServiceLocalNameClash_Parent.wsdl" ));
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        final Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
 
         final int serviceOid = 3828382;
@@ -201,7 +203,7 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        final Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
 
@@ -211,7 +213,7 @@ public class BusinessServicePublisherTest {
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         Pair<List<BindingTemplate>, List<TModel>> bindingAndModels =
-                servicePublisher.publishEndPointToExistingService("serviceKey", "YessoTestWebServicesPort", "YessoTestWebServicesPortBinding", null, Arrays.asList(endpointPair), false);
+                servicePublisher.publishEndPointToExistingService("serviceKey", "YessoTestWebServicesPort", "YessoTestWebServicesPortBinding", null, Arrays.asList(endpointPair), null, null, false);
 
 
         testBindingTemplate(gatewayWsdlUrl, gatewayURL, "serviceKey", new Pair<BindingTemplate, List<TModel>>(bindingAndModels.left.get(0), bindingAndModels.right));
@@ -229,11 +231,9 @@ public class BusinessServicePublisherTest {
 
         final String gatewayWsdlUrl = "http://localhost:8080/3828382?wsdl";
         final String gatewayURL = "http://localhost:8080/3828382";
-        Pair<String, String> endpointPair = new Pair<String, String>(gatewayURL, gatewayWsdlUrl);
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
 
         final int serviceOid = 3828382;
-
-        //Test is now setup
 
         TestUddiClient uddiClient = new TestUddiClient();
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
@@ -303,6 +303,587 @@ public class BusinessServicePublisherTest {
         Assert.assertEquals("Invalid tModelKey found", "uddi:uddi.org:categorization:general_keywords", containsRef.getTModelKey());
         Assert.assertEquals("Invalid key name found", "Contains", containsRef.getKeyName());
         Assert.assertEquals("Invalid key value found", "pretend service key", containsRef.getKeyValue());
+
+    }
+
+    /**
+     * Upgrade from Pandora to Maytag requires the ability to be able to identify and delete bindingTemplates with just a host
+     * name. From Maytag on we track the full URL of all endpoints published, in Pandora we did'nt.
+     * This tests that with the hostname we will correctly delete previously published bindingTemplates
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testDeleteBindingTemplateOnUpgrade() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/Warehouse.wsdl"));
+
+        final String gatewayURL = "http://devautotest.l7tech.com:8080/service/3828382";
+        final int serviceOid = 3828382;
+
+        BusinessService businessService = new BusinessService();
+        businessService.setServiceKey("not needed");
+        BindingTemplate bt1 = new BindingTemplate();
+        bt1.setBindingKey("bt1key");
+        AccessPoint ap1 = new AccessPoint();
+        ap1.setValue(gatewayURL);
+        ap1.setUseType("endPoint");
+        bt1.setAccessPoint(ap1);
+        BindingTemplates bindingTemplates = new BindingTemplates();
+        bindingTemplates.getBindingTemplate().add(bt1);
+        businessService.setBindingTemplates(bindingTemplates);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, null, true);
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+        EndpointPair endpointPair = new EndpointPair();
+        endpointPair.setEndPointUrl("http://devautotest.l7tech.com");
+        servicePublisher.deleteGatewayBindingTemplates("key", new HashSet<EndpointPair>(Arrays.asList(endpointPair)), null);
+
+        Assert.assertEquals("Incorrect number of bindingTemplates deleted", 1, uddiClient.getNumBindingsDeleted());
+    }
+
+    /**
+     * Test that when publishing a business service which already exists in UDDI, and the only difference between the
+     * business service being published and the one in UDDI is the endpoint URLs, that no new keys should be created and
+     * the keys from the existing service should be set correctly on the business service being published. 
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testUpdateOfBusinessService() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://theoriginalhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel), false);
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+            servicePublisher.publishServicesToUDDIRegistry("business key",
+                            new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("Only 1 service should have had empty keys", 1, uddiClient.getNumServicesWithNoKey());
+        Assert.assertEquals("2 services should have been published", 2, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("Only 1 bindingTemplates should have had empty keys", 1, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("Only 2 tModels should have had empty keys", 2, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Only a single URL should have been found", 1, urls.size());
+        Assert.assertEquals("Incorrect published URL found", gatewayURL, urls.iterator().next());
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertEquals("Only a single WSDL URL should have been found", 1, wsdlUrls.size());
+        Assert.assertEquals("Incorrect published WSDL URL found", gatewayWsdlUrl, wsdlUrls.iterator().next());
+    }
+
+    /**
+     * Test that when publishing a business service which has already been published to UDDI, and the Business Service
+     * being published differs due to a new wsdl:port having been added to the local gateway WSDL. In this case
+     * the new wsdl:port will result in a newly published bindingTemplate, and 2 new tModels.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testPublishAndUpdateOfBusinessService() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats_new_endpoint.wsdl"));
+
+        final String gatewayWsdlUrl = "http://theoriginalhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        //these UDDI Objects represent the previously published WSDL, and are now out of date
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+            servicePublisher.publishServicesToUDDIRegistry("business key",
+                            new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have had empty keys", 0, uddiClient.getNumServicesWithNoKey());
+        Assert.assertEquals("Only 1 service should have been published", 1, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("Only one bindingTemplate should have had empty keys", 1, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("Only two tModels should have had empty keys", 2, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Only a single URL should have been found", 1, urls.size());
+        Assert.assertEquals("Incorrect published URL found", gatewayURL, urls.iterator().next());
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertEquals("Only a single WSDL URL should have been found", 1, wsdlUrls.size());
+        Assert.assertEquals("Incorrect published WSDL URL found", gatewayWsdlUrl, wsdlUrls.iterator().next());
+
+    }
+
+    /**
+     * Test that when publishing a business service which has already been published to UDDI, and the Business Service
+     * being published differs due to a wsdl:port having been removed from the local gateway WSDL. In this case
+     * the applicable bindingTemplate and it's 2 tModels should be deleted.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testEndpointRemovedUpdateOfBusinessService() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://theoriginalhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        //these UDDI Objects represent the previously published WSDL, and are now out of date
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTwoEndpoints.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+            servicePublisher.publishServicesToUDDIRegistry("business key",
+                            new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have had empty keys", 1, uddiClient.getNumServicesWithNoKey());
+        Assert.assertEquals("2 services should have been published", 2, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("Only 1 bindingTemplate should have had empty keys", 1, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("Only 2 tModels should have had empty keys", 2, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("Two tModels should have been deleted", 2, uddiClient.getNumTModelsDeleted());
+
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Only a single URL should have been found", 1, urls.size());
+        Assert.assertEquals("Incorrect published URL found", gatewayURL, urls.iterator().next());
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertEquals("Only a single WSDL URL should have been found", 1, wsdlUrls.size());
+        Assert.assertEquals("Incorrect published WSDL URL found", gatewayWsdlUrl, wsdlUrls.iterator().next());
+
+    }
+
+    /**
+     * Tests that when updating an overwritten service, that keys are correctly reused, as with the above test cases
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testUpdateOfOverwrittenBusinessService() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        EndpointPair securePair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        //these UDDI Objects represent the previously published WSDL, and are now out of date
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, true, Arrays.asList(bindingTModel, portTypeTModel));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+            final Set<String> publishedBindings = servicePublisher.overwriteServiceInUDDI(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "business key",
+                    Arrays.asList(endpointPair, securePair));
+            
+            Assert.assertEquals("Incorrect number of bindings published", 2, publishedBindings.size());
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have had empty keys", 0, uddiClient.getNumServicesWithNoKey());
+        Assert.assertEquals("Only 1 service should have been published", 1, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("Incorrect number of tModels with empty keys", 4, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("Incorrect number of bindingTemplates with empty keys", 2, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Incorrect number of unique endpoints URLs found", 2, urls.size());
+        Assert.assertTrue("Incorrect published URLs found", new HashSet<String>(Arrays.asList(gatewayURL, secureGatewayURL)).containsAll(urls));
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertTrue("Incorrect unique WSDL URLs found", new HashSet<String>(Arrays.asList(gatewayWsdlUrl)).containsAll(wsdlUrls));
+    }
+
+    /**
+     * Tests the publishing of an endpoint to UDDI for the first time
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testFirstPublishOfEndpoint() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://theoriginalhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://theoriginalhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        Set<String> bindingKeys;
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+
+            bindingKeys = servicePublisher.publishBindingTemplate(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "PlayerStatsWsdlPort",
+                    "PlayerStatsSoapBinding",
+                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    null,
+                    Arrays.asList(endpointPair),
+                    null,
+                    false);
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("Only 1 bindingTemplates should have had empty keys", 1, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("Only 2 tModels should have had empty keys", 2, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+        Assert.assertEquals("Only 1 bindingTemplate should have been published", 1, uddiClient.getNumPublishedBindingTemplates());
+
+        Assert.assertTrue("Incorrect bindingKeys found", bindingKeys.containsAll(uddiClient.getPublishedBindingTemplateKeys()));
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Only a single URL should have been found", 1, urls.size());
+        Assert.assertEquals("Incorrect published URL found", gatewayURL, urls.iterator().next());
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertEquals("Only a single WSDL URL should have been found", 1, wsdlUrls.size());
+        Assert.assertEquals("Incorrect published WSDL URL found", gatewayWsdlUrl, wsdlUrls.iterator().next());
+    }
+
+    /**
+     * Tests the updating of a previously published endpoint - upgrade from Pandora to Maytag
+     * The published endpoint should be updated correctly and the existing bindingTemplate keys and tModel keys
+     * reused
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testUpdatePublishOfEndpoint() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        //this reflects the current state of trunk - there are no secure WSDL URLs currently published
+        EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_3endpoints.xml");
+        final TModel bindingTModel3 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_3endpoints.xml");
+        final TModel portTypeTModel3 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        EndpointPair previousPair = new EndpointPair();
+        previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
+
+        Set<String> bindingKeys;
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+
+            bindingKeys = servicePublisher.publishBindingTemplate(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "PlayerStatsWsdlPort",
+                    "PlayerStatsSoapBinding",
+                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    Arrays.asList(previousPair),
+                    Arrays.asList(endpointPair, secureEndpointPair),
+                    null,
+                    false);
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("No bindingTemplates should have had empty keys", 0, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("No tModels should have had empty keys", 0, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+        Assert.assertEquals("Incorrect number of tModels published", 4, uddiClient.getNumTModelsPublished());
+        Assert.assertEquals("Only 2 bindingTemplates should have been published", 2, uddiClient.getNumPublishedBindingTemplates());
+
+
+        Assert.assertTrue("Incorrect bindingKeys found", bindingKeys.containsAll(uddiClient.getPublishedBindingTemplateKeys()));
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Incorrect number of unique endpoints URLs found", 2, urls.size());
+        Assert.assertTrue("Incorrect published URLs found", new HashSet<String>(Arrays.asList(gatewayURL, secureGatewayURL)).containsAll(urls));
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertTrue("Incorrect unique WSDL URLs found", new HashSet<String>(Arrays.asList(gatewayWsdlUrl)).containsAll(wsdlUrls));
+    }
+
+    /**
+     * Tests the updating of a previously published endpoint - from Maytag onwards. The existing BindingTemplate keys
+     * should be found by the bindingKey and not hostname and relative URL parts
+     * The published endpoint should be updated correctly and the existing bindingTemplate keys and tModel keys
+     * reused
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testUpdatePublishOfEndpointWithBindingKeys() throws Exception{
+
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        //this reflects the current state of trunk - there are no secure WSDL URLs currently published
+        EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_3endpoints.xml");
+        final TModel bindingTModel3 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_3endpoints.xml");
+        final TModel portTypeTModel3 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        EndpointPair previousPair = new EndpointPair();
+        previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
+
+        Set<String> bindingKeys;
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+
+            bindingKeys = servicePublisher.publishBindingTemplate(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "PlayerStatsWsdlPort",
+                    "PlayerStatsSoapBinding",
+                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    Arrays.asList(previousPair),
+                    Arrays.asList(endpointPair, secureEndpointPair),
+                    new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
+                    false);
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("No bindingTemplates should have had empty keys", 0, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("No tModels should have had empty keys", 0, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+        Assert.assertEquals("Incorrect number of tModels published", 4, uddiClient.getNumTModelsPublished());
+        Assert.assertEquals("Only 2 bindingTemplates should have been published", 2, uddiClient.getNumPublishedBindingTemplates());
+        
+
+        Assert.assertTrue("Incorrect bindingKeys found", bindingKeys.containsAll(uddiClient.getPublishedBindingTemplateKeys()));
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Incorrect number of unique endpoints URLs found", 2, urls.size());
+        Assert.assertTrue("Incorrect published URLs found", new HashSet<String>(Arrays.asList(gatewayURL, secureGatewayURL)).containsAll(urls));
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertTrue("Incorrect unique WSDL URLs found", new HashSet<String>(Arrays.asList(gatewayWsdlUrl)).containsAll(wsdlUrls));
+    }
+
+    /**
+     * Tests that when endpoints are published for a published service, that any previously published bindingTemplates
+     * which are no longer applicable are deleted from UDDI.
+     *
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8147)
+    public void testBindingTemplateListenerRemoved() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        //this reflects the current state of trunk - there are no secure WSDL URLs currently published
+        EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_3endpoints.xml");
+        final TModel bindingTModel3 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_3endpoints.xml");
+        final TModel portTypeTModel3 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        EndpointPair previousPair = new EndpointPair();
+        previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
+
+        Set<String> bindingKeys;
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+
+            bindingKeys = servicePublisher.publishBindingTemplate(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "PlayerStatsWsdlPort",
+                    "PlayerStatsSoapBinding",
+                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    Arrays.asList(previousPair),
+                    Arrays.asList(secureEndpointPair),
+                    new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
+                    false);
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
+        Assert.assertEquals("No bindingTemplates should have had empty keys", 0, uddiClient.getNumBindingTemplatesWithNoKey());
+        Assert.assertEquals("No tModels should have had empty keys", 0, uddiClient.getNumTModelsWithNoKey());
+        Assert.assertEquals("No services should have been deleted", 0, uddiClient.getNumServicesDeleted());
+        Assert.assertEquals("No tModels should have been deleted", 0, uddiClient.getNumTModelsDeleted());
+        Assert.assertEquals("Incorrect number of tModels published", 2, uddiClient.getNumTModelsPublished());
+        Assert.assertEquals("Only 1 bindingTemplates should have been published", 1, uddiClient.getNumPublishedBindingTemplates());
+
+
+        Assert.assertTrue("Incorrect bindingKeys found", bindingKeys.containsAll(uddiClient.getPublishedBindingTemplateKeys()));
+        final Set<String> urls = uddiClient.getUniqueUrls();
+        Assert.assertEquals("Incorrect number of unique endpoints URLs found", 1, urls.size());
+        Assert.assertTrue("Incorrect published URLs found", new HashSet<String>(Arrays.asList(gatewayURL, secureGatewayURL)).containsAll(urls));
+
+        final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
+        Assert.assertTrue("Incorrect unique WSDL URLs found", new HashSet<String>(Arrays.asList(gatewayWsdlUrl)).containsAll(wsdlUrls));
+
+        //A bindingTemplate should have been deleted as the gateway configuration changed to remove the http listener
+        Assert.assertEquals("Incorrect number of bindingTemplates deleted from UDDI", 1, uddiClient.getNumBindingsDeleted());
+
 
     }
 
@@ -422,24 +1003,29 @@ public class BusinessServicePublisherTest {
         return new TestUddiClient();
     }
 
-    //code to download and marshall UDDI objects
-//        final String inquiry = "http://donalwinxp.l7tech.com:53307/UddiRegistry/inquiry";
-//        final String publish = "http://donalwinxp.l7tech.com:53307/UddiRegistry/publish";
-//        final String subscription = "http://donalwinxp.l7tech.com:53307/UddiRegistry/subscription";
-//        final String security = "http://donalwinxp.l7tech.com:53307/UddiRegistry/security";
-//        GenericUDDIClient uddiClient = new GenericUDDIClient(inquiry, publish, subscription, security, "administrator", "7layer", PolicyAttachmentVersion.v1_2);
-//        UDDIClientConfig uddiClientConfig = new UDDIClientConfig(inquiry, publish, subscription, security, "administrator", "7layer");
-
-//        UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(uddiClient, uddiClientConfig);
-//        Set<String> serviceKeys = new HashSet<String>();
-//        serviceKeys.add("uddi:8617fae0-c987-11de-8486-efda8c54fa31");
-//        Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(serviceKeys);
-//        Assert.assertEquals("", 1, modelFromUddi.left.size());
+//    public static void main(String [] args) throws Exception{
+////        code to download and marshall UDDI objects
+//        final String inquiry = "http://systinet.l7tech.com:8080/uddi/inquiry";
+//        final String publish = "http://systinet.l7tech.com:8080/uddi/inquiry";
+//        final String subscription = "http://systinet.l7tech.com:8080/uddi/inquiry";
+//        final String security = "http://systinet.l7tech.com:8080/uddi/security";
+//        GenericUDDIClient uddiClient = new GenericUDDIClient(inquiry, publish, subscription, security, "admin", "7layer", PolicyAttachmentVersion.v1_2, null, true);
 //
-//        JAXB.marshal(modelFromUddi.left.get(0), new File("/home/darmstrong/Documents/Projects/Bondo/UDDI/Marshalled/BusinessService.xml"));
+//        UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(uddiClient);
+//
+//        Set<String> serviceKeys = new HashSet<String>();
+//        serviceKeys.add("uddi:e3544a00-2234-11df-acce-251c32a0acbe");
+//        final List<Pair<BusinessService, Map<String, TModel>>> modelFromUddi = serviceDownloader.getBusinessServiceModels(serviceKeys);
+////        Pair<List<BusinessService>, Map<String, TModel>> modelFromUddi = serviceDownloader.getBusinessServiceModels(serviceKeys);
+//        Assert.assertEquals("", 1, modelFromUddi.size());
+//
+//        final Pair<BusinessService, Map<String, TModel>> serviceMapPair = modelFromUddi.iterator().next();
+//        JAXB.marshal(serviceMapPair.left, new File("/home/darmstrong/Documents/Projects/Pandora/Bugs/Bug8147/UDDIObjects/PlayerStats.xml"));
 //        int i = 0;
-//        for(TModel model: modelFromUddi.right.values()) {
-//            JAXB.marshal(model, new File("/home/darmstrong/Documents/Projects/Bondo/UDDI/Marshalled/tModel" + i + ".xml"));
+//        for(TModel model: serviceMapPair.right.values()) {
+//            JAXB.marshal(model, new File("/home/darmstrong/Documents/Projects/Pandora/Bugs/Bug8147/UDDIObjects/tModel" + i + ".xml"));
 //            i++;
 //        }
+//
+//    }
 }

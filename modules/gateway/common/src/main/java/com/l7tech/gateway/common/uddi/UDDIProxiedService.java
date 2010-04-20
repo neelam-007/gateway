@@ -33,20 +33,6 @@ public class UDDIProxiedService extends PersistentEntityImp {
         }
     }
 
-
-    /**
-     * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
-     * the entity has been created based on application logic
-     *
-     * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
-     * changed in 'this'
-     */
-    public void throwIfFinalPropertyModified(final UDDIProxiedService original){
-        UDDIProxiedServiceInfo.testProperty("service key", this.getUddiServiceKey(), original.getUddiServiceKey());
-        UDDIProxiedServiceInfo.testProperty("service name", this.getUddiServiceName(), original.getUddiServiceName());
-        UDDIProxiedServiceInfo.testProperty("wsdl service name", this.getWsdlServiceName(), original.getWsdlServiceName());
-    }
-
     @Override
     @Version
     @Column(name = "version")

@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.uddi.EndpointPair;
 import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.*;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
@@ -13,7 +14,6 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -89,18 +89,18 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      * All URL's returned are specific to the published service with the serviceOid supplied.
      *
      * @param serviceOid long oid of the published service to generated external URLs for
-     * @return Collection<Pair<String, String>> Collection of Pairs where each pair is a distinct end point URL for the
+     * @return Collection&lt;EndpointPair&gt; Collection of Pairs where each pair is a distinct end point URL for the
      * service. There should only ever be one http pair and one https pair
      */
-    public Collection<Pair<String, String>> getAllExternalEndpointAndWsdlUrls( long serviceOid ){
-        final Collection<Pair<String,String>> endpointsAndWsdlUrls = new ArrayList<Pair<String,String>>();
+    public Set<EndpointPair> getAllExternalEndpointAndWsdlUrls( long serviceOid ){
+        final Set<EndpointPair> endpointsAndWsdlUrls = new HashSet<EndpointPair>();
 
         final Map<Long,String> connectorProtocols;
         synchronized (activeConnectorProtocols) {
             connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
         }
 
-        final Pair<String,String> httpPair = new Pair<String,String>(
+        final EndpointPair httpPair = new EndpointPair(
                 doGetExternalUrlForService( serviceOid, false ),
                 doGetExternalWsdlUrlForService( serviceOid, false ) );
 
@@ -109,7 +109,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         }
 
         if ( connectorProtocols.values().contains("HTTPS") ) {
-            endpointsAndWsdlUrls.add( new Pair<String,String>(
+            endpointsAndWsdlUrls.add( new EndpointPair(
                 doGetExternalUrlForService( serviceOid, true),
                 doGetExternalWsdlUrlForService( serviceOid, false )
             ) );

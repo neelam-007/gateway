@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" businessKey="uddi:systinet.com:demo:it" serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe">
+    <ns4:name>PlayerStatsServiceBug8147</ns4:name>
+    <ns4:description>wsdl:type representing service</ns4:description>
+    <ns4:bindingTemplates>
+        <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a0acbe">
+            <ns4:description>wsdl:type representing port</ns4:description>
+            <ns4:accessPoint useType="endPoint">http://hugh:8081/axis/services/PlayerStats/bug8147</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e327e2d0-2234-11df-acce-251c32a0acbe">
+                    <ns4:instanceDetails>
+                        <ns4:instanceParms>PlayerStatsWsdlPort</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a0acbe"/>
+            </ns4:tModelInstanceDetails>
+            <ns4:categoryBag>
+                <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+            </ns4:categoryBag>
+        </ns4:bindingTemplate>
+        <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a0acbd">
+            <ns4:description>wsdl:type representing port</ns4:description>
+            <ns4:accessPoint useType="endPoint">http://thegatewayhost.l7tech.com:8080/service/3828382</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e327e2d0-2234-11df-acce-251c32a0acff">
+                    <ns4:instanceDetails>
+                        <ns4:instanceParms>PlayerStatsWsdlPort</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a0acgg"/>
+            </ns4:tModelInstanceDetails>
+            <ns4:categoryBag>
+                <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+            </ns4:categoryBag>
+        </ns4:bindingTemplate>
+        <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a03333">
+            <ns4:description>wsdl:type representing port</ns4:description>
+            <ns4:accessPoint useType="endPoint">https://thegatewayhost.l7tech.com:8080/service/3828382</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e327e2d0-2234-11df-acce-251c32a04444">
+                    <ns4:instanceDetails>
+                        <ns4:instanceParms>PlayerStatsWsdlPort</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a05555"/>
+            </ns4:tModelInstanceDetails>
+            <ns4:categoryBag>
+                <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+            </ns4:categoryBag>
+        </ns4:bindingTemplate>
+    </ns4:bindingTemplates>
+    <ns4:categoryBag>
+        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats/bug8147" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="service" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localName"/>
+    </ns4:categoryBag>
+</businessService>
