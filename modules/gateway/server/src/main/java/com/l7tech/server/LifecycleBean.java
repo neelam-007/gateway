@@ -1,23 +1,22 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-
-import com.l7tech.server.event.system.LicenseEvent;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.LicenseManager;
 
 /**
  * Abstract base class for components with life cycles.
@@ -113,7 +112,7 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
                         @Override
                         public void run() {
                             try {
-                                doStart();
+                                start();
                             } catch (LifecycleException e) {
                                 logger.log(Level.SEVERE, "Unable to start subsystem: " + ExceptionUtils.getMessage(e), e);
                             }
