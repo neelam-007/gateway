@@ -61,7 +61,7 @@ import java.util.logging.Logger;
 /**
  * Bean that owns the Tomcat servlet container and all the HTTP/HTTPS connectors.
  * <p/>
- * It listens for entity chagne events for SsgConnector to know when to start/stop HTTP connectors.
+ * It listens for entity change events for SsgConnector to know when to start/stop HTTP connectors.
  */
 public class HttpTransportModule extends TransportModule implements PropertyChangeListener {
     protected static final Logger logger = Logger.getLogger(HttpTransportModule.class.getName());
@@ -221,8 +221,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (executor == null) return; // not yet started
 
         final String propertyName = evt.getPropertyName();
-        if (ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
-                ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS.equals(propertyName))
+        if ( ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
+             ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS.equals(propertyName))
         {
             try {
                 int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
@@ -232,8 +232,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 maxSize = adjusted.right;
 
                 logger.info("Changing HTTP/HTTPS concurrency to core=" + coreSize + ", max=" + maxSize);
-                executor.setMaxThreads(maxSize);
-                executor.setMinSpareThreads(coreSize);
+                if ( maxSize > executor.getMaxThreads() ) {
+                    executor.setMaxThreads(maxSize);
+                    executor.setMinSpareThreads(coreSize);
+                } else {
+                    executor.setMinSpareThreads(coreSize);
+                    executor.setMaxThreads(maxSize);
+                }
                 executor.stop();
                 executor.start();
             } catch (org.apache.catalina.LifecycleException e) {
@@ -759,7 +764,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 connectorExecutor.start();
                 embedded.addExecutor( connectorExecutor );
             } catch ( NumberFormatException nfe ) {
-                logger.warning("Inoring invalid thread pool size '"+sizeStr+"' for connector '"+connector.getName()+"'.");            
+                logger.warning("Ignoring invalid thread pool size '"+sizeStr+"' for connector '"+connector.getName()+"'.");
             } catch (org.apache.catalina.LifecycleException e) {
                 throw new ListenerException( "Unable to start HTTPS listener on port " + connector.getPort() + ": Unable to start thread pool '" + ExceptionUtils.getMessage(e) + "'.");
             }
@@ -882,7 +887,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *
      * @see #getInstanceId
      * @param id the instance ID to search for.  Required.
-     * @return  the corresopnding HttpTransportModule instance, or null if not found.
+     * @return  the corresponding HttpTransportModule instance, or null if not found.
      */
     public static HttpTransportModule getInstance(long id) {
         if (testMode) return testModule;
