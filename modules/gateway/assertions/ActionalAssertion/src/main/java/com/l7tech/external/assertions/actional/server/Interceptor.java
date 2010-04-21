@@ -74,7 +74,7 @@ class Interceptor {
             }
             try {
                 ci.setSize(requestMessage.getMimeKnob().getContentLength());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Error determining response size: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
 
@@ -143,7 +143,7 @@ class Interceptor {
             }
             try {
                 ci.setSize(responseMessage.getMimeKnob().getContentLength());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Error determining response size: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         } finally {
@@ -290,7 +290,7 @@ class Interceptor {
             }
             try {
                 si.setSize(responseMessage.getMimeKnob().getContentLength());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.log(Level.WARNING, "Error determining response size: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         } finally {
