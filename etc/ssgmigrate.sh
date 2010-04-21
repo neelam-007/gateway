@@ -55,16 +55,21 @@ checkRunningLocalGateway
 
 # This must be run as layer7
 if [ $UID -eq 0 ]; then
+    ESCAPED_ARGS=""
+    for ARG in "$@"; do
+        ESCAPED_ARGS="$ESCAPED_ARGS $(printf '%q' ${ARG})"
+    done
+
     # invoke backup as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${RESTORE_HOME}/SSGBackupUtility.jar migrate $*"
+        -jar ${RESTORE_HOME}/SSGBackupUtility.jar migrate ${ESCAPED_ARGS}"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${RESTORE_HOME}/SSGBackupUtility.jar migrate $*
+        -jar ${RESTORE_HOME}/SSGBackupUtility.jar migrate "$@"
 else
     echo "Must be layer7 to invoke ssgmigrate.sh"
 fi

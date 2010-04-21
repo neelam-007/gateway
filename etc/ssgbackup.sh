@@ -29,22 +29,27 @@ cd ${BACKUP_HOME}
 
 # This must be run as layer7
 if [ $UID -eq 0 ]; then
+    ESCAPED_ARGS=""
+    for ARG in "$@"; do
+        ESCAPED_ARGS="$ESCAPED_ARGS $(printf '%q' ${ARG})"
+    done
+
     # invoke backup as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup $*"
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup ${ESCAPED_ARGS}"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup $*
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup "$@"
 elif [ "$USER" == "gateway" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -Djava.util.logging.config.file=backupgatewaylogging.properties \
-        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup $*
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup "$@"
 else
     echo "Must be layer7 to invoke ssgbackup.sh"
     exit 1
