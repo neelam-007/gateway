@@ -86,42 +86,46 @@ public class InterceptorEventListener implements ApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        final ActionalConfig config = configuration.get();
-        if (config.enabled) { //dispatch to appropriate Interceptor handler
-            if (event instanceof MessageReceived) {
-                final MessageReceived messageReceivedEvent = (MessageReceived) event;
-                Interceptor.handleServerRequest(messageReceivedEvent, config.transmitProviderPayload, config.enforceInboundTrustZone, config.inboundHttpHeaderName);
-            } else if (event instanceof MessageProcessed) {
-                final MessageProcessed messageProcessedEvent = (MessageProcessed) event;
-                Interceptor.handleServerResponse(messageProcessedEvent, config.transmitProviderPayload);
-            } else if (event instanceof PreRoutingEvent) {
-                final PreRoutingEvent preRoutingEvent = (PreRoutingEvent) event;
-                Interceptor.handleClientRequest(preRoutingEvent, config.transmitConsumerPayload, config.getHeaderNameIfEnabled());
-            } else if (event instanceof PostRoutingEvent) {
-                final PostRoutingEvent postRoutingEvent = (PostRoutingEvent) event;
-                Interceptor.handleClientResponse(postRoutingEvent, config.transmitConsumerPayload);
-            }
-        } else if (!initialized) {
-            if (event instanceof AssertionModuleRegistrationEvent) {// TODO do we actually care about any other events?
-                //since all our init is done onModuleLoaded()
-                logger.log(Level.FINEST, "Interceptor received AssertionModuleRegistrationEvent.");
-                //a module (.aar file) has been registered
-                AssertionModuleRegistrationEvent moduleRegistrationEvent = (AssertionModuleRegistrationEvent) event;
-                Set<? extends Assertion> prototypes = moduleRegistrationEvent.getModule().getAssertionPrototypes();
-                if (!prototypes.isEmpty()) {//should never be empty - this module should always only have 1 assertion prototype
-                    Assertion prototype = prototypes.iterator().next();
-                    //check if this new modular assertion is ours
-                    if (prototype.getClass().getClassLoader() == this.getClass().getClassLoader()) {
-                        initialize();
-                    }
+        try {
+            final ActionalConfig config = configuration.get();
+            if (config.enabled) { //dispatch to appropriate Interceptor handler
+                if (event instanceof MessageReceived) {
+                    final MessageReceived messageReceivedEvent = (MessageReceived) event;
+                    Interceptor.handleServerRequest(messageReceivedEvent, config.transmitProviderPayload, config.enforceInboundTrustZone, config.inboundHttpHeaderName);
+                } else if (event instanceof MessageProcessed) {
+                    final MessageProcessed messageProcessedEvent = (MessageProcessed) event;
+                    Interceptor.handleServerResponse(messageProcessedEvent, config.transmitProviderPayload);
+                } else if (event instanceof PreRoutingEvent) {
+                    final PreRoutingEvent preRoutingEvent = (PreRoutingEvent) event;
+                    Interceptor.handleClientRequest(preRoutingEvent, config.transmitConsumerPayload, config.getHeaderNameIfEnabled());
+                } else if (event instanceof PostRoutingEvent) {
+                    final PostRoutingEvent postRoutingEvent = (PostRoutingEvent) event;
+                    Interceptor.handleClientResponse(postRoutingEvent, config.transmitConsumerPayload);
                 }
-            } else if (event instanceof Starting || event instanceof Started) {
-                logger.log(Level.FINEST, "Interceptor received Starting OR Started event.");
-                //do we need to capture these events...why not wait until the registration event (above)?
+            } else if (!initialized) {
+                if (event instanceof AssertionModuleRegistrationEvent) {// TODO do we actually care about any other events?
+                    //since all our init is done onModuleLoaded()
+                    logger.log(Level.FINEST, "Interceptor received AssertionModuleRegistrationEvent.");
+                    //a module (.aar file) has been registered
+                    AssertionModuleRegistrationEvent moduleRegistrationEvent = (AssertionModuleRegistrationEvent) event;
+                    Set<? extends Assertion> prototypes = moduleRegistrationEvent.getModule().getAssertionPrototypes();
+                    if (!prototypes.isEmpty()) {//should never be empty - this module should always only have 1 assertion prototype
+                        Assertion prototype = prototypes.iterator().next();
+                        //check if this new modular assertion is ours
+                        if (prototype.getClass().getClassLoader() == this.getClass().getClassLoader()) {
+                            initialize();
+                        }
+                    }
+                } else if (event instanceof Starting || event instanceof Started) {
+                    logger.log(Level.FINEST, "Interceptor received Starting OR Started event.");
+                    //do we need to capture these events...why not wait until the registration event (above)?
 
-                //gateway is booting & our module is loaded
-                initialize();
+                    //gateway is booting & our module is loaded
+                    initialize();
+                }
             }
+        } catch (InterceptorException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
