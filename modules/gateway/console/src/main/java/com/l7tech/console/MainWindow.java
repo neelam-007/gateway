@@ -57,6 +57,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.rmi.server.RMIClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -84,6 +86,14 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private static
     ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
+
+    private static Action goToAction = null;
+
+    /**
+     * Reference to the component which currently has focus
+     */
+    private static JComponent focusOwner = null;//todo add getter for this so that classes like ClipboardActions can also use this reference and remove it's focus tracking code
+
 
     /* this class classloader */
     private final ClassLoader cl = MainWindow.class.getClassLoader();
@@ -219,6 +229,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
 
     private static final String WARNING_BANNER_PROP_NAME = "logon.warningBanner";
+    public static final String L7_GO_TO = "l7goto";
 
     /**
      * MainWindow constructor comment.
@@ -648,9 +659,92 @@ public class MainWindow extends JFrame implements SheetHolder {
             mi = new JMenuItem(ClipboardActions.getGlobalPasteAction());
             menu.add(mi);
 
+            menu.add(new JMenuItem(getGlobalGoToAction()));
+            
             editMenu = menu;
         }
         return editMenu;
+    }
+
+    private static Action getGlobalGoToAction(){
+        if(goToAction == null){
+            goToAction = new ProxyAction(L7_GO_TO, KeyEvent.VK_G, KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_MASK));
+            goToAction.putValue(Action.NAME, resapplication.getString("Goto_MenuItem_text"));
+        }
+        return goToAction;
+    }
+
+    /**
+     * Proxy Action allows for an Action to configure a menu item in a global menu like the Edit menu, but allows
+     * the actual implementation of the Action to be specified by the Component on which it applies.
+     *
+     * When the ProxyAction fires it will look up the component with focus, and if it contains an action with the name
+     * of the 'actionCommand' property, it will be invoked.
+     *
+     */
+    private static class ProxyAction extends AbstractAction {
+        private final String actionCommand;
+
+        public ProxyAction(String actionCommand, int mnemonic, KeyStroke accelerator) {
+            super(actionCommand);
+            this.actionCommand = actionCommand;
+            if (mnemonic > 0) putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
+            if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
+        }
+
+        public ProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
+            this((String) actionToRun.getValue(Action.NAME),
+                    mnemonic,
+                    accelerator);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    if (focusOwner == null)
+                        return null;
+
+                    final ActionMap actionMap = focusOwner.getActionMap();
+                    Action a = actionMap.get(actionCommand);
+                    if (a != null) {
+                        a.actionPerformed(new ActionEvent(focusOwner,
+                                                          ActionEvent.ACTION_PERFORMED,
+                                                          actionCommand));
+                    }
+                    return null;
+                }
+            });
+        }
+    }
+
+    /**
+     * Called when the component with focus changes
+     *
+     * Many components are configured via their associated Action e.g. enabled state, text
+     * Any such Action whose state is determined by the component with focus should be updated in this method.
+     *
+     * Manage the state of actions responsible for goto Ctrl + G, Next search result F3 and previous search result
+     * Shift + F3 (search not implemented yet)
+     */
+    private static void updateActionsDependentOnFocusedComponent(){
+        boolean enableGoTo = false;
+        try {
+            if (focusOwner == null)
+                return;
+
+            ActionMap am = focusOwner.getActionMap();
+            if (am == null)
+                return;
+
+            if(am.get(L7_GO_TO) == null)
+                return;
+
+            enableGoTo = true;
+        } finally {
+            goToAction.setEnabled(enableGoTo);
+        }
     }
 
     /**
@@ -2513,6 +2607,28 @@ public class MainWindow extends JFrame implements SheetHolder {
               }
           };
         UIManager.addPropertyChangeListener(l);
+
+        //focus listener to track the component which currently has focus
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                Object fo = evt.getNewValue();
+                if (fo instanceof JComponent) {
+                    focusOwner = (JComponent)fo;
+                    //all logic for when a component is focused should go in the following method and not here
+                    updateActionsDependentOnFocusedComponent();
+                }
+            }
+        });
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                //all logic for when a component is focused should go in the following method and not here
+                updateActionsDependentOnFocusedComponent();
+            }
+        });
     }
 
 

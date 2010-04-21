@@ -3,7 +3,9 @@
  */
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
@@ -142,8 +144,52 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         ClipboardActions.replaceClipboardActionMap(this);
 
+        Action goTo = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DialogDisplayer.showInputDialog(PolicyTree.this,
+                        "Enter Assertion Ordinal: ",
+                        "Goto Assertion",
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null, null, null,
+                        new DialogDisplayer.InputListener() {
+                    @Override
+                    public void reportResult(Object option) {
+                        if (option == null)
+                            return;
+
+                        final int ordinal;
+                        try {
+                            ordinal = Integer.parseInt(option.toString());
+                        } catch (NumberFormatException e1) {
+                            //show a warning dialog
+                            DialogDisplayer.showMessageDialog(PolicyTree.this,
+                                    "Invalid Assertion Ordinal (Must be an integer >= "
+                                            + Assertion.MIN_DISPLAYED_ORDINAL + ")",
+                                    "Invalid Assertion Ordinal", JOptionPane.WARNING_MESSAGE, null);
+                            return;
+                        }
+
+                        if(ordinal < Assertion.MIN_DISPLAYED_ORDINAL){
+                            DialogDisplayer.showMessageDialog(PolicyTree.this,
+                                    "Invalid Assertion Ordinal (Must be an integer >= "
+                                            + Assertion.MIN_DISPLAYED_ORDINAL + ")",
+                                    "Invalid Assertion Ordinal", JOptionPane.WARNING_MESSAGE, null);
+                            return;
+                        }
+
+                        //goto the ordinal
+                        goToAssertionTreeNode(ordinal);
+                    }
+                });
+            }
+        };
+
+        this.getActionMap().put(MainWindow.L7_GO_TO, goTo);
+
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
         getActionMap().put("copyAll", new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 getSelectionModel().clearSelection();
                 ClipboardActions.getCopyAction().actionPerformed(e);
@@ -151,6 +197,51 @@ public class PolicyTree extends JTree implements DragSourceListener,
         });
 
         setTransferHandler(new PolicyTreeTransferHandler());
+    }
+
+    /**
+     * Callers should ensure they are on the swing thread
+     * @param assertionOrdinal int display the assertion tree node whose assertion has this ordinal
+     */
+    private void goToAssertionTreeNode(final int assertionOrdinal){
+
+        final Object rootObj = this.getModel().getRoot();
+        if (!(rootObj instanceof AssertionTreeNode)) throw new IllegalStateException("Invalid root found");//coding error
+
+        AssertionTreeNode root = (AssertionTreeNode) rootObj;
+
+        AssertionTreeNode foundNode = findTreeNode(root, assertionOrdinal);
+
+        //if null show warning
+        if(foundNode == null){
+            DialogDisplayer.showMessageDialog(PolicyTree.this,
+                    "Assertion with ordinal #"+ assertionOrdinal+" not found.",
+                    "Assertion not found", JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
+        final TreeNode[] pathToNode = foundNode.getPath();
+        this.setSelectionPath(new TreePath(pathToNode));
+
+    }
+
+    private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal){
+
+        final Assertion assertion = treeNode.asAssertion();
+        if(assertion.getOrdinal() == assertionOrdinal) return treeNode;
+
+        for(int i = 0; i < treeNode.getChildCount(); i++){
+            final TreeNode childTreeNode = treeNode.getChildAt(i);
+            if(!( childTreeNode instanceof AssertionTreeNode)) continue;
+
+            final AssertionTreeNode childAssertionTreeNode = (AssertionTreeNode) childTreeNode;
+            final Assertion childAssertion = childAssertionTreeNode.asAssertion();
+            if(childAssertion.getOrdinal() == assertionOrdinal) return childAssertionTreeNode;
+
+            final AssertionTreeNode foundNode = findTreeNode(childAssertionTreeNode, assertionOrdinal);
+            if(foundNode != null) return foundNode;
+        }
+        return null;
     }
 
     private Transferable createTransferable(TreePath[] paths) {

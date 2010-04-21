@@ -37,6 +37,12 @@ import java.util.*;
  */
 public abstract class Assertion implements Cloneable, Serializable {
     private static final Map metadataCache = Collections.synchronizedMap(new HashMap());
+
+    /**
+     * This is the minimum ordinal value displayed in the SSM
+     */
+    public static final int MIN_DISPLAYED_ORDINAL = 2;
+
     protected transient CompositeAssertion parent;
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
