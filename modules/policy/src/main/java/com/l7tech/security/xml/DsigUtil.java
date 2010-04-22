@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.security.xml;
@@ -13,6 +11,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -39,6 +38,29 @@ import static com.l7tech.security.xml.SupportedDigestMethods.*;
  */
 public class DsigUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+
+    /**
+     * Get the identifier attribute for the given element.
+     *
+     * <p>Note that the identifier attribute does not need to be present on the
+     * element.</p>
+     *
+     * @param element The element to process
+     * @return The identifier attribute name.
+     */
+    public static String getIdAttribute( final Element element ) {
+        String idAttr = "Id";
+
+        if ( element != null && SamlConstants.ELEMENT_ASSERTION.equals(element.getLocalName()) ) {
+            if ( SamlConstants.NS_SAML.equals(element.getNamespaceURI()) ) {
+                idAttr = SamlConstants.ATTR_ASSERTION_ID;
+            } else if ( SamlConstants.NS_SAML2.equals(element.getNamespaceURI()) ) {
+                idAttr = SamlConstants.ATTR_SAML2_ASSERTION_ID;
+            }
+        }
+
+        return idAttr;
+    }
 
     /**
      * Digitally sign the specified element, using the specified key and including the specified cert inline
@@ -74,14 +96,10 @@ public class DsigUtil {
         template.setIndentation(false);
         template.setPrefix("ds");
 
-        String idAttr = "Id";
-        if ("Assertion".equals(elementToSign.getLocalName()) &&
-                elementToSign.getNamespaceURI() != null &&
-                elementToSign.getNamespaceURI().indexOf("urn:oasis:names:tc:SAML") == 0)
-            idAttr = "AssertionID";
+        final String idAttr = getIdAttribute(elementToSign);
         String rootId = elementToSign.getAttribute(idAttr);
         if (rootId == null || rootId.length() < 1) {
-            rootId = "root";
+            rootId = SoapUtil.generateUniqueId( "root", 0 );
             elementToSign.setAttribute(idAttr, rootId);
         }
         Reference rootRef = template.createReference("#" + rootId);

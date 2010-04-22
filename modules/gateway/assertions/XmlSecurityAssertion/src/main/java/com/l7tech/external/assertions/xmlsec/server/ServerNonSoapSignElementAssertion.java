@@ -23,7 +23,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 /**
- * Server imlementation of signing arbitrary XML elements in a non-SOAP message.
+ * Server implementation of signing arbitrary XML elements in a non-SOAP message.
  */
 public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapSignElementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNonSoapSignElementAssertion.class.getName());
@@ -56,14 +56,16 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
     }
 
     private int generateId(int count, Element element) {
-        String id = element.getAttribute("Id");
+        final String idAttr = DsigUtil.getIdAttribute(element);
+
+        String id = element.getAttribute( idAttr );
         if (id != null && id.trim().length() > 0)
             return count;
 
         byte[] randbytes = new byte[16];
         random.nextBytes(randbytes);
         id = element.getLocalName() + "-" + count++ + "-" + HexUtils.hexDump(randbytes);
-        element.setAttribute("Id", id);
+        element.setAttribute( idAttr, id);
         return count;
     }    
 }
