@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
@@ -66,7 +67,7 @@ public class ClientRequestWssIntegrity extends ClientDomXpathBasedAssertion<Requ
 
             String[] digs = data.getAcceptedDigestAlgorithms();
             if (digs != null && digs.length > 0) {
-                wssReqs.setSignatureMessageDigest(digs[0]);
+                wssReqs.setSignatureMessageDigest(SupportedDigestMethods.fromAlgorithmId(digs[0]).getCanonicalName());
             }
 
             return AssertionStatus.NONE;
