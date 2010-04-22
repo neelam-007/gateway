@@ -292,6 +292,18 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
+
+        // Add Expand/Collapse assertion action
+        // Note: the expand/collaspe assertion action is not limited into the below condition checking, since the action is purely for GUI displaying purpose.
+        ExpandOrCollapseAssertionAction expandOrCollapseAssertionAction;
+        if (isExpanded()) {
+            expandOrCollapseAssertionAction = new CollapseAssertionAction();
+        } else {
+            expandOrCollapseAssertionAction = new ExpandAssertionAction();
+        }
+        expandOrCollapseAssertionAction.setEnabled(this.getChildCount() > 0);
+        list.add(expandOrCollapseAssertionAction);
+
         CompositeAssertionTreeNode ca;
         if (this instanceof CompositeAssertionTreeNode) {
             ca = (CompositeAssertionTreeNode)this;

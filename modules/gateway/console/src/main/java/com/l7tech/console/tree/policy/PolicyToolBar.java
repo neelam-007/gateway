@@ -17,10 +17,7 @@ import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
@@ -52,6 +49,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private JTree assertionPalette;
     private JTree assertionTree;
     private JButton enableOrDisableButton;
+    private JButton expandOrCollapseButton;
 
     public PolicyToolBar() {
         initialize();
@@ -81,6 +79,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     public void registerPolicyTree(JTree tree) {
         tree.addTreeSelectionListener(policyTreeListener);
         tree.getModel().addTreeModelListener(policyTreeModelListener);
+        tree.addTreeExpansionListener(policyTreeExpansionListener);
         rootAssertionNode = (AssertionTreeNode)tree.getModel().getRoot();
         lastAssertionNode = rootAssertionNode;
         lastAssertionNodes = new AssertionTreeNode[]{rootAssertionNode};
@@ -97,6 +96,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     public void unregisterPolicyTree(JTree tree) {
         if (tree == null) return;
         tree.removeTreeSelectionListener(policyTreeListener);
+        tree.removeTreeExpansionListener(policyTreeExpansionListener);
         final TreeModel model = tree.getModel();
         if (model != null) {
             model.removeTreeModelListener(policyTreeModelListener);
@@ -117,6 +117,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         getAssertionMoveUpAction().setEnabled(false);
         getAddAssertionAction().setEnabled(false);
         enableOrDisableButton.setEnabled(false);
+        expandOrCollapseButton.setEnabled(false);
     }
 
     /**
@@ -140,6 +141,12 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         d.height = 8;
         addSeparator(d);
 
+        expandOrCollapseButton = add(getExpandOrCollapseAssertionAction());
+        expandOrCollapseButton.setText(null);
+        expandOrCollapseButton.setFocusable(false);
+        expandOrCollapseButton.setMargin(new Insets(0, 0, 0, 0));
+        addSeparator(d);
+
         b = add(getAssertionMoveUpAction());
         b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
@@ -159,8 +166,8 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         enableOrDisableButton.setText(null);
         enableOrDisableButton.setFocusable(false);
         enableOrDisableButton.setMargin(new Insets(0, 0, 0, 0));
-
         addSeparator(d);
+        
         setFloatable(false);
     }
 
@@ -255,6 +262,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
     /**
      * The returned action is dependent on whether the selected assertion is disabled or enabled.
+     * @return an action to disable/enable assertions
      */
     private DisableOrEnableAssertionAction getDisableOrEnableAssertionAction() {
         // Check if the action is available or not.
@@ -284,6 +292,45 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         return enableOrDisableAction;
     }
 
+    /**
+     * The returned action depends on the expanding status of the selected assertion nodes.  If an expanded assertion is
+     * selected, then the action will an ExpandAssertionAction.  Vice verse.
+     * @return an action to expand/collapse the selected assertions.
+     */
+    private NodeAction getExpandOrCollapseAssertionAction() {
+        if (lastAssertionNode == null) {// lastAssertionNode is null only when the policy tool bar is being initialized.
+            return new ExpandAssertionAction();  // This is only for displaying purpose.
+        }
+
+        // Create a new action every time, since the expand/collapse status may be always changed.
+        AssertionTreeNode targetNode = getExpandedOrCollapsedNode();
+        return targetNode.isExpanded()?
+            new CollapseAssertionAction() {
+                @Override
+                public void performAction() {
+                    super.performAction();
+                    updateActions();
+                }
+            }
+            :
+            new ExpandAssertionAction() {
+                @Override
+                public void performAction() {
+                    super.performAction();
+                    updateActions();
+                }
+            };
+    }
+
+    /**
+     *  Get the tree node to be expanded or collapsed.
+     * @return a tree node to be processed, either root assertion node or last assertion node.
+     */
+    private AssertionTreeNode getExpandedOrCollapsedNode() {
+        return(assertionTree != null && assertionTree.getSelectionCount() == 0)?
+            rootAssertionNode : lastAssertionNode;
+    }
+
     private void updateActions() {
         boolean validPNode = validPaletteNode();
         boolean validPolicyAssertionNode = validPolicyAssertionNode();
@@ -309,13 +356,17 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         }
 
         enableOrDisableButton.setAction(getDisableOrEnableAssertionAction());
-        enableOrDisableButton.setText(null);        
+        enableOrDisableButton.setText(null);
+
+        expandOrCollapseButton.setAction(getExpandOrCollapseAssertionAction());
+        expandOrCollapseButton.setText(null);
 
         if (validPolicyAssertionNode) {
             getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveDownAction().setEnabled(canUpdate && canMoveDown(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveUpAction().setEnabled(canUpdate && canMoveUp(lastAssertionNode, lastAssertionNodes));
             enableOrDisableButton.setEnabled(canUpdate);
+            expandOrCollapseButton.setEnabled(getExpandedOrCollapsedNode().getChildCount() > 0);
         }
         if (validPNode) {
             // Allow an include policy node to receive a new assertion at the position below the include policy node.
@@ -418,6 +469,24 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
               updateActions();
           }
       };
+
+    private TreeExpansionListener policyTreeExpansionListener = new TreeExpansionListener() {
+        @Override
+        public void treeExpanded(TreeExpansionEvent event) {
+            TreePath path = event.getPath();
+            AssertionTreeNode node = (AssertionTreeNode) path.getLastPathComponent();
+            node.setExpanded(true);
+            updateActions();
+        }
+
+        @Override
+        public void treeCollapsed(TreeExpansionEvent event) {
+            TreePath path = event.getPath();
+            AssertionTreeNode node = (AssertionTreeNode) path.getLastPathComponent();
+            node.setExpanded(false);
+            updateActions();
+        }
+    };
 
     private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
         java.util.List<AssertionTreeNode> assertionTreeNodes = new ArrayList<AssertionTreeNode>();

@@ -39,6 +39,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     private java.util.List<Cookie> cookies = new ArrayList<Cookie>();
     protected String tooltip = null;
     protected Comparator<TreeNode> childrenComparator = DEFAULT_COMPARATOR;
+    protected boolean expanded; // Keep tracing if the node is expanded or collapsed (for gui purpose only).
     private boolean isCut = false;
 
     public boolean isCut() {
@@ -149,6 +150,22 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     public void setHasLoadedChildren(boolean b) {
         this.hasLoadedChildren = b;
+    }
+
+    /**
+     * Check if the tree node is expanded or collapsed.
+     * @return true if the node is expanded.  Otherwise, false if the node is collapsed.
+     */
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    /**
+     * Set the expanding status of the tree node.
+     * @param expanded: the expanding status
+     */
+    public void setExpanded(boolean expanded) {
+        this.expanded = expanded;
     }
 
     /**
