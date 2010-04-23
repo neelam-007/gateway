@@ -196,7 +196,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
      *
      * @throws NumberFormatException if any number cannot be parsed from the stringOrdinal
      */
-    private void goToAssertionTreeNode(final String stringOrdinal) throws NumberFormatException {
+    public void goToAssertionTreeNode(final String stringOrdinal) throws NumberFormatException {
 
         StringTokenizer tokenizer = new StringTokenizer(stringOrdinal, ".,-");
         final List<Integer> indexPath = new ArrayList<Integer>();

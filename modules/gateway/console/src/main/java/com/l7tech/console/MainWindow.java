@@ -88,6 +88,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private static Action goToAction = null;
+    private static Action findAction = null;
 
     /**
      * Reference to the component which currently has focus
@@ -136,7 +137,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     // actions
     private Action refreshAction = null;
-    private FindIdentityAction findAction = null;
+    private FindIdentityAction findIdentityAction = null;
     private Action prefsAction = null;
     private Action removeNodeAction = null;
     private Action connectAction = null;
@@ -230,6 +231,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private static final String WARNING_BANNER_PROP_NAME = "logon.warningBanner";
     public static final String L7_GO_TO = "l7goto";
+    public static final String L7_FIND = "l7search";
+    public static final String L7_ESC = "l7esc";
 
     /**
      * MainWindow constructor comment.
@@ -659,7 +662,11 @@ public class MainWindow extends JFrame implements SheetHolder {
             mi = new JMenuItem(ClipboardActions.getGlobalPasteAction());
             menu.add(mi);
 
+            //goto only applies to policy window currently, but could be extended
             menu.add(new JMenuItem(getGlobalGoToAction()));
+
+            //search only applies to policy window, but could be extended
+            menu.add(new JMenuItem(getGlobalFindAction()));
             
             editMenu = menu;
         }
@@ -673,6 +680,22 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
         return goToAction;
     }
+
+    private static Action getGlobalFindAction(){
+        if(findAction == null){
+            findAction = new ProxyAction(L7_FIND, KeyEvent.VK_S, KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK));
+            findAction.putValue(Action.NAME, resapplication.getString("Find_MenuItem_text"));
+        }
+        return findAction;
+    }
+
+//    private static Action getGlobalEscAction(){
+//        if(findAction == null){
+//            findAction = new ProxyAction(L7_FIND, KeyEvent.VK_S, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
+//            findAction.putValue(Action.NAME, "SHOULD NOT BE SHOWN");
+//        }
+//        return findAction;
+//    }
 
     /**
      * Proxy Action allows for an Action to configure a menu item in a global menu like the Edit menu, but allows
@@ -706,8 +729,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                     if (focusOwner == null)
                         return null;
 
-                    final ActionMap actionMap = focusOwner.getActionMap();
-                    Action a = actionMap.get(actionCommand);
+                    Action a = findActionInComponentOrParent(focusOwner, actionCommand);
+
                     if (a != null) {
                         a.actionPerformed(new ActionEvent(focusOwner,
                                                           ActionEvent.ACTION_PERFORMED,
@@ -725,11 +748,12 @@ public class MainWindow extends JFrame implements SheetHolder {
      * Many components are configured via their associated Action e.g. enabled state, text
      * Any such Action whose state is determined by the component with focus should be updated in this method.
      *
-     * Manage the state of actions responsible for goto Ctrl + G, Next search result F3 and previous search result
-     * Shift + F3 (search not implemented yet)
+     * Manage the state of actions responsible for goto Ctrl + G, Ctrl + F,  Next search result F3 and previous search
+     * result Shift + F3 (search not implemented yet)
      */
     private static void updateActionsDependentOnFocusedComponent(){
         boolean enableGoTo = false;
+        boolean enableFind = false;
         try {
             if (focusOwner == null)
                 return;
@@ -738,13 +762,39 @@ public class MainWindow extends JFrame implements SheetHolder {
             if (am == null)
                 return;
 
-            if(am.get(L7_GO_TO) == null)
-                return;
+            enableGoTo = findActionInComponentOrParent(focusOwner, L7_GO_TO) != null;
+            enableFind = findActionInComponentOrParent(focusOwner, L7_FIND) != null;
 
-            enableGoTo = true;
         } finally {
-            goToAction.setEnabled(enableGoTo);
+            getGlobalGoToAction().setEnabled(enableGoTo);
+            getGlobalFindAction().setEnabled(enableFind);
         }
+    }
+
+    private static Action findActionInComponentOrParent(final JComponent comp, final String actionCommand){
+
+        final ActionMap actionMap = comp.getActionMap();
+        Action a = actionMap.get(actionCommand);
+
+        if(a == null){
+            //search through it's parents
+            Container parent = comp.getParent();
+            while(parent != null){
+                if(!(parent instanceof JComponent)){
+                    break;
+                }
+                JComponent jParent = (JComponent) parent;
+                Action parentAction = jParent.getActionMap().get(actionCommand);
+                if(parentAction != null){
+                    a = parentAction;
+                    break;
+                }
+
+                parent = jParent.getParent();
+            }
+        }
+
+        return a;
     }
 
     /**
@@ -761,7 +811,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getNewProviderSubMenu());
             menu.add(getNewInternalUserAction());
             menu.add(getNewInternalGroupAction());
-            menu.add(getFindAction());
+            menu.add(getFindIdentityAction());
 
             menu.addSeparator();
 
@@ -1338,19 +1388,19 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return the find <CODE>Action</CODE>
      */
-    private Action getFindAction() {
-        if (findAction != null) return findAction;
+    private Action getFindIdentityAction() {
+        if (findIdentityAction != null) return findIdentityAction;
 
         Options options = new Options();
         options.setEnableDeleteAction(true);
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        findAction = new FindIdentityAction(options);
-        String aDesc = resapplication.getString("Find_MenuItem_text_description");
-        findAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
-        addPermissionRefreshListener(findAction);
+        findIdentityAction = new FindIdentityAction(options);
+        String aDesc = resapplication.getString("Search_IdentityProvider_MenuItem_text_description");
+        findIdentityAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+        addPermissionRefreshListener(findIdentityAction);
 
-        return findAction;
+        return findIdentityAction;
     }
 
     /**
@@ -1414,7 +1464,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @param connected true if connected, false otherwise
      */
     private void toggleConnectedMenus(boolean connected) {
-        getFindAction().setEnabled(connected);
+        getFindIdentityAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
         getCreatePolicyAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
@@ -2526,11 +2576,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (node == null) {
             toggleConnectedMenus(false);
             getRemoveNodeAction().setEnabled(false);
-            getFindAction().setEnabled(false);
+            getFindIdentityAction().setEnabled(false);
             return;
         }
         getRemoveNodeAction().setEnabled(node.canDelete());
-        getFindAction().setEnabled(false);
+        getFindIdentityAction().setEnabled(false);
         getRefreshAction().setEnabled(false);
     }
 

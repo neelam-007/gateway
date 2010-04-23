@@ -67,7 +67,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      * @return the action name
      */
     public String getName() {
-        return resapplication.getString("Find_MenuItem_text_name");
+        return resapplication.getString("Search_IdentityProvider_MenuItem_text");
     }
 
     /**

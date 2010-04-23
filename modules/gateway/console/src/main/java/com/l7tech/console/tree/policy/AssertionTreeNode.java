@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Class <code>AssertionTreeNode</code> is the base superclass for the
  * assertion tree policy nodes.
  */
-public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode {
+public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode implements Comparable<AssertionTreeNode>{
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
     private static final OneOrMoreAssertion ONEORMORE_PROTOTYPE = new OneOrMoreAssertion();
 
@@ -467,6 +467,19 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return false;
     }
 
+    @Override
+    public int compareTo(AssertionTreeNode o) {
+        final List<Integer> whatVirtualOrdinal = getVirtualOrdinal(o);
+        final List<Integer> thisOrdinals = getVirtualOrdinal(this);
+
+        for (int i = 0; i < thisOrdinals.size() && i < whatVirtualOrdinal.size(); i++) {
+            final int compare = thisOrdinals.get(i).compareTo(whatVirtualOrdinal.get(i));
+            if (compare != 0) return compare;
+        }
+        //e.g. 2.2.2 compare to 2.2.2.1 => 3 compare to 4 = -1 as 2.2.2 comes first
+        return new Integer(thisOrdinals.size()).compareTo(whatVirtualOrdinal.size());
+    }
+
     /**
      * assign the policy template.
      * todo: find a better place for this
@@ -558,6 +571,39 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             if (value instanceof EntityWithPolicyNode) return (EntityWithPolicyNode)value;
         }
         return null;
+    }
+
+    public static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
+        Stack<Integer> integerStack = new Stack<Integer>();
+        integerStack.push(treeNode.asAssertion().getOrdinal());
+
+        AbstractTreeNode parent = (AbstractTreeNode) treeNode.getParent();
+        while (parent != null) {
+            if (parent.asAssertion() instanceof Include){
+                integerStack.push(parent.asAssertion().getOrdinal());
+            }
+            parent = (AbstractTreeNode) parent.getParent();
+        }
+
+        List<Integer> ordinalList = new ArrayList<Integer>();
+        while(!integerStack.isEmpty()){
+            ordinalList.add(integerStack.pop());
+        }
+
+        return Collections.unmodifiableList(ordinalList);
+    }
+
+    public static String getVirtualOrdinalString(final AssertionTreeNode treeNode) {
+        final List<Integer> virtualOrdinal = getVirtualOrdinal(treeNode);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0, virtualOrdinalSize = virtualOrdinal.size(); i < virtualOrdinalSize; i++) {
+            Integer integer = virtualOrdinal.get(i);
+            sb.append(integer);
+            if(i < virtualOrdinalSize - 1) sb.append(".");
+        }
+
+        return sb.toString();
     }
 
     /**

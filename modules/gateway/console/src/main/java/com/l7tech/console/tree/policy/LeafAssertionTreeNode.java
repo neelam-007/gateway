@@ -70,7 +70,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
                     final MutableTreeNode parent = (MutableTreeNode)getParent();
                     int index = parent.getIndex(this);
                     if (index == -1) {
-                        throw new IllegalStateException("Unknown node to the three model " + this);
+                        throw new IllegalStateException("Unknown node to the tree model " + this);
                     }
                     model.insertNodeInto(as, parent, index + (i + 1));
                 }

@@ -1,8 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import java.awt.event.KeyListener;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,6 +50,10 @@ public class EditableSearchComboBox extends JComboBox {
         updateSearchableItems(searchableItems);
     }
 
+    public void addEscapeKeyListener(KeyListener listener){
+        editor.textField.addKeyListener(listener);
+    }
+    
     /**
      * Updates the list of searchable items with this one. 
      * @param searchableItems   The list of searchable items to be used as part of the look up list.
@@ -169,7 +176,9 @@ public class EditableSearchComboBox extends JComboBox {
          * @param searchableItems   The new updated searchable item list
          */
         public void updateSearchableItems(List searchableItems) {
-            items = searchableItems;
+            items.clear();
+            items.addAll(searchableItems);
+            updateFilteredItems();
         }
 
         /**
@@ -220,8 +229,9 @@ public class EditableSearchComboBox extends JComboBox {
     /**
      *  The text editor field which will be listened for search characters to filter the items.
      */
-    private class SearchFieldEditor implements ComboBoxEditor, DocumentListener {
+    public class SearchFieldEditor implements ComboBoxEditor, DocumentListener {
         public JTextField textField;
+        private AssertionTreeNode selectedNode;
         private volatile boolean isFiltering = false;
         private volatile boolean isSetting = false;
         private Filter filter;
@@ -249,11 +259,18 @@ public class EditableSearchComboBox extends JComboBox {
             if (anObject == null) {
                 textField.setText("");
             } else {
-                textField.setText(anObject.toString());
+                if(!(anObject instanceof AssertionTreeNode)) throw new IllegalStateException("Unexpected value found: " + anObject.getClass().getName());
+                AssertionTreeNode node = (AssertionTreeNode) anObject;
+                //todo make this a function so caller supplied logic for what is shown
+                textField.setText(node.getName());
+                selectedNode = node;
             }
             isSetting = false;
         }
 
+        public AssertionTreeNode getSelectedNode() {
+            return selectedNode;
+        }
 
         public Object getItem() {
             return textField.getText();
@@ -326,7 +343,7 @@ public class EditableSearchComboBox extends JComboBox {
          */
         public void clearSearch() {
             textField.setText("");
-            textField.setBackground(Color.white);;
+            textField.setBackground(Color.white);
         }
     }
 

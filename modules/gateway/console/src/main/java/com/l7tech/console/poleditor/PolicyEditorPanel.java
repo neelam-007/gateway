@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.poleditor;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -111,6 +112,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final PolicyValidator policyValidator;
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
+    private SearchForm searchForm;
 
     public interface PolicyEditorSubject {
         /**
@@ -392,11 +394,53 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setMessageAreaVisible(preferences.isPolicyMessageAreaVisible());
     }
 
+    private JPanel getFindPanel(){
+        if(searchForm != null) return searchForm.getSearchPanel();
+
+        searchForm = new SearchForm();
+
+        final MouseListener listener = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                searchForm.hidePanel();
+            }
+        };
+
+        searchForm.addCloseLabelListener(listener);
+        searchForm.hidePanel();
+        return searchForm.getSearchPanel();
+    }
+
     private JSplitPane getSplitPane() {
         if (splitPane != null) return splitPane;
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setBorder(null);
-        splitPane.add(getPolicyTreePane(), "top");
+
+        JPanel containerPanel = new JPanel();
+        containerPanel.setLayout(new BorderLayout());
+        containerPanel.add(getFindPanel(), BorderLayout.NORTH);
+        containerPanel.add(getPolicyTreePane(), BorderLayout.CENTER);
+
+        final Action findAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (searchForm != null) searchForm.showPanel();
+            }
+        };
+
+        containerPanel.getActionMap().put(MainWindow.L7_FIND, findAction);
+
+        policyTree.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if(e.getKeyCode() == KeyEvent.VK_ESCAPE){
+                    if (searchForm != null) searchForm.hidePanel();
+                }
+            }
+        });
+
+//        splitPane.add(getPolicyTreePane(), "top");
+        splitPane.add(containerPanel, "top");
 
         final JComponent messagePane = getMessagePane();
 
@@ -530,6 +574,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     final TreePath path = new TreePath(((DefaultMutableTreeNode)selNode).getPath());
                     policyTree.setSelectionPath(path);
                     policyTree.requestFocusInWindow();
+                    searchForm.setPolicyTree(policyTree);
                 }
             }
         });
@@ -1249,10 +1294,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     TreeModelListener treeModelListener = new TreeModelListener() {
         @Override
         public void treeNodesChanged(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
         }
 
         @Override
         public void treeNodesInserted(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
         }
 
         @Override
