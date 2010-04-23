@@ -259,11 +259,14 @@ public class EditableSearchComboBox extends JComboBox {
             if (anObject == null) {
                 textField.setText("");
             } else {
-                if(!(anObject instanceof AssertionTreeNode)) throw new IllegalStateException("Unexpected value found: " + anObject.getClass().getName());
-                AssertionTreeNode node = (AssertionTreeNode) anObject;
-                //todo make this a function so caller supplied logic for what is shown
-                textField.setText(node.getName());
-                selectedNode = node;
+                if(anObject instanceof AssertionTreeNode){
+                    AssertionTreeNode node = (AssertionTreeNode) anObject;
+                    //todo make this a function so caller supplied logic for what is shown
+                    textField.setText(node.getName());
+                    selectedNode = node;
+                } else{
+                    textField.setText(anObject.toString());
+                }
             }
             isSetting = false;
         }
