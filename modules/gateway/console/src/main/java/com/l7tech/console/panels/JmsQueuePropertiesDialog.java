@@ -303,7 +303,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         icfTextField.setDocument(new MaxLengthDocument(255));
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
         jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
-        jndiPasswordField.setDocument(new MaxLengthDocument(1024));
+        jndiPasswordField.setDocument(new MaxLengthDocument(255));
         // Case 2: in the Queue Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
         queueNameTextField.setDocument(new MaxLengthDocument(128));
