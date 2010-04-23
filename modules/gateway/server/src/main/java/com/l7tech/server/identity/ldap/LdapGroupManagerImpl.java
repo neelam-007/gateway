@@ -312,22 +312,22 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
                 for(int i = 0;i < membersAttribute.size();i++) {
                     try {
-                        String member = (String)membersAttribute.get(i);
+                        final String member = (String)membersAttribute.get(i);
                         if( MemberStrategy.MEMBERS_ARE_LOGIN.equals(memberStrategy) ) {
-                            if ( member.equals(user.getLogin()) ) {
+                            if ( membershipEquality( member, user.getLogin() ) ) {
                                 return true;
                             }
                         } else if ( MemberStrategy.MEMBERS_ARE_DN.equals(memberStrategy) ) {
-                            if ( member.equals(user.getId()) ) {
+                            if ( membershipEquality( member, user.getId() ) ) {
                                 return true;
                             }
                         } else if ( MemberStrategy.MEMBERS_ARE_NVPAIR.equals(memberStrategy) ) {
                             for ( String nameAttribute : getDistinctUserNameAttributeNames() ) {
-                                if ( member.equals(nameAttribute + "=" + user.getName()) ) {
+                                if ( membershipEquality( member, nameAttribute + "=" + user.getName() ) ) {
                                     return true;
                                 }
                             }
-                            if ( member.equals(user.getId()) ) {
+                            if ( membershipEquality( member, user.getId() ) ) {
                                 return true;
                             }
                         }
@@ -377,6 +377,18 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         }
 
         return false;
+    }
+
+    private boolean membershipEquality( final String value1, final String value2 ) {
+        boolean equal;
+
+        if ( compareMembershipCaseSensitively ) {
+            equal = value1.equals( value2 );
+        } else {
+            equal = value1.equalsIgnoreCase( value2 );
+        }
+
+        return equal;
     }
 
     private String groupNameFromNVPair( final String memberString ) {
@@ -1293,6 +1305,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
     private static final String memberNvPairAttribute = SyspropUtil.getString( "com.l7tech.server.identity.ldap.memberAttrName", "cn" );
     private static final boolean useSingleMemberNvPair = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.useMemberAttrName", false );
+    private static final boolean compareMembershipCaseSensitively = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.compareMembersCaseSensitively", true );
 
     private static final int DEFAULT_GROUP_CACHE_SIZE = 0; // Zero for backwards compatibility
     private static final int DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000;
