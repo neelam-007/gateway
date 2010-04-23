@@ -302,13 +302,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
         // Case 1: in the JNDI Tab
         icfTextField.setDocument(new MaxLengthDocument(255));
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
-        jndiUsernameTextField.setDocument(new MaxLengthDocument(32));
-        jndiPasswordField.setDocument(new MaxLengthDocument(32));
+        jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
+        jndiPasswordField.setDocument(new MaxLengthDocument(1024));
         // Case 2: in the Queue Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
         queueNameTextField.setDocument(new MaxLengthDocument(128));
-        queueUsernameTextField.setDocument(new MaxLengthDocument(32));
-        queuePasswordField.setDocument(new MaxLengthDocument(32));
+        queueUsernameTextField.setDocument(new MaxLengthDocument(255));
+        queuePasswordField.setDocument(new MaxLengthDocument(255));
         // Case 3: in the Inbound or Outbound Options Tab
         inboundReplySpecifiedQueueField.setDocument(new MaxLengthDocument(128));
         failureQueueNameTextField.setDocument(new MaxLengthDocument(128));
@@ -935,12 +935,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
             String jndiPassword = props.getProperty(Context.SECURITY_CREDENTIALS);
             useJndiCredentialsCheckBox.setSelected(jndiUsername != null || jndiPassword != null);
             jndiUsernameTextField.setText(jndiUsername);
+            jndiUsernameTextField.setCaretPosition( 0 );
             jndiPasswordField.setText(jndiPassword);
+            jndiPasswordField.setCaretPosition( 0 );
             enableOrDisableJndiCredentials();
 
             useQueueCredentialsCheckBox.setSelected(connection.getUsername() != null || connection.getPassword() != null);
             queueUsernameTextField.setText(connection.getUsername());
+            queueUsernameTextField.setCaretPosition( 0 );
             queuePasswordField.setText(connection.getPassword());
+            queuePasswordField.setCaretPosition( 0 );
             enableOrDisableQueueCredentials();
 
             String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);

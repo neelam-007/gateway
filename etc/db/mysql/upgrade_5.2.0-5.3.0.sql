@@ -52,8 +52,8 @@ INSERT INTO cluster_properties
     values (-500301, 0, "upgrade.task.500301", "com.l7tech.server.upgrade.Upgrade52To53UpdateRoles");
 
 
-ALTER TABLE jms_endpoint ADD COLUMN is_template tinyint NOT NULL default '0' after is_message_source, MODIFY COLUMN destination_name varchar(128);
-ALTER TABLE jms_connection ADD COLUMN provider_type varchar(255) after properties, ADD COLUMN is_template tinyint NOT NULL default '0' after password, MODIFY COLUMN jndi_url varchar(255), MODIFY COLUMN factory_classname varchar(255);
+ALTER TABLE jms_endpoint ADD COLUMN is_template tinyint NOT NULL default '0' after is_message_source, MODIFY COLUMN destination_name varchar(128), MODIFY COLUMN username varchar(255) default '', MODIFY COLUMN password varchar(255) default '';
+ALTER TABLE jms_connection ADD COLUMN provider_type varchar(255) after properties, ADD COLUMN is_template tinyint NOT NULL default '0' after password, MODIFY COLUMN jndi_url varchar(255), MODIFY COLUMN factory_classname varchar(255), MODIFY COLUMN username varchar(255) default '', MODIFY COLUMN password varchar(255) default '';
 
 --
 -- Upgrade task for DN canonicalization (This is a repeat of a 5.2 upgrade task as the format has changed)

@@ -118,8 +118,8 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         return super.getName();
     }
 
-    @Size(max=32)
-    @Column(name="username", length=32)
+    @Size(max=255)
+    @Column(name="username", length=255)
     public String getUsername() {
         return _username;
     }
@@ -129,8 +129,8 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _username = username;
     }
 
-    @Size(max=32)
-    @Column(name="password", length=32)
+    @Size(max=255)
+    @Column(name="password", length=255)
     public String getPassword() {
         return _password;
     }

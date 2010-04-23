@@ -107,10 +107,10 @@ public class EntityValidationTest {
         jmsEndpoint.setUsername( "" );
         valid( jmsEndpoint, "empty username" );
 
-        jmsEndpoint.setUsername( string(32, 'a') );
+        jmsEndpoint.setUsername( string(255, 'a') );
         valid( jmsEndpoint, "longest username" );
 
-        jmsEndpoint.setUsername( string(33, 'a') );
+        jmsEndpoint.setUsername( string(256, 'a') );
         invalid( jmsEndpoint, "long username" );
 
         jmsEndpoint.setUsername( null );
@@ -119,10 +119,10 @@ public class EntityValidationTest {
         jmsEndpoint.setPassword( "" );
         valid( jmsEndpoint, "empty password" );
 
-        jmsEndpoint.setPassword( string(32, 'a') );
+        jmsEndpoint.setPassword( string(255, 'a') );
         valid( jmsEndpoint, "longest password" );
 
-        jmsEndpoint.setPassword( string(33, 'a') );
+        jmsEndpoint.setPassword( string(256, 'a') );
         invalid( jmsEndpoint, "long password" );
 
         jmsEndpoint.setPassword( null );
@@ -233,10 +233,10 @@ public class EntityValidationTest {
         jmsConnection.setUsername( "" );
         valid( jmsConnection, "empty username" );
 
-        jmsConnection.setUsername( string(32, 'a') );
+        jmsConnection.setUsername( string(255, 'a') );
         valid( jmsConnection, "longest username" );
 
-        jmsConnection.setUsername( string(33, 'a') );
+        jmsConnection.setUsername( string(256, 'a') );
         invalid( jmsConnection, "long username" );
 
         jmsConnection.setUsername( null );
@@ -245,10 +245,10 @@ public class EntityValidationTest {
         jmsConnection.setPassword( "" );
         valid( jmsConnection, "empty password" );
 
-        jmsConnection.setPassword( string(32, 'a') );
+        jmsConnection.setPassword( string(255, 'a') );
         valid( jmsConnection, "longest password" );
 
-        jmsConnection.setPassword( string(33, 'a') );
+        jmsConnection.setPassword( string(256, 'a') );
         invalid( jmsConnection, "long password" );
 
         jmsConnection.setPassword( null );
