@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -131,8 +132,10 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
         cacheSizeSpinner.setModel(new SpinnerNumberModel(assertion.getCacheSize(), 0, 100000, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cacheSizeSpinner, "Cache size"));
+        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, cachePeriodSpinner );
         cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache maximum age"));
+        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, cachePeriodSpinner );
 
         validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
@@ -238,7 +241,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
                     comboStuff.add(item);
                 }
             }
-        } catch (Exception e) {
+        } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, "problem reading providers", e);
         }
 

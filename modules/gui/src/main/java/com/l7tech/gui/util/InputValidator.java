@@ -167,6 +167,29 @@ public class InputValidator implements FocusListener {
 
             return null;
         }
+
+        /**
+         * Validate the given validator when the spinner is changed.
+         *
+         * <p>WARNING: The JSpinner may only validate after focus is lost,
+         * which can mean a button may have been pressed before the
+         * re-validation occurs.</p>
+         *
+         * @param validator The validator to validate
+         * @param spinner The spinner to listen to
+         */
+        public static void validateOnChange( final InputValidator validator, final JSpinner spinner ) {
+            final RunOnChangeListener listener = new RunOnChangeListener(){
+                @Override
+                protected void run() {
+                    validator.isValid();
+                }
+            };
+            if ( spinner.getEditor() instanceof JSpinner.DefaultEditor ) {
+                ((JSpinner.DefaultEditor)spinner.getEditor()).getTextField().getDocument().addDocumentListener(listener);
+            }
+            spinner.addChangeListener( listener );
+        }
     }
 
     /**
