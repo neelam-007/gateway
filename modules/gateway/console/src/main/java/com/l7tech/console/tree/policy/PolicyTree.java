@@ -144,7 +144,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         ClipboardActions.replaceClipboardActionMap(this);
 
-        Action goTo = new AbstractAction() {
+        Action goToAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 DialogDisplayer.showInputDialog(PolicyTree.this,
@@ -158,34 +158,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         if (option == null)
                             return;
 
-                        final int ordinal;
                         try {
-                            ordinal = Integer.parseInt(option.toString());
+                            goToAssertionTreeNode(option.toString());
                         } catch (NumberFormatException e1) {
                             //show a warning dialog
                             DialogDisplayer.showMessageDialog(PolicyTree.this,
                                     "Invalid Assertion Ordinal (Must be an integer >= "
                                             + Assertion.MIN_DISPLAYED_ORDINAL + ")",
                                     "Invalid Assertion Ordinal", JOptionPane.WARNING_MESSAGE, null);
-                            return;
                         }
-
-                        if(ordinal < Assertion.MIN_DISPLAYED_ORDINAL){
-                            DialogDisplayer.showMessageDialog(PolicyTree.this,
-                                    "Invalid Assertion Ordinal (Must be an integer >= "
-                                            + Assertion.MIN_DISPLAYED_ORDINAL + ")",
-                                    "Invalid Assertion Ordinal", JOptionPane.WARNING_MESSAGE, null);
-                            return;
-                        }
-
-                        //goto the ordinal
-                        goToAssertionTreeNode(ordinal);
                     }
                 });
             }
         };
 
-        this.getActionMap().put(MainWindow.L7_GO_TO, goTo);
+        this.getActionMap().put(MainWindow.L7_GO_TO, goToAction);
 
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
         getActionMap().put("copyAll", new AbstractAction() {
@@ -201,21 +188,42 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     /**
      * Callers should ensure they are on the swing thread
-     * @param assertionOrdinal int display the assertion tree node whose assertion has this ordinal
+     *
+     * @param stringOrdinal display the assertion tree node whose assertion has this ordinal. May be either
+     * a single integer e.e. '2' or may use a sub index syntax e.g. 2.3.2, where each integer before the last, must
+     * resolve to an include assertion, otherwise an error message will be shown the currently selected assertion will
+     * not change
+     *
+     * @throws NumberFormatException if any number cannot be parsed from the stringOrdinal
      */
-    private void goToAssertionTreeNode(final int assertionOrdinal){
+    private void goToAssertionTreeNode(final String stringOrdinal) throws NumberFormatException {
+
+        StringTokenizer tokenizer = new StringTokenizer(stringOrdinal, ".,-");
+        final List<Integer> indexPath = new ArrayList<Integer>();
+        while (tokenizer.hasMoreTokens()) {
+            indexPath.add(Integer.parseInt(tokenizer.nextToken()));
+        }
 
         final Object rootObj = this.getModel().getRoot();
-        if (!(rootObj instanceof AssertionTreeNode)) throw new IllegalStateException("Invalid root found");//coding error
+        if (!(rootObj instanceof AssertionTreeNode))
+            throw new IllegalStateException("Invalid root found");//coding error
 
         AssertionTreeNode root = (AssertionTreeNode) rootObj;
 
-        AssertionTreeNode foundNode = findTreeNode(root, assertionOrdinal);
+        AssertionTreeNode foundNode;
+        try {
+            foundNode = findTreeNode(root, indexPath);
+        } catch (OrdinalIndexOutOfRangeException e) {
+            DialogDisplayer.showMessageDialog(PolicyTree.this,
+                    "Assertion with ordinal #" + stringOrdinal + " not found. " + e.getMessage(),
+                    "Assertion not found", JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
 
         //if null show warning
-        if(foundNode == null){
+        if (foundNode == null) {
             DialogDisplayer.showMessageDialog(PolicyTree.this,
-                    "Assertion with ordinal #"+ assertionOrdinal+" not found.",
+                    "Assertion with ordinal #" + stringOrdinal + " not found.",
                     "Assertion not found", JOptionPane.WARNING_MESSAGE, null);
             return;
         }
@@ -225,10 +233,37 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     }
 
-    private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal){
+    private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final List<Integer> assertionOrdinal) throws OrdinalIndexOutOfRangeException{
 
-        final Assertion assertion = treeNode.asAssertion();
-        if(assertion.getOrdinal() == assertionOrdinal) return treeNode;
+        AssertionTreeNode foundAssertion = treeNode;
+        for (int i = 0, assertionOrdinalSize = assertionOrdinal.size(); i < assertionOrdinalSize; i++) {
+            Integer index = assertionOrdinal.get(i);
+            foundAssertion = findTreeNode(foundAssertion, index);
+            if(foundAssertion == null) return null;
+            if (assertionOrdinal.size() > 1 && i != assertionOrdinal.size() - 1) { //any assertion before the last must be an include
+                if (!(foundAssertion.asAssertion() instanceof Include)) {
+                    //when indexing e.g. 1.2.3 and were not on the last assertion and we don't find an include, then the index is invalid
+                    return null;
+                }
+            }
+        }
+
+        return foundAssertion;
+    }
+
+    //todo remove when ordinals are modified to be at 1, so users won't make this mistake while the first displayed ordinal is 2
+    private class OrdinalIndexOutOfRangeException extends Exception{
+        private OrdinalIndexOutOfRangeException(String message) {
+            super(message);
+        }
+    }
+
+    private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal) throws OrdinalIndexOutOfRangeException{
+
+        if(assertionOrdinal < Assertion.MIN_DISPLAYED_ORDINAL)
+            throw new OrdinalIndexOutOfRangeException(
+                    "Ordinal value '" + assertionOrdinal+"' is out of range for assertion ordinals. " +
+                            "Each ordinal Must be >=" + Assertion.MIN_DISPLAYED_ORDINAL);
 
         for(int i = 0; i < treeNode.getChildCount(); i++){
             final TreeNode childTreeNode = treeNode.getChildAt(i);
@@ -236,7 +271,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             final AssertionTreeNode childAssertionTreeNode = (AssertionTreeNode) childTreeNode;
             final Assertion childAssertion = childAssertionTreeNode.asAssertion();
+
             if(childAssertion.getOrdinal() == assertionOrdinal) return childAssertionTreeNode;
+
+            if( childAssertion instanceof Include) continue;//includes are only accessed if indexed correctly i.e. don't look at the includes children
 
             final AssertionTreeNode foundNode = findTreeNode(childAssertionTreeNode, assertionOrdinal);
             if(foundNode != null) return foundNode;
