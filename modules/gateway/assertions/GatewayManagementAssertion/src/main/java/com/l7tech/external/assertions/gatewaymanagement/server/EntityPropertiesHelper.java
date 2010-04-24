@@ -202,6 +202,7 @@ class EntityPropertiesHelper {
             "version",
             "name",
             "laxResolution",
+            "tracingEnabled",
             "oid",
             "disabled"
         ) ) )

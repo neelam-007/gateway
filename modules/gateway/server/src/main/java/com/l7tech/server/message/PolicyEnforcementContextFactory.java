@@ -2,6 +2,8 @@ package com.l7tech.server.message;
 
 import com.l7tech.message.Message;
 
+import java.util.concurrent.Callable;
+
 /**
  * Factory for PolicyEnforcementContexts
  */
@@ -35,40 +37,52 @@ public class PolicyEnforcementContextFactory {
                                                                            final Message response,
                                                                            final boolean replyExpected ) {
         // Construct PEC
+        final PolicyEnforcementContext context =
+                createUnregisteredPolicyEnforcementContext( request, response, replyExpected );
+
+        return registerThreadLocal(context, instanceHolder);
+    }
+
+    /**
+     * Create a new PEC for the given messages, without replacing any current thread-local PEC that is already
+     * registered.
+     *
+     * @param request The request message to use (optional, created if missing)
+     * @param response  The response message to use (optional, created if missing)
+     * @param replyExpected True if a reply is expected for the context
+     * @return The new unregistered PEC
+     */
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final Message request,
+                                                                                       final Message response,
+                                                                                       final boolean replyExpected ) {
+        // Construct PEC
         final PolicyEnforcementContextImpl context = new PolicyEnforcementContextImpl( request, response );
         context.setReplyExpected( replyExpected );
 
-        // Handle current instance tracking
-        PolicyEnforcementContextFactory.instanceHolder.set(context);
-        context.runOnClose( new Runnable(){
-            @Override
-            public void run() {
-                PolicyEnforcementContextFactory.instanceHolder.set(null);
-            }
-        } );
-        
         return context;
     }
 
     /**
      * Create a PEC that delegates to the given parent for messages and authentication.
      *
-     * @param parent
-     * @return
+     * @param parent parent context.  Required.
+     * @return the new child PEC.  Never null.
      */
     public static PolicyEnforcementContext createPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
-        final PolicyEnforcementContext context = new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null) );
+        final PolicyEnforcementContext context = createUnregisteredPolicyEnforcementContext(parent);
 
-        // Handle current instance tracking
-        PolicyEnforcementContextFactory.childInstanceHolder.set(context);
-        context.runOnClose( new Runnable(){
-            @Override
-            public void run() {
-                PolicyEnforcementContextFactory.childInstanceHolder.set(null);
-            }
-        } );
+        return registerThreadLocal(context, childInstanceHolder);
+    }
 
-        return context;
+    /**
+     * Create a PEC that delegates to the given parent for messages and authentication, without replacing any current
+     * thread-local child or instance PEC that is already registered.
+     *
+     * @param parent parent context.  Required.
+     * @return the new child PEC.  Never null.
+     */
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final PolicyEnforcementContext parent ) {
+        return new ChildPolicyEnforcementContext( parent, new PolicyEnforcementContextImpl(null, null) );
     }
 
     /**
@@ -87,7 +101,38 @@ public class PolicyEnforcementContextFactory {
         return current;
     }
 
+    /**
+     * Perform an action on the current thread with the specific context registered as the current
+     * thread-local context, restoring any previous context before returning.
+     *
+     * @param context the context to use.  Required.
+     * @param callable stuff to do while the thread-local context is set.
+     * @return the result from the callable
+     * @throws Exception if the callable throws an exception
+     */
+    public static <T> T doWithCurrentContext( PolicyEnforcementContext context, Callable<T> callable ) throws Exception {
+        PolicyEnforcementContext prev = childInstanceHolder.get();
+        try {
+            childInstanceHolder.set(context);
+            return callable.call();
+        } finally {
+            childInstanceHolder.set(prev);
+        }
+    }
+
     //- PRIVATE
+
+    private static PolicyEnforcementContext registerThreadLocal( final PolicyEnforcementContext context, final ThreadLocal<PolicyEnforcementContext> threadLocal ) {
+        // Handle current instance tracking
+        threadLocal.set(context);
+        context.runOnClose( new Runnable(){
+            @Override
+            public void run() {
+                threadLocal.set(null);
+            }
+        } );
+        return context;
+    }
 
     public static final ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
     public static final ThreadLocal<PolicyEnforcementContext> childInstanceHolder = new ThreadLocal<PolicyEnforcementContext>();

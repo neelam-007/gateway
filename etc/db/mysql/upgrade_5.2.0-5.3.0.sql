@@ -80,6 +80,9 @@ INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-500303, 0, "upgrade.task.500303", "com.l7tech.server.upgrade.Upgrade52To53UpdateJmsProviderType");
 
+-- Add flag for enable/disable policy trace debugging of published service
+ALTER TABLE published_service ADD COLUMN tracing TINYINT(1) NOT NULL DEFAULT 0 AFTER wss_processing;
+
 --
 -- Reenable FK at very end of script
 --

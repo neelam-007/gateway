@@ -9,6 +9,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
+import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -19,6 +20,16 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyCheckpointState;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -31,6 +42,9 @@ import java.util.*;
  * Action to edit the published service properties
  */
 public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNode> {
+    public static final String INTERNAL_TAG_TRACE_POLICY = "debug-trace";
+    public static final String TRACE_POLICY_GUID_CLUSTER_PROP = "trace.policy.guid";
+
     public EditServiceProperties(ServiceNode node) {
         super(node);
     }
@@ -54,7 +68,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
     protected void performAction() {
         final ServiceNode serviceNode = ((ServiceNode)node);
         boolean hasUpdatePermission;
-        PublishedService svc;
+        final PublishedService svc;
         try {
             svc = serviceNode.getEntity();
             hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
@@ -67,9 +81,13 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
         final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        final boolean wasTracingEnabled = svc.isTracingEnabled();
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
+                    if (svc.isTracingEnabled())
+                        checkTracePolicyStatus(wasTracingEnabled);
+
                     serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
 
@@ -118,6 +136,109 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                 serviceNode.clearCachedEntities();
             }
         });
+    }
+
+    /**
+     * If a service was saved with tracing enabled, ensure a trace policy exists, and offer to allow the
+     * admin to immediately open it for editing.
+     * @param wasPreviouslyEnabled true if tracing was already enabled on this service before its properties dialog was opened
+     */
+    private void checkTracePolicyStatus(boolean wasPreviouslyEnabled) {
+        try {
+            // Ensure a trace policy exists
+            PolicyHeader header = getOrCreateTracePolicyHeader();
+            String guid = header.getGuid();
+            ClusterPropertyCrud.putClusterProperty(TRACE_POLICY_GUID_CLUSTER_PROP, guid);
+
+            // Don't bother offering to edit the trace policy if tracing was already on for this service
+            if (wasPreviouslyEnabled)
+                return;
+
+            final Action editAction = prepareEditAction();
+
+            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                    "Do you want to edit the debug trace policy now?",
+                    "Edit Trace Policy",
+                    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if (JOptionPane.YES_OPTION == option) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                editAction.actionPerformed(null);
+                            }
+                        });
+                    }
+                }
+            });
+
+        } catch (ObjectModelException e) {
+            err("configure audit sink", e);
+        } catch (PolicyAssertionException e) {
+            err("configure audit sink", e);
+        }
+    }
+
+
+    private Action prepareEditAction() throws FindException, PolicyAssertionException, SaveException {
+        PolicyHeader header = getOrCreateTracePolicyHeader();
+        PolicyEntityNode node = new PolicyEntityNode(header);
+        return new EditPolicyAction(node, true);
+    }
+
+    private PolicyHeader getTracePolicyHeader() throws FindException {
+        Collection<PolicyHeader> allInternals = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
+        for (PolicyHeader internal : allInternals) {
+            if (INTERNAL_TAG_TRACE_POLICY.equals(internal.getDescription())) {
+                return internal;
+            }
+        }
+        return null;
+    }
+
+    private PolicyHeader getOrCreateTracePolicyHeader() throws FindException, PolicyAssertionException, SaveException {
+        PolicyHeader header = getTracePolicyHeader();
+        if (header == null) {
+            // Create new trace policy with default settings
+            Policy policy = makeDefaultTracePolicyEntity();
+            PolicyCheckpointState checkpoint = Registry.getDefault().getPolicyAdmin().savePolicy(policy, true);
+            policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(checkpoint.getPolicyOid());
+            header = new PolicyHeader(policy);
+
+            // Refresh service tree
+            ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+            tree.refresh();
+        }
+        return header;
+    }
+
+    private static Policy makeDefaultTracePolicyEntity() {
+        String theXml = makeDefaultTracePolicyXml();
+        Policy policy = new Policy(PolicyType.INTERNAL, "[Internal Debug Trace Policy]", theXml, false);
+        policy.setInternalTag(INTERNAL_TAG_TRACE_POLICY);
+        return policy;
+    }
+
+    private static String makeDefaultTracePolicyXml() {
+        AllAssertion all = makeDefaultTracePolicyAssertions();
+        return WspWriter.getPolicyXml(all);
+    }
+
+    private static AllAssertion makeDefaultTracePolicyAssertions() {
+        AllAssertion all = new AllAssertion();
+        all.addChild(new CommentAssertion("A simple debug trace policy."));
+        all.addChild(new CommentAssertion("This policy will be invoked after every assertion for any service with debug tracing enabled."));
+        all.addChild(new CommentAssertion("For example, we can trigger auditing of trace information about the assertion that just finished."));
+        all.addChild(new AuditAssertion("WARNING"));
+        all.addChild(new AuditDetailAssertion("TRACE: service.oid=${trace.service.oid} assertion.path=${trace.assertion.pathstr} policy.oid=${trace.policy.oid} assertion.ordinal=${trace.assertion.ordinal} assertion.shortname=${trace.assertion.shortname} status=${trace.status}"));
+        return all;
+    }
+
+    private void err(String what, Throwable t) {
+        final String msg = "Unable to " + what + ": " + ExceptionUtils.getMessage(t);
+        logger.log(Level.WARNING, msg, t);
+        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Unable to " + what, msg, null);
     }
 
     private void sortChildren(AbstractTreeNode node){

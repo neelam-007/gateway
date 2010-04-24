@@ -106,6 +106,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JTextField wsdlBindingTextField;
     private JLabel wsdlBindingNamespaceLabel;
     private JTextField wsdlBindingNamespaceTextField;
+    private JCheckBox tracingCheckBox;
     private String ssgURL;
     private final boolean canUpdate;
     private UDDIServiceControl uddiServiceControl;
@@ -145,6 +146,7 @@ public class ServicePropertiesDialog extends JDialog {
         nameField.setText(subject.getName());
         oidField.setText(subject.getId());        
         enableWSSSecurityProcessingCheckBox.setSelected(subject.isWssProcessingEnabled());
+        tracingCheckBox.setSelected(subject.isTracingEnabled());
         if (subject.isDisabled()) {
             disableRadio.setSelected(true);
         } else {
@@ -628,6 +630,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(enableRadio);
         enableIfHasUpdatePermission(laxResolutionCheckbox);
         enableIfHasUpdatePermission(enableWSSSecurityProcessingCheckBox);
+        enableIfHasUpdatePermission(tracingCheckBox);
     }
 
     private void applyReadOnlySettings(boolean isReadOnly) {
@@ -743,6 +746,7 @@ public class ServicePropertiesDialog extends JDialog {
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());
         subject.setWssProcessingEnabled(enableWSSSecurityProcessingCheckBox.isSelected());
+        subject.setTracingEnabled(tracingCheckBox.isSelected());
 
         if (newWSDLUrl != null) {
             try {

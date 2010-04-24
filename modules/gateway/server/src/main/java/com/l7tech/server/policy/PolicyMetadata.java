@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.UsesVariables;
 
@@ -37,4 +38,11 @@ public interface PolicyMetadata extends UsesVariables, SetsVariables {
      * @return true if the policy processes (request) multipart.
      */
     boolean isMultipart();
+
+    /**
+     * Get the PolicyHeader for the Policy described by this metadata.
+     *
+     * @return the header information, or null if this is somehow not available.
+     */
+    PolicyHeader getPolicyHeader();
 }

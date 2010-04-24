@@ -4,12 +4,10 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.common.http.HttpMethod;
-import static com.l7tech.common.http.HttpMethod.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -39,6 +37,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
+
+import static com.l7tech.common.http.HttpMethod.*;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * A service that is published by the SecureSpan Gateway.  Primarily contains references to a WSDL and a policy.
@@ -76,6 +77,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         setHttpMethods(objToCopy.getHttpMethodsReadOnly());
         setLaxResolution(objToCopy.isLaxResolution());
         setWssProcessingEnabled(objToCopy.isWssProcessingEnabled());
+        setTracingEnabled(objToCopy.isTracingEnabled());
         setPolicy(objToCopy.getPolicy()==null ? null : new Policy(objToCopy.getPolicy()));
         setRoutingUri(objToCopy.getRoutingUri());
         setSoap(objToCopy.isSoap());
@@ -558,6 +560,14 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         this.wssProcessingEnabled = wssProcessingEnabled;
     }
 
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
+    }
+
+    public void setTracingEnabled(boolean tracingEnabled) {
+        this.tracingEnabled = tracingEnabled;
+    }
+
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.ASSERTION)
     public Folder getFolder() {
@@ -620,6 +630,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     private Set<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
     private boolean laxResolution;
     private boolean wssProcessingEnabled = true;
+    private boolean tracingEnabled = false;
     private Folder folder;
 
     private transient WsdlStrategy wsdlStrategy;

@@ -8,11 +8,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.CircularPolicyException;
-import com.l7tech.policy.InvalidPolicyException;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyDeletionForbiddenException;
-import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
@@ -1047,7 +1043,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
-                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, collectMetadata( assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion );
+                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, collectMetadata( thisPolicy, assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion );
                 pce = new PolicyCacheEntry( thisPolicy, ServerPolicy, null );
             } else {
                 pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
@@ -1131,7 +1127,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      *
      * Used policies must be in cache.
      */
-    private PolicyMetadata collectMetadata( final Assertion rootAssertion, final Set<Long> usedPolicyOids ) {
+    private PolicyMetadata collectMetadata( final Policy policy, final Assertion rootAssertion, final Set<Long> usedPolicyOids ) {
         boolean tarariWanted = false;
         boolean wssInPolicy = false;
         boolean multipartInPolicy = false;
@@ -1182,6 +1178,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final boolean metaMultipartInPolicy = multipartInPolicy;
         final String[] metaVariablesUsed = allVarsUsed.toArray(new String[allVarsUsed.size()]);
         final VariableMetadata[] metaVariablesSet = allVarsSet.values().toArray(new VariableMetadata[allVarsSet.values().size()]);
+        final PolicyHeader policyHeader = new PolicyHeader(policy);
         return new PolicyMetadata() {
             @Override
             public boolean isTarariWanted() {
@@ -1206,6 +1203,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             @Override
             public VariableMetadata[] getVariablesSet() {
                 return metaVariablesSet;
+            }
+
+            @Override
+            public PolicyHeader getPolicyHeader() {
+                return policyHeader;
             }
         };
     }

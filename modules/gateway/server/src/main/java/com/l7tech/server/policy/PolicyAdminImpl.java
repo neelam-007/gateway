@@ -14,13 +14,14 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.map;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.map;
 
 /**
  * @author alex
@@ -108,12 +109,12 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     @Override
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
-        checkForActiveAuditSinkPolicy(oid);
+        checkForActiveAuditSinkOrTracePolicy(oid);
         policyManager.delete(oid);
         policyManager.deleteRoles(oid);
     }
 
-    private void checkForActiveAuditSinkPolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
+    private void checkForActiveAuditSinkOrTracePolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
         if (serverConfig == null)
             return;
         Policy policy = policyManager.findByPrimaryKey(oid);
@@ -124,7 +125,15 @@ public class PolicyAdminImpl implements PolicyAdmin {
         String guid = policy.getGuid();
         String sinkGuid = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
         if (sinkGuid != null && sinkGuid.trim().equals(guid))
-            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");         
+            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");
+        String traceGuid = serverConfig.getProperty(ServerConfig.PARAM_TRACE_POLICY_GUID);
+        if (traceGuid != null && traceGuid.trim().equals(guid) && atLeastOneServiceHasTracingEnabled())
+            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global debug trace policy");
+    }
+
+    private boolean atLeastOneServiceHasTracingEnabled() {
+        // TODO
+        return true;
     }
 
     @Override

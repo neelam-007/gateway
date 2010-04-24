@@ -17,8 +17,9 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.wsdl.Operation;
@@ -436,6 +437,8 @@ public class ServerVariables {
                 return originalContext == null ? null : originalContext.isPolicyExecutionAttempted();
             }
         }),
+
+        new Variable("trace", new DebugTraceGetter("trace")),
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
@@ -641,6 +644,26 @@ public class ServerVariables {
                 logger.log(Level.WARNING, "Couldn't get SOAP namespace", e);
                 return null;
             }
+        }
+    }
+
+    private static class DebugTraceGetter extends SelectingGetter {
+        private DebugTraceGetter(final String baseName) {
+            super(baseName);
+        }
+
+        @Override
+        protected Object getBaseObject(PolicyEnforcementContext context) {
+            if (context instanceof TracePolicyEnforcementContext) {
+                return new DebugTraceVariableContext((TracePolicyEnforcementContext) context);
+            }
+            logger.log(Level.WARNING, "The trace.* variables are only available while processing a debug trace policy.");
+            return null;
+        }
+
+        @Override
+        boolean isValidForContext(PolicyEnforcementContext context) {
+            return context instanceof TracePolicyEnforcementContext;
         }
     }
 

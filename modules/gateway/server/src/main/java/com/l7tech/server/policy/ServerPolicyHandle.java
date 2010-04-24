@@ -22,7 +22,14 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         ServerPolicy target = getTarget();
         if (target == null) throw new IllegalStateException("ServerPolicyHandle has already been closed");
-        return target.checkRequest(context);
+
+        final PolicyMetadata prev = context == null ? null : context.getCurrentPolicyMetadata();
+        try {
+            if (context != null) context.setCurrentPolicyMetadata(policyMetadata);
+            return target.checkRequest(context);
+        } finally {
+            if (context != null) context.setCurrentPolicyMetadata(prev);
+        }
     }
 
     public PolicyMetadata getPolicyMetadata() {

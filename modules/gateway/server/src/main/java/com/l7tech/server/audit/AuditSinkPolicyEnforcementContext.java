@@ -2,15 +2,16 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.message.Message;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.message.HasOriginalContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextWrapper;
-import com.l7tech.policy.variable.NoSuchVariableException;
 
 /**
  * Policy enforcement context used when evaluating an audit sink policy.
  * @see com.l7tech.server.audit.AuditPolicyEvaluator
  */
-public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
+public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContextWrapper implements HasOriginalContext {
     private final AuditRecord auditRecord;
     private final PolicyEnforcementContext originalContext;
 
@@ -26,19 +27,23 @@ public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContextW
         return auditRecord;
     }
 
+    @Override
     public Message getOriginalRequest() {
         return originalContext == null ? null : originalContext.getRequest();
     }
 
+    @Override
     public Message getOriginalResponse() {
         return originalContext == null ? null : originalContext.getResponse();
     }
 
+    @Override
     public Object getOriginalContextVariable(String name) throws NoSuchVariableException {
         return originalContext == null ? null : originalContext.getVariable(name);
     }
 
     /** @return the original PolicyEnforcementContext if we are handling a message processing audit event, or null. */
+    @Override
     public PolicyEnforcementContext getOriginalContext() {
         return originalContext;
     }

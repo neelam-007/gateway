@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -129,6 +130,26 @@ public interface PolicyEnforcementContext extends Closeable {
      * @return the service or null if unknown 
      */
     PublishedService getService();
+
+    /**
+     * Get the metadata for the policy (service or include) currently executing on this context.
+     * <p/>
+     * This will be the top-level metadata of {@link #getService} if no Include assertion is currently
+     * executing on this context.  Otherwise, it will be the metadata of the policy of the most recent
+     * pending Include.
+     *
+     * @return metadata for the most recent pending Include, or for the service policy if no Include assertions are currently active on this context.  May be null if no metadata has been set.
+     */
+    PolicyMetadata getCurrentPolicyMetadata();
+
+    /**
+     * Record the metadata for the policy (service or include) now executing on this context.
+     * <p/>
+     * This is managed by the ServerPolicyHandle and this method should not normally be called from other locations.
+     *
+     * @param policyMetadata the policy metadata to register, or null to clear any registered policy metadata.
+     */
+    void setCurrentPolicyMetadata(PolicyMetadata policyMetadata);
 
     void setService(PublishedService service);
 
@@ -298,6 +319,62 @@ public interface PolicyEnforcementContext extends Closeable {
     List<MessageContextMapping> getMappings();
 
     void setMappings(List<MessageContextMapping> mappings);
+
+    /**
+     * Get the current assertion ordinal path, in top-down order.  This list is empty unless at least one
+     * Include assertion is currently executing as an ancestor of the policy currently being executed.
+     * <p/>
+     * While a ServerInclude assertion executes, it pushes its ordinal onto the current assertion ordinal path.
+     * This can be used to locate the over context in which a particular server assertion is executing.
+     * <p/>
+     * This path is kept in top-down order; that is, the ordinal of the first ServerInclude executed
+     * comes first, and any ServerInclude executed while this first one was executing comes next.
+     * <p/>
+     * Example showing assertion paths as they are when checkRequest() is called (and returns) on the following:
+     * <pre>
+     *    - All                         { }
+     *      - True                      { }
+     *      - Include: Policy A         { }
+     *        - True                    { 3 }
+     *        - Include: Policy B       { 3 }
+     *          - True                  { 3, 2 }
+     *          - HTTP Basic            { 3, 2 }
+     *          - Include: Policy C     { 3, 2 }
+     *            - True                { 3, 2, 3 }
+     *          - True                  { 3, 2 }
+     *        - True                    { 3 }
+     *      - True
+     *      - Include: Policy C         { }
+     *        - True                    { 5 }
+     *      - Include: Policy D         { }
+     *        - Include: Policy E       { 6 }
+     *          - True                  { 6, 1 }
+     *        - True                    { 6 }
+     *      - True                      { }
+     * </pre>
+     *
+     * @return the assertion ordinal path, ie { 3, 2, 3 }, in which the current policy fragment is executing.  May be empty but never null.
+     */
+    Collection<Integer> getAssertionOrdinalPath();
+
+    /**
+     * Push a new assertion ordinal onto the assertion ordinal path.
+     * <p/>This should typically be invoked only by the ServerInclude assertion.
+     *
+     * @param ordinal the ordinal to add to the path.
+     */
+    void pushAssertionOrdinal(int ordinal);
+
+    /**
+     * Remove the last assertion ordinal from the path.
+     * <p/>This should typically be invoked only by the ServerInclude assertion.
+     *
+     * @return the ordinal removed.
+     * @throws NoSuchElementException if the assertion ordinal path is empty.
+     */
+    int popAssertionOrdinal() throws NoSuchElementException;
+
+    void setTraceListener(AssertionTraceListener traceListener);
 
     boolean isRequestWasCompressed();
 

@@ -16,21 +16,17 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.*;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.processor.BadSecurityContextException;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.xml.processor.ProcessorValidationException;
+import com.l7tech.security.xml.processor.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
@@ -49,14 +45,11 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.trace.TracePolicyEvaluator;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
@@ -64,17 +57,20 @@ import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
-import java.io.IOException;
 import java.io.Closeable;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -493,6 +489,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
 
             context.setPolicyExecutionAttempted(true);
+            if (context.getService().isTracingEnabled())
+                maybeEnableTracing();
             AssertionStatus status = serverPolicy.checkRequest(context);
 
             // fail early if there are any (I/O) errors reading the response
@@ -520,6 +518,17 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     MessageProcessingMessages.ERROR_POST_SECURITY );
 
             return status;
+        }
+
+        private void maybeEnableTracing() {
+            String traceGuid = serverConfig.getPropertyCached(ServerConfig.PARAM_TRACE_POLICY_GUID);
+            if (traceGuid == null || traceGuid.trim().length() < 1) {
+                logger.info("Tracing enabled on service but no trace policy configured");
+                return;
+            }
+
+            // Evaluator takes ownership of trace policy handle
+            TracePolicyEvaluator.createAndAttachToContext(context, policyCache.getServerPolicy(traceGuid));
         }
 
         /**

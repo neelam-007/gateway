@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
@@ -123,7 +124,7 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     /**
-     * @returns an empty list (deferred assertions not supported)
+     * @return an empty list (deferred assertions not supported)
      */
     @Override
     @Deprecated
@@ -191,6 +192,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public PublishedService getService() {
         return delegate.getService();
+    }
+
+    @Override
+    public PolicyMetadata getCurrentPolicyMetadata() {
+        return delegate.getCurrentPolicyMetadata();
+    }
+
+    @Override
+    public void setCurrentPolicyMetadata(PolicyMetadata policyMetadata) {
+        delegate.setCurrentPolicyMetadata(policyMetadata);
     }
 
     @Override
@@ -406,6 +417,26 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void setMappings( final List<MessageContextMapping> mappings ) {
         delegate.setMappings( mappings );
+    }
+
+    @Override
+    public Collection<Integer> getAssertionOrdinalPath() {
+        return delegate.getAssertionOrdinalPath();
+    }
+
+    @Override
+    public void pushAssertionOrdinal(int ordinal) {
+        delegate.pushAssertionOrdinal(ordinal);
+    }
+
+    @Override
+    public int popAssertionOrdinal() throws NoSuchElementException {
+        return delegate.popAssertionOrdinal();
+    }
+
+    @Override
+    public void setTraceListener(AssertionTraceListener traceListener) {
+        delegate.setTraceListener(traceListener);
     }
 
     @Override

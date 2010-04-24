@@ -5,6 +5,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -454,6 +455,7 @@ public class ServiceCache
 
         if ( policyMetadata == null ) {
             // use defaults
+            final PolicyHeader policyHeader = policy == null ? null : new PolicyHeader(policy);
             policyMetadata = new PolicyMetadata() {
                 @Override
                 public boolean isTarariWanted() { return false; }
@@ -461,6 +463,8 @@ public class ServiceCache
                 public boolean isWssInPolicy() { return false; }
                 @Override
                 public boolean isMultipart() { return false; }
+                @Override
+                public PolicyHeader getPolicyHeader() { return policyHeader; }
                 @Override
                 public String[] getVariablesUsed() { return new String[0]; }
                 @Override

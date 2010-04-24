@@ -143,6 +143,7 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.PolicyEnforcementContextSelector",
         "com.l7tech.server.policy.variable.PartInfoSelector",
         "com.l7tech.server.policy.variable.ArraySelector",
+        "com.l7tech.server.policy.variable.DebugTraceVariableContextSelector",
     };
 
     private static final Map<Class, Selector<Object>> selectorMap = Collections.unmodifiableMap(new HashMap<Class, Selector<Object>>() {{

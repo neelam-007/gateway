@@ -23,6 +23,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -82,6 +83,9 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private boolean malformedRequest;
     private boolean policyExecutionAttempted;
     private String savedRequestL7aMessageId;
+    private Deque<Integer> assertionOrdinalPath = null; // null by default, rather than an empty LinkedList, so we don't pay for it unless at least one Include is used
+    private AssertionTraceListener traceListener = null;
+    private PolicyMetadata policyMetadata = null;
 
     protected PolicyEnforcementContextImpl(Message request, Message response) {
         super(request, response);
@@ -248,6 +252,16 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public PublishedService getService() {
         return service;
+    }
+
+    @Override
+    public PolicyMetadata getCurrentPolicyMetadata() {
+        return policyMetadata;
+    }
+
+    @Override
+    public void setCurrentPolicyMetadata(PolicyMetadata policyMetadata) {
+        this.policyMetadata = policyMetadata;
     }
 
     @Override
@@ -512,6 +526,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     public void assertionFinished(ServerAssertion assertion, AssertionStatus status) {
         if (assertion == null || status == null) throw new NullPointerException();
         assertionStatuses.put(assertion, status);
+        if (traceListener != null)
+            traceListener.assertionFinished(assertion, status);
     }
 
     /**
@@ -731,6 +747,30 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setMappings(List<MessageContextMapping> mappings) {
         this.mappings = mappings;
+    }
+
+    @Override
+    public Collection<Integer> getAssertionOrdinalPath() {
+        return assertionOrdinalPath == null ? Collections.<Integer>emptyList() : new ArrayList<Integer>(assertionOrdinalPath);
+    }
+
+    @Override
+    public void pushAssertionOrdinal(int ordinal) {
+        if (assertionOrdinalPath == null)
+            assertionOrdinalPath = new LinkedList<Integer>();
+        assertionOrdinalPath.addLast(ordinal);
+    }
+
+    @Override
+    public int popAssertionOrdinal() {
+        if (assertionOrdinalPath == null)
+            throw new NoSuchElementException("no assertion ordinal path");
+        return assertionOrdinalPath.removeLast();
+    }
+
+    @Override
+    public void setTraceListener(AssertionTraceListener traceListener) {
+        this.traceListener = traceListener;
     }
 
     @Override

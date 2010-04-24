@@ -174,6 +174,7 @@ CREATE TABLE published_service (
   http_methods mediumtext,
   lax_resolution TINYINT(1) NOT NULL DEFAULT 0,
   wss_processing TINYINT(1) NOT NULL DEFAULT 1,
+  tracing TINYINT(1) NOT NULL DEFAULT 0,
   folder_oid bigint(20),
   PRIMARY KEY (objectid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),

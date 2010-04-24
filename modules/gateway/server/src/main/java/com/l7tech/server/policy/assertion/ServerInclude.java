@@ -52,6 +52,7 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+        context.pushAssertionOrdinal(assertion.getOrdinal());
         try {
             if ( serverPolicy != null ) {
                 return serverPolicy.checkRequest( context );
@@ -68,6 +69,8 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
             // Caught here so we can audit it
             auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_EXCEPTION, ExceptionUtils.getMessage(e));
             throw e;
+        } finally {
+            context.popAssertionOrdinal();
         }
     }
 

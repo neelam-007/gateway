@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.EditServiceProperties;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -14,8 +15,8 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -68,6 +69,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         } else if (looksLikeAuditSinkPolicy(policy)) {
             this.canUpdate = false;
             unsavedWarningLabel.setText(resources.getString("auditsink.warning"));
+        } else if (looksLikeDebugTracePolicy(policy)) {
+            this.canUpdate = false;
+            unsavedWarningLabel.setText(resources.getString("debugtrace.warning"));
         } else {
             unsavedWarningLabel.setVisible(false);
             this.canUpdate = canUpdate;
@@ -80,6 +84,12 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         return policy != null &&
                PolicyType.INTERNAL.equals(policy.getType()) &&
                AuditSinkGlobalPropertiesDialog.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
+    }
+
+    private boolean looksLikeDebugTracePolicy(Policy policy) {
+        return policy != null &&
+               PolicyType.INTERNAL.equals(policy.getType()) &&
+               EditServiceProperties.INTERNAL_TAG_TRACE_POLICY.equals(policy.getInternalTag());
     }
 
     private static boolean areUnsavedChangesToThisPolicy(Policy policy) {

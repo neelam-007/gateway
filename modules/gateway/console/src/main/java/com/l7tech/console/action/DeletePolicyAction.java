@@ -113,7 +113,7 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
         String msg;
         msg = node.getName() + " cannot be deleted at this time; it is still in use" + (EntityType.POLICY.equals(pdfe.getReferringEntityType())
                 ? " by another policy"
-                : " as the audit sink policy");
+                : " as the audit sink or debug trace policy");
         return msg;
     }
 
