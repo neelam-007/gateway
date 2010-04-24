@@ -513,10 +513,7 @@
         <echo level="info">Clear cache and configure repository settings. (${ivy.settings.filepath})</echo>
         <mkdir dir="${build.etc}"/>
         <!-- Clean cache -->
-        <delete dir="${build.dir}/ivycache"/>
-        <mkdir dir="${build.dir}/ivycache"/>
-        <delete dir="${build.dir}/ivyidea"/>
-        <mkdir dir="${build.dir}/ivyidea"/>
+        <delete dir="${build.dir}/ivy"/>
 
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
@@ -1844,6 +1841,7 @@
               dir="${src.installer}/proxy/win32/"
               failonerror="true">
             <arg value="/NOCD"/>
+            <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
             <arg value="/DPACKAGE_REL=installer\Client-${build.version}"/>
             <arg value="/DOUTPUT_DIR=../../../build/installer"/>
@@ -1916,6 +1914,7 @@
               dir="${src.installer}/console/win32/"
               failonerror="true">
             <arg value="/NOCD"/>
+            <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
             <arg value="/DPACKAGE_REL=installer\Manager-${build.version}"/>
             <arg value="/DOUTPUT_DIR=../../../build/installer"/>
