@@ -206,12 +206,16 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             @Override
             public String getValidationError() {
                 String uiResponseTimeout = jmsResponseTimeout.getText();
+                String errMsg = "The value for the response timeout must be a valid positive number or empty.";
                 try {
                     if (! uiResponseTimeout.isEmpty()) {
-                        Integer.parseInt(uiResponseTimeout);
+                        int timeout = Integer.parseInt(uiResponseTimeout);
+                        if (timeout <= 0) {
+                            return errMsg;
+                        }
                     }
                 } catch (NumberFormatException e) {
-                    return "The value for the response timeout must be a valid number or empty.";
+                    return errMsg;
                 }
                 return null;
             }
@@ -304,6 +308,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
                     DialogDisplayer.showMessageDialog(JmsRoutingAssertionDialog.this,
+                        "JMS Routing: Response Timeout Warning",
                         "Warning: responses may be lost if the JMS response timeout is greater than the HTTP response timeout configured for the client.", null);
                     assertion.setResponseTimeout(Integer.valueOf(responseTimeoutOverride));
                 } else {
