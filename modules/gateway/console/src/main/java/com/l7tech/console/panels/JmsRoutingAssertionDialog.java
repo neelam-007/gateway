@@ -307,9 +307,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
-                    DialogDisplayer.showMessageDialog(JmsRoutingAssertionDialog.this,
-                        "JMS Routing: Response Timeout Warning",
-                        "Warning: responses may be lost if the JMS response timeout is greater than the HTTP response timeout configured for the client.", null);
                     assertion.setResponseTimeout(Integer.valueOf(responseTimeoutOverride));
                 } else {
                     assertion.setResponseTimeout(-1);
