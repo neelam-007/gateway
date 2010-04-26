@@ -119,38 +119,46 @@ public class EditableSearchComboBox extends JComboBox {
             updateFilteredItems();
         }
 
+        @Override
         public void addElement(Object obj) {
             items.add(obj);
             updateFilteredItems();
         }
 
+        @Override
         public void removeElement(Object obj) {
             items.remove(obj);
             updateFilteredItems();
         }
 
+        @Override
         public void removeElementAt(int obj) {
             items.remove(obj);
             updateFilteredItems();
         }
 
+        @Override
         public void insertElementAt(Object obj, int index) {
             //TODO: Provide implementation body
         }
 
+        @Override
         public int getSize() {
             //returned the size of the filtered items because we want this to be actual display list size
             return filteredItems.size();
         }
 
+        @Override
         public Object getElementAt(int index) {
             return filteredItems.get(index);
         }
 
+        @Override
         public Object getSelectedItem() {
             return selectedItem;
         }
 
+        @Override
         public void setSelectedItem(Object anItem) {
             if ((selectedItem == null) && (anItem == null)) return;
             if ((selectedItem != null) && selectedItem.equals(anItem)) return;
@@ -248,10 +256,12 @@ public class EditableSearchComboBox extends JComboBox {
             textField.setColumns(cols);
         }
 
+        @Override
         public Component getEditorComponent() {
             return textField;
         }
 
+        @Override
         public void setItem(Object anObject) {
             if(isFiltering) return;
 
@@ -275,28 +285,35 @@ public class EditableSearchComboBox extends JComboBox {
             return selectedNode;
         }
 
+        @Override
         public Object getItem() {
             return textField.getText();
         }
 
+        @Override
         public void selectAll() {
             textField.selectAll();
         }
 
+        @Override
         public void addActionListener(ActionListener l) {
             textField.addActionListener(l);
         }
 
+        @Override
         public void removeActionListener(ActionListener l) {
             textField.removeActionListener(l);
         }
 
+        @Override
         public void changedUpdate(DocumentEvent e) {}
 
+        @Override
         public void insertUpdate(DocumentEvent e) {
             filterItems();
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             filterItems();
         }

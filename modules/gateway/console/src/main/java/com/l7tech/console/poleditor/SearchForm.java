@@ -129,6 +129,8 @@ public class SearchForm {
     }
 
     public void setPolicyTree(PolicyTree policyTree){
+        if(!searchPanel.isVisible()) return;
+
         final Object root = policyTree.getModel().getRoot();
         AbstractTreeNode rootNode = (AbstractTreeNode) root;
 
@@ -138,12 +140,14 @@ public class SearchForm {
     }
 
     /**
-     * Expands the tree accordingly based on the service or policy selection.  It will also invoke the editing
-     * action so that the user can readily edit the service or policy.
+     * Bring the user to the selected assertion
      */
     private void invokeSelection() {
         final EditableSearchComboBox.SearchFieldEditor fieldEditor = (EditableSearchComboBox.SearchFieldEditor) searchComboBox.getEditor();
         final AssertionTreeNode selectedNode = fieldEditor.getSelectedNode();
+
+        if(selectedNode == null) return;
+
         final String vOrdinal = AssertionTreeNode.getVirtualOrdinalString(selectedNode);
 
         PolicyTree policyTree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
@@ -199,9 +203,10 @@ public class SearchForm {
         searchPanel.setVisible(false);
     }
 
-    public void showPanel(){
+    public void showPanel(final PolicyTree policyTree){
         searchPanel.setVisible(true);
         searchComboBox.requestFocusInWindow();
+        setPolicyTree(policyTree);
     }
 
 }

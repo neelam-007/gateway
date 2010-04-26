@@ -424,7 +424,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final Action findAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (searchForm != null) searchForm.showPanel();
+                if (searchForm != null) searchForm.showPanel(policyTree);
             }
         };
 
