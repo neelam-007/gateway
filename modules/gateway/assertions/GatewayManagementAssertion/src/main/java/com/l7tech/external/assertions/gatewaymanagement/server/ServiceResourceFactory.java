@@ -221,7 +221,6 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         oldPublishedService.setHttpMethods( newPublishedService.getHttpMethodsReadOnly() );
         oldPublishedService.setLaxResolution( newPublishedService.isLaxResolution() );
         oldPublishedService.setWssProcessingEnabled( newPublishedService.isWssProcessingEnabled() );
-        oldPublishedService.setTracingEnabled( newPublishedService.isTracingEnabled() );
         oldPublishedService.getPolicy().setXml( newPublishedService.getPolicy().getXml() );
 
         final boolean wsdlUpdated = isWsdlUpdated(oldEntityBag, newEntityBag);
