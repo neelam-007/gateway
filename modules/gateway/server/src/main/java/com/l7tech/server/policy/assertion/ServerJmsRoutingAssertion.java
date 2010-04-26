@@ -358,9 +358,19 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
                     final String selector = getSelector( jmsOutboundRequest, cfg.getEndpoint() );
+                    int emergencyTimeoutDefault = 10000;
                     int timeout = assertion.getResponseTimeout();
-                    if (timeout < 0) {
-                        timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT, 10000);
+                    if (timeout <= 0) {
+                        timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT, emergencyTimeoutDefault);
+                    }
+                    if (timeout <= 0) {
+                        try {
+                            timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                            logger.warning("Using server default value (" + timeout + ") for JMS response timeout.");
+                        } catch (NumberFormatException e) {
+                            timeout = emergencyTimeoutDefault;
+                            logger.warning("Using emergency default value (" + emergencyTimeoutDefault + ") for JMS response timeout.");
+                        }
                     }
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
