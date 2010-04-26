@@ -13,6 +13,10 @@
 PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin:/usr/local/bin"
 export PATH
 
-# Ensure JAVA_HOME is present
+# Ensure JAVA_HOME is set
 JAVA_HOME="/opt/SecureSpan/JDK"
 export JAVA_HOME
+
+# Ensure JAVA_OPTS is set
+JAVA_OPTS="-Djava.ext.dirs=${JAVA_HOME}/jre/lib/ext"
+export JAVA_OPTS

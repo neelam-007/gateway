@@ -6,7 +6,7 @@ export PATH
 
 # Ensure JAVA_HOME is present
 JAVA_HOME="/opt/SecureSpan/JDK"
-export JAVA_HOME
+OPTIONS="-Djava.ext.dirs=${JAVA_HOME}/jre/lib/ext"
 
 #set the current working directory to where this script lives
 umask 0002

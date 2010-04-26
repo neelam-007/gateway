@@ -19,6 +19,7 @@ import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,6 +108,13 @@ public class PatchCli {
         final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
         if ( logsDir.exists() && logsDir.canWrite() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.client", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
+        } else if ( !SyspropUtil.getBoolean("com.l7tech.server.log.console") ){
+            final Logger rootLogger = Logger.getLogger( "" );
+            for ( final Handler handler : rootLogger.getHandlers() ) {
+                if ( handler instanceof ConsoleHandler ) {
+                    rootLogger.removeHandler( handler );
+                }
+            }
         }
         if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
             Logger.getLogger("").addHandler( new ConsoleHandler() );

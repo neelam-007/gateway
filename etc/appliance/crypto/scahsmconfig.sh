@@ -21,9 +21,9 @@ PATH=$OLDPATH
 launch(){
     #check who we are
     if [ "${USERID}" != "${SSGCONFIG_USERID}" ]; then
-        su layer7 -c "${JAVA_HOME}/bin/java ${OPTIONS} -jar ${1}.jar ${2}"
+        su layer7 -c "${JAVA_HOME}/bin/java ${JAVA_OPTS} -jar ${1}.jar ${2}"
     else
-        ${JAVA_HOME}/bin/java ${OPTIONS} -jar ${1}.jar ${2}
+        ${JAVA_HOME}/bin/java ${JAVA_OPTS} -jar ${1}.jar ${2}
     fi
 
     return $?

@@ -10,8 +10,8 @@ if [ ! -x "${JAVA_HOME}/bin/java" ] ; then
 fi
 
 if [ $UID -eq 0 ]; then
-    su layer7 -c "${JAVA_HOME}/bin/java -jar SystemConfigWizard.jar $*"
+    su layer7 -c "${JAVA_HOME}/bin/java ${JAVA_OPTS} -jar SystemConfigWizard.jar $*"
 else
-    ${JAVA_HOME}/bin/java -jar SystemConfigWizard.jar $*
+    ${JAVA_HOME}/bin/java ${JAVA_OPTS} -jar SystemConfigWizard.jar $*
 fi
 
