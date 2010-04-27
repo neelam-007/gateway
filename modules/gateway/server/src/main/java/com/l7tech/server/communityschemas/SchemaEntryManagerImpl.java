@@ -133,8 +133,6 @@ public class SchemaEntryManagerImpl
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByName(final String schemaName) throws FindException {
-        if(schemaName == null || schemaName.trim().isEmpty()) throw new IllegalArgumentException("schemaName cannot be null or empty");
-
         final String nameHash = SchemaEntry.createNameHash(schemaName);
 
         final String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
