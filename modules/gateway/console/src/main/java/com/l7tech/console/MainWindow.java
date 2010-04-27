@@ -89,6 +89,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private static Action goToAction = null;
     private static Action findAction = null;
+    private static Action f3Action = null;
+    private static Action shiftF3Action = null;
 
     /**
      * Reference to the component which currently has focus
@@ -233,6 +235,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String L7_GO_TO = "l7goto";
     public static final String L7_FIND = "l7search";
     public static final String L7_ESC = "l7esc";
+    public static final String L7_F3 = "l7f3";
+    public static final String L7_SHIFT_F3 = "l7shiftf3";
 
     /**
      * MainWindow constructor comment.
@@ -603,6 +607,21 @@ public class MainWindow extends JFrame implements SheetHolder {
         return preferences;
     }
 
+    /**
+     * Show an InformationDialog centered on screen
+     * @param iDialog
+     */
+    public static void showInformationDialog(final InformationDialog iDialog, final JComponent parent, final Runnable continuation){
+        iDialog.pack();
+
+        final Rectangle rect = parent.getVisibleRect();
+
+        iDialog.setLocation(new Point(rect.x, rect.y));
+
+        Utilities.centerOnScreen(iDialog);
+        DialogDisplayer.display(iDialog, continuation);
+    }
+
     private JMenuItem getSaveAndActivateMenuItem() {
         if (saveAndActivateMenuItem == null) {
             saveAndActivateMenuItem = new JMenuItem();
@@ -667,6 +686,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             //search only applies to policy window, but could be extended
             menu.add(new JMenuItem(getGlobalFindAction()));
+            menu.add(new JMenuItem(getGlobalF3Action()));
+            menu.add(new JMenuItem(getGlobalShiftF3Action()));
             
             editMenu = menu;
         }
@@ -683,10 +704,26 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private static Action getGlobalFindAction(){
         if(findAction == null){
-            findAction = new ProxyAction(L7_FIND, KeyEvent.VK_S, KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK));
+            findAction = new ProxyAction(L7_FIND, KeyEvent.VK_F, KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK));
             findAction.putValue(Action.NAME, resapplication.getString("Find_MenuItem_text"));
         }
         return findAction;
+    }
+
+    private static Action getGlobalF3Action(){
+        if(f3Action == null){
+            f3Action = new ProxyAction(L7_F3, KeyEvent.VK_N, KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
+            f3Action.putValue(Action.NAME, resapplication.getString("F3_MenuItem_text"));
+        }
+        return f3Action;
+    }
+
+    private static Action getGlobalShiftF3Action(){
+        if(shiftF3Action == null){
+            shiftF3Action = new ProxyAction(L7_SHIFT_F3, KeyEvent.VK_V, KeyStroke.getKeyStroke(KeyEvent.VK_F3, KeyEvent.SHIFT_MASK));
+            shiftF3Action.putValue(Action.NAME, resapplication.getString("Shift_F3_MenuItem_text"));
+        }
+        return shiftF3Action;
     }
 
 //    private static Action getGlobalEscAction(){
@@ -754,6 +791,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private static void updateActionsDependentOnFocusedComponent(){
         boolean enableGoTo = false;
         boolean enableFind = false;
+        boolean enableF3 = false;
+        boolean enableShiftF3 = false;
         try {
             if (focusOwner == null)
                 return;
@@ -764,10 +803,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             enableGoTo = findActionInComponentOrParent(focusOwner, L7_GO_TO) != null;
             enableFind = findActionInComponentOrParent(focusOwner, L7_FIND) != null;
+            enableF3 = findActionInComponentOrParent(focusOwner, L7_F3) != null;
+            enableShiftF3 = findActionInComponentOrParent(focusOwner, L7_SHIFT_F3) != null;
 
         } finally {
             getGlobalGoToAction().setEnabled(enableGoTo);
             getGlobalFindAction().setEnabled(enableFind);
+            getGlobalF3Action().setEnabled(enableF3);
+            getGlobalShiftF3Action().setEnabled(enableShiftF3);
         }
     }
 

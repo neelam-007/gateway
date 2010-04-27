@@ -9,6 +9,7 @@ import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
+import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -430,6 +431,78 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         containerPanel.getActionMap().put(MainWindow.L7_FIND, findAction);
 
+        final Action f3Action = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final String ordinal;
+                final boolean isF3;
+                if(e.getActionCommand().equals(MainWindow.L7_F3)){
+                    ordinal = searchForm.getNextAssertionOrdinal();
+                    isF3 = true;
+                } else if(e.getActionCommand().equals(MainWindow.L7_SHIFT_F3)){
+                    ordinal = searchForm.getPreviousAssertionOrdinal();
+                    isF3 = false;
+                }else {
+                    ordinal = null;
+                    isF3 = false;
+                }
+
+                if(ordinal == null){
+                    if(searchForm.hasSearchResults()){
+                        final InformationDialog iDialog;
+                        if(isF3){
+                            iDialog = new InformationDialog("No more results. Press F3 to search from the top.", KeyEvent.VK_F3, false);
+                        }else{
+                            iDialog = new InformationDialog("No more results. Press Shift + F3 to search from the bottom.",
+                                    KeyStroke.getKeyStroke(KeyEvent.VK_F3,  KeyEvent.VK_SHIFT).getKeyCode(), true);
+                        }
+
+                        MainWindow.showInformationDialog(iDialog, policyTree, new Runnable() {
+                            @Override
+                            public void run() {
+                                //this runs on the swing thread
+                                if (iDialog.isSpecialKeyDisposed()) {
+                                    final String goToOrdinal;
+                                    if (isF3) {
+                                        searchForm.resetSearchIndex();
+                                        goToOrdinal = searchForm.getNextAssertionOrdinal();
+                                    } else{
+                                        searchForm.setSearchIndexAtEnd();
+                                        goToOrdinal = searchForm.getPreviousAssertionOrdinal();
+                                    }
+                                    
+                                    if (goToOrdinal != null) {
+                                        policyTree.goToAssertionTreeNode(goToOrdinal);
+                                    }
+                                }
+                            }
+                        });
+                    }else{
+                        final InformationDialog iDialog = new InformationDialog("No search results.", 0, false);
+                        MainWindow.showInformationDialog(iDialog, policyTree, null);
+                    }
+                }else {
+                    policyTree.goToAssertionTreeNode(ordinal);
+                }
+            }
+        };
+
+        searchForm.addEnterListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if(e.getKeyCode() == KeyEvent.VK_ENTER){
+                    //user has pressed enter. Search results are now reset.
+                    searchForm.resetSearchIndex();
+                    f3Action.actionPerformed(new ActionEvent(this,
+                            ActionEvent.ACTION_PERFORMED,
+                            MainWindow.L7_F3));
+                }
+            }
+        });
+        
+        containerPanel.getActionMap().put(MainWindow.L7_F3, f3Action);
+        containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
+
         policyTree.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -453,6 +526,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   prefs.putProperty(MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
               }
           });
+        
         messagePane.addHierarchyListener(new HierarchyListener() {
             @Override
             public void hierarchyChanged(HierarchyEvent e) {
@@ -472,6 +546,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         });
+        
         return splitPane;
     }
 

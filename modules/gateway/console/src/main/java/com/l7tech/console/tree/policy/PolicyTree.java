@@ -230,7 +230,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         final TreeNode[] pathToNode = foundNode.getPath();
         this.setSelectionPath(new TreePath(pathToNode));
-
+        this.requestFocusInWindow();
     }
 
     private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final List<Integer> assertionOrdinal) throws OrdinalIndexOutOfRangeException{

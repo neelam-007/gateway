@@ -5,14 +5,12 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**
  * Provide own implementation of a editable searching combo box.
@@ -26,8 +24,10 @@ import java.awt.event.ActionEvent;
  * Date: Jan 18, 2009
  */
 public class EditableSearchComboBox extends JComboBox {
-    private FilterableComboBoxModel model;
-    private SearchFieldEditor editor;
+    private final FilterableComboBoxModel model;
+    private final SearchFieldEditor editor;
+    private final static int startIndex = -1;
+    private int searchResultsIndexer = startIndex;
 
     /**
      * Default constructor which will provide no list of search items.
@@ -50,18 +50,46 @@ public class EditableSearchComboBox extends JComboBox {
         updateSearchableItems(searchableItems);
     }
 
-    public void addEscapeKeyListener(KeyListener listener){
-        editor.textField.addKeyListener(listener);
+    public void addTextFieldKeyListener(KeyListener listener){
+        editor.addKeyListener(listener);
     }
-    
+
+    public Object getNextSearchResult(){
+        if(model.getSize() < 1) return null;
+
+        if(searchResultsIndexer < model.getSize() - 1) searchResultsIndexer++;
+        else return null;//no more results
+
+        return model.getElementAt(searchResultsIndexer);
+    }
+
+    public Object getPreviousAssertionOrdinal(){
+        if(searchResultsIndexer == 0 || model.getSize() < 1) return null;
+
+        if(searchResultsIndexer > 0) searchResultsIndexer--;
+        else return null;//no previous results
+
+        return model.getElementAt(searchResultsIndexer);
+    }
+
+    public boolean hasResults(){
+        return model.getSize() > 0;
+    }
+
+    public void resetSearchResultIndex(){
+        searchResultsIndexer = startIndex;
+    }
+
+    public void setSearchIndexAtEnd(){
+        searchResultsIndexer = model.getSize();
+    }
+
     /**
      * Updates the list of searchable items with this one. 
      * @param searchableItems   The list of searchable items to be used as part of the look up list.
      */
     public void updateSearchableItems(List searchableItems) {
-        if (model != null) {
-            model.updateSearchableItems(searchableItems);
-        } 
+        model.updateSearchableItems(searchableItems);
     }
 
     /**
@@ -69,9 +97,7 @@ public class EditableSearchComboBox extends JComboBox {
      * @param comparator    The comparator used for sorting
      */
     public void setComparator(Comparator comparator) {
-        if (model != null) {
-            model.setComparator(comparator);
-        }
+        model.setComparator(comparator);
     }
 
     /**
@@ -79,24 +105,22 @@ public class EditableSearchComboBox extends JComboBox {
      * @param filter    The implemented filtering
      */
     public void setFilter(Filter filter) {
-        if (editor != null) {
-            editor.setFilter(filter);
-        }
+        editor.setFilter(filter);
     }
 
     /**
      * Clear search text and background colour accordingly.
      */
     public void clearSearch() {
-        if (editor != null) {
-            editor.clearSearch();
-        }
+        setSelectedItem(null);
+        editor.clearSearch();
+        model.updateFilteredItems();
     }
 
     /**
      * The model implementation that will model the editable search combo box.
      */
-    private class FilterableComboBoxModel extends AbstractListModel implements MutableComboBoxModel {
+    public class FilterableComboBoxModel extends AbstractListModel implements MutableComboBoxModel {
         private List items;
         private List filteredItems;
         private Object selectedItem;
@@ -121,6 +145,8 @@ public class EditableSearchComboBox extends JComboBox {
 
         @Override
         public void addElement(Object obj) {
+            if(obj == null) return;
+            
             items.add(obj);
             updateFilteredItems();
         }
@@ -160,20 +186,21 @@ public class EditableSearchComboBox extends JComboBox {
 
         @Override
         public void setSelectedItem(Object anItem) {
-            if ((selectedItem == null) && (anItem == null)) return;
-            if ((selectedItem != null) && selectedItem.equals(anItem)) return;
-            if ((anItem != null) && anItem.equals(selectedItem)) return;
-            if (anItem == null) return;
-
-            //only accept selection based on the recognized type from our searchable items
-            boolean recognizedType = false;
-            for (Object item : items) {
-                if (item.getClass().equals(anItem.getClass())) {
-                    recognizedType = true;
-                }
+            if (selectedItem != null && anItem != null){
+                if(selectedItem.equals(anItem)) return;
             }
-            if (!recognizedType) return;
-
+            
+            if (anItem != null) {
+                //only accept selection based on the recognized type from our searchable items
+                boolean recognizedType = false;
+                for (Object item : items) {
+                    if (item.getClass().equals(anItem.getClass())) {
+                        recognizedType = true;
+                        break;
+                    }
+                }
+                if (!recognizedType) return;
+            }
 
             selectedItem = anItem;
             fireContentsChanged(this, -1, -1);  //notify of new selected item
@@ -202,6 +229,7 @@ public class EditableSearchComboBox extends JComboBox {
          * Updates the searchable items into the filter items list.
          */
         private void updateFilteredItems() {
+            //this fire will cause the action listener on the text field to fire
             fireIntervalRemoved(this, 0, filteredItems.size()); //notify clearing of the previous list
             filteredItems.clear();  //remove old filterItems items
 
@@ -237,28 +265,25 @@ public class EditableSearchComboBox extends JComboBox {
     /**
      *  The text editor field which will be listened for search characters to filter the items.
      */
-    public class SearchFieldEditor implements ComboBoxEditor, DocumentListener {
-        public JTextField textField;
+    public class SearchFieldEditor extends JTextField implements ComboBoxEditor, DocumentListener {
         private AssertionTreeNode selectedNode;
         private volatile boolean isFiltering = false;
         private volatile boolean isSetting = false;
         private Filter filter;
 
-
         public SearchFieldEditor() {
-            textField = new JTextField();
-            textField.getDocument().addDocumentListener(this);
+            getDocument().addDocumentListener(this);
             filter = null;
         }
 
         public SearchFieldEditor(int cols) {
             this();
-            textField.setColumns(cols);
+            setColumns(cols);
         }
 
         @Override
         public Component getEditorComponent() {
-            return textField;
+            return this;
         }
 
         @Override
@@ -267,15 +292,15 @@ public class EditableSearchComboBox extends JComboBox {
 
             isSetting = true;
             if (anObject == null) {
-                textField.setText("");
+                setText("");
             } else {
                 if(anObject instanceof AssertionTreeNode){
                     AssertionTreeNode node = (AssertionTreeNode) anObject;
                     //todo make this a function so caller supplied logic for what is shown
-                    textField.setText(node.getName());
+                    setText(node.getName());
                     selectedNode = node;
                 } else{
-                    textField.setText(anObject.toString());
+                    setText(anObject.toString());
                 }
             }
             isSetting = false;
@@ -287,22 +312,7 @@ public class EditableSearchComboBox extends JComboBox {
 
         @Override
         public Object getItem() {
-            return textField.getText();
-        }
-
-        @Override
-        public void selectAll() {
-            textField.selectAll();
-        }
-
-        @Override
-        public void addActionListener(ActionListener l) {
-            textField.addActionListener(l);
-        }
-
-        @Override
-        public void removeActionListener(ActionListener l) {
-            textField.removeActionListener(l);
+            return getText();
         }
 
         @Override
@@ -330,7 +340,7 @@ public class EditableSearchComboBox extends JComboBox {
 
             isFiltering = true;
             if (filter != null) {
-                filter.setPrefix(textField.getText());
+                filter.setPrefix(getText());
             }
             ((FilterableComboBoxModel) getModel()).setFilter(filter);
 
@@ -342,17 +352,17 @@ public class EditableSearchComboBox extends JComboBox {
             if (hasSearchableItems) {
                 if (getModel().getSize() > 0) {
                     setPopupVisible(true);
-                    textField.setBackground(Color.white);
+                    setBackground(Color.white);
                 } else {
-                    if (!"".equals(textField.getText())) {
-                        textField.setBackground(new Color(0xFF, 0xFF, 0xe1));
+                    if (!"".equals(getText())) {
+                        setBackground(new Color(0xFF, 0xFF, 0xe1));
                     }
                 }
             } else {
-                if (!"".equals(textField.getText())) {
-                    textField.setBackground(new Color(0xFF, 0xFF, 0xe1));
+                if (!"".equals(getText())) {
+                    setBackground(new Color(0xFF, 0xFF, 0xe1));
                 } else {
-                    textField.setBackground(Color.white);
+                    setBackground(Color.white);
                 }
             }
             isFiltering = false;
@@ -362,8 +372,8 @@ public class EditableSearchComboBox extends JComboBox {
          * Clears the text field and sets background back to white.
          */
         public void clearSearch() {
-            textField.setText("");
-            textField.setBackground(Color.white);
+            setText("");
+            setBackground(Color.white);
         }
     }
 
