@@ -37,6 +37,7 @@ public class TopComponents {
     private boolean connectionLost = false;
     private URI ssgURL;
     private String logonWarningBanner;
+    private SsmPreferences preferences;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -83,7 +84,16 @@ public class TopComponents {
     }
 
     public SsmPreferences getPreferences() {
-        return getMainWindow().getPreferences();
+        SsmPreferences preferences = this.preferences;
+        if ( preferences == null ) {
+            MainWindow mainWindow = getMainWindow();
+            this.preferences = preferences = mainWindow==null ? null : mainWindow.getPreferences();
+        }
+        return preferences;
+    }
+
+    public void setPreferences( SsmPreferences preferences ) {
+        this.preferences = preferences;    
     }
 
     public void disconnectFromGateway() {

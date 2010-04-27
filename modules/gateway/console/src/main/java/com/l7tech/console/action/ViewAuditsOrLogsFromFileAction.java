@@ -17,15 +17,8 @@ import com.l7tech.gui.util.FileChooserUtil;
 
 /**
  * Action to load saved audit or log records.
- *
- * @author $Author$
- * @version $Revision$
  */
-public class ViewAuditsOrLogsFromFileAction extends SecureAction {
-
-    public ViewAuditsOrLogsFromFileAction() {
-        super(null, UI_AUDIT_WINDOW);
-    }
+public class ViewAuditsOrLogsFromFileAction extends BaseAction {
 
     /**
      * @return the action name

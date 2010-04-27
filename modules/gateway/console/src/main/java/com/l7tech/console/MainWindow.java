@@ -1983,7 +1983,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
         if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
         auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
-        disableUntilLogin(auditOrLogFromFileAction);
         return auditOrLogFromFileAction;
     }
 

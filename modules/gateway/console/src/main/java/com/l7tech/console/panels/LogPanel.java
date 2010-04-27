@@ -68,6 +68,9 @@ public class LogPanel extends JPanel {
     public static final int LOG_SERVICE_COLUMN_INDEX = 10;
     public static final int LOG_THREAD_COLUMN_INDEX = 11;
 
+    private static final String DATE_FORMAT_PATTERN = "yyyyMMdd HH:mm:ss.SSS";
+    private static final String DATE_FORMAT_ZONE_PATTERN = "yyyyMMdd HH:mm:ss.SSS z";
+
     private static final String[] COLUMN_NAMES = {
             "Sig",          // digital signature
             "Message #",
@@ -101,7 +104,7 @@ public class LogPanel extends JPanel {
     private LogPanelControlPanel controlPanel = new LogPanelControlPanel();
     private int[] tableColumnWidths = new int[20];
     private boolean isAuditType;
-    private boolean signAudits = isSignAudits(true);
+    private boolean signAudits;
     private String nodeId;
     private JPanel bottomPane;
     private JLabel filterLabel;
@@ -152,7 +155,11 @@ public class LogPanel extends JPanel {
         /**
          * Retrieves between a fixed start and end time.
          */
-        TIME_RANGE
+        TIME_RANGE,
+        /**
+         * No retrieval (offline data)
+         */
+        NONE
     }
 
     private String threadId = "";
@@ -625,7 +632,6 @@ public class LogPanel extends JPanel {
         }
 
         setControlPanelFromData();
-        updateControlState();
     }
 
     /**
@@ -661,8 +667,10 @@ public class LogPanel extends JPanel {
         getMsgProgressBar().setVisible(true);   // Shows progress bar only upon full retrieval; not upon incremental auto-refresh.
         clearLogCache();
         if (retrievalMode == RetrievalMode.DURATION) {
+            auditLogTableSorterModel.setTimeZone( null );
             refreshLogs();
         } else if (retrievalMode == RetrievalMode.TIME_RANGE) {
+            auditLogTableSorterModel.setTimeZone( timeRangeTimeZone );
             updateLogAutoRefresh();
             updateViewSelection();
         }
@@ -774,6 +782,7 @@ public class LogPanel extends JPanel {
     }
 
     private AuditLogMessage cacheLogMessage( final LogMessage logMessage, final AuditLogMessage auditLogMessage ) {
+        auditLogMessage.setNodeName( logMessage.getNodeName() );
         this.cachedLogMessages.put( logMessage.getMsgNumber(), new SoftReference<AuditLogMessage>( auditLogMessage ) );
         return auditLogMessage;
     }
@@ -804,8 +813,14 @@ public class LogPanel extends JPanel {
     private void updateMsgDetails( final LogMessage lm ) {
         String msg = "";
 
+        TimeZone timeZone = retrievalMode == RetrievalMode.TIME_RANGE ? timeRangeTimeZone : null;
+        SimpleDateFormat sdf = timeZone==null || timeZone.equals( TimeZone.getDefault() ) ?
+                new SimpleDateFormat( DATE_FORMAT_PATTERN ):
+                new SimpleDateFormat( DATE_FORMAT_ZONE_PATTERN );
+        if ( timeZone != null ) sdf.setTimeZone( timeZone );
+
         msg += nonull("Node       : ", lm.getNodeName());
-        msg += nonull("Time       : ", lm.getTime());
+        msg += nonull("Time       : ", sdf.format( lm.getTimestamp() ));
         msg += nonull("Severity   : ", lm.getSeverity());
         msg += nonule("Request Id : ", lm.getReqId());
         msg += nonull("Class      : ", lm.getMsgClass());
@@ -1759,6 +1774,7 @@ public class LogPanel extends JPanel {
      */
     public void setLogs(Map<Long, ? extends LogMessage> logs) {
         onDisconnect();
+        retrievalMode = RetrievalMode.NONE;
         getFilteredLogTableSorter().setLogs(this, logs);
         setDynamicData(false);
     }
@@ -2098,6 +2114,7 @@ public class LogPanel extends JPanel {
     }
 
     public boolean importView(File file) throws IOException {
+        retrievalMode = RetrievalMode.NONE;
         setDynamicData(false);
 
         InputStream in = null;
@@ -2168,7 +2185,7 @@ public class LogPanel extends JPanel {
         AuditRecord record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
         if ( record == null )
             throw new FindException("Missing audit record for id '"+logMessage.getMsgNumber()+"'.");
-        return new AuditLogMessage( record );
+        return new AuditLogMessage( record, logMessage.getNodeName() );
     }
 
     public static class WriteableLogMessage implements Comparable, Serializable {

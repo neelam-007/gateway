@@ -17,8 +17,12 @@ public class AuditLogMessage extends LogMessage {
     //- PUBLIC
 
     public AuditLogMessage( final AuditRecord auditRecord ) {
-        super( auditRecord.getMillis() );
         this.auditRecord = auditRecord;
+    }
+
+    public AuditLogMessage( final AuditRecord auditRecord, final String nodeName ) {
+        this.auditRecord = auditRecord;
+        setNodeName( nodeName );
     }
 
     @Override

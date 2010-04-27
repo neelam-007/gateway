@@ -12,7 +12,6 @@ public class AuditHeaderLogMessage extends LogMessage {
     //- PUBLIC
 
     public AuditHeaderLogMessage( final AuditRecordHeader header ) {
-        super( header.getTimestamp() );
         this.header = header;
     }
 

@@ -10,7 +10,6 @@ public class LogRecordLogMessage extends LogMessage {
     //- PUBLIC
 
     public LogRecordLogMessage( final SSGLogRecord log ) {
-        super( log.getMillis() );
         this.log = log;
     }
 

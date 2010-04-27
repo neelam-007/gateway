@@ -1,8 +1,6 @@
 package com.l7tech.console.util;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * LogMessages are displayed in the log and audit viewer.
@@ -10,10 +8,6 @@ import java.util.Date;
 public abstract class LogMessage implements Comparable {
 
     //- PUBLIC
-
-    public String getTime() {
-        return time;
-    }
 
     public String getNodeName() {
         return nodeName;
@@ -112,17 +106,11 @@ public abstract class LogMessage implements Comparable {
 
     //- PROTECTED
 
-    protected LogMessage( final long timestamp ) {
-        time = formatTime( timestamp );        
+    protected LogMessage() {
     }
 
     //- PRIVATE
 
-    private final String time;
     private String nodeName = "";  // gets filled in afterward
 
-    private static String formatTime( final long time ) {
-        SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
-        return sdf.format(new Date(time));
-    }
 }

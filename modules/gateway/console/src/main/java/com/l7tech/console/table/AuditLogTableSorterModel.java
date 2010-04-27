@@ -19,7 +19,6 @@ import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.util.HexUtils;
 
-import javax.crypto.Cipher;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.IOException;
@@ -27,6 +26,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.interfaces.ECKey;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -82,6 +82,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     private static Logger logger = Logger.getLogger(AuditLogTableSorterModel.class.getName());
+
+    private static final String DATE_FORMAT_PATTERN = "yyyyMMdd HH:mm:ss.SSS";
+
     private boolean ascending = false;
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
@@ -91,6 +94,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     private boolean displayingFromFile;
     private boolean truncated;
     private AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
+    private TimeZone timeZone;
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -174,6 +178,14 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         }
     }
 
+    public TimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone( final TimeZone timeZone ) {
+        this.timeZone = timeZone;
+    }
+
     /**
      * Apply the filter specified.
      */
@@ -238,7 +250,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
                 return msg.getNodeName();
             case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                return msg.getTime();
+                SimpleDateFormat sdf = getDateFormatter();
+                return sdf.format(new Date(msg.getTimestamp()) );
             case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                 return msg.getSeverity();
             case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
@@ -323,8 +336,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementB = logMsgB.getNodeName();
                     break;
                 case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                    elementA = logMsgA.getTime();
-                    elementB = logMsgB.getTime();
+                    SimpleDateFormat sdf = getDateFormatter();
+                    elementA = sdf.format(new Date(logMsgA.getTimestamp()));
+                    elementB = sdf.format(new Date(logMsgB.getTimestamp()));
                     break;
                 case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                     elementA = logMsgA.getSeverity();
@@ -386,6 +400,13 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 }
             }
         }
+    }
+
+    private SimpleDateFormat getDateFormatter() {
+        SimpleDateFormat sdf = new SimpleDateFormat( DATE_FORMAT_PATTERN );
+        TimeZone timeZone = this.timeZone;
+        if ( timeZone != null ) sdf.setTimeZone( timeZone );
+        return sdf;
     }
 
     /**
