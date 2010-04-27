@@ -8,10 +8,13 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,7 +37,7 @@ public class JmsUtilities {
             for (JmsAdmin.JmsTuple tuple : tuples) {
                 if (!(outboundOnly && tuple.getEndpoint().isMessageSource())) jmsQueues.add(tuple);
             }
-            return jmsQueues;
+            return sort(jmsQueues);
         } catch (Exception e) {
             throw new RuntimeException("Unable to look up list of known JMS Queues", e);
         }
@@ -119,5 +122,16 @@ public class JmsUtilities {
      */
     public static void selectEndpoint(JComboBox cb, JmsEndpoint endpoint) {
         selectEndpoint(cb, endpoint == null ? null : endpoint.getOid());
+    }
+    
+    private static List<JmsAdmin.JmsTuple> sort( final ArrayList<JmsAdmin.JmsTuple> jmsQueues ) {
+        Collections.sort( jmsQueues, new ResolvingComparator<JmsAdmin.JmsTuple,String>(new Resolver<JmsAdmin.JmsTuple,String>(){
+            @Override
+            public String resolve( final JmsAdmin.JmsTuple key ) {
+                String name = key.getEndpoint().getName();
+                return name==null ?  "" : name.toLowerCase();
+            }
+        }, false) );
+        return jmsQueues;
     }
 }
