@@ -73,19 +73,15 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
                                               final Message message,
                                               final String messageDescription,
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
-        final ProcessorResult processorResult;
+        ProcessorResult processorResult = null;
         if ( isResponse() ) {
             try {
-                if (!context.getRequest().isSoap()) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP);
-                    return AssertionStatus.NOT_APPLICABLE;
+                if (context.getRequest().isSoap()) {
+                    processorResult = context.getRequest().getSecurityKnob().getProcessorResult();
                 }
-                processorResult = context.getRequest().getSecurityKnob().getProcessorResult();
             } catch (SAXException e) {
                 throw new CausedIOException(e);
             }
-        } else {
-            processorResult = null;   
         }
 
         final XmlSecurityRecipientContext recipient = wssConfig.getRecipientContext();

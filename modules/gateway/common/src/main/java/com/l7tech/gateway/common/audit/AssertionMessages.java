@@ -264,7 +264,7 @@ public class AssertionMessages extends Messages {
     public static final M WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN   = m(5410, Level.INFO, "Request did not include a token suitable for response encryption.");
 
     // ServerResponseWssIntegrity
-    public static final M ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP          = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
+    /** @deprecated */ @Deprecated public static final M ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP          = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_NOT_SOAP = m(5501, Level.WARNING, false, true, "Response not SOAP; cannot apply WS-Security signature");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL = m(5502, Level.INFO, "No matching elements to sign in response: Assertion therefore fails");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
