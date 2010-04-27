@@ -36,7 +36,7 @@ public class TracePolicyEvaluator implements AssertionTraceListener {
      * @param contextToTrace the context that is to be traced.  Required.  Caller retains ownership of the contextToTrace and remains responsible for closing it.
      * @param tracePolicyHandle the server policy to invoke for each trace event.  Required.  This handle will be closed when contextToTrace is closed.
      */
-    public static void createAndAttachToContext(final PolicyEnforcementContext contextToTrace, final ServerPolicyHandle tracePolicyHandle) {
+    public static TracePolicyEvaluator createAndAttachToContext(final PolicyEnforcementContext contextToTrace, final ServerPolicyHandle tracePolicyHandle) {
         final TracePolicyEnforcementContext tracePec = new TracePolicyEnforcementContext(contextToTrace);
         final TracePolicyEvaluator traceEvaluator = new TracePolicyEvaluator(tracePec, tracePolicyHandle);
         contextToTrace.runOnClose(new Runnable() {
@@ -48,6 +48,11 @@ public class TracePolicyEvaluator implements AssertionTraceListener {
             }
         });
         contextToTrace.setTraceListener(traceEvaluator);
+        return traceEvaluator;
+    }
+
+    TracePolicyEnforcementContext getTraceContext() {
+        return tracePec;
     }
 
     @Override

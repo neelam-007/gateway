@@ -16,17 +16,17 @@ import java.util.*;
  * Selector for trace.* suffixes.
  */
 public class DebugTraceVariableContextSelector implements ExpandVariables.Selector<DebugTraceVariableContext> {
-    public static final String SERVICE_OID = "service.oid";
-    public static final String POLICY_OID = "policy.oid";
-    public static final String ASSERTION_PATH = "assertion.path";
-    public static final String ASSERTION_PATHSTR = "assertion.pathstr";
-    public static final String ASSERTION_ORDINAL = "assertion.ordinal";
-    public static final String ASSERTION_SHORTNAME = "assertion.shortname";
-    public static final String STATUS = "status";
-    public static final String REQUEST = "request";
-    public static final String RESPONSE = "response";
+    private static final String SERVICE_OID = "service.oid";
+    private static final String POLICY_OID = "policy.oid";
+    private static final String ASSERTION_PATH = "assertion.path";
+    private static final String ASSERTION_PATHSTR = "assertion.pathstr";
+    private static final String ASSERTION_ORDINAL = "assertion.ordinal";
+    private static final String ASSERTION_SHORTNAME = "assertion.shortname";
+    private static final String STATUS = "status";
+    private static final String REQUEST = "request";
+    private static final String RESPONSE = "response";
 
-    public static final String PREFIX_VAR = "var.";
+    private static final String PREFIX_VAR = "var.";
 
     @Override
     public Selection select(String contextName, DebugTraceVariableContext context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -34,13 +34,29 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
         if (simpleGetter != null)
             return simpleGetter.call(context);
 
-        if (name.startsWith(PREFIX_VAR)) {
-            // Delegate to PolicyEnforcementContextGetter
-            String remainingName = name.substring(PREFIX_VAR.length());
-            return new Selection(context.getContext(), remainingName);
+        String remainingName;
+
+        if (null != (remainingName = startsWith(name, REQUEST))) {
+            return new Selection(context.getContext().getOriginalRequest(), remainingName);
+        }
+
+        if (null != (remainingName = startsWith(name, RESPONSE))) {
+            return new Selection(context.getContext().getOriginalResponse(), remainingName);
+        }
+
+        if (null != (remainingName = startsWith(name, PREFIX_VAR))) {
+            return new Selection(context.getContext().getOriginalContext(), remainingName);
         }
 
         return null;
+    }
+
+    private String startsWith(String name, String what) {
+        if (!name.toLowerCase().startsWith(what))
+            return null;
+
+        final String remainingName = name.substring(what.length());
+        return remainingName.startsWith(".") ? remainingName.substring(1) : remainingName;
     }
 
     @Override
