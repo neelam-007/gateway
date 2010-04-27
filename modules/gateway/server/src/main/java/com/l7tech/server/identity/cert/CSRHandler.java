@@ -79,11 +79,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.log(Level.SEVERE, "Failed authentication", e);
+            logger.log(Level.WARNING, "Authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return;
         } catch (MissingCredentialsException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.log(Level.SEVERE, "Failed authentication", e);
+            logger.log(Level.WARNING, "Authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return;
         } catch (IssuedCertNotPresentedException e) {
             logger.log(Level.WARNING, "Requestor is refused csr");
@@ -91,11 +91,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
               " Contact your administrator for more info.");
             return;
         } catch ( LicenseException e) {
-            logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
+            logger.log(Level.WARNING, "Service is unlicensed, returning 500", ExceptionUtils.getDebugException(e));
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled by license");
             return;
         } catch (ListenerException e) {
-            logger.log(Level.WARNING, "Request not permitted on this port, returning 500", e);
+            logger.log(Level.WARNING, "Request not permitted on this port, returning 500", ExceptionUtils.getDebugException(e));
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled on this port");
             return;
         }
