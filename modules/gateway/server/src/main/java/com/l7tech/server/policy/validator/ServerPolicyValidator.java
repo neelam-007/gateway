@@ -31,12 +31,13 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.nio.charset.Charset;
@@ -398,23 +399,30 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         Document schemaDoc;
         try {
             schemaDoc = XmlUtil.stringToDocument(sri.getDocument());
-            Element schemael = schemaDoc.getDocumentElement();
-            List listofimports = DomUtils.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-            if (!listofimports.isEmpty()) {
-                ArrayList<String> unresolvedImportsList = new ArrayList<String>();
 
-                //noinspection ForLoopReplaceableByForEach
-                for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
-                    Element importEl = (Element)iterator.next();
-                    String importns = importEl.getAttribute("namespace");
-                    String importloc = importEl.getAttribute("schemaLocation");
+            final List<Element> dependencyElements = new ArrayList<Element>();
+            final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
+            schemaReferenceProcessor.processDocumentReferences( schemaDoc, new DocumentReferenceProcessor.ReferenceCustomizer(){
+                @Override
+                public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+                    if ( node instanceof Element ) dependencyElements.add( (Element)node );
+                    return null;
+                }
+            } );
+
+            if (!dependencyElements.isEmpty()) {
+                final ArrayList<String> unresolvedImportsList = new ArrayList<String>();
+
+                for ( final Element dependencyElement : dependencyElements  ) {
+                    final String schemaNamespace = dependencyElement.getAttribute("namespace");
+                    final String schemaUrl = dependencyElement.getAttribute("schemaLocation");
                     try {
-                        if (importloc == null || schemaEntryManager.findByName(importloc).isEmpty()) {
-                            if (importns == null || schemaEntryManager.findByTNS(importns).isEmpty()) {
-                                if (importloc != null) {
-                                    unresolvedImportsList.add(importloc);
+                        if (schemaEntryManager.findByName(schemaUrl).isEmpty()) {
+                            if (!"import".equals(dependencyElement.getLocalName()) || schemaEntryManager.findByTNS(schemaNamespace).isEmpty()) {
+                                if (schemaUrl != null) {
+                                    unresolvedImportsList.add(schemaUrl);
                                 } else {
-                                    unresolvedImportsList.add(importns);
+                                    unresolvedImportsList.add(schemaNamespace);
                                 }
                             }
                         }
@@ -423,8 +431,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     }
                 }
                 if (!unresolvedImportsList.isEmpty()) {
-                    StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved imported " +
-                            "schemas: ");
+                    StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved " +
+                            "schema dependencies: ");
                     for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
                         msg.append(iterator.next());
                         if (iterator.hasNext()) msg.append(", ");
