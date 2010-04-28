@@ -659,7 +659,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         boolean updatedContent = false;
         String dependencySchemaContent = null;
 
-        // Case 1: schemaLocation exists
+        // Find from global schemas
         if ( !dependencyLocation.isEmpty() ) {
             attemptedFindByLocation = true;
             systemId = dependencyLocation;
@@ -677,15 +677,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     }
                 }
             }
-
-            final String newSchemaContent = fetchSchemaFromUrl(dependencyLocation, dependencySchemaContent==null);
-            if ( newSchemaContent != null ) {
-                updatedContent = true;
-                dependencySchemaContent = newSchemaContent;
-            }
         }
 
-        // Case 2: schemaLocation does not exist, or did not resolve
         if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
             attemptedFindByNamespace = true;
             systemId = generateURN(dependencyNamespace==null ? "" : dependencyNamespace);
@@ -693,7 +686,18 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             if ( entries != null && !entries.isEmpty()) {
                 dependencySchemaContent = entries.iterator().next().getSchema();
             }
+        }
 
+        // Find or refresh from URL or other schemas in WSDL
+        if ( !dependencyLocation.isEmpty() ) {
+            final String newSchemaContent = fetchSchemaFromUrl(dependencyLocation, dependencySchemaContent==null);
+            if ( newSchemaContent != null ) {
+                updatedContent = true;
+                dependencySchemaContent = newSchemaContent;
+            }
+        }
+
+        if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
             final String newSchemaContent = fetchSchemaByTargetNamespace(dependencyNamespace, dependencySchemaContent==null);
             if ( newSchemaContent != null ) {
                 updatedContent = true;
@@ -704,11 +708,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if ( dependencySchemaContent == null) {
             String errorMessage;
             if ( attemptedFindByLocation && attemptedFindByNamespace ) {
-                errorMessage = "Cannot locate schema dependency using location:\n" + dependencyLocation + "\n or by namespace:\n" + dependencyNamespace;
+                errorMessage = "Cannot locate schema dependency using location:\n\t" + dependencyLocation + "\nor by namespace:\n\t" + dependencyNamespace;
             } else if ( attemptedFindByLocation ) {
-                errorMessage = "Cannot locate schema dependency using location:\n" + dependencyLocation;
+                errorMessage = "Cannot locate schema dependency using location:\n\t" + dependencyLocation;
             } else if ( attemptedFindByNamespace ) {
-                errorMessage = "Cannot locate schema dependency by namespace:\n" + dependencyNamespace;
+                errorMessage = "Cannot locate schema dependency by namespace:\n\t" + dependencyNamespace;
             } else {
                 errorMessage = "Invalid schema " + dependencyEl.getLocalName();
             }
@@ -989,7 +993,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return null;
         }
         String wsdl = service.getWsdlXml();
-        return stringToDoc(wsdl);
+        return wsdl==null ? null : stringToDoc(wsdl);
     }
 
     private void readFromFile() {
@@ -1067,9 +1071,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             new URL(url);
         } catch (MalformedURLException e) {
             final String errorMsg = url + " " + resources.getString("error.badurl");
-            if (reportErrorEnabled) {
-                displayError(errorMsg, null);
-            }
             log.log(Level.FINE, errorMsg, e);
             return null;
         }
@@ -1119,7 +1120,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private String fetchSchemaByTargetNamespace(String targetNamespace, boolean reportErrorEnabled) {
         Document wsdlDocument = getWsdlDocument();
         if (wsdlDocument == null) {
-            if (reportErrorEnabled) displayError(resources.getString("error.nowsdl"), null);
             return null;
         }
 
@@ -1139,7 +1139,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         }
 
-        if (reportErrorEnabled) displayError(MessageFormat.format(resources.getString("error.invalid.targetnamespace"), targetNamespace), null);
         return null;
     }
 
