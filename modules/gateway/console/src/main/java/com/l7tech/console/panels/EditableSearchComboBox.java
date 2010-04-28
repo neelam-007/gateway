@@ -54,20 +54,48 @@ public class EditableSearchComboBox extends JComboBox {
         editor.addKeyListener(listener);
     }
 
+    /**
+     * Both okToLoopForward and okToLoopBack allow for the behaviour where the first time results are exhausted
+     * in a direction, the user can be shown a message (via returning null), but the subsequent time an attempt is made
+     * to move in that direction, the index will loop back to the correct index (either the start or the end)
+     */
+    private boolean okToLoopForward = false;
+    private boolean okToLoopBack = false;
+
     public Object getNextSearchResult(){
         if(model.getSize() < 1) return null;
 
-        if(searchResultsIndexer < model.getSize() - 1) searchResultsIndexer++;
-        else return null;//no more results
+        okToLoopBack = false;
+        
+        if (searchResultsIndexer == model.getSize() - 1 && okToLoopForward){
+            searchResultsIndexer = startIndex;//reset
+            okToLoopForward = false;
+        }
+
+        if (searchResultsIndexer < model.getSize() - 1) searchResultsIndexer++;
+        else {
+            okToLoopForward = true;
+            return null;//no more results
+        }
 
         return model.getElementAt(searchResultsIndexer);
     }
 
     public Object getPreviousAssertionOrdinal(){
-        if(searchResultsIndexer == 0 || model.getSize() < 1) return null;
+        if(model.getSize() < 1) return null;
+
+        okToLoopForward = false;
+
+        if(searchResultsIndexer <= 0 && okToLoopBack){
+            searchResultsIndexer = model.getSize();//reset
+            okToLoopBack = false;
+        }
 
         if(searchResultsIndexer > 0) searchResultsIndexer--;
-        else return null;//no previous results
+        else {
+            okToLoopBack = true;
+            return null;//no previous results
+        }
 
         return model.getElementAt(searchResultsIndexer);
     }
@@ -75,13 +103,9 @@ public class EditableSearchComboBox extends JComboBox {
     public boolean hasResults(){
         return model.getSize() > 0;
     }
-
+//
     public void resetSearchResultIndex(){
         searchResultsIndexer = startIndex;
-    }
-
-    public void setSearchIndexAtEnd(){
-        searchResultsIndexer = model.getSize();
     }
 
     /**
@@ -90,6 +114,10 @@ public class EditableSearchComboBox extends JComboBox {
      */
     public void updateSearchableItems(List searchableItems) {
         model.updateSearchableItems(searchableItems);
+    }
+
+    public void refresh(){
+        model.refresh();
     }
 
     /**
@@ -225,6 +253,10 @@ public class EditableSearchComboBox extends JComboBox {
             updateFilteredItems();
         }
 
+        public void refresh(){
+            updateFilteredItems();
+        }
+        
         /**
          * Updates the searchable items into the filter items list.
          */
@@ -291,9 +323,11 @@ public class EditableSearchComboBox extends JComboBox {
             if(isFiltering) return;
 
             isSetting = true;
-            if (anObject == null) {
-                setText("");
-            } else {
+
+            //anObject comes directly from 'getSelectedItem' on the combo box. anObject is null, when nothing
+            //is selected. Therefore we do not want to set "" as the text when anObject is null. We simply will do
+            //nothing, which will leave any text previously entered in the text field.
+            if (anObject != null) {
                 if(anObject instanceof AssertionTreeNode){
                     AssertionTreeNode node = (AssertionTreeNode) anObject;
                     //todo make this a function so caller supplied logic for what is shown

@@ -4,6 +4,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -214,17 +215,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
         try {
             foundNode = findTreeNode(root, indexPath);
         } catch (OrdinalIndexOutOfRangeException e) {
-            DialogDisplayer.showMessageDialog(PolicyTree.this,
-                    "Assertion with ordinal #" + stringOrdinal + " not found. " + e.getMessage(),
-                    "Assertion not found", JOptionPane.WARNING_MESSAGE, null);
+            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found. " + e.getMessage());
+            MainWindow.showInformationDialog(iDialog, null);
             return;
         }
 
         //if null show warning
         if (foundNode == null) {
-            DialogDisplayer.showMessageDialog(PolicyTree.this,
-                    "Assertion with ordinal #" + stringOrdinal + " not found.",
-                    "Assertion not found", JOptionPane.WARNING_MESSAGE, null);
+            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found.");
+            MainWindow.showInformationDialog(iDialog, null);
             return;
         }
 
@@ -251,7 +250,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         return foundAssertion;
     }
 
-    //todo remove when ordinals are modified to be at 1, so users won't make this mistake while the first displayed ordinal is 2
     private class OrdinalIndexOutOfRangeException extends Exception{
         private OrdinalIndexOutOfRangeException(String message) {
             super(message);

@@ -55,6 +55,10 @@ public class TopComponents {
         getMainWindow().firePolicyEdit(pep);
     }
 
+    public void fireGlobalAction(final String actionName, final Component source){
+        getMainWindow().fireGlobalAction(actionName, source);
+    }
+    
     public boolean isConnectionLost() {
         return connectionLost;
     }

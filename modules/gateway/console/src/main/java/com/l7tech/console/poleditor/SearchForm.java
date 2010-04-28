@@ -4,6 +4,7 @@
  */
 package com.l7tech.console.poleditor;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.EditableSearchComboBox;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -122,6 +123,20 @@ public class SearchForm {
             }
         });
 
+        nextButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TopComponents.getInstance().fireGlobalAction(MainWindow.L7_F3, nextButton);
+            }
+        });
+
+        previousButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TopComponents.getInstance().fireGlobalAction(MainWindow.L7_SHIFT_F3, previousButton);
+            }
+        });
+        
         caseSensitiveCheckBox.setMnemonic(KeyEvent.VK_C);
     }
 
@@ -160,14 +175,11 @@ public class SearchForm {
     }
 
     public void resetSearchIndex(){
-        ((EditableSearchComboBox)searchComboBox).resetSearchResultIndex();    
-    }
-
-    public void setSearchIndexAtEnd(){
-        ((EditableSearchComboBox)searchComboBox).setSearchIndexAtEnd();
+        ((EditableSearchComboBox)searchComboBox).resetSearchResultIndex();
     }
 
     public boolean hasSearchResults(){
+        //todo only return true when there is a filter present
         return ((EditableSearchComboBox)searchComboBox).hasResults();
     }
 
@@ -185,7 +197,7 @@ public class SearchForm {
     public void setSearchableTreeNodes(List<AbstractTreeNode> allAssertions){
         ((EditableSearchComboBox) searchComboBox).updateSearchableItems(allAssertions);
     }
-    
+
     /**
      * @param mouseCloseListener MouseListener allows clients to know when the user has clicked on the 'x' area, to indicate
      * that the search form should no longer be shown
@@ -223,9 +235,9 @@ public class SearchForm {
     public void showPanel(final PolicyTree policyTree){
         if(searchPanel.isVisible()) {
             //If the panel is snown, then simply place focus back in the search field. Don't want existing text to be lost
-            final EditableSearchComboBox.SearchFieldEditor fieldEditor = (EditableSearchComboBox.SearchFieldEditor) searchComboBox.getEditor();
-            fieldEditor.setText(fieldEditor.getText());//todo fix, hack for now to get model to update it's filtered items
+            //case sensitive may have been changed, so we need to cause the set of filtered items to be updated
             searchComboBox.requestFocusInWindow();
+            ((EditableSearchComboBox) searchComboBox).refresh();
             return;
         }
 

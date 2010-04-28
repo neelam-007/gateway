@@ -97,7 +97,6 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private static JComponent focusOwner = null;//todo add getter for this so that classes like ClipboardActions can also use this reference and remove it's focus tracking code
 
-
     /* this class classloader */
     private final ClassLoader cl = MainWindow.class.getClassLoader();
 
@@ -611,14 +610,11 @@ public class MainWindow extends JFrame implements SheetHolder {
      * Show an InformationDialog centered on screen
      * @param iDialog
      */
-    public static void showInformationDialog(final InformationDialog iDialog, final JComponent parent, final Runnable continuation){
+    public static void showInformationDialog(final InformationDialog iDialog, final Runnable continuation){
         iDialog.pack();
-
-        final Rectangle rect = parent.getVisibleRect();
-
-        iDialog.setLocation(new Point(rect.x, rect.y));
-
         Utilities.centerOnScreen(iDialog);
+        iDialog.setModal(false);
+        iDialog.requestFocusInWindow();
         DialogDisplayer.display(iDialog, continuation);
     }
 
@@ -3381,6 +3377,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSaveOnlyMenuItem().setAction(policyPanel.getSaveOnlyAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
+    }
+
+    public void fireGlobalAction(final String actionName, final Component source){
+        if(actionName.equals(L7_F3)){
+            f3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_F3));
+        } else if(actionName.equals(L7_SHIFT_F3)){
+            shiftF3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_SHIFT_F3));            
+        }
     }
 
     public void showLicenseWarning(boolean invalidLicense, boolean expiresSoon, Date expiry) {

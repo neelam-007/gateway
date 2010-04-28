@@ -451,26 +451,24 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if(searchForm.hasSearchResults()){
                         final InformationDialog iDialog;
                         if(isF3){
-                            iDialog = new InformationDialog("No more results. Press F3 to search from the top.", KeyEvent.VK_F3, false);
+                            iDialog = new InformationDialog("No more results. Press F3 to search from the top.", KeyEvent.VK_F3);
                         }else{
                             iDialog = new InformationDialog("No more results. Press Shift + F3 to search from the bottom.",
                                     KeyStroke.getKeyStroke(KeyEvent.VK_F3,  KeyEvent.VK_SHIFT).getKeyCode(), true);
                         }
 
-                        MainWindow.showInformationDialog(iDialog, policyTree, new Runnable() {
+                        MainWindow.showInformationDialog(iDialog, new Runnable() {
                             @Override
                             public void run() {
                                 //this runs on the swing thread
                                 if (iDialog.isSpecialKeyDisposed()) {
                                     final String goToOrdinal;
                                     if (isF3) {
-                                        searchForm.resetSearchIndex();
                                         goToOrdinal = searchForm.getNextAssertionOrdinal();
-                                    } else{
-                                        searchForm.setSearchIndexAtEnd();
+                                    } else {
                                         goToOrdinal = searchForm.getPreviousAssertionOrdinal();
                                     }
-                                    
+
                                     if (goToOrdinal != null) {
                                         policyTree.goToAssertionTreeNode(goToOrdinal);
                                     }
@@ -478,8 +476,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             }
                         });
                     }else{
-                        final InformationDialog iDialog = new InformationDialog("No search results.", 0, false);
-                        MainWindow.showInformationDialog(iDialog, policyTree, null);
+                        final InformationDialog iDialog = new InformationDialog("No search results.");
+                        MainWindow.showInformationDialog(iDialog, null);
                     }
                 }else {
                     policyTree.goToAssertionTreeNode(ordinal);
