@@ -2402,7 +2402,25 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private EditableSearchComboBox getSearchComboBox() {
         if (searchComboBox == null) {
-            searchComboBox = new EditableSearchComboBox();
+            searchComboBox = new EditableSearchComboBox(new EditableSearchComboBox.Filter() {
+                @Override
+                public boolean accept(Object obj) {
+                    //match display names
+                    boolean matches = !(obj == null) && obj.toString().toLowerCase().startsWith(this.getFilterText().toLowerCase());
+
+                    //match uri as well
+                    if (obj instanceof ServiceNode) {
+                        ServiceNode serviceNode = (ServiceNode) obj;
+                        String routingUri = serviceNode.getEntityHeader().getRoutingUri();
+                        if (routingUri != null) {
+                            matches = matches || routingUri.toLowerCase().startsWith(this.getFilterText().toLowerCase());
+                        }
+                    }
+
+                    return matches;
+                }
+            });
+            
             searchComboBox.setEnabled(false);
             searchLabel.setEnabled(false);
 
@@ -2423,26 +2441,6 @@ public class MainWindow extends JFrame implements SheetHolder {
                     setIcon(new ImageIcon(node.getIcon()));
                     setText(node.getName());
                     return this;
-                }
-            });
-
-            //set filter style
-            searchComboBox.setFilter(new EditableSearchComboBox.Filter() {
-                @Override
-                public boolean accept(Object obj) {
-                    //match display names
-                    boolean matches = !(obj == null) && obj.toString().toLowerCase().startsWith(this.prefix.toLowerCase());
-
-                    //match uri as well
-                    if (obj instanceof ServiceNode) {
-                        ServiceNode serviceNode = (ServiceNode) obj;
-                        String routingUri = serviceNode.getEntityHeader().getRoutingUri();
-                        if (routingUri != null) {
-                            matches = matches || routingUri.toLowerCase().startsWith(this.prefix.toLowerCase());
-                        }
-                    }
-
-                    return matches; 
                 }
             });
 

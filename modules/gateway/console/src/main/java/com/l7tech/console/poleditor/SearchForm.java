@@ -37,13 +37,15 @@ public class SearchForm {
         }
     };
 
+    private EditableSearchComboBox.Filter filter;
+
     /**
      * Create a new SearchForm.
      *
      * Note: idea's createUIComponents() is inserted into the constructor before any code below runs 
      */
     public SearchForm() {
-        //any component which can get focus needs to listen for escape...there must be an easier way to do this for a group of components
+        //todo fix any component which can get focus needs to listen for escape...there must be an easier way to do this for a group of components
         searchPanel.addKeyListener(escapeListener);
         previousButton.addKeyListener(escapeListener);
         nextButton.addKeyListener(escapeListener);
@@ -69,35 +71,6 @@ public class SearchForm {
                 setText(AssertionTreeNode.getVirtualOrdinalString(node) + " " + node.getName());
 
                 return this;
-            }
-        });
-
-        //set filter style
-        ((EditableSearchComboBox)searchComboBox).setFilter(new EditableSearchComboBox.Filter() {
-            @Override
-            public boolean accept(Object obj) {
-                if (obj == null) return false;//this can't happen but leaving in for future changes
-                
-                //match display names
-                if (!(obj instanceof AbstractTreeNode)) return false;
-
-                AbstractTreeNode node = (AbstractTreeNode) obj;
-
-                final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
-
-                final String nodeName = node.getName();
-
-                final String nodeNameLowerCase = nodeName.toLowerCase();
-                final int index = nodeNameLowerCase.indexOf(prefix.toLowerCase());
-                final boolean matches = index != -1;
-
-                if(!isCaseSensitive) return matches;
-
-                if(matches && isCaseSensitive){
-                    return nodeName.regionMatches(false, index, prefix, 0, prefix.length());
-                }
-
-                return false;
             }
         });
 
@@ -136,7 +109,15 @@ public class SearchForm {
                 TopComponents.getInstance().fireGlobalAction(MainWindow.L7_SHIFT_F3, previousButton);
             }
         });
-        
+
+        caseSensitiveCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //if case sensitive is toggled, then update the search results
+                ((EditableSearchComboBox) searchComboBox).refresh();
+            }
+        });
+
         caseSensitiveCheckBox.setMnemonic(KeyEvent.VK_C);
     }
 
@@ -216,7 +197,35 @@ public class SearchForm {
         xLabel = new JLabel(new CloseIcon(18));
         xLabel.setText(null);
 
-        searchComboBox = new EditableSearchComboBox();
+        filter = new EditableSearchComboBox.Filter() {
+                @Override
+                public boolean accept(Object obj) {
+                    if (obj == null) return false;//this can't happen but leaving in for future changes
+
+                    //match display names
+                    if (!(obj instanceof AbstractTreeNode)) return false;
+
+                    AbstractTreeNode node = (AbstractTreeNode) obj;
+
+                    final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
+
+                    final String nodeName = node.getName();
+
+                    final String nodeNameLowerCase = nodeName.toLowerCase();
+                    final int index = nodeNameLowerCase.indexOf(getFilterText().toLowerCase());
+                    final boolean matches = index != -1;
+
+                    if(!isCaseSensitive) return matches;
+
+                    if(matches && isCaseSensitive){
+                        return nodeName.regionMatches(false, index, getFilterText(), 0, getFilterText().length());
+                    }
+
+                    return false;
+                }
+            };
+
+        searchComboBox = new EditableSearchComboBox(filter);
     }
 
     public JPanel getSearchPanel() {

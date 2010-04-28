@@ -228,7 +228,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         final TreeNode[] pathToNode = foundNode.getPath();
-        this.setSelectionPath(new TreePath(pathToNode));
+        final TreePath path = new TreePath(pathToNode);
+        this.setSelectionPath(path);
+        this.scrollPathToVisible(path);
         this.requestFocusInWindow();
     }
 
