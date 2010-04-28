@@ -7,11 +7,12 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.DomUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.xml.DocumentReferenceProcessor;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.util.logging.Level;
@@ -117,8 +118,8 @@ public class ExternalSchemaReference extends ExternalReference {
                 // check schema imports, if any
                 if (schema != null) {
                     for (ExternalSchemaReference.ListedImport listedImport : listImports(schema)) {
-                        if (listedImport.name.equals(name)) return false;
-                        if (listedImport.tns.equals(tns)) return false;
+                        if (listedImport.name!=null && listedImport.name.equals(name)) return false;
+                        if (listedImport.tns!=null && listedImport.tns.equals(tns)) return false;
                     }
                 }
             }
@@ -129,7 +130,7 @@ public class ExternalSchemaReference extends ExternalReference {
     }
 
     static class ListedImport {
-        public ListedImport(String name, String tns) {
+        ListedImport(final String name, final String tns) {
             this.name = name;
             this.tns = tns;
         }
@@ -141,16 +142,28 @@ public class ExternalSchemaReference extends ExternalReference {
      * @return An array list of ListedImport objects
      */
     static ArrayList<ListedImport> listImports(Document schemaDoc) {
-        Element schemael = schemaDoc.getDocumentElement();
-        List<Element> listofimports = DomUtils.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-        ArrayList<ListedImport> output = new ArrayList<ListedImport>();
-        if (listofimports.isEmpty()) return output;
+        final ArrayList<ListedImport> output = new ArrayList<ListedImport>();
+        final List<Element> dependencyElements = new ArrayList<Element>();
+        final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
+        schemaReferenceProcessor.processDocumentReferences( schemaDoc, new DocumentReferenceProcessor.ReferenceCustomizer(){
+            @Override
+            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+                if ( node instanceof Element ) dependencyElements.add( (Element)node );
+                return null;
+            }
+        } );
 
-        for (Element importEl : listofimports) {
-            String importns = importEl.getAttribute("namespace");
-            String importloc = importEl.getAttribute("schemaLocation");
-            output.add(new ListedImport(importloc, importns));
+        for ( Element dependencyElement : dependencyElements ) {
+            String schemaNamespace = dependencyElement.hasAttribute("namespace") ?
+                    dependencyElement.getAttribute("namespace") :
+                    null;
+            String schemaUrl = dependencyElement.hasAttribute("schemaLocation") ?
+                    dependencyElement.getAttribute("schemaLocation") :
+                    null;
+
+            output.add(new ListedImport(schemaUrl, schemaNamespace));
         }
+
         return output;
     }
 
