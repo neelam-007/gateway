@@ -206,6 +206,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
+    private JMenuItem showAstnLnsMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
     private JMenuItem saveAndActivateMenuItem;
@@ -557,6 +558,20 @@ public class MainWindow extends JFrame implements SheetHolder {
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return validateMenuItem;
+    }
+
+    private JMenuItem getShowAssertionLineNumbersMenuItem() {
+        if (showAstnLnsMenuItem == null) {
+            showAstnLnsMenuItem = new JMenuItem();
+            showAstnLnsMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ShowLineNumbers16.png"));
+            showAstnLnsMenuItem.setIcon(icon);
+            showAstnLnsMenuItem.setText("Show Line Numbers");
+            int mnemonic = showAstnLnsMenuItem.getText().toCharArray()[5];
+            showAstnLnsMenuItem.setMnemonic(mnemonic);
+            showAstnLnsMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return showAstnLnsMenuItem;
     }
 
     private JMenuItem getImportMenuItem() {
@@ -937,6 +952,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             jcm.setSelected(getPreferences().isStatusBarBarVisible());
             menu.add(jcm);
         }
+
+        menu.add(getShowAssertionLineNumbersMenuItem());
 
         menu.addSeparator();
 
@@ -3375,6 +3392,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSaveOnlyMenuItem().setAction(policyPanel.getSaveOnlyAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
+        getShowAssertionLineNumbersMenuItem().setAction(policyPanel.getShowAssertionLineNumbersAction(getShowAssertionLineNumbersMenuItem()));
     }
 
     public void fireGlobalAction(final String actionName, final Component source){

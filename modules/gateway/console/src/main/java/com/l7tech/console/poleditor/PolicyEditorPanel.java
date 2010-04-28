@@ -16,6 +16,7 @@ import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -50,10 +51,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
+import javax.swing.event.*;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
@@ -90,17 +88,20 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
+    private AssertionLineNumbersTree assertionLineNumbersTree;
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
     private final TopComponents topComponents = TopComponents.getInstance();
-    private JScrollPane policyTreePane;
+    private JPanel policyTreePane;
     private boolean initialValidate = false;
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
     private SecureAction saveAndActivateAction;
     private SecureAction saveOnlyAction;
+    private SecureAction showAssertionLineNumbersAction;
+    private List<AbstractButton> showLnNumsButtons = new ArrayList<AbstractButton>();
     private ValidatePolicyAction validateAction;
     private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
@@ -553,15 +554,18 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return splitPane;
     }
 
-
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
         policyTree.setPolicyEditor(this);
         policyTree.setRootVisible(false);
         policyTree.setShowsRootHandles(true);
-        policyTree.setRowHeight((int)(policyTree.getRowHeight() * 1.3));
-        policyTreePane = new JScrollPane(policyTree);
-        policyTreePane.setBorder(null);
+        policyTree.setAlignmentX(Component.LEFT_ALIGNMENT);
+        policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
+
+        NumberedPolicyTreePane numberedPane = new NumberedPolicyTreePane();
+        assertionLineNumbersTree = numberedPane.getAssertionLineNumbersTree();
+        policyTreePane = numberedPane.getPolicyTreePane();
+
         return policyTreePane;
     }
 
@@ -614,8 +618,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      * Render the policy into the editor
      */
-    private void renderPolicy()
-      {
+    private void renderPolicy() {
         updateHeadings();
 
         TreeModel policyTreeModel;
@@ -636,6 +639,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         updateAssertions(newRootAssertion);
 
         policyTree.setModel(policyTreeModel);
+        assertionLineNumbersTree.registerPolicyTree();
+
         rootAssertion = newRootAssertion;
         pt.registerPolicyTree(policyTree);
 
@@ -656,6 +661,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         });
+
+        assertionLineNumbersTree.updateOrdinalsDisplaying();
     }
 
     /**
@@ -743,6 +750,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         private void initComponents() {
+            JButton displayAssertionLineNums = new JButton();
+            displayAssertionLineNums.setAction(getShowAssertionLineNumbersAction(displayAssertionLineNums));
+            add(displayAssertionLineNums);
+
             buttonSaveOnly = new JButton(getSaveOnlyAction());
             final BaseAction bsaa = (BaseAction)buttonSaveOnly.getAction();
             buttonSaveAndActivate = new JButton(getSaveAndActivateAction());
@@ -795,7 +806,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             JButton showComments = new JButton();
             showComments.setAction(getHideShowCommentAction(showComments));
             this.add(showComments);
-
         }
 
         private void setSaveButtonsEnabled(boolean enabled) {
@@ -1921,5 +1931,56 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         importPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_I);
         importPolicyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
         return importPolicyAction;
+    }
+
+    /**
+     * Create/get an action showing/hiding assertion line numbers in the policy editor panel.
+     *
+     * @param targetButton could be either JButton (used in PolicyEditorPanel) or JMenuItem (used in MainWindow)
+     * @return an action showing/hiding assertion line numbers.
+     */
+    public Action getShowAssertionLineNumbersAction(final AbstractButton targetButton) {
+        if (targetButton != null && !showLnNumsButtons.contains(targetButton)) {
+            showLnNumsButtons.add(targetButton);
+        }
+
+        if (showAssertionLineNumbersAction == null) {
+            showAssertionLineNumbersAction = new SecureAction(null) { //todo: access control for assertions
+                private boolean lineNumsShown = AssertionLineNumbersTree.DEFAULT_VISIBILITY;
+
+                @Override
+                protected void performAction() {
+                    // Update the status of assertion line numbers shown/hidden in the policy editor panel.
+                    lineNumsShown = !lineNumsShown;
+
+                    // Show/hide the assertion line numbers in the policy editor panel
+                    assertionLineNumbersTree.setVisible(lineNumsShown);
+
+                    // Update the buttons such as policy edit button or menuItem.
+                    for (AbstractButton button: showLnNumsButtons) {
+                        button.setText(getName());
+                        button.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconResource())));
+                    }
+                }
+
+                @Override
+                public String getName() {
+                    return lineNumsShown ? "Hide Line Numbers" : "Show Line Numbers";
+                }
+
+                @Override
+                protected String iconResource() {
+                    return lineNumsShown ?
+                        "com/l7tech/console/resources/HideLineNumbers16.png" :
+                        "com/l7tech/console/resources/ShowLineNumbers16.png";
+                }
+            };
+
+            // Set the mnemonic and accelerator key
+            showAssertionLineNumbersAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_L);
+            showAssertionLineNumbersAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
+        }
+
+        return showAssertionLineNumbersAction;
     }
 }
