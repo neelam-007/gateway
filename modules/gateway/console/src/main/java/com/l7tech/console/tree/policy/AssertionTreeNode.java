@@ -574,23 +574,18 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     public static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
-        Stack<Integer> integerStack = new Stack<Integer>();
-        integerStack.push(treeNode.asAssertion().getOrdinal());
-
         AbstractTreeNode parent = (AbstractTreeNode) treeNode.getParent();
+        List<Integer> ordinalList = new ArrayList<Integer>();
+        ordinalList.add(treeNode.asAssertion().getOrdinal());
         while (parent != null) {
             if (parent.asAssertion() instanceof Include){
-                integerStack.push(parent.asAssertion().getOrdinal());
+                ordinalList.add(parent.asAssertion().getOrdinal());
             }
             parent = (AbstractTreeNode) parent.getParent();
         }
 
-        List<Integer> ordinalList = new ArrayList<Integer>();
-        while(!integerStack.isEmpty()){
-            ordinalList.add(integerStack.pop());
-        }
-
-        return Collections.unmodifiableList(ordinalList);
+        Collections.reverse(ordinalList);
+        return ordinalList;
     }
 
     public static String getVirtualOrdinalString(final AssertionTreeNode treeNode) {
