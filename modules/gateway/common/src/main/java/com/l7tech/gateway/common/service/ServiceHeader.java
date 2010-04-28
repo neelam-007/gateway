@@ -23,7 +23,8 @@ public class ServiceHeader extends OrganizationHeader {
               null,
               svc.getPolicy() == null ? 0L : svc.getPolicy().getVersionOrdinal(),
               svc.getVersion(),
-              svc.getRoutingUri());
+              svc.getRoutingUri(),
+              svc.isTracingEnabled() );
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -37,7 +38,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getAliasOid(),
              serviceHeader.getPolicyRevision(),
              serviceHeader.getVersion(),
-             serviceHeader.getRoutingUri());
+             serviceHeader.getRoutingUri(),
+             serviceHeader.isTracingEnabled() );
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -50,7 +52,8 @@ public class ServiceHeader extends OrganizationHeader {
                          final Long aliasOid,
                          final long policyRevision,
                          final int version,
-                         final String routingUri) {
+                         final String routingUri,
+                         final boolean tracingEnabled) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
@@ -59,6 +62,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.aliasOid = aliasOid;
         this.policyRevision = policyRevision;
         this.routingUri = routingUri;
+        this.tracingEnabled = tracingEnabled;
     }
 
     public boolean isSoap() {
@@ -86,6 +90,10 @@ public class ServiceHeader extends OrganizationHeader {
         return policyRevision;
     }
 
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
+    }
+
     @Override
     public String toString() {
         return getDisplayName();
@@ -98,4 +106,5 @@ public class ServiceHeader extends OrganizationHeader {
     private final String displayName;
     private final long policyRevision;
     private final String routingUri;
+    private final boolean tracingEnabled;
 }

@@ -1,22 +1,27 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.servicesAndPolicies.ServiceNodeFilter;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +35,7 @@ import java.util.logging.Logger;
  */
 public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceHeader> implements Comparable<ServiceNode> {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
+    private static Map<String, Reference<Image>> bugDecoratedImages = new ConcurrentHashMap<String, Reference<Image>>();
     private volatile Reference<PublishedService> svc = null;
 
     /**
@@ -199,6 +205,42 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     @Override
     public int compareTo( ServiceNode serviceNode ) {
         return getName().toLowerCase().compareTo( serviceNode.getName().toLowerCase() );
+    }
+
+    @Override
+    public Image getIcon() {
+        Image image = super.getIcon();
+        ServiceHeader header = getEntityHeader();
+        return header == null || !header.isTracingEnabled() ? image : getBugDecoratedImage(iconResource(false), image);
+    }
+
+    @Override
+    public Image getOpenedIcon() {
+        Image image = super.getOpenedIcon();
+        ServiceHeader header = getEntityHeader();
+        return header == null || !header.isTracingEnabled() ? image : getBugDecoratedImage(iconResource(true), image);
+    }
+
+    private static Image getBugDecoratedImage(String bgPath, Image bgImage) {
+        Reference<Image> ref = bugDecoratedImages.get(bgPath);
+        if (ref != null) {
+            Image ret = ref.get();
+            if (ret != null)
+                return ret;
+        }
+
+        Image ret = addBugOverlay(bgImage);
+        bugDecoratedImages.put(bgPath, new SoftReference<Image>(ret));
+        return ret;
+    }
+
+    private static Image addBugOverlay(Image bgImage) {
+        Image bugImage = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/bug16.gif");
+        Image ret = new BufferedImage(24, 16, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = (Graphics2D)ret.getGraphics();
+        g.drawImage(bgImage, 0, 2, null);
+        g.drawImage(bugImage, 8, 0, null);
+        return ret;
     }
 
     /**
