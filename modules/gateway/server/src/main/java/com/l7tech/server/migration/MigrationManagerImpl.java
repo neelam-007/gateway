@@ -208,7 +208,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
         for(ExternalEntityHeader header : metadata.getAllHeaders()) {
             // top-level selection and dependencies
-            headersToLoad.put(header, false);
+            if (! metadata.isMapped(header))
+                headersToLoad.put(header, false);
         }
         for(ExternalEntityHeader header : metadata.getMappedHeaders()) {
             headersToLoad.put(header, true);
