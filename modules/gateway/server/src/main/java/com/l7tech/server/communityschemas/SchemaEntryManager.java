@@ -15,13 +15,24 @@ import java.util.Collection;
  */
 public interface SchemaEntryManager extends EntityManager<SchemaEntry, EntityHeader> {
     /**
-     * Find a schema by targetNamespace. The targetNamespace is not unique in the database and two different schemas
-     * could have the same targetNamespace. All found will be returned. 
+     * Find a schema by targetNamespace.
      *
-     * @param tns String targetNamespace to find all matching SchemaEntry's for
-     * @return Collection&lt;SchemaEntry&gt; all matching schema entries.
-     * @throws FindException
+     * <p>The targetNamespace is not unique in the database and two different
+     * schemas could have the same targetNamespace. All found will be
+     * returned.</p>
+     *
+     * @param tns String targetNamespace to find all matching SchemaEntry's for (may be null)
+     * @return Collection&lt;SchemaEntry&gt; all matching schema entries (may be empty, never null)
+     * @throws FindException If an error occurs
      */
     Collection<SchemaEntry> findByTNS(String tns) throws FindException;
+
+    /**
+     * Find a schema by name / system identifier.
+     * 
+     * @param schemaName The name / system identifier to use (must not be null)
+     * @return The collection of matching schema entries (may be empty, never null)
+     * @throws FindException If an error occurs
+     */
     Collection<SchemaEntry> findByName(String schemaName) throws FindException;
 }
