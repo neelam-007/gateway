@@ -750,10 +750,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         private void initComponents() {
-            JButton displayAssertionLineNums = new JButton();
-            displayAssertionLineNums.setAction(getShowAssertionLineNumbersAction(displayAssertionLineNums));
-            add(displayAssertionLineNums);
-
             buttonSaveOnly = new JButton(getSaveOnlyAction());
             final BaseAction bsaa = (BaseAction)buttonSaveOnly.getAction();
             buttonSaveAndActivate = new JButton(getSaveAndActivateAction());
@@ -806,6 +802,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             JButton showComments = new JButton();
             showComments.setAction(getHideShowCommentAction(showComments));
             this.add(showComments);
+
+            JButton displayAssertionLineNums = new JButton();
+            displayAssertionLineNums.setAction(getShowAssertionLineNumbersAction(displayAssertionLineNums));
+            add(displayAssertionLineNums);
         }
 
         private void setSaveButtonsEnabled(boolean enabled) {
