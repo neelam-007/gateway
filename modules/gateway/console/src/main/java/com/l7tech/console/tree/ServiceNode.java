@@ -237,9 +237,9 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     private static Image addBugOverlay(Image bgImage) {
         Image bugImage = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/bug16.gif");
         Image ret = new BufferedImage(24, 16, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = (Graphics2D)ret.getGraphics();
+        Graphics g = ret.getGraphics();
         g.drawImage(bgImage, 0, 2, null);
-        g.drawImage(bugImage, 8, 0, null);
+        g.drawImage(bugImage, 8, -1, null);
         return ret;
     }
 
