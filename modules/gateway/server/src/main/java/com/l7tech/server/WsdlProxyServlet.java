@@ -473,13 +473,16 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
             documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
                 @Override
-                public String customize(Document document, Node node, String documentUrl, String referenceUrl) {
+                public String customize( final Document document,
+                                         final Node node,
+                                         final String documentUrl,
+                                         final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
                     String uri = null;
 
-                    if ( documentUrl != null ) {
+                    if ( documentUrl != null && referenceInfo.getReferenceUrl() != null ) {
                         try {
                             URI base = new URI(documentUrl);
-                            String docUrl = base.resolve(new URI(referenceUrl)).toString();
+                            String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
                             for ( ServiceDocument serviceDocument : documents ) {
                                 if ( docUrl.equals(serviceDocument.getUri()) ) {
                                     // Don't proxy WSDL if we generated it in place of a directly imported XSD

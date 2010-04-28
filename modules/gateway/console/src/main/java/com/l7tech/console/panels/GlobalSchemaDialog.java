@@ -146,7 +146,7 @@ public class GlobalSchemaDialog extends JDialog {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                add(null, new ArrayList<SchemaEntry>(), false);
+                add((String)null, new ArrayList<SchemaEntry>());
             }
         });
 
@@ -244,8 +244,7 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void add( final String systemIdentifier,
-                      final java.util.List<SchemaEntry> dependencies,
-                      final boolean dependency ) {
+                      final java.util.List<SchemaEntry> dependencies ) {
         final SchemaEntry newEntry = new SchemaEntry();
         if ( systemIdentifier != null ) {
             newEntry.setName(systemIdentifier);
@@ -326,7 +325,10 @@ public class GlobalSchemaDialog extends JDialog {
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
         schemaReferenceProcessor.processDocumentReferences( schemaDoc, new DocumentReferenceProcessor.ReferenceCustomizer(){
             @Override
-            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+            public String customize( final Document document,
+                                     final Node node,
+                                     final String documentUrl,
+                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
                 assert node instanceof Element;
                 if ( node instanceof Element ) dependencyElements.add( (Element)node );
                 return null;  
@@ -385,7 +387,7 @@ public class GlobalSchemaDialog extends JDialog {
                 msg = TextUtils.breakOnMultipleLines(msg, 30);
                 if ( JOptionPane.showConfirmDialog(this, msg, "Unresolved Dependencies", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     dependants.add(schemaTobeSaved);
-                    add(unresolvedDependency, dependants, true);
+                    add(unresolvedDependency, dependants);
                 } else if (!isUrl) {
                     // if user wants to abort, then we're all done
                     break;

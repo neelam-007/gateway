@@ -232,20 +232,25 @@ class WsdlSchemaTypeResolver implements SoapUtil.SchemaTypeResolver {
                 schemaElement,
                 new DocumentReferenceProcessor.ReferenceCustomizer(){
                     @Override
-                    public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
-                        try {
-                            final URI base = new URI(documentUrl);
-                            final String docUrl = base.resolve(new URI(referenceUrl)).toString();
-                            final String schemaXml = resolveSchema( docUrl );
-                            if ( schemaXml != null ) {
-                                referencedSchemaElements.add( compileAndCache( docUrl, schemaXml ) );
+                    public String customize( final Document document,
+                                             final Node node,
+                                             final String documentUrl,
+                                             final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                        if ( referenceInfo.getReferenceUrl() != null ) {
+                            try {
+                                final URI base = new URI(documentUrl);
+                                final String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
+                                final String schemaXml = resolveSchema( docUrl );
+                                if ( schemaXml != null ) {
+                                    referencedSchemaElements.add( compileAndCache( docUrl, schemaXml ) );
+                                }
+                            } catch ( IOException ioe ) {
+                                // skip
+                            } catch ( URISyntaxException e ) {
+                                // skip
+                            } catch ( SAXException e ) {
+                                // skip
                             }
-                        } catch ( IOException ioe ) {
-                            // skip
-                        } catch ( URISyntaxException e ) {
-                            // skip
-                        } catch ( SAXException e ) {
-                            // skip
                         }
                         return null;
                     }

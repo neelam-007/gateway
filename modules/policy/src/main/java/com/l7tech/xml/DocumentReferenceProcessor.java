@@ -106,8 +106,10 @@ public class DocumentReferenceProcessor {
             final List<String> newReferences = new ArrayList<String>();
             processDocumentReferences( document, new ReferenceCustomizer() {
                 @Override
-                public String customize(Document document, Node node, String documentUrl, String referenceUrl) {
-                    newReferences.add( referenceUrl );
+                public String customize(Document document, Node node, String documentUrl, ReferenceInfo referenceInfo) {
+                    if ( referenceInfo.getReferenceUrl() != null ) {
+                        newReferences.add( referenceInfo.getReferenceUrl() );
+                    }
                     return null;
                 }
             } );
@@ -175,11 +177,11 @@ public class DocumentReferenceProcessor {
                         if ( namespace != null ) {
                             ReferenceTypeProcessor processor = typeRegistry.get( namespace );
                             if ( processor != null ) {
-                                String referenceUrl = processor.extractReference( node );
-                                if ( referenceUrl != null ) {
-                                    String newUrl = referenceCustomizer.customize( document, node, url, referenceUrl );
+                                ReferenceInfo referenceInfo = processor.extractReference( node );
+                                if ( referenceInfo != null ) {
+                                    String newUrl = referenceCustomizer.customize( document, node, url, referenceInfo );
                                     if ( newUrl != null ) {
-                                        processor.replaceReference( node, referenceUrl, newUrl );
+                                        processor.replaceReference( node, referenceInfo.getReferenceUrl(), newUrl );
                                     }
                                 }
                             }
@@ -194,6 +196,38 @@ public class DocumentReferenceProcessor {
         String resolve( String resourceUrl ) throws IOException;
     }
 
+    public static class ReferenceInfo {
+        private final String url;
+        private final String namespace;
+
+        private ReferenceInfo( final String url ) {
+            this(url, null);
+        }
+
+        private ReferenceInfo( final String url, final String namespace ) {
+            this.url = url;
+            this.namespace = namespace;
+        }
+
+        /**
+         * Get the URL for the reference.
+         *
+         * @return The reference or null.
+         */
+        public String getReferenceUrl() {
+            return url;
+        }
+
+        /**
+         * Get the namespace for the reference.
+         *
+         * @return The namespace or null.
+         */
+        public String getReferenceNamespace() {
+            return namespace;
+        }
+    }
+
     public interface ReferenceCustomizer {
         /**
          * Customize the given reference.
@@ -203,14 +237,28 @@ public class DocumentReferenceProcessor {
          * @param document The document being processed
          * @param node The document node that contains the reference
          * @param documentUrl The URL of the document
-         * @param referenceUrl The URL of the reference
+         * @param referenceInfo The reference details
          * @return The customized reference or null
          */
-        String customize( Document document, Node node, String documentUrl, String referenceUrl );
+        String customize( Document document, Node node, String documentUrl, ReferenceInfo referenceInfo );
     }
 
     public interface ReferenceTypeProcessor {
-        String extractReference( Node node );
+        /**
+         * Extract the reference for the given node.
+         *
+         * @param node The node to check for references.
+         * @return The reference info, or null for no reference.
+         */
+        ReferenceInfo extractReference( Node node );
+
+        /**
+         * Replace the reference URL with an alternative.
+         *
+         * @param node The node to process.
+         * @param referenceUrl The URL to be replaced
+         * @param replacementReferenceUrl The replacement URL
+         */
         void replaceReference( Node node, String referenceUrl, String replacementReferenceUrl );
     }
 
@@ -235,26 +283,33 @@ public class DocumentReferenceProcessor {
         }
 
         @Override
-        public String extractReference( final Node node) {
-            String referenceUrl = null;
+        public ReferenceInfo extractReference( final Node node) {
+            ReferenceInfo referenceInfo = null;
 
             if ( node.getNodeType() == Node.ELEMENT_NODE ) {
                 Element referenceElement = (Element) node;
                 if ( namespace.equals( referenceElement.getNamespaceURI() ) &&
                      elements.contains( referenceElement.getLocalName() ) ) {
-                    if ( referenceElement.hasAttribute( attribute ) ) {
-                        referenceUrl = referenceElement.getAttribute( attribute );
+                    if ( attribute==null || referenceElement.hasAttribute( attribute ) ) {
+                        referenceInfo = processReference( referenceElement );
                     }
                 }
             }
 
-            return referenceUrl;
+            return referenceInfo;
         }
 
         @Override
         public void replaceReference( final Node node,
                                       final String referenceUrl,
                                       final String replacementReferenceUrl ) {
+            replaceReference( node, attribute, referenceUrl, replacementReferenceUrl );
+        }
+
+        protected void replaceReference( final Node node,
+                                         final String attribute,
+                                         final String referenceUrl,
+                                         final String replacementReferenceUrl ) {
             if ( node.getNodeType() == Node.ELEMENT_NODE ) {
                 Element referenceElement = (Element) node;
                 if ( namespace.equals( referenceElement.getNamespaceURI() ) &&
@@ -263,17 +318,56 @@ public class DocumentReferenceProcessor {
                 }
             }
         }
+
+        protected ReferenceInfo processReference( final Node reference ) {
+            ReferenceInfo referenceInfo = null;
+
+            if ( reference instanceof Element && attribute != null ) {
+                referenceInfo = new ReferenceInfo(((Element)reference).getAttribute( attribute ));    
+            }
+
+            return referenceInfo;
+        }
     }
 
     private static class SchemaReferenceTypeProcessor extends ReferenceTypeProcessorSupport {
         private static final String SCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
+        private static final String ATTR_NAMESPACE = "namespace";
         private static final String ATTR_SCHEMA_LOCATION = "schemaLocation";
         private static final String ELE_IMPORT = "import";
         private static final String ELE_INCLUDE = "include";
         private static final String ELE_REDEFINE = "redefine";
 
         SchemaReferenceTypeProcessor() {
-            super( SCHEMA_NAMESPACE, ATTR_SCHEMA_LOCATION, ELE_IMPORT, ELE_INCLUDE, ELE_REDEFINE );
+            super( SCHEMA_NAMESPACE, null, ELE_IMPORT, ELE_INCLUDE, ELE_REDEFINE );
+        }
+
+        @Override
+        protected ReferenceInfo processReference( final Node reference ) {
+            ReferenceInfo referenceInfo = null;
+
+            if ( reference instanceof Element ) {
+                final Element referenceElement = (Element) reference;
+                final String schemaLocation = referenceElement.hasAttribute( ATTR_SCHEMA_LOCATION ) ?
+                        referenceElement.getAttribute( ATTR_SCHEMA_LOCATION ) :
+                        null;
+                final String namespace = referenceElement.hasAttribute( ATTR_NAMESPACE ) ?
+                        referenceElement.getAttribute( ATTR_NAMESPACE ) :
+                        null;
+                referenceInfo = new ReferenceInfo(schemaLocation, namespace);
+            }
+
+            return referenceInfo;
+        }
+
+        @Override
+        protected void replaceReference( final Node node,
+                                         final String attribute,
+                                         final String referenceUrl,
+                                         final String replacementReferenceUrl ) {
+            if ( referenceUrl != null ) {
+                super.replaceReference( node, ATTR_SCHEMA_LOCATION, referenceUrl, replacementReferenceUrl );
+            }
         }
     }
 

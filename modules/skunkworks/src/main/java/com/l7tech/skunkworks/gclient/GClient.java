@@ -670,8 +670,11 @@ public class GClient {
                         Document document = XmlUtil.parse( new InputSource( new StringReader(urisToResources.get( uri )) ){{setSystemId(uri);}}, false );
                         processor.processDocumentReferences( document, new DocumentReferenceProcessor.ReferenceCustomizer(){
                             @Override
-                            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
-                                return filename( referenceUrl, ".wsdl" );
+                            public String customize( final Document document,
+                                                     final Node node,
+                                                     final String documentUrl,
+                                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                                return filename( referenceInfo.getReferenceUrl(), ".wsdl" );
                             }
                         } );
                         File file = new File( selected, filename(uri, ".wsdl") );

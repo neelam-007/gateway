@@ -165,7 +165,9 @@ public class SchemaEntryManagerImpl
                 return q.list();
             }});
 
-        output = addSoapEnv(output, null, tns);
+        if ( tns != null ) {
+            output = addSoapEnv(output, null, tns);
+        }
 
         return output;
     }

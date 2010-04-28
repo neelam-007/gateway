@@ -404,7 +404,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
             schemaReferenceProcessor.processDocumentReferences( schemaDoc, new DocumentReferenceProcessor.ReferenceCustomizer(){
                 @Override
-                public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
+                public String customize( final Document document,
+                                         final Node node,
+                                         final String documentUrl,
+                                         final DocumentReferenceProcessor.ReferenceInfo referenceInfo  ) {
                     if ( node instanceof Element ) dependencyElements.add( (Element)node );
                     return null;
                 }

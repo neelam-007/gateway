@@ -948,9 +948,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
         schemaReferenceProcessor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
             @Override
-            public String customize( final Document document, final Node node, final String documentUrl, final String referenceUrl ) {
-                if ( !"import".equals(node.getLocalName()) ) {
-                    includes.add( referenceUrl );
+            public String customize( final Document document, 
+                                     final Node node,
+                                     final String documentUrl,
+                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                if ( !"import".equals(node.getLocalName()) && referenceInfo.getReferenceUrl()!=null ) {
+                    includes.add( referenceInfo.getReferenceUrl() );
                 }
                 return null;
             }
