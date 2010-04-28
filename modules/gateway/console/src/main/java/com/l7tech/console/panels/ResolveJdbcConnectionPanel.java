@@ -56,7 +56,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         if (connectionComboBox.getSelectedIndex() < 0) return false;
 
         String connectionName = (String) connectionComboBox.getSelectedItem();
-        connectionReference.setLocalizeReplace(connectionName);
+        connectionReference.setLocalizeReplaceByName(connectionName);
         return true;
     }
 

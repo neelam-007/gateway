@@ -44,9 +44,11 @@ public class JdbcConnectionReference extends ExternalReference {
         connectionName = connable.getConnectionName();
         try {
             JdbcConnection connection = getFinder().getJdbcConnection(connectionName);
-            driverClass = connection.getDriverClass();
-            jdbcUrl = connection.getJdbcUrl();
-            userName = connection.getUserName();
+            if ( connection != null ) {
+                driverClass = connection.getDriverClass();
+                jdbcUrl = connection.getJdbcUrl();
+                userName = connection.getUserName();
+            }
         } catch (FindException e) {
             logger.warning("Cannot find the JDBC connection entity (ConnectionName = " + connable.getConnectionName() + ").");
         }
@@ -117,30 +119,24 @@ public class JdbcConnectionReference extends ExternalReference {
     }
 
     @Override
-    void serializeToRefElement(Element referencesParentElement) {
-        Element refElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_REF);
-        setTypeAttribute( refElmt );
-        referencesParentElement.appendChild(refElmt);
+    void serializeToRefElement(final Element referencesParentElement) {
+        Element referenceElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_REF);
+        setTypeAttribute( referenceElement );
+        referencesParentElement.appendChild(referenceElement);
 
-        Element connNameElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_CONN_NAME);
-        Text txt = DomUtils.createTextNode(referencesParentElement, connectionName);
-        connNameElmt.appendChild(txt);
-        refElmt.appendChild(connNameElmt);
+        addParameterElement( ELMT_NAME_CONN_NAME, connectionName, referenceElement );
+        addParameterElement( ELMT_NAME_DRV_CLASS, driverClass, referenceElement );
+        addParameterElement( ELMT_NAME_JDBC_URL, jdbcUrl, referenceElement );
+        addParameterElement( ELMT_NAME_USR_NAME, userName, referenceElement );
+    }
 
-        Element driverClassElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_DRV_CLASS);
-        txt = DomUtils.createTextNode(referencesParentElement, driverClass);
-        driverClassElmt.appendChild(txt);
-        refElmt.appendChild(driverClassElmt);
-
-        Element jdbcUrlElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_JDBC_URL);
-        txt = DomUtils.createTextNode(referencesParentElement, jdbcUrl);
-        jdbcUrlElmt.appendChild(txt);
-        refElmt.appendChild(jdbcUrlElmt);
-
-        Element userNameElmt = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_USR_NAME);
-        txt = DomUtils.createTextNode(referencesParentElement, userName);
-        userNameElmt.appendChild(txt);
-        refElmt.appendChild(userNameElmt);
+    private void addParameterElement( final String name, final String value, final Element parent ) {
+        if ( value != null ) {
+            final Element parameterElement = parent.getOwnerDocument().createElement(name);
+            final Text txt = DomUtils.createTextNode(parent, value);
+            parameterElement.appendChild(txt);
+            parent.appendChild(parameterElement);
+        }
     }
 
     @Override
@@ -149,10 +145,10 @@ public class JdbcConnectionReference extends ExternalReference {
             JdbcConnection connection = getFinder().getJdbcConnection(connectionName);
             return
                 connection != null && 
-                connection.getName().equals(connectionName) &&
-                connection.getDriverClass().equals(driverClass) &&
-                connection.getJdbcUrl().equals(jdbcUrl) &&
-                connection.getUserName().equals(userName);
+                connection.getName().equalsIgnoreCase(connectionName) &&
+                (driverClass==null || connection.getDriverClass().equals(driverClass)) &&
+                (jdbcUrl==null || connection.getJdbcUrl().equals(jdbcUrl)) &&
+                (userName==null || connection.getUserName().equals(userName));
         } catch (FindException e) {
             logger.warning("Cannot find a JDBC connection, " + connectionName);
             return false;
@@ -164,7 +160,7 @@ public class JdbcConnectionReference extends ExternalReference {
         if ( localizeType == LocalizeAction.REPLACE) {
             if (assertionToLocalize instanceof JdbcConnectionable) {
                 JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;
-                if (connable.getConnectionName().equals(connectionName)) { // The purpose of "equals" is to find the right assertion and update it using localized value.
+                if (connable.getConnectionName().equalsIgnoreCase(connectionName)) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     connable.setConnectionName(localConnectionName);
                 }
             }
