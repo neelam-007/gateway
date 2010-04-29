@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.*;
@@ -39,6 +40,7 @@ import javax.swing.tree.TreePath;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -56,6 +58,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     private List<PolicyValidatorResult.Message> viewValidatorMessages = null;
 
     protected AT assertion;
+    private SoftReference<String> assertionPropsAsString;
 
     /**
      * package private constructor accepting the assertion
@@ -78,6 +81,34 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return assertion;
     }
 
+    /**
+     * Get the contained assertion's policy xml. If the contained assertion is a CompositeAssertion or an Include,
+     * then null will be returned
+     *
+     * @return String properties xml for the contained assertion, or null if the assertion is a folder assertion.
+     */
+    public String getAssertionPropsAsString(){
+        String props = null;
+
+        if(assertionPropsAsString != null){
+            props = assertionPropsAsString.get();
+            if(props != null) return props;
+            //props == null, the String has been garbage collected or cleared
+        }
+
+        final Assertion assertion = asAssertion();
+        //ignorning folder assertions now as they have no interesting props of their own to search and copying them
+        //just to remove their children for their props xml would likely be expensive
+        if (!(assertion instanceof CompositeAssertion) && !(assertion instanceof Include)) {
+            props = WspWriter.getPolicyXml(assertion);
+            assertionPropsAsString = new SoftReference<String>(props);
+            return props;
+        }
+        //todo post pandora it should be possible to search comments on 'folder' assertions
+
+        return props;
+    }
+
     @SuppressWarnings({ "unchecked" })
     @Override
     public void setUserObject(Object userObject) {
@@ -85,6 +116,17 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         // a RequestWssSaml2 with a RequestWssSaml
         assertion = (AT)userObject;
         super.setUserObject(userObject);
+        clearPropsString();
+    }
+
+    /**
+     * Call when ever the user object is set or the contents of the user object (Assertion) has changed
+     */
+    public void clearPropsString(){
+        if(assertionPropsAsString != null){
+            assertionPropsAsString.clear();
+            //don't recreate the properties string until it is needed
+        }
     }
 
     /**
@@ -573,7 +615,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return null;
     }
 
-    public static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
+    static List<Integer> getVirtualOrdinal(final AssertionTreeNode treeNode){
         AbstractTreeNode parent = (AbstractTreeNode) treeNode.getParent();
         List<Integer> ordinalList = new ArrayList<Integer>();
         ordinalList.add(treeNode.asAssertion().getOrdinal());

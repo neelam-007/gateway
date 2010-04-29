@@ -1335,6 +1335,21 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         @Override
         public void treeNodesChanged(TreeModelEvent e) {
             if (!(e instanceof PolicyTreeModelEvent)) return; // do not validate this
+
+            final Object[] path = e.getPath();
+
+            if(path[path.length - 1] instanceof AssertionTreeNode){
+                AssertionTreeNode parentNode = (AssertionTreeNode) path[path.length - 1];
+                final int[] ints = e.getChildIndices();
+                for (int anInt : ints) {
+                    final TreeNode at = parentNode.getChildAt(anInt);
+                    if(at instanceof AssertionTreeNode){
+                        AssertionTreeNode assertionNode = (AssertionTreeNode) at;
+                        assertionNode.clearPropsString();
+                    }
+                }
+            }
+
             if (!initialValidate) {
                 enableButtonSave();
                 SwingUtilities.invokeLater(new Runnable() {

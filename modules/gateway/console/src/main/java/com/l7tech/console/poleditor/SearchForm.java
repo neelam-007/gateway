@@ -27,6 +27,7 @@ public class SearchForm {
     private JLabel xLabel;
     private JComboBox searchComboBox;
     private JCheckBox caseSensitiveCheckBox;
+    private JCheckBox includePropertiesCheckBox;
 
     private final KeyAdapter escapeListener = new KeyAdapter() {
         @Override
@@ -110,15 +111,18 @@ public class SearchForm {
             }
         });
 
-        caseSensitiveCheckBox.addActionListener(new ActionListener() {
+        final ActionListener checkBoxListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //if case sensitive is toggled, then update the search results
                 ((EditableSearchComboBox) searchComboBox).refresh();
             }
-        });
-
+        };
+        caseSensitiveCheckBox.addActionListener(checkBoxListener);
         caseSensitiveCheckBox.setMnemonic(KeyEvent.VK_C);
+
+        includePropertiesCheckBox.setMnemonic(KeyEvent.VK_P);
+        includePropertiesCheckBox.addActionListener(checkBoxListener);
     }
 
     public void addEnterListener(KeyListener listener){
@@ -203,25 +207,32 @@ public class SearchForm {
                     if (obj == null) return false;//this can't happen but leaving in for future changes
 
                     //match display names
-                    if (!(obj instanceof AbstractTreeNode)) return false;
+                    if (!(obj instanceof AssertionTreeNode)) return false;
 
-                    AbstractTreeNode node = (AbstractTreeNode) obj;
+                    AssertionTreeNode node = (AssertionTreeNode) obj;
 
                     final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
+                    final boolean includeProperties = includePropertiesCheckBox.isSelected();
 
-                    final String nodeName = node.getName();
-
-                    final String nodeNameLowerCase = nodeName.toLowerCase();
-                    final int index = nodeNameLowerCase.indexOf(getFilterText().toLowerCase());
-                    final boolean matches = index != -1;
-
-                    if(!isCaseSensitive) return matches;
-
-                    if(matches && isCaseSensitive){
-                        return nodeName.regionMatches(false, index, getFilterText(), 0, getFilterText().length());
+                    final String searchString;
+                    if (includeProperties) {
+                        String propsString = node.getAssertionPropsAsString();
+                        if(propsString != null){
+                            StringBuilder builder = new StringBuilder(node.getName()).append(propsString);
+                            searchString = builder.toString();
+                        } else{
+                            searchString = node.getName();
+                        }
+                    } else {
+                        searchString = node.getName();
                     }
 
-                    return false;
+                    if(!isCaseSensitive){
+                        final String nodeNameLowerCase = searchString.toLowerCase();
+                        return nodeNameLowerCase.indexOf(getFilterText().toLowerCase()) != -1;
+                    }
+
+                    return searchString.indexOf(getFilterText()) != -1;
                 }
             };
 

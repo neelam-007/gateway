@@ -289,6 +289,8 @@ public class EditableSearchComboBox extends JComboBox {
                     //don't filter with no filter text entered
                     if (!"".equals(getText())){
                         filterItems(true);
+                        SearchFieldEditor.this.setSelectionStart(0);
+                        SearchFieldEditor.this.setSelectionEnd(SearchFieldEditor.this.getText().length());
                     }
                 }
 
@@ -319,9 +321,10 @@ public class EditableSearchComboBox extends JComboBox {
             //nothing, which will leave any text previously entered in the text field.
             if (anObject != null) {
                 if(anObject instanceof AssertionTreeNode){
+                    //do not set the text of the text field. This overwrites what the user has typed
+                    //and causes various bugs where going back into the text field populates it with a previous selection
                     AssertionTreeNode node = (AssertionTreeNode) anObject;
                     //todo make this a function so caller supplied logic for what is shown
-                    setText(node.getName());
                     selectedNode = node;
                 } else{
                     setText(anObject.toString());
@@ -360,6 +363,8 @@ public class EditableSearchComboBox extends JComboBox {
             if (isSetting) return;
 
             isFiltering = true;
+            //reset the selected node, as if we are filtering it no longer applies
+            selectedNode = null;
             
             ((FilterableComboBoxModel) getModel()).setSearchText(getText());
 
