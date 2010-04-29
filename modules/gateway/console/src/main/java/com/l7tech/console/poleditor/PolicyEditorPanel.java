@@ -39,6 +39,7 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -564,8 +565,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         NumberedPolicyTreePane numberedPane = new NumberedPolicyTreePane();
         assertionLineNumbersTree = numberedPane.getAssertionLineNumbersTree();
-        policyTreePane = numberedPane.getPolicyTreePane();
+        assertionLineNumbersTree.setCheckingLineNumbersShownFunction(new Functions.Nullary<Boolean>() {
+            @Override
+            public Boolean call() {
+                String actionName = ((SecureAction) getShowAssertionLineNumbersAction(null)).getName();
+                return "Hide Line Numbers".equals(actionName);
+            }
+        });
 
+        policyTreePane = numberedPane.getPolicyTreePane();
         return policyTreePane;
     }
 
@@ -662,7 +670,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         });
 
-        assertionLineNumbersTree.updateOrdinalsDisplaying();
+        assertionLineNumbersTree.updateOrdinalsDisplaying(true);
     }
 
     /**
@@ -1952,6 +1960,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 protected void performAction() {
                     // Update the status of assertion line numbers shown/hidden in the policy editor panel.
                     lineNumsShown = !lineNumsShown;
+
+                    // Update the assertion line numbers tree if assertion ordinals are required to be shown.
+                    if (lineNumsShown) assertionLineNumbersTree.updateOrdinalsDisplaying(false);
 
                     // Show/hide the assertion line numbers in the policy editor panel
                     assertionLineNumbersTree.setVisible(lineNumsShown);

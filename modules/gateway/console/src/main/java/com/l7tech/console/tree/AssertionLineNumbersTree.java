@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -17,11 +18,11 @@ import java.util.List;
  * @author ghuang
  */
 public class AssertionLineNumbersTree extends JTree {
-    public final static String NAME = "assertion.line.numbers.tree";
     public final static String BLANK_ICON_FILE_NAME = "com/l7tech/console/resources/Transparent16.png";
     public final static boolean DEFAULT_VISIBILITY = false;
 
     private PolicyTree policyTree;
+    private Functions.Nullary<Boolean> checkingFunction;
 
     public AssertionLineNumbersTree(PolicyTree policyTree) {
         this.policyTree = policyTree;
@@ -51,28 +52,50 @@ public class AssertionLineNumbersTree extends JTree {
             }
         });
 
-        updateOrdinalsDisplaying();
+        updateOrdinalsDisplaying(true);
     }
 
+    /**
+     * Add listeners to listen PolicyTree changes in order to restructure AssertionLineNumbersTree
+     */
     public void registerPolicyTree() {
         if (policyTree == null) return;
-
         policyTree.removeTreeExpansionListener(policyTreeExpansionListener);
-        policyTree.removeTreeSelectionListener(treeSelectionListener);
         policyTree.addTreeExpansionListener(policyTreeExpansionListener);
-        policyTree.addTreeSelectionListener(treeSelectionListener);
 
         if (policyTree.getModel() == null) return;
-
         policyTree.getModel().removeTreeModelListener(policyTreeModelListener);
         policyTree.getModel().addTreeModelListener(policyTreeModelListener);
     }
 
-    public void updateOrdinalsDisplaying() {
+    /**
+     * Update the assertion-line-numbers tree due to the changes of policy tree structure or policy tree nodes expanding/collapsing.
+     * @param forInitial: a flag to indicate whether the tree is to be initialized.  If it is true, then the tree will be restructured.
+     */
+    public void updateOrdinalsDisplaying(boolean forInitial) {
+        // Check whether it is really needed to update the assertion line numbers tree.
+        if (!forInitial && checkingFunction != null) {
+            boolean lnShown = checkingFunction.call();
+            if (! lnShown) return;
+        }
+
+        // Get new ordinals
         List<String> ordinals = getOrdinals();
+
+        // Generate a new tree model
         DefaultMutableTreeNode root = createRootForAssertionLineNumbersTree(ordinals);
         TreeModel newTreeModel = new DefaultTreeModel(root);
+
+        // Update the AssertionLineNumbersTree
         setModel(newTreeModel);
+    }
+
+    /**
+     * Set a checking function to check whether the tree needs updating or not.
+     * @param checkingFunction: a function implemented in PolicyEditorPanel.
+     */
+    public void setCheckingLineNumbersShownFunction(Functions.Nullary<Boolean> checkingFunction) {
+        this.checkingFunction = checkingFunction;
     }
 
     private DefaultMutableTreeNode createRootForAssertionLineNumbersTree(List<String> ordinals) {
@@ -99,41 +122,34 @@ public class AssertionLineNumbersTree extends JTree {
     private TreeExpansionListener policyTreeExpansionListener = new TreeExpansionListener() {
         @Override
         public void treeExpanded(TreeExpansionEvent event) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
 
         @Override
         public void treeCollapsed(TreeExpansionEvent event) {
-            updateOrdinalsDisplaying();
-        }
-    };
-
-    private TreeSelectionListener treeSelectionListener = new TreeSelectionListener() {
-        @Override
-        public void valueChanged(TreeSelectionEvent e) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
     };
 
     private TreeModelListener policyTreeModelListener = new TreeModelListener() {
         @Override
         public void treeNodesChanged(TreeModelEvent e) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
 
         @Override
         public void treeNodesInserted(TreeModelEvent e) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
 
         @Override
         public void treeNodesRemoved(TreeModelEvent e) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
 
         @Override
         public void treeStructureChanged(TreeModelEvent e) {
-            updateOrdinalsDisplaying();
+            updateOrdinalsDisplaying(false);
         }
     };
 }
