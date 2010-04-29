@@ -44,6 +44,7 @@
     <property name="module.jar.index" value="false"/>
     <property name="module.package.root" value="."/>
     <property name="module.source.allow.properties" value="false"/>
+    <property name="module.resources.allow.forms" value="false"/>
     <property name="module.official.build" value="true"/> <!-- Remove for dev Jar versioning -->
 
     <!--
@@ -329,6 +330,19 @@
         <module-jrc srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
     </target>
     <target name="compile-main-resources" if="module.resources.available" depends="compile-main-init">
+        <path id="module.form.resources.filepath">
+            <fileset dir="${src.main.res.dir}">
+                <include name="**/*.form"/>
+            </fileset>
+        </path>
+        <condition property="module.invalid.form">
+            <and>
+                <equals arg1="${module.resources.allow.forms}" arg2="false"/>
+                <resourcecount refid="module.form.resources.filepath" when="greater" count="0" />
+            </and>
+        </condition>
+        <fail if="module.invalid.form">Invalid resources found, this module should not have IDEA form files in the resources source tree.${line.separator}${toString:module.form.resources.filepath}</fail>
+
         <copy todir="${classes.main.dir}" preservelastmodified="true">
             <fileset dir="${src.main.res.dir}" includes="**/*.properties"/>
             <filterset begintoken="@@@" endtoken="@@@">
