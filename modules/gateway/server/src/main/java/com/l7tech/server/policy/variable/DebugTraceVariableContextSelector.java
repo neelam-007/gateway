@@ -23,6 +23,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
     private static final String ASSERTION_SHORTNAME = "assertion.shortname";
     private static final String STATUS = "status";
+    private static final String STATUS_MESSAGE = "status.message";
     private static final String REQUEST = "request";
     private static final String RESPONSE = "response";
 
@@ -144,6 +145,14 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             public Selection call(DebugTraceVariableContext ctx) {
                 final AssertionStatus status = ctx.getContext().getTracedStatus();
                 return new Selection(status == null ? null : status.getNumeric());
+            }
+        });
+
+        simpleFields.put(STATUS_MESSAGE, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                final AssertionStatus status = ctx.getContext().getTracedStatus();
+                return new Selection(status == null ? null : status.getMessage());
             }
         });
     }

@@ -62,6 +62,7 @@ public class TracePolicyEvaluatorTest {
         traceAssertion.addChild(new SetVariableAssertion("t.service.oid", "${trace.service.oid}"));
         traceAssertion.addChild(new SetVariableAssertion("t.policy.oid", "${trace.policy.oid}"));
         traceAssertion.addChild(new SetVariableAssertion("t.status", "${trace.status}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.status.message", "${trace.status.message}"));
         traceAssertion.addChild(new SetVariableAssertion("t.request.mainpart", "${trace.request.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("t.response.mainpart", "${trace.response.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.ordinal", "${trace.assertion.ordinal}"));
@@ -111,6 +112,7 @@ public class TracePolicyEvaluatorTest {
         assertEquals("<path><p>3</p><p>6</p><p>12</p><p>4</p></path>", traceContext.getVariable("t.assertion.path"));
         assertEquals(new FalseAssertion().meta().get(AssertionMetadata.SHORT_NAME), traceContext.getVariable("t.assertion.shortName"));
         assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getNumeric()), traceContext.getVariable("t.status"));
+        assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getMessage()), traceContext.getVariable("t.status.message"));
 
         tracedContext.close();
     }
