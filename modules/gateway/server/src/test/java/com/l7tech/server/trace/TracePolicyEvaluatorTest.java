@@ -24,7 +24,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -69,6 +69,7 @@ public class TracePolicyEvaluatorTest {
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.path", "<path><p>${trace.assertion.path|</p><p>}</p></path>"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.pathStr", "${trace.assertion.pathStr}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.shortName", "${trace.assertion.shortName}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.xml", "${trace.assertion.xml}"));
         Policy tracePolicy = new Policy(PolicyType.INTERNAL, "[Internal Debug Trace Policy]", WspWriter.getPolicyXml(traceAssertion), false);
         tracePolicy.setOid(TRACE_POLICY_OID);
         tracePolicy.setGuid("guid" + TRACE_POLICY_OID);
@@ -113,6 +114,7 @@ public class TracePolicyEvaluatorTest {
         assertEquals(new FalseAssertion().meta().get(AssertionMetadata.SHORT_NAME), traceContext.getVariable("t.assertion.shortName"));
         assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getNumeric()), traceContext.getVariable("t.status"));
         assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getMessage()), traceContext.getVariable("t.status.message"));
+        assertTrue(traceContext.getVariable("t.assertion.xml").toString().contains("FalseAssertion"));
 
         tracedContext.close();
     }

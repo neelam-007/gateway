@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.Functions;
@@ -22,6 +23,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String ASSERTION_PATHSTR = "assertion.pathstr";
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
     private static final String ASSERTION_SHORTNAME = "assertion.shortname";
+    private static final String ASSERTION_XML = "assertion.xml";
     private static final String STATUS = "status";
     private static final String STATUS_MESSAGE = "status.message";
     private static final String REQUEST = "request";
@@ -137,6 +139,15 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
                 ServerAssertion tsass = ctx.getContext().getTracedAssertion();
                 Assertion ass = tsass == null ? null : tsass.getAssertion();
                 return new Selection(ass == null ? null : ass.meta().get(AssertionMetadata.SHORT_NAME));
+            }
+        });
+
+        simpleFields.put(ASSERTION_XML, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                ServerAssertion tsass = ctx.getContext().getTracedAssertion();
+                Assertion ass = tsass == null ? null : tsass.getAssertion();
+                return new Selection(ass == null ? null : WspWriter.getPolicyXml(ass));
             }
         });
 
