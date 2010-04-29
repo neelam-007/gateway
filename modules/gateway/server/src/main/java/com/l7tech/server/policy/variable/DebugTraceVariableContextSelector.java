@@ -28,6 +28,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String STATUS_MESSAGE = "status.message";
     private static final String REQUEST = "request";
     private static final String RESPONSE = "response";
+    private static final String FINAL = "final";
 
     private static final String PREFIX_VAR = "var.";
 
@@ -70,6 +71,13 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     static Map<String, Functions.Unary<Selection, DebugTraceVariableContext>> simpleFields =
             new TreeMap<String, Functions.Unary<Selection, DebugTraceVariableContext>>(String.CASE_INSENSITIVE_ORDER);
     static {
+        simpleFields.put(FINAL, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                return new Selection(ctx.getContext().isFinalInvocation());
+            }
+        });
+
         simpleFields.put(SERVICE_OID, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {

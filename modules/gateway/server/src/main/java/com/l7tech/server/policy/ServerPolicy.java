@@ -7,6 +7,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.AbstractReferenceCounted;
 import com.l7tech.util.ResourceUtils;
@@ -52,7 +53,17 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        return rootAssertion.checkRequest(context);
+        AssertionStatus result;
+        try {
+            result = rootAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            result = e.getAssertionStatus();
+        }
+
+        if (context != null)
+            context.assertionFinished(rootAssertion, result);
+
+        return result;
     }
 
     //- PROTECTED

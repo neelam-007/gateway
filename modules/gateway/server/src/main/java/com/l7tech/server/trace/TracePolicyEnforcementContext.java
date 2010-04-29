@@ -81,6 +81,24 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
         tracedContext.setAuditSaveResponse(auditSaveResponse);
     }
 
+    /**
+     * Check if this is the final invocation.
+     *
+     * @return true if a request has finished tracing and this is the final time this trace context will ever be invoked before it is closed.
+     */
+    public boolean isFinalInvocation() {
+        // We'll assume this is the final invocation if the assertion being traced is the top-level assertion of the root service policy.
+        return tracedAssertion != null &&
+                tracedAssertion.getAssertion() != null &&
+                tracedContext.getAssertionOrdinalPath().isEmpty() &&
+                tracedAssertion.getAssertion().getParent() == null;
+    }
+
+    /**
+     * Get the assertion currently being traced.
+     *
+     * @return the assertion being traced, or null if not yet set.
+     */
     public ServerAssertion getTracedAssertion() {
         return tracedAssertion;
     }
@@ -89,6 +107,11 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
         tracedAssertion = assertion;
     }
 
+    /**
+     * Get the assertion status returned by the last assertion that finished.
+     *
+     * @return the assertion status, or null if not yet set.
+     */
     public AssertionStatus getTracedStatus() {
         return tracedStatus;
     }

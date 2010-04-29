@@ -8,7 +8,9 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ApplicationContexts;
@@ -57,19 +59,19 @@ public class TracePolicyEvaluatorTest {
         testService.setOid(TEST_SERVICE_OID);
 
         AllAssertion traceAssertion = new AllAssertion();
-        traceAssertion.addChild(new SetVariableAssertion("tracePolicyExecuted", "true"));
         traceAssertion.addChild(new SetVariableAssertion("origVar", "${trace.var.orig.one}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.final", "${t.final}~${trace.final}"));
         traceAssertion.addChild(new SetVariableAssertion("t.service.oid", "${trace.service.oid}"));
         traceAssertion.addChild(new SetVariableAssertion("t.policy.oid", "${trace.policy.oid}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.status", "${trace.status}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.status.message", "${trace.status.message}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.status", "${t.status}~${trace.status}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.status.message", "${t.status.message}~${trace.status.message}"));
         traceAssertion.addChild(new SetVariableAssertion("t.request.mainpart", "${trace.request.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("t.response.mainpart", "${trace.response.mainpart}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.ordinal", "${trace.assertion.ordinal}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.path", "<path><p>${trace.assertion.path|</p><p>}</p></path>"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.pathStr", "${trace.assertion.pathStr}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.shortName", "${trace.assertion.shortName}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.xml", "${trace.assertion.xml}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.ordinal", "${t.assertion.ordinal}~${trace.assertion.ordinal}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.path", "${t.assertion.path}~${trace.assertion.path|.}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.pathStr", "${t.assertion.pathStr}~${trace.assertion.pathStr}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.shortName", "${t.assertion.shortName}~${trace.assertion.shortName}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.xml", "${t.assertion.xml}~${trace.assertion.xml}"));
         Policy tracePolicy = new Policy(PolicyType.INTERNAL, "[Internal Debug Trace Policy]", WspWriter.getPolicyXml(traceAssertion), false);
         tracePolicy.setOid(TRACE_POLICY_OID);
         tracePolicy.setGuid("guid" + TRACE_POLICY_OID);
@@ -90,32 +92,61 @@ public class TracePolicyEvaluatorTest {
         tracedContext.setService(testService);
         tracedContext.getRequest().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy there!".getBytes(Charsets.UTF8)));
         tracedContext.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy yourself!".getBytes(Charsets.UTF8)));
-        tracedContext.pushAssertionOrdinal(3);
-        tracedContext.pushAssertionOrdinal(6);
-        tracedContext.pushAssertionOrdinal(12);
 
         ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
-        ServerPolicyHandle traceHandle = policyCache.getServerPolicy(TRACE_POLICY_OID);
-        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, traceHandle);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
         testHandle.checkRequest(tracedContext);
 
         final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();
-        assertEquals("true", traceContext.getVariable("tracePolicyExecuted"));
         assertEquals("testorigvar", traceContext.getVariable("origVar"));
         assertEquals(String.valueOf(TEST_POLICY_OID), traceContext.getVariable("t.policy.oid"));
         assertEquals(String.valueOf(TEST_SERVICE_OID), traceContext.getVariable("t.service.oid"));
         assertEquals("Howdy there!", traceContext.getVariable("t.request.mainpart"));
         assertEquals("Howdy yourself!", traceContext.getVariable("t.response.mainpart"));
 
-        // Recorded stats will be overwritten by the last assertion executed, the final FalseAssertion of the traced policy
-        assertEquals("4", traceContext.getVariable("t.assertion.ordinal"));
-        assertEquals("3.6.12.4", traceContext.getVariable("t.assertion.pathStr"));
-        assertEquals("<path><p>3</p><p>6</p><p>12</p><p>4</p></path>", traceContext.getVariable("t.assertion.path"));
-        assertEquals(new FalseAssertion().meta().get(AssertionMetadata.SHORT_NAME), traceContext.getVariable("t.assertion.shortName"));
-        assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getNumeric()), traceContext.getVariable("t.status"));
-        assertEquals(String.valueOf(AssertionStatus.FALSIFIED.getMessage()), traceContext.getVariable("t.status.message"));
-        assertTrue(traceContext.getVariable("t.assertion.xml").toString().contains("FalseAssertion"));
+        // per-assertion stats are accumulated using set("$f", "${f},${newstuff}") append idiom
+        assertEquals("~false~false~false~true", traceContext.getVariable("t.final"));
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.ordinal"));
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.pathStr"));
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.path"));
+        assertEquals("~Set Context Variable~Continue Processing~Stop Processing~All assertions must evaluate to true", traceContext.getVariable("t.assertion.shortName"));
+        assertEquals("~0~0~600~600", traceContext.getVariable("t.status"));
+        assertEquals("~No Error~No Error~Assertion Falsified~Assertion Falsified", traceContext.getVariable("t.status.message"));
+
+        String[] assertionXmls = traceContext.getVariable("t.assertion.xml").toString().split("~");
+        assertEquals("", assertionXmls[0]);
+        assertTrue(assertionXmls[1].contains("<L7p:SetVariable>") && !assertionXmls[1].contains("<wsp:All "));
+        assertTrue(assertionXmls[2].contains("<L7p:TrueAssertion/>") && !assertionXmls[2].contains("<wsp:All "));
+        assertTrue(assertionXmls[3].contains("<L7p:FalseAssertion/>") && !assertionXmls[3].contains("<wsp:All "));
+        assertTrue(assertionXmls[4].contains("<wsp:All "));
 
         tracedContext.close();
+        testHandle.close();
+    }
+
+    @Test
+    public void testOrdinalPath() throws Exception {
+        PolicyEnforcementContext tracedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        tracedContext.pushAssertionOrdinal(3);
+        tracedContext.pushAssertionOrdinal(6);
+        tracedContext.pushAssertionOrdinal(12);
+
+        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
+        testHandle.checkRequest(tracedContext);
+
+        final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();
+
+        // Request and response were left uninitialized for this test
+        assertEquals("", traceContext.getVariable("t.request.mainpart"));
+        assertEquals("", traceContext.getVariable("t.response.mainpart"));
+
+        // per-assertion stats are accumulated using set("$f", "${f},${newstuff}") append idiom
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.ordinal"));
+        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.pathStr"));
+        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.path"));
+
+        tracedContext.close();
+        testHandle.close();
     }
 }
