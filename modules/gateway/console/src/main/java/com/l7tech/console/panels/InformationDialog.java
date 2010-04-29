@@ -26,6 +26,10 @@ public class InformationDialog extends JDialog {
         this(msg, 0, false, defaultDisplayTime);
     }
 
+    public InformationDialog(String msg, long maxDisplayTime){
+        this(msg, 0, false, maxDisplayTime);
+    }
+
     public InformationDialog(String msg, final int specialKey){
         this(msg, specialKey, false, defaultDisplayTime);
     }

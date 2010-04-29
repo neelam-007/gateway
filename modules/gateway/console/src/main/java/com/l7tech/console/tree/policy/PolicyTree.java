@@ -33,6 +33,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 
 import javax.swing.*;
@@ -215,14 +216,19 @@ public class PolicyTree extends JTree implements DragSourceListener,
         try {
             foundNode = findTreeNode(root, indexPath);
         } catch (OrdinalIndexOutOfRangeException e) {
-            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found. " + e.getMessage());
+            //show for 4 seconds as the messages are longer
+            InformationDialog iDialog = new InformationDialog(e.getMessage(), 1000 * 4L);
             MainWindow.showInformationDialog(iDialog, null);
-            return;
+            foundNode = e.getNodeToGoto();
+            if(foundNode == root){
+                foundNode = (AssertionTreeNode) root.getFirstChild();
+            }
         }
 
-        //if null show warning
         if (foundNode == null) {
-            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found.");
+            //this should only happen with an empty policy
+            //show for 4 seconds as the messages are longer
+            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found.", 1000 * 4L);
             MainWindow.showInformationDialog(iDialog, null);
             return;
         }
@@ -239,12 +245,23 @@ public class PolicyTree extends JTree implements DragSourceListener,
         AssertionTreeNode foundAssertion = treeNode;
         for (int i = 0, assertionOrdinalSize = assertionOrdinal.size(); i < assertionOrdinalSize; i++) {
             Integer index = assertionOrdinal.get(i);
-            foundAssertion = findTreeNode(foundAssertion, index);
-            if(foundAssertion == null) return null;
+            final Pair<AssertionTreeNode, AssertionTreeNode> nodePair = findTreeNode(foundAssertion, index);
+            foundAssertion = nodePair.left;
+
+            if(foundAssertion == null) {
+                //assertion index was too large
+                throw new OrdinalIndexOutOfRangeException(
+                        "No assertion found at Ordinal " + index + ". Going to assertion with ordinal " +
+                                AssertionTreeNode.getVirtualOrdinalString(nodePair.right), nodePair.right);
+            }
+
             if (assertionOrdinal.size() > 1 && i != assertionOrdinal.size() - 1) { //any assertion before the last must be an include
                 if (!(foundAssertion.asAssertion() instanceof Include)) {
                     //when indexing e.g. 1.2.3 and were not on the last assertion and we don't find an include, then the index is invalid
-                    return null;
+                    throw new OrdinalIndexOutOfRangeException(
+                            "Invalid assertion ordinal sub index. Going to assertion with ordinal " +
+                            AssertionTreeNode.getVirtualOrdinalString(foundAssertion), foundAssertion);
+
                 }
             }
         }
@@ -252,19 +269,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
         return foundAssertion;
     }
 
-    private class OrdinalIndexOutOfRangeException extends Exception{
-        private OrdinalIndexOutOfRangeException(String message) {
-            super(message);
-        }
-    }
-
-    private AssertionTreeNode findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal) throws OrdinalIndexOutOfRangeException{
+    private Pair<AssertionTreeNode, AssertionTreeNode> findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal) throws OrdinalIndexOutOfRangeException{
 
         if(assertionOrdinal < Assertion.MIN_DISPLAYED_ORDINAL)
             throw new OrdinalIndexOutOfRangeException(
-                    "Ordinal value '" + assertionOrdinal+"' is out of range for assertion ordinals. " +
-                            "Each ordinal Must be >=" + Assertion.MIN_DISPLAYED_ORDINAL);
+                    "Invalid ordinal." +
+                            " Each ordinal must be >= " + Assertion.MIN_DISPLAYED_ORDINAL+". Going to assertion with ordinal " +
+                    AssertionTreeNode.getVirtualOrdinalString(treeNode), treeNode);
 
+        AssertionTreeNode lastFoundNode = treeNode;
         for(int i = 0; i < treeNode.getChildCount(); i++){
             final TreeNode childTreeNode = treeNode.getChildAt(i);
             if(!( childTreeNode instanceof AssertionTreeNode)) continue;
@@ -272,14 +285,32 @@ public class PolicyTree extends JTree implements DragSourceListener,
             final AssertionTreeNode childAssertionTreeNode = (AssertionTreeNode) childTreeNode;
             final Assertion childAssertion = childAssertionTreeNode.asAssertion();
 
-            if(childAssertion.getOrdinal() == assertionOrdinal) return childAssertionTreeNode;
+            if(childAssertion.getOrdinal() == assertionOrdinal)
+                return new Pair<AssertionTreeNode, AssertionTreeNode>(childAssertionTreeNode, lastFoundNode);
 
-            if( childAssertion instanceof Include) continue;//includes are only accessed if indexed correctly i.e. don't look at the includes children
+            if (childAssertion instanceof Include)
+                continue;//includes are only accessed if indexed correctly i.e. don't look at the includes children
 
-            final AssertionTreeNode foundNode = findTreeNode(childAssertionTreeNode, assertionOrdinal);
-            if(foundNode != null) return foundNode;
+            final Pair<AssertionTreeNode, AssertionTreeNode> foundNode = findTreeNode(childAssertionTreeNode, assertionOrdinal);
+            if(foundNode.left != null) return foundNode;
+            lastFoundNode = foundNode.right;
         }
-        return null;
+
+        return new Pair<AssertionTreeNode, AssertionTreeNode>(null, lastFoundNode);
+    }
+
+    private static class OrdinalIndexOutOfRangeException extends Exception{
+        private final AssertionTreeNode nodeToGoto;
+
+        private OrdinalIndexOutOfRangeException(String message, AssertionTreeNode nodeToGoto) {
+            super(message);
+            if(nodeToGoto == null) throw new NullPointerException("nodeToGoto cannot be null");
+            this.nodeToGoto = nodeToGoto;
+        }
+
+        public AssertionTreeNode getNodeToGoto() {
+            return nodeToGoto;
+        }
     }
 
     private Transferable createTransferable(TreePath[] paths) {
