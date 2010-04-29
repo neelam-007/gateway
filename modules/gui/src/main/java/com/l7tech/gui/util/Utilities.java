@@ -19,10 +19,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1168,6 +1165,60 @@ public class Utilities {
         FontMetrics metrics = c.getFontMetrics(f);
         Graphics g = c.getGraphics();
         return metrics.getStringBounds(str, g);
+    }
+
+    /**
+     * Get a scrolling component to use for text display.
+     *
+     * <p>This uses a minimum width of 600 and a minimum height of 100.</p>
+     *
+     * @param text The text to display.
+     * @return The component to use.
+     */
+    public static JComponent getTextDisplayComponent( final String text ) {
+        return getTextDisplayComponent( text, 600, 100, -1, -1 );
+    }
+
+    /**
+     * Get a scrolling component to use for text display.
+     *
+     * @param text The text to display.
+     * @param minWidth The minimum width (a value of zero or less is ignored)
+     * @param minHeight The minimum height (a value of zero or less is ignored)
+     * @param preferredWidth The preferred width (-1 for default)
+     * @param preferredHeight The preferred height (-1 for default)
+     * @return
+     */
+    public static JComponent getTextDisplayComponent( final String text,
+                                                      final int minWidth,
+                                                      final int minHeight,
+                                                      final int preferredWidth,
+                                                      final int preferredHeight ) {
+        final JTextPane tp = new JTextPane();
+        final JLabel label = new JLabel(" ");
+        tp.setBackground(label.getBackground());
+        tp.setForeground(label.getForeground());
+        tp.setFont(label.getFont());
+        tp.setEditable(false);
+        tp.setText(text);
+        tp.setCaretPosition( 0 );
+
+        final JScrollPane sp = new JScrollPane(tp);
+        sp.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
+
+        final JPanel panel = new JPanel();
+        panel.setLayout( new BorderLayout() );
+        panel.add( sp, BorderLayout.CENTER );
+
+        if ( minHeight > 0 ) {
+            panel.add( Box.createVerticalStrut(minHeight), BorderLayout.WEST );
+        }
+
+        if ( minWidth > 0 ) {
+            panel.add( Box.createHorizontalStrut(minWidth), BorderLayout.SOUTH );
+        }
+
+        return panel;
     }
 
     /**

@@ -276,7 +276,7 @@ public class GlobalSchemaDialog extends JDialog {
             if (err != null) {
                 String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
                 logger.log(Level.WARNING, text, err);
-                JOptionPane.showMessageDialog(this, text, "Unable to save schema entry", JOptionPane.ERROR_MESSAGE);
+                showErrorMessage(text);
             }
 
             // pickup all changes from gateway
@@ -286,17 +286,8 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void showErrorMessage(String text) {
-        JTextPane tp = new JTextPane();
-        JLabel label = new JLabel(" ");
-        tp.setBackground(label.getBackground());
-        tp.setForeground(label.getForeground());
-        tp.setFont(label.getFont());
-        tp.setEditable(false);
-        tp.setText(text);
-        JScrollPane sp = new JScrollPane(tp);
-        sp.setPreferredSize(new Dimension(800, -1));
         JOptionPane.showMessageDialog(GlobalSchemaDialog.this,
-                                      sp,
+                                      Utilities.getTextDisplayComponent(text, 600, 100, -1, -1),
                                       "Unable to save schema entry",
                                       JOptionPane.ERROR_MESSAGE);
     }
@@ -459,16 +450,7 @@ public class GlobalSchemaDialog extends JDialog {
         final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
         final Object object;
         if(width > 600){
-            JTextArea jTextArea = new JTextArea(message);
-            jTextArea.setRows(3);
-            jTextArea.setEditable(false);
-            jTextArea.setCaretPosition(0);
-            jTextArea.setBackground(this.getBackground());
-
-            JScrollPane jScrollPane = new JScrollPane(jTextArea);
-            final int textHeight = this.getFontMetrics(this.getFont()).getHeight();
-            jScrollPane.setPreferredSize(new Dimension(600, textHeight * 5));
-            object = jScrollPane;
+            object = Utilities.getTextDisplayComponent(message, 600, 100, -1, -1);
         }else{
             object = message;
         }
