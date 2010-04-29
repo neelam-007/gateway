@@ -19,6 +19,8 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -1012,7 +1014,13 @@ public class FindIdentitiesDialog extends JDialog {
         try {
             providersComboBoxModel = new DefaultComboBoxModel();
             final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            EntityHeader[] headers = admin.findAllIdentityProviderConfig();
+            final EntityHeader[] headers = admin.findAllIdentityProviderConfig();
+            Arrays.sort( headers, 0, headers.length, new ResolvingComparator<EntityHeader,String>( new Resolver<EntityHeader,String>(){
+                @Override
+                public String resolve( final EntityHeader key ) {
+                    return key.getName() == null ? "" : key.getName().toLowerCase();
+                }
+            }, false ) );
             for (EntityHeader header : headers) {
                 IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
                 if (config == null) {

@@ -13,6 +13,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -21,6 +23,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 /**
@@ -42,6 +46,7 @@ public class FindEntityDialog extends JDialog {
     private EntityHeader selectedEntityHeader;
 
     private Action okAction = new AbstractAction() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             ok();
         }
@@ -93,9 +98,17 @@ public class FindEntityDialog extends JDialog {
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find " + entityType.getName(), e);
         }
+        java.util.List<EntityHeader> sortedHeaders = new ArrayList<EntityHeader>(headers);
+        Collections.sort( sortedHeaders, new ResolvingComparator<EntityHeader,String>( new Resolver<EntityHeader,String>(){
+            @Override
+            public String resolve( final EntityHeader key ) {
+                return key.getName() == null ? "" : key.getName().toLowerCase();
+            }
+        }, false ) );
         resultSizeExceeded.setVisible(headers.isMaxExceeded());
-        list.setModel(new DefaultComboBoxModel(headers.toArray(new EntityHeader[headers.size()])));
+        list.setModel(new DefaultComboBoxModel(sortedHeaders.toArray(new EntityHeader[sortedHeaders.size()])));
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableDisable();
             }
@@ -104,6 +117,7 @@ public class FindEntityDialog extends JDialog {
         okButton.addActionListener(okAction);
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
@@ -141,6 +155,7 @@ public class FindEntityDialog extends JDialog {
         fed.pack();
         Utilities.centerOnParentWindow(fed);
         DialogDisplayer.display(fed, new Runnable() {
+            @Override
             public void run() {
                 EntityHeader eh = fed.getSelectedEntityHeader();
                 if (eh == null) return;
