@@ -336,6 +336,8 @@
         <constructor-arg ref="policyAliasManager"/>
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="policyVersionManager"/>
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 

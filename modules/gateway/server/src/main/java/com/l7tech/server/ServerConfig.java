@@ -75,7 +75,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS = "modularAssertionsRescanMillis";
     public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
 
-    public static final String PARAM_TRACE_POLICY_GUID = "trace.policy.guid";
+    public static final String PARAM_TRACE_POLICY_GUID = "trace.policy.guid"; // serverconfig name must be same as cluster property name for this property
 
     public static final String PARAM_AUDIT_SINK_POLICY_GUID = "audit.sink.policy.guid";
     public static final String PARAM_AUDIT_SINK_FALLBACK_ON_FAIL = "audit.sink.fallbackToInternal";

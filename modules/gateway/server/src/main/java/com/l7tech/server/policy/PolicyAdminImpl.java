@@ -4,6 +4,8 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -11,6 +13,8 @@ import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
@@ -19,6 +23,7 @@ import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.util.Functions.map;
@@ -32,6 +37,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
     private final PolicyVersionManager policyVersionManager;
+    private final ServiceManager serviceManager;
+    private final ClusterPropertyManager clusterPropertyManager;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -42,12 +49,16 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public PolicyAdminImpl(PolicyManager policyManager,
                            PolicyAliasManager policyAliasManager,
                            PolicyCache policyCache,
-                           PolicyVersionManager policyVersionManager)
+                           PolicyVersionManager policyVersionManager,
+                           ServiceManager serviceManager,
+                           ClusterPropertyManager clusterPropertyManager)
     {
         this.policyManager = policyManager;
         this.policyAliasManager = policyAliasManager;
         this.policyCache = policyCache;
         this.policyVersionManager = policyVersionManager;
+        this.serviceManager = serviceManager;
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     @Override
@@ -127,13 +138,38 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (sinkGuid != null && sinkGuid.trim().equals(guid))
             throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");
         String traceGuid = serverConfig.getProperty(ServerConfig.PARAM_TRACE_POLICY_GUID);
-        if (traceGuid != null && traceGuid.trim().equals(guid) && atLeastOneServiceHasTracingEnabled())
-            throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global debug trace policy");
+        if (traceGuid != null && traceGuid.trim().equals(guid)) {
+            if (atLeastOneServiceHasTracingEnabled())
+                throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global debug trace policy");
+            cleanupTraceClusterProperty();
+        }
     }
 
-    private boolean atLeastOneServiceHasTracingEnabled() {
-        // TODO
-        return true;
+    private boolean atLeastOneServiceHasTracingEnabled() throws FindException {
+        if (serviceManager == null)
+            return true;
+        Collection<ServiceHeader> serviceHeaders = serviceManager.findAllHeaders();
+        for (ServiceHeader serviceHeader : serviceHeaders) {
+            if (serviceHeader.isTracingEnabled())
+                return true;
+        }
+        return false;
+    }
+
+    private void cleanupTraceClusterProperty() {
+        if (clusterPropertyManager == null)
+            return;
+        try {
+            ClusterProperty traceProp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_TRACE_POLICY_GUID);
+            if (traceProp == null)
+                return;
+
+            clusterPropertyManager.delete(traceProp);
+        } catch (FindException e) {
+            logger.log(Level.INFO, "Unable to look up trace.policy.guid cluster property: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (DeleteException e) {
+            logger.log(Level.INFO, "Unable to delete no-longer-needed trace.policy.guid cluster property: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     @Override
