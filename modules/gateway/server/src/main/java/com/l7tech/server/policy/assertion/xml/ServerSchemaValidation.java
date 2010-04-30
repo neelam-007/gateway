@@ -298,7 +298,7 @@ public class ServerSchemaValidation
             schemaValidationFailed(context, "A required MIME part was lost: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            schemaValidationFailed(context, ExceptionUtils.getMessage(e), e);
+            schemaValidationFailed(context, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } finally {
             if (ps != null) ps.close();
