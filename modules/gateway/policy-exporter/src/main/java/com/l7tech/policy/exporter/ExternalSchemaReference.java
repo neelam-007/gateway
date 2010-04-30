@@ -82,7 +82,7 @@ public class ExternalSchemaReference extends ExternalReference {
         // check that the schema is present on this target system
         try {
             if (name == null || getFinder().findSchemaByName(name).isEmpty()) {
-                return tns != null && getFinder().findSchemaByTNS(tns).size() == 1;
+                return tns != null && !getFinder().findSchemaByTNS(tns).isEmpty();
             }
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "error using schema admin layer", e);
@@ -157,14 +157,16 @@ public class ExternalSchemaReference extends ExternalReference {
         } );
 
         for ( Element dependencyElement : dependencyElements ) {
-            String schemaNamespace = dependencyElement.hasAttribute("namespace") ?
-                    dependencyElement.getAttribute("namespace") :
+            String schemaNamespace = "import".equals(dependencyElement.getLocalName())?
+                    dependencyElement.getAttribute("namespace") : // we want empty, not null for a reference to a schema with no TNS
                     null;
             String schemaUrl = dependencyElement.hasAttribute("schemaLocation") ?
                     dependencyElement.getAttribute("schemaLocation") :
                     null;
 
-            output.add(new ListedImport(schemaUrl, schemaNamespace));
+            if ( schemaUrl != null || schemaNamespace != null ) {
+                output.add(new ListedImport(schemaUrl, schemaNamespace));
+            }
         }
 
         return output;
