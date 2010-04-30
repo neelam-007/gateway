@@ -2,6 +2,7 @@ package com.l7tech.server.policy.validator;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
@@ -28,6 +29,7 @@ import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
@@ -95,6 +97,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private ClientCertManager clientCertManager;
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
+    private JdbcConnectionManager jdbcConnectionManager;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -381,6 +384,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if ( assertion instanceof PrivateKeyable) {
             checkPrivateKey((PrivateKeyable) assertion, path, result);
         }
+
+        if ( assertion instanceof JdbcConnectionable ) {
+            checkJdbcConnection((JdbcConnectionable) assertion, path, result);
+        }
     }
 
     private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {
@@ -486,6 +493,24 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                                            "This assertion refers to a Private Key which cannot " +
                                                            "be found on this SecureSpan Gateway",
                                                            null));
+            }
+        }
+    }
+
+    protected void checkJdbcConnection( final JdbcConnectionable jdbcConnectionable,
+                                        final AssertionPath ap,
+                                        final PolicyValidatorResult r ) {
+        final String name = jdbcConnectionable.getConnectionName();
+        if ( name != null ) {
+            try {
+                JdbcConnection connection = jdbcConnectionManager.getJdbcConnection( name );
+                if ( connection == null ) {
+                    r.addError(new PolicyValidatorResult.Error( (Assertion)jdbcConnectionable, ap,
+                            "Assertion refers to the " + EntityType.JDBC_CONNECTION.getName() +" '"+name+"' which cannot be located on this system.", null));
+
+                }
+            } catch ( FindException e ) {
+                logger.log(Level.WARNING, "Error looking for JDBC connection: " + ExceptionUtils.getMessage(e), e);
             }
         }
     }
@@ -608,6 +633,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         this.entityFinder = entityFinder;
     }
 
+    public void setJdbcConnectionManager( final JdbcConnectionManager jdbcConnectionManager ) {
+        this.jdbcConnectionManager = jdbcConnectionManager;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
@@ -618,12 +647,24 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             throw new IllegalArgumentException("Identity Provider Factory is required");
         }
 
+        if (ssgKeyStoreManager == null) {
+            throw new IllegalArgumentException("KeyStore Manager is required");
+        }
+
+        if (schemaEntryManager == null) {
+            throw new IllegalArgumentException("SchemaEntry Manager is required");
+        }
+
         if (clientCertManager == null) {
             throw new IllegalArgumentException("Client Cert Manger is required");
         }
 
         if (entityFinder == null) {
             throw new IllegalArgumentException("EntityFinder is required");
+        }
+
+        if (jdbcConnectionManager == null) {
+            throw new IllegalArgumentException("JDBC Connection Manager is required");
         }
     }
 

@@ -835,6 +835,7 @@
         <property name="clientCertManager" ref='clientCertManager'/>
         <property name="entityFinder" ref="entityFinder"/>
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
+        <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
