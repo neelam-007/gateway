@@ -438,6 +438,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             public void actionPerformed(ActionEvent e) {
                 //check that the some search text has been entered
                 if(!searchForm.hasSearchResults()) {
+                    final InformationDialog iDialog = new InformationDialog("No search results.");
+                    MainWindow.showInformationDialog(iDialog, null);
                     return;
                 }
 
