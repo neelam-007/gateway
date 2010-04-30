@@ -612,9 +612,9 @@ public class MigrationManagerImpl implements MigrationManager {
         EntityHeader header = EntityHeaderUtils.fromExternal(externalHeader);
         String message = summary + ":\n";
         if ( header instanceof ServiceHeader) {
-            message += header.getType() +", " + ((ServiceHeader)header).getDisplayName() + " (#"+header.getOid()+")\ndue to:\n";
+            message += header.getType() + ", " + ((ServiceHeader) header).getDisplayName() + getDisplayId(header) + "\ndue to:\n";
         } else {
-            message += header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getOid()+")\ndue to:\n";
+            message += header.getType() + ", " + (header.getName() == null ? "" : header.getName()) + getDisplayId(header) + "\ndue to:\n";
         }
 
         String errMsg = ExceptionUtils.getMessage(root);
@@ -625,6 +625,12 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         return message;
+    }
+
+    private String getDisplayId(EntityHeader header) {
+        String id = header instanceof GuidEntityHeader ? ((GuidEntityHeader)header).getGuid() :
+                    header.getOid() != -1 ? Long.toString(header.getOid()) : null;
+        return id == null ? "" : " (#" + id + ")";
     }
 
     private Entity loadEntity( final ExternalEntityHeader externalHeader ) throws MigrationApi.MigrationException {
