@@ -18,7 +18,11 @@ import java.util.*;
  */
 public class DebugTraceVariableContextSelector implements ExpandVariables.Selector<DebugTraceVariableContext> {
     private static final String SERVICE_OID = "service.oid";
+    private static final String SERVICE_NAME = "service.name";
     private static final String POLICY_OID = "policy.oid";
+    private static final String POLICY_GUID = "policy.guid";
+    private static final String POLICY_NAME = "policy.name";
+    private static final String POLICY_VERSION = "policy.version";
     private static final String ASSERTION_PATH = "assertion.path";
     private static final String ASSERTION_PATHSTR = "assertion.pathstr";
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
@@ -86,12 +90,47 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             }
         });
 
+        simpleFields.put(SERVICE_NAME, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                final PublishedService service = ctx.getContext().getOriginalContext().getService();
+                return new Selection(service == null ? null : service.getName());
+            }
+        });
+
         simpleFields.put(POLICY_OID, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
                 PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
                 return new Selection(head == null ? null : head.getOid());
+            }
+        });
+
+        simpleFields.put(POLICY_GUID, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
+                PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+                return new Selection(head == null ? null : head.getGuid());
+            }
+        });
+
+        simpleFields.put(POLICY_NAME, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
+                PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+                return new Selection(head == null ? null : head.getName());
+            }
+        });
+
+        simpleFields.put(POLICY_VERSION, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
+                PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+                return new Selection(head == null ? null : (head.getVersion() + 1));
             }
         });
 

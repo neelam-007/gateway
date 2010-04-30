@@ -32,6 +32,8 @@ import static org.junit.Assert.*;
  *
  */
 public class TracePolicyEvaluatorTest {
+    static final String TEST_SERVICE_NAME = "_Foo_TestServiceName___";
+    static final String TEST_POLICY_NAME = "_Puu_TestPolicyName___";
     static final int TEST_SERVICE_OID = 47847;
     static final int TEST_POLICY_OID = 4848;
     static final int TRACE_POLICY_OID = 5454;
@@ -52,17 +54,22 @@ public class TracePolicyEvaluatorTest {
         assertionToTrace.addChild(new SetVariableAssertion("orig.one", "testorigvar"));
         assertionToTrace.addChild(new TrueAssertion());
         assertionToTrace.addChild(new FalseAssertion());
-        Policy policyToTrace = new Policy(PolicyType.SHARED_SERVICE, "policy to trace", WspWriter.getPolicyXml(assertionToTrace), false);
+        Policy policyToTrace = new Policy(PolicyType.SHARED_SERVICE, TEST_POLICY_NAME, WspWriter.getPolicyXml(assertionToTrace), false);
         policyToTrace.setOid(TEST_POLICY_OID);
         policyToTrace.setGuid("guid" + TEST_POLICY_OID);
         testService = new PublishedService();
         testService.setOid(TEST_SERVICE_OID);
+        testService.setName(TEST_SERVICE_NAME);
 
         AllAssertion traceAssertion = new AllAssertion();
         traceAssertion.addChild(new SetVariableAssertion("origVar", "${trace.var.orig.one}"));
         traceAssertion.addChild(new SetVariableAssertion("t.final", "${t.final}~${trace.final}"));
         traceAssertion.addChild(new SetVariableAssertion("t.service.oid", "${trace.service.oid}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.service.name", "${trace.service.name}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.policy.guid", "${trace.policy.guid}"));
         traceAssertion.addChild(new SetVariableAssertion("t.policy.oid", "${trace.policy.oid}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.policy.name", "${trace.policy.name}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.policy.version", "${trace.policy.version}"));
         traceAssertion.addChild(new SetVariableAssertion("t.status", "${t.status}~${trace.status}"));
         traceAssertion.addChild(new SetVariableAssertion("t.status.message", "${t.status.message}~${trace.status.message}"));
         traceAssertion.addChild(new SetVariableAssertion("t.request.mainpart", "${trace.request.mainpart}"));
@@ -101,6 +108,10 @@ public class TracePolicyEvaluatorTest {
         assertEquals("testorigvar", traceContext.getVariable("origVar"));
         assertEquals(String.valueOf(TEST_POLICY_OID), traceContext.getVariable("t.policy.oid"));
         assertEquals(String.valueOf(TEST_SERVICE_OID), traceContext.getVariable("t.service.oid"));
+        assertEquals("guid" + TEST_POLICY_OID, traceContext.getVariable("t.policy.guid"));
+        assertEquals(TEST_POLICY_NAME, traceContext.getVariable("t.policy.name"));
+        assertEquals("1", traceContext.getVariable("t.policy.version"));
+        assertEquals(TEST_SERVICE_NAME, traceContext.getVariable("t.service.name"));
         assertEquals("Howdy there!", traceContext.getVariable("t.request.mainpart"));
         assertEquals("Howdy yourself!", traceContext.getVariable("t.response.mainpart"));
 
