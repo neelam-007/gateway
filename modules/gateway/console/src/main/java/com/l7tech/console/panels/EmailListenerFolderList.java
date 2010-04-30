@@ -27,8 +27,6 @@ public class EmailListenerFolderList extends JDialog {
     private JButton cancelButton;
     private JScrollPane scrollPane;
     private JPanel contentPane;
-    private JTree folderTree;
-    private DefaultTreeModel treeModel;
 
     private boolean confirmed = false;
     private TreePath selectedFolderPath = null;
@@ -57,6 +55,7 @@ public class EmailListenerFolderList extends JDialog {
         initialize(rootFolder);
     }
 
+    @Override
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
         super.setVisible(b);
@@ -64,34 +63,38 @@ public class EmailListenerFolderList extends JDialog {
 
     private void initialize(EmailListenerAdmin.IMAPFolder rootFolder) {
         setContentPane(contentPane);
-        pack();
+        setDefaultCloseOperation( JDialog.DISPOSE_ON_CLOSE );
         setModal(true);
+        pack();
 
-        treeModel = new DefaultTreeModel(createTreeNode(rootFolder, null));
+        final DefaultTreeModel treeModel = new DefaultTreeModel( createTreeNode( rootFolder, null ) );
         treeModel.reload();
-        folderTree = new JTree(treeModel);
+        final JTree folderTree = new JTree( treeModel );
         folderTree.setRootVisible(false);
         folderTree.setShowsRootHandles(true);
         folderTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         folderTree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent e) {
                 selectedFolderPath = e.getNewLeadSelectionPath();
             }
         });
-        scrollPane.setViewportView(folderTree);
+        scrollPane.setViewportView( folderTree );
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 onOk();
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
-                setVisible(false);
+                dispose();
             }
         });
 
-        Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
+        Utilities.equalizeButtonSizes(okButton, cancelButton);
         Utilities.centerOnScreen(this);
     }
 
@@ -109,23 +112,7 @@ public class EmailListenerFolderList extends JDialog {
 
     private void onOk() {
         confirmed = true;
-        setVisible(false);
-    }
-
-    private String getFolderPathForTreePath(TreePath treePath, int index, IMAPFolderTreeNode folderNode) {
-        Object pc = treePath.getPathComponent(index);
-        for(IMAPFolderTreeNode child : folderNode.children) {
-            if(child.name.equals(treePath.getPathComponent(index))) {
-                if(index == treePath.getPathCount() - 1) {
-                    return child.path;
-                } else {
-                    return getFolderPathForTreePath(treePath, index + 1, child);
-                }
-            }
-        }
-
-        System.out.println("*** Returning null");
-        return null;
+        dispose();
     }
 
     private IMAPFolderTreeNode createTreeNode(EmailListenerAdmin.IMAPFolder folder, IMAPFolderTreeNode parent) {
@@ -145,20 +132,23 @@ public class EmailListenerFolderList extends JDialog {
         private IMAPFolderTreeNode parent;
         private java.util.List<IMAPFolderTreeNode> children = new ArrayList<IMAPFolderTreeNode>();
 
-        public IMAPFolderTreeNode(EmailListenerAdmin.IMAPFolder folder, IMAPFolderTreeNode parent) {
+        IMAPFolderTreeNode(EmailListenerAdmin.IMAPFolder folder, IMAPFolderTreeNode parent) {
             name = folder.getName();
             path = folder.getPath();
             this.parent = parent;
         }
 
+        @Override
         public Enumeration children() {
             return Collections.enumeration(children);
         }
 
+        @Override
         public boolean getAllowsChildren() {
             return true;
         }
 
+        @Override
         public TreeNode getChildAt(int childIndex) {
             if(childIndex < 0 || childIndex >= children.size()) {
                 return null;
@@ -166,18 +156,22 @@ public class EmailListenerFolderList extends JDialog {
             return children.get(childIndex);
         }
 
+        @Override
         public int getChildCount() {
             return children.size();
         }
 
+        @Override
         public int getIndex(TreeNode node) {
             return children.indexOf(node);
         }
 
+        @Override
         public TreeNode getParent() {
             return parent;
         }
 
+        @Override
         public boolean isLeaf() {
             return children.size() == 0;
         }

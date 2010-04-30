@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.JDialog;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * Support class for AssertionPropertiesEditor implementations.
@@ -22,6 +24,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     @Deprecated
     public AssertionPropertiesEditorSupport( Frame owner, String title, boolean modal ) {
         super( owner, title, modal ? AssertionPropertiesOkCancelSupport.DEFAULT_MODALITY_TYPE : ModalityType.MODELESS );
+        init();
     }
 
     /**
@@ -30,6 +33,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     @Deprecated
     public AssertionPropertiesEditorSupport( Dialog owner, String title, boolean modal ) {
         super( owner, title, modal ? AssertionPropertiesOkCancelSupport.DEFAULT_MODALITY_TYPE : ModalityType.MODELESS );
+        init();
     }
 
     /**
@@ -40,19 +44,23 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
      */
     public AssertionPropertiesEditorSupport( Window owner, String title ) {
         super( owner, title, AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE );
+        init();
     }
 
     public AssertionPropertiesEditorSupport( Window owner, Assertion assertion) {
         super( owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString()
                 , AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE );
+        init();
     }
 
     public AssertionPropertiesEditorSupport( Window owner, String title, ModalityType modalityType ) {
         super( owner, title, modalityType );
+        init();
     }
 
     public AssertionPropertiesEditorSupport( Window owner, Assertion assertion, ModalityType modalityType ) {
         super( owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString() , modalityType );
+        init();
     }
 
     @Override
@@ -76,12 +84,6 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     @Override
     public JDialog getDialog() {
         return this;
-    }
-
-    @Override
-    public void setVisible( boolean b ) {
-        configureView();
-        super.setVisible( b );
     }
 
     /**
@@ -132,7 +134,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
 
         if ( parentAssertion instanceof CompositeAssertion ) {
             CompositeAssertion compositeAssertion = (CompositeAssertion) parentAssertion;
-            java.util.List<Assertion> children = (java.util.List<Assertion>) compositeAssertion.getChildren();
+            java.util.List<Assertion> children = compositeAssertion.getChildren();
             //children should never be null
             if(children == null || children.isEmpty()) return parentAssertion;
 
@@ -149,4 +151,14 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     private boolean readOnly = false;
     private Assertion parentAssertion;
     private int insertPosition;
+
+    private void init() {
+        this.setDefaultCloseOperation( JDialog.DISPOSE_ON_CLOSE );
+        this.addWindowListener( new WindowAdapter(){
+            @Override
+            public void windowOpened( final WindowEvent e ) {
+                configureView();
+            }
+        } );
+    }
 }
