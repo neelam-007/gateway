@@ -806,7 +806,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                         String resolvedSystemId = generateURN(namespaceURI);
                         if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
                             systemId = resolvedSystemId;
-                        } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
+                        } else if (namespaceURI != null && globalSchemasByUrl.containsKey(namespaceURI)) {
                             systemId = namespaceURI;
                         } else {
                             throw new CausedIOException("No systemId, cannot resolve resource");
@@ -836,7 +836,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private String generateURN( final String namespace ) {
         StringBuilder sb = new StringBuilder();
         sb.append("urn:uuid:");
-        sb.append(UUID.nameUUIDFromBytes(namespace.getBytes(Charsets.UTF8)).toString());
+        byte[] bytes = namespace==null ? new byte[0] : namespace.getBytes(Charsets.UTF8);
+        sb.append(UUID.nameUUIDFromBytes(bytes).toString());
         return sb.toString();
     }
 
@@ -1030,7 +1031,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             String resolvedSystemId = generateURN(namespaceURI);
             if (globalSchemasByUrl.containsKey(resolvedSystemId)) {
                 systemId = resolvedSystemId;
-            } else if (globalSchemasByUrl.containsKey(namespaceURI)) {
+            } else if (namespaceURI != null && globalSchemasByUrl.containsKey(namespaceURI)) {
                 systemId = namespaceURI;
             } else {
                 throw new CausedIOException("No systemId, cannot resolve resource");
