@@ -150,7 +150,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             @Override
             public void actionPerformed(ActionEvent e) {
                 DialogDisplayer.showInputDialog(PolicyTree.this,
-                        "Enter Assertion Ordinal: ",
+                        "Enter Assertion Number: ",
                         "Goto Assertion",
                         JOptionPane.INFORMATION_MESSAGE,
                         null, null, null,
@@ -165,9 +165,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         } catch (NumberFormatException e1) {
                             //show a warning dialog
                             DialogDisplayer.showMessageDialog(PolicyTree.this,
-                                    "Invalid Assertion Ordinal (Must be an integer >= "
+                                    "Invalid Assertion Number (Must be an integer >= "
                                             + Assertion.MIN_DISPLAYED_ORDINAL + ")",
-                                    "Invalid Assertion Ordinal", JOptionPane.WARNING_MESSAGE, null);
+                                    "Invalid Assertion Number", JOptionPane.WARNING_MESSAGE, null);
                         }
                     }
                 });
