@@ -228,7 +228,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (foundNode == null) {
             //this should only happen with an empty policy
             //show for 4 seconds as the messages are longer
-            InformationDialog iDialog = new InformationDialog("Assertion with ordinal #" + stringOrdinal + " not found.", 1000 * 4L);
+            InformationDialog iDialog = new InformationDialog("Assertion #" + stringOrdinal + " not found.", 1000 * 4L);
             MainWindow.showInformationDialog(iDialog, null);
             return;
         }
@@ -251,7 +251,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if(foundAssertion == null) {
                 //assertion index was too large
                 throw new OrdinalIndexOutOfRangeException(
-                        "No assertion found at Ordinal " + index + ". Going to assertion with ordinal " +
+                        "Assertion number " + index + " not found. Going to assertion #" +
                                 AssertionTreeNode.getVirtualOrdinalString(nodePair.right), nodePair.right);
             }
 
@@ -259,7 +259,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (!(foundAssertion.asAssertion() instanceof Include)) {
                     //when indexing e.g. 1.2.3 and were not on the last assertion and we don't find an include, then the index is invalid
                     throw new OrdinalIndexOutOfRangeException(
-                            "Invalid assertion ordinal sub index. Going to assertion with ordinal " +
+                            "Invalid assertion number sub index. Going to assertion #" +
                             AssertionTreeNode.getVirtualOrdinalString(foundAssertion), foundAssertion);
 
                 }
@@ -273,8 +273,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         if(assertionOrdinal < Assertion.MIN_DISPLAYED_ORDINAL)
             throw new OrdinalIndexOutOfRangeException(
-                    "Invalid ordinal." +
-                            " Each ordinal must be >= " + Assertion.MIN_DISPLAYED_ORDINAL+". Going to assertion with ordinal " +
+                    "Invalid assertion number." +
+                            " Each number must be >= " + Assertion.MIN_DISPLAYED_ORDINAL+". Going to assertion #" +
                     AssertionTreeNode.getVirtualOrdinalString(treeNode), treeNode);
 
         AssertionTreeNode lastFoundNode = treeNode;

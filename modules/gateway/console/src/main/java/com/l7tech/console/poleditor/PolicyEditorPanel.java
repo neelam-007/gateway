@@ -569,7 +569,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             @Override
             public Boolean call() {
                 String actionName = ((SecureAction) getShowAssertionLineNumbersAction(null)).getName();
-                return "Hide Line Numbers".equals(actionName);
+                return "Hide Assertion Numbers".equals(actionName);
             }
         });
 
@@ -1991,7 +1991,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 @Override
                 public String getName() {
-                    return lineNumsShown ? "Hide Line Numbers" : "Show Line Numbers";
+                    return lineNumsShown ? "Hide Assertion Numbers" : "Show Assertion Numbers";
                 }
 
                 @Override
@@ -2003,8 +2003,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
 
             // Set the mnemonic and accelerator key
-            showAssertionLineNumbersAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_L);
-            showAssertionLineNumbersAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
+            showAssertionLineNumbersAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A);
+            showAssertionLineNumbersAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.ALT_MASK));
         }
 
         return showAssertionLineNumbersAction;

@@ -12,6 +12,7 @@ import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.CloseIcon;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
@@ -25,7 +26,7 @@ public class SearchForm {
     private JButton nextButton;
     private JPanel searchPanel;
     private JLabel xLabel;
-    private JComboBox searchComboBox;
+    private EditableSearchComboBox searchComboBox;
     private JCheckBox caseSensitiveCheckBox;
     private JCheckBox includePropertiesCheckBox;
 
@@ -50,13 +51,25 @@ public class SearchForm {
         searchPanel.addKeyListener(escapeListener);
         previousButton.addKeyListener(escapeListener);
         nextButton.addKeyListener(escapeListener);
-        ((EditableSearchComboBox)searchComboBox).addTextFieldKeyListener(escapeListener);
+        searchComboBox.addTextFieldKeyListener(escapeListener);
 
+        final JLabel fontLabel = new JLabel();
+        final FontMetrics metrics = fontLabel.getFontMetrics(fontLabel.getFont());
+        final int[] widths = metrics.getWidths();
+        int totalWidth = 0;
+        for (int width : widths) {
+            totalWidth += width;
+        }
+
+        final int maxComboBoxWidth = 600; //this shoudl always match the size set in the idea form for the search combo box component
+        final int averageWidth = totalWidth / widths.length;
+        final int maxChars = maxComboBoxWidth / averageWidth;
         //create list renderer
-        searchComboBox.setRenderer(new BasicComboBoxRenderer() {
+        final BasicComboBoxRenderer comboBoxRenderer = new BasicComboBoxRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList list, Object value,  int index, boolean isSelected, boolean cellHasFocus) {
-                if(!(value instanceof AssertionTreeNode)) throw new IllegalStateException("Unexpected value found in combo box: " + value.getClass().getName());
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (!(value instanceof AssertionTreeNode))
+                    throw new IllegalStateException("Unexpected value found in combo box: " + value.getClass().getName());
 
                 AssertionTreeNode node = (AssertionTreeNode) value;
                 if (isSelected) {
@@ -69,14 +82,15 @@ public class SearchForm {
 
                 // Based on value type, determine cell contents
                 setIcon(new ImageIcon(node.getIcon()));
-                setText(AssertionTreeNode.getVirtualOrdinalString(node) + " " + node.getName());
 
+                setText(TextUtils.truncateStringAtEnd(AssertionTreeNode.getVirtualOrdinalString(node) + " " + node.getName(), maxChars));
                 return this;
             }
-        });
+        };
+        searchComboBox.setRenderer(comboBoxRenderer);
 
         //create comparator to sort the filtered items
-        ((EditableSearchComboBox)searchComboBox).setComparator(new Comparator<AssertionTreeNode>() {
+        searchComboBox.setComparator(new Comparator<AssertionTreeNode>() {
             @Override
             public int compare(AssertionTreeNode o1, AssertionTreeNode o2) {
                 return o1.compareTo(o2);
@@ -115,7 +129,7 @@ public class SearchForm {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //if case sensitive is toggled, then update the search results
-                ((EditableSearchComboBox) searchComboBox).refresh();
+                searchComboBox.refresh();
             }
         };
         caseSensitiveCheckBox.addActionListener(checkBoxListener);
@@ -135,7 +149,7 @@ public class SearchForm {
      */
     public String getNextAssertionOrdinal(){
         String returnString = null;
-        Object result = ((EditableSearchComboBox)searchComboBox).getNextSearchResult();
+        Object result = searchComboBox.getNextSearchResult();
         if(result instanceof AssertionTreeNode){
             AssertionTreeNode treeNode = (AssertionTreeNode) result;
             returnString =  AssertionTreeNode.getVirtualOrdinalString(treeNode);
@@ -150,7 +164,7 @@ public class SearchForm {
      */
     public String getPreviousAssertionOrdinal(){
         String returnString = null;
-        Object result = ((EditableSearchComboBox)searchComboBox).getPreviousAssertionOrdinal();
+        Object result = searchComboBox.getPreviousAssertionOrdinal();
         if(result instanceof AssertionTreeNode){
             AssertionTreeNode treeNode = (AssertionTreeNode) result;
             returnString =  AssertionTreeNode.getVirtualOrdinalString(treeNode);
@@ -160,12 +174,11 @@ public class SearchForm {
     }
 
     public void resetSearchIndex(){
-        ((EditableSearchComboBox)searchComboBox).resetSearchResultIndex();
+        searchComboBox.resetSearchResultIndex();
     }
 
     public boolean hasSearchResults(){
-        //todo only return true when there is a filter present
-        return ((EditableSearchComboBox)searchComboBox).hasResults();
+        return searchComboBox.hasResults();
     }
 
     public void setPolicyTree(PolicyTree policyTree){
@@ -180,7 +193,7 @@ public class SearchForm {
     }
 
     public void setSearchableTreeNodes(List<AbstractTreeNode> allAssertions){
-        ((EditableSearchComboBox) searchComboBox).updateSearchableItems(allAssertions);
+        searchComboBox.updateSearchableItems(allAssertions);
     }
 
     /**
@@ -248,7 +261,7 @@ public class SearchForm {
      * search field should be cleared and the panel set to invisible
      */
     public void hidePanel(){
-        ((EditableSearchComboBox)searchComboBox).clearSearch();//casting as the ui editor requires the raw type
+        searchComboBox.clearSearch();
         searchPanel.setVisible(false);
     }
 
@@ -257,7 +270,7 @@ public class SearchForm {
             //If the panel is snown, then simply place focus back in the search field. Don't want existing text to be lost
             //case sensitive may have been changed, so we need to cause the set of filtered items to be updated
             searchComboBox.requestFocusInWindow();
-            ((EditableSearchComboBox) searchComboBox).refresh();
+            searchComboBox.refresh();
             return;
         }
 
