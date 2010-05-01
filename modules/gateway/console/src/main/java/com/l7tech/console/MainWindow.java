@@ -692,16 +692,32 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(mi);
 
             //goto only applies to policy window currently, but could be extended
-            menu.add(new JMenuItem(getGlobalGoToAction()));
+            menu.add(getGoToMenuItem());
 
             //search only applies to policy window, but could be extended
-            menu.add(new JMenuItem(getGlobalFindAction()));
-            menu.add(new JMenuItem(getGlobalF3Action()));
-            menu.add(new JMenuItem(getGlobalShiftF3Action()));
+            menu.add(getFindMenuItem());
+            menu.add(getF3MenuItem());
+            menu.add(getShiftF3MenuItem());
             
             editMenu = menu;
         }
         return editMenu;
+    }
+
+    private JMenuItem getGoToMenuItem() {
+        return new JMenuItem(getGlobalGoToAction());
+    }
+
+    private JMenuItem getShiftF3MenuItem() {
+        return new JMenuItem(getGlobalShiftF3Action());
+    }
+
+    private JMenuItem getF3MenuItem() {
+        return new JMenuItem(getGlobalF3Action());
+    }
+
+    private JMenuItem getFindMenuItem() {
+        return new JMenuItem(getGlobalFindAction());
     }
 
     private static Action getGlobalGoToAction(){
@@ -2206,6 +2222,15 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getFromFileMenuItem());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif");
+
+            menu = new JPopupMenu("Edit");
+            menu.add(getGoToMenuItem());
+            menu.add(getFindMenuItem());
+            menu.add(getF3MenuItem());
+            menu.add(getShiftF3MenuItem());
+
+            Utilities.removeToolTipsFromMenuItems(menu);
+            tbadd(toolBarPane, menu, null);
 
             menu = new JPopupMenu("Help...");
             menu.add(getHelpTopicsMenuItem());

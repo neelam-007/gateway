@@ -510,6 +510,33 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         containerPanel.getActionMap().put(MainWindow.L7_F3, f3Action);
         containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
 
+        if(topComponents.isApplet()){
+            //todo fix this applet hack once it's understood why the keyboard short cuts are not working
+            policyTree.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_MASK).getKeyCode()) {
+                        findAction.actionPerformed(new ActionEvent(this,
+                                ActionEvent.ACTION_PERFORMED,
+                                MainWindow.L7_FIND));
+                    } else if (e.getKeyCode() == KeyEvent.VK_F3 && e.getModifiers() == KeyEvent.SHIFT_MASK) {
+                        f3Action.actionPerformed(new ActionEvent(this,
+                                ActionEvent.ACTION_PERFORMED,
+                                MainWindow.L7_SHIFT_F3));
+                    } else if (e.getKeyCode() == KeyEvent.VK_F3) {
+                        f3Action.actionPerformed(new ActionEvent(this,
+                                ActionEvent.ACTION_PERFORMED,
+                                MainWindow.L7_F3));
+                    } else if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_G, KeyEvent.CTRL_MASK).getKeyCode()) {
+                        policyTree.getGoToAction().actionPerformed(new ActionEvent(this,
+                                ActionEvent.ACTION_PERFORMED,
+                                MainWindow.L7_GO_TO));
+                    }
+
+                }
+            });
+        }
+
         policyTree.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
