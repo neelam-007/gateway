@@ -63,6 +63,8 @@ public class TracePolicyEvaluatorTest {
 
         AllAssertion traceAssertion = new AllAssertion();
         traceAssertion.addChild(new SetVariableAssertion("origVar", "${trace.var.orig.one}"));
+        traceAssertion.addChild(new SetVariableAssertion("trace.out", "${trace.out}\nTRACE:${trace.assertion.numberstr}:${trace.status.message}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.out", "${t.out}~${trace.out}"));
         traceAssertion.addChild(new SetVariableAssertion("t.final", "${t.final}~${trace.final}"));
         traceAssertion.addChild(new SetVariableAssertion("t.service.oid", "${trace.service.oid}"));
         traceAssertion.addChild(new SetVariableAssertion("t.service.name", "${trace.service.name}"));
@@ -75,8 +77,8 @@ public class TracePolicyEvaluatorTest {
         traceAssertion.addChild(new SetVariableAssertion("t.request.mainpart", "${trace.request.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("t.response.mainpart", "${trace.response.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.ordinal", "${t.assertion.ordinal}~${trace.assertion.ordinal}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.path", "${t.assertion.path}~${trace.assertion.path|.}"));
-        traceAssertion.addChild(new SetVariableAssertion("t.assertion.pathStr", "${t.assertion.pathStr}~${trace.assertion.pathStr}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.number", "${t.assertion.number}~${trace.assertion.number|.}"));
+        traceAssertion.addChild(new SetVariableAssertion("t.assertion.numberStr", "${t.assertion.numberstr}~${trace.assertion.numberSTr}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.shortName", "${t.assertion.shortName}~${trace.assertion.shortName}"));
         traceAssertion.addChild(new SetVariableAssertion("t.assertion.xml", "${t.assertion.xml}~${trace.assertion.xml}"));
         Policy tracePolicy = new Policy(PolicyType.INTERNAL, "[Internal Debug Trace Policy]", WspWriter.getPolicyXml(traceAssertion), false);
@@ -116,10 +118,22 @@ public class TracePolicyEvaluatorTest {
         assertEquals("Howdy yourself!", traceContext.getVariable("t.response.mainpart"));
 
         // per-assertion stats are accumulated using set("$f", "${f},${newstuff}") append idiom
+        assertEquals("~\n" +
+                "TRACE:2:No Error~\n" +
+                "TRACE:2:No Error\n" +
+                "TRACE:3:No Error~\n" +
+                "TRACE:2:No Error\n" +
+                "TRACE:3:No Error\n" +
+                "TRACE:4:Assertion Falsified~\n" +
+                "TRACE:2:No Error\n" +
+                "TRACE:3:No Error\n" +
+                "TRACE:4:Assertion Falsified\n" +
+                "TRACE:1:Assertion Falsified",
+                traceContext.getVariable("t.out"));
         assertEquals("~false~false~false~true", traceContext.getVariable("t.final"));
         assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.ordinal"));
-        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.pathStr"));
-        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.path"));
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.numberStr"));
+        assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.number"));
         assertEquals("~Set Context Variable~Continue Processing~Stop Processing~All assertions must evaluate to true", traceContext.getVariable("t.assertion.shortName"));
         assertEquals("~0~0~600~600", traceContext.getVariable("t.status"));
         assertEquals("~No Error~No Error~Assertion Falsified~Assertion Falsified", traceContext.getVariable("t.status.message"));
@@ -154,8 +168,8 @@ public class TracePolicyEvaluatorTest {
 
         // per-assertion stats are accumulated using set("$f", "${f},${newstuff}") append idiom
         assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.ordinal"));
-        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.pathStr"));
-        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.path"));
+        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.numberStr"));
+        assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.number"));
 
         tracedContext.close();
         testHandle.close();

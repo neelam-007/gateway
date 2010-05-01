@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
- * @author flascelles<br/>
+ * @author flascelles
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
 public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
@@ -268,14 +268,15 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                     uddiServiceWsdlUpdateChecker.isWsdlUpdatePermitted( service, true );
                 }
 
-                if (policy != null) {
-                    // Saving an existing published service must never change its policy xml (or folder) as a side-effect. (Bug #6405)
-                    PublishedService previous = serviceManager.findByPrimaryKey(service.getOid());
-                    if (previous != null) {
-                        service.setFolder(previous.getFolder());
-                        service.setPolicy(previous.getPolicy());
-                    }
-                }
+
+                PublishedService previous = serviceManager.findByPrimaryKey(service.getOid());
+                if (previous == null)
+                    throw new UpdateException("Unable to update service: previous version not found");
+                // Saving an existing published service must never change its policy xml (or folder) as a side-effect. (Bug #6405)
+                if (policy != null)
+                    service.setPolicy(previous.getPolicy());
+                service.setFolder(previous.getFolder());
+                service.setTracingEnabled(previous.isTracingEnabled());
 
                 serviceManager.update(service);
             } else {
@@ -285,6 +286,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                     UUID guid = UUID.randomUUID();
                     policy.setGuid(guid.toString());
                 }
+
+                // Services may not be saved for the first time with the trace bit set.
+                service.setTracingEnabled(false);
+
                 oid = serviceManager.save(service);
                 if (policy != null) {
                     policyVersionManager.checkpointPolicy(policy, true, true);
@@ -369,6 +374,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         }
 
         return oid;
+    }
+
+    @Override
+    public void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException {
+        try {
+            PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
+            service.setTracingEnabled(tracingEnabled);
+            serviceManager.update(service);
+        } catch (FindException e) {
+            throw new UpdateException("Unable to find service with oid " + serviceOid + ": " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     @Override

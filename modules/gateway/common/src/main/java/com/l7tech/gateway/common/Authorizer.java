@@ -97,6 +97,8 @@ public abstract class Authorizer {
             } else if (attempted instanceof AttemptedUpdateAny){
                 // EntityType and Operation already match
                 return true;
+            } else if (attempted instanceof AttemptedUpdateAll) {
+                if ( perm.getScope().isEmpty() ) return true;
             }
         }
         return false;

@@ -7,12 +7,13 @@ import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAll;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -26,7 +27,10 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AuditAssertion;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
@@ -35,8 +39,10 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.logging.Level;
-import java.util.*;
 
 /**
  * Action to edit the published service properties
@@ -68,17 +74,19 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
     protected void performAction() {
         final ServiceNode serviceNode = ((ServiceNode)node);
         boolean hasUpdatePermission;
+        boolean hasTracePermission;
         final PublishedService svc;
         try {
             svc = serviceNode.getEntity();
             hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+            hasTracePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdateAll(EntityType.SERVICE));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
         }
 
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission);
+        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission, hasTracePermission);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         final boolean wasTracingEnabled = svc.isTracingEnabled();
@@ -231,7 +239,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
         all.addChild(new CommentAssertion("This policy will be invoked after every assertion for any service with debug tracing enabled."));
         all.addChild(new CommentAssertion("For example, we can trigger auditing of trace information about the assertion that just finished."));
         all.addChild(new AuditAssertion("WARNING"));
-        all.addChild(new AuditDetailAssertion("TRACE: service.oid=${trace.service.oid} assertion.path=${trace.assertion.pathstr} policy.guid=${trace.policy.guid} assertion.ordinal=${trace.assertion.ordinal} assertion.shortname=${trace.assertion.shortname} status=${trace.status}"));
+        all.addChild(new AuditDetailAssertion("TRACE: service.name=${trace.service.name} policy.name=${trace.policy.name} policy.guid=${trace.policy.guid} assertion.number=${trace.assertion.numberstr} assertion.shortname=${trace.assertion.shortname} status=${trace.status}"));
         return all;
     }
 

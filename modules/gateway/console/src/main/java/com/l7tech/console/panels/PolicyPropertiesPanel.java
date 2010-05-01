@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.Policy;
@@ -35,6 +36,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
     private JPanel mainPanel;
     private JTextField nameField;
+    private JTextField guidField;
     private JCheckBox soapCheckbox;
     private JComboBox typeCombo;
     private JComboBox tagCombo;
@@ -143,6 +145,10 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         
         // The max length of a policy name is 255. 
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
+
+        guidField.setText(policy.getGuid() == null ? "" : policy.getGuid());
+        guidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
+        Utilities.attachDefaultContextMenu(guidField);
 
         nameField.setEditable(nameField.isEditable() && canUpdate);
         soapCheckbox.setEnabled(soapCheckbox.isEnabled() && canUpdate);

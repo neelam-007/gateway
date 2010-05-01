@@ -11,11 +11,15 @@ import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An AssertionTraceListener that invokes the trace policy each time an assertion finishes executing.
  */
 public class TracePolicyEvaluator implements AssertionTraceListener {
+    private static final Logger logger = Logger.getLogger(TracePolicyEvaluator.class.getName());
+
     private final TracePolicyEnforcementContext tracePec;
     private final ServerPolicyHandle tracePolicyHandle;
 
@@ -42,6 +46,11 @@ public class TracePolicyEvaluator implements AssertionTraceListener {
         contextToTrace.runOnClose(new Runnable() {
             @Override
             public void run() {
+                Object out = tracePec.getTraceOut();
+                if (out != null && logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Trace output: " + out);
+                }
+
                 contextToTrace.setTraceListener(null);
                 tracePec.close();
                 tracePolicyHandle.close();

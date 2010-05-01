@@ -20,6 +20,7 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
 
     private ServerAssertion tracedAssertion; // assertion currently being traced
     private AssertionStatus tracedStatus; // status returned by tracedAssertion
+    private Object traceOut; // holds reference to value of convenience variable $trace.out
 
     public TracePolicyEnforcementContext(final PolicyEnforcementContext contextToTrace) {
         super(PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(null, null, true));
@@ -118,5 +119,13 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
 
     public void setTracedStatus(AssertionStatus status) {
         tracedStatus = status;
+    }
+
+    public Object getTraceOut() {
+        return traceOut;
+    }
+
+    public void setTraceOut(Object traceOut) {
+        this.traceOut = traceOut;
     }
 }

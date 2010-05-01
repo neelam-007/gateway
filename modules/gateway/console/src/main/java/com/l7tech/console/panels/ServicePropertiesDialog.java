@@ -26,6 +26,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -54,7 +55,8 @@ import java.util.regex.Pattern;
  * @author flascell<br/>
  */
 public class ServicePropertiesDialog extends JDialog {
-    private PublishedService subject;
+    private final PublishedService subject;
+    private final boolean wasTracingEnabled;
     private XMLEditor editor;
     private final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
     private Collection<ServiceDocument> newWsdlDocuments;
@@ -85,6 +87,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JEditorPane routingURL;
     private JCheckBox laxResolutionCheckbox;
     private JTextField oidField;
+    private JTextField policyGuidField;
     private JCheckBox enableWSSSecurityProcessingCheckBox;
     private JLabel readOnlyWarningLabel;
     private JButton selectButton;
@@ -109,21 +112,25 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox tracingCheckBox;
     private String ssgURL;
     private final boolean canUpdate;
+    private final boolean canTrace;
     private UDDIServiceControl uddiServiceControl;
     private UDDIProxiedServiceInfo uddiProxiedServiceInfo;
     private String originalServiceEndPoint;
     private Long lastModifiedTimeStamp;
     private String accessPointURL;
 
-    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
+    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission, boolean hasTracePermission) {
         super(owner, true);
         subject = svc;
+        wasTracingEnabled = subject.isTracingEnabled();
 
         if (areUnsavedChangesToThisPolicy(svc)) {
             readOnlyWarningLabel.setText("Service has unsaved policy changes");
             this.canUpdate = false;
+            this.canTrace = false;
         } else {
             this.canUpdate = hasUpdatePermission;
+            this.canTrace = hasTracePermission;
         }
 
         initialize();
@@ -144,7 +151,14 @@ public class ServicePropertiesDialog extends JDialog {
 
         // set initial data
         nameField.setText(subject.getName());
-        oidField.setText(subject.getId());        
+        oidField.setText(subject.getId());
+        oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
+        Utilities.attachDefaultContextMenu(oidField);
+        Policy policy = subject.getPolicy();
+        String policyGuid = policy == null ? "" : policy.getGuid();
+        policyGuidField.setText(policyGuid);
+        policyGuidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
+        Utilities.attachDefaultContextMenu(policyGuidField);
         enableWSSSecurityProcessingCheckBox.setSelected(subject.isWssProcessingEnabled());
         tracingCheckBox.setSelected(subject.isTracingEnabled());
         if (subject.isDisabled()) {
@@ -486,6 +500,9 @@ public class ServicePropertiesDialog extends JDialog {
         applyReadOnlySettings(subject.isInternal() || underUDDIControl);
 
         selectButton.setEnabled(canUpdate);
+        tracingCheckBox.setEnabled(canUpdate && canTrace);
+        if (canUpdate && !canTrace)
+            tracingCheckBox.setToolTipText("Disabled because enabling tracing requires having permission to update all published services");
 
         if(uddiServiceControl == null){
             clearButton.setEnabled( false );
@@ -777,6 +794,10 @@ public class ServicePropertiesDialog extends JDialog {
                 Registry.getDefault().getServiceManager().savePublishedService(subject);
             else
                 Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
+
+            // Update tracing flag if indicated
+            if (wasTracingEnabled != subject.isTracingEnabled())
+                Registry.getDefault().getServiceManager().setTracingEnabled(subject.getOid(), subject.isTracingEnabled());
 
             //uddi settings
             if(uddiServiceControl != null){

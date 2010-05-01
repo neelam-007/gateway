@@ -1,29 +1,31 @@
 package com.l7tech.gateway.common.service;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.admin.AliasAdmin;
-import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.Policy;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.UDDINamedEntity;
-import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
-
+import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.uddi.UDDIRegistryInfo;
+import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.CollectionUpdate;
+import com.l7tech.wsdl.Wsdl;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * Provides a remote interface for publishing searching and updating published services
@@ -197,6 +199,18 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException;
+
+    /**
+     * Enable or disable debug tracing for the specified service.
+     * <p/>
+     * This currently requires that the caller have UPDATE permission on all PublishedService entities.
+     *
+     * @param serviceOid the OID of the published service whose tracing flag to turn on or off.  Must not be null.
+     * @param tracingEnabled true to enable debug tracing for this published service; false to turn tracing off.
+     * @throws UpdateException if the requested information could not be updated.
+     */
+    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
+    void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException;
 
     /**
      * Validate the service policy and return the policy validation result. Only the server side validation rules

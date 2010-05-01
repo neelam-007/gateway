@@ -439,6 +439,7 @@ public class ServerVariables {
         }),
 
         new Variable("trace", new DebugTraceGetter("trace")),
+        new SettableVariable("trace.out", new DebugTraceGetter("trace"), new DebugTraceGetter("trace")),
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
@@ -647,7 +648,7 @@ public class ServerVariables {
         }
     }
 
-    private static class DebugTraceGetter extends SelectingGetter {
+    private static class DebugTraceGetter extends SelectingGetter implements Setter {
         private DebugTraceGetter(final String baseName) {
             super(baseName);
         }
@@ -659,6 +660,21 @@ public class ServerVariables {
             }
             logger.log(Level.WARNING, "The trace.* variables are only available while processing a debug trace policy.");
             return null;
+        }
+
+        @Override
+        public void set(String name, Object value, PolicyEnforcementContext context) {
+            if (!(context instanceof TracePolicyEnforcementContext)) {
+                logger.log(Level.WARNING, "The trace.* variables are only available while processing a debug trace policy.");
+                return;
+            }
+
+            if ("trace.out".equals(name)) {
+                TracePolicyEnforcementContext traceContext = (TracePolicyEnforcementContext) context;
+                traceContext.setTraceOut(value);
+            } else {
+                logger.log(Level.WARNING, "Unable to set trace variable: " + name);
+            }
         }
 
         @Override

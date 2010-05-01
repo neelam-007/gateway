@@ -29,6 +29,7 @@ public class BuiltinVariables {
     public static final String PREFIX_AUDIT = "audit"; // Only actually available at runtime when running an audit sink policy
 
     public static final String PREFIX_TRACE = "trace"; // Only actually available at runtime when running a debug trace policy
+    public static final String TRACE_OUT = "trace.out";// Only actually available at runtime when running a debug trace policy
 
     private static final Map metadataByName = new HashMap();
     private static final Map metadataPresetByName = new HashMap();
@@ -169,6 +170,7 @@ public class BuiltinVariables {
         new VariableMetadata(PREFIX_AUDIT, true, false, null, false),
 
         new VariableMetadata(PREFIX_TRACE, true, false, null, false),
+        new VariableMetadata(TRACE_OUT, false, false, TRACE_OUT, true),
     };
 
     static {

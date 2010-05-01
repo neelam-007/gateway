@@ -23,8 +23,8 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String POLICY_GUID = "policy.guid";
     private static final String POLICY_NAME = "policy.name";
     private static final String POLICY_VERSION = "policy.version";
-    private static final String ASSERTION_PATH = "assertion.path";
-    private static final String ASSERTION_PATHSTR = "assertion.pathstr";
+    private static final String ASSERTION_NUMBER = "assertion.number";
+    private static final String ASSERTION_NUMBERSTR = "assertion.numberstr";
     private static final String ASSERTION_ORDINAL = "assertion.ordinal";
     private static final String ASSERTION_SHORTNAME = "assertion.shortname";
     private static final String ASSERTION_XML = "assertion.xml";
@@ -33,6 +33,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
     private static final String REQUEST = "request";
     private static final String RESPONSE = "response";
     private static final String FINAL = "final";
+    private static final String OUT = "out";
 
     private static final String PREFIX_VAR = "var.";
 
@@ -134,7 +135,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             }
         });
 
-        simpleFields.put(ASSERTION_PATH, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+        simpleFields.put(ASSERTION_NUMBER, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 Collection<Integer> steps = ctx.getContext().getOriginalContext().getAssertionOrdinalPath();
@@ -147,7 +148,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             }
         });
 
-        simpleFields.put(ASSERTION_PATHSTR, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+        simpleFields.put(ASSERTION_NUMBERSTR, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
                 StringBuilder ret = new StringBuilder();
@@ -211,6 +212,13 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             public Selection call(DebugTraceVariableContext ctx) {
                 final AssertionStatus status = ctx.getContext().getTracedStatus();
                 return new Selection(status == null ? null : status.getMessage());
+            }
+        });
+
+        simpleFields.put(OUT, new Functions.Unary<Selection, DebugTraceVariableContext>() {
+            @Override
+            public Selection call(DebugTraceVariableContext ctx) {
+                return new Selection(ctx.getContext().getTraceOut());
             }
         });
     }

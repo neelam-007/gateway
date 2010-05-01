@@ -1,32 +1,25 @@
 package com.l7tech.server.service;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.UDDINamedEntity;
-import com.l7tech.uddi.WsdlPortInfo;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.util.CollectionUpdateProducer;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.AssertionLicense;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
-import com.l7tech.gateway.common.service.*;
+import com.l7tech.uddi.UDDINamedEntity;
+import com.l7tech.uddi.UDDIRegistryInfo;
+import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.CollectionUpdate;
+import com.l7tech.util.CollectionUpdateProducer;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -120,6 +113,17 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
+    }
+
+    @Override
+    public void setTracingEnabled(long serviceOid, boolean tracingEnabled) throws UpdateException {
+        try {
+            PublishedService service = serviceManager.findByPrimaryKey(serviceOid);
+            service.setTracingEnabled(tracingEnabled);
+            serviceManager.update(service);
+        } catch (FindException e) {
+            throw new UpdateException("Unable to find service with oid " + serviceOid + ": " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /**
