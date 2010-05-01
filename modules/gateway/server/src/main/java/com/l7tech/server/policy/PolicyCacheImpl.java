@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -36,12 +37,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1152,7 +1153,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
 
             if (ass instanceof SetsVariables) {
-                VariableMetadata[] vms = ((SetsVariables) ass).getVariablesSet();
+                VariableMetadata[] vms = PolicyVariableUtils.getVariablesSetNoThrow((SetsVariables) ass);
                 mergeVariablesSet(allVarsSet, vms);
             }
         }
@@ -1168,7 +1169,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     multipartInPolicy = multipartInPolicy || metadata.isMultipart();
                     String[] varsUsed = metadata.getVariablesUsed();
                     if (varsUsed != null) allVarsUsed.addAll(Arrays.asList(varsUsed));
-                    mergeVariablesSet(allVarsSet, metadata.getVariablesSet());
+                    mergeVariablesSet(allVarsSet, PolicyVariableUtils.getVariablesSetNoThrow(metadata));
                 }
             }
         }
