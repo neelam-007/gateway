@@ -48,6 +48,8 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Address;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
 import java.awt.*;
@@ -83,7 +85,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.3");
+        frame = new JFrame("GClient v0.9.4");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -535,6 +537,10 @@ public class GClient {
                         SOAPAddress sa = (SOAPAddress)ee;
                         urlTextField.setText(sa.getLocationURI());
                     }
+                    else if (ee instanceof SOAP12Address) {
+                        SOAP12Address sa = (SOAP12Address)ee;
+                        urlTextField.setText(sa.getLocationURI());
+                    }
                     else if (ee.getElementType().equals(new QName("http://schemas.xmlsoap.org/wsdl/soap12/","address"))
                             && ee instanceof UnknownExtensibilityElement) {
                         UnknownExtensibilityElement uee = (UnknownExtensibilityElement) ee;
@@ -547,6 +553,10 @@ public class GClient {
                     ExtensibilityElement ee = (ExtensibilityElement) ite.next();
                     if (ee instanceof SOAPOperation) {
                         SOAPOperation sop = (SOAPOperation)ee;
+                        soapActionTextField.setText(sop.getSoapActionURI());
+                    }
+                    else if (ee instanceof SOAP12Operation) {
+                        SOAP12Operation sop = (SOAP12Operation)ee;
                         soapActionTextField.setText(sop.getSoapActionURI());
                     }
                     else if (ee.getElementType().equals(new QName("http://schemas.xmlsoap.org/wsdl/soap12/","operation"))
