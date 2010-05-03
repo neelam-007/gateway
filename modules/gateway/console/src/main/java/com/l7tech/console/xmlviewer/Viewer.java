@@ -48,9 +48,10 @@ import java.io.StringWriter;
  * XML document.
  *
  * @author Edwin Dankert <edankert@cladonia.com>
- * @version	$Revision$, $Date$
  */
 public class Viewer extends JPanel implements XDocumentListener {
+    private static final String DEFAULT_COPY_LABEL = "Copy Document";
+
     XmlTree tree = null;
     private JScrollPane scrollPane = null;
 
@@ -87,7 +88,7 @@ public class Viewer extends JPanel implements XDocumentListener {
         if (!(content == null || "".equals(content))) {
             exchangerDocument = asExchangerDocument(content);
         }
-        return new Viewer(cp.getViewer(), exchangerDocument, scrollPane);
+        return new Viewer(cp.getViewer(), exchangerDocument, scrollPane, DEFAULT_COPY_LABEL);
     }
 
     /**
@@ -97,7 +98,7 @@ public class Viewer extends JPanel implements XDocumentListener {
      * @param document the exchanger document
      */
     public Viewer(ViewerProperties props, ExchangerDocument document) {
-        this(props, document, true);
+        this(props, document, true, DEFAULT_COPY_LABEL);
 
     }
 
@@ -107,8 +108,12 @@ public class Viewer extends JPanel implements XDocumentListener {
      * @param props      the viewer properties.
      * @param document   the exchanger document
      * @param scrollpane whether to use scrollpane
+     * @param copyLabel  text to use for copy context menu option
      */
-    public Viewer(ViewerProperties props, ExchangerDocument document, boolean scrollpane) {
+    public Viewer( final ViewerProperties props,
+                   final ExchangerDocument document,
+                   final boolean scrollpane,
+                   final String copyLabel ) {
         this.document = document;
         this.properties = props;
 
@@ -145,7 +150,7 @@ public class Viewer extends JPanel implements XDocumentListener {
 
             private JPopupMenu makeMenu() {
                 JPopupMenu contextMenu = new JPopupMenu();
-                JMenuItem item = new JMenuItem(new AbstractAction("Copy Sample Message") {
+                JMenuItem item = new JMenuItem(new AbstractAction(copyLabel) {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         ExchangerElement rootElement = getCurrentTreeRootElement();

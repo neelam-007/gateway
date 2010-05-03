@@ -1029,7 +1029,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
       throws IOException, SAXParseException, DocumentException {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument(msg);
-        messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
+        messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false, "Copy Sample Message");
         messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
