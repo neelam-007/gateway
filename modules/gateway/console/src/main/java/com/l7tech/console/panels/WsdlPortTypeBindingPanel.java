@@ -11,6 +11,8 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Body;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -187,9 +189,12 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
                 String action = portType.getQName().getLocalPart() + "#" + bop.getName();
                 ExtensibilityElement ee;
                 ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
-                ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
+                ee = extensionRegistry.createExtension(BindingOperation.class, new QName(wsdlComposer.getBindingNamespace(), "operation"));
                 if (ee instanceof SOAPOperation) {
                     SOAPOperation sop = (SOAPOperation) ee;
+                    sop.setSoapActionURI(action);
+                } else if (ee instanceof SOAP12Operation ) {
+                    SOAP12Operation sop = (SOAP12Operation) ee;
                     sop.setSoapActionURI(action);
                 } else {
                     throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
@@ -229,7 +234,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     private ExtensibilityElement getSoapBody() throws WSDLException {
         ExtensibilityElement ee;
         ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
-        ee = extensionRegistry.createExtension(BindingInput.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "body"));
+        ee = extensionRegistry.createExtension(BindingInput.class, new QName(wsdlComposer.getBindingNamespace(), "body"));
         if (ee instanceof SOAPBody) {
             SOAPBody sob = (SOAPBody)ee;
             sob.setNamespaceURI(wsdlComposer.getTargetNamespace());
@@ -237,6 +242,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             java.util.List encodingStyles =
               Arrays.asList("http://schemas.xmlsoap.org/soap/encoding/");
             sob.setEncodingStyles(encodingStyles);
+        } else if (ee instanceof SOAP12Body ) {
+            SOAP12Body sob = (SOAP12Body)ee;
+            sob.setNamespaceURI(wsdlComposer.getTargetNamespace());
+            sob.setUse("encoded"); //soap encoded
+            sob.setEncodingStyle("http://schemas.xmlsoap.org/soap/encoding/");
         } else {
             throw new RuntimeException("expected SOAPBody, received " + ee.getClass());
         }

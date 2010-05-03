@@ -63,6 +63,8 @@ public class Wsdl implements Serializable {
 
     public static final String WSDL_SOAP_NAMESPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
 
+    public static final String WSDL_SOAP12_NAMESPACE = "http://schemas.xmlsoap.org/wsdl/soap12/";
+
     /**
      * bitmask for soap bindings filtering
      */

@@ -11,6 +11,7 @@ import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.*;
@@ -75,8 +76,12 @@ public class WsdlServicePanel extends WizardStepPanel {
             List ees = port.getExtensibilityElements();
             for (Object obj : ees) {
                 ExtensibilityElement ee = (ExtensibilityElement) obj;
-                if (StringUtils.equals(ee.getElementType().getNamespaceURI(), Wsdl.WSDL_SOAP_NAMESPACE)  && StringUtils.equals(ee.getElementType().getLocalPart(), "address")) {
+                if (ee instanceof SOAPAddress) {
                     SOAPAddress sa = (SOAPAddress) ee;
+                    address = sa.getLocationURI();
+                    break;
+                } else if (ee instanceof SOAP12Address) {
+                    SOAP12Address sa = (SOAP12Address) ee;
                     address = sa.getLocationURI();
                     break;
                 }
@@ -139,19 +144,28 @@ public class WsdlServicePanel extends WizardStepPanel {
     private void collectSoapAddress(WsdlComposer wsdlComposer, Port port) throws WSDLException {
         ExtensionRegistry extensionRegistry = wsdlComposer.getExtensionRegistry();
 
-        java.util.List<SOAPAddress> remove = new ArrayList<SOAPAddress>();
+        java.util.List<ExtensibilityElement> remove = new ArrayList<ExtensibilityElement>();
         java.util.List extensibilityElements = port.getExtensibilityElements();
         for (Object o : extensibilityElements) {
             if (o instanceof SOAPAddress) {
                 remove.add((SOAPAddress) o);
+            } else if (o instanceof SOAP12Address) {
+                remove.add((SOAP12Address) o);
             }
         }
         extensibilityElements.removeAll(remove);
 
         ExtensibilityElement ee = extensionRegistry.createExtension(Port.class,
-          new QName(Wsdl.WSDL_SOAP_NAMESPACE, "address"));
+          new QName(wsdlComposer.getBindingNamespace(), "address"));
         if (ee instanceof SOAPAddress) {
             SOAPAddress sa = (SOAPAddress)ee;
+            String address = portAddressField.getText();
+            if (StringUtils.isBlank(address)) {
+                address = WsdlComposer.getDefaultPortAddress();
+            }
+            sa.setLocationURI(address);
+        } else if (ee instanceof SOAP12Address) {
+            SOAP12Address sa = (SOAP12Address)ee;
             String address = portAddressField.getText();
             if (StringUtils.isBlank(address)) {
                 address = WsdlComposer.getDefaultPortAddress();
