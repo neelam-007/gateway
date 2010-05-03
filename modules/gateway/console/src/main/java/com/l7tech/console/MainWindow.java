@@ -626,9 +626,10 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     public static void showInformationDialog(final InformationDialog iDialog, final Runnable continuation){
         iDialog.pack();
-        Utilities.centerOnScreen(iDialog);
+        final PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+        final Point point = pointerInfo.getLocation();
+        iDialog.setLocation(point);
         iDialog.setModal(false);
-        iDialog.requestFocusInWindow();
         DialogDisplayer.display(iDialog, continuation);
     }
 

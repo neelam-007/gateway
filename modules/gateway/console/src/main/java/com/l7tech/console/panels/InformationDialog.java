@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
@@ -13,7 +14,6 @@ import java.awt.event.*;
  * Dialog feels light weight and not as intrusive as a normal pop up message.
  * Has the ability to report on whether a specific key stroke causes the dialog to dismiss.
  *
- * //todo make this an internal frame or draw this dialog manually to remove the taskbar button which appears for a dialog
  */
 public class InformationDialog extends JDialog {
     private JPanel contentPane;
@@ -49,6 +49,9 @@ public class InformationDialog extends JDialog {
      * @param maxDisplayTime long max time the dialog will be displayed for
      */
     public InformationDialog(final String msg, final int specialKey, final boolean requiresMask, final long maxDisplayTime) {
+        //by setting the parent, the dialog will not be show it's own task bar button
+        super(TopComponents.getInstance().getTopParent());
+        
         setContentPane(contentPane);
         contentPane.setBackground(new Color(0xFF, 0xFF, 0xe1));
         msgLabel.setText(msg);
