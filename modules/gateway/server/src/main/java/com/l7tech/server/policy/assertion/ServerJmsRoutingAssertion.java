@@ -366,10 +366,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     if (timeout <= 0) {
                         try {
                             timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
-                            logger.warning("Using server default value (" + timeout + ") for JMS response timeout.");
+                            logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                         } catch (NumberFormatException e) {
                             timeout = emergencyTimeoutDefault;
-                            logger.warning("Using emergency default value (" + emergencyTimeoutDefault + ") for JMS response timeout.");
+                            logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
                     }
                     MessageConsumer jmsConsumer = null;
