@@ -1168,6 +1168,28 @@ public class Utilities {
     }
 
     /**
+     * Wrapper for the SwingUtilities method that handles multiple lines.
+     *
+     * @param fontMetrics The font metrics to use.
+     * @param text The text
+     * @return The width of the widest line of text
+     */
+    public static int computeStringWidth( final FontMetrics fontMetrics, final String text ) {
+        int width = 0;
+
+        if ( text.indexOf( '\n' ) >= 0 ) {
+            final StringTokenizer stringTokenizer = new StringTokenizer( text, "\n" );
+            while ( stringTokenizer.hasMoreTokens() ) {
+                width = Math.max(SwingUtilities.computeStringWidth(fontMetrics, stringTokenizer.nextToken()), width);
+            }
+        } else {
+            width = SwingUtilities.computeStringWidth(fontMetrics, text);
+        }
+
+        return width;
+    }
+
+    /**
      * Get a scrolling component to use for text display.
      *
      * <p>This uses a minimum width of 600 and a minimum height of 100.</p>

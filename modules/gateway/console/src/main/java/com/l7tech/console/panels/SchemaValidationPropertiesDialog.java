@@ -551,19 +551,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             messageBuilder.append("\nWould you like to manually add the schema dependency?");
             String msg = messageBuilder.toString();
 
-            final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
+            final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
             final Object object;
             if(width > 600){
-                JTextArea jTextArea = new JTextArea(msg);
-                jTextArea.setRows(3);
-                jTextArea.setEditable(false);
-                jTextArea.setCaretPosition(0);
-                jTextArea.setBackground(this.getBackground());
-                
-                JScrollPane jScrollPane = new JScrollPane(jTextArea);
-                final int textHeight = this.getFontMetrics(this.getFont()).getHeight();
-                jScrollPane.setPreferredSize(new Dimension(600, textHeight * 5));
-                object = jScrollPane;
+                object = Utilities.getTextDisplayComponent( msg, 600, 100, -1, -1 );
             }else{
                 object = msg;
             }
@@ -708,11 +699,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if ( dependencySchemaContent == null) {
             String errorMessage;
             if ( attemptedFindByLocation && attemptedFindByNamespace ) {
-                errorMessage = "Cannot locate schema dependency using location:\n\t" + dependencyLocation + "\nor by namespace:\n\t" + dependencyNamespace;
+                errorMessage = "Cannot locate schema dependency using location:\n  " + dependencyLocation + "\nor by namespace:\n  " + (dependencyNamespace==null ? "<None>" : dependencyNamespace);
             } else if ( attemptedFindByLocation ) {
-                errorMessage = "Cannot locate schema dependency using location:\n\t" + dependencyLocation;
+                errorMessage = "Cannot locate schema dependency using location:\n  " + dependencyLocation;
             } else if ( attemptedFindByNamespace ) {
-                errorMessage = "Cannot locate schema dependency by namespace:\n\t" + dependencyNamespace;
+                errorMessage = "Cannot locate schema dependency by namespace:\n  " + dependencyNamespace;
             } else {
                 errorMessage = "Invalid schema " + dependencyEl.getLocalName();
             }
@@ -1158,16 +1149,14 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private void displayError(String msg, String title) {
         if (title == null) title = resources.getString("error.window.title");
         final FontMetrics fontMetrics = this.getFontMetrics(this.getFont());
-        final int width = SwingUtilities.computeStringWidth(fontMetrics, msg);
+        final int width = Utilities.computeStringWidth(fontMetrics, msg);
+        final Object object;
         if(width > 600){
-            JLabel jLabel = new JLabel(msg);
-            JScrollPane jScrollPane = new JScrollPane(jLabel);
-            jScrollPane.setPreferredSize(new Dimension(600, fontMetrics.getHeight() * 3));
-            JOptionPane.showMessageDialog(this, jScrollPane, title, JOptionPane.ERROR_MESSAGE);
+            object = Utilities.getTextDisplayComponent( msg, 600, 100, -1, -1 );
         }else{
-            JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);    
+            object = msg;
         }
-
+        JOptionPane.showMessageDialog(this, object, title, JOptionPane.ERROR_MESSAGE);
     }
 
     private void initControls() {

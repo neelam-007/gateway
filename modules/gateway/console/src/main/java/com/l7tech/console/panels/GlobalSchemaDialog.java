@@ -447,7 +447,7 @@ public class GlobalSchemaDialog extends JDialog {
         Object[] options = {"Remove", "Cancel"};
         String message = "Are you sure you want to remove the selected schema?\n" + schemasToBeDeleted.getName();
 
-        final int width = SwingUtilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
+        final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
         final Object object;
         if(width > 600){
             object = Utilities.getTextDisplayComponent(message, 600, 100, -1, -1);
