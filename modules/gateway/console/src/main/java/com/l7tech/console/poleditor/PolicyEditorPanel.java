@@ -39,7 +39,6 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -89,12 +88,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
-    private AssertionLineNumbersTree assertionLineNumbersTree;
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
     private final TopComponents topComponents = TopComponents.getInstance();
-    private JPanel policyTreePane;
+    private NumberedPolicyTreePane policyTreePane;
     private boolean initialValidate = false;
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
@@ -591,18 +589,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setShowsRootHandles(true);
         policyTree.setAlignmentX(Component.LEFT_ALIGNMENT);
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
-
-        NumberedPolicyTreePane numberedPane = new NumberedPolicyTreePane();
-        assertionLineNumbersTree = numberedPane.getAssertionLineNumbersTree();
-        assertionLineNumbersTree.setCheckingLineNumbersShownFunction(new Functions.Nullary<Boolean>() {
-            @Override
-            public Boolean call() {
-                String actionName = ((SecureAction) getShowAssertionLineNumbersAction(null)).getName();
-                return "Hide Assertion Numbers".equals(actionName);
-            }
-        });
-
-        policyTreePane = numberedPane.getPolicyTreePane();
+        policyTreePane = new NumberedPolicyTreePane(policyTree);
         return policyTreePane;
     }
 
@@ -676,7 +663,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         updateAssertions(newRootAssertion);
 
         policyTree.setModel(policyTreeModel);
-        assertionLineNumbersTree.registerPolicyTree();
 
         rootAssertion = newRootAssertion;
         pt.registerPolicyTree(policyTree);
@@ -698,8 +684,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         });
-
-        assertionLineNumbersTree.updateOrdinalsDisplaying(true);
     }
 
     /**
@@ -2004,12 +1988,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 protected void performAction() {
                     // Update the status of assertion line numbers shown/hidden in the policy editor panel.
                     lineNumsShown = !lineNumsShown;
-
-                    // Update the assertion line numbers tree if assertion ordinals are required to be shown.
-                    if (lineNumsShown) assertionLineNumbersTree.updateOrdinalsDisplaying(false);
-
-                    // Show/hide the assertion line numbers in the policy editor panel
-                    assertionLineNumbersTree.setVisible(lineNumsShown);
+                    policyTreePane.setNumbersVisible( lineNumsShown );
 
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
