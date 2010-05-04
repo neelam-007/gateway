@@ -2,10 +2,10 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.GlobalResourceInfo;
-import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.FindException;
@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -96,36 +97,69 @@ public class ExternalSchemaReference extends ExternalReference {
 
     @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (removeRefferees) {
-            // check if this assertion indeed refers to this external schema
-            if (assertionToLocalize instanceof SchemaValidation) {
-                Document schema = null;
-                AssertionResourceInfo schemaResource = ((UsesResourceInfo) assertionToLocalize).getResourceInfo();
+        if (assertionToLocalize instanceof SchemaValidation) {
+            final SchemaValidation schemaVal = (SchemaValidation) assertionToLocalize;
+            final AssertionResourceInfo schemaResource = schemaVal.getResourceInfo();
+
+            if ( localizeType == LocalizeAction.DELETE ) {
+                // check if this assertion indeed refers to this external schema
                 if (schemaResource instanceof StaticResourceInfo) {
-                    try {
-                        schema = XmlUtil.stringToDocument(((StaticResourceInfo) schemaResource).getDocument());
-                    } catch (SAXException e) {
-                        logger.log(Level.SEVERE, "cannot parse schema");
-                        // nothing more to do since assertion has no valid xml, nothing to localize
-                        return true;
+                    if ( name != null || tns != null ) {
+                        try {
+                            final Document schema = XmlUtil.stringToDocument(((StaticResourceInfo) schemaResource).getDocument());
+
+                            // check schema imports, if any
+                            for (ExternalSchemaReference.ListedImport listedImport : listImports(schema)) {
+                                if (listedImport.name!=null && listedImport.name.equals(name)) return false;
+                                if (listedImport.tns!=null && listedImport.tns.equals(tns)) return false;
+                            }
+                        } catch (SAXException e) {
+                            logger.log(Level.SEVERE, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
+                        }
                     }
-                } else if (schemaResource instanceof GlobalResourceInfo) {
+                } else if (schemaResource instanceof GlobalResourceInfo && name != null) {
                     String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
                     if (globalSchemaName.equals(name))
                         return false;
                 }
-
-                // check schema imports, if any
-                if (schema != null) {
-                    for (ExternalSchemaReference.ListedImport listedImport : listImports(schema)) {
-                        if (listedImport.name!=null && listedImport.name.equals(name)) return false;
-                        if (listedImport.tns!=null && listedImport.tns.equals(tns)) return false;
+            } else if ( localizeType == LocalizeAction.REPLACE && name != null) {
+                if (schemaResource instanceof GlobalResourceInfo) {
+                    final GlobalResourceInfo resourceInfo = (GlobalResourceInfo) schemaResource;
+                    if (resourceInfo.getId()!=null && resourceInfo.getId().equals(name)) {
+                        resourceInfo.setId( localName );       
+                    }
+                } else if (schemaResource instanceof StaticResourceInfo) {
+                    StaticResourceInfo resourceInfo = (StaticResourceInfo) schemaResource;
+                    try {
+                        final Document schema = XmlUtil.stringToDocument(resourceInfo.getDocument());
+                        final boolean[] updated = new boolean[]{false};
+                        DocumentReferenceProcessor processor = DocumentReferenceProcessor.schemaProcessor();
+                        processor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
+                            @Override
+                            public String customize( final Document document,
+                                                     final Node node,
+                                                     final String documentUrl,
+                                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                                String uri = null;
+                                if ( name.equals( referenceInfo.getReferenceUrl() ) ) {
+                                    updated[0] = true;
+                                    uri = localName;
+                                }
+                                return uri;
+                            }
+                        } );
+                        if ( updated[0] ) {
+                            resourceInfo.setDocument( XmlUtil.nodeToString(schema) );
+                        }
+                    } catch (SAXException e) {
+                        logger.log(Level.SEVERE, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
+                    } catch ( IOException e) {
+                        logger.log(Level.SEVERE, "Cannot update schema: " + ExceptionUtils.getMessage( e ));
                     }
                 }
             }
         }
-        // nothing to do here. the assertion does not need to be localized once the external schema has been added
-        // since the link is obvious through tns or schemalocation attribute
+
         return true;
     }
 
@@ -172,6 +206,7 @@ public class ExternalSchemaReference extends ExternalReference {
         return output;
     }
 
+    @SuppressWarnings({ "RedundantIfStatement" })
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -193,22 +228,26 @@ public class ExternalSchemaReference extends ExternalReference {
 
     @Override
     public boolean setLocalizeDelete() {
-        setRemoveRefferees( true );
+        localizeType = LocalizeAction.DELETE;
         return true;
     }
 
     @Override
     public void setLocalizeIgnore() {
-        setRemoveRefferees( false );
+        localizeType = LocalizeAction.IGNORE;
     }
 
-    public void setRemoveRefferees(boolean removeRefferees) {
-        this.removeRefferees = removeRefferees;
+    @Override
+    public boolean setLocalizeReplace( final String identifier ) {
+        localizeType = LocalizeAction.REPLACE;
+        localName = identifier;
+        return true;
     }
 
     private String name;
     private String tns;
-    private boolean removeRefferees = false;
+    private String localName;
+    private LocalizeAction localizeType = LocalizeAction.IGNORE;
     private static final String TOPEL_NAME = "ExternalSchema";
     private static final String LOC_ATTR_NAME = "schemaLocation";
     private static final String TNS_ATTR_NAME = "targetNamespace";
