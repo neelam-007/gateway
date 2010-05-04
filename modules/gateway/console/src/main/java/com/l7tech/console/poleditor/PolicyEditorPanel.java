@@ -430,6 +430,36 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         };
 
         containerPanel.getActionMap().put(MainWindow.L7_FIND, findAction);
+        
+        final Action goToAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DialogDisplayer.showInputDialog(policyTree,
+                        "Enter Assertion Number: ",
+                        "Goto Assertion",
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null, null, null,
+                        new DialogDisplayer.InputListener() {
+                    @Override
+                    public void reportResult(Object option) {
+                        if (option == null)
+                            return;
+
+                        try {
+                            policyTree.goToAssertionTreeNode(option.toString());
+                        } catch (NumberFormatException e1) {
+                            //show a warning dialog
+                            DialogDisplayer.showMessageDialog(policyTree,
+                                    "Invalid Assertion Number (Must be an integer >= "
+                                            + Assertion.MIN_DISPLAYED_ORDINAL + ")",
+                                    "Invalid Assertion Number", JOptionPane.WARNING_MESSAGE, null);
+                        }
+                    }
+                });
+            }
+        };
+
+        containerPanel.getActionMap().put(MainWindow.L7_GO_TO, goToAction);
 
         final Action f3Action = new AbstractAction() {
             @Override
@@ -492,6 +522,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         };
 
+        containerPanel.getActionMap().put(MainWindow.L7_F3, f3Action);
+        containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
+
         searchForm.addEnterListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -505,9 +538,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         });
         
-        containerPanel.getActionMap().put(MainWindow.L7_F3, f3Action);
-        containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
-
         if(topComponents.isApplet()){
             //todo fix this applet hack once it's understood why the keyboard short cuts are not working
             policyTree.addKeyListener(new KeyAdapter() {
@@ -526,7 +556,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 ActionEvent.ACTION_PERFORMED,
                                 MainWindow.L7_F3));
                     } else if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_G, KeyEvent.CTRL_MASK).getKeyCode()) {
-                        policyTree.getGoToAction().actionPerformed(new ActionEvent(this,
+                        goToAction.actionPerformed(new ActionEvent(this,
                                 ActionEvent.ACTION_PERFORMED,
                                 MainWindow.L7_GO_TO));
                     }
@@ -544,7 +574,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         });
 
-//        splitPane.add(getPolicyTreePane(), "top");
         splitPane.add(containerPanel, "top");
 
         final JComponent messagePane = getMessagePane();

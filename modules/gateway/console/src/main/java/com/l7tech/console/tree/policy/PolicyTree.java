@@ -7,7 +7,6 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.util.*;
 import com.l7tech.gui.util.ClipboardActions;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
@@ -73,33 +72,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private Border topBorder;
     private boolean writeAccess;
     private final WspReader wspReader;
-    private Action goToAction = new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            DialogDisplayer.showInputDialog(PolicyTree.this,
-                    "Enter Assertion Number: ",
-                    "Goto Assertion",
-                    JOptionPane.INFORMATION_MESSAGE,
-                    null, null, null,
-                    new DialogDisplayer.InputListener() {
-                @Override
-                public void reportResult(Object option) {
-                    if (option == null)
-                        return;
-
-                    try {
-                        goToAssertionTreeNode(option.toString());
-                    } catch (NumberFormatException e1) {
-                        //show a warning dialog
-                        DialogDisplayer.showMessageDialog(PolicyTree.this,
-                                "Invalid Assertion Number (Must be an integer >= "
-                                        + Assertion.MIN_DISPLAYED_ORDINAL + ")",
-                                "Invalid Assertion Number", JOptionPane.WARNING_MESSAGE, null);
-                    }
-                }
-            });
-        }
-    };
 
     public PolicyEditorPanel getPolicyEditorPanel() {
         return policyEditorPanel;
@@ -113,10 +85,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
         initialize();
         setSelectionModel(getTreeSelectionModel());
-    }
-
-    public Action getGoToAction() {
-        return goToAction;
     }
 
     @Override
@@ -173,8 +141,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         putClientProperty(ClipboardActions.CUT_HINT, Boolean.FALSE);
 
         ClipboardActions.replaceClipboardActionMap(this);
-
-        getActionMap().put(MainWindow.L7_GO_TO, goToAction);
 
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
         getActionMap().put("copyAll", new AbstractAction() {

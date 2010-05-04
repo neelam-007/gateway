@@ -621,14 +621,13 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Show an InformationDialog centered on screen
-     * @param iDialog
+     * Show an InformationDialog centered on the parent window
+     *
+     * @param iDialog InformationDialog to show
      */
     public static void showInformationDialog(final InformationDialog iDialog, final Runnable continuation){
         iDialog.pack();
-        final PointerInfo pointerInfo = MouseInfo.getPointerInfo();
-        final Point point = pointerInfo.getLocation();
-        iDialog.setLocation(point);
+        Utilities.centerOnParentWindow(iDialog);
         iDialog.setModal(false);
         DialogDisplayer.display(iDialog, continuation);
     }
