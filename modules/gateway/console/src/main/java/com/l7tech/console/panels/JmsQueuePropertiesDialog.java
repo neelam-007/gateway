@@ -342,6 +342,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inboundReplyAutomaticRadioButton.addActionListener(inboundEnabler);
         inboundReplyNoneRadioButton.addActionListener(inboundEnabler);
 
+        serviceNameCombo.setRenderer( TextListCellRenderer.<ComboItem>basicComboBoxRenderer() );
+
         Utilities.enableGrayOnDisabled(contentTypeValues);
  	 	Utilities.enableGrayOnDisabled(getContentTypeFromProperty);
 
