@@ -78,7 +78,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public static final String POLICYNAME_PROPERTY = "policy.name";
     public static final String SHOW_COMMENTS = "COMMENTS.SHOWSTATE";
 
-    private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
+    private static final String PREF_PREFIX = "policy.editor.";
+    private static final String SHOW_ASSERTION_NUMBERS = PREF_PREFIX + "showAssertionNumbers";
+    private static final String MESSAGE_AREA_DIVIDER_KEY =  PREF_PREFIX + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
 
     private static final String PROP_PREFIX = "com.l7tech.console";
@@ -619,6 +621,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setAlignmentX(Component.LEFT_ALIGNMENT);
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
         policyTreePane = new NumberedPolicyTreePane(policyTree);
+        policyTreePane.setNumbersVisible( Boolean.valueOf(preferences.getString( SHOW_ASSERTION_NUMBERS, "false" )) );
         return policyTreePane;
     }
 
@@ -2011,13 +2014,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         if (showAssertionLineNumbersAction == null) {
             showAssertionLineNumbersAction = new SecureAction(null) { //todo: access control for assertions
-                private boolean lineNumsShown = AssertionLineNumbersTree.DEFAULT_VISIBILITY;
-
                 @Override
                 protected void performAction() {
                     // Update the status of assertion line numbers shown/hidden in the policy editor panel.
-                    lineNumsShown = !lineNumsShown;
+                    boolean lineNumsShown = !policyTreePane.isNumbersVisible();
                     policyTreePane.setNumbersVisible( lineNumsShown );
+                    preferences.putProperty( SHOW_ASSERTION_NUMBERS, Boolean.toString(lineNumsShown));
+                    try {
+                        preferences.store();
+                    } catch ( IOException e ) {
+                        log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
+                    }
 
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
@@ -2028,12 +2035,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 @Override
                 public String getName() {
-                    return lineNumsShown ? "Hide Assertion Numbers" : "Show Assertion Numbers";
+                    return policyTreePane.isNumbersVisible() ? "Hide Assertion Numbers" : "Show Assertion Numbers";
                 }
 
                 @Override
                 protected String iconResource() {
-                    return lineNumsShown ?
+                    return policyTreePane.isNumbersVisible() ?
                         "com/l7tech/console/resources/HideLineNumbers16.png" :
                         "com/l7tech/console/resources/ShowLineNumbers16.png";
                 }

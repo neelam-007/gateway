@@ -24,7 +24,7 @@ public class AssertionLineNumbersTree extends JTree {
 
     private PolicyTree policyTree;
 
-    public AssertionLineNumbersTree(PolicyTree policyTree) {
+    public AssertionLineNumbersTree( final PolicyTree policyTree ) {
         this.policyTree = policyTree;
         initialize();
         registerPolicyTree();
@@ -48,7 +48,7 @@ public class AssertionLineNumbersTree extends JTree {
     /**
      * Add listeners to listen PolicyTree changes in order to restructure AssertionLineNumbersTree
      */
-    public void registerPolicyTree() {
+    private void registerPolicyTree() {
         if (policyTree == null) return;
         policyTree.removeTreeExpansionListener(policyTreeExpansionListener);
         policyTree.addTreeExpansionListener(policyTreeExpansionListener);
@@ -66,6 +66,8 @@ public class AssertionLineNumbersTree extends JTree {
                         policyTree.getModel().removeTreeModelListener(policyTreeModelListener);
                         policyTree.getModel().addTreeModelListener(policyTreeModelListener);
                     }
+
+                    updateOrdinalsDisplaying();
                 }
             }
         } );
