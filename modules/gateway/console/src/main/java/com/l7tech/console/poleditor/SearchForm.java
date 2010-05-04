@@ -12,10 +12,10 @@ import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.CloseIcon;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.util.TextUtils;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -30,17 +30,6 @@ public class SearchForm {
     private JCheckBox caseSensitiveCheckBox;
     private JCheckBox includePropertiesCheckBox;
 
-    private final KeyAdapter escapeListener = new KeyAdapter() {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                hidePanel();
-            }
-        }
-    };
-
-    private EditableSearchComboBox.Filter filter;
-
     /**
      * Create a new SearchForm.
      *
@@ -48,45 +37,41 @@ public class SearchForm {
      */
     public SearchForm() {
         //todo fix any component which can get focus needs to listen for escape...there must be an easier way to do this for a group of components
+        KeyAdapter escapeListener = new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    hidePanel();
+                }
+            }
+        };
         searchPanel.addKeyListener(escapeListener);
         previousButton.addKeyListener(escapeListener);
         nextButton.addKeyListener(escapeListener);
         searchComboBox.addTextFieldKeyListener(escapeListener);
 
-        final JLabel fontLabel = new JLabel();
-        final FontMetrics metrics = fontLabel.getFontMetrics(fontLabel.getFont());
-        final int[] widths = metrics.getWidths();
-        int totalWidth = 0;
-        for (int width : widths) {
-            totalWidth += width;
-        }
-
-        final int maxComboBoxWidth = 600; //this shoudl always match the size set in the idea form for the search combo box component
-        final int averageWidth = totalWidth / widths.length;
-        final int maxChars = maxComboBoxWidth / averageWidth;
-        //create list renderer
-        final BasicComboBoxRenderer comboBoxRenderer = new BasicComboBoxRenderer() {
+        final Functions.Unary<String, AssertionTreeNode> accessorFunction = new Functions.Unary<String, AssertionTreeNode>() {
             @Override
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (!(value instanceof AssertionTreeNode))
-                    throw new IllegalStateException("Unexpected value found in combo box: " + value.getClass().getName());
+            public String call(AssertionTreeNode assertionTreeNode) {
+                return  AssertionTreeNode.getVirtualOrdinalString(assertionTreeNode)
+                                + " " + assertionTreeNode.getName();
 
-                AssertionTreeNode node = (AssertionTreeNode) value;
-                if (isSelected) {
-                    setBackground(list.getSelectionBackground());
-                    setForeground(list.getSelectionForeground());
-                } else {
-                    setBackground(list.getBackground());
-                    setForeground(list.getForeground());
-                }
-
-                // Based on value type, determine cell contents
-                setIcon(new ImageIcon(node.getIcon()));
-
-                setText(TextUtils.truncateStringAtEnd(AssertionTreeNode.getVirtualOrdinalString(node) + " " + node.getName(), maxChars));
-                return this;
             }
         };
+
+        final Functions.Unary<Icon, AssertionTreeNode> iconAccessorFunction = new Functions.Unary<Icon, AssertionTreeNode>() {
+            @Override
+            public Icon call(AssertionTreeNode assertionTreeNode) {
+                return new ImageIcon(assertionTreeNode.getIcon());
+            }
+        };
+
+        //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
+        //and the jlabel will not grow to accommodate it, if it is larger thatn the size of the combo box component
+        TextListCellRenderer<AssertionTreeNode> comboBoxRenderer =
+                new TextListCellRenderer<AssertionTreeNode>(accessorFunction, null, iconAccessorFunction, false);
+        comboBoxRenderer.setRenderClipped(true);
+
         searchComboBox.setRenderer(comboBoxRenderer);
 
         //create comparator to sort the filtered items
@@ -214,40 +199,40 @@ public class SearchForm {
         xLabel = new JLabel(new CloseIcon(18));
         xLabel.setText(null);
 
-        filter = new EditableSearchComboBox.Filter() {
-                @Override
-                public boolean accept(Object obj) {
-                    if (obj == null) return false;//this can't happen but leaving in for future changes
+        EditableSearchComboBox.Filter filter = new EditableSearchComboBox.Filter() {
+            @Override
+            public boolean accept(Object obj) {
+                if (obj == null) return false;//this can't happen but leaving in for future changes
 
-                    //match display names
-                    if (!(obj instanceof AssertionTreeNode)) return false;
+                //match display names
+                if (!(obj instanceof AssertionTreeNode)) return false;
 
-                    AssertionTreeNode node = (AssertionTreeNode) obj;
+                AssertionTreeNode node = (AssertionTreeNode) obj;
 
-                    final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
-                    final boolean includeProperties = includePropertiesCheckBox.isSelected();
+                final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
+                final boolean includeProperties = includePropertiesCheckBox.isSelected();
 
-                    final String searchString;
-                    if (includeProperties) {
-                        String propsString = node.getAssertionPropsAsString();
-                        if(propsString != null){
-                            StringBuilder builder = new StringBuilder(node.getName()).append(propsString);
-                            searchString = builder.toString();
-                        } else{
-                            searchString = node.getName();
-                        }
+                final String searchString;
+                if (includeProperties) {
+                    String propsString = node.getAssertionPropsAsString();
+                    if (propsString != null) {
+                        StringBuilder builder = new StringBuilder(node.getName()).append(propsString);
+                        searchString = builder.toString();
                     } else {
                         searchString = node.getName();
                     }
-
-                    if(!isCaseSensitive){
-                        final String nodeNameLowerCase = searchString.toLowerCase();
-                        return nodeNameLowerCase.indexOf(getFilterText().toLowerCase()) != -1;
-                    }
-
-                    return searchString.indexOf(getFilterText()) != -1;
+                } else {
+                    searchString = node.getName();
                 }
-            };
+
+                if (!isCaseSensitive) {
+                    final String nodeNameLowerCase = searchString.toLowerCase();
+                    return nodeNameLowerCase.indexOf(getFilterText().toLowerCase()) != -1;
+                }
+
+                return searchString.indexOf(getFilterText()) != -1;
+            }
+        };
 
         searchComboBox = new EditableSearchComboBox(filter);
     }

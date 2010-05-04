@@ -323,9 +323,7 @@ public class EditableSearchComboBox extends JComboBox {
                 if(anObject instanceof AssertionTreeNode){
                     //do not set the text of the text field. This overwrites what the user has typed
                     //and causes various bugs where going back into the text field populates it with a previous selection
-                    AssertionTreeNode node = (AssertionTreeNode) anObject;
-                    //todo make this a function so caller supplied logic for what is shown
-                    selectedNode = node;
+                    selectedNode = (AssertionTreeNode) anObject;
                 } else{
                     setText(anObject.toString());
                 }
