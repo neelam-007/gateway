@@ -18,10 +18,14 @@ public class AuditAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
-    private JCheckBox saveResponseCheckbox;
-    private JCheckBox saveRequestCheckbox;
     private JComboBox levelCombo;
     private JLabel thresholdLabel;
+    private JRadioButton saveRequestAlwaysButton;
+    private JRadioButton saveRequestNeverButton;
+    private JRadioButton saveRequestDefaultButton;
+    private JRadioButton saveResponseAlwaysButton;
+    private JRadioButton saveResponseNeverButton;
+    private JRadioButton saveResponseDefaultButton;
 
     private final AuditAssertion assertion;
     private boolean modified;
@@ -42,8 +46,9 @@ public class AuditAssertionDialog extends LegacyAssertionPropertyDialog {
 
         levelCombo.setModel(new DefaultComboBoxModel(levels));
         levelCombo.setSelectedItem(ass.getLevel());
-        saveRequestCheckbox.setSelected(ass.isSaveRequest());
-        saveResponseCheckbox.setSelected(ass.isSaveResponse());
+        
+        configSaveButtons(saveRequestAlwaysButton, saveRequestNeverButton, saveRequestDefaultButton, ass.isChangeSaveRequest(), ass.isSaveRequest());
+        configSaveButtons(saveResponseAlwaysButton, saveResponseNeverButton, saveResponseDefaultButton, ass.isChangeSaveResponse(), ass.isSaveResponse());
 
         //get the current server level
         updateThresholdLabel();
@@ -54,8 +59,10 @@ public class AuditAssertionDialog extends LegacyAssertionPropertyDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 assertion.setLevel((String) levelCombo.getSelectedItem());
-                assertion.setSaveRequest(saveRequestCheckbox.isSelected());
-                assertion.setSaveResponse(saveResponseCheckbox.isSelected());
+                assertion.setChangeSaveRequest(!saveRequestDefaultButton.isSelected());
+                assertion.setSaveRequest(saveRequestAlwaysButton.isSelected());
+                assertion.setChangeSaveResponse(!saveResponseDefaultButton.isSelected());
+                assertion.setSaveResponse(saveResponseAlwaysButton.isSelected());
                 modified = true;
                 dispose();
             }
@@ -78,6 +85,12 @@ public class AuditAssertionDialog extends LegacyAssertionPropertyDialog {
         });
 
         getContentPane().add(mainPanel);
+    }
+    
+    private void configSaveButtons(AbstractButton alwaysButton, AbstractButton neverButton, AbstractButton defaultButton, boolean changeDefault, boolean newValue) {
+        defaultButton.setSelected(!changeDefault);
+        alwaysButton.setSelected(changeDefault && newValue);
+        neverButton.setSelected(changeDefault && !newValue);
     }
 
     private void updateThresholdLabel() {

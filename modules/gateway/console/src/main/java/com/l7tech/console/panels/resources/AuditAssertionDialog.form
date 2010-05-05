@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.AuditAssertionDialog">
-  <grid id="ab21d" binding="mainPanel" row-count="9" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="ab21d" binding="mainPanel" layout-manager="GridLayoutManager" row-count="8" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="24" y="37" width="367" height="232"/>
-      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+      <xy x="24" y="37" width="424" height="230"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
       <component id="262df" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="22" width="287" height="15"/>
-          <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Record audit events at the following level beyond this point:"/>
@@ -20,8 +18,7 @@
       </component>
       <component id="167de" class="javax.swing.JLabel" binding="thresholdLabel">
         <constraints>
-          <xy x="20" y="72" width="290" height="15"/>
-          <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="(NOTE: the server is currently not recording below level {0})"/>
@@ -29,42 +26,21 @@
       </component>
       <component id="7f679" class="javax.swing.JComboBox" binding="levelCombo">
         <constraints>
-          <xy x="40" y="45" width="307" height="19"/>
-          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
       </component>
-      <component id="b39b5" class="javax.swing.JCheckBox" binding="saveRequestCheckbox">
-        <constraints>
-          <xy x="40" y="95" width="115" height="23"/>
-          <grid row="4" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-        </constraints>
-        <properties>
-          <text value="Save request XML"/>
-        </properties>
-      </component>
-      <component id="d277f" class="javax.swing.JCheckBox" binding="saveResponseCheckbox">
-        <constraints>
-          <xy x="40" y="123" width="123" height="23"/>
-          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-        </constraints>
-        <properties>
-          <text value="Save response XML"/>
-        </properties>
-      </component>
-      <grid id="b82f3" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="b82f3" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="40" y="171" width="307" height="41"/>
-          <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="ed541" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <xy x="64" y="9" width="75" height="23"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0">
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false">
                 <minimum-size width="75" height="-1"/>
               </grid>
             </constraints>
@@ -74,8 +50,7 @@
           </component>
           <component id="fefd" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="169" y="9" width="75" height="23"/>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0">
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
                 <minimum-size width="75" height="-1"/>
               </grid>
             </constraints>
@@ -87,52 +62,134 @@
       </grid>
       <vspacer id="9b5ca">
         <constraints>
-          <xy x="188" y="151" width="11" height="20"/>
-          <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
       <vspacer id="19d9a">
         <constraints>
-          <xy x="188" y="212" width="11" height="20"/>
-          <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
       <vspacer id="14a1d">
         <constraints>
-          <xy x="188" y="0" width="11" height="20"/>
-          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
       <hspacer id="a94d7">
         <constraints>
-          <xy x="0" y="24" width="20" height="11"/>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="12" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="484cd">
         <constraints>
-          <xy x="347" y="49" width="20" height="11"/>
-          <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="12" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="c7d44">
         <constraints>
-          <xy x="20" y="49" width="20" height="11"/>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="12" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
+      <grid id="c3508" layout-manager="GridLayoutManager" row-count="2" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="aa466" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Save request XML:"/>
+            </properties>
+          </component>
+          <component id="92d2a" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Save response XML:"/>
+            </properties>
+          </component>
+          <component id="2dda0" class="javax.swing.JRadioButton" binding="saveRequestAlwaysButton">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Always"/>
+            </properties>
+          </component>
+          <component id="bf8b9" class="javax.swing.JRadioButton" binding="saveRequestNeverButton">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text value="Never"/>
+            </properties>
+          </component>
+          <component id="611f5" class="javax.swing.JRadioButton" binding="saveRequestDefaultButton">
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="No change"/>
+            </properties>
+          </component>
+          <component id="70029" class="javax.swing.JRadioButton" binding="saveResponseAlwaysButton">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Always"/>
+            </properties>
+          </component>
+          <component id="f64da" class="javax.swing.JRadioButton" binding="saveResponseNeverButton">
+            <constraints>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text value="Never"/>
+            </properties>
+          </component>
+          <component id="ff5e5" class="javax.swing.JRadioButton" binding="saveResponseDefaultButton">
+            <constraints>
+              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="No change"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="saveRequestButtonGroup">
+      <member id="2dda0"/>
+      <member id="bf8b9"/>
+      <member id="611f5"/>
+    </group>
+    <group name="saveResponseButtonGroup">
+      <member id="70029"/>
+      <member id="f64da"/>
+      <member id="ff5e5"/>
+    </group>
+  </buttonGroups>
 </form>

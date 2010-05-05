@@ -29,8 +29,10 @@ public class ServerAuditAssertion extends AbstractServerAssertion implements Ser
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         context.setAuditLevel(level);
-        context.setAuditSaveRequest(data.isSaveRequest());
-        context.setAuditSaveResponse(data.isSaveResponse());
+        if (data.isChangeSaveRequest())
+            context.setAuditSaveRequest(data.isSaveRequest());
+        if (data.isChangeSaveResponse())
+            context.setAuditSaveResponse(data.isSaveResponse());
         return AssertionStatus.NONE;
     }
 }

@@ -6,9 +6,9 @@
 
 package com.l7tech.policy.assertion;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-
 import java.util.logging.Level;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * @author mike
@@ -17,6 +17,8 @@ public class AuditAssertion extends Assertion {
     private Level level;
     private boolean saveRequest = false;
     private boolean saveResponse = false;
+    private boolean changeSaveRequest = true;
+    private boolean changeSaveResponse = true;
 
     /**
      * Create a new AuditAssertion with the default level.
@@ -33,6 +35,14 @@ public class AuditAssertion extends Assertion {
     public AuditAssertion(String level) throws IllegalArgumentException {
         super();
         setLevel(level);
+    }
+
+    public AuditAssertion(Level level, boolean changeSaveRequest, boolean saveRequest, boolean changeSaveResponse, boolean saveResponse) {
+        this.level = level;
+        this.saveRequest = saveRequest;
+        this.saveResponse = saveResponse;
+        this.changeSaveRequest = changeSaveRequest;
+        this.changeSaveResponse = changeSaveResponse;
     }
 
     /**
@@ -76,6 +86,22 @@ public class AuditAssertion extends Assertion {
 
     public void setSaveResponse(boolean saveResponse) {
         this.saveResponse = saveResponse;
+    }
+
+    public boolean isChangeSaveRequest() {
+        return changeSaveRequest;
+    }
+
+    public void setChangeSaveRequest(boolean changeSaveRequest) {
+        this.changeSaveRequest = changeSaveRequest;
+    }
+
+    public boolean isChangeSaveResponse() {
+        return changeSaveResponse;
+    }
+
+    public void setChangeSaveResponse(boolean changeSaveResponse) {
+        this.changeSaveResponse = changeSaveResponse;
     }
 
     public static final String[] ALLOWED_LEVELS = new String[] {
