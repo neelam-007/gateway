@@ -1599,6 +1599,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
             }
         }
+        ca.treeChanged();
         log.finer("children assertions = " + ca.getChildren().size());
         log.finer("nodes          tree = " + parent.getChildCount());
     }
