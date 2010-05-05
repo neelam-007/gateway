@@ -6,8 +6,6 @@
 
 package com.l7tech.util;
 
-import com.l7tech.util.IOUtils;
-
 import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -16,11 +14,11 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.SecureRandom;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -38,6 +36,25 @@ public class FileUtils {
      */
     public interface Saver {
         void doSave(FileOutputStream fos) throws IOException;
+    }
+
+    /**
+     * A simple {@link Saver} that saves a single byte array.
+     */
+    public static class ByteSaver implements Saver {
+        private final byte[] bytes;
+
+        /**
+         * @param bytes bytes to save.  Required.
+         */
+        public ByteSaver(byte[] bytes) {
+            this.bytes = bytes;
+        }
+
+        @Override
+        public void doSave(FileOutputStream fos) throws IOException {
+            fos.write(bytes);
+        }
     }
 
     /**
