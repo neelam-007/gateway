@@ -27,7 +27,7 @@ public class ScriptAssertion extends Assertion {
                    "if (!request.isXml()) {\n" +
                    "    false;\n" +
                    "} else {\n" +
-                   "    response.initialize(Packages.com.l7tech.common.util.XmlUtil.stringToDocument(\"<someXml/>\"));\n" +
+                   "    response.initialize(Packages.Packages.com.l7tech.common.io.XmlUtil.stringToDocument(\"<test>Hello from custom JavaScript!</test>\"));\n" +
                    "    true;\n" +
                    '}');
 

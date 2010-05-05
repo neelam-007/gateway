@@ -25,6 +25,7 @@
     <dependencies>
         <dependency org="bsf" name="bsf" rev="2.4.0-l7p1" force="true" conf="core"/>
         <dependency org="rhino" name="js" rev="1.6R7" force="true" conf="core"/>
+        <dependency org="org.springframework" name="aspectjweaver" rev="2.5.4" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
     </dependencies>
