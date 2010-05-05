@@ -3,16 +3,13 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
+import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.exporter.PolicyImporter;
-import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
@@ -24,22 +21,14 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TextUtils;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.util.*;
@@ -524,40 +513,20 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
     /**
      * assign the policy template.
-     * todo: find a better place for this
      */
     private void assignPolicyTemplate(PolicyTemplateNode templateNode) {
         EntityWithPolicyNode policyNode = getPolicyNodeCookie();
-        if (policyNode == null)
+        if ( policyNode == null )
             throw new IllegalArgumentException("No edited policy specified");
-        InputStream in = null;
-        try {
-            in = new FileInputStream(templateNode.getFile());
-            final Document readDoc = XmlUtil.parse(in);
 
-            WspReader wspReader = (WspReader) TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
-            ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policyNode.getPolicy(), readDoc, wspReader, finder, finder, finder);
-            Assertion newRoot = result.assertion;
-            // for some reason, the PublishedService class does not allow to set a policy
-            // directly, it must be set through the XML
-            if (newRoot != null) {
-                String oldPolicyXml = policyNode.getPolicy().getXml();
-                policyNode.getPolicy().setXml(WspWriter.getPolicyXml(newRoot));
-                policyNode.firePropertyChange(this, "policy", oldPolicyXml, policyNode.getPolicy().getXml());
+        try {
+            final Policy policy = policyNode.getPolicy();
+            final String oldPolicyXml = policy.getXml();
+            if ( PolicyExportUtils.importPolicyFromFile( policy, templateNode.getFile() ) ) {
+                policyNode.firePropertyChange(this, "policy", oldPolicyXml, policy.getXml());
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
-        } catch (InvalidPolicyStreamException e) {
-            logger.log(Level.WARNING, "Could not import the policy", e);
-        } catch ( SAXException e ) {
-            logger.log(Level.WARNING, "Could not import the policy", e);
-        } catch ( IOException e ) {
-            logger.log(Level.WARNING, "Could not import the policy", e);
-        } catch (PolicyImportCancelledException e) {
-            logger.log(Level.INFO, "import was cancelled", e);
-        } finally {
-            ResourceUtils.closeQuietly(in);
         }
     }
 

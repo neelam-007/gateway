@@ -75,13 +75,15 @@ public class IncludedPolicyReference extends ExternalReference {
             if (policy == null) {
                 policy = policyReference.retrieveFragmentPolicy();
             }
-            this.name = (name == null)? policy.getName() : name;
-            this.type = policy.getType();
-            this.soap = policy.isSoap();
-            this.xml = policy.getXml();
-            this.internalTag = policy.getInternalTag();
+            if ( policy != null ) {
+                this.name = (name == null)? policy.getName() : name;
+                this.type = policy.getType();
+                this.soap = policy.isSoap();
+                this.xml = policy.getXml();
+                this.internalTag = policy.getInternalTag();
+            }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to resolve included policy #{0} --storing OID only", new Object[] { policyReference.retrievePolicyGuid() });
+            logger.log(Level.WARNING, "Unable to resolve included policy #{0} --storing OID only", new Object[] { policyReference.retrievePolicyGuid() });
         }
     }
 

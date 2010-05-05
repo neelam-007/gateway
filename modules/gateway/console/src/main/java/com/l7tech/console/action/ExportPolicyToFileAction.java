@@ -1,8 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
-import com.l7tech.policy.exporter.PolicyExporter;
+import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -79,9 +78,9 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         return OperationType.UPDATE;
     }
 
-    /** Actually perform the action.
-     * This is the method which should be called programatically.
-
+    /**
+     * Actually perform the action.
+     *
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -185,8 +184,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
     }
 
     protected void serializeToFile(Assertion rootAssertion, File policyFile) throws IOException, SAXException {
-        PolicyExporter exporter = new PolicyExporter( new ConsoleExternalReferenceFinder() );
-        exporter.exportToFile(rootAssertion, policyFile);
+        PolicyExportUtils.exportPolicyToFile(rootAssertion, policyFile);
     }
 
     private void insertIntoAssertionTree(File policyFile) {

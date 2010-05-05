@@ -3,45 +3,25 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.console.policy.exporter.PolicyExportUtils;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.policy.exporter.PolicyImporter;
-import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyReference;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.wsp.PolicyConflictException;
-import com.l7tech.util.ResourceUtils;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * The SSM action type that imports a policy from a file.
  */
 public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAction<PolicyEntityNode> {
-    private static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     private final String homePath;
 
     /**
@@ -78,9 +58,8 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
 
     /**
      * Actually perform the action.
-     * This is the method which should be called programatically.
      */
-    protected boolean importPolicy( Policy policy) {
+    protected boolean importPolicy( final Policy policy ) {
         try {
             return doFileImport(policy);
         } catch (AccessControlException e) {
@@ -89,8 +68,7 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
         return false;
     }
 
-    private boolean doFileImport(Policy policy) {
-        // get file from user
+    private boolean doFileImport( final Policy policy ) {
         JFileChooser chooser;
         File templateDir = null;
         if (homePath != null) {
@@ -129,83 +107,8 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
             }
         });
         int ret = chooser.showOpenDialog(TopComponents.getInstance().getTopParent());
-        if (JFileChooser.APPROVE_OPTION != ret) return false;
 
-        try {
-            final File input = chooser.getSelectedFile();
-            Document readDoc;
-            InputStream in = null;
-            try {
-                in = new FileInputStream(input);
-                readDoc = XmlUtil.parse(in);
-            } catch ( SAXException e) {
-                throw new IOException(e);
-            } finally {
-                ResourceUtils.closeQuietly(in);
-            }
-
-            WspReader wspReader = (WspReader) TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
-            ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder );
-            Assertion newRoot = (result != null) ? result.assertion : null;
-            // for some reason, the PublishedService class does not allow to set a policy
-            // directly, it must be set through the XML
-            if (newRoot != null) {
-                String newPolicyXml = WspWriter.getPolicyXml(newRoot);
-                policy.setXml(newPolicyXml);
-                addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
-                return true;
-            } else {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          "The policy being imported is not a valid policy, or is empty.",
-                                          "Invalid/Empty Policy",
-                                          JOptionPane.WARNING_MESSAGE, null);
-                return false;
-            }
-        } catch (PolicyConflictException e) {
-            String existingPolicyName = e.getExistingPolicyName();
-            String importedPolicyName = e.getImportedPolicyName();
-
-            // Generate an error message depending on if the name of the imported policy fragment is the same as
-            // the name of the existing policy fragment or not.
-            StringBuilder errorMessage = new StringBuilder("The policy fragment " + importedPolicyName + " in the imported file is different from the existing policy fragment");
-            if (! importedPolicyName.equals(existingPolicyName)) {
-                errorMessage.append(" ").append(existingPolicyName).append(", but they have the same ID");
-            }
-            errorMessage.append(".\n");
-            errorMessage.append("Due to this conflict, the policy fragment ").append(importedPolicyName).append(" cannot be imported.");
-
-            log.log(Level.WARNING, "could not import the policy from " + chooser.getSelectedFile().getPath() + "\n" + errorMessage, e);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          "Could not find policy export in the selected file or the imported policy contains errors",
-                                          "Policy Not Found/Not Valid",
-                                          JOptionPane.WARNING_MESSAGE, null);
-        } catch (PolicyImportCancelledException e) {
-            log.log(Level.INFO, "import from file \"" + chooser.getSelectedFile().getPath() + "\" was cancelled", e);
-        }
-
-        return false;
-    }
-
-    private void addPoliciesToPolicyReferenceAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
-        if(rootAssertion instanceof CompositeAssertion) {
-            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
-            for(Iterator it = compAssertion.children();it.hasNext();) {
-                Assertion child = (Assertion)it.next();
-                addPoliciesToPolicyReferenceAssertions(child, fragments);
-            }
-        } else if(rootAssertion instanceof PolicyReference) {
-            PolicyReference policyReference = (PolicyReference)rootAssertion;
-            Policy fragment = fragments.get(policyReference.retrievePolicyGuid());
-            if(fragment != null) {
-                policyReference.replaceFragmentPolicy(fragment);
-                if(rootAssertion instanceof Include) {
-                    ((Include)rootAssertion).setPolicyName(fragment.getName());
-                }
-                addPoliciesToPolicyReferenceAssertions(fragment.getAssertion(), fragments);
-            }
-        }
+        return JFileChooser.APPROVE_OPTION == ret &&
+               PolicyExportUtils.importPolicyFromFile( policy, chooser.getSelectedFile() );
     }
 }

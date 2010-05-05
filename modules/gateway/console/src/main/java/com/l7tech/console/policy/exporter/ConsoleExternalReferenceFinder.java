@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  * <p>This class also acts as an import advisor with the advice being provided
  * by the user via the external references wizard.</p>
  */
-public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, ExternalReferenceErrorListener, PolicyImporter.PolicyImporterAdvisor {
+class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, ExternalReferenceErrorListener, PolicyImporter.PolicyImporterAdvisor {
 
     //- PUBLIC
 
