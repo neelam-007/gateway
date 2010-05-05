@@ -161,6 +161,8 @@ class ExternalReferenceResolver {
                 final String existingPolicyName = pce.getExistingPolicyName();
                 final String guid = pce.getPolicyGuid();
                 if ( advisor.acceptPolicyConflict( policyName, existingPolicyName, guid ) ) {
+                    fragmtRef.setUseType( IncludedPolicyReference.UseType.USE_EXISTING );
+                    
                     // Use the top parent policy fragment reference to remove all redundant references.
                     Policy policy = new Policy(fragmtRef.getType(), fragmtRef.getName(), fragmtRef.getXml(), fragmtRef.isSoap());
                     // Remove all redundant references if a policy fragment will be substituted by an existing policy fragment.
