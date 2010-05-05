@@ -105,7 +105,6 @@ public class SavePolicyTemplateAction extends SecureAction {
           chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
-        System.out.println(name);
         int overwrite = JOptionPane.YES_OPTION;
         File policyFile = new File(name);
         final boolean policyFileExists = policyFile.exists();

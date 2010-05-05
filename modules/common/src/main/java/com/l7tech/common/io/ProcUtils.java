@@ -229,7 +229,6 @@ public class ProcUtils {
             throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            System.out.println(System.currentTimeMillis() + " " + Thread.currentThread() + " ProcUtils caught interruption");
             throw new CausedIOException("Interrupted during invocation of program " + program.getName() + ": " + ExceptionUtils.getMessage(e), e);
         } catch (ExecutionException e) {
             throw new CausedIOException("Unable to invoke " + program.getName() + " program: " + e.getMessage(), e);

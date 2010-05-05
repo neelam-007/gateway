@@ -1,15 +1,18 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ValidationUtils;
+
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URI;
 import java.net.URISyntaxException;
-import javax.swing.*;
-
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Property edit dialog for WsFederationPassiveTokenRequest.
@@ -18,6 +21,8 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
  * @version $Revision$
  */
 public class WsFederationPassiveTokenRequestPropertiesDialog extends LegacyAssertionPropertyDialog {
+    private static final Logger logger = Logger.getLogger(WsFederationPassiveTokenRequestPropertiesDialog.class.getName());
+
 
     //- PUBLIC
 
@@ -155,7 +160,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends LegacyAsser
                 }
             }
             catch(URISyntaxException use) {
-                System.out.println(use);
+                logger.log(Level.FINE, ExceptionUtils.getMessage(use), ExceptionUtils.getDebugException(use));
             }
         }
 
