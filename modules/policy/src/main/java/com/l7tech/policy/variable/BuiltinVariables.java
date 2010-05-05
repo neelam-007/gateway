@@ -15,6 +15,7 @@ public class BuiltinVariables {
     public static final String PREFIX_RESPONSE = "response";
 
     public static final String PREFIX_REQUEST_HTTP_PARAM = "request.http.parameter";
+    public static final String PREFIX_REQUEST_HTTP_PARAMS = "request.http.parameters";
 
     public static final String PREFIX_REQUEST_JMS_MSG_PROP = "request.jms.property";
     public static final String PREFIX_RESPONSE_JMS_MSG_PROP = "response.jms.property";
@@ -132,6 +133,7 @@ public class BuiltinVariables {
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, false, DataType.MESSAGE),
         new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, false, DataType.MESSAGE),
 
+        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, true, true, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, true, false, null, false),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, true, false, null, false),

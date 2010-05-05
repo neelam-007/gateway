@@ -250,18 +250,27 @@ public class ServerVariables {
             }
         }),
 
+        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                String[] vals = null;
+                try {
+                    vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, name, context);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't get HTTP parameters: " + name, e);
+                }
+                return vals;
+            }
+        }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals;
                 try {
-                    vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
-                    if (vals == null) return null;
+                    String[] vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
+                    if (vals != null && vals.length > 0) return vals[0];
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Couldn't get HTTP parameter: " + name, e);
-                    return null;
                 }
-                if (vals.length > 0) return vals[0];
                 return null;
             }
         }),

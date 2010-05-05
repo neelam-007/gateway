@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
@@ -8,6 +10,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -36,6 +39,7 @@ import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -366,6 +370,30 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${request.mainpart}", newreq);
     }
 
+    @Test
+    public void testHttpParameter() throws Exception {
+        PolicyEnforcementContext context = contextHttp();
+        expandAndCheck(context, "${request.http.parameter.single}", "1");
+        expandAndCheck(context, "${request.http.parameter.multi}", "1");
+        expandAndCheck(context, "${request.http.parameter.invalid}", "");
+    }
+
+    @BugNumber(8428)
+    @Test
+    public void testRequestHttpParameters() throws Exception {
+        PolicyEnforcementContext context = contextHttp();
+        expandAndCheck(context, "${request.http.parameters.single}", "1");
+        expandAndCheck(context, "${request.http.parameters.multi}", "1, 2, 3, 4, 5");
+        expandAndCheck(context, "${request.http.parameters.multi|:}", "1:2:3:4:5");
+        expandAndCheck(context, "${request.http.parameters.multi[0]}", "1");
+        expandAndCheck(context, "${request.http.parameters.multi[1]}", "2");
+        expandAndCheck(context, "${request.http.parameters.multi[2]}", "3");
+        expandAndCheck(context, "${request.http.parameters.multi[3]}", "4");
+        expandAndCheck(context, "${request.http.parameters.multi[4]}", "5");
+        expandAndCheck(context, "${request.http.parameters.multi[5]}", "");
+        expandAndCheck(context, "${request.http.parameters.invalid}", "");
+    }
+
     /*
     * Test the service.url context variable and associated suffixes
     * : host, protocol, path, file, query
@@ -680,6 +708,22 @@ public class ServerVariablesTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
+    private PolicyEnforcementContext contextHttp(){
+        PolicyEnforcementContext context = context();
+
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.setMethod("POST");
+        mockRequest.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.setParameter( "single", "1" );
+        mockRequest.setParameter( "multi", new String[]{"1","2","3","4","5"} );
+        mockRequest.setQueryString( "single=1&multi=1&multi=2&multi=3&multi=4&multi=5" );
+
+        context.getRequest().attachHttpRequestKnob( new HttpServletRequestKnob( mockRequest ) );
+
+        return context;
+    }
+
     private PolicyEnforcementContext delegate() {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
     }
@@ -716,7 +760,7 @@ public class ServerVariablesTest {
         String[] usedVars = Syntax.getReferencedNames(expression);
         Map<String,Object> vars = context.getVariableMap(usedVars, auditor);
         String expanded = ExpandVariables.process(expression, vars, auditor);
-        assertEquals(expectedValue, expanded);
+        assertEquals(expression, expectedValue, expanded);
     }
 
     private PolicyEnforcementContext context(User user) {
