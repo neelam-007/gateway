@@ -1,14 +1,20 @@
 package com.l7tech.gui.util;
 
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import java.util.logging.Logger;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.AccessControlException;
-import java.io.File;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utilities for creating JFileChooser instances in a variety of situations.
@@ -117,5 +123,66 @@ public class FileChooserUtil {
                 return description;
             }
         };
+    }
+
+    /**
+     * Display a file selector that will save a single file, with a single optional FileFilter type, displaying
+     * a confirmation dialog if an existing file is about to be overwritten.  The selector dialog will be displayed
+     * immediately and this method will not return until either the file has been saved, the user has canceled the
+     * operation, or an error message has been shown to the user. 
+     *
+     * @param parent  parent component for dialogs.  Required.
+     * @param dialogTitle  title of dialog, eg "Save .DOC File".  Required.
+     * @param fileFilter   FileFilter.  Optional.  See {@link #buildFilter(String, String)}.
+     * @param defaultExtension  extension to add if user does not provide one, eg ".doc".  Optional.
+     * @param saver  a Saver that will write content to the file.  Required.  See {@link com.l7tech.util.FileUtils.ByteSaver}.
+     * @return true if the file was saved successfully; false if the operation was canceled by the user or if there was a problem saving the file
+     * (in which case an error message dialog has already been shown to the user)
+     */
+    public static boolean saveSingleFileWithOverwriteConfirmation(final Component parent, final String dialogTitle, final FileFilter fileFilter, final String defaultExtension, final FileUtils.Saver saver) {
+        final boolean[] saved = { false };
+        doWithJFileChooser(new FileChooserUser() {
+            @Override
+            public void useFileChooser(JFileChooser fc) {
+                fc.setDialogTitle(dialogTitle);
+                fc.setDialogType(JFileChooser.SAVE_DIALOG);
+                fc.setMultiSelectionEnabled(false);
+                if (fileFilter != null)
+                    fc.setFileFilter(fileFilter);
+
+                int result = fc.showSaveDialog(parent);
+                if (JFileChooser.APPROVE_OPTION != result)
+                    return;
+
+                File file = fc.getSelectedFile();
+                if (file == null)
+                    return;
+
+                //if user did not append .pem extension, we'll append to it
+                if (defaultExtension != null && !file.getName().endsWith(defaultExtension)){
+                    file = new File(file.toString() + defaultExtension);
+                } else {
+                    file = new File(file.getParent(), file.getName());
+                }
+
+                try {
+                    //if file already exists, we need to ask for confirmation to overwrite.
+                    if (file.exists()) {
+                        result = JOptionPane.showOptionDialog(fc, "The file '" + file.getName() + "' already exists.  Overwrite?",
+                                "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                        if (result != JOptionPane.YES_OPTION)
+                            return;
+                    }
+
+                    FileUtils.save(file, saver);
+                    saved[0] = true;
+                } catch (IOException e) {
+                    final String msg = "Unable to save file: " + ExceptionUtils.getMessage(e);
+                    logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                    DialogDisplayer.showMessageDialog(parent, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+                }
+            }
+        });
+        return saved[0];
     }
 }
