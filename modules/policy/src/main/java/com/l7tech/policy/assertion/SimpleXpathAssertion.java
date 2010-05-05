@@ -94,7 +94,7 @@ public abstract class SimpleXpathAssertion
             new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false, DataType.INTEGER),
             new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false, DataType.STRING),
             new VariableMetadata(multipleResultsVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_MULTIPLE_RESULTS, false, DataType.STRING),
-            new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false, DataType.ELEMENT),
+            new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false, DataType.STRING),
             new VariableMetadata(multipleElementsVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_MULTIPLE_ELEMENTS, false, DataType.ELEMENT),
         };
     }

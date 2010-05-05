@@ -1,12 +1,16 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
-import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -52,9 +56,8 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
             selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                     new PolicyEnforcementContextXpathVariableFinder(context));
         } catch (JaxenException e) {
-            // this is thrown when there is an error in the expression
-            // this is therefore a bad policy
-            throw new PolicyAssertionException(assertion, e);
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
         if (selectedElements == null || selectedElements.size() < 1) {

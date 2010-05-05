@@ -14,16 +14,19 @@ import com.l7tech.wsdl.Wsdl;
  * @author emil
  */
 public class WssSignElementValidator extends XpathBasedAssertionValidator {
-    private final WssDecorationAssertionValidator wssDecorationAssertionValidator;
+    private final AssertionValidator wssDecorationAssertionValidator;
+    private final AssertionValidator elementSelectingXpathValidator;
 
     public WssSignElementValidator( final WssSignElement wssSignElement ) {
         super(wssSignElement);
         wssDecorationAssertionValidator = new WssDecorationAssertionValidator(wssSignElement);
+        elementSelectingXpathValidator = new ElementSelectingXpathValidator(wssSignElement);
     }
 
     @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         super.validate( path, wsdl, soap, result );
         wssDecorationAssertionValidator.validate( path, wsdl, soap, result );
+        elementSelectingXpathValidator.validate( path, wsdl, soap, result );
     }
 }

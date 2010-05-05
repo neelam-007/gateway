@@ -5,9 +5,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.wsdl.Wsdl;
-import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
 
@@ -22,11 +20,13 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
     private static final Logger logger = Logger.getLogger(WssEncryptElementValidator.class.getName());
     private final WssEncryptElement assertion;
     private final XpathBasedAssertionValidator xpathBasedAssertionValidator;
+    private final AssertionValidator elementSelectingXpathValidator;
 
     public WssEncryptElementValidator( final WssEncryptElement wssEncryptElement ) {
         super(wssEncryptElement, true, false);
         assertion = wssEncryptElement;
         xpathBasedAssertionValidator = new XpathBasedAssertionValidator( wssEncryptElement );
+        elementSelectingXpathValidator = new ElementSelectingXpathValidator( wssEncryptElement );
     }
 
     @Override
@@ -35,7 +35,7 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
                           final boolean soap,
                           final PolicyValidatorResult result ) {
         xpathBasedAssertionValidator.validate( path, wsdl, soap, result );
-
+        elementSelectingXpathValidator.validate( path, wsdl, soap, result );
         super.validate( path, wsdl, soap, result );
     }
 
