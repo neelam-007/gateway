@@ -67,7 +67,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         Class<?> found = null;
         try {
-            if (!name.startsWith("com.l7tech.") && !name.startsWith("java."))
+            if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
                 found = findClassFromNestedJars(name, false);
             if (found == null)
                 found = super.findClass(name);
