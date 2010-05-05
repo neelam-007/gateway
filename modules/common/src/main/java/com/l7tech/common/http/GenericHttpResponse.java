@@ -123,7 +123,7 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
     }
 
     private static final Pattern FIND_ENCODING =
-            Pattern.compile("^<\\?xml\\s+version=(.).*\\s+encoding=\\1(.*?)\\1\\s*(?:\\s+standalone=.*\\s*)?\\?>", Pattern.MULTILINE);
+            Pattern.compile("^<\\?xml\\s+version\\s*=\\s*(.).*\\1\\s+encoding\\s*=\\s*(.)(.*?)\\2\\s*(?:\\s+standalone\\s*=\\s*(.).*\\4\\s*)?\\?>", Pattern.MULTILINE);
 
     /**
      * Examines the supplied byte array looking for an XML declaration. If an XML declaration is found
@@ -142,7 +142,7 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
             // character is used for quotes
             Matcher matcher = FIND_ENCODING.matcher(xmlString);
             if(matcher.find()) {
-                return Charset.forName(matcher.group(2));
+                return Charset.forName(matcher.group(3));
             } else {
                 // There isn't an XML declaration, or it doesn't specify the encoding, so fallback to using
                 // the HTTP "Content-type" header.

@@ -1,7 +1,11 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import junit.framework.TestCase;
+
+import static org.junit.Assert.*;
+
+import com.l7tech.test.BugNumber;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -13,7 +17,7 @@ import java.util.HashSet;
  * Tests the code that guesses the character encoding of XML files that are retrieved through
  * HTTP.
  */
-public class GenericHttpClientXmlDecodingTest  extends TestCase {
+public class GenericHttpClientXmlDecodingTest {
     private final int maxResponseSize = 1024 * 1024 * 10;
 
     private static class MockHttpResponse extends GenericHttpResponse {
@@ -73,6 +77,11 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         return xml.replaceFirst(ENCODING_PATTERN, "<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>");
     }
 
+    private static String replaceXmlDeclaration(String xml, String xmlDec) {
+        return xml.replaceFirst(ENCODING_PATTERN, xmlDec);
+    }
+
+    @Test
     public void testUTF32BEWithBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-32BE");
         byte[] messageBytes = message.getBytes("X-UTF-32BE-BOM");
@@ -88,6 +97,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF32BEWithoutBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-32BE");
         byte[] bytes = message.getBytes("X-UTF-32BE-BOM");
@@ -104,6 +114,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF32LEWithBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-32LE");
         byte[] messageBytes = message.getBytes("X-UTF-32LE-BOM");
@@ -119,6 +130,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF16LEWithBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-16LE");
         byte[] messageBytes = message.getBytes("X-UTF-16LE-BOM");
@@ -134,6 +146,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF16BEWithBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-16BE");
         byte[] bytes = message.getBytes("UTF-16BE");
@@ -153,6 +166,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF8WithBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-8");
         byte[] bytes = message.getBytes("UTF-8");
@@ -173,6 +187,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF32LEWithoutBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-32LE");
         byte[] bytes = message.getBytes("X-UTF-32LE-BOM");
@@ -189,6 +204,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF16LEWithoutBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-16LE");
         byte[] bytes = message.getBytes("X-UTF-16LE-BOM");
@@ -205,6 +221,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF16BEWithoutBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-16BE");
         byte[] messageBytes = message.getBytes("UTF-16BE");
@@ -220,6 +237,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testUTF8WithoutBOM() throws Exception {
         String message = getMessageWithEncoding("UTF-8");
         byte[] messageBytes = message.getBytes("UTF-8");
@@ -235,6 +253,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testCp1047() throws Exception {
         String message = getMessageWithEncoding("Cp1047");
         byte[] messageBytes = message.getBytes("Cp1047");
@@ -250,6 +269,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testISO_8859_1() throws Exception {
         String message = getMessageWithEncoding("ISO-8859-1");
         byte[] messageBytes = message.getBytes("ISO-8859-1");
@@ -265,6 +285,7 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         assertEquals(message, response.getAsString(true, maxResponseSize));
     }
 
+    @Test
     public void testAllEncodings() throws Exception {
         String smallXmlMessage = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
                 "<test_document>\n" +
@@ -293,6 +314,8 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
                 continue; // Cannot test this charset
             }
             GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(bytes);
+            assertNotNull("Guessed result for " + charsetName, guessedEncodingResult);
+            assertNotNull("Guessed result encoding for " + charsetName, guessedEncodingResult.encoding);
             String decodedMessage = new String(bytes, guessedEncodingResult.bytesToSkip, bytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
             assertEquals("Big message (charset = " + charsetName + ")", msg, decodedMessage);
 
@@ -303,5 +326,67 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
             decodedMessage = new String(bytes, guessedEncodingResult.bytesToSkip, bytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
             assertEquals("Small message (charset = " + charsetName + ")", msg, decodedMessage);
         }
+    }
+
+    /**
+     * S (white space) consists of one or more space (#x20) characters, carriage returns, line feeds, or tabs.
+     */
+    @BugNumber(8366)
+    @Test
+    public void testXmlDeclarationFormat() throws Exception {
+        // Spaces
+        testFormat( "<?xml version= '1.0' encoding= 'ascii' ?>" );
+        testFormat( "<?xml version= '1.0' encoding= 'ascii' standalone= 'yes'?>" );
+        testFormat( "<?xml version = '1.0' encoding = 'ascii' ?>" );
+        testFormat( "<?xml version = '1.0' encoding = 'ascii' standalone = 'no'?>" );
+        testFormat( "<?xml version= \"1.0\" encoding= 'ascii' ?>" );
+        testFormat( "<?xml version= \"1.0\" encoding= \"ascii\" standalone= \"yes\"?>" );
+        testFormat( "<?xml version = \"1.0\" encoding = \"ascii\" ?>" );
+        testFormat( "<?xml version = \"1.0\" encoding = \"ascii\" standalone = \"yes\"?>" );
+
+        // Tabs
+        testFormat( "<?xml\tversion=\t'1.0'\tencoding=\t'ascii'\t?>" );
+        testFormat( "<?xml\tversion=\t'1.0'\tencoding=\t'ascii'\tstandalone=\t'yes'?>" );
+        testFormat( "<?xml\tversion\t=\t'1.0'\tencoding\t=\t'ascii'\t?>" );
+        testFormat( "<?xml\tversion\t=\t'1.0'\tencoding\t=\t'ascii'\tstandalone\t=\t'yes'?>" );
+        testFormat( "<?xml\tversion=\t\"1.0\"\tencoding=\t'ascii'\t?>" );
+        testFormat( "<?xml\tversion=\t\"1.0\"\tencoding=\t\"ascii\"\tstandalone=\t\"no\"?>" );
+        testFormat( "<?xml\tversion\t=\t\"1.0\"\tencoding\t=\t\"ascii\"\t?>" );
+        testFormat( "<?xml\tversion\t=\t\"1.0\"\tencoding\t=\t\"ascii\"\tstandalone\t=\t\"yes\"?>" );
+
+        // Carriage return
+        testFormat( "<?xml\rversion=\r'1.0'\rencoding=\r'ascii'\r?>" );
+        testFormat( "<?xml\rversion=\r'1.0'\rencoding=\r'ascii'\rstandalone=\r'yes'?>" );
+        testFormat( "<?xml\rversion\r=\r'1.0'\rencoding\r=\r'ascii'\r?>" );
+        testFormat( "<?xml\rversion\r=\r'1.0'\rencoding\r=\r'ascii'\rstandalone\r=\r'yes'?>" );
+        testFormat( "<?xml\rversion=\r\"1.0\"\rencoding=\r'ascii'\r?>" );
+        testFormat( "<?xml\rversion=\r\"1.0\"\rencoding=\r\"ascii\"\rstandalone=\r\"no\"?>" );
+        testFormat( "<?xml\rversion\r=\r\"1.0\"\rencoding\r=\r\"ascii\"\r  ?>" );
+        testFormat( "<?xml\rversion\r=\r\"1.0\"\rencoding\r=\r\"ascii\"\rstandalone\r=\r\"yes\"  ?>" );
+
+        // Line feed
+        testFormat( "<?xml\nversion=\n'1.0'\nencoding=\n'ascii'\n?>" );
+        testFormat( "<?xml\nversion=\n'1.0'\nencoding=\n'ascii'\nstandalone=\n'yes'?>" );
+        testFormat( "<?xml\nversion\n=\n'1.0'\nencoding\n=\n'ascii'\n?>" );
+        testFormat( "<?xml\nversion\n=\n'1.0'\nencoding\n=\n'ascii'\nstandalone\n=\n'yes'?>" );
+        testFormat( "<?xml\nversion=\n\"1.0\"\nencoding=\n'ascii'\n?>" );
+        testFormat( "<?xml\nversion=\n\"1.0\"\nencoding=\n\"ascii\"\nstandalone=\n\"no\"?>" );
+        testFormat( "<?xml\nversion\n=\n\"1.0\"\nencoding\n=\n\"ascii\"\n?>" );
+        testFormat( "<?xml\nversion\n=\n\"1.0\"\nencoding\n=\n\"ascii\"\nstandalone\n=\n\"yes\"?>" );
+
+        // Minimum spaces
+        testFormat( "<?xml version='1.0' encoding='ascii'?>" );
+        testFormat( "<?xml version='1.0' encoding='ascii' standalone='yes'?>" );
+
+        // Lots of various spaces
+        testFormat( "<?xml\n\r    \tversion\n\r    \t=\n\r    \t'1.0'\n\r    \tencoding\n\r    \t=\n\r    \t'ascii'?>" );
+        testFormat( "<?xml\n\r    \tversion\n\r    \t=\n\r    \t'1.0'\n\r    \tencoding\n\r    \t=\n\r    \t'ascii'\n\r    \tstandalone\n\r    \t=\n\r    \t'yes'\n\r    \t?>" );
+    }
+
+    private void testFormat( final String xmlDeclaration ) throws Exception {
+        String message = replaceXmlDeclaration(XML_MESSAGE, xmlDeclaration);
+        GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(message.getBytes("UTF-8"));
+        assertNotNull( "Guessed encoding null ("+xmlDeclaration+")", guessedEncodingResult );
+        assertEquals( "Guessed encoding ("+xmlDeclaration+")", "US-ASCII", guessedEncodingResult.encoding.displayName() );
     }
 }
