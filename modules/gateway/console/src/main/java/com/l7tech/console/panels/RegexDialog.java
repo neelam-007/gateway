@@ -121,6 +121,13 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(targetMessagePanel) {
+            @Override
+            public String getValidationError() {
+                return targetMessagePanel.check();
+            }
+        });
+
         regexTextArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) { chk(); }

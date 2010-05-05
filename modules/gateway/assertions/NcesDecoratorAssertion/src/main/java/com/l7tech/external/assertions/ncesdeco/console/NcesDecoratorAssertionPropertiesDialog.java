@@ -3,18 +3,19 @@
  */
 package com.l7tech.external.assertions.ncesdeco.console;
 
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.console.panels.TargetMessagePanel;
-import com.l7tech.util.SoapConstants;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.util.SoapConstants;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * @author alex
@@ -129,6 +130,13 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                String err = targetMessagePanel.check();
+                if (err != null) {
+                    DialogDisplayer.showMessageDialog(NcesDecoratorAssertionPropertiesDialog.this,
+                            "Invalid message target: " + err, "Invalid Message Target", null);
+                    return;
+                }
+
                 assertion.setMessageIdUriPrefix(uuidUriPrefixTextField.getText());
                 assertion.setNodeBasedUuid(macBasedUuidRadioButton.isSelected());
                 assertion.setDeferDecoration(!responseImmediateCheckBox.isSelected());

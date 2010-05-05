@@ -153,6 +153,11 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
         customizeForMode();
     }
 
+    @Override
+    public boolean canAdvance() {
+        return targetMessagePanel.isValidTarget();
+    }
+
     /**
      * @return the wizard step label
      */

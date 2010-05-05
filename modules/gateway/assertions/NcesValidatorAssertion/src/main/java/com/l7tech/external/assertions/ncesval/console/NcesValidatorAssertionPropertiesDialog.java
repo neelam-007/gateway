@@ -3,10 +3,12 @@
  */
 package com.l7tech.external.assertions.ncesval.console;
 
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
-import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.TrustedCertsPanel;
 import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.security.types.CertificateValidationType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /** @author alex */
 public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<NcesValidatorAssertion> {
@@ -80,8 +83,10 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             @Override
             public void actionPerformed(ActionEvent e) {
                 ok = true;
-                targetMessagePanel.updateModel(assertion);
-                dispose();
+                if (validated()) {
+                    targetMessagePanel.updateModel(assertion);
+                    dispose();
+                }
             }
         });
 
@@ -114,6 +119,14 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         trustedCertIssuersPanelHolder.add( trustedCertIssuersPanel, BorderLayout.CENTER );
 
         add(mainPanel);
+    }
+
+    private boolean validated() {
+        String err = targetMessagePanel.check();
+        if (err == null)
+            return true;
+        DialogDisplayer.showMessageDialog(this, "Invalid target message: " + err, "Invalid Target Message", JOptionPane.ERROR_MESSAGE, null);
+        return false;
     }
 
     /**

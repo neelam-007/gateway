@@ -221,7 +221,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
     private void ok() {
         // validate the contents of the xml control
-        final String err;
+        String err;
 
         String mode = getCurrentFetchMode();
         if (MODE_FETCH_PI_URL.equals(mode)) {
@@ -236,6 +236,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
             err = specifyPanel.check();
             if (err == null) specifyPanel.updateModel(assertion);
         }
+
+        if (err == null)
+            err = targetMessagePanel.check();
 
         if (err != null) {
             displayError(err, null);

@@ -3,16 +3,17 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -112,8 +113,24 @@ public class TargetMessagePanel extends JPanel {
         }
     }
 
+    /**
+     * Check whether the view currently contains valid information.
+     *
+     * @return true if {@link #updateModel} would succeed if called now; false if it would throw InvalidModelException
+     */
     public boolean isValidTarget() {
-        return !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().trim().length() > 0;
+        return null == check();
+    }
+
+    /**
+     * Check validity of view contents.
+     *
+     * @return null if OK, otherwise the error message.
+     */
+    public String check() {
+        if (!otherRadioButton.isSelected())
+            return null;
+        return VariableMetadata.validateName(getVariableName());
     }
 
     protected void initComponents() {

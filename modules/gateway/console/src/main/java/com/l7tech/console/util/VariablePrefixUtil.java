@@ -86,7 +86,7 @@ public final class VariablePrefixUtil {
     }
 
     /**
-     * Fix a variable name by trimming space and removing any surrounding ${...}
+     * Fix a variable name by trimming space and removing any surrounding ${...} or leading $
      *
      * @param variableName The name to fix.
      * @return The fixed name.
@@ -104,7 +104,7 @@ public final class VariablePrefixUtil {
 
     //- PRIVATE
 
-    private static final Pattern FIXSTART = Pattern.compile("\\s*(?:\\$\\{)?\\s*");
+    private static final Pattern FIXSTART = Pattern.compile("\\s*(?:\\$\\{?)?\\s*");
     private static final Pattern FIXEND = Pattern.compile("\\s*(?:\\})?\\s*");
 
 }

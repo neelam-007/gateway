@@ -3,10 +3,9 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.util.TimeUnit;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -109,8 +108,7 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
 
     @Override
     protected String getSyntaxError(RequireWssTimestamp model) {
-        if (!targetPanelValid) return "Variable name is required";
-        return null;
+        return targetMessagePanel.check();
     }
 
     public void focusFirstComponent() {

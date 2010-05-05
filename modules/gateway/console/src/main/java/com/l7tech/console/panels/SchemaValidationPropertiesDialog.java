@@ -230,6 +230,13 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                String err = targetMessagePanel.check();
+                if (err != null) {
+                    DialogDisplayer.showMessageDialog(SchemaValidationPropertiesDialog.this, MessageFormat.format(resources.getString("error.invalid.targetmessage"), err),
+                                                  resources.getString("error.invalid.targetmessage.title"),
+                                                  JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
                 ok();
             }
         });
