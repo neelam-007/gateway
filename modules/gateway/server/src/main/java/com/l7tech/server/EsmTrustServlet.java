@@ -19,6 +19,7 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.admin.AdminLoginHelper;
 import com.l7tech.util.*;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.apache.xmlbeans.XmlCursor;
@@ -99,6 +100,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
     private TrustedEsmManager trustedEsmManager;
     private TrustedEsmUserManager trustedEsmUserManager;
     private AdminLogin adminLogin;
+    private AdminLoginHelper adminLoginHelper;
     private LicenseManager licenseManager;
     private static final Random random = new SecureRandom();
     private byte[] secretData;
@@ -109,7 +111,8 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         this.trustedEsmManager = (TrustedEsmManager) config.getServletContext().getAttribute("trustedEsmManager");
         this.trustedEsmUserManager = (TrustedEsmUserManager) config.getServletContext().getAttribute("trustedEsmUserManager");
         this.adminLogin = (AdminLogin) config.getServletContext().getAttribute("adminLogin");
-        this.licenseManager = (LicenseManager) config.getServletContext().getAttribute("licenseManager");        
+        this.adminLoginHelper = (AdminLoginHelper) config.getServletContext().getAttribute("adminLoginHelper");
+        this.licenseManager = (LicenseManager) config.getServletContext().getAttribute("licenseManager");
         this.secretData = new byte[32];
         random.nextBytes(secretData);
     }
@@ -397,7 +400,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         AdminLoginResult result;
         if (clientCertChain != null && clientCertChain[0] != null) {
             // Authenticate with client cert
-            result = adminLogin.login(clientCertChain[0]);
+            result = adminLoginHelper.login(clientCertChain[0]);
         } else {
             // Authenticate with username/password
             String username = param.get("username");

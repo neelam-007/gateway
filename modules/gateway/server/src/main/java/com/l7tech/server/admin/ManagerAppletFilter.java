@@ -103,6 +103,7 @@ public class ManagerAppletFilter implements Filter {
     private ServerAssertionRegistry assertionRegistry;
     private AdminSessionManager adminSessionManager;
     private AdminLogin adminLogin;
+    private AdminLoginHelper adminLoginHelper;
     private AuditContext auditContext;
 
     private ServerAssertion dogfoodPolicy;
@@ -131,6 +132,7 @@ public class ManagerAppletFilter implements Filter {
         assertionRegistry = (ServerAssertionRegistry)getBean("assertionRegistry", ServerAssertionRegistry.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
         adminLogin = (AdminLogin)getBean("adminLogin", AdminLogin.class);
+        adminLoginHelper = (AdminLoginHelper)getBean("adminLoginHelper", AdminLoginHelper.class);
         auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
 
         //CompositeAssertion dogfood = new AllAssertion();
@@ -375,7 +377,7 @@ public class ManagerAppletFilter implements Filter {
                 } else if ( username != null || password != null ){
                     loginResult = adminLogin.login(username, password);
                 } else {
-                    loginResult = adminLogin.login(authContext.getLastCredentials().getClientCert());
+                    loginResult = adminLoginHelper.login(authContext.getLastCredentials().getClientCert());
                 }
 
                 final User user = loginResult.getUser();

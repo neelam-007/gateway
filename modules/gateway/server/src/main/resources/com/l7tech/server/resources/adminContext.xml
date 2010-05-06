@@ -161,6 +161,12 @@
         <property name="order" value="10000"/>
     </bean>
 
+    <!-- admin login helper for "internal" authentications -->
+    <bean id="adminLoginHelper" class="com.l7tech.server.admin.AdminLoginHelper">
+        <constructor-arg ref="adminSessionManager"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <!--==============================================================-
     Administration beans (admin intercepted)
     -===============================================================-->

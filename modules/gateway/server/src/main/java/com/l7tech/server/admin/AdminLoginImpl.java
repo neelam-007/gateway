@@ -64,57 +64,6 @@ public class AdminLoginImpl
     }
 
     @Override
-    public AdminLoginResult login(final X509Certificate cert) throws AccessControlException, LoginException {
-
-        //the implementation of this method will be very similar to the one that uses the username/password as
-        //login credentials, except that we'll use the client certificate as the login credentials instead
-        if (cert == null) throw new AccessControlException("Client certificate required.");
-
-        String remoteIp = null;
-        LoginCredentials creds = null;
-        try {
-            //make certificate login credentials
-            creds = LoginCredentials.makeLoginCredentials( new HttpClientCertToken(cert), null);
-            User user = sessionManager.authenticate( creds );
-
-            boolean remoteLogin = true;
-
-            try {
-                remoteIp = RemoteUtils.getClientHost();
-            } catch (ServerNotActiveException snae) {
-                remoteLogin = false;
-            }
-
-            if (user == null) {
-                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
-                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
-            }
-
-            if (remoteLogin) {
-                logger.info("User '" + user.getLogin() + "' logged in from IP '" + remoteIp + "'.");
-            } else {
-                logger.finer("User '" + user.getLogin() + "' logged in locally.");
-            }
-
-            String cookie = "-";
-            if (remoteLogin) {
-                // If local, caller is responsible for generating event/session if required
-                getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
-                cookie = sessionManager.createSession(user, null);
-            }
-
-            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
-        } catch (ObjectModelException e) {
-            logger.log(Level.WARNING, "Authentication provider error", e);
-            throw buildAccessControlException("Authentication failed", e);
-        } catch (FailAttemptsExceededException faee) {
-            //shouldn't happen for certificates
-            getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
-            throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
-        }
-    }
-
-    @Override
     public AdminLoginResult login( final String username, final String password )
             throws AccessControlException, LoginException
     {
