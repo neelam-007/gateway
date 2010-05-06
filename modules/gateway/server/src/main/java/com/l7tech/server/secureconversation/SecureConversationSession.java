@@ -14,21 +14,30 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
  * Date: Aug 3, 2004<br/>
  */
 public class SecureConversationSession implements SecurityContext {
-    public String getIdentifier() {
-        return identifier;
+
+    public SecureConversationSession( final String secConvNamespaceUsed,
+                                      final String identifier,
+                                      final byte[] sharedSecret,
+                                      final long creation,
+                                      final long expiration,
+                                      final User usedBy,
+                                      final LoginCredentials credentials ) {
+        this.secConvNamespaceUsed = secConvNamespaceUsed;
+        this.identifier = identifier;
+        this.sharedSecret = sharedSecret;
+        this.creation = creation;
+        this.expiration = expiration;
+        this.usedBy = usedBy;
+        this.credentials = credentials;
     }
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
+    public String getIdentifier() {
+        return identifier;
     }
 
     @Override
     public byte[] getSharedSecret() {
         return sharedSecret;
-    }
-
-    public void setSharedSecret(byte[] sharedSecret) {
-        this.sharedSecret = sharedSecret;
     }
 
     @Override
@@ -40,24 +49,12 @@ public class SecureConversationSession implements SecurityContext {
         return expiration;
     }
 
-    public void setExpiration(long expiration) {
-        this.expiration = expiration;
-    }
-
     public long getCreation() {
         return creation;
     }
 
-    public void setCreation(long creation) {
-        this.creation = creation;
-    }
-
     public User getUsedBy() {
         return usedBy;
-    }
-
-    public void setUsedBy(User usedBy) {
-        this.usedBy = usedBy;
     }
 
     /**
@@ -72,27 +69,19 @@ public class SecureConversationSession implements SecurityContext {
     }
 
     /**
-     * Set the credentials that the <code>User</code> authenticated with.
+     * Get the namespace used.
      *
-     * @param credentials
+     * @return The namespace (may be null)
      */
-    public void setCredentials(LoginCredentials credentials) {
-        this.credentials = credentials;
-    }
-
     public String getSecConvNamespaceUsed() {
         return secConvNamespaceUsed;
     }
 
-    public void setSecConvNamespaceUsed(String secConvNamespaceUsed) {
-        this.secConvNamespaceUsed = secConvNamespaceUsed;
-    }
-
-    private String identifier;
-    private byte[] sharedSecret;
-    private long expiration;
-    private long creation;
-    private User usedBy;
-    private LoginCredentials credentials;
-    private String secConvNamespaceUsed;
+    private final String identifier;
+    private final byte[] sharedSecret;
+    private final long expiration;
+    private final long creation;
+    private final User usedBy;
+    private final LoginCredentials credentials;
+    private final String secConvNamespaceUsed;
 }

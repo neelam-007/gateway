@@ -80,6 +80,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private final FilterManager filterManager;
     private final SecurityTokenResolver securityTokenResolver;
     private final PolicyPathBuilderFactory policyPathBuilderFactory;
+    private final SecureConversationContextManager secureConversationContextManager;
 
     /**
      * The supported credential sources used to determine whether the requester is
@@ -114,7 +115,8 @@ public class PolicyService extends ApplicationObjectSupport {
                          ServerPolicyFactory policyFactory,
                          FilterManager filterManager,
                          SecurityTokenResolver securityTokenResolver,
-                         PolicyPathBuilderFactory policyPathBuilderFactory)
+                         PolicyPathBuilderFactory policyPathBuilderFactory,
+                         SecureConversationContextManager secureConversationContextManager )
     {
         if (serverCertFinder == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
@@ -126,6 +128,7 @@ public class PolicyService extends ApplicationObjectSupport {
         this.filterManager = filterManager;
         this.securityTokenResolver = securityTokenResolver;
         this.policyPathBuilderFactory = policyPathBuilderFactory;
+        this.secureConversationContextManager = secureConversationContextManager;
 
         // populate all possible credentials sources
         this.allCredentialAssertions = new ArrayList<Assertion>();
@@ -231,7 +234,7 @@ public class PolicyService extends ApplicationObjectSupport {
             WssProcessor trogdor = new WssProcessorImpl();
             wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                   null,
-                                                  SecureConversationContextManager.getInstance(),
+                                                  secureConversationContextManager,
                                                   securityTokenResolver);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
+import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
@@ -12,6 +13,7 @@ import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -25,17 +27,17 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 3, 2004<br/>
- * $Id$<br/>
  */
 public class SecureConversationContextManager implements SecurityContextFinder {
 
-    public static SecureConversationContextManager getInstance() {
-        return SingletonHolder.singleton;
+    public SecureConversationContextManager( final Config config ) {
+        this.config = config;
     }
 
     /**
      * For use by the WssProcessor on the ssg.
      */
+    @Override
     public SecurityContext getSecurityContext(String securityContextIdentifier) {
         return getSession(securityContextIdentifier);
     }
@@ -44,14 +46,31 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * Retrieve a session previously recorded.
      */
     public SecureConversationSession getSession(String identifier) {
+        // Cleanup if necessary
         checkExpiriedSessions();
+
+        // Get session
         SecureConversationSession output = null;
         rwlock.readLock().lock();
         try {
-            output = (SecureConversationSession)sessions.get(identifier);
+            output = sessions.get(identifier);
         } finally {
             rwlock.readLock().unlock();
         }
+
+        // Check if expired
+        if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
+            output = null;
+
+            rwlock.writeLock().lock();
+            try {
+                sessions.remove(identifier);
+            }
+            finally {
+                rwlock.writeLock().unlock();
+            }
+        }
+
         return output;
     }
 
@@ -62,8 +81,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         rwlock.writeLock().lock();
         try {
             // Two sessions with same id is not allowed. ever (even if one is expired)
-            SecureConversationSession alreadyExistingOne =
-                    (SecureConversationSession) sessions.get(newSession.getIdentifier());
+            SecureConversationSession alreadyExistingOne = sessions.get(newSession.getIdentifier());
             if (alreadyExistingOne != null) {
                 throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
             }
@@ -81,7 +99,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws DuplicateSessionException {
-        byte[] tmp = null;
+        final byte[] tmp;
         if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
             tmp = generateNewSecret(32);
         } else {
@@ -90,14 +108,16 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         final byte[] sharedSecret = tmp;
         String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();
         // make up a new session identifier and shared secret (using some random generator)
-        SecureConversationSession session = new SecureConversationSession();
-        session.setCreation(System.currentTimeMillis());
-        session.setExpiration(System.currentTimeMillis() + DEFAULT_SESSION_DURATION);
-        session.setIdentifier(newSessionIdentifier);
-        session.setCredentials(credentials);
-        session.setSecConvNamespaceUsed(namespace);
-        session.setSharedSecret(sharedSecret);
-        session.setUsedBy(sessionOwner);
+        final long time = System.currentTimeMillis();
+        final SecureConversationSession session = new SecureConversationSession(
+            namespace,
+            newSessionIdentifier,
+            sharedSecret,
+            time,
+            time  + getDefaultSessionDuration(),
+            sessionOwner,
+            credentials
+        );
         saveSession(session);
         return session;
     }
@@ -113,16 +133,28 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, byte[] sharedKey) throws DuplicateSessionException {
-        long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + DEFAULT_SESSION_DURATION;
-        SecureConversationSession session = new SecureConversationSession();
-        session.setCreation(System.currentTimeMillis());
-        session.setExpiration(expires);
-        session.setIdentifier(sessionId);
-        session.setCredentials(credentials);
-        session.setSharedSecret(sharedKey);
-        session.setUsedBy(sessionOwner);
+        long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + getDefaultSessionDuration();
+        SecureConversationSession session = new SecureConversationSession(
+                null,
+                sessionId,
+                sharedKey,
+                System.currentTimeMillis(),
+                expires,
+                sessionOwner,
+                credentials
+        );
         saveSession(session);
         return session;
+    }
+
+    private long getDefaultSessionDuration() {
+        long duration = config.getTimeUnitProperty( "wss.secureConversation.defaultSessionDuration", DEFAULT_SESSION_DURATION );
+
+        if ( duration < MIN_SESSION_DURATION || duration > MAX_SESSION_DURATION ) {
+            duration = DEFAULT_SESSION_DURATION;    
+        }
+
+        return duration;
     }
 
     private void checkExpiriedSessions() {
@@ -172,24 +204,20 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         return HexUtils.hexDump(output);
     }
 
-    private SecureConversationContextManager() {
-        // maybe in the future we use some distributed cache?
-    }
-
     /**
      * keys: identifier (string)
      * values: SecureConversationSession objects
      */
-    private HashMap sessions = new HashMap();
-
-    private static class SingletonHolder {
-        private static SecureConversationContextManager singleton = new SecureConversationContextManager();
-    }
+    private Map<String,SecureConversationSession> sessions = new HashMap<String,SecureConversationSession>();
 
     private static final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
+    private static final long MIN_SESSION_DURATION = 1000*60; // 1 min
+    private static final long MAX_SESSION_DURATION = 1000*60*60*24; // 24 hrs
     private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs
     private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
     private static final Random random = new SecureRandom();
+
+    private final Config config;
     private long lastExpirationCheck = System.currentTimeMillis();
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
 }

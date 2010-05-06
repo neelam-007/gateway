@@ -963,6 +963,7 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
         <constructor-arg ref="securityTokenResolver"/>
+        <constructor-arg ref="secureConversationContextManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContext"/>
@@ -978,12 +979,14 @@
         <constructor-arg ref="policyFilterManager"/>
         <constructor-arg ref="securityTokenResolver"/>
         <constructor-arg ref="policyPathBuilderFactory"/>
+        <constructor-arg ref="secureConversationContextManager"/>
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="securityTokenResolver"/>
+        <constructor-arg ref="secureConversationContextManager"/>
     </bean>
 
     <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
@@ -1750,5 +1753,9 @@
     
     <bean id="serviceDocumentResolver" class="com.l7tech.server.service.ServiceDocumentResolver">
         <constructor-arg index="0" ref="httpClientFactory"/>
+    </bean>
+
+    <bean id="secureConversationContextManager" class="com.l7tech.server.secureconversation.SecureConversationContextManager">
+        <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 </beans>

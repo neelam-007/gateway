@@ -30,6 +30,7 @@ import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.xpath.XpathExpression;
 import junit.extensions.TestSetup;
@@ -119,7 +120,8 @@ public class PolicyServiceTest extends TestCase {
                 (ServerPolicyFactory) applicationContext.getBean("policyFactory"),
                 (FilterManager) applicationContext.getBean("policyFilterManager"),
                 (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),
-                (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"));
+                (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"),
+                (SecureConversationContextManager)applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class));
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             @Override

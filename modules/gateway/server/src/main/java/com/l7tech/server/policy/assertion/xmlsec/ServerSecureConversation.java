@@ -42,11 +42,13 @@ import java.util.logging.Logger;
  */
 public class ServerSecureConversation extends AbstractServerAssertion<SecureConversation> {
     private final Auditor auditor;
+    private final SecureConversationContextManager secureConversationContextManager;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
         // nothing to remember from the passed assertion
-        auditor = new Auditor(this, springContext, logger);
+        this.auditor = new Auditor(this, springContext, logger);
+        this.secureConversationContextManager = (SecureConversationContextManager) springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {
@@ -93,7 +95,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     continue;
                 }
                 String contextId = secConTok.getContextIdentifier();
-                SecureConversationSession session = SecureConversationContextManager.getInstance().getSession(contextId);
+                SecureConversationSession session = secureConversationContextManager.getSession(contextId);
                 if (session == null) {
                     auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
                     context.setRequestPolicyViolated();

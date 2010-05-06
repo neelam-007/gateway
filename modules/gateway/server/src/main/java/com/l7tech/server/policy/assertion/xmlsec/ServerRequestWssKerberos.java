@@ -34,7 +34,8 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
     public ServerRequestWssKerberos(RequestWssKerberos requestWssKerberos, ApplicationContext springContext) {
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
-        auditor = new Auditor(this, springContext, logger);
+        this.auditor = new Auditor(this, springContext, logger);
+        this.secureConversationContextManager = (SecureConversationContextManager) springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
     }
 
     @SuppressWarnings({"RedundantArrayCreation"})
@@ -105,11 +106,15 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
             // stash for later reference
-            final SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
             final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosServiceTicket.getGSSAPReqTicket());
-            if ( sccm.getSecurityContext( sessionIdentifier ) == null) {
+            if ( secureConversationContextManager.getSecurityContext( sessionIdentifier ) == null) {
                 try {
-                    sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, kerberosServiceTicket.getKey());
+                    secureConversationContextManager.createContextForUser(
+                            sessionIdentifier,
+                            kerberosServiceTicket.getExpiry(),
+                            null,
+                            loginCreds,
+                            kerberosServiceTicket.getKey());
                 }
                 catch(DuplicateSessionException dse) {
                     //can't happen since duplicate tickets are detected by kerberos.
@@ -131,6 +136,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
+    private final SecureConversationContextManager secureConversationContextManager;
 
     private RequestWssKerberos requestWssKerberos;
 

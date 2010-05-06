@@ -59,6 +59,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
+    private static SecureConversationContextManager secureConversationContextManager = null;
 
     /**
      * Test services, data is:
@@ -142,21 +143,21 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public static void setUpClass() throws Exception {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
+        messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
+        soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+        testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        secureConversationContextManager = (SecureConversationContextManager) applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+
         // well known test session
-        SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
-        if (sccm.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
-            sccm.createContextForUser(
+        if (secureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
+            secureConversationContextManager.createContextForUser(
                     "http://www.layer7tech.com/uuid/00000000",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     new UserBean(),
                     LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "password".toCharArray()), HttpBasic.class),
                     new byte[16]);
         }
-
-        messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-        testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
         buildServices( (ServiceManager) applicationContext.getBean("serviceManager", ServiceManager.class) );
 

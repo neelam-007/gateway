@@ -87,6 +87,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private final DefaultKey defaultKey;
     private final ServerAssertion tokenServicePolicy;
     private final SecurityTokenResolver securityTokenResolver;
+    private final SecureConversationContextManager secureConversationContextManager;
 
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
@@ -96,13 +97,15 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      */
     public TokenServiceImpl( final DefaultKey defaultKey,
                              final ServerPolicyFactory policyFactory,
-                             final SecurityTokenResolver securityTokenResolver) {
+                             final SecurityTokenResolver securityTokenResolver,
+                             final SecureConversationContextManager secureConversationContextManager ) {
         if (defaultKey == null) {
             throw new IllegalArgumentException("DefaultKey must be provided to create a TokenService");
         }
 
         this.defaultKey = defaultKey;
         this.securityTokenResolver = securityTokenResolver;
+        this.secureConversationContextManager = secureConversationContextManager;
         try {
             // Compile with license enforcement disabled (dogfood policy can use any assertion it wants)
             this.tokenServicePolicy = policyFactory.compilePolicy(getGenericEnforcementPolicy(), false);
@@ -154,7 +157,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                                       null,
-                                                                      SecureConversationContextManager.getInstance(),
+                                                                      secureConversationContextManager,
                                                                       securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {
@@ -402,7 +405,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                              final String scns ) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
-            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
+            newSession = secureConversationContextManager.createContextForUser(requestor,
                                                                                              context.getDefaultAuthenticationContext().getLastCredentials(),
                                                                                              scns);
         } catch (DuplicateSessionException e) {

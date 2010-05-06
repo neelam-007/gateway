@@ -89,6 +89,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
     private final SecurityTokenResolver securityTokenResolver;
+    private final SecureConversationContextManager secureConversationContextManager;
     private final LicenseManager licenseManager;
     private final ServiceMetricsServices serviceMetricsServices;
     private final AuditContext auditContext;
@@ -121,6 +122,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             PolicyCache pc,
                             WssDecorator wssd,
                             SecurityTokenResolver securityTokenResolver,
+                            SecureConversationContextManager secureConversationContextManager,
                             LicenseManager licenseManager,
                             ServiceMetricsServices metricsServices,
                             AuditContext auditContext,
@@ -143,6 +145,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.policyCache = pc;
         this.wssDecorator = wssd;
         this.securityTokenResolver = securityTokenResolver;
+        this.secureConversationContextManager = secureConversationContextManager;
         this.licenseManager = licenseManager;
         this.serviceMetricsServices = metricsServices;
         this.auditContext = auditContext;
@@ -681,7 +684,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     final SecurityKnob reqSec = request.getSecurityKnob();
                     wssOutput = trogdor.undecorateMessage(request,
                                                           null,
-                                                          SecureConversationContextManager.getInstance(),
+                                                          secureConversationContextManager,
                                                           securityTokenResolver);
                     reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {

@@ -16,9 +16,12 @@ import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.util.MockConfig;
 import com.l7tech.util.SoapConstants;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;                                                                          
+import org.junit.Test;
+
+import java.util.Properties;
 
 /**
  *
@@ -26,8 +29,9 @@ import org.junit.Test;
 public class SecureConversationPerformanceTester {
     @Test
     public void testSignatureValidationPerformance() throws Exception {
+        final SecureConversationContextManager manager = new SecureConversationContextManager( new MockConfig( new Properties() ) );
         WssDecoratorTest.TestDocument td = new WssDecoratorTest().getSigningOnlyWithSecureConversationTestDocument();
-        final SecureConversationSession session = SecureConversationContextManager.getInstance().createContextForUser(new UserBean(3, "foo"),
+        final SecureConversationSession session = manager.createContextForUser(new UserBean(3, "foo"),
                 LoginCredentials.makeLoginCredentials(new HttpBasicToken("foo", "blah".toCharArray()),
                         HttpBasic.class), SoapConstants.WSSC_NAMESPACE2);
         td.req.setSecureConversationSession(new DecorationRequirements.SimpleSecureConversationSession(session.getIdentifier(),
@@ -51,7 +55,7 @@ public class SecureConversationPerformanceTester {
                     wssProcessor.setSecurityContextFinder(new SecurityContextFinder() {
                         @Override
                         public SecurityContext getSecurityContext(String securityContextIdentifier) {
-                            return SecureConversationContextManager.getInstance().getSecurityContext(securityContextIdentifier);
+                            return manager.getSecurityContext(securityContextIdentifier);
                         }
                     });
                     ProcessorResult got = wssProcessor.processMessage();

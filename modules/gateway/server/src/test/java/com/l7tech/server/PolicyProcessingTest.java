@@ -81,6 +81,7 @@ public class PolicyProcessingTest {
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
+    private static SecureConversationContextManager secureConversationContextManager = null;
 
     static {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
@@ -168,6 +169,7 @@ public class PolicyProcessingTest {
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        secureConversationContextManager = (SecureConversationContextManager) applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
@@ -246,11 +248,10 @@ public class PolicyProcessingTest {
 
     private static void createSecureConversationSession() throws DuplicateSessionException {
         // Create a well known test session for secure conversation testing
-        SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
         UserBean ub1 = new UserBean(9898, "Alice");
         ub1.setUniqueIdentifier( "4718592" );
-        if (sccm.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
-            sccm.createContextForUser(
+        if (secureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
+            secureConversationContextManager.createContextForUser(
                     "http://www.layer7tech.com/uuid/00000001",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     ub1,

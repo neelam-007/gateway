@@ -19,6 +19,7 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.soap.SoapUtil;
@@ -87,8 +88,9 @@ public class TokenServiceTest {
         ((SimpleSecurityTokenResolver)testTokenResolver).addCerts( new X509Certificate[]{TestDocuments.getDotNetServerCertificate()} );
 
         final TokenService service = new TokenServiceImpl(new TestDefaultKey(),
-                                                      (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-                                                      testTokenResolver)
+                                                      (ServerPolicyFactory)applicationContext.getBean("policyFactory",ServerPolicyFactory.class),
+                                                      testTokenResolver,
+                                                      (SecureConversationContextManager)applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class))
         {
             @Override
             public AssertionStatus respondToSecurityTokenRequest( PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, BadSecurityContextException, GeneralSecurityException, AuthenticationException {
@@ -149,7 +151,8 @@ public class TokenServiceTest {
 
         final TokenService service = new TokenServiceImpl(new TestDefaultKey(issuerCertificate, issuerPrivateKey),
                                                           (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-                                                          (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
+                                                          (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"),
+                                                          (SecureConversationContextManager)applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class));
 
         final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 
