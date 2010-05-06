@@ -651,7 +651,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             subjectDn = subjectDn.substring(0,42) + "...";
         }
         String confirmationDialogMessage =
-            "<html><center>This will irrevocably destroy this key and cannot be undone. " +
+            "<html><center>This will delete this key and cannot be undone. " +
                     "The change will not fully take effect until all cluster nodes have been restarted.</center><p>" +
                 "<center>Really delete the private key " + alias + " (" + subjectDn + ")?</center></html>";
 
