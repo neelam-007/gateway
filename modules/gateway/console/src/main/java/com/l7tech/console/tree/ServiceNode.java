@@ -238,7 +238,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         Image bugImage = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/bug16.gif");
         Image ret = new BufferedImage(24, 16, BufferedImage.TYPE_INT_ARGB);
         Graphics g = ret.getGraphics();
-        g.drawImage(bgImage, 0, 2, null);
+        g.drawImage(bgImage, 0, 0, null);
         g.drawImage(bugImage, 8, -1, null);
         return ret;
     }
