@@ -594,10 +594,14 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
             UserIdentificationRequestDialog certManager = new UserIdentificationRequestDialog(certsHash);
             Utilities.centerOnScreen(certManager);
-            DialogDisplayer.display(certManager, null);
-            populateCertificateChoices();
-            loginButton.setEnabled(certSelection.getItemCount() > 0 &&
-                (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+            DialogDisplayer.display(certManager, new Runnable(){
+                @Override
+                public void run() {
+                    populateCertificateChoices();
+                    loginButton.setEnabled(certSelection.getItemCount() > 0 &&
+                        (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+                }
+            });
         }
     }
 
@@ -672,6 +676,8 @@ public class LogonDialog extends JDialog {
                               String selected = (String) certSelection.getSelectedItem();
                               setSelectedCertificateByDn(selected);
                               authenticationCredentials = new PasswordAuthentication("", "".toCharArray());
+                          } else {
+                              setSelectedCertificateByDn(""); //clear selected certificate                             
                           }
 
                           //determine which approach to logon based on the parameters
@@ -845,7 +851,7 @@ public class LogonDialog extends JDialog {
         private String serviceUrl;
         private volatile boolean cancelled = false;
 
-        public LogonInProgressDialog(Frame owner, String url)
+        LogonInProgressDialog(Frame owner, String url)
           throws HeadlessException {
             super(owner, true);
             setTitle("Logon in progress");

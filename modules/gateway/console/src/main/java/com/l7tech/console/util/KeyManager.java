@@ -54,27 +54,33 @@ public class KeyManager {
      */
     private X509KeyManager buildKeyManager() {
         return new X509KeyManager() {
+                @Override
                 public String[] getClientAliases(String string, Principal[] principals) {
                     return getClientAlias();//new String[] { "client" };
                 }
 
+                @Override
                 public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
                     return "clientCert.";
                 }
 
+                @Override
                 public String[] getServerAliases(String string, Principal[] principals) {
                     return new String[0];
                 }
 
+                @Override
                 public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
                     return null;
                 }
 
+                @Override
                 public X509Certificate[] getCertificateChain(String string) {
                     populateCertAndPrivateKeyValues();
                     return cert;
                 }
 
+                @Override
                 public PrivateKey getPrivateKey(String string) {
                     populateCertAndPrivateKeyValues();
                     return privateKey;
@@ -86,14 +92,16 @@ public class KeyManager {
      * Populate the certificate and certificate values based on the list from the trust store.
      */
     private void populateCertAndPrivateKeyValues() {
+        cert = null;
+        privateKey = null;
         try {
             final List<String> aliases = Collections.list(keyStore.aliases());
             for (String alias : aliases) {
                 X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
-                //System.out.println("IsCertificateEntry=" + keyStore.isCertificateEntry(alias) + " IsKeyEntry=" + keyStore.isKeyEntry(alias) + " for " + alias);
                 if (certificate != null && CertUtils.certsAreEqual(choice, certificate)) {
-                    cert = new X509Certificate[] {certificate } ;//keyStore.getCertificateChain(alias);//new X509Certificate[]{(X509Certificate) keyStore.getCertificate(alias)};
+                    cert = new X509Certificate[] {certificate } ;
                     privateKey = (PrivateKey) keyStore.getKey(alias, TRUST_PASSWORD.toCharArray());
+                    break;
                 }
             }
         } catch (Exception e) {
