@@ -801,7 +801,9 @@ public class LogonDialog extends JDialog {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
           showMessageDialog(parentFrame,
-                            resources.getString("logon.invalid.credentials"),
+                             useCert.isSelected() ?
+                               resources.getString("logon.invalid.certificate") :
+                               resources.getString("logon.invalid.credentials"),
                             "Warning",
                             JOptionPane.WARNING_MESSAGE);
     }

@@ -34,6 +34,7 @@ import javax.security.auth.login.LoginException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URI;
+import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -125,6 +126,9 @@ public class SecurityProviderImpl extends SecurityProvider
             String sessionCookie = result.getSessionCookie();
             setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
             TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+        }
+        catch( AccessControlException ace ) {
+            throw new LoginException( ExceptionUtils.getMessage(ace) );
         }
         catch(RemoteAccessException e) {
             Throwable cause = ExceptionUtils.unnestToRoot(e);
