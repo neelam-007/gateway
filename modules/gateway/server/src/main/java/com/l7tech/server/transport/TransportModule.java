@@ -238,8 +238,8 @@ public abstract class TransportModule extends LifecycleBean {
             certs.add(trustedCert.getCertificate());
         }
 
-        // If the issuers list is completely empty, include our own server cert in the list just to keep SSL-J happy.
-        if (certs.isEmpty()) {
+        // If the issuers list is completely empty, and we are using SSL-J, include our own server cert in the list just to keep SSL-J happy.
+        if (certs.isEmpty() && isUsingTls11OrHigher(connector)) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {
@@ -250,5 +250,10 @@ public abstract class TransportModule extends LifecycleBean {
         }
 
         return certs.toArray(new X509Certificate[certs.size()]);
+    }
+
+    private boolean isUsingTls11OrHigher(SsgConnector c) {
+        String protocols = c.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
+        return protocols != null && (protocols.contains("TLSv1.1") || protocols.contains("TLSv1.2"));
     }
 }
