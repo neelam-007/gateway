@@ -34,7 +34,7 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
 
     @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-        if (path == null || wsdl == null || result == null) throw new IllegalArgumentException();
+        if (path == null || result == null) throw new IllegalArgumentException();
         if (!soap) return;
 
         if (wsdlError != null) {
@@ -42,9 +42,11 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
             return;
         }
 
-        // check whether any binding info operation
-        for (BindingInfo bi : assertion.getBindings().values()) {
-            if (hasMimeParts(bi, wsdl)) return;
+        if (wsdl != null) {
+            // check whether any binding info operation
+            for (BindingInfo bi : assertion.getBindings().values()) {
+                if (hasMimeParts(bi, wsdl)) return;
+            }
         }
         wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
                                  "This assertion only works with soap services with attachments.";
