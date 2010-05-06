@@ -19,6 +19,7 @@ import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,7 +27,8 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -63,6 +65,7 @@ public class TracePolicyEvaluatorTest {
 
         AllAssertion traceAssertion = new AllAssertion();
         traceAssertion.addChild(new SetVariableAssertion("origVar", "${trace.var.orig.one}"));
+        traceAssertion.addChild(new SetVariableAssertion("messvarMainpart", "${trace.var.messvar.mainpart}"));
         traceAssertion.addChild(new SetVariableAssertion("trace.out", "${trace.out}\nTRACE:${trace.assertion.numberstr}:${trace.status.message}"));
         traceAssertion.addChild(new SetVariableAssertion("t.out", "${t.out}~${trace.out}"));
         traceAssertion.addChild(new SetVariableAssertion("t.final", "${t.final}~${trace.final}"));
@@ -170,6 +173,25 @@ public class TracePolicyEvaluatorTest {
         assertEquals("~2~3~4~1", traceContext.getVariable("t.assertion.ordinal"));
         assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.numberStr"));
         assertEquals("~3.6.12.2~3.6.12.3~3.6.12.4~3.6.12.1", traceContext.getVariable("t.assertion.number"));
+
+        tracedContext.close();
+        testHandle.close();
+    }
+
+    @Test
+    @BugNumber(8757)
+    public void testMessageVariableMainpart() throws Exception {
+        PolicyEnforcementContext tracedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        tracedContext.setVariable("messvar", new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("test message var body".getBytes(Charsets.UTF8))));
+
+        ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
+        TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
+        testHandle.checkRequest(tracedContext);
+
+        final TracePolicyEnforcementContext traceContext = evaluator.getTraceContext();
+
+        // Request and response were left uninitialized for this test
+        assertEquals("test message var body", traceContext.getVariable("messvarMainpart"));
 
         tracedContext.close();
         testHandle.close();
