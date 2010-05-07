@@ -466,6 +466,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final Action f3Action = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if(!searchForm.isSearchVisible()){
+                    searchForm.showPanel(policyTree);
+                    return;
+                }
+
                 //check that the some search text has been entered
                 if(!searchForm.hasSearchResults()) {
                     final InformationDialog iDialog = new InformationDialog("No search results.");

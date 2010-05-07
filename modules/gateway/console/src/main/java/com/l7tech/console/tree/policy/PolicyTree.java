@@ -182,7 +182,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         try {
             foundNode = findTreeNode(root, indexPath);
         } catch (OrdinalIndexOutOfRangeException e) {
-            //show for 4 seconds as the messages are longer
             InformationDialog iDialog = new InformationDialog(e.getMessage());
             MainWindow.showInformationDialog(iDialog, null);
             foundNode = e.getNodeToGoto();

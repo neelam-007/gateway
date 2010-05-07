@@ -253,6 +253,10 @@ public class SearchForm {
         setPolicyTree(policyTree);
     }
 
+    public boolean isSearchVisible(){
+        return searchPanel.isVisible();
+    }
+
     /**
      * Bring the user to the selected assertion
      */
