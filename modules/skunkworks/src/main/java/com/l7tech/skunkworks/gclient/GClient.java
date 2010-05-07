@@ -1635,10 +1635,13 @@ public class GClient {
                     @Override
                     public void run() {
                         final String action = soapActionTextField.getText(); // save and restore so setting WSDL doesn't overwrite
+                        final String url = urlTextField.getText();
                         final String message = requestTextArea.getText();
                         setWsdl( wsdl );                        
                         soapActionTextField.setText( action );
                         soapActionTextField.setCaretPosition( 0 );
+                        urlTextField.setText( url );
+                        urlTextField.setCaretPosition( 0 );
                         requestTextArea.setText( message );
                         requestTextArea.setCaretPosition( 0 );
                     }
