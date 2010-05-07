@@ -47,9 +47,6 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
 
         // Step2: notify the assertion is disabled/enabled, then Save buttons will be activated.
         notifyAssertionTreeNodeChanged();
-
-        // Step3: notify the assertion is disabled/enabled, then validate the policy.
-        notifyPolicyValidation();
     }
 
     /**
@@ -108,26 +105,6 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
 
         if (node instanceof AssertionTreeNode) {
             policyTreeModel.assertionTreeNodeChanged((AssertionTreeNode)node);
-        }
-    }
-
-    /**
-     *  Notify the validator to validate the policy after there are some changes on the disable/enable status of some assertions.
-     */
-    private void notifyPolicyValidation() {
-        WorkSpacePanel currentWorkSpace = TopComponents.getInstance().getCurrentWorkspace();
-        final JComponent currentPanel = currentWorkSpace.getComponent();
-        if(currentPanel == null || !(currentPanel instanceof PolicyEditorPanel)) {
-            logger.warning("Internal error: current workspace is not a PolicyEditorPanel instance");
-        } else {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    // The reason of not using full validatition is because it would cause lots of overhead for connecting
-                    // the server, when user disables and enables assertions back and forth before the finalization.
-                    // After user finalizes the policy modification, press Validate or Save buttons to make a full validation. 
-                    ((PolicyEditorPanel)currentPanel).validatePolicy();
-                }
-            });
         }
     }
 }

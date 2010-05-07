@@ -178,6 +178,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             protected void performAction() {
                 node = lastAssertionNode;
                 nodes = lastAssertionNodes;
@@ -186,6 +187,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
                 final JTree tree = assertionTree;
                 if (treePaths != null && tree!=null) {
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             tree.setSelectionPaths(treePaths);
                         }
@@ -203,6 +205,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             protected void performAction() {
                 node = lastAssertionNode;
                 nodes = lastAssertionNodes;
@@ -211,6 +214,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
                 final JTree tree = assertionTree;
                 if (treePaths != null && tree!=null) {
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             tree.setSelectionPaths(treePaths);
                         }
@@ -228,6 +232,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             protected void performAction() {
                 this.paletteNode = lastPaletteNode;
                 this.assertionNode = lastAssertionNode;
@@ -249,6 +254,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             /**
              * Invoked when an action occurs.
              */
+            @Override
             protected void performAction() {
                 this.node = lastAssertionNode;
                 this.nodes = lastAssertionNodes;
@@ -266,16 +272,17 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
      */
     private DisableOrEnableAssertionAction getDisableOrEnableAssertionAction() {
         // Check if the action is available or not.
-        if ((lastAssertionNode == null) ||
-            (lastAssertionNode.isDescendantOfInclude(false)) ||
-            (assertionTree != null && assertionTree.getSelectionCount() == 0)) {
-            return null;
+        if ( !canEnableDisable() ) {
+            DisableAssertionAction disableAssertionAction = new DisableAssertionAction(null);
+            disableAssertionAction.setEnabled( false );
+            return disableAssertionAction;
         }
 
         // Create a new action every time, since the disable/enable status may be always changed.
         //noinspection UnnecessaryLocalVariable
         DisableOrEnableAssertionAction enableOrDisableAction = (lastAssertionNode.asAssertion().isEnabled())?
             new DisableAssertionAction(lastAssertionNode) {
+                @Override
                 public void performAction() {
                     super.performAction();
                     updateActions();
@@ -283,6 +290,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             }
             :
             new EnableAssertionAction(lastAssertionNode) {
+                @Override
                 public void performAction() {
                     super.performAction();
                     updateActions();
@@ -365,7 +373,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveDownAction().setEnabled(canUpdate && canMoveDown(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveUpAction().setEnabled(canUpdate && canMoveUp(lastAssertionNode, lastAssertionNodes));
-            enableOrDisableButton.setEnabled(canUpdate);
+            enableOrDisableButton.setEnabled(canUpdate && canEnableDisable() );
             expandOrCollapseButton.setEnabled(getExpandedOrCollapsedNode().getChildCount() > 0);
         }
         if (validPNode) {
@@ -392,6 +400,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
     private TreeSelectionListener
       assertionPaletteListener = new TreeSelectionListener() {
+          @Override
           public void valueChanged(TreeSelectionEvent e) {
               try {
                   TreePath path = e.getNewLeadSelectionPath();
@@ -408,11 +417,13 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
       };
 
     private FocusListener assertionPaletteFocusListener = new FocusAdapter() {
+        @Override
         public void focusLost(FocusEvent e) {
             lastPaletteNode = null;
             updateActions();
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
             TreePath path = assertionPalette.getSelectionPath();
             if (path == null) {
@@ -426,6 +437,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
     private TreeSelectionListener
       policyTreeListener = new TreeSelectionListener() {
+          @Override
           public void valueChanged(TreeSelectionEvent e) {
               TreePath path = e.getNewLeadSelectionPath();
               if (path == null) {
@@ -443,14 +455,17 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
     private TreeModelListener
       policyTreeModelListener = new TreeModelListener() {
+          @Override
           public void treeNodesChanged(TreeModelEvent e) {
               updateActions();
           }
 
+          @Override
           public void treeNodesInserted(TreeModelEvent e) {
               updateActions();
           }
 
+          @Override
           public void treeNodesRemoved(TreeModelEvent e) {
               final Object[] children = e.getChildren();
               for (Object o : children) {
@@ -462,6 +477,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
               }
           }
 
+          @Override
           public void treeStructureChanged(TreeModelEvent e) {
               lastAssertionNode = null;
               lastAssertionNodes = null;
@@ -505,6 +521,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
      *
      * @param e describing the connection event
      */
+    @Override
     public void onLogon(LogonEvent e) {
     }
 
@@ -513,9 +530,11 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
      *
      * @param e describing the dosconnect event
      */
+    @Override
     public void onLogoff(LogonEvent e) {
 
         Runnable r = new Runnable() {
+            @Override
             public void run() {
                 log.fine("Policy Toolbar disconnect - disabling actions");
                 disableAll();
@@ -579,5 +598,13 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         }
 
         return move;
+    }
+
+    private boolean canEnableDisable() {
+        return
+            lastAssertionNode != null &&
+            !lastAssertionNode.isDescendantOfInclude(false) &&
+            assertionTree != null &&
+            assertionTree.getSelectionCount() > 0;        
     }
 }
