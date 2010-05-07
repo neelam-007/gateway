@@ -20,22 +20,13 @@ public class InformationDialog extends JDialog {
     private JLabel msgLabel;
     private boolean specialKeyDisposed = false;
     private boolean firstKeyEvent = true;
-    private final static long defaultDisplayTime = 1000 * 2;
 
     public InformationDialog(String msg){
-        this(msg, 0, false, defaultDisplayTime);
-    }
-
-    public InformationDialog(String msg, long maxDisplayTime){
-        this(msg, 0, false, maxDisplayTime);
+        this(msg, 0, false);
     }
 
     public InformationDialog(String msg, final int specialKey){
-        this(msg, specialKey, false, defaultDisplayTime);
-    }
-
-    public InformationDialog(String msg, final int specialKey, final boolean requiresMask){
-        this(msg, specialKey, requiresMask, defaultDisplayTime);
+        this(msg, specialKey, false);
     }
 
     /**
@@ -46,9 +37,8 @@ public class InformationDialog extends JDialog {
      * @param specialKey   int if the key with this code is used to dispose the dialog, then isSpecialKeyDisposed() will
      *                     return true
      * @param requiresMask boolean, true if the specialKey requires a mask to make it's key code e.g. Shift + F3
-     * @param maxDisplayTime long max time the dialog will be displayed for
      */
-    public InformationDialog(final String msg, final int specialKey, final boolean requiresMask, final long maxDisplayTime) {
+    public InformationDialog(final String msg, final int specialKey, final boolean requiresMask) {
         //by setting the parent, the dialog will not be show it's own task bar button
         super(TopComponents.getInstance().getTopParent());
         
@@ -56,8 +46,6 @@ public class InformationDialog extends JDialog {
         contentPane.setBackground(new Color(0xFF, 0xFF, 0xe1));
         msgLabel.setText(msg);
         setUndecorated(true);
-        Utilities.setEscKeyStrokeDisposes(this);
-
         final KeyAdapter adapter = new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -70,22 +58,27 @@ public class InformationDialog extends JDialog {
             }
 
             private void processEvent(KeyEvent e) {
-                if (e.getKeyCode() == specialKey) {
+                if (e.getKeyCode() == specialKey && !requiresMask) {
+                    specialKeyDisposed = true;
+                } else if( e.getKeyCode() == specialKey && !firstKeyEvent){
                     specialKeyDisposed = true;
                 }
 
                 if (firstKeyEvent && requiresMask) {
                     firstKeyEvent = false;
+                    if(e.getModifiers() == 0){
+                        //if the first key was not a modifier (e.g. shift / ctrl) don't need to wait for the second key
+                        dispose();
+                    }
                 } else {
                     dispose();
                 }
             }
         };
 
-        JLayeredPane layeredPane = getLayeredPane();
-        layeredPane.addKeyListener(adapter);
+        this.addKeyListener(adapter);
 
-        layeredPane.addFocusListener(new FocusListener() {
+        this.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
                 //nothing to do
@@ -97,30 +90,12 @@ public class InformationDialog extends JDialog {
             }
         });
 
-        layeredPane.addMouseListener(new MouseAdapter() {
+        this.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 dispose();
             }
         });
-
-        final InformationDialog thisDialog = this;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(maxDisplayTime);
-                } catch (InterruptedException e) {
-                    dispose();
-                }
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        thisDialog.dispose();
-                    }
-                });
-            }
-        }).start();
     }
 
     public boolean isSpecialKeyDisposed() {

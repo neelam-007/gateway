@@ -438,7 +438,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             public void actionPerformed(ActionEvent e) {
                 DialogDisplayer.showInputDialog(policyTree,
                         "Enter Assertion Number: ",
-                        "Goto Assertion",
+                        "Go to Assertion",
                         JOptionPane.INFORMATION_MESSAGE,
                         null, null, null,
                         new DialogDisplayer.InputListener() {

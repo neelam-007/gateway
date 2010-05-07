@@ -183,7 +183,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             foundNode = findTreeNode(root, indexPath);
         } catch (OrdinalIndexOutOfRangeException e) {
             //show for 4 seconds as the messages are longer
-            InformationDialog iDialog = new InformationDialog(e.getMessage(), 1000 * 4L);
+            InformationDialog iDialog = new InformationDialog(e.getMessage());
             MainWindow.showInformationDialog(iDialog, null);
             foundNode = e.getNodeToGoto();
             if(foundNode == root){
@@ -194,7 +194,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (foundNode == null) {
             //this should only happen with an empty policy
             //show for 4 seconds as the messages are longer
-            InformationDialog iDialog = new InformationDialog("Assertion #" + stringOrdinal + " not found.", 1000 * 4L);
+            InformationDialog iDialog = new InformationDialog("Assertion #" + stringOrdinal + " not found.");
             MainWindow.showInformationDialog(iDialog, null);
             return;
         }
@@ -237,11 +237,19 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     private Pair<AssertionTreeNode, AssertionTreeNode> findTreeNode(final AssertionTreeNode treeNode, final int assertionOrdinal) throws OrdinalIndexOutOfRangeException{
 
-        if(assertionOrdinal < Assertion.MIN_DISPLAYED_ORDINAL)
+        if(assertionOrdinal < Assertion.MIN_DISPLAYED_ORDINAL){
+            final String assertionNumberToGoTo;
+            if(treeNode.getParent() == null){//this is the root node
+                assertionNumberToGoTo = String.valueOf(Assertion.MIN_DISPLAYED_ORDINAL);
+            }else{
+                assertionNumberToGoTo = AssertionTreeNode.getVirtualOrdinalString(treeNode);
+            }
+
             throw new OrdinalIndexOutOfRangeException(
                     "Invalid assertion number." +
                             " Each number must be >= " + Assertion.MIN_DISPLAYED_ORDINAL+". Going to assertion #" +
-                    AssertionTreeNode.getVirtualOrdinalString(treeNode), treeNode);
+                    assertionNumberToGoTo, treeNode);
+        }
 
         AssertionTreeNode lastFoundNode = treeNode;
         for(int i = 0; i < treeNode.getChildCount(); i++){
