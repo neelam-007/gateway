@@ -5,6 +5,8 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -13,21 +15,35 @@ import java.util.Collections;
 import java.awt.*;
 
 /**
- * Provide own implementation of a editable searching combo box.
- * It would basically dynamically update the list of options in the combo box based on the characters being typed
- * in the search textfield area.
+ * Editable search combo box. As the user types a dynamic pop up shows all matching items.
  *
- * Implementation tried to be generic as much as possible so that it can be used for other purposes, but may be constrained
- * to AbstractTreeNodes because of the first implementation attempt.
+ * actionPerformed has been enhanced to only fire ActionEvents when it is known that a user has made a valid selection.
+ * This means some ActionEvents are ignored. This is due to the JComboBox being a compound component and can cause multiple
+ * events to be fired for a single user action. However in some circumstances an event may be fired more than once.
  *
  * @author dlee
  * @author darmstrong
  */
-public class EditableSearchComboBox extends JComboBox {
+public class EditableSearchComboBox<T> extends JComboBox {
     private final FilterableComboBoxModel model;
-    private final SearchFieldEditor editor;
+    private final SearchFieldEditor<T> editor;
     private final static int startIndex = -1;
     private int searchResultsIndexer = startIndex;
+    private long lastEvent = System.currentTimeMillis();
+    private List<ActionListener> actionListeners = new ArrayList<ActionListener>();
+
+    /**
+     * popUpCancelled informs us to ignore the ActionEvent caused by the pop up menu being cancelled. This happens
+     * when the User chooses nothing by clicking out side of the menu pop up. In this case take no action
+     * note: the selectedItem will be what ever the last element the mouse went over was
+     */
+    private boolean popUpCancelled = false;
+
+    /**
+     * ignoreWhen is used to know when to ignore the built in delay of 1 second between events. This is set when the
+     * user types so that we can support a fast typer typing a search term and pressing enter.
+     */
+    private boolean ignoreWhen = false;
 
     /**
      * Default constructor which will provide no list of search items.
@@ -35,11 +51,62 @@ public class EditableSearchComboBox extends JComboBox {
      */
     public EditableSearchComboBox(final Filter filter) {
         model = new FilterableComboBoxModel(filter);
-        editor = new SearchFieldEditor();
+        editor = new SearchFieldEditor<T>();
 
         setModel(model);
         setEditor(editor);
         setEditable(true);
+
+        super.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if ((e.getActionCommand().equals("comboBoxChanged") && e.getModifiers() > 0) ||
+                        (e.getActionCommand().equals("comboBoxEdited") && e.getModifiers() == 0)) {
+
+                    final boolean actionFromFocusEvent = e.getActionCommand().equals("comboBoxChanged") &&
+                            EditableSearchComboBox.this.getSelectedItem() == null;
+
+                    //A JComboBox is a compound component and a single user action may cause several actionPerformed events
+                    //as a result we will ignore any events which occur with 1 second of the previous event
+                    final long eventTime = e.getWhen();
+
+                    final long difference = eventTime - lastEvent;
+                    if (!actionFromFocusEvent &&
+                            (difference > 1000 || ignoreWhen) &&
+                            !"".equals(filter.getFilterText()) &&
+                            !popUpCancelled) {
+                        for (ActionListener actList : actionListeners) {
+                            actList.actionPerformed(e);
+                        }
+                    }
+
+                    lastEvent = eventTime;
+                    popUpCancelled = false;
+                    ignoreWhen = false;
+                }
+            }
+        });
+
+        this.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                popUpCancelled = true;
+            }
+        });
+    }
+
+    /**
+     * Get the actual object which the user selected via it's textual representation in the combo box
+     * @return
+     */
+    public T getSelectedObject() {
+        return editor.selectedObject;
     }
 
     /**
@@ -47,13 +114,24 @@ public class EditableSearchComboBox extends JComboBox {
      * @param searchableItems   The default list of searchable items
      * @param filter Filter contains the filtering logic
      */
-    public EditableSearchComboBox(final List searchableItems, final Filter filter) {
+    public EditableSearchComboBox(final List<T> searchableItems, final Filter filter) {
         this(filter);
         updateSearchableItems(searchableItems);
     }
 
     public void addTextFieldKeyListener(KeyListener listener){
         editor.addKeyListener(listener);
+    }
+
+    /**
+     * Overridden to manage it's own set of listeners which will get notified of higher level events than the
+     * ActionPerformed events. This allows clients of this class to not have to work out which events it should ignore.
+     *
+     * @param l ActionListener to add
+     */
+    @Override
+    public void addActionListener(ActionListener l) {
+        actionListeners.add(l);
     }
 
     /**
@@ -83,7 +161,7 @@ public class EditableSearchComboBox extends JComboBox {
         return model.getElementAt(searchResultsIndexer);
     }
 
-    public Object getPreviousAssertionOrdinal(){
+    public Object getPreviousSearchResult(){
         if(model.getSize() < 1) return null;
 
         okToLoopForward = false;
@@ -114,7 +192,7 @@ public class EditableSearchComboBox extends JComboBox {
      * Updates the list of searchable items with this one. 
      * @param searchableItems   The list of searchable items to be used as part of the look up list.
      */
-    public void updateSearchableItems(List searchableItems) {
+    public void updateSearchableItems(List<T> searchableItems) {
         model.updateSearchableItems(searchableItems);
     }
 
@@ -127,7 +205,7 @@ public class EditableSearchComboBox extends JComboBox {
      * Sets the comparator that will be used to sort the filtered items.
      * @param comparator    The comparator used for sorting
      */
-    public void setComparator(Comparator comparator) {
+    public void setComparator(Comparator<T> comparator) {
         model.setComparator(comparator);
     }
 
@@ -144,15 +222,16 @@ public class EditableSearchComboBox extends JComboBox {
      * The model implementation that will model the editable search combo box.
      */
     public class FilterableComboBoxModel extends AbstractListModel implements MutableComboBoxModel {
-        private List items;
-        private List filteredItems;
+        private List<T> items;
+        private List<T> filteredItems;
         private Object selectedItem;
         private final Filter filter;
-        private Comparator comparator;
+        private Comparator<T> comparator;
+        private String modelItemsClass;
 
         public FilterableComboBoxModel(final Filter filter) {
-            items = new ArrayList();
-            filteredItems = new ArrayList();
+            items = new ArrayList<T>();
+            filteredItems = new ArrayList<T>();
             this.filter = filter;
         }
 
@@ -160,10 +239,11 @@ public class EditableSearchComboBox extends JComboBox {
         public void addElement(Object obj) {
             if(obj == null) return;
             
-            items.add(obj);
+            items.add((T) obj);
             updateFilteredItems();
         }
 
+        @SuppressWarnings({"SuspiciousMethodCalls"})
         @Override
         public void removeElement(Object obj) {
             items.remove(obj);
@@ -178,7 +258,7 @@ public class EditableSearchComboBox extends JComboBox {
 
         @Override
         public void insertElementAt(Object obj, int index) {
-            //TODO: Provide implementation body
+            throw new UnsupportedOperationException("insertElementAt is not supported");
         }
 
         @Override
@@ -223,9 +303,13 @@ public class EditableSearchComboBox extends JComboBox {
          * Update the list of searchable items
          * @param searchableItems   The new updated searchable item list
          */
-        public void updateSearchableItems(List searchableItems) {
+        public void updateSearchableItems(List<T> searchableItems) {
             items.clear();
             items.addAll(searchableItems);
+            if(searchableItems.size() > 0){
+                final Object t = searchableItems.get(0);
+                modelItemsClass = t.getClass().getName();
+            }
             updateFilteredItems();
         }
 
@@ -248,7 +332,7 @@ public class EditableSearchComboBox extends JComboBox {
 
             //if there is no filter, then there are no search results
             if (!"".equals(filter.getFilterText())) {
-                for (Object obj : items) {
+                for (T obj : items) {
                     if (filter.accept(obj)) {
                         filteredItems.add(obj);
                     }
@@ -262,7 +346,7 @@ public class EditableSearchComboBox extends JComboBox {
             }
         }
 
-        public void setComparator(Comparator comparator) {
+        public void setComparator(Comparator<T> comparator) {
             this.comparator = comparator;
         }
 
@@ -274,14 +358,12 @@ public class EditableSearchComboBox extends JComboBox {
     /**
      *  The text editor field which will be listened for search characters to filter the items.
      */
-    public class SearchFieldEditor extends JTextField implements ComboBoxEditor, DocumentListener {
-        private AssertionTreeNode selectedNode;
+    public class SearchFieldEditor<T> extends JTextField implements ComboBoxEditor, DocumentListener {
+        private T selectedObject;
         private volatile boolean isFiltering = false;
         private volatile boolean isSetting = false;
 
-
         public SearchFieldEditor() {
-
             getDocument().addDocumentListener(this);
             addFocusListener(new FocusListener() {
                 @Override
@@ -301,38 +383,36 @@ public class EditableSearchComboBox extends JComboBox {
             });
         }
 
-        public SearchFieldEditor(int cols) {
-            setColumns(cols);
-        }
-
         @Override
         public Component getEditorComponent() {
             return this;
         }
 
+        /**
+         * setItem is called every time the user uses either the mouse keys to move through the drop down list or
+         * if an item is clicked on with the mouse
+         *
+         * @param anObject
+         */
         @Override
         public void setItem(Object anObject) {
             if(isFiltering) return;
 
             isSetting = true;
-
             //anObject comes directly from 'getSelectedItem' on the combo box. anObject is null, when nothing
             //is selected. Therefore we do not want to set "" as the text when anObject is null. We simply will do
             //nothing, which will leave any text previously entered in the text field.
             if (anObject != null) {
-                if(anObject instanceof AssertionTreeNode){
-                    //do not set the text of the text field. This overwrites what the user has typed
-                    //and causes various bugs where going back into the text field populates it with a previous selection
-                    selectedNode = (AssertionTreeNode) anObject;
-                } else{
-                    setText(anObject.toString());
+                //do not set the text of the text field. This overwrites what the user has typed
+                //and causes various bugs where going back into the text field populates it with a previous selection
+                if(model.modelItemsClass != null){
+                    final String anObjectType = anObject.getClass().getName();
+                    if(anObjectType.equals(model.modelItemsClass)){
+                        selectedObject = (T) anObject;
+                    }
                 }
             }
             isSetting = false;
-        }
-
-        public AssertionTreeNode getSelectedNode() {
-            return selectedNode;
         }
 
         @Override
@@ -346,11 +426,13 @@ public class EditableSearchComboBox extends JComboBox {
         @Override
         public void insertUpdate(DocumentEvent e) {
             filterItems(true);
+            ignoreWhen = true;
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
             filterItems(true);
+            ignoreWhen = true;
         }
 
         /**
@@ -362,17 +444,17 @@ public class EditableSearchComboBox extends JComboBox {
 
             isFiltering = true;
             //reset the selected node, as if we are filtering it no longer applies
-            selectedNode = null;
+            selectedObject = null;
             
-            ((FilterableComboBoxModel) getModel()).setSearchText(getText());
+            model.setSearchText(getText());
 
             //refresh the drop down list
             setPopupVisible(false);
 
             //only show drop down list when there are filtered items available to be displayed
-            boolean hasSearchableItems = ((FilterableComboBoxModel) getModel()).getSearchableItemsCount() > 0;
+            boolean hasSearchableItems = model.getSearchableItemsCount() > 0;
             if (hasSearchableItems) {
-                if (getModel().getSize() > 0) {
+                if (model.getSize() > 0) {
                     setPopupVisible(showPopUp);
                     setBackground(Color.white);
                 } else {

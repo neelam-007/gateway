@@ -527,19 +527,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         containerPanel.getActionMap().put(MainWindow.L7_F3, f3Action);
         containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
 
-        searchForm.addEnterListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if(e.getKeyCode() == KeyEvent.VK_ENTER){
-                    //user has pressed enter. Search results are now reset.
-                    searchForm.resetSearchIndex();
-                    f3Action.actionPerformed(new ActionEvent(this,
-                            ActionEvent.ACTION_PERFORMED,
-                            MainWindow.L7_F3));
-                }
-            }
-        });
-        
         if(topComponents.isApplet()){
             //todo fix this applet hack once it's understood why the keyboard short cuts are not working
             policyTree.addKeyListener(new KeyAdapter() {
@@ -723,14 +710,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private void setEditorListeners() {
         subject.addPropertyChangeListener(policyPropertyChangeListener);
-        addListener(ServicesAndPoliciesTree.NAME);
-        addListener(PolicyTree.NAME);
+        addListener(ServicesAndPoliciesTree.NAME, treeModelListener);
+        addListener(PolicyTree.NAME, treeModelListener);
+        addListener(PolicyTree.NAME, policyTreeModelListener);
     }
 
-    private void addListener(final String treeComponentName) {
+    private void addListener(final String treeComponentName, final TreeModelListener treeModelListernToAdd) {
         JTree tree = (JTree)topComponents.getComponent(treeComponentName);
         if (tree == null) throw new IllegalStateException("Internal error - (could not get tree component)");
-        tree.getModel().addTreeModelListener(treeModelListener);
+        tree.getModel().addTreeModelListener(treeModelListernToAdd);
     }
 
     private JComponent getMessagePane() {
@@ -1445,9 +1433,32 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     };
 
+    // listener for policy tree changes
+    final TreeModelListener policyTreeModelListener = new TreeModelListener() {
+        @Override
+        public void treeNodesChanged(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
+        }
+
+        @Override
+        public void treeNodesInserted(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
+        }
+
+        @Override
+        public void treeNodesRemoved(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
+        }
+
+        @Override
+        public void treeStructureChanged(TreeModelEvent e) {
+            searchForm.setPolicyTree(policyTree);
+        }
+    };
+
 
     // listener for policy tree changes
-    TreeModelListener treeModelListener = new TreeModelListener() {
+    final TreeModelListener treeModelListener = new TreeModelListener() {
         @Override
         public void treeNodesChanged(TreeModelEvent e) {
             searchForm.setPolicyTree(policyTree);

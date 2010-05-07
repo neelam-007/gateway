@@ -30,9 +30,11 @@ import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 
 import javax.security.auth.login.LoginException;
@@ -192,7 +194,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JPanel mainSplitPaneRight = null;
     private JTabbedPane paletteTabbedPane;
 
-    private EditableSearchComboBox searchComboBox;
+    private EditableSearchComboBox<EntityHeaderNode> searchComboBox;
     private final JLabel searchLabel = new JLabel("Search");
 
     public static final String TITLE = "SSG Management Console";
@@ -1774,6 +1776,29 @@ public class MainWindow extends JFrame implements SheetHolder {
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         servicesTreeModel.setRoot(rootNode);
         getServicesAndPoliciesTree().setModel(servicesTreeModel);
+        servicesTreeModel.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+                getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+                getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
+            }
+        });
+        getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
+        
         getServicesAndPoliciesTree().setShowsRootHandles(true);
         getServicesAndPoliciesTree().setRootVisible(true);
 
@@ -2428,7 +2453,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         servicesAndPoliciesTreePanel.add(searchPanel, BorderLayout.NORTH);
         servicesAndPoliciesTreePanel.add(serviceScroller, BorderLayout.CENTER);
         servicesAndPoliciesTreePanel.add(getFilterStatusLabel(), BorderLayout.SOUTH);
-        
+
+        final Action findAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getSearchComboBox().requestFocusInWindow();                
+            }
+        };
+
+        servicesAndPoliciesTreePanel.getActionMap().put(MainWindow.L7_FIND, findAction);
+
         verticalSplitPane.setBottomComponent(servicesAndPoliciesTreePanel);
 
         mainLeftPanel = new JPanel(new BorderLayout());
@@ -2441,20 +2475,29 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * @return  The initialized editable search combo box for service and policy tree panel.
      */
-    private EditableSearchComboBox getSearchComboBox() {
+    private EditableSearchComboBox<EntityHeaderNode> getSearchComboBox() {
         if (searchComboBox == null) {
-            searchComboBox = new EditableSearchComboBox(new EditableSearchComboBox.Filter() {
+            searchComboBox = new EditableSearchComboBox<EntityHeaderNode>(new EditableSearchComboBox.Filter() {
                 @Override
                 public boolean accept(Object obj) {
+                    if(obj == null) return false; //this should not happen
+
+                    if (!(obj instanceof EntityHeaderNode)) return false;
+                    EntityHeaderNode headerNode = (EntityHeaderNode) obj;
+
                     //match display names
-                    boolean matches = !(obj == null) && obj.toString().toLowerCase().startsWith(this.getFilterText().toLowerCase());
+                    final String searchText = this.getFilterText().toLowerCase();
+                    //getName contains the URI for service nodes
+                    boolean matches = headerNode.getName().toLowerCase().contains(searchText);
 
                     //match uri as well
                     if (obj instanceof ServiceNode) {
                         ServiceNode serviceNode = (ServiceNode) obj;
-                        String routingUri = serviceNode.getEntityHeader().getRoutingUri();
-                        if (routingUri != null) {
-                            matches = matches || routingUri.toLowerCase().startsWith(this.getFilterText().toLowerCase());
+                        final String routingUri = serviceNode.getEntityHeader().getRoutingUri();
+                        if (routingUri != null){
+                            if(searchText.startsWith("/")){
+                                matches = routingUri.contains(searchText.substring(1));
+                            }
                         }
                     }
 
@@ -2465,121 +2508,82 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.setEnabled(false);
             searchLabel.setEnabled(false);
 
-            //create list renderer
-            searchComboBox.setRenderer(new BasicComboBoxRenderer() {
+            final Functions.Unary<String, EntityHeaderNode> accessorFunction = new Functions.Unary<String, EntityHeaderNode>() {
                 @Override
-                public Component getListCellRendererComponent(JList list, Object value,  int index, boolean isSelected, boolean cellHasFocus) {
-                    AbstractTreeNode node = (AbstractTreeNode) value;
-                    if (isSelected) {
-                        setBackground(list.getSelectionBackground());
-                        setForeground(list.getSelectionForeground());
-                    } else {
-                        setBackground(list.getBackground());
-                        setForeground(list.getForeground());
-                    }
+                public String call(EntityHeaderNode abstractTreeNode) {
+                    return  abstractTreeNode.getName();
 
-                    // Based on value type, determine cell contents
-                    setIcon(new ImageIcon(node.getIcon()));
-                    setText(node.getName());
-                    return this;
                 }
-            });
+            };
+
+            final Functions.Unary<Icon, EntityHeaderNode> iconAccessorFunction = new Functions.Unary<Icon, EntityHeaderNode>() {
+                @Override
+                public Icon call(EntityHeaderNode abstractTreeNode) {
+                    return new ImageIcon(abstractTreeNode.getIcon());
+                }
+            };
+
+            //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
+            //and the jlabel will not grow to accommodate it, if it is larger thatn the size of the combo box component
+            TextListCellRenderer<EntityHeaderNode> comboBoxRenderer =
+                    new TextListCellRenderer<EntityHeaderNode>(accessorFunction, null, iconAccessorFunction, false);
+            comboBoxRenderer.setRenderClipped(true);
+
+            searchComboBox.setRenderer(comboBoxRenderer);
 
             //create comparator to sort the filtered items
-            searchComboBox.setComparator(new Comparator<Object>() {
+            searchComboBox.setComparator(new Comparator<EntityHeaderNode>() {
                 @Override
-                public int compare(Object o1, Object o2) {
+                public int compare(EntityHeaderNode o1, EntityHeaderNode o2) {
                     return (o1.toString().compareToIgnoreCase(o2.toString()));
                 }
             });
-
-            //update the searchable nodes when the search box area is focused
-            searchComboBox.getEditor().getEditorComponent().addFocusListener(new FocusListener() {
-                @Override
-                public void focusGained(FocusEvent e) {
-                    searchComboBox.updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
-                }
-
-                @Override
-                public void focusLost(FocusEvent e) {}
-            });
-
-            //do the same for the button of the combo box
-            for (Component component : searchComboBox.getComponents()) {
-                if (component instanceof JButton) {
-                    component.addFocusListener(new FocusListener() {
-                        @Override
-                        public void focusGained(FocusEvent e) {
-                            searchComboBox.updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
-                        }
-
-                        @Override
-                        public void focusLost(FocusEvent e) {}
-                    });
-                }
-            }
 
             //monitor the action if selection was made by mouse or keyboard.  We need to filter scrolling actions
             searchComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    //System.out.println(e.getActionCommand() + " " + e.getModifiers() + " selected Item:" + ((searchComboBox.getSelectedItem() !=null) ? searchComboBox.getSelectedItem().getClass(): " null"));
-
-                    //key board selection detection
-                    if (e.getActionCommand().equals("comboBoxEdited") && e.getModifiers() == 0) {
-                        //System.out.println("Key board selected -->" + searchComboBox.getSelectedItem() + " " + searchComboBox.getSelectedIndex());
                         invokeSelection();
-                    }
-
-                    //mouse selection detection
-                    if (e.getActionCommand().equals("comboBoxChanged") && e.getModifiers() > 0) {
-                        //System.out.println("mouse selected -->" + searchComboBox.getSelectedItem());
-                        invokeSelection();
-                    }
-                }
-
-                /**
-                 * Expands the tree accordingly based on the service or policy selection.  It will also invoke the editing
-                 * action so that the user can readily edit the service or policy.
-                 */
-                private void invokeSelection() {
-                    JTree tree = getServicesAndPoliciesTree();
-                    final AbstractTreeNode node = (AbstractTreeNode) searchComboBox.getSelectedItem();
-                    if (node == null) return;
-                    tree.setSelectionPath(new TreePath(node.getPath()));
-                    tree.makeVisible(new TreePath(node.getPath()));
-
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            //invoke the edit policy action
-                            for (Action action : node.getActions()) {
-                                if (action instanceof EditPolicyAction) {
-                                    ((EditPolicyAction) action).invoke();
-
-                                }
-                            }
-                        }
-                    });
                 }
             });
         }
+
         return searchComboBox;
+    }
+
+    /**
+     * Expands the tree accordingly based on the service or policy selection.  It will also invoke the editing
+     * action so that the user can readily edit the service or policy.
+     */
+    private void invokeSelection() {
+        JTree tree = getServicesAndPoliciesTree();
+        final AbstractTreeNode node = (AbstractTreeNode) searchComboBox.getSelectedItem();
+        if (node == null) return;
+        tree.setSelectionPath(new TreePath(node.getPath()));
+        tree.makeVisible(new TreePath(node.getPath()));
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                //invoke the edit policy action
+                for (Action action : node.getActions()) {
+                    if (action instanceof EditPolicyAction) {
+                        ((EditPolicyAction) action).invoke();
+                    }
+                }
+            }
+        });
     }
 
     /**
      * @return  The list of searchable service and policy nodes based on the filtering selection.
      */
-    private List<AbstractTreeNode> getAllSearchableServiceAndPolicyNodes() {
+    private List<EntityHeaderNode> getAllSearchableServiceAndPolicyNodes() {
         JTree tree = getServicesAndPoliciesTree();
         RootNode rootNode = (RootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
-        List<AbstractTreeNode> ret = new ArrayList<AbstractTreeNode>();
-        if (rootNode.isSearchable(filter))
-            ret.add(rootNode);
-        rootNode.collectSearchableChildren(ret, filter);        
-        return ret;
+        return (List<EntityHeaderNode>) rootNode.collectSearchableChildren(EntityHeaderNode.class, filter);
     }
 
     private JLabel getFilterStatusLabel(){

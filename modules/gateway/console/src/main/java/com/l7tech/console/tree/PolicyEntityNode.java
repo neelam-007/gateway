@@ -14,10 +14,7 @@ import com.l7tech.policy.PolicyType;
 import javax.swing.*;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /** @author alex */
 @SuppressWarnings( { "serial" } )
@@ -71,8 +68,9 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     }
 
     @Override
-    public void collectSearchableChildren(List<AbstractTreeNode> collect, NodeFilter filter) {
-        // No need to recurse any further
+    public List<? extends AbstractTreeNode> collectSearchableChildren(Class assignableFromClass, NodeFilter filter) {
+        // Has no searchable children; override to avoid forcing a pointless WSDL download and parse (Bug #6936)
+        return Collections.emptyList();
     }
 
     @Override

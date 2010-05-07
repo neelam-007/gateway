@@ -6,7 +6,6 @@ package com.l7tech.console.poleditor;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.EditableSearchComboBox;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ArrowIcon;
@@ -16,7 +15,6 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
@@ -26,7 +24,7 @@ public class SearchForm {
     private JButton nextButton;
     private JPanel searchPanel;
     private JLabel xLabel;
-    private EditableSearchComboBox searchComboBox;
+    private EditableSearchComboBox<AssertionTreeNode> searchComboBox;
     private JCheckBox caseSensitiveCheckBox;
     private JCheckBox includePropertiesCheckBox;
 
@@ -85,14 +83,7 @@ public class SearchForm {
         searchComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals("comboBoxEdited") && e.getModifiers() == 0) {
-                    invokeSelection();
-                }
-
-                //mouse selection detection
-                if (e.getActionCommand().equals("comboBoxChanged") && e.getModifiers() > 0) {
-                    invokeSelection();
-                }
+                invokeSelection();
             }
         });
 
@@ -124,10 +115,6 @@ public class SearchForm {
         includePropertiesCheckBox.addActionListener(checkBoxListener);
     }
 
-    public void addEnterListener(KeyListener listener){
-        searchComboBox.getEditor().getEditorComponent().addKeyListener(listener);        
-    }
-
     /**
      * Returns the next virtual ordinal from search results.
      * @return String, next ordinal. Will be null when no results or no more results
@@ -149,7 +136,7 @@ public class SearchForm {
      */
     public String getPreviousAssertionOrdinal(){
         String returnString = null;
-        Object result = searchComboBox.getPreviousAssertionOrdinal();
+        Object result = searchComboBox.getPreviousSearchResult();
         if(result instanceof AssertionTreeNode){
             AssertionTreeNode treeNode = (AssertionTreeNode) result;
             returnString =  AssertionTreeNode.getVirtualOrdinalString(treeNode);
@@ -170,14 +157,14 @@ public class SearchForm {
         if(!searchPanel.isVisible()) return;
 
         final Object root = policyTree.getModel().getRoot();
-        AbstractTreeNode rootNode = (AbstractTreeNode) root;
+        AssertionTreeNode rootNode = (AssertionTreeNode) root;
 
-        final List<AbstractTreeNode> allAssertions = collectNodes(rootNode);
+        final List<AssertionTreeNode> allAssertions = collectNodes(rootNode);
 
         setSearchableTreeNodes(allAssertions);
     }
 
-    public void setSearchableTreeNodes(List<AbstractTreeNode> allAssertions){
+    public void setSearchableTreeNodes(List<AssertionTreeNode> allAssertions){
         searchComboBox.updateSearchableItems(allAssertions);
     }
 
@@ -234,7 +221,7 @@ public class SearchForm {
             }
         };
 
-        searchComboBox = new EditableSearchComboBox(filter);
+        searchComboBox = new EditableSearchComboBox<AssertionTreeNode>(filter);
     }
 
     public JPanel getSearchPanel() {
@@ -248,6 +235,8 @@ public class SearchForm {
     public void hidePanel(){
         searchComboBox.clearSearch();
         searchPanel.setVisible(false);
+        //put focus into the policy tree
+        TopComponents.getInstance().getPolicyTree().requestFocusInWindow();
     }
 
     public void showPanel(final PolicyTree policyTree){
@@ -268,10 +257,15 @@ public class SearchForm {
      * Bring the user to the selected assertion
      */
     private void invokeSelection() {
-        final EditableSearchComboBox.SearchFieldEditor fieldEditor = (EditableSearchComboBox.SearchFieldEditor) searchComboBox.getEditor();
-        final AssertionTreeNode selectedNode = fieldEditor.getSelectedNode();
+        final AssertionTreeNode selectedNode = searchComboBox.getSelectedObject();
 
-        if(selectedNode == null) return;
+        if(selectedNode == null){
+            //user pressed 'enter' in the search box
+            resetSearchIndex();
+            TopComponents.getInstance().fireGlobalAction(MainWindow.L7_F3, this.searchPanel);
+            return;
+        }
+
         //user selected a specific result
         final String vOrdinal = AssertionTreeNode.getVirtualOrdinalString(selectedNode);
         PolicyTree policyTree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
@@ -279,12 +273,12 @@ public class SearchForm {
 
     }
 
-    private List<AbstractTreeNode> collectNodes(AbstractTreeNode node){
-        List<AbstractTreeNode> nodes = new ArrayList<AbstractTreeNode>();
+    private List<AssertionTreeNode> collectNodes(AssertionTreeNode node){
+        List<AssertionTreeNode> nodes = new ArrayList<AssertionTreeNode>();
         //dont add the current node here, don't want the root node added
         for(int i = 0; i < node.getChildCount(); i++){
-            nodes.add((AbstractTreeNode) node.getChildAt(i));//add the node here
-            nodes.addAll(collectNodes((AbstractTreeNode) node.getChildAt(i)));
+            nodes.add((AssertionTreeNode) node.getChildAt(i));//add the node here
+            nodes.addAll(collectNodes((AssertionTreeNode) node.getChildAt(i)));
         }
 
         return nodes;
