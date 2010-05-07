@@ -171,7 +171,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
 
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES, new String[] {
-                "Maximum number of cached policies loaded from URLs (Integer). Requires gateway restart.",
+                "Maximum number of cached policies loaded from URLs, 0 for no caching (Integer). Requires gateway restart.",
                 "100"
         });
         props.put(CPROP_XACML_POLICY_CACHE_MAX_AGE, new String[] {

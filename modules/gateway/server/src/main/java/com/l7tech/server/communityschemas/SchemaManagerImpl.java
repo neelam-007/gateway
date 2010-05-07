@@ -67,7 +67,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         CacheConfiguration(Config config) {
             maxCacheAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
-            maxCacheEntries = Math.max( 1, config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100) );
+            maxCacheEntries = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
             hardwareRecompileLatency = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
             hardwareRecompileMinAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
             hardwareRecompileMaxAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
@@ -173,7 +173,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                        Timer timer,
                        final TarariSchemaHandler tarariSchemaHandler ) {
         if (config == null || httpClientFactory == null) throw new NullPointerException();
-        this.config = config;
+        this.config = validated(config);
         this.httpClientFactory = httpClientFactory;
         this.tarariSchemaHandler = tarariSchemaHandler;
         this.cacheConfigurationReference = new AtomicReference<CacheConfiguration>();
@@ -1432,5 +1432,18 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             if (export != null) hardwareDisable(export, closing);
     }
 
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                return ServerConfig.getInstance().getClusterPropertyName( key );
+            }
+        } );
+
+        vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 0 );
+        vc.setMaximumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 1000000 );
+
+        return vc;
+    }
 }
 

@@ -8,10 +8,10 @@ package com.l7tech.server.url;
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
-import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_LATEST;
-import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_NEVER;
+import static com.l7tech.server.url.AbstractUrlObjectCache.*;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class HttpObjectCacheTest {
     private static class UserObj {
         final String blat;
 
-        public UserObj(String blat) {
+        private UserObj(String blat) {
             this.blat = blat;
         }
 
@@ -61,6 +61,7 @@ public class HttpObjectCacheTest {
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
             public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) {
                 return new UserObj(userObjStr);
             }
@@ -73,9 +74,11 @@ public class HttpObjectCacheTest {
                                                                    userObjStr.getBytes());
 
         GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
             public GenericHttpClient createHttpClient() {
                 return hc;
             }
+            @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return createHttpClient();
             }
@@ -145,6 +148,85 @@ public class HttpObjectCacheTest {
         assertTrue(result.getUserObject() != firstUo); // must have replaced the object
     }
 
+    @Test
+    public void testSingleThreadedNoCache() throws Exception {
+        final String userObjStr = "Howza!";
+        final UserObj userObj = new UserObj(userObjStr);
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) {
+                return new UserObj(userObjStr);
+            }
+        };
+
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes());
+
+        GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+        };
+
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(0,
+                        TEST_POLL_AGE,
+                        clientFactory,
+                        factory,
+                        WAIT_INITIAL,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
+        httpObjectCache.clock = clock;
+
+        final String url = "http://blat/";
+
+        // Make sure we include a last modified header, although we'll just send garbage
+        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                                                                                     "blarglebliff")}));
+
+        hc.clearResponseCount();
+        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(url, WAIT_NEVER);
+        assertTrue(hc.getResponseCount() == 1);
+        assertNotNull(result);
+        assertNull(result.getException());
+        final Object firstUo = result.getUserObject();
+        assertNotNull(firstUo);
+        assertEquals(userObj, firstUo);
+
+        // Try a fetch and ensure the HTTP client is contacted
+        result = httpObjectCache.fetchCached(url, WAIT_LATEST);
+        assertTrue(hc.getResponseCount() == 2);
+        assertNotNull(result);
+        assertNull(result.getException());
+        assertNotNull(result.getUserObject());
+        assertTrue(result.getUserObject() != firstUo);
+
+        // Try a fetch and ensure the HTTP client is contacted
+        result = httpObjectCache.fetchCached(url, WAIT_INITIAL);
+        assertTrue(hc.getResponseCount() == 3);
+        assertNotNull(result);
+        assertNull(result.getException());
+        assertNotNull(result.getUserObject());
+        assertTrue(result.getUserObject() != firstUo);
+
+        // Try a fetch and ensure the HTTP client is contacted
+        result = httpObjectCache.fetchCached(url, WAIT_NEVER);
+        assertTrue(hc.getResponseCount() == 4);
+        assertNotNull(result);
+        assertNull(result.getException());
+        assertNotNull(result.getUserObject());
+        assertTrue(result.getUserObject() != firstUo);
+    }
 
     /** Class that represents an execution context for the multithreaded test. */
     private static class TestThread implements Runnable {
@@ -163,7 +245,7 @@ public class HttpObjectCacheTest {
         private Throwable lastException = null;
         private Thread thread = null;
 
-        public TestThread(HttpObjectCache<UserObj> cache, String url, HttpObjectCache.WaitMode waitForNewestResult) {
+        private TestThread(HttpObjectCache<UserObj> cache, String url, HttpObjectCache.WaitMode waitForNewestResult) {
             this.httpObjectCache = cache;
             this.url = url;
             this.waitForNewestResult = waitForNewestResult;
@@ -183,6 +265,7 @@ public class HttpObjectCacheTest {
         }
 
         /** Called in test thread. */
+        @Override
         public void run() {
             try {
                 synchronized (this) {
@@ -284,15 +367,18 @@ public class HttpObjectCacheTest {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
             public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) {
                 return new UserObj(userObjStr);
             }
         };
 
         GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
             public GenericHttpClient createHttpClient() {
                 return hc;
             }
+            @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
                 return createHttpClient();
             }
@@ -313,14 +399,72 @@ public class HttpObjectCacheTest {
         TestThread t1 = new TestThread(httpObjectCache, url, WAIT_NEVER);
         TestThread t2 = new TestThread(httpObjectCache, url, WAIT_NEVER);
         try {
-            doTestMultiThreaded(t1, t2, hc, userObj);
+            doTestMultiThreaded(t1, t2, hc, userObj, true, 1);
         } finally {
             t1.close();
             t2.close();
         }
     }
 
-    private void doTestMultiThreaded(TestThread t1, TestThread t2, MockGenericHttpClient hc, UserObj userObj)
+    @BugNumber(8654)
+    @Test
+    public void testMultiThreadedNoCache() throws Exception {
+
+        final String userObjStr = "Howza!";
+        final UserObj userObj = new UserObj(userObjStr);
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes());
+        final String url = "http://blatty44/";
+
+        // Make sure we include a last modified header, although we'll just send garbage
+        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                                                                                     "blarglebliff")}));
+
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) {
+                return new UserObj(userObjStr);
+            }
+        };
+
+        GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+        };
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(0,
+                        TEST_POLL_AGE,
+                        clientFactory,
+                        factory,
+                        WAIT_INITIAL,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
+        httpObjectCache.clock = clock;
+
+        // Make two test threads
+        TestThread t1 = new TestThread(httpObjectCache, url, WAIT_NEVER);
+        TestThread t2 = new TestThread(httpObjectCache, url, WAIT_NEVER);
+        try {
+            doTestMultiThreaded(t1, t2, hc, userObj, false, 2);
+        } finally {
+            t1.close();
+            t2.close();
+        }
+    }
+
+
+    private void doTestMultiThreaded(TestThread t1, TestThread t2, MockGenericHttpClient hc, UserObj userObj, boolean checkDownloading, int expectedHitCount)
             throws Exception
     {
         // Block HTTP requests until released
@@ -336,19 +480,21 @@ public class HttpObjectCacheTest {
         assertTrue(t1.isWaiting());
         assertTrue(t1.getNumRequestsFinished() == 0);
 
-        // Thread 2 should immediately return DOWNLOADING_NOW, but without any cached info
-        t2.setWaitForNewestResult(WAIT_NEVER);
-        t2.startRequest();
-        t2.joinThread();
-        assertNull(t2.getLastException());
-        assertTrue(t2.getNumRequestsStarted() == 1);
-        assertFalse(t2.isWaiting());
-        assertTrue(t2.getNumRequestsFinished() == 1);
-        assertTrue(t2.getNumRequestsAsync() == 1);
-        HttpObjectCache.FetchResult t2fr = t2.getLastFetchResult();
-        assertNotNull(t2fr);
-        assertTrue(t2fr.getResult() == HttpObjectCache.RESULT_DOWNLOADING_NOW);
-        assertNull(t2fr.getUserObject());
+        if ( checkDownloading ) {
+            // Thread 2 should immediately return DOWNLOADING_NOW, but without any cached info
+            t2.setWaitForNewestResult(WAIT_NEVER);
+            t2.startRequest();
+            t2.joinThread();
+            assertNull(t2.getLastException());
+            assertTrue(t2.getNumRequestsStarted() == 1);
+            assertFalse(t2.isWaiting());
+            assertTrue(t2.getNumRequestsFinished() == 1);
+            assertTrue(t2.getNumRequestsAsync() == 1);
+            HttpObjectCache.FetchResult t2fr = t2.getLastFetchResult();
+            assertNotNull(t2fr);
+            assertTrue(t2fr.getResult() == HttpObjectCache.RESULT_DOWNLOADING_NOW);
+            assertNull(t2fr.getUserObject());
+        }
 
         // Now tell thread 2 to wait for complete info
         t2.setWaitForNewestResult(WAIT_LATEST);
@@ -356,10 +502,10 @@ public class HttpObjectCacheTest {
         Thread.sleep(POLL_DELAY); // this is to give the thread plenty of time to start
         clock.sleep(SHORT_DELAY, 0);  // this is to simulate time actually advancing by a smaller amount
         assertNull(t2.getLastException());
-        assertTrue(t2.getNumRequestsStarted() == 2);
+        assertTrue(t2.getNumRequestsStarted() == (checkDownloading ? 2 : 1));
         assertTrue(t2.isWaiting());
-        assertTrue(t2.getNumRequestsFinished() == 1);
-        assertTrue(t2.getNumRequestsAsync() == 1);
+        assertTrue(t2.getNumRequestsFinished() == (checkDownloading ? 1 : 0));
+        assertTrue(t2.getNumRequestsAsync() == (checkDownloading ? 1 : 0));
 
         // Unblock the download, and ensure both threads finish with the same up-to-date info
         hc.setHoldResponses(false);
@@ -371,20 +517,24 @@ public class HttpObjectCacheTest {
         assertFalse(t2.isWaiting());
         assertEquals(1, t1.getNumRequestsFinished());
         assertEquals(1, t1.getNumRequestsSuccess());
-        assertEquals(2, t2.getNumRequestsFinished());
+        assertEquals((checkDownloading ? 2 : 1), t2.getNumRequestsFinished());
         assertEquals(1, t2.getNumRequestsSuccess());
-        assertTrue(t2.getNumRequestsAsync() == 1);
+        assertTrue(t2.getNumRequestsAsync() == (checkDownloading ? 1 : 0));
         HttpObjectCache.FetchResult t1fr = t1.getLastFetchResult();
         assertNotNull(t1fr);
         assertTrue(t1fr.getResult() == HttpObjectCache.RESULT_DOWNLOAD_SUCCESS);
-        t2fr = t2.getLastFetchResult();
+        HttpObjectCache.FetchResult t2fr = t2.getLastFetchResult();
         assertTrue(t2fr.getResult() == HttpObjectCache.RESULT_DOWNLOAD_SUCCESS);
         assertEquals(userObj, t1fr.getUserObject());
         assertEquals(userObj, t2fr.getUserObject());
-        assertTrue(t1fr.getUserObject() == t2fr.getUserObject());
+        if ( checkDownloading ) {
+            assertTrue(t1fr.getUserObject() == t2fr.getUserObject());
+        } else { 
+            assertTrue(t1fr.getUserObject() != t2fr.getUserObject());
+        }
         assertTrue(userObj != t1fr.getUserObject());
 
         // Make sure the server was only hit by one of the threads
-        assertTrue(hc.getResponseCount() == 1);
+        assertEquals("Expected HTTP requests", expectedHitCount, hc.getResponseCount());
     }
 }

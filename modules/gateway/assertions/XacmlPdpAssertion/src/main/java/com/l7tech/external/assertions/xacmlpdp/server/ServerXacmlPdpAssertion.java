@@ -29,7 +29,10 @@ import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ValidatedConfig;
 import com.sun.xacml.Indenter;
 import com.sun.xacml.PDP;
 import com.sun.xacml.PDPConfig;
@@ -328,9 +331,10 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
+        Config config = validated( ServerConfig.getInstance() );
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
-                ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),
-                ServerConfig.getInstance().getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
+                config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),
+                config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
                 clientFactory,
                 cacheObjectFactory,
                 HttpObjectCache.WAIT_INITIAL,
@@ -338,6 +342,22 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         );
 
         return httpObjectCache;
+    }
+
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                return XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES.equals( key ) ?
+                        XacmlPdpAssertion.CPROP_XACML_POLICY_CACHE_MAX_ENTRIES :
+                        key;
+            }
+        } );
+
+        vc.setMinimumValue( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 0 );
+        vc.setMaximumValue( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 1000000 );
+
+        return vc;
     }
 
     private CurrentEnvModule envModule;

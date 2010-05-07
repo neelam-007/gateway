@@ -99,7 +99,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
         super(recheckAge, defaultWaitMode);
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
-        this.cache = new LRUMap(maxCachedObjects);
+        this.cache = maxCachedObjects <= 0 ? null : new LRUMap(maxCachedObjects);
         this.maxDownloadSizeProperty = maxDownloadSizeProperty;
         this.emergencyDownloadSize = emergencyDownloadSize;
 
@@ -115,31 +115,45 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     @SuppressWarnings({"unchecked"})
     @Override
     protected AbstractCacheEntry<UT> cacheGet(String url) {
-        synchronized( cache ) {
-            return (AbstractCacheEntry<UT>)cache.get(url);
+        if ( cache != null ) {
+            synchronized( cache ) {
+                return (AbstractCacheEntry<UT>)cache.get(url);
+            }
+        } else {
+            return null;
         }
     }
 
     @Override
     protected void cachePut(String url, AbstractCacheEntry<UT> cacheEntry) {
-        synchronized( cache ) {
-            cache.put(url, cacheEntry);
+        if ( cache != null ) {
+            synchronized( cache ) {
+                cache.put(url, cacheEntry);
+            }
         }
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     protected AbstractCacheEntry<UT> cacheRemove(String url) {
-        synchronized( cache ) {
-            return (AbstractCacheEntry<UT>)cache.remove(url);
+        if ( cache != null ) {
+            synchronized( cache ) {
+                return (AbstractCacheEntry<UT>)cache.remove(url);
+            }
+        } else {
+            return null;
         }
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     protected Iterator<AbstractCacheEntry<UT>> cacheIterator() {
-        synchronized( cache ) {
-            return new ArrayList<AbstractCacheEntry<UT>>(cache.values()).iterator();
+        if ( cache != null ) {
+            synchronized( cache ) {
+                return new ArrayList<AbstractCacheEntry<UT>>(cache.values()).iterator();
+            }
+        } else {
+            return null;
         }
     }
 

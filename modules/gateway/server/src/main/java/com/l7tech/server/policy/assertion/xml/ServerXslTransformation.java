@@ -32,9 +32,12 @@ import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ValidatedConfig;
 import com.l7tech.xml.*;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -186,13 +189,28 @@ public class ServerXslTransformation
             GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
             if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
+            Config config = validated( ServerConfig.getInstance() );
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
-                        ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                        ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
+                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
                         clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE);
 
             return httpObjectCache;
         }
+    }
+
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                return ServerConfig.getInstance().getClusterPropertyName( key );
+            }
+        } );
+
+        vc.setMinimumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 0 );
+        vc.setMaximumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 1000000 );
+
+        return vc;
     }
 
     @Override
