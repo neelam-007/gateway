@@ -1,6 +1,6 @@
 #!/bin/sh
 . /opt/SecureSpan/Appliance/libexec/envclean
 
-export OPTIONS="${JAVA_OPTS}"
+export OPTIONS="${JAVA_OPTS} -Dcom.l7tech.gateway.config.clearConsole=true"
 
 /opt/SecureSpan/Gateway/config/ssgconfig.sh "${@}"

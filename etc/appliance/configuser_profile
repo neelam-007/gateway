@@ -187,13 +187,17 @@ doConfiguration() {
                         clear;;
                     2)
                         clear;
+                        echo "Accessing configuration, please wait ..."
                         (${CONFWIZARD} wizard appliance-full);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
+                          clear
                           confirmedMessage "Node is already configured."
                         elif [ $STATUS -eq 3 ] ; then
+                          clear
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
+                          clear
                           confirmedMessage "Unexpected error in configuration service."
                         else
                           confirmedMessage ""
@@ -201,13 +205,17 @@ doConfiguration() {
                         clear;;
                     3)
                         clear;
+                        echo "Accessing configuration, please wait ..."
                         (${CONFWIZARD});
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
+                          clear
                           confirmedMessage "Node is already configured."
                         elif [ $STATUS -eq 3 ] ; then
+                          clear
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
+                          clear
                           confirmedMessage "Unexpected error in configuration service."
                         else
                           confirmedMessage ""
@@ -220,13 +228,17 @@ doConfiguration() {
                         clear;;
                     5)
                         clear;
+                        echo "Accessing configuration, please wait ..."
                         (${CONFWIZARD} wizard appliance-delete);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
+                          clear
                           confirmedMessage "Node is not yet configured."
                         elif [ $STATUS -eq 3 ] ; then
+                          clear
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
+                          clear
                           confirmedMessage "Unexpected error in configuration service."
                         else
                           confirmedMessage ""
@@ -234,13 +246,17 @@ doConfiguration() {
                         clear;;
                     6)
                         clear;
+                        echo "Accessing configuration, please wait ..."
                         (${CONFWIZARD} show);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
+                          clear
                           confirmedMessage "Node is not yet configured."
                         elif [ $STATUS -eq 3 ] ; then
+                          clear
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
+                          clear
                           confirmedMessage "Unexpected error in configuration service."
                         elif [ $STATUS -ne 0 ] ; then
                           confirmedMessage ""
@@ -248,13 +264,17 @@ doConfiguration() {
                         clear;;
                     7)
                         clear;
+                        echo "Accessing configuration, please wait ..."
                         (${CONFWIZARD} show status);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
+                          clear
                           confirmedMessage "Node is not yet configured."
                         elif [ $STATUS -eq 3 ] ; then
+                          clear
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
+                          clear
                           confirmedMessage "Unexpected error in status service."
                         elif [ $STATUS -eq 21 ] || [ $STATUS -eq 22 ] ; then
                             doNodeLifecycle $STATUS

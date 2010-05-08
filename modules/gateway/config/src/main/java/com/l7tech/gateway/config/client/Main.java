@@ -20,8 +20,10 @@ import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.objectmodel.FindException;
 
+import java.io.Console;
 import java.io.IOException;
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
@@ -90,6 +92,7 @@ public class Main {
                             }
                         }
 
+                        clearConsole();
                         ConfigurationClient client = new ConfigurationClient( provider, os, command );
                         if ( client.doInteraction() ) {
                             success = true;
@@ -231,6 +234,17 @@ public class Main {
         }
 
         return type;
+    }
+
+    private static void clearConsole() {
+        final Console console = System.console();
+        if ( console != null &&
+             SyspropUtil.getBoolean( "com.l7tech.gateway.config.clearConsole", false ) &&
+             SyspropUtil.getString( "os.name", "Unknown" ).startsWith( "Linux" ) ) {
+            final PrintWriter writer = console.writer();
+            writer.write( "\u001b[2J\u001b[H" );
+            writer.flush();
+        }
     }
 
     private static final ConfigurationType[] configurationTypes = {
