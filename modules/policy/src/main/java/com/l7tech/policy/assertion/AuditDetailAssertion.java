@@ -1,13 +1,14 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.variable.Syntax;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.variable.Syntax;
 
 import java.util.logging.Level;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Allows administrator to add audit details to the audit context of a message. Detail record
@@ -22,6 +23,8 @@ import java.util.logging.Level;
 public class AuditDetailAssertion extends Assertion implements UsesVariables {
     private String level = Level.INFO.toString();
     private String detail;
+    private boolean loggingOnly = false;
+    private String customLoggerSuffix = null;
 
     public AuditDetailAssertion() {
     }
@@ -44,6 +47,38 @@ public class AuditDetailAssertion extends Assertion implements UsesVariables {
 
     public void setDetail(String detail) {
         this.detail = detail;
+    }
+
+    /**
+     * @return  true if this details message is to be sent immediately to the log sinks, bypassing the audit subsystem.
+     */
+    public boolean isLoggingOnly() {
+        return loggingOnly;
+    }
+
+    /**
+     * @param loggingOnly  true if this detail message should be sent immediately to the log sinks, bypassing the audit subsystem.
+     */
+    public void setLoggingOnly(boolean loggingOnly) {
+        this.loggingOnly = loggingOnly;
+    }
+
+    /**
+     * @return suffix for custom logger name, or null if custom logger is disabled.
+     */
+    public String getCustomLoggerSuffix() {
+        return customLoggerSuffix;
+    }
+
+    /**
+     * A custom suffix to use for a custom logger name, or null to use the default logger name.
+     * <p/>
+     * The custom logger prefix is always "com.l7tech.log.custom.".
+     *
+     * @param customLoggerSuffix suffix for custom logger name, or null to disable use of a custom logger name.
+     */
+    public void setCustomLoggerSuffix(String customLoggerSuffix) {
+        this.customLoggerSuffix = customLoggerSuffix;
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
