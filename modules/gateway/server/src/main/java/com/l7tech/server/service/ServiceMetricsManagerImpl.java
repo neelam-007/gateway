@@ -663,20 +663,28 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     }
 
     private String describe( final Long providerOid, final String userId ) {
-        String description;
+        String description = null;
 
         try {
-            IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
-            User user = provider.getUserManager().findByPrimaryKey( userId );
-            description = getUserDesription(user) + " [" + provider.getConfig().getName() + "]";
-        } catch ( FindException fe ) {
+            final IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
+            if ( provider != null ) {
+                final User user = provider.getUserManager().findByPrimaryKey( userId );
+                description =
+                        (user==null ? userId : getUserDescription(user)) +
+                        " [" + provider.getConfig().getName() + "]";
+            }
+        } catch ( Exception fe ) {
+            _logger.log( Level.WARNING, "Error accessing user details.", fe );
+        }
+
+        if ( description == null ) {
             description = userId + " [#" + providerOid + "]";
         }
 
         return description;
     }
 
-    private String getUserDesription( final User user ) {
+    private String getUserDescription( final User user ) {
         String userName = user.getLogin();
         if (userName == null || "".equals(userName)) userName = user.getName();
         if (userName == null || "".equals(userName)) userName = user.getId();

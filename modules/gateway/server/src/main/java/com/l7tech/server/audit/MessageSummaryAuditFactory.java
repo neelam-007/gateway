@@ -315,24 +315,32 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
     }
 
     private String describe( final Long providerOid, final String userId ) {
-         String description;
+        String description = null;
 
-         try {
-             IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
-             User user = provider.getUserManager().findByPrimaryKey( userId );
-             description = getUserDesription(user) + " [" + provider.getConfig().getName() + "]";
-         } catch ( FindException fe ) {
-             description = userId + " [#" + providerOid + "]";
-         }
+        try {
+            final IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
+            if ( provider != null ) {
+                final User user = provider.getUserManager().findByPrimaryKey( userId );
+                description =
+                        (user==null ? userId : getUserDescription(user)) +
+                        " [" + provider.getConfig().getName() + "]";
+            }
+        } catch ( Exception fe ) {
+            logger.log( Level.WARNING, "Error accessing user details.", fe );
+        }
 
-         return description;
-     }
+        if ( description == null ) {
+            description = userId + " [#" + providerOid + "]";
+        }
 
-     private String getUserDesription( final User user ) {
-         String userName = user.getLogin();
-         if (userName == null || "".equals(userName)) userName = user.getName();
-         if (userName == null || "".equals(userName)) userName = user.getId();
-         return userName;
-     }
+        return description;
+    }
+
+    private String getUserDescription( final User user ) {
+        String userName = user.getLogin();
+        if (userName == null || "".equals(userName)) userName = user.getName();
+        if (userName == null || "".equals(userName)) userName = user.getId();
+        return userName;
+    }
      
 }
