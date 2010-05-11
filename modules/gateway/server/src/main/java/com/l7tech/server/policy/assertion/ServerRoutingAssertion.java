@@ -341,9 +341,14 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                 } else if (tok instanceof SecurityContextToken) {
                     SecurityContext securityContext = ((SecurityContextToken) tok).getSecurityContext();
                     if (securityContext instanceof SecureConversationSession) {
-                        kerberosServiceTicket = (KerberosServiceTicket) ((SecureConversationSession) securityContext).getCredentials().getPayload();
+                        final Object payload = ((SecureConversationSession) securityContext).getCredentials().getPayload();
+                        if ( payload instanceof KerberosServiceTicket ) {
+                            kerberosServiceTicket = (KerberosServiceTicket) payload;
+                        } else {
+                            logger.fine("Found security context with payload of incorrect type '" + (payload == null ? "null" : payload.getClass().getName()) + "'.");
+                        }
                     } else {
-                        logger.warning("Found security context of incorrect type '" + (securityContext == null ? "null" : securityContext.getClass().getName()) + "'.");
+                        logger.fine("Found security context of incorrect type '" + (securityContext == null ? "null" : securityContext.getClass().getName()) + "'.");
                     }
                 }
             }
