@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
@@ -51,7 +50,7 @@ public class ElementSelectingXpathValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (expectedElementVariable != null) {
             VariableMetadata elementMeta = null;
             Assertion[] assertionPath = path.getPath();

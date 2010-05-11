@@ -3,13 +3,13 @@
  */
 package com.l7tech.external.assertions.idattr.policy;
 
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +26,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         int firstIdPos = -1;
         Set<Long> authenticatedProviders = new HashSet<Long>();
         for (int i = 0; i < path.getPath().length; i++) {

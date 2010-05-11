@@ -5,7 +5,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
-import com.l7tech.wsdl.Wsdl;
 
 import java.util.logging.Logger;
 
@@ -31,12 +30,11 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
-        xpathBasedAssertionValidator.validate( path, wsdl, soap, result );
-        elementSelectingXpathValidator.validate( path, wsdl, soap, result );
-        super.validate( path, wsdl, soap, result );
+        xpathBasedAssertionValidator.validate( path, pvc, result );
+        elementSelectingXpathValidator.validate( path, pvc, result );
+        super.validate( path, pvc, result );
     }
 
     @Override

@@ -8,8 +8,8 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
-import com.l7tech.wsdl.Wsdl;
 
 /**
  * User: vchan
@@ -27,7 +27,7 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
 
         if (assertion != null) {
             int firstCreds = -1;

@@ -2,11 +2,7 @@ package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.validator.AssertionValidatorSupport;
-import com.l7tech.policy.validator.ElementSelectingXpathValidator;
-import com.l7tech.policy.validator.XpathBasedAssertionValidator;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.validator.*;
 
 /**
  *
@@ -26,9 +22,9 @@ public class NonSoapCheckVerifyResultsValidator extends XpathBasedAssertionValid
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-        super.validate(path, wsdl, soap, result);
-        vs.validate(path, wsdl, soap, result);
-        elementSelectingXpathValidator.validate(path, wsdl, soap, result);
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
+        super.validate(path, pvc, result);
+        vs.validate(path, pvc, result);
+        elementSelectingXpathValidator.validate(path, pvc, result);
     }
 }

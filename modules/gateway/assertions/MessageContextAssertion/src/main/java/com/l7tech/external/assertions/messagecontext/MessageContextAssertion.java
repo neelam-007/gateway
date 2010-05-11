@@ -1,28 +1,25 @@
 package com.l7tech.external.assertions.messagecontext;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.policy.wsp.BeanTypeMapping;
-import com.l7tech.policy.wsp.ArrayTypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.*;
 
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Identity a customer by message context mappings
@@ -115,7 +112,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             // Get all MCAs from the current MCA to the last MCA.
             Assertion[] assertions = path.getPath();
             List<MessageContextAssertion> checkedAssertions = new ArrayList<MessageContextAssertion>();

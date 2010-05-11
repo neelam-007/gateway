@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AbstractPolicyValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -34,7 +35,6 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -106,14 +106,12 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     @Override
     protected void doValidation( final Assertion assertion,
-                                 final PolicyType policyType,
-                                 final Wsdl wsdl,
-                                 final boolean soap,
+                                 final PolicyValidationContext pvc,
                                  final AssertionLicense assertionLicense,
                                  final PolicyValidatorResult result ) throws InterruptedException {
-        if ( policyType.isServicePolicy() ) {
+        if ( pvc.getPolicyType() != null && pvc.getPolicyType().isServicePolicy() ) {
             // Full path validation
-            super.doValidation( assertion, policyType, wsdl, soap, assertionLicense, result );
+            super.doValidation( assertion, pvc, assertionLicense, result );
         } else {
             // Assertion validation only
             try {
@@ -130,9 +128,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     @Override
     public void validatePath( final AssertionPath path,
-                              final PolicyType policyType,
-                              final Wsdl wsdl,
-                              final boolean soap,
+                              final PolicyValidationContext pvc,
                               final AssertionLicense assertionLicense,
                               final PolicyValidatorResult result ) {
         Assertion[] ass = path.getPath();

@@ -1,19 +1,13 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 /**
  * AssertionValidator for assertions that perform encryption with WsSecurity assertion.
@@ -33,10 +27,9 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
-        super.validate( path, wsdl, soap, result );
+        super.validate( path, pvc, result );
 
         if ( (!defaultActor || !Assertion.isResponse(assertion )) && !defaultIdentityTarget ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,

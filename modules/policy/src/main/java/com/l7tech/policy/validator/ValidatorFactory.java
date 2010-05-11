@@ -1,15 +1,17 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.util.ConstructorInvocation;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
+import com.l7tech.util.ConstructorInvocation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
@@ -165,6 +167,6 @@ class ValidatorFactory {
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {}
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {}
     }
 }

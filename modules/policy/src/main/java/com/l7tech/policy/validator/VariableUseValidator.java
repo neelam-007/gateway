@@ -1,17 +1,16 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.Syntax;
 
-import java.util.Set;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Variable validator for use with any assertions that use variables.
@@ -23,7 +22,7 @@ public class VariableUseValidator implements AssertionValidator {
     //- PUBLIC
 
     @Override
-    public void validate( AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result ) {
+    public void validate( AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result ) {
         for ( String warnString : warnStrings )
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warnString, null));
         if (errString != null)

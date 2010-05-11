@@ -1,28 +1,23 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
-import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.util.ExceptionUtils;
-
-import java.util.Map;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import org.jaxen.dom.DOMXPath;
-import org.jaxen.XPathFunctionContext;
 import org.jaxen.NamespaceContext;
-import org.jaxen.VariableContext;
 import org.jaxen.UnresolvableException;
+import org.jaxen.VariableContext;
+import org.jaxen.XPathFunctionContext;
+import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * AssertionValidator for XacmlRequestBuilderAssertion 
@@ -38,8 +33,7 @@ public class XacmlRequestBuilderAssertionValidator implements AssertionValidator
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( errString != null ) {
             result.addError( new PolicyValidatorResult.Error( assertion, path, errString, null ) );

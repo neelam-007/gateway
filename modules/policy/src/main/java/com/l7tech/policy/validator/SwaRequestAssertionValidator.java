@@ -33,19 +33,19 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (path == null || result == null) throw new IllegalArgumentException();
-        if (!soap) return;
+        if (!pvc.isSoap()) return;
 
         if (wsdlError != null) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
             return;
         }
 
-        if (wsdl != null) {
+        if (pvc.getWsdl() != null) {
             // check whether any binding info operation
             for (BindingInfo bi : assertion.getBindings().values()) {
-                if (hasMimeParts(bi, wsdl)) return;
+                if (hasMimeParts(bi, pvc.getWsdl())) return;
             }
         }
         wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +

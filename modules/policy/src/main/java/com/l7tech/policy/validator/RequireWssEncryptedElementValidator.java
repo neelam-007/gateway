@@ -5,9 +5,9 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
-import com.l7tech.wsdl.Wsdl;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -23,10 +23,9 @@ public class RequireWssEncryptedElementValidator extends XpathBasedAssertionVali
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
-        super.validate( path, wsdl, soap, result );
+        super.validate( path, pvc, result );
 
         Assertion[] assertionPath = path.getPath();
         for ( int i = assertionPath.length - 1; i >= 0; i-- ) {

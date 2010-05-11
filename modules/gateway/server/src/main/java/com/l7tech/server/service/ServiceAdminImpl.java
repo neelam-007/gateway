@@ -2,20 +2,23 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.uddi.*;
+import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.server.uddi.UDDIHelper;
+import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
@@ -175,9 +178,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
     @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
-                                                       final PolicyType policyType,
-                                                       final boolean soap,
-                                                       final Wsdl wsdl)
+                                                       final PolicyValidationContext pvc)
     {
         final Assertion assertion;
         try {
@@ -186,15 +187,15 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
         }
 
-        return validatePolicy(assertion, policyType, soap, wsdl);
+        return validatePolicy(assertion, pvc);
     }
 
-    private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyType policyType, final boolean soap, final Wsdl wsdl) {
+    private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyValidationContext pvc) {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<PolicyValidatorResult>() {
             @Override
             public PolicyValidatorResult call() throws Exception {
                 try {
-                    return policyValidator.validate(assertion, policyType, wsdl, soap, licenseManager);
+                    return policyValidator.validate(assertion, pvc, licenseManager);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Policy validation failure: " + ExceptionUtils.getMessage(e), e);
                     throw new RuntimeException(e);
@@ -204,7 +205,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
-    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments) {
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyValidationContext pvc, HashMap<String, Policy> fragments) {
         final Assertion assertion;
         try {
             assertion = wspReader.parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
@@ -213,7 +214,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
         }
 
-        return validatePolicy(assertion, policyType, soap, wsdl);
+        return validatePolicy(assertion, pvc);
     }
 
     private void addPoliciesToPolicyReferenceAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {

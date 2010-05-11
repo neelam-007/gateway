@@ -3,13 +3,12 @@
  */
 package com.l7tech.policy.validator;
 
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.security.saml.SamlConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +39,7 @@ public class SamlStatementValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if ( Assertion.isRequest(requestWssSaml) ) {
             final SslAssertion[]  sslAssertions = getSslAssertions(path);
             

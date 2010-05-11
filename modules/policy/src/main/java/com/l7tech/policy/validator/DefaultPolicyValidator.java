@@ -1,9 +1,5 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.wsdl.WsdlUtil;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -12,6 +8,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.wsdl.WsdlUtil;
 
 import java.util.Iterator;
 import java.util.List;
@@ -46,10 +43,10 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
     }
 
     @Override
-    public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
-        PolicyValidatorResult r = super.validate(assertion, policyType, wsdl, soap, assertionLicense);
+    public PolicyValidatorResult validate(Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
+        PolicyValidatorResult r = super.validate(assertion, pvc, assertionLicense);
 
-        if (soap && Assertion.contains(assertion, XpathBasedAssertion.class, true) && WsdlUtil.isRPCWithNoSchema(wsdl)) {
+        if (pvc.isSoap() && Assertion.contains(assertion, XpathBasedAssertion.class, true) && WsdlUtil.isRPCWithNoSchema(pvc.getWsdl())) {
             Assertion lastAssertion = assertion;
             if (assertion instanceof CompositeAssertion) {
                 List children = ((CompositeAssertion) assertion).getChildren();
@@ -66,9 +63,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
 
     @Override
     public void validatePath(final AssertionPath ap,
-                             final PolicyType policyType,
-                             final Wsdl wsdl,
-                             final boolean soap,
+                             final PolicyValidationContext pvc,
                              final AssertionLicense assertionLicense,
                              final PolicyValidatorResult r)
             throws InterruptedException
@@ -99,7 +94,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
             }
         }
 
-        PathValidator pv = new PathValidator(ap, r, wsdl, soap, assertionLicense);
+        PathValidator pv = new PathValidator(ap, pvc, assertionLicense, r);
         for (Assertion assertion : path) {
             if (assertion instanceof CommentAssertion || !assertion.isEnabled()) continue;
             pv.validate(assertion);
@@ -111,7 +106,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
             dv.validate(pv, path);
         }
         
-        if (!policyType.isServicePolicy()) {
+        if (pvc.getPolicyType() != null && !pvc.getPolicyType().isServicePolicy()) {
             // All subsequent rules pertain only to Service policies (i.e. not fragments)
             return;
         }
@@ -131,7 +126,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
               Warning(lastAssertion, ap, "No route assertion.", null));
         }
         if (!pv.seenParsing) {
-            if (!soap) {
+            if (!pvc.isSoap()) {
                 r.addWarning(new PolicyValidatorResult.
                   Warning(lastAssertion, ap, "This path potentially allows non-xml content through.", null));
             }

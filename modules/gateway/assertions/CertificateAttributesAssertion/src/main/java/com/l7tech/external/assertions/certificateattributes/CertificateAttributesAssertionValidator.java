@@ -1,12 +1,12 @@
 package com.l7tech.external.assertions.certificateattributes;
 
-import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.validator.PolicyValidationContext;
 
 /**
  * Validator for CertificateAttributesAssertion.
@@ -19,7 +19,7 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         int firstCertCred = -1;
         int firstIdentity = -1;
         for (int i = 0; i < path.getPath().length; i++) {

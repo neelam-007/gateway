@@ -4,11 +4,10 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 
 /**
  * Policy validator for WsSecurity assertion.
@@ -24,8 +23,7 @@ public class WsSecurityValidator implements AssertionValidator {
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( errString != null && hasDefaultActorEncryption(path.getPath()) ) {
             result.addError(new PolicyValidatorResult.Error(wsSecurity, path, errString, null));

@@ -4,20 +4,18 @@
 
 package com.l7tech.policy.validator;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.io.XmlUtil;
-
-import org.jaxen.dom.DOMXPath;
-import org.jaxen.XPathFunctionContext;
 import org.jaxen.NamespaceContext;
-import org.jaxen.VariableContext;
 import org.jaxen.UnresolvableException;
+import org.jaxen.VariableContext;
+import org.jaxen.XPathFunctionContext;
+import org.jaxen.dom.DOMXPath;
 
-import java.util.logging.Logger;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -67,7 +65,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (errString != null)
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
     }

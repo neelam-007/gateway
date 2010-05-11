@@ -12,8 +12,8 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
-import com.l7tech.wsdl.Wsdl;
 
 import java.util.EnumSet;
 
@@ -36,7 +36,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         int firstCreds = -1;
         int firstCertCred = -1;
         int firstRoute = -1;

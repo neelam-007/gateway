@@ -1,15 +1,14 @@
 package com.l7tech.external.assertions.whichmodule;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
@@ -18,6 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -201,7 +201,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if (xmlProblem != null)
                 result.addError(
                         new PolicyValidatorResult.Error(assertion,

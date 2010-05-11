@@ -2,11 +2,10 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * AssertionValidator that delegates to a List of AssertionValidators
@@ -18,9 +17,9 @@ public class SequenceValidator implements AssertionValidator {
     //- PUBLIC
     
     @Override
-    public void validate( final AssertionPath path, final Wsdl wsdl, final boolean soap, final PolicyValidatorResult result ) {
+    public void validate( final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result ) {
         for ( AssertionValidator validator : validators ) {
-            validator.validate( path, wsdl, soap, result );
+            validator.validate( path, pvc, result );
         }
     }
 

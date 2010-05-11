@@ -10,9 +10,9 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
-import com.l7tech.wsdl.Wsdl;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -232,7 +232,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if ( warningStr != null ) {
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningStr, null));
             }

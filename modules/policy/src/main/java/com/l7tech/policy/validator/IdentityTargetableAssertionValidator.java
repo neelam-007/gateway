@@ -2,24 +2,14 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.assertion.RequestIdentityTargetable;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.IdentityTagable;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Iterator;
 
 /**
  * Policy validator for IdentityTargetable assertions.
@@ -35,8 +25,7 @@ public class IdentityTargetableAssertionValidator implements AssertionValidator 
 
     @Override
     public void validate( final AssertionPath assertionPath,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( warning != null ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath, warning, null));

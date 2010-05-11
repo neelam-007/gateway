@@ -5,7 +5,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.IdentityTagable;
-import com.l7tech.wsdl.Wsdl;
 
 /**
  * Policy validator for IdentityTagable assertions.
@@ -21,8 +20,7 @@ public class IdentityTagAssertionValidator implements AssertionValidator {
 
     @Override
     public void validate( final AssertionPath assertionPath,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( tag != null ) {
 

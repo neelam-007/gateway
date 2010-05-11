@@ -1,9 +1,8 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
 
 /**
  * Assertion validator for AddWssTimestamp
@@ -20,14 +19,13 @@ public class AddWssTimestampAssertionValidator extends WssDecorationAssertionVal
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( warningMessage != null ) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningMessage, null));
         }
 
-        super.validate( path, wsdl, soap, result );
+        super.validate( path, pvc, result );
     }
 
     //- PRIVATE

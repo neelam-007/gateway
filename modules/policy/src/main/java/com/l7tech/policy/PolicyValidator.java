@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.validator.PolicyValidationContext;
 
 /**
  * Interface for validation of policies.
@@ -17,8 +17,13 @@ public interface PolicyValidator {
 
     /**
      * Validates the specified assertion tree.
+     * @param assertion the assertion to validate. Required.
+     * @param pvc the context in which this assertion lives.  Required.
+     * @param assertionLicense used to determine which assertions are currently available.  Required.
+     * @return the validation result.  Never null.
+     * @throws InterruptedException  if the thread is interrupted during validation
      */
-    PolicyValidatorResult validate( Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException;
+    PolicyValidatorResult validate( Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense ) throws InterruptedException;
 
     /**
      * Scans the provided assertion tree looking for circular includes.

@@ -1,23 +1,24 @@
 package com.l7tech.external.assertions.esm;
 
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.wsdl.Wsdl;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * 
@@ -86,7 +87,8 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
+            final Wsdl wsdl = pvc.getWsdl();            
 
             // check to see if it's an XML service, display appropriate warning
 

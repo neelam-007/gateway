@@ -2,12 +2,11 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.WsiBspAssertion;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.WsiBspAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.wsdl.Wsdl;
 
 /**
  * Assertion validator for WS-I Basic Security Profile compliance.
@@ -29,7 +28,7 @@ public class WsiBspAssertionValidator implements AssertionValidator {
      *
      */
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if(path!=null && result!=null) {
             int count = path.getPathCount();
             for(int p=0; p<count; p++) {

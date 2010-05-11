@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.util.Functions;
-import com.l7tech.wsdl.Wsdl;
 
 import java.io.IOException;
 import java.util.*;
@@ -45,12 +44,12 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * Validates the specified assertion tree.
      */
     @Override
-    public PolicyValidatorResult validate(final Assertion assertion, final PolicyType policyType, final Wsdl wsdl, final boolean soap, final AssertionLicense assertionLicense) throws InterruptedException {
+    public PolicyValidatorResult validate(final Assertion assertion, final PolicyValidationContext pvc, final AssertionLicense assertionLicense) throws InterruptedException {
         try {
             return CurrentAssertionTranslator.doWithAssertionTranslator(getAssertionTranslator(), new Callable<PolicyValidatorResult>() {
                 @Override
                 public PolicyValidatorResult call() throws Exception {
-                    return validateWithCurrentAssertionTranslator(assertion, policyType, wsdl, soap, assertionLicense);
+                    return validateWithCurrentAssertionTranslator(assertion, pvc, assertionLicense);
                 }
             });
         } catch (InterruptedException e) {
@@ -62,7 +61,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         }
     }
 
-    protected PolicyValidatorResult validateWithCurrentAssertionTranslator(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
+    protected PolicyValidatorResult validateWithCurrentAssertionTranslator(Assertion assertion, PolicyValidationContext pvc, AssertionLicense assertionLicense) throws InterruptedException {
         assertion.treeChanged();
 
         //we'll pre-process for any include fragments errors, if there are errors then we'll return the list of errors
@@ -75,7 +74,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         }
 
         // perform main validation
-        doValidation( assertion, policyType, wsdl, soap, assertionLicense, result );
+        doValidation( assertion, pvc, assertionLicense, result );
 
         return result;
     }
@@ -86,9 +85,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
     }
 
     protected void doValidation( final Assertion assertion,
-                                 final PolicyType policyType,
-                                 final Wsdl wsdl,
-                                 final boolean soap,
+                                 final PolicyValidationContext pvc,
                                  final AssertionLicense assertionLicense,
                                  final PolicyValidatorResult result ) throws InterruptedException {
         PolicyPathResult path = null;
@@ -100,7 +97,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
 
         if ( path != null ) {
             for ( final AssertionPath assertionPath : path.paths() ) {
-                validatePath(assertionPath, policyType, wsdl, soap, assertionLicense, result);
+                validatePath(assertionPath, pvc, assertionLicense, result);
             }
         }
     }
@@ -109,13 +106,12 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
      * Validate the the assertion path and collect the result into the validator result
      *
      * @param ap the assertion path to validate
-     * @param policyType The type of the policy to validate
-     * @param wsdl The WSDL that relates to the policy
-     * @param soap true if the policy is only for SOAP services
+     * @param pvc  policy validation context.  required
+     * @param assertionLicense used to check whether assertions are licensed.  Required.
      * @param r The result collect parameter
      * @throws InterruptedException if the thread is interrupted while validating
      */
-    abstract public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) throws InterruptedException;
+    abstract public void validatePath(AssertionPath ap, PolicyValidationContext pvc, AssertionLicense assertionLicense, PolicyValidatorResult r) throws InterruptedException;
 
     /**
      * Scans the provided assertion tree looking for circular includes.

@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement;
 
 import com.l7tech.policy.PolicyValidatorResult;
-import static org.junit.Assert.*;
-
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for Gateway Management Assertion
@@ -18,7 +19,7 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( null, null, true, result );
+        validator.validate( null, new PolicyValidationContext(null, null, null, true), result );
 
         assertEquals( "Validation warning present", 1, result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());

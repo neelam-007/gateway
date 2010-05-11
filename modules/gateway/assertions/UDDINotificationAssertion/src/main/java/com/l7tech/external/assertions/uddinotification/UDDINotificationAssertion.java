@@ -1,13 +1,15 @@
 package com.l7tech.external.assertions.uddinotification;
 
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.wsdl.Wsdl;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * 
@@ -45,9 +47,9 @@ public class UDDINotificationAssertion extends Assertion {
 
         @Override
         public void validate( final AssertionPath path,
-                              final Wsdl wsdl,
-                              final boolean soap,
+                              final PolicyValidationContext pvc,
                               final PolicyValidatorResult result ) {
+            final Wsdl wsdl = pvc.getWsdl();
             if ( (wsdl == null) || (!"urn:uddi-org:subr_v3".equals(wsdl.getTargetNamespace())) ){
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,

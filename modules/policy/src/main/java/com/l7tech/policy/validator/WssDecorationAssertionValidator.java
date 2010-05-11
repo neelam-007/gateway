@@ -1,12 +1,11 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.message.WsSecurityVersion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.message.WsSecurityVersion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 
 /**
  * AssertionValidator for assertions used with the WsSecurity assertion.
@@ -30,8 +29,7 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( requiresDecoration || isWss11 ) {
             boolean seenWss10 = false;

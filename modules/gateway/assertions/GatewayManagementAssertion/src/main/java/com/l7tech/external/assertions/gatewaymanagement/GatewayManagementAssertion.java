@@ -4,10 +4,10 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.wsdl.Wsdl;
@@ -15,6 +15,8 @@ import com.l7tech.wsdl.Wsdl;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * 
@@ -97,9 +99,9 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
 
         @Override
         public void validate( final AssertionPath path,
-                              final Wsdl wsdl,
-                              final boolean soap,
+                              final PolicyValidationContext pvc,
                               final PolicyValidatorResult result ) {
+            final Wsdl wsdl = pvc.getWsdl();
             if ( (wsdl == null) || (!"http://ns.l7tech.com/2010/04/gateway-management".equals(wsdl.getTargetNamespace())) ){
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,

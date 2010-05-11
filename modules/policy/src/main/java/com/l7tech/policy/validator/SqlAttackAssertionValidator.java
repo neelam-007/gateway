@@ -2,11 +2,10 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
-import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.assertion.SqlAttackAssertion;
 
 /**
  * Policy validator for SQL Attack Assertion
@@ -26,8 +25,7 @@ public class SqlAttackAssertionValidator implements AssertionValidator {
 
     @Override
     public void validate( final AssertionPath assertionPath,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result) {
             if ( warningStr != null ) {
                 result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, warningStr, null));

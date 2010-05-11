@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.poleditor;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
@@ -10,48 +11,47 @@ import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.console.panels.InformationDialog;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyReference;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.IdentityTagable;
-import com.l7tech.policy.assertion.AssertionUtils;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.HtmlUtil;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.wsdl.Wsdl;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
@@ -62,7 +62,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -329,7 +332,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    PolicyValidatorResult r = policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
+                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdl, soap), licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
                 }
@@ -887,6 +890,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final Wsdl wsdl;
         final boolean soap;
         final PolicyType type;
+        final String internalTag;
         final PublishedService service;
         final HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
         try {
@@ -895,10 +899,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 wsdl = null;
                 soap = getPolicyNode().getPolicy().isSoap();
                 type = getPolicyNode().getPolicy().getType();
+                internalTag = getPolicyNode().getPolicy().getInternalTag();
             } else {
                 wsdl = service.parsedWsdl();
                 soap = service.isSoap();
                 type = PolicyType.PRIVATE_SERVICE;
+                internalTag = null;
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't parse policy or WSDL", e);
@@ -913,11 +919,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    final PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdl, soap);
+                    final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
                     final AsyncAdminMethods.JobId<PolicyValidatorResult> serverValidationJobId =
-                            serviceAdmin.validatePolicy(policyXml, type, soap, wsdl, includedFragments);
+                            serviceAdmin.validatePolicy(policyXml, pvc, includedFragments);
                     double delay = DELAY_INITIAL;
                     Thread.sleep((long)delay);
                     PolicyValidatorResult serverValidationResult = null;

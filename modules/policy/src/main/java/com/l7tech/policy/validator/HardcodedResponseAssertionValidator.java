@@ -1,13 +1,12 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ExceptionUtils;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (ctypeErr != null)
             result.addError(new PolicyValidatorResult.Error(ass, path, "The content type is invalid: " + ctypeErr, null));
         if (useContextVariable)

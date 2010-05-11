@@ -1,11 +1,10 @@
 package com.l7tech.server.policy.validator;
 
 import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.validator.PolicyValidationContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,15 +22,13 @@ public class CompositePolicyValidator implements PolicyValidator {
 
     @Override
     public PolicyValidatorResult validate( final Assertion assertion,
-                                           final PolicyType policyType,
-                                           final Wsdl wsdl,
-                                           final boolean soap,
+                                           final PolicyValidationContext pvc,
                                            final AssertionLicense assertionLicense ) throws InterruptedException {
         final PolicyValidatorResult result = new PolicyValidatorResult();
 
         for ( final PolicyValidator validator : validators ) {
             final PolicyValidatorResult validatorResult =
-                    validator.validate( assertion, policyType, wsdl, soap, assertionLicense );
+                    validator.validate( assertion, pvc, assertionLicense );
 
             for ( final PolicyValidatorResult.Warning message : validatorResult.getWarnings() ) {
                 result.addWarning( message );

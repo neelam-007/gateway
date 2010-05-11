@@ -1,10 +1,9 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 
 /**
  * Policy validator for WssReplayProtection assertions.
@@ -19,8 +18,7 @@ public class WssReplayProtectionValidator implements AssertionValidator {
 
     @Override
     public void validate( final AssertionPath assertionPath,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( assertion.isCustomProtection() ) {
             if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
@@ -28,7 +26,7 @@ public class WssReplayProtectionValidator implements AssertionValidator {
                         "Custom replay protection will be ignored for non-local WSS Recipient.", null));
             }
         } else {
-            if ( !soap ) {
+            if ( !pvc.isSoap() ) {
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
                         "Custom replay protection should be used for non SOAP messages.", null));
             }

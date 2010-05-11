@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.validator.PolicyValidationContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,10 +15,8 @@ public class PolicyValidatorStub implements PolicyValidator {
 
     @Override
     public PolicyValidatorResult validate( final Assertion assertion,
-                                           final PolicyType policyType,
-                                           final Wsdl wsdl,
-                                           final boolean soap,
-                                           final AssertionLicense assertionLicense ) throws InterruptedException {
+                                           final PolicyValidationContext pvc,
+                                           final AssertionLicense assertionLicense) throws InterruptedException {
         final PolicyValidatorResult result = new PolicyValidatorResult();
 
         for ( PolicyValidatorResult.Warning warning : warnings ) {

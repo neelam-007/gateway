@@ -1,26 +1,25 @@
 package com.l7tech.external.assertions.splitjoin;
 
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.InvalidContextVariableException;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang.StringUtils;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * This assertion splits a single-valued String context variable into a multi-valued List&lt;String&gt; by
@@ -142,7 +141,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         }
 
         @Override
-        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if (message != null)
                 result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));
         }

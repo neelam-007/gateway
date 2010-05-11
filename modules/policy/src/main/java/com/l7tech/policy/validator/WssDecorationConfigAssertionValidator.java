@@ -1,16 +1,15 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.PrivateKeyable;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Policy validator for WssDecorationConfig assertions.
@@ -25,8 +24,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
 
     @Override
     public void validate( final AssertionPath path,
-                          final Wsdl wsdl,
-                          final boolean soap,
+                          final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         List<Assertion> shouldMatch = new ArrayList<Assertion>();
 

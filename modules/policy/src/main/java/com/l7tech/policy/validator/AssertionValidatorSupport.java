@@ -5,7 +5,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Pair;
-import com.l7tech.wsdl.Wsdl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,7 +65,7 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
     }
 
     @Override
-    public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         for (Pair<String, Throwable> err : errs) {
             result.addError(new PolicyValidatorResult.Error(assertion, path, err.left, err.right));
         }

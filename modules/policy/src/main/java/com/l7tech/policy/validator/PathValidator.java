@@ -2,6 +2,7 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
@@ -33,8 +34,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.*;
 import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * validate single path, and collect the validation results in the
@@ -69,6 +70,7 @@ public class PathValidator {
      * result accumulator
      */
     private final List<DeferredValidate> deferredValidators = new ArrayList<DeferredValidate>();
+    private final PolicyValidationContext pvc;
     private final AssertionLicense assertionLicense;
     private final Map<String, MessageTargetContext> messageTargetContexts = new HashMap<String, MessageTargetContext>();
     private final Wsdl wsdl;
@@ -95,12 +97,13 @@ public class PathValidator {
         private boolean seenAccessControl = false;
     }
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) {
+    PathValidator(AssertionPath ap, PolicyValidationContext pvc, AssertionLicense assertionLicense, PolicyValidatorResult r) {
         if (assertionLicense == null) throw new NullPointerException();
         result = r;
         assertionPath = ap;
-        this.wsdl = wsdl;
-        this.soap = soap;
+        this.pvc = pvc;
+        this.wsdl = pvc.getWsdl();
+        this.soap = pvc.isSoap();
         this.assertionLicense = assertionLicense;
     }
 
@@ -117,7 +120,7 @@ public class PathValidator {
 
         final String targetName = AssertionUtils.getTargetName(a);
         final AssertionValidator av = ValidatorFactory.getValidator(a);
-        av.validate(assertionPath, wsdl, soap, result);
+        av.validate(assertionPath, pvc, result);
 
         // Check licensing
         if (assertionLicense != null) {
@@ -568,6 +571,10 @@ public class PathValidator {
             if (!(a instanceof RoutingAssertionDoesNotRoute)) {
                 seenRouting = true;
             }
+        }
+
+        if (PolicyType.INTERNAL.equals(pvc.getPolicyType()) && ("debug-trace".equals(pvc.getPolicyInternalTag()) || "audit-sink".equals(pvc.getPolicyInternalTag()))) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("routing.metapolicy.loop"), null));
         }
     }
 

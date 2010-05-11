@@ -3,9 +3,13 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.*;
+import com.l7tech.policy.AssertionLicense;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.UDDIRegistryInfo;
@@ -13,7 +17,6 @@ import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -172,16 +175,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     
     @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
-                                                       final PolicyType policyType,
-                                                       final boolean soap,
-                                                       final Wsdl wsdl)
+                                                       final PolicyValidationContext pvc)
     {
         Future<PolicyValidatorResult> future = new FutureTask<PolicyValidatorResult>(new Callable<PolicyValidatorResult>() {
             @Override
             public PolicyValidatorResult call() throws Exception {
                 try {
                     final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml, WspReader.INCLUDE_DISABLED);
-                    return policyValidator.validate(assertion, policyType, wsdl, soap,
+                    return policyValidator.validate(assertion, pvc,
                             new AssertionLicense() {
                                 @Override
                                 public boolean isAssertionEnabled( Assertion assertion ) {
@@ -198,12 +199,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
-                                                       final PolicyType policyType,
-                                                       final boolean soap,
-                                                       final Wsdl wsdl,
+                                                       final PolicyValidationContext pvc,
                                                        HashMap<String, Policy> fragments)
     {
-        return validatePolicy(policyXml, policyType, soap, wsdl);
+        return validatePolicy(policyXml, pvc);
     }
 
     /**

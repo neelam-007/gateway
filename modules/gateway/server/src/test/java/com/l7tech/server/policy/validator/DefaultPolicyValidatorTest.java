@@ -4,9 +4,12 @@
 
 package com.l7tech.server.policy.validator;
 
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -15,11 +18,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.TestDocuments;
+import com.l7tech.wsdl.Wsdl;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -56,6 +58,10 @@ public class DefaultPolicyValidatorTest extends TestCase {
         this.spring = ApplicationContexts.getTestApplicationContext();
     }
 
+    private PolicyValidationContext pvc(PolicyType type, Wsdl wsdl, boolean soap) {
+        return new PolicyValidationContext(type, null, wsdl, soap);
+    }
+
     /**
      * Test public access warning
      *
@@ -74,7 +80,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
-        PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         List messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0", !messages.isEmpty(), messages);
 
@@ -87,7 +93,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -123,7 +129,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
-        PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         List messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
@@ -138,7 +144,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         aa = new AllAssertion();
         aa.setChildren(kids);
         dfpv = getValidator();
-        result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         messages = result.messages(specificUser);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -161,7 +167,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
-        PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         List messages = result.messages(xs);
         assertTrue("Expected errors/warnings for the " + RequireWssSignedElement.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
@@ -184,7 +190,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
-        PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         List messages = result.messages(xs);
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
     }
@@ -209,7 +215,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
-        PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         List messages = result.getMessages();
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
 
@@ -222,7 +228,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap()), new TestLicenseManager());
         messages = result.messages(clientCert);
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
     }

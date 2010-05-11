@@ -230,6 +230,7 @@ public class PolicyHelper {
 
         // Get request values
         PolicyType policyType = getPolicyType( policyValidationContext.getPolicyType() );
+        String policyInternalTag = null;
         boolean soap = isSoap( policyValidationContext.getProperties() );
         final Map<String, ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( policyValidationContext.getResourceSets() );
         Wsdl wsdl = getWsdl( resourceHelper.getResources( resourceSetMap, ResourceHelper.WSDL_TAG, false, null ) );
@@ -245,6 +246,7 @@ public class PolicyHelper {
                 throw new ResourceFactory.ResourceAccessException("Policy is invalid.");
             }
             policyType = policy.getType();
+            policyInternalTag = policy.getInternalTag();
             soap = policy.isSoap();
             wsdl = resolver.resolveWsdl();
         }
@@ -252,7 +254,7 @@ public class PolicyHelper {
         // Run the validator
         final PolicyValidatorResult result;
         try {
-            result = policyValidator.validate( assertion, policyType, wsdl, soap, licenseManager );
+            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, wsdl, soap), licenseManager );
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new ResourceFactory.ResourceAccessException(e);
