@@ -121,9 +121,8 @@ public class SearchForm {
      */
     public String getNextAssertionOrdinal(){
         String returnString = null;
-        Object result = searchComboBox.getNextSearchResult();
-        if(result instanceof AssertionTreeNode){
-            AssertionTreeNode treeNode = (AssertionTreeNode) result;
+        AssertionTreeNode treeNode = searchComboBox.getNextSearchResult();
+        if(treeNode != null){
             returnString =  AssertionTreeNode.getVirtualOrdinalString(treeNode);
         }
 

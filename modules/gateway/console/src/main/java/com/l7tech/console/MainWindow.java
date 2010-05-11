@@ -97,7 +97,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Reference to the component which currently has focus
      */
-    private static JComponent focusOwner = null;//todo add getter for this so that classes like ClipboardActions can also use this reference and remove it's focus tracking code
+    private static JComponent focusOwner = null;
+    private static boolean infoDialogShowing = false;
 
     /* this class classloader */
     private final ClassLoader cl = MainWindow.class.getClassLoader();
@@ -623,15 +624,41 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Show an InformationDialog centered on the parent window
+     * Show an InformationDialog centered on the parent window.
+     *
+     * On windows if an InformationDialog is shown as a result of a key press e.g. F3, and the key is held down,
+     * this can result in many dialogs being created, which then persist as the focusLost listeners are not invoked
+     * as each new dialog is shown. As a result this method ensures that only a single InformationDialog is showing
+     * at a time. While a dialog is showing, any further dialogs are ignored.
+     *
+     * Only access from the swing thread, if not an IllegalStateException will be thrown
      *
      * @param iDialog InformationDialog to show
      */
-    public static void showInformationDialog(final InformationDialog iDialog, final Runnable continuation){
+    public static void showInformationDialog(final InformationDialog iDialog,
+                                             final Runnable continuation) throws IllegalStateException{
+
+        if(!SwingUtilities.isEventDispatchThread()){
+            throw new IllegalStateException("Cannot invoke showInformationDialog if caller is not on the event dispatching thread");
+        }
+
+        if(infoDialogShowing) {
+            return;
+        }
+        infoDialogShowing = true;
+
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (continuation != null) continuation.run();
+                infoDialogShowing = false;
+            }
+        };
+
         iDialog.pack();
         Utilities.centerOnParentWindow(iDialog);
         iDialog.setModal(false);
-        DialogDisplayer.display(iDialog, continuation);
+        DialogDisplayer.display(iDialog, runnable);
     }
 
     private JMenuItem getSaveAndActivateMenuItem() {

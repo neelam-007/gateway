@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,9 +9,10 @@ import java.awt.event.*;
 /**
  * Undecorated dialog to show the user an information message which will dispose on the first key stroke or when it loses
  * focus or is clicked.
- * The dialog will self destruct after a default time of 2 seconds, if not set via a constructor
  * Dialog feels light weight and not as intrusive as a normal pop up message.
  * Has the ability to report on whether a specific key stroke causes the dialog to dismiss.
+ *
+ * See MainWindow.showInformationDialog
  *
  */
 public class InformationDialog extends JDialog {
@@ -78,7 +78,7 @@ public class InformationDialog extends JDialog {
 
         this.addKeyListener(adapter);
 
-        this.addFocusListener(new FocusListener() {
+        final FocusListener focusListener = new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
                 //nothing to do
@@ -88,7 +88,8 @@ public class InformationDialog extends JDialog {
             public void focusLost(FocusEvent e) {
                 dispose();
             }
-        });
+        };
+        this.addFocusListener(focusListener);
 
         this.addMouseListener(new MouseAdapter() {
             @Override
