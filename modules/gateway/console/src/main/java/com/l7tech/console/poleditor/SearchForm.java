@@ -43,10 +43,7 @@ public class SearchForm {
                 }
             }
         };
-        searchPanel.addKeyListener(escapeListener);
-        previousButton.addKeyListener(escapeListener);
-        nextButton.addKeyListener(escapeListener);
-        searchComboBox.addTextFieldKeyListener(escapeListener);
+        addKeyListeners(escapeListener);
 
         final Functions.Unary<String, AssertionTreeNode> accessorFunction = new Functions.Unary<String, AssertionTreeNode>() {
             @Override
@@ -113,6 +110,17 @@ public class SearchForm {
 
         includePropertiesCheckBox.setMnemonic(KeyEvent.VK_P);
         includePropertiesCheckBox.addActionListener(checkBoxListener);
+    }
+
+    /**
+     * Add a keylistener to each component on the search bar which can have focus.
+     * @param keyListener KeyListener
+     */
+    public void addKeyListeners(KeyListener keyListener) {
+        searchPanel.addKeyListener(keyListener);
+        previousButton.addKeyListener(keyListener);
+        nextButton.addKeyListener(keyListener);
+        searchComboBox.addTextFieldKeyListener(keyListener);
     }
 
     /**

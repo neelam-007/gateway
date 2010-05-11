@@ -537,7 +537,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         if(topComponents.isApplet()){
             //todo fix this applet hack once it's understood why the keyboard short cuts are not working
-            policyTree.addKeyListener(new KeyAdapter() {
+            final KeyAdapter adapter = new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_MASK).getKeyCode()) {
@@ -559,7 +559,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     }
 
                 }
-            });
+            };
+            policyTree.addKeyListener(adapter);
+            searchForm.addKeyListeners(adapter);
+            
         }
 
         policyTree.addKeyListener(new KeyAdapter() {
