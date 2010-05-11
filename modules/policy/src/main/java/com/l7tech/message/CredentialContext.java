@@ -1,13 +1,15 @@
 package com.l7tech.message;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.util.Disposable;
+import com.l7tech.util.ResourceUtils;
 
 import java.util.*;
 
 /**
  * Context for credential information.
  */
-public class CredentialContext {
+public class CredentialContext implements Disposable {
 
     //- PUBLIC
 
@@ -48,6 +50,11 @@ public class CredentialContext {
      */
     public void setAuthenticationMissing() {
         isAuthenticationMissing = true;
+    }
+
+    @Override
+    public void dispose() {
+        ResourceUtils.dispose( credentials );
     }
 
     //- PRIVATE

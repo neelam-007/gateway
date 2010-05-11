@@ -10,6 +10,7 @@ import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.SignedPart;
 
+import com.l7tech.util.Disposable;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.List;
 /**
  * Holds some common implementation for SigningSecurityTokens.
  */
-abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements SigningSecurityToken {
+abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements Disposable, SigningSecurityToken {
     private List<SignedElement> signedElements = new ArrayList();
     private List<SignedPart> signedParts = new ArrayList();
     protected boolean possessionProved = false;
@@ -57,5 +58,12 @@ abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements Sig
 
     public boolean isPossessionProved() {
         return possessionProved;
+    }
+
+    @Override
+    public void dispose() {
+        element = null;
+        signedElements.clear();
+        signedParts.clear();
     }
 }

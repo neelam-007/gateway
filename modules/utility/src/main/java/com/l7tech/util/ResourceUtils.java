@@ -200,6 +200,48 @@ public final class ResourceUtils {
     }
 
     /**
+     * Dispose the given items if Disposable.
+     *
+     * <p>Null items are ignored.</p>
+     *
+     * @param possiblyDisposables The items to dispose (may be null)
+     */
+    public static void dispose( final Object... possiblyDisposables ) {
+        if ( possiblyDisposables != null ) {
+            for ( final Object possiblyDisposable : possiblyDisposables ) {
+                if ( possiblyDisposable instanceof Disposable ) {
+                    try {
+                        ((Disposable)possiblyDisposable).dispose();
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Unexpected error when disposing", e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Dispose the given items if Disposable.
+     * 
+     * <p>Null items are ignored.</p>
+     *
+     * @param possiblyDisposables The items to dispose (may be null)
+     */
+    public static void dispose( final Iterable possiblyDisposables ) {
+        if ( possiblyDisposables != null ) {
+            for ( final Object possiblyDisposable : possiblyDisposables ) {
+                if ( possiblyDisposable instanceof Disposable ) {
+                    try {
+                        ((Disposable)possiblyDisposable).dispose();
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Unexpected error when disposing", e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Check if the given URLs address the same resource.
      *
      * <p>Currently this checks for equal URLs which does a basic equality check

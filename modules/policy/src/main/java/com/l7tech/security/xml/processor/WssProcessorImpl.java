@@ -502,7 +502,7 @@ public class WssProcessorImpl implements WssProcessor {
             this(element, null);
         }
 
-        public MustUnderstandException(Element element, Exception e) {
+        private MustUnderstandException(Element element, Exception e) {
             super("mustUnderstand: " + element.getNodeName(), e);
             this.element = element;
         }
@@ -1931,81 +1931,9 @@ public class WssProcessorImpl implements WssProcessor {
             final SamlAssertion samlToken = SamlAssertion.newInstance(securityTokenElement, securityTokenResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
-                final String signatureAlgorithmId = DsigUtil.findSigAlgorithm(samlToken.getEmbeddedIssuerSignature());
-                final String[] digestAlgorithmIds = DsigUtil.findDigestAlgorithms(samlToken.getEmbeddedIssuerSignature());
-
-                class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
-                    public EmbeddedSamlSignatureToken() {
-                        super(null);
-                    }
-
-                    @Override
-                    public X509Certificate getCertificate() {
-                        return samlToken.getIssuerCertificate();
-                    }
-
-                    /**
-                     * @return true if the sender has proven its possession of the private key corresponding to this security token.
-                     *         This is done by signing one or more elements of the message with it.
-                     */
-                    @Override
-                    public boolean isPossessionProved() {
-                        return false;
-                    }
-
-                    /**
-                     * @return An array of elements signed by this signing security token.  May be empty but never null.
-                     */
-                    @Override
-                    public SignedElement[] getSignedElements() {
-                        SignedElement se = new SignedElement() {
-                            @Override
-                            public SigningSecurityToken getSigningSecurityToken() {
-                                return EmbeddedSamlSignatureToken.this;
-                            }
-
-                            @Override
-                            public Element getSignatureElement() {
-                                return samlToken.getEmbeddedIssuerSignature();
-                            }
-
-                            @Override
-                            public Element asElement() {
-                                return samlToken.asElement();
-                            }
-
-                            @Override
-                            public String getSignatureAlgorithmId() {
-                                return signatureAlgorithmId;
-                            }
-
-                            @Override
-                            public String[] getDigestAlgorithmIds() {
-                                return digestAlgorithmIds;
-                            }
-                        };
-
-                        return new SignedElement[]{se};
-                    }
-
-                    @Override
-                    public SecurityTokenType getType() {
-                        return SecurityTokenType.WSS_X509_BST;
-                    }
-
-                    @Override
-                    public String getElementId() {
-                        return samlToken.getElementId();
-                    }
-
-                    @Override
-                    public Element asElement() {
-                        return samlToken.asElement();
-                    }
-                }
 
                 // Add the fake X509SecurityToken that signed the assertion
-                final EmbeddedSamlSignatureToken samlSignatureToken = new EmbeddedSamlSignatureToken();
+                final EmbeddedSamlSignatureToken samlSignatureToken = new EmbeddedSamlSignatureToken(samlToken);
                 securityTokens.add(samlSignatureToken);
                 elementsThatWereSigned.addAll(Arrays.asList(samlSignatureToken.getSignedElements()));
             }
@@ -2289,7 +2217,7 @@ public class WssProcessorImpl implements WssProcessor {
         Date date;
         String dateString;
 
-        TimestampDate(Element createdOrExpiresElement) throws ParseException {
+        private TimestampDate(Element createdOrExpiresElement) throws ParseException {
             super(createdOrExpiresElement);
             dateString = DomUtils.getTextValue(createdOrExpiresElement);
             date = ISO8601Date.parse(dateString);
@@ -2310,7 +2238,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
 
-        public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
+        private TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             super(timestampElement);
             this.createdTimestampDate = createdTimestampDate;
             this.expiresTimestampDate = expiresTimestampDate;
@@ -2334,7 +2262,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final String signatureAlgorithmId;
         private final String[] digestAlgorithmIds;
 
-        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement, String signatureAlgorithmId, String[] digestAlgorithmsIds) {
+        private SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement, String signatureAlgorithmId, String[] digestAlgorithmsIds) {
             this.signingToken = signingToken;
             this.element = element;
             this.signatureElement = signatureElement;
@@ -2372,7 +2300,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final SigningSecurityToken signingToken;
         private final PartInfo partInfo;
 
-        public SignedPartImpl(SigningSecurityToken signingToken, PartInfo partInfo) {
+        private SignedPartImpl(SigningSecurityToken signingToken, PartInfo partInfo) {
             this.signingToken = signingToken;
             this.partInfo = partInfo;
         }
@@ -2385,6 +2313,80 @@ public class WssProcessorImpl implements WssProcessor {
         @Override
         public PartInfo getPartInfo() {
             return partInfo;
+        }
+    }
+
+    private static class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
+        private final SamlAssertion samlToken;
+        private final String signatureAlgorithmId;
+        private final String[] digestAlgorithmIds;
+
+        private EmbeddedSamlSignatureToken( final SamlAssertion samlToken ) throws SignatureException {
+            super(null);
+            this.samlToken = samlToken;
+            this.signatureAlgorithmId = DsigUtil.findSigAlgorithm(samlToken.getEmbeddedIssuerSignature());
+            this.digestAlgorithmIds = DsigUtil.findDigestAlgorithms(samlToken.getEmbeddedIssuerSignature());
+            addSignedElement( new SignedElement() {
+                @Override
+                public SigningSecurityToken getSigningSecurityToken() {
+                    return EmbeddedSamlSignatureToken.this;
+                }
+
+                @Override
+                public Element getSignatureElement() {
+                    return samlToken.getEmbeddedIssuerSignature();
+                }
+
+                @Override
+                public Element asElement() {
+                    return samlToken.asElement();
+                }
+
+                @Override
+                public String getSignatureAlgorithmId() {
+                    return signatureAlgorithmId;
+                }
+
+                @Override
+                public String[] getDigestAlgorithmIds() {
+                    return digestAlgorithmIds;
+                }
+            } );
+        }
+
+        @Override
+        public X509Certificate getCertificate() {
+            return samlToken.getIssuerCertificate();
+        }
+
+        /**
+         * @return true if the sender has proven its possession of the private key corresponding to this security token.
+         *         This is done by signing one or more elements of the message with it.
+         */
+        @Override
+        public boolean isPossessionProved() {
+            return false;
+        }
+
+        @Override
+        public SecurityTokenType getType() {
+            return SecurityTokenType.WSS_X509_BST;
+        }
+
+        @Override
+        public String getElementId() {
+            return samlToken.getElementId();
+        }
+
+        @Override
+        public Element asElement() {
+            return samlToken.asElement();
+        }
+
+        @Override
+        public void dispose() {
+            super.dispose();
+            samlToken.dispose();
         }
     }
 }

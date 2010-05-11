@@ -4,6 +4,8 @@
 
 package com.l7tech.message;
 
+import com.l7tech.util.ResourceUtils;
+
 import java.io.Closeable;
 import java.util.*;
 import java.util.logging.Level;
@@ -98,6 +100,8 @@ public abstract class ProcessingContext<CT extends CredentialContext> implements
                 i.remove();
             }
         } finally {
+            ResourceUtils.dispose( credentialContext );
+            ResourceUtils.dispose( authenticationContexts.values() );
             try {
                 response.close();
             } catch (Exception e) {

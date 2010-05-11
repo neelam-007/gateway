@@ -5,6 +5,7 @@ import static com.l7tech.util.ResourceUtils.*;
 import static com.l7tech.util.ResourceUtils.isSameResource;
 
 import java.net.PasswordAuthentication;
+import java.util.Arrays;
 
 import static junit.framework.Assert.*;
 
@@ -49,5 +50,37 @@ public class ResourceUtilsTest {
         assertEquals( "replacement test", "http://user:pass@host/", addPasswordAuthentication( "http://otheruser:otherpass@host/", new PasswordAuthentication("user","pass".toCharArray())) );
         assertEquals( "replacement odd chars test", "http://user:pass@host/", addPasswordAuthentication( "http://otheruser:!#$%^&*()_-+= @host/", new PasswordAuthentication("user","pass".toCharArray())) );
         assertEquals( "no creds test", "http://host/", addPasswordAuthentication( "http://host/", null) );
+    }
+
+    @Test
+    public void testDispose() {
+        final boolean[] disposed = new boolean[]{false};
+        final Disposable disposable = new Disposable(){
+            @Override
+            public void dispose() {
+                disposed[0] = true;
+            }
+        };
+
+        // Ensure null is handled
+        ResourceUtils.dispose( (Object) null );
+        ResourceUtils.dispose( null, null );
+        ResourceUtils.dispose( new Object[20] );
+        ResourceUtils.dispose( (Iterable) null );
+
+        ResourceUtils.dispose( disposable );
+        assertTrue( "Not disposed", disposed[0] );
+
+        disposed[0] = false;
+        ResourceUtils.dispose( disposable, null );
+        assertTrue( "Not disposed", disposed[0] );
+
+        disposed[0] = false;
+        ResourceUtils.dispose( Arrays.asList( disposable ) );
+        assertTrue( "Not disposed", disposed[0] );
+
+        disposed[0] = false;
+        ResourceUtils.dispose( Arrays.asList( new Object(), new Object(), disposable, new Object() ) );
+        assertTrue( "Not disposed", disposed[0] );
     }
 }

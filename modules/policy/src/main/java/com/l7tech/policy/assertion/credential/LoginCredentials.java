@@ -15,6 +15,8 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Disposable;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
@@ -22,7 +24,9 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -35,7 +39,7 @@ import java.util.Map;
  *
  * @author alex
  */
-public final class LoginCredentials {
+public final class LoginCredentials implements Disposable {
 
     /**
      * Create a LoginCredentials for the given SecurityToken.
@@ -331,6 +335,17 @@ public final class LoginCredentials {
      */
     public Class<? extends Assertion> getCredentialSourceAssertion() {
         return credentialSourceAssertion;
+    }
+
+    @Override
+    public void dispose() {
+        Collection<Object> toDispose = new ArrayList<Object>();
+        toDispose.add( payload );
+        toDispose.add( securityToken );
+        if ( supportingSecurityTokens != null ) {
+            toDispose.addAll( Arrays.asList( supportingSecurityTokens ) );
+        }
+        ResourceUtils.dispose( toDispose );
     }
 
     @Override
