@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.MainWindow;
+
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
@@ -87,9 +89,7 @@ public class EditableSearchComboBox<T> extends JComboBox {
                             !"".equals(filter.getFilterText()) &&
                             !popUpCancelled &&
                             ( !editor.isEditorShowingNoResults() || editor.getAndClearIsEnterLastKeyPressed() )) {
-                        for (ActionListener actList : actionListeners) {
-                            actList.actionPerformed(e);
-                        }
+                        fireActionPerformed(e);
                     }
 
                     lastEvent = eventTime;
@@ -99,6 +99,15 @@ public class EditableSearchComboBox<T> extends JComboBox {
             }
         });
 
+        editor.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if(e.getKeyCode() == KeyEvent.VK_ENTER && "".equals(editor.getText())){
+                    fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, MainWindow.L7_F3));
+                }
+            }
+        });
+        
         this.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
@@ -111,6 +120,12 @@ public class EditableSearchComboBox<T> extends JComboBox {
                 popUpCancelled = true;
             }
         });
+    }
+
+    private void fireActionPerformed(ActionEvent e) {
+        for (ActionListener actList : actionListeners) {
+            actList.actionPerformed(e);
+        }
     }
 
     /**

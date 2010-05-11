@@ -192,7 +192,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         if (foundNode == null) {
             //this should only happen with an empty policy
-            //show for 4 seconds as the messages are longer
             InformationDialog iDialog = new InformationDialog("Assertion #" + stringOrdinal + " not found.");
             MainWindow.showInformationDialog(iDialog, null);
             return;
