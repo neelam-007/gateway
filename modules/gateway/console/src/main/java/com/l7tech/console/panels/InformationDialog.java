@@ -40,7 +40,8 @@ public class InformationDialog extends JDialog {
      */
     public InformationDialog(final String msg, final int specialKey, final boolean requiresMask) {
         //by setting the parent, the dialog will not be show it's own task bar button
-        super(TopComponents.getInstance().getTopParent());
+        //do not set when in the Applet as it causes the dialog to become decorated (As it has a SheetHolder parent)
+        super(!TopComponents.getInstance().isApplet()? TopComponents.getInstance().getTopParent(): null);
         
         setContentPane(contentPane);
         contentPane.setBackground(new Color(0xFF, 0xFF, 0xe1));
