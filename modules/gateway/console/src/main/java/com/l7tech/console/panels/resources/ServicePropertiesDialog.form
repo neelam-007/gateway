@@ -129,7 +129,7 @@
                       <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="Policy Debug &amp;Tracing"/>
+                      <text value="Enable policy debug &amp;tracing"/>
                     </properties>
                   </component>
                   <vspacer id="857fd">
@@ -224,7 +224,7 @@
                           <focusable value="true"/>
                           <opaque value="false"/>
                           <requestFocusEnabled value="true"/>
-                          <text value="&lt;html&gt;&#13;&#10;  &lt;head&gt;&#13;&#10;    &#13;&#10;  &lt;/head&gt;&#13;&#10;  &lt;body&gt;&#13;&#10;  &lt;/body&gt;&#13;&#10;&lt;/html&gt;&#13;&#10;"/>
+                          <text value="&lt;html&gt;&#13;&#10;  &lt;head&gt;&#13;&#10;&#13;&#10;  &lt;/head&gt;&#13;&#10;  &lt;body&gt;&#13;&#10;    &lt;p style=&quot;margin-top: 0&quot;&gt;&#13;&#10;      &#13;&#10;    &lt;/p&gt;&#13;&#10;  &lt;/body&gt;&#13;&#10;&lt;/html&gt;&#13;&#10;"/>
                           <verifyInputWhenFocusTarget value="false"/>
                         </properties>
                       </component>
