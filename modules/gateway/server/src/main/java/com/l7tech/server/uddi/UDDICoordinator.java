@@ -493,7 +493,7 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
 
                 final Set<EndpointPair> allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
                 final Set<EndpointPair> persistedEndpoints = serviceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
-                if(!persistedEndpoints.equals(allEndpointPairs)){
+                if(!allEndpointPairs.equals(persistedEndpoints)){
                     logger.log(Level.INFO, "Setting service #(" + serviceInfo.getPublishedServiceOid()+") to republish to UDDI following change to external endpoints");
                     publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
                     uddiPublishStatusManager.update(publishStatus);
