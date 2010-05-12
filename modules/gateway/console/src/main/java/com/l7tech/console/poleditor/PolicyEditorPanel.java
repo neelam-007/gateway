@@ -536,7 +536,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         containerPanel.getActionMap().put(MainWindow.L7_SHIFT_F3, f3Action);
 
         if(topComponents.isApplet()){
-            //todo fix this applet hack once it's understood why the keyboard short cuts are not working
+            //The applet does not have any JMenus so accelerators will not work out of the box. (Copy, paste are
+            //special as they work due to the JComponents transferHandler). 
             final KeyAdapter adapter = new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
