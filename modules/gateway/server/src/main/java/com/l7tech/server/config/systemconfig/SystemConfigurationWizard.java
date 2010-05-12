@@ -31,11 +31,15 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
         ConsoleWizardUtils utils = getWizardUtils();
         try {
             List<NetworkingConfigurationBean.NetworkConfig> netConfigs = osFunctions.getNetworkConfigs(false, true);
-            for (NetworkingConfigurationBean.NetworkConfig netConfig : netConfigs) {
-                NetworkInterface networkInterface = netConfig.getNetworkInterface();
-                if (!networkInterface.isLoopback()) {
-                    printNetworkConfig(netConfig);
+            if ( !netConfigs.isEmpty() ) {
+                for (NetworkingConfigurationBean.NetworkConfig netConfig : netConfigs) {
+                    NetworkInterface networkInterface = netConfig.getNetworkInterface();
+                    if (!networkInterface.isLoopback()) {
+                        printNetworkConfig(netConfig);
+                    }
                 }
+            } else {
+                utils.printText("No interfaces found." + ConsoleWizardUtils.EOL_CHAR);
             }
         } catch (SocketException e) {
             utils.printText("Error while determining the interface information for this machine:" + e.getMessage() + ConsoleWizardUtils.EOL_CHAR);

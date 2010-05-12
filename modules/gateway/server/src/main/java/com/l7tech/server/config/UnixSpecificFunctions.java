@@ -16,36 +16,43 @@ import java.net.SocketException;
  */
 public abstract class UnixSpecificFunctions extends OSSpecificFunctions {
 
-    public UnixSpecificFunctions(String OSName) {
+    public UnixSpecificFunctions( final String OSName ) {
         super(OSName);
     }
 
+    @Override
     void doOsSpecificSetup() {
         doSpecialSetup();
     }
 
-    //put anything that is specific to the flabour of UNIX you are working with (i.e. solaris, Linux etc) in here.
+    //put anything that is specific to the flavour of UNIX you are working with (i.e. Solaris, Linux etc) in here.
     abstract void doSpecialSetup();
 
+    @Override
     public boolean isUnix() {
         return true;
     }
 
-    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs(boolean getLoopBack, boolean getIPV6) throws SocketException {
-        List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
+    @Override
+    public List<NetworkingConfigurationBean.NetworkConfig> getNetworkConfigs( final boolean getLoopBack,
+                                                                              final boolean getIPV6) throws SocketException {
+        final List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
 
-        List<NetworkInterface> allInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-        for (NetworkInterface networkInterface : allInterfaces) {
-            boolean addIt = ( (!networkInterface.isLoopback()) || (networkInterface.isLoopback() && getLoopBack));
-            if (addIt) {
-                addNetworkConfigToList(networkInterface, networkConfigs, getIPV6);
+        final Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
+        if ( allInterfaces != null ) {
+            for ( final NetworkInterface networkInterface : Collections.list(allInterfaces) ) {
+                final boolean addIt = ( (!networkInterface.isLoopback()) || (networkInterface.isLoopback() && getLoopBack));
+                if (addIt) {
+                    addNetworkConfigToList(networkInterface, networkConfigs);
+                }
             }
         }
 
         return networkConfigs;
     }
 
-    private void addNetworkConfigToList(NetworkInterface networkInterface, List<NetworkingConfigurationBean.NetworkConfig> networkConfigs, boolean getIPV6) throws SocketException {
+    private void addNetworkConfigToList( final NetworkInterface networkInterface,
+                                         final List<NetworkingConfigurationBean.NetworkConfig> networkConfigs ) throws SocketException {
         NetworkingConfigurationBean.NetworkConfig aConfig = createNetworkConfig(networkInterface, false);
         if (aConfig != null) networkConfigs.add(aConfig);
 
