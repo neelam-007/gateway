@@ -21,7 +21,6 @@ import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.*;
 import com.l7tech.util.*;
-import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
@@ -105,7 +104,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.uddiRegistryAdmin = uddiRegistryAdmin;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
 
-        int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 18);
+        int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 18);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue );
     }
@@ -681,5 +680,18 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public void destroy() throws Exception {
         if (validatorExecutor != null) validatorExecutor.shutdown();
+    }
+
+    private Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                return ServerConfig.getInstance().getClusterPropertyName( key );
+            }
+        } );
+
+        vc.setMinimumValue( ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 1 );
+
+        return vc;
     }
 }
