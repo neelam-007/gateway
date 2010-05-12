@@ -8,7 +8,7 @@ import com.l7tech.policy.validator.*;
 /**
  *
  */
-public class NonSoapEncryptElementValidator extends XpathBasedAssertionValidator {
+public class NonSoapEncryptElementValidator extends ElementSelectingXpathBasedAssertionValidator {
     private final AssertionValidatorSupport vs;
     private final AssertionValidator elementSelectingXpathValidator;
 

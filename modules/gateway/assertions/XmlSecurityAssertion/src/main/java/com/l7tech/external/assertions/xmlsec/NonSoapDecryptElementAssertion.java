@@ -4,9 +4,9 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 
 /**
  * Immediately decrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -85,7 +85,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
 
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, XpathBasedAssertionValidator.class.getName());
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, ElementSelectingXpathBasedAssertionValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
