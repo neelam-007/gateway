@@ -1,5 +1,5 @@
 --
--- Script to update mysql ssg database from 5.2.0 to 5.3.0
+-- Script to update mysql ssg database from 5.3.0 to 5.4.0
 --
 -- Layer 7 Technologies, inc
 --
