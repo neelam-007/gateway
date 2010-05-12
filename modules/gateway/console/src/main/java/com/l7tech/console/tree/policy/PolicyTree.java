@@ -122,11 +122,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         TreeSelectionListener tsl = new TreeSelectionListener() {
             ClipboardOwner owner = new ClipboardOwner() {
+                @Override
                 public void lostOwnership(Clipboard clipboard, Transferable contents) {
                     // No action required
                 }
             };
 
+            @Override
             public void valueChanged(TreeSelectionEvent e) {
                 Clipboard sel = Utilities.getDefaultSystemSelection();
                 if (sel == null) return;
@@ -544,6 +546,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             // After the setting of clipboard global actions are ready, then the context menu will pop up with/without Copy, Copy All, and Paste.
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     JTree tree = (JTree)mouseEvent.getSource();
 
@@ -620,7 +623,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
             }
             // return the updated action array
-            return actionList.toArray(new Action[]{});
+            return actionList.toArray(new Action[actionList.size()]);
         }
 
         /**
@@ -749,18 +752,22 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
 
+    @Override
     public void dragEnter(DragSourceDragEvent dsde) {
         log.finest("entering dragEnter()");
     }
 
+    @Override
     public void dragOver(DragSourceDragEvent dsde) {
         //log.finest("entering dragOver()");  // very spammy trace
     }
 
+    @Override
     public void dropActionChanged(DragSourceDragEvent dsde) {
         log.finest("entering dropActionChanged()");
     }
 
+    @Override
     public void dragDropEnd(DragSourceDropEvent dsde) {
         log.fine("entering dragDropEnd()");
         if (dsde.getDropSuccess()) {
@@ -791,6 +798,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         //repaint();
     }
 
+    @Override
     public void dragExit(DragSourceEvent dse) {
     }
 
@@ -828,6 +836,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         return retVal;
     }
 
+    @Override
     public void dragGestureRecognized(DragGestureEvent dge) {
         Point ptDragOrigin = dge.getDragOrigin();
         //TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
@@ -976,7 +985,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private BufferedImage imgLeft = new ArrowImage(15, 15, ArrowImage.ARROW_LEFT);
 
         // Constructor...
-          public PolicyDropTargetListener() {
+          PolicyDropTargetListener() {
             colorCueLine = new Color(SystemColor.controlShadow.getRed(),
                                      SystemColor.controlShadow.getGreen(),
                                      SystemColor.controlShadow.getBlue(),
@@ -985,6 +994,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             // Set up a hover timer, so that a node will be automatically expanded or collapsed
             // if the user lingers on it for more than a short time
             timerHover = new Timer(1000, new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     nLeftRight = 0;    // Reset left/right movement trend
                     if (isRootPath(pathLast))
@@ -999,6 +1009,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         // PolicyDropTargetListener interface
+          @Override
           public void dragEnter(DropTargetDragEvent e) {
             if (!hasWriteAccess()) {
                 log.fine("dragEnter: DropTargetListener does not have write access.");
@@ -1014,12 +1025,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
+        @Override
         public void dragExit(DropTargetEvent e) {
             if (!DragSource.isDragImageSupported()) {
                 repaint(raGhost.getBounds());
             }
         }
 
+        @Override
         public void dragOver(DropTargetDragEvent e) {
             if (!hasWriteAccess()) {
                 e.rejectDrag();
@@ -1125,10 +1138,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
                                  transferData instanceof AbstractTreeNode ) {
                                 AssertionTreeNode aTreeNode = (AssertionTreeNode) treeObject;
                                 AbstractTreeNode node = (AbstractTreeNode) transferData;
-                                if (!aTreeNode.accept( node )) {
-                                    accept = false;
-                                    break;
-                                }
+
+                                accept = acceptNode( aTreeNode, node );
+                                if (!accept) break;
                             }
                         }
                     }
@@ -1144,6 +1156,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     e.rejectDrag();                    
                 }
             }
+        }
+
+        private boolean acceptNode( AssertionTreeNode aTreeNode,
+                                    final AbstractTreeNode node ) {
+            boolean accept = false;
+
+            while ( aTreeNode != null ) {
+                if ( aTreeNode.accept(node ) ) {
+                    accept = true;
+                    break;
+                }
+                aTreeNode = (AssertionTreeNode) aTreeNode.getParent();
+            }
+
+            return accept;
         }
 
         /**
@@ -1166,7 +1193,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                          transferData instanceof AbstractTreeNode ) {
                         AssertionTreeNode aTreeNode = (AssertionTreeNode) treeObject;
                         AbstractTreeNode node = (AbstractTreeNode) transferData;
-                        accept = aTreeNode.accept( node );
+                        accept = acceptNode(aTreeNode, node);
                     }
                 } catch (IOException ioe) {
                     log.log(Level.WARNING, "Drag and drop error, '"+ExceptionUtils.getMessage( ioe )+"'", ExceptionUtils.getDebugException( ioe ));
@@ -1185,6 +1212,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
+        @Override
         public void dropActionChanged(DropTargetDragEvent e) {
             log.fine("dropActionChanged " + Arrays.toString(e.getCurrentDataFlavors()));
             if (!isDragAcceptable(e))
@@ -1193,6 +1221,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 e.acceptDrag(e.getDropAction());
         }
 
+        @Override
         public void drop(DropTargetDropEvent e) {
             try {
                 DataFlavor[] flavors = e.getCurrentDataFlavors();
@@ -1237,6 +1266,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 AssertionTreeNode potentialTarget = (AssertionTreeNode) path.getLastPathComponent();
                 AssertionTreeNode target = null;
                 List<AbstractTreeNode> notAcceptedNodes = new ArrayList<AbstractTreeNode>(Arrays.asList(nodes));
+                int insertPosition = -1;
                 while ( potentialTarget != null ) {
                     for(Iterator<AbstractTreeNode> it = notAcceptedNodes.iterator();it.hasNext();) {
                         AbstractTreeNode node = it.next();
@@ -1250,7 +1280,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         break;
                     }
 
-                    potentialTarget = (AssertionTreeNode) potentialTarget.getParent();
+                    AssertionTreeNode parent = (AssertionTreeNode) potentialTarget.getParent();
+                    insertPosition = parent==null ? -1 : parent.getIndex( potentialTarget ) + 1;
+                    potentialTarget = parent;
                 }
 
                 if ( target != null ) {
@@ -1273,8 +1305,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             compositeAssertionTreeNode.receive(node, 0);
                         }
                     } else {
-                        for(AbstractTreeNode node : nodes) {
-                            target.receive(node);
+                        if (insertPosition > -1 && target instanceof CompositeAssertionTreeNode) {
+                            CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
+                            for(AbstractTreeNode node : nodes) {
+                                compositeAssertionTreeNode.receive(node, insertPosition);
+                            }
+                        } else {
+                            for(AbstractTreeNode node : nodes) {
+                                target.receive(node);
+                            }
                         }
                     }
                     e.dropComplete(true);
@@ -1342,27 +1381,32 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             Assertion a = (Assertion) an.asAssertion().clone();
                             final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(a);
 
-                            DefaultMutableTreeNode targetTreeNode =
-                                    ((DefaultMutableTreeNode) pathTarget.getLastPathComponent());
+                            AssertionTreeNode targetTreeNode =
+                                    ((AssertionTreeNode) pathTarget.getLastPathComponent());
 
-                            if (targetTreeNode.getAllowsChildren()) {
-                                int targetIndex = 0;
-                                if (!dropAsFirstContainerChild && targetTreeNode == model.getRoot()) {
-                                    targetIndex = targetTreeNode.getChildCount();
+                            AssertionTreeNode insertAfter = null;
+                            int targetIndex = 0;
+                            while ( targetTreeNode != null ) {
+                                if (targetTreeNode.getAllowsChildren() && targetTreeNode.accept( assertionTreeNodeCopy )) {
+                                    if ( insertAfter != null ) {
+                                        targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
+                                    }
+                                    break;
+                                } else {
+                                    insertAfter = targetTreeNode;
+                                    targetTreeNode = (AssertionTreeNode) targetTreeNode.getParent();
                                 }
-                                if (e.getDropAction() == DnDConstants.ACTION_MOVE)
-                                    model.moveNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
-                                else
-                                    model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
-                            } else {
-                                final DefaultMutableTreeNode parent = (DefaultMutableTreeNode) targetTreeNode.getParent();
+                            }
 
-                                int index = parent.getIndex(targetTreeNode);
-                                if (index != -1) {
-                                    if (e.getDropAction() == DnDConstants.ACTION_MOVE)
-                                        model.moveNodeInto(assertionTreeNodeCopy, parent, index + 1);
-                                    else
-                                        model.insertNodeInto(assertionTreeNodeCopy, parent, index + 1);
+                            if ( dropAsFirstContainerChild ) {
+                                targetIndex = 0;
+                            }
+
+                            if ( targetTreeNode != null && targetIndex > -1 ) {
+                                if (e.getDropAction() == DnDConstants.ACTION_MOVE) {
+                                    model.moveNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+                                } else {
+                                    model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
                                 }
                             }
                         }
@@ -1386,7 +1430,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
         // Helpers...
-          public boolean isDragAcceptable(DropTargetDragEvent e) {
+          private boolean isDragAcceptable(DropTargetDragEvent e) {
             if (!hasWriteAccess()) return false;
 
             // Only accept COPY or MOVE gestures (ie LINK is not supported)
@@ -1426,7 +1470,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                          transferData instanceof AbstractTreeNode ) {
                         AssertionTreeNode aTreeNode = (AssertionTreeNode) treeObject;
                         AbstractTreeNode node = (AbstractTreeNode) transferData;
-                        return aTreeNode.accept( node );
+                        return acceptNode( aTreeNode, node );
                     }
                 } catch (IOException ioe) {
                     log.log(Level.WARNING, "Drag and drop error, '"+ExceptionUtils.getMessage( ioe )+"'", ExceptionUtils.getDebugException( ioe ));
@@ -1440,7 +1484,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return false;
         }
 
-        public boolean isTreePathDropAcceptable(DropTargetDropEvent e) {
+        private boolean isTreePathDropAcceptable(DropTargetDropEvent e) {
             // Only accept COPY or MOVE gestures (ie LINK is not supported)
             if ((e.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) == 0)
                 return false;
@@ -1480,6 +1524,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 // Ok, we've been told to scroll because the mouse cursor is in our
 // scroll zone.
 
+    @Override
     public void autoscroll(Point pt) {
         // Figure out which row we're on.
         int nRow = getRowForLocation(pt.x, pt.y);
@@ -1506,6 +1551,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 // Calculate the insets for the *JTREE*, not the viewport
 // the tree is in. This makes it a bit messy.
 
+    @Override
     public Insets getAutoscrollInsets() {
         Rectangle raOuter = getBounds();
         Rectangle raInner = getParent().getBounds();
@@ -1516,18 +1562,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 // TreeModelListener interface implemntations
 
+    @Override
     public void treeNodesChanged(TreeModelEvent e) {
         //   log.fine("treeNodesChanged");
         //   sayWhat(e);
 // We dont need to reset the selection path, since it has not moved
     }
 
+    @Override
     public void treeNodesInserted(TreeModelEvent e) {
         //sayWhat(e);
         int nChildIndex = e.getChildIndices()[0];
         TreePath pathParent = e.getTreePath();
         final TreePath childPath = getChildPath(pathParent, nChildIndex);
         Runnable doSelect = new Runnable() {
+            @Override
             public void run() {
                 setSelectionPath(childPath);
                 PolicyTree.this.requestFocusInWindow();
@@ -1567,6 +1616,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         log.finer("nodes          tree = " + parent.getChildCount());
     }
 
+    @Override
     public void treeNodesRemoved(TreeModelEvent e) {
         final AssertionTreeNode parent = (AssertionTreeNode)e.getTreePath().getLastPathComponent();
         final Assertion pass = parent.asAssertion();
@@ -1610,17 +1660,20 @@ public class PolicyTree extends JTree implements DragSourceListener,
         log.finer("nodes          tree = " + parent.getChildCount());
     }
 
+    @Override
     public void treeStructureChanged(TreeModelEvent e) {
         //log.fine("treeStructureChanged ");
         //sayWhat(e);
     }
 
+    @Override
     public void refresh() {
         if (canRefresh()) {
             new EditPolicyAction(policyEditorPanel.getPolicyNode(), true).invoke();
         }
     }
 
+    @Override
     public boolean canRefresh() {
         return policyEditorPanel != null && policyEditorPanel.getPolicyNode() != null;
     }
