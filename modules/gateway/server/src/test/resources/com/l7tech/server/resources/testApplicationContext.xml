@@ -342,4 +342,5 @@
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
+    <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>
 </beans>

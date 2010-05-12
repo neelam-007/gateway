@@ -41,7 +41,6 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -89,7 +88,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
     private final SecurityTokenResolver securityTokenResolver;
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final SecurityContextFinder securityContextFinder;
     private final LicenseManager licenseManager;
     private final ServiceMetricsServices serviceMetricsServices;
     private final AuditContext auditContext;
@@ -122,7 +121,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             PolicyCache pc,
                             WssDecorator wssd,
                             SecurityTokenResolver securityTokenResolver,
-                            SecureConversationContextManager secureConversationContextManager,
+                            SecurityContextFinder securityContextFinder,
                             LicenseManager licenseManager,
                             ServiceMetricsServices metricsServices,
                             AuditContext auditContext,
@@ -145,7 +144,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.policyCache = pc;
         this.wssDecorator = wssd;
         this.securityTokenResolver = securityTokenResolver;
-        this.secureConversationContextManager = secureConversationContextManager;
+        this.securityContextFinder = securityContextFinder;
         this.licenseManager = licenseManager;
         this.serviceMetricsServices = metricsServices;
         this.auditContext = auditContext;
@@ -684,7 +683,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     final SecurityKnob reqSec = request.getSecurityKnob();
                     wssOutput = trogdor.undecorateMessage(request,
                                                           null,
-                                                          secureConversationContextManager,
+                                                          securityContextFinder,
                                                           securityTokenResolver);
                     reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {

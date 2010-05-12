@@ -8,15 +8,13 @@ import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ValidatedConfig;
+import org.apache.commons.collections.map.LRUMap;
 
 import java.security.SecureRandom;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 /**
@@ -31,7 +29,15 @@ import java.util.logging.Logger;
 public class SecureConversationContextManager implements SecurityContextFinder {
 
     public SecureConversationContextManager( final Config config ) {
-        this.config = config;
+        this.config = validated(config);
+        sessions = new LRUMap( config.getIntProperty( "wss.secureConversation.maxSessions", DEFAULT_MAX_SESSIONS )){
+            @Override
+            protected boolean removeLRU( final LinkEntry entry ) {
+                final SecureConversationSession session = (SecureConversationSession) entry.getValue();
+                logger.fine("Deleting least recently used SecureConversation context: " + session.getIdentifier());
+                return true;
+            }
+        };
     }
 
     /**
@@ -47,27 +53,20 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      */
     public SecureConversationSession getSession(String identifier) {
         // Cleanup if necessary
-        checkExpiriedSessions();
+        checkExpiredSessions();
 
         // Get session
-        SecureConversationSession output = null;
-        rwlock.readLock().lock();
-        try {
-            output = sessions.get(identifier);
-        } finally {
-            rwlock.readLock().unlock();
+        SecureConversationSession output;
+        synchronized( sessions ) {
+            output = (SecureConversationSession) sessions.get(identifier);
         }
 
         // Check if expired
         if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
             output = null;
 
-            rwlock.writeLock().lock();
-            try {
+            synchronized( sessions ) {
                 sessions.remove(identifier);
-            }
-            finally {
-                rwlock.writeLock().unlock();
             }
         }
 
@@ -78,17 +77,14 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * For use by the token service. Records and remembers a session for the duration specified.
      */
     public void saveSession(SecureConversationSession newSession) throws DuplicateSessionException {
-        rwlock.writeLock().lock();
-        try {
+        synchronized( sessions ) {
             // Two sessions with same id is not allowed. ever (even if one is expired)
-            SecureConversationSession alreadyExistingOne = sessions.get(newSession.getIdentifier());
+            SecureConversationSession alreadyExistingOne = (SecureConversationSession) sessions.get(newSession.getIdentifier());
             if (alreadyExistingOne != null) {
                 throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
             }
             sessions.put(newSession.getIdentifier(), newSession);
-            logger.finest("Saved SC context " + newSession.getIdentifier());
-        } finally {
-            rwlock.writeLock().unlock();
+            logger.fine("Saved SecureConversation context " + newSession.getIdentifier());
         }
     }
 
@@ -99,14 +95,13 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws DuplicateSessionException {
-        final byte[] tmp;
+        final byte[] sharedSecret;
         if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
-            tmp = generateNewSecret(32);
+            sharedSecret = generateNewSecret(32);
         } else {
-            tmp = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
+            sharedSecret = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
         }
-        final byte[] sharedSecret = tmp;
-        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();
+        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
         // make up a new session identifier and shared secret (using some random generator)
         final long time = System.currentTimeMillis();
         final SecureConversationSession session = new SecureConversationSession(
@@ -126,9 +121,9 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * Creates a new session and saves it.
      *
      * @param sessionId the session identifier, you should use your own "namespace"
-     * @param expiryTime the expiry in millis
+     * @param expiryTime the expiry in milliseconds
      * @param sessionOwner the user
-     * @param credentials the users creds
+     * @param credentials the users credentials
      * @param sharedKey the key for the session
      * @return the newly created session
      */
@@ -148,77 +143,77 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     }
 
     private long getDefaultSessionDuration() {
-        long duration = config.getTimeUnitProperty( "wss.secureConversation.defaultSessionDuration", DEFAULT_SESSION_DURATION );
-
-        if ( duration < MIN_SESSION_DURATION || duration > MAX_SESSION_DURATION ) {
-            duration = DEFAULT_SESSION_DURATION;    
-        }
-
-        return duration;
+        return config.getTimeUnitProperty( "wss.secureConversation.defaultSessionDuration", DEFAULT_SESSION_DURATION );
     }
 
-    private void checkExpiriedSessions() {
-        long now = System.currentTimeMillis();
+    private void checkExpiredSessions() {
+        final long now = System.currentTimeMillis();
         long last;
-        rwlock.readLock().lock();
-        try {
+        synchronized( sessions ) {
             last = lastExpirationCheck;
-        } finally {
-            rwlock.readLock().unlock();
         }
 
         if ((now - last) > SESSION_CHECK_INTERVAL) {
-            rwlock.writeLock().lock();
-            try {
+            synchronized( sessions ) {
                 // check expired sessions
                 logger.finest("Checking for expired sessions");
-                Collection sessionsCol = sessions.values();
-                for (Iterator iterator = sessionsCol.iterator(); iterator.hasNext();) {
-                    SecureConversationSession sess = (SecureConversationSession)iterator.next();
-                    if (sess.getExpiration() <= now) {
+                final Collection sessionsCol = sessions.values();
+                for (final Iterator iterator = sessionsCol.iterator(); iterator.hasNext();) {
+                    final SecureConversationSession session = (SecureConversationSession)iterator.next();
+                    if (session.getExpiration() <= now) {
                         // delete the session
-                        logger.info("Deleting secure conversation session because expired: " + sess.getIdentifier());
+                        logger.fine("Deleting expired SecureConversation context: " + session.getIdentifier());
                         iterator.remove();
                     }
                 }
 
                 lastExpirationCheck = now;
             }
-            finally {
-                rwlock.writeLock().unlock();
-            }
         }
     }
 
     private byte[] generateNewSecret(int length) {
         // return some random secret
-        byte[] output = new byte[length];
+        final byte[] output = new byte[length];
         random.nextBytes(output);
         return output;
     }
 
-    private String randomuuid() {
+    private String randomUuid() {
         // return some random encoded string
-        byte[] output = new byte[20];
+        final byte[] output = new byte[20];
         random.nextBytes(output);
         return HexUtils.hexDump(output);
     }
 
-    /**
-     * keys: identifier (string)
-     * values: SecureConversationSession objects
-     */
-    private Map<String,SecureConversationSession> sessions = new HashMap<String,SecureConversationSession>();
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger );
+
+        vc.setMinimumValue( "wss.secureConversation.defaultSessionDuration", MIN_SESSION_DURATION );
+        vc.setMaximumValue( "wss.secureConversation.defaultSessionDuration", MAX_SESSION_DURATION );
+
+        vc.setMinimumValue( "wss.secureConversation.maxSessions", MIN_SESSIONS );
+        vc.setMaximumValue( "wss.secureConversation.maxSessions", MAX_SESSIONS );
+
+        return vc;
+    }
 
     private static final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
+    private static final long MIN_SESSIONS = 1;
+    private static final long MAX_SESSIONS = 1000000;
+    private static final int DEFAULT_MAX_SESSIONS = 10000;
     private static final long MIN_SESSION_DURATION = 1000*60; // 1 min
     private static final long MAX_SESSION_DURATION = 1000*60*60*24; // 24 hrs
     private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs
     private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
     private static final Random random = new SecureRandom();
 
+    /**
+     * keys: identifier (string)
+     * values: SecureConversationSession objects
+     */
+    private final LRUMap sessions;
     private final Config config;
     private long lastExpirationCheck = System.currentTimeMillis();
-    private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
 }
 

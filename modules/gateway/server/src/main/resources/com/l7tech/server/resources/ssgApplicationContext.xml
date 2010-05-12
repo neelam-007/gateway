@@ -963,7 +963,7 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
         <constructor-arg ref="securityTokenResolver"/>
-        <constructor-arg ref="secureConversationContextManager"/>
+        <constructor-arg ref="securityContextFinder"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContext"/>
@@ -979,7 +979,7 @@
         <constructor-arg ref="policyFilterManager"/>
         <constructor-arg ref="securityTokenResolver"/>
         <constructor-arg ref="policyPathBuilderFactory"/>
-        <constructor-arg ref="secureConversationContextManager"/>
+        <constructor-arg ref="securityContextFinder"/>
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
@@ -1757,5 +1757,16 @@
 
     <bean id="secureConversationContextManager" class="com.l7tech.server.secureconversation.SecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>
+
+    <bean id="securityContextFinder" class="com.l7tech.server.security.DelegatingSecurityContextFinder">
+        <constructor-arg index="0">
+            <list>
+                <ref bean="secureConversationContextManager"/>
+                <ref bean="kerberosSessionContextManager"/>
+            </list>
+        </constructor-arg>
     </bean>
 </beans>

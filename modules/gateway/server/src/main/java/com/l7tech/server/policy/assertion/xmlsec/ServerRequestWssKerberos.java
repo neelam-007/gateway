@@ -14,8 +14,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.security.kerberos.KerberosSessionContextManager;
 import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -35,7 +34,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         this.auditor = new Auditor(this, springContext, logger);
-        this.secureConversationContextManager = (SecureConversationContextManager) springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
+        this.kerberosSessionContextManager = (KerberosSessionContextManager) springContext.getBean( "kerberosSessionContextManager", KerberosSessionContextManager.class );
     }
 
     @SuppressWarnings({"RedundantArrayCreation"})
@@ -107,16 +106,15 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
             // stash for later reference
             final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosServiceTicket.getGSSAPReqTicket());
-            if ( secureConversationContextManager.getSecurityContext( sessionIdentifier ) == null) {
+            if ( kerberosSessionContextManager.getSession( sessionIdentifier ) == null) {
                 try {
-                    secureConversationContextManager.createContextForUser(
+                    kerberosSessionContextManager.createSession(
                             sessionIdentifier,
                             kerberosServiceTicket.getExpiry(),
-                            null,
                             loginCreds,
                             kerberosServiceTicket.getKey());
                 }
-                catch(DuplicateSessionException dse) {
+                catch(KerberosSessionContextManager.DuplicateSessionException dse) {
                     //can't happen since duplicate tickets are detected by kerberos.
                     logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
                 }
@@ -136,7 +134,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final KerberosSessionContextManager kerberosSessionContextManager;
 
     private RequestWssKerberos requestWssKerberos;
 

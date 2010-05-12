@@ -29,6 +29,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.security.xml.processor.WssProcessor;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.DefaultKey;
@@ -37,7 +38,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.HideDisabledAssertions;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultLevel;
@@ -80,7 +80,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private final FilterManager filterManager;
     private final SecurityTokenResolver securityTokenResolver;
     private final PolicyPathBuilderFactory policyPathBuilderFactory;
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final SecurityContextFinder securityContextFinder;
 
     /**
      * The supported credential sources used to determine whether the requester is
@@ -116,7 +116,7 @@ public class PolicyService extends ApplicationObjectSupport {
                          FilterManager filterManager,
                          SecurityTokenResolver securityTokenResolver,
                          PolicyPathBuilderFactory policyPathBuilderFactory,
-                         SecureConversationContextManager secureConversationContextManager )
+                         SecurityContextFinder securityContextFinder )
     {
         if (serverCertFinder == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
@@ -128,7 +128,7 @@ public class PolicyService extends ApplicationObjectSupport {
         this.filterManager = filterManager;
         this.securityTokenResolver = securityTokenResolver;
         this.policyPathBuilderFactory = policyPathBuilderFactory;
-        this.secureConversationContextManager = secureConversationContextManager;
+        this.securityContextFinder = securityContextFinder;
 
         // populate all possible credentials sources
         this.allCredentialAssertions = new ArrayList<Assertion>();
@@ -234,7 +234,7 @@ public class PolicyService extends ApplicationObjectSupport {
             WssProcessor trogdor = new WssProcessorImpl();
             wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                   null,
-                                                  secureConversationContextManager,
+                                                  securityContextFinder,
                                                   securityTokenResolver);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
