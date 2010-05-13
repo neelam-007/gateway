@@ -1385,7 +1385,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                                     ((AssertionTreeNode) pathTarget.getLastPathComponent());
 
                             AssertionTreeNode insertAfter = null;
-                            int targetIndex = 0;
+                            int targetIndex = row == -1 ? targetTreeNode.getChildCount() : 0;
                             while ( targetTreeNode != null ) {
                                 if (targetTreeNode.getAllowsChildren() && targetTreeNode.accept( assertionTreeNodeCopy )) {
                                     if ( insertAfter != null ) {
