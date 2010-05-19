@@ -372,7 +372,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 List<ReportApi.FilterPair> lFp = new ArrayList<ReportApi.FilterPair>();
                 keysToFilterPairs.put(key, lFp);
                 if (keysToFilterPairs.keySet().size() > MAX_KEYS_PER_CLUSTER) {
-                    throw new ReportException("The max number of mapping keys per cluster is 5");
+                    throw new ReportException("The max number of mapping keys per cluster is " + MAX_KEYS_PER_CLUSTER);
                 }
             }
 
