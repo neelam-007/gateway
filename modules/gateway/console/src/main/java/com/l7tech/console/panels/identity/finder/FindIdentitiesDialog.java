@@ -669,8 +669,9 @@ public class FindIdentitiesDialog extends JDialog {
                       deleteButton.setEnabled(false);
                   } else {
                       EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                      if (eh.getType() != EntityType.USER && eh.getType() !=EntityType.GROUP &&
-                          eh.getType() != EntityType.ID_PROVIDER_CONFIG) {
+                      if (eh instanceof LimitExceededMarkerIdentityHeader ||
+                          (eh.getType() != EntityType.USER && eh.getType() !=EntityType.GROUP &&
+                           eh.getType() != EntityType.ID_PROVIDER_CONFIG)) {
                         selectButton.setEnabled(false);
                         deleteButton.setEnabled(false);
 
