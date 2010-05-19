@@ -99,10 +99,10 @@ class NcipherKeyStoreData implements Serializable {
      * If this method returns normally, then at least the following tests have passed for this instance:
      * <ul>
      * <li>The keystore identifier is non-empty.
-     * <li>The keystore identifier is less than 40 characters long.
-     * <li>The keystore identifier contains characters other than ASCII letters or digits.
+     * <li>The keystore identifier is at least 40 characters long.
+     * <li>The keystore identifier contains no characters other than ASCII letters or digits.
      * <li>No files in the fileset are missing names or contents.
-     * <li>No files in the fileset contain characters other than a-z, A-Z, 0-9, dashes, and underscores.
+     * <li>No files in the fileset have names containing characters other than a-z, A-Z, 0-9, dashes, and underscores.
      * <li>All files in the fileset have names beginning with the application prefix "key_jcecsp_".
      * <li>No "module_*" or "world" files are present in the fileset. (separate rule in case previous rule restricting filenames to key_jcecsp_* is someday relaxed)
      * </ul>
