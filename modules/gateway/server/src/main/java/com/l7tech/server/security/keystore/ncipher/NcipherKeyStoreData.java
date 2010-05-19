@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
 /**
  * Holds keystore metadata (40-character hex identifier string) and relevant keystore and module fileset for saving/restoring
  * an nCipher Java keystore within an already-programmed nCipher security world (in /opt/nfast/kmdata/local).
+ * <p/>
+ * We make no attempt to zip or otherwise compress the files in the fileset becuase this would just be a waste
+ * of CPU cycles because the files are already encrypted and hence uncompressible.
  */
 class NcipherKeyStoreData implements Serializable {
     private static final Logger logger = Logger.getLogger(NcipherKeyStoreData.class.getName());
@@ -21,7 +24,7 @@ class NcipherKeyStoreData implements Serializable {
 
     private static final Pattern PAT_ALPHANUM = Pattern.compile("^[a-zA-Z0-9]+$");
     private static final Pattern PAT_ALPHANUM_WITH_DASH_AND_UNDERSCORE = Pattern.compile("^[a-zA-Z0-9\\_\\-]+$");
-    private static final String APP_PREFIX_KEY_JCECSP = "key_jcecsp_";
+    private static final String APP_PREFIX_KEY_JCECSP = "key_jcecsp_"; // The nCipher Java KeyStore uses "key_jcecsp" as its application name for key blob storage purposes
 
     String keystoreMetadata;
     Map<String, byte[]> fileset = new HashMap<String,byte[]>();
