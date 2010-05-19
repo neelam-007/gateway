@@ -824,6 +824,9 @@ insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null)
 -- placeholder for ID reserved for Luna, never loaded or saved
 insert into keystore_file values (3, 0, "SafeNet HSM", "luna", null, null);
 
+-- serialized NcipherKeyStoreData for an nCipher keystore
+insert into keystore_file values (4, 0, "nCipher HSM", "hsm.NcipherKeyStoreData", null, null);
+
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
   encodingid varchar(32) NOT NULL,

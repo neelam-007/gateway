@@ -34,6 +34,10 @@ UPDATE uddi_proxied_service_info SET properties = CONCAT('<?xml version="1.0" en
 ALTER TABLE uddi_proxied_service_info DROP published_hostname;
 
 
+-- serialized NcipherKeyStoreData for an nCipher keystore
+insert into keystore_file values (4, 0, "nCipher HSM", "hsm.NcipherKeyStoreData", null, null);
+
+
 --
 -- Reenable FK at very end of script
 --

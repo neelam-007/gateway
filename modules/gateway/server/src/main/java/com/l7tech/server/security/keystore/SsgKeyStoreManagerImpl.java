@@ -5,22 +5,24 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
+import com.l7tech.server.security.keystore.ncipher.NcipherSsgKeyStore;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
-import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.KeyStoreException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Manages all SsgKeyFinder (and SsgKeyStore) instances that will be available on this Gateway node.
@@ -33,7 +35,7 @@ import java.text.MessageFormat;
  * <p/>
  * Keystore IDs of -1 and 0 have a special meaning and are reserved.
  */
-public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
+public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingBean {
     protected static final Logger logger = Logger.getLogger(SsgKeyStoreManagerImpl.class.getName());
     /** Characters for converting shared key bytes into pass phrase.  Do not change this, ever! */
     private static final String PASSPHRASE_MAP = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+[]{};:'\\|\"/?.,<>`~";
@@ -78,8 +80,10 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         }
 
         boolean haveLuna = isUsingLuna();
-        boolean haveHsm = isHsmAvailable();
+        boolean haveNcipher = isUsingNcipher();
+        boolean haveSca = isUsingSca6000();
         boolean createdHsmFinder = false;
+        boolean createdNcipher = false;
 
         for (KeystoreFile dbFile : dbFiles) {
             long id = Long.parseLong(dbFile.getId());
@@ -87,32 +91,48 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
             String format = dbFile.getFormat();
             if (format == null)
                 throw new KeyStoreException("Database contains keystore_file with no format objectid=" + id);
-            if (format.startsWith("hsm.")) {
-                if (!haveHsm) {
-                    logger.info("Ignoring keystore_file row with a format of hsm because this Gateway node is not configured to use an internal HSM");
+            if (format.startsWith("hsm.sca.")) {
+                if (!haveSca) {
+                    logger.info("Ignoring keystore_file row with a format of hsm.sca because this Gateway node is not configured to use an internal SCA HSM");
                 } else {
                     if (createdHsmFinder)
-                        throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
+                        throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm.sca");
 
                     String encryptedPassword = dbFile.getProperty("passphrase");
                     char[] decryptedPassword = dbEncrypter.decryptPasswordIfEncrypted(encryptedPassword);
                     list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager));
                     createdHsmFinder = true;
                 }
+            } else if (format.startsWith("hsm.Ncipher")) {
+                if (!haveNcipher) {
+                    logger.info("Ignoring keystore_file row with a format of hsm.Ncipher because this Gateway node is not configured to use an nCipher HSM");
+                } else {
+                    if (createdNcipher)
+                        throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm.Ncipher");
+
+                    list.add(new NcipherSsgKeyStore(id, name, keystoreFileManager));
+                    createdNcipher = true;
+                }
             } else if (format.equals("ss")) {
                 logger.fine("Ignoring keystore_file row with a format of ss because this keystore type is no longer supported");
             } else if (format.startsWith("sdb.")) {
-                if (haveHsm || haveLuna)
+                if (haveSca || haveLuna || haveNcipher)
                     logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna instead");
                 else
                     list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword));
             }
 
-            // We'll ignore the placeholder row for Luna
+            // We'll ignore the placeholder row for Luna, if any
         }
 
         if (haveLuna && list.isEmpty()) {
             list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM"));
+        }
+
+        // Force all keyfinders to initialize their keystores early, so they don't end up trying to do so lazily
+        // after someone is already in the middle of a read-only transaction
+        for (SsgKeyFinder ssgKeyFinder : list) {
+            ssgKeyFinder.getAliases();
         }
 
         // TODO maybe offer software keystores even if HSM is available?
@@ -125,17 +145,19 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         return JceProvider.LUNA_ENGINE.equals(JceProvider.getEngineClass());
     }
 
-    public boolean isHsmAvailable() {
+    public boolean isUsingNcipher() {
+        return JceProvider.NCIPHER_ENGINE.equals(JceProvider.getEngineClass());
+    }
+
+    public boolean isUsingSca6000() {
         return JceProvider.PKCS11_ENGINE.equals( JceProvider.getEngineClass());
     }
 
     public List<SsgKeyFinder> findAll() throws FindException, KeyStoreException {
-        init();
         return keystores;
     }
 
     public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
-        init();
         for (SsgKeyFinder keystore : keystores) {
             if (keystore.getOid() == id)
                 return keystore;
@@ -180,12 +202,17 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 continue;
             try {
                 return finder.getCertificateChain(keyAlias);
-            } catch (KeyStoreException e) {
+            } catch (ObjectNotFoundException e) {
                 /* FALLTHROUGH and check the next keystore */
             }
         }
 
         String whichks = scanOthers ? "any keystore" : "keystore ID " + preferredKeystoreId;
         throw new ObjectNotFoundException("No key with alias " + keyAlias + " found in " + whichks);
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        init();
     }
 }

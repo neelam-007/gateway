@@ -50,6 +50,7 @@ public abstract class JceProvider {
     public static final String SUN_ENGINE = "com.l7tech.security.prov.sun.SunJceProviderEngine";
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
     public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
+    public static final String NCIPHER_ENGINE = "com.l7tech.security.prov.ncipher.NcipherJceProviderEngine";
     public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
 
     // Old driver class names
@@ -95,6 +96,7 @@ public abstract class JceProvider {
         put("bc", BC_ENGINE);
         put("luna", LUNA_ENGINE);
         put("rsa", RSA_ENGINE);
+        put("ncipher", NCIPHER_ENGINE);
     }};
 
     static String mapEngine( final String engineClass ) {
