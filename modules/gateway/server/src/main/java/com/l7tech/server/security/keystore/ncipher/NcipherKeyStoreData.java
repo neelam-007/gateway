@@ -244,7 +244,7 @@ class NcipherKeyStoreData implements Serializable {
                     throw new IOException("Unable to overwrite file: " + curFile);
 
                 written.add(name);
-                FileUtils.save(newFile, new FileUtils.ByteSaver(bytes));
+                FileUtils.save(newFile, true, new FileUtils.ByteSaver(bytes));
             }
 
             // Ready to commit

@@ -32,6 +32,48 @@ public class FileUtils {
     private static String defaultDir;
 
     /**
+     * Delete a file.  This just calls {@link File#delete}, but translates a false return value into
+     * an IOException.  Also, this method silently succeeds if the named file does not exist.
+     *
+     * @param file the file to delete.  Required.
+     * @throws IOException if the deletion fails.
+     */
+    public static void delete(File file) throws IOException {
+        if (!file.exists())
+            return;
+        if (!file.delete())
+            throw new IOException("Delete failed for file: " + file);
+    }
+
+    /**
+     * Create a directory.  This method just calls {@link File#mkdir}, but translates a false return value
+     * into an IOException.  Also, this method silently succeeds if the named directory already exists.
+     *
+     * @param file the directory to create.  Required.
+     * @throws IOException if the creation fails.
+     */
+    public static void mkdir(File file) throws IOException {
+        if (file.isDirectory())
+            return;
+        if (!file.mkdir())
+            throw new IOException("Unable to create directory: " + file);
+    }
+
+    /**
+     * Rename a file.  This method just calls {@link File#renameTo}, but translates a false return value
+     * into an IOException.
+     *
+     * @param oldName  the existing filename.  Required.
+     * @param newName  the desired new filename.  Required.
+     * @throws IOException if the rename fails.
+     */
+    public static void rename(File oldName, File newName) throws IOException {
+        if (!oldName.renameTo(newName))
+            throw new IOException("Unable to rename file from " + oldName + " to " + newName);
+    }
+
+
+    /**
      * Interface implemented by those who wish to call saveFileSafely().
      */
     public interface Saver {
@@ -80,6 +122,34 @@ public class FileUtils {
      * @throws java.io.IOException if there is a problem saving the file
      */
     public static void saveFileSafely(String path, Saver saver) throws IOException {
+        saveFileSafely(path, false, saver);
+    }
+
+    /**
+     * Safely overwrite the specified file with new information, with sync to disk.  A lock file will be used to ensure
+     * that only one thread at a time will be attempting to save or load the file at the same time.
+     * <p/>
+     * <pre>
+     *    oldFile   curFile  newFile  Description                    Action to take
+     *    --------  -------  -------  -----------------------------  --------------------------------
+     *  1    -         -        -     Newly created store file       (>newFile) => curFile
+     *  2    -         -        +     Create was interrupted         -newFile; (do #1)
+     *  3    -         +        -     Normal operation               curFile => oldFile; (do #1); -oldFile
+     *  4    -         +        +     Update was interrupted         -newFile; (do #3)
+     *  5    +         -        -     Update was interrupted         oldFile => curFile; (do #3)
+     *  6    +         -        +     Update was interrupted         -newFile; (do #5)
+     *  7    +         +        -     Update was interrupted         -oldFile; (do #3)
+     *  8    +         +        +     Invalid; can't happen          -newFile; -oldFile; (do #3)
+     * </pre>
+     * <p/>
+     * We guarantee to end up in state #3 if we complete successfully.
+     * @param path  the pathname of the file to atomically overwrite.  Required.
+     * @param sync  if true, we will attempt to sync the file descriptor after writing the new file.  May cause a SyncFailedException if this cannot be done.
+     * @param saver a Saver that will produce the bytes that are to be saved to this file.  Required.
+     * @throws java.io.IOException if there is a problem saving the file
+     * @throws java.io.SyncFailedException if sync is requested but the sync fails.
+     */
+    public static void saveFileSafely(String path, boolean sync, Saver saver) throws IOException {
         FileOutputStream out = null;
         RandomAccessFile lockRaf = null;
         FileLock lock = null;
@@ -95,9 +165,10 @@ public class FileUtils {
 
             // Make directory if needed
             if (curFile.getParentFile() != null)
-                curFile.getParentFile().mkdir();
+                mkdir(curFile.getParentFile());
 
             // Get file lock
+            //noinspection ResultOfMethodCallIgnored
             lckFile.createNewFile();
             lockRaf = new RandomAccessFile(lckFile, "rw");
             lock = lockRaf.getChannel().lock();
@@ -105,15 +176,15 @@ public class FileUtils {
             // At start: any state is possible
 
             if (oldFile.exists() && !curFile.exists())
-                oldFile.renameTo(curFile);
+                rename(oldFile, curFile);
             // States 5 and 6 now ruled out
 
             if (newFile.exists())
-                newFile.delete();
+                delete(newFile);
             // States 2, 4, 6 and 8 now ruled out
 
             if (oldFile.exists())
-                oldFile.delete();
+                delete(oldFile);
             // States 5, 6, 7, and 8 now ruled out
 
             // We are now in either State 1 or State 3
@@ -121,6 +192,12 @@ public class FileUtils {
             // Do the actual updating the file contents.
             out = new FileOutputStream(newFile);
             saver.doSave(out);
+            if (sync) {
+                if (!out.getFD().valid())
+                    throw new SyncFailedException("Unable to sync as requested: the Saver has already closed the output file");
+                out.flush();
+                out.getFD().sync();
+            }
             out.close();
             out = null;
 
@@ -139,7 +216,7 @@ public class FileUtils {
 
             // If interrupted here, we end up in State 7 (or State 3 if was no existing file)
 
-            oldFile.delete();
+            delete(oldFile);
 
             // We are now in State 3 (invariant)
 
@@ -193,6 +270,7 @@ public class FileUtils {
         try {
             // Get file lock
             File lckFile = new File(path + ".LCK");
+            //noinspection ResultOfMethodCallIgnored
             lckFile.createNewFile();
             lockRaf = new RandomAccessFile(lckFile, "rw");
             lock = lockRaf.getChannel().lock();
@@ -233,6 +311,7 @@ public class FileUtils {
 
             // Get file lock
             try {
+                //noinspection ResultOfMethodCallIgnored
                 lckFile.createNewFile();
                 lockRaf = new RandomAccessFile(lckFile, "rw");
                 lock = lockRaf.getChannel().lock();
@@ -262,6 +341,7 @@ public class FileUtils {
                     logger.log(Level.SEVERE, "Unable to close lock file: " + e.getMessage(), e);
                 }
             }
+            //noinspection ResultOfMethodCallIgnored
             lckFile.delete();
         }
     }
@@ -309,6 +389,25 @@ public class FileUtils {
      * @throws IOException if there is a problem saving the file.
      */
     public static void save(File out, Saver saver) throws IOException {
+        save(out, false, saver);
+    }
+
+    /**
+     * Saves information into the given output file
+     * using the specified Saver, with optional sync to disk.
+     * <p/>
+     * This save utility can leave a partially-written file if there is a system crash during the save.
+     * See {@link #saveFileSafely(String, com.l7tech.util.FileUtils.Saver)} for a slightly safer way
+     * to save files (at the cost of possibly leaving behind .NEW and .OLD and .LCK files).
+     *
+     * @param out a File to which the information is to be saved.  The file will be overwritten
+     *            without any confirmation or atomicity safeguards.
+     * @param sync  if true, this method will call sync on the descriptor and will not return until the information
+     *              has been fully written to disk.
+     * @param saver a Saver that will save information to the file.
+     * @throws IOException if there is a problem saving the file.
+     */
+    public static void save(File out, boolean sync, Saver saver) throws IOException {
         if (saver == null || out == null) {
             throw new IllegalArgumentException();
         }
@@ -316,6 +415,10 @@ public class FileUtils {
         try {
             fos = new FileOutputStream(out);
             saver.doSave(fos);
+            if (sync) {
+                fos.flush();
+                fos.getFD().sync();
+            }
         } finally {
             ResourceUtils.closeQuietly(fos);
         }
@@ -407,13 +510,14 @@ public class FileUtils {
      * Ensures that a parent directory exists, creating intermediate directories as necessary.
      *
      * @param in the path whose directory should be ensured to exist.  Required.
+     * @throws java.io.IOException if the directory cannot be created.
      */
-    public static void ensurePath(File in) {
+    public static void ensurePath(File in) throws IOException {
         if (in.getParentFile() != null) {
             ensurePath(in.getParentFile());
         }
         if (!in.exists()) {
-            in.mkdir();
+            mkdir(in);
         }
     }
 
@@ -587,7 +691,14 @@ public class FileUtils {
 
     /**
      * Until it makes it into java.io.File
-     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4735419 
+     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4735419
+     *
+     * @param prefix  prefix, to insert before random portion of filename.  Required.
+     * @param suffix  suffix, to append after random portion of filename, or null to default to ".tmp".
+     * @param directory  directory in which to create the temp directory, or null to look up the value in the java.io.tmddir system property.
+     * @param deleteOnExit  if true, the temp directory will be scheduled for deletion on exit of the JDK.
+     * @return the newly-created temp directory.  Never null.
+     * @throws IOException if we are unable to create a temporary file in the specified directory.
      */
     public static File createTempDirectory(String prefix, String suffix, File directory, boolean deleteOnExit) throws IOException {
         if (prefix == null) throw new NullPointerException();
@@ -599,16 +710,24 @@ public class FileUtils {
             String tmpDir = System.getProperty("java.io.tmpdir");
             directory = new File(tmpDir);
         }
-        File f;
-        do {
-            f = generateFile(prefix, s, directory);
-        } while (!f.mkdir());
-        if (deleteOnExit) f.deleteOnExit();
-        return f;
+
+        if (!directory.exists())
+            throw new IOException("Unable to create temporary directory within parent directory " + directory + ": directory does not exist");
+        if (!directory.isDirectory())
+            throw new IOException("Unable to create temporary directory within parent directory " + directory + ": not a directory");
+
+        for (int a = 1; a < 20; a++) {
+            File f = generateFile(prefix, s, directory);
+            if (f.mkdir()) {
+                if (deleteOnExit) f.deleteOnExit();
+                return f;
+            }
+        }
+        throw new IOException("Unable to create temporary directory within parent directory " + directory + " (possible permission problem?)");
     }
 
     private static final SecureRandom random = new SecureRandom();
-    private static File generateFile(String prefix, String suffix, File dir) throws IOException {
+    private static File generateFile(String prefix, String suffix, File dir) {
         long n = random.nextLong();
         return new File(dir, prefix + Long.toString(n == Long.MIN_VALUE ? 0 : Math.abs(n)) + suffix);
     }
