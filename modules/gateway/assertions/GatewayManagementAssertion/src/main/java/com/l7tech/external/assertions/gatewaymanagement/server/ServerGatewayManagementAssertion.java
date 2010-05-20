@@ -134,7 +134,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                         if ( th instanceof AssertionStatusException ) throw (AssertionStatusException) th;
                         try {
                             Management managementResponse = new Management();
-                            managementResponse.setFault(new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(th), null, ExceptionUtils.getDebugException(th), null)));
+                            managementResponse.setFault((InternalErrorFault)new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(th), null, ExceptionUtils.getDebugException(th), null)).initCause(th));
                             response = managementResponse;
                         } catch ( Exception e ) {
                             throw ExceptionUtils.wrap( e );

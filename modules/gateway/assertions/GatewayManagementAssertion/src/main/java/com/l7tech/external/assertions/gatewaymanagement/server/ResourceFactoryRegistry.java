@@ -161,7 +161,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                 resourceSelectors = resourceFactory.getResources();
                 resourceSelectorIterator = resourceSelectors.iterator();
             } catch ( Exception e ) {
-                throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
+                throw (InternalErrorFault) new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
             }
         }
 
@@ -189,7 +189,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                 try {
                     resource = resourceFactory.getResource( selectors );
                 } catch (ResourceFactory.ResourceNotFoundException e) {
-                    throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
+                    throw (InternalErrorFault) new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
                 }
             } else {
                 resource = null;
@@ -203,7 +203,7 @@ public class ResourceFactoryRegistry implements InitializingBean {
                             resourceUri,
                             selectors );
                 } catch ( Exception e ) {
-                    throw new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null));
+                    throw(InternalErrorFault)  new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
                 }
             } else {
                 epr = null;

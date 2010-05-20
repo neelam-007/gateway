@@ -29,10 +29,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -277,10 +274,14 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         final Collection<ET> filteredEntities;
         final User user = JaasUtils.getCurrentUser();
 
-        if ( rbacServices.isPermittedForAnyEntityOfType(user, operationType, entityType) ) {
-            filteredEntities = entities;
+        if ( user != null ) {
+            if ( rbacServices.isPermittedForAnyEntityOfType(user, operationType, entityType) ) {
+                filteredEntities = entities;
+            } else {
+                filteredEntities = securityFilter.filter( entities, user, operationType, otherOperationName );
+            }
         } else {
-            filteredEntities = securityFilter.filter( entities, user, operationType, otherOperationName );
+            filteredEntities = Collections.emptyList();
         }
 
         return filteredEntities;

@@ -348,7 +348,9 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
                     final Resource resource =
                         resourceFactory.find( url, resourceUri, timeout, (SelectorSetType) null )[0];
 
-                    resource.release( context );
+                    if ( context != null ) {
+                        resource.release( context );
+                    }
 
                     complete = true;
                     context = null;
