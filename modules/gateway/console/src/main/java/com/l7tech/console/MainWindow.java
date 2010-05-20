@@ -569,8 +569,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ShowLineNumbers16.png"));
             showAstnLnsMenuItem.setIcon(icon);
             showAstnLnsMenuItem.setText("Show Assertion Numbers");
-            showAstnLnsMenuItem.setMnemonic(KeyEvent.VK_A);
-            showAstnLnsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.ALT_MASK));
+            showAstnLnsMenuItem.setMnemonic(KeyEvent.VK_N);
+            showAstnLnsMenuItem.setDisplayedMnemonicIndex(15);
+            showAstnLnsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.ALT_MASK));
         }
         return showAstnLnsMenuItem;
     }

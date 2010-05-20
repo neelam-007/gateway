@@ -856,9 +856,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             showComments.setAction(getHideShowCommentAction(showComments));
             this.add(showComments);
 
-            JButton displayAssertionLineNums = new JButton();
-            displayAssertionLineNums.setAction(getShowAssertionLineNumbersAction(displayAssertionLineNums));
-            add(displayAssertionLineNums);
+            JButton displayAssertionNumsBtn = new JButton();
+            displayAssertionNumsBtn.setAction(getShowAssertionLineNumbersAction(displayAssertionNumsBtn));
+            displayAssertionNumsBtn.setDisplayedMnemonicIndex(15);
+            add(displayAssertionNumsBtn);
         }
 
         private void setSaveButtonsEnabled(boolean enabled) {
@@ -2056,6 +2057,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
                         button.setText(getName());
+                        button.setDisplayedMnemonicIndex(15);
                         button.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconResource())));
                     }
                 }
@@ -2074,8 +2076,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
 
             // Set the mnemonic and accelerator key
-            showAssertionLineNumbersAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A);
-            showAssertionLineNumbersAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.ALT_MASK));
+            showAssertionLineNumbersAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_N);
+            showAssertionLineNumbersAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.ALT_MASK));
         }
 
         return showAssertionLineNumbersAction;
