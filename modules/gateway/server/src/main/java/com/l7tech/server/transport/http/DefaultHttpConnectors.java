@@ -46,7 +46,8 @@ public class DefaultHttpConnectors {
     private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
     private static final String RSA_ECC_3DES_RC4 = TextUtils.join(",", RSA_ECC, RSA_3DES, RSA_RC4).toString();
 
-    static final String defaultEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
+    static final String defaultHttpEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,OTHER_SERVLETS");
+    static final String defaultHttpsEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
     static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4);
     static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, RSA_ECC);
     static final String defaultInternodePoolSize = SyspropUtil.getString(PROP_INIT_INTERNODE_POOLSIZE, "10");
@@ -66,7 +67,7 @@ public class DefaultHttpConnectors {
             SsgConnector https = new SsgConnector();
             https.setName("Default HTTPS ("+initPort+")");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
-            https.setEndpoints(defaultEndpoints);
+            https.setEndpoints(defaultHttpsEndpoints);
             setListenerCiphers(https);
             https.setPort(initPort);
             https.setKeyAlias(null);
@@ -87,7 +88,7 @@ public class DefaultHttpConnectors {
             SsgConnector https = new SsgConnector();
             https.setName("Default HTTPS (8443)");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
-            https.setEndpoints(defaultEndpoints);
+            https.setEndpoints(defaultHttpsEndpoints);
             setListenerCiphers(https);
             https.setPort(8443);
             https.setKeyAlias(null);
@@ -101,7 +102,7 @@ public class DefaultHttpConnectors {
         SsgConnector http = new SsgConnector();
         http.setName("Default HTTP (8080)");
         http.setScheme(SsgConnector.SCHEME_HTTP);
-        http.setEndpoints(defaultEndpoints);
+        http.setEndpoints(defaultHttpEndpoints);
         http.setPort(8080);
         http.setEnabled(true);
         ret.add(http);
@@ -109,7 +110,7 @@ public class DefaultHttpConnectors {
         SsgConnector httpsNocc = new SsgConnector();
         httpsNocc.setName("Default HTTPS (9443)");
         httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
-        httpsNocc.setEndpoints(defaultEndpoints);
+        httpsNocc.setEndpoints(defaultHttpsEndpoints);
         setListenerCiphers(httpsNocc);
         httpsNocc.setPort(9443);
         httpsNocc.setKeyAlias(null);

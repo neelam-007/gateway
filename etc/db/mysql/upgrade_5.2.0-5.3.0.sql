@@ -83,6 +83,9 @@ INSERT INTO cluster_properties
 -- Add flag for enable/disable policy trace debugging of published service
 ALTER TABLE published_service ADD COLUMN tracing TINYINT(1) NOT NULL DEFAULT 0 AFTER wss_processing;
 
+-- Fix any unmodified default listen port that was created with incorrect endpoints list (Bug #8802)
+UPDATE CONNECTOR SET endpoints="MESSAGE_INPUT,OTHER_SERVLETS" WHERE scheme="HTTP" AND endpoints="MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
+
 --
 -- Reenable FK at very end of script
 --
