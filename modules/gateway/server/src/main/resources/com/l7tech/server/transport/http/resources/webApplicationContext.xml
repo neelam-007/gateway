@@ -20,6 +20,7 @@
                 <entry key="remotingProvider" value-ref="remotingProvider"/>
                 <entry key="licenseManager" value-ref="licenseManager"/>
                 <entry key="adminLogin" value-ref="adminLogin"/>
+                <entry key="adminLoginHelper" value-ref="adminLoginHelper"/>
                 <entry key="trustedEsmManager" value-ref="trustedEsmManager"/>
                 <entry key="trustedEsmUserManager" value-ref="trustedEsmUserManager"/>
             </map>
