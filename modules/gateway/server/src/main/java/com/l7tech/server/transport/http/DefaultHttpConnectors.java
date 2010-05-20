@@ -22,7 +22,8 @@ public class DefaultHttpConnectors {
 
     private static final String PROP_INIT_ADDR = "com.l7tech.server.listener.initaddr";
     private static final String PROP_INIT_PORT = "com.l7tech.server.listener.initport";
-    private static final String PROP_INIT_LISTENER_ENDPOINTS = "com.l7tech.server.listener.initendpoints";
+    private static final String PROP_INIT_LISTENER_HTTP_ENDPOINTS = "com.l7tech.server.listener.initendpoints.http";
+    private static final String PROP_INIT_LISTENER_HTTPS_ENDPOINTS = "com.l7tech.server.listener.initendpoints";
     private static final String PROP_INIT_LISTENER_CIPHERS = "com.l7tech.server.listener.initciphers";
     private static final String PROP_INIT_INTERNODE_CIPHERS = "com.l7tech.server.listener.initinternodeciphers";
     private static final String PROP_INIT_INTERNODE_POOLSIZE = "com.l7tech.server.listener.initinternodepoolsize";
@@ -46,8 +47,8 @@ public class DefaultHttpConnectors {
     private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
     private static final String RSA_ECC_3DES_RC4 = TextUtils.join(",", RSA_ECC, RSA_3DES, RSA_RC4).toString();
 
-    static final String defaultHttpEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,OTHER_SERVLETS");
-    static final String defaultHttpsEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
+    static final String defaultHttpEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_HTTP_ENDPOINTS, "MESSAGE_INPUT,OTHER_SERVLETS");
+    static final String defaultHttpsEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_HTTPS_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
     static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4);
     static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, RSA_ECC);
     static final String defaultInternodePoolSize = SyspropUtil.getString(PROP_INIT_INTERNODE_POOLSIZE, "10");
