@@ -161,12 +161,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
-        privateKeyComboBox.addActionListener(new ActionListener() {
+        final ActionListener enableOrDisableEndpointsListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableEndpoints();
             }
-        });
+        };
+        privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
         protocolComboBox.setModel(new DefaultComboBoxModel(new Object[] {
                 SCHEME_HTTP,
@@ -190,12 +191,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 CA_REQUIRED
         }));
 
-        clientAuthComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableEndpoints();
-            }
-        });
+        clientAuthComboBox.addActionListener(enableOrDisableEndpointsListener);
 
         // Make sure user-initiated changes to checkbox state get recorded so we can restore them
         final ActionListener stateSaver = new ActionListener() {
@@ -203,6 +199,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 JCheckBox source = (JCheckBox)e.getSource();
                 saveCheckBoxState(source);
+                enableOrDisableEndpoints();
             }
         };
         for (JCheckBox cb : savedStateCheckBoxes) {
@@ -698,6 +695,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
                 }
                 enableAndRestore(cbEnableNode);
+
+                if (!cbEnableSsmRemote.isSelected()) {
+                    setEnableAndSelect(false, false, "Disabled because it requires enabling SecureSpan Manager access", cbEnableSsmApplet);
+                }
             } else {
                 setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
             }
@@ -806,6 +807,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnableBuiltinServices.setSelected(builtin);
         cbEnableNode.setSelected(node);
         cbEnablePCAPI.setSelected(pcapi);
+
+        // For listen ports last saved pre-Pandora, have GUI reflect what the actual system behavior will be (Bug #8802)
+        if (cbEnableSsmApplet.isSelected())
+            cbEnableSsmRemote.setSelected(true);
     }
 
 
