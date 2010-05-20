@@ -43,8 +43,17 @@ else
     exit 1
 fi
 
+CARD=""
+CARD_ID=""
+
 if [ "$RELEASE" = "5.1" ]; then
-	CARD_ID="0004"
+	#look first for an astoria card.
+	CARD_ID="0a01"
+	CARD=`/sbin/lspci -nv  |grep "1000" |grep ${CARD_ID}`
+        if [ -z "${CARD}" ] ; then 
+		    #astoria isn't present, look for previous version
+		    CARD_ID="0004"
+	    fi
 elif [ "$RELEASE" = "4.3" ] || [ "$RELEASE" = "4.4" ]; then
         CARD_ID="0203"
 elif [ "$RELEASE" = "4.2" ]; then
@@ -52,10 +61,15 @@ elif [ "$RELEASE" = "4.2" ]; then
 else
         CARD_ID="NOT SUPPORTED";
 fi
-# FIXME: need to add other card ID's if we get new ones
 
-CARD=`/sbin/lspci -nv  |grep "1863" |grep "${CARD_ID}"`
 
+if [ -z "${CARD}" ]; then
+	#if $CARD is already set then it's an astoria card, otherwise look for one on the pci bus using the old vendor id
+	and the appropriate CARD_ID.
+	CARD=`/sbin/lspci -nv  |grep "1863" |grep "${CARD_ID}"`
+fi
+
+#if CARD still isn't set, we've failed to find a supported card.
 if [ -z "${CARD}" ]; then
         echo "No card detected or this release (${RELEASE}) does not support this card (${CARD_ID})"
         exit 
