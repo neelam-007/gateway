@@ -4,11 +4,8 @@ import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.security.xml.processor.BadSecurityContextException;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.InvalidClientCertificateException;
@@ -20,14 +17,20 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
+import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.transport.ListenerException;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -79,6 +82,17 @@ public class TokenServiceServlet extends HttpServlet {
         }
         catch(BeansException be) {
             throw new ServletException("Configuration error; could not get required beans.", be);
+        }
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            HttpTransportModule.requireEndpoint(req, SsgConnector.Endpoint.STS);
+            super.service(req, resp);
+        } catch (ListenerException e) {
+            logger.log(Level.INFO, "Token service not enabled on this connector");
+            resp.sendError(404, "Token service not available on this port");
         }
     }
 
