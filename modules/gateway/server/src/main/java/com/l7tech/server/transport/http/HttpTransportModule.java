@@ -38,7 +38,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
 import javax.naming.directory.DirContext;
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.ServletRequest;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -818,7 +818,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @param req the request to identify.  Required.
      * @return the SsgConnector instance whose listener accepted this request, or null if it can't be found.
      */
-    public static SsgConnector getConnector(HttpServletRequest req) {
+    public static SsgConnector getConnector( ServletRequest req) {
         if (testMode) return testConnector;
 
         Long connectorOid = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
@@ -854,7 +854,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @throws ListenerException if no SsgConnector could be found for this request, or a connector was found but
      *                           was not configured to grant access to the specified endpoint.
      */
-    public static void requireEndpoint(HttpServletRequest req, SsgConnector.Endpoint endpoint) throws ListenerException {
+    public static void requireEndpoint(ServletRequest req, SsgConnector.Endpoint endpoint) throws ListenerException {
         SsgConnector connector = getConnector(req);
         if (connector == null)
             throw new ListenerException("No connector was found for the specified request.");

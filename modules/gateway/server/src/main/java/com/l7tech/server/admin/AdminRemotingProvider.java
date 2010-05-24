@@ -1,10 +1,11 @@
-package com.l7tech.server.admin;
+ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.admin.AdminSessionValidationRuntimeException;
@@ -39,7 +40,7 @@ import java.io.IOException;
  *
  * @author steve
  */
-public class AdminRemotingProvider implements RemotingProvider<Administrative> {
+public class AdminRemotingProvider implements RemotingProvider<Administrative>, SecureHttpInvokerServiceExporter.SecurityCallback {
 
     //- PUBLIC
 
@@ -69,6 +70,15 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
             enforceAdminEnabled( adminAnno == null || adminAnno.authenticated() );
         } else {
             throw new IllegalArgumentException( "Unknown facility " + facility );
+        }
+    }
+
+    @Override
+    public void checkSecured() throws IOException {
+        try {
+            ensureAuthenticated();
+        } catch ( Exception e ) {
+            throw new IOException( ExceptionUtils.getMessage(e), e );
         }
     }
 
@@ -106,19 +116,25 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
             throw new AccessControlException("Request not permitted on this port");
 
         if ( checkAuthenticated ) {
-            // populate principal information if available
-            Subject subject = JaasUtils.getCurrentSubject();
-            if (subject == null) {
-                throw new AccessControlException("No subject passed, authentication failed.");
-            }
+            ensureAuthenticated();
+        }
+    }
 
+    private void ensureAuthenticated() {
+        // populate principal information if available
+        final Subject subject = JaasUtils.getCurrentSubject();
+        if (subject == null) {
+            throw new AccessControlException("No subject passed, authentication failed.");
+        }
+
+        if ( subject.getPrincipals(User.class).isEmpty() ) {
             try {
-                Set<String> credentials = subject.getPublicCredentials(String.class);
+                final Set<String> credentials = subject.getPublicCredentials(String.class);
                 if ( credentials.isEmpty() ) {
-                    throw new AccessControlException("Admin request disallowed: no credentials.");                        
+                    throw new AccessControlException("Admin request disallowed: no credentials.");
                 } else {
-                    String cookie = credentials.iterator().next();
-                    User user = adminSessionManager.resumeSession(cookie);
+                    final String cookie = credentials.iterator().next();
+                    final User user = adminSessionManager.resumeSession(cookie);
                     if( user != null ){
                         subject.getPrincipals().add(user);
                     } else {
@@ -126,7 +142,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
                     }
                 }
             } catch (ObjectModelException fe) {
-                logger.log(Level.WARNING, "Error resuming administrative user session '"+ExceptionUtils.getMessage(fe)+"'.",fe);
+                logger.log(Level.WARNING, "Error resuming administrative user session '"+ ExceptionUtils.getMessage(fe)+"'.",fe);
             } catch (AuthenticationException ve) {
                 throw new AdminSessionValidationRuntimeException("Permission denied.");
             }

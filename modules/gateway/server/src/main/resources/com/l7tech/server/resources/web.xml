@@ -46,6 +46,24 @@
     </filter>
 
     <filter>
+        <filter-name>managerRemotingFilter</filter-name>
+        <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
+        <init-param>
+            <param-name>endpoint-names</param-name>
+            <param-value>ADMIN_APPLET, ADMIN_REMOTE</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
+        <filter-name>clusterRemotingFilter</filter-name>
+        <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
+        <init-param>
+            <param-name>endpoint-names</param-name>
+            <param-value>NODE_COMMUNICATION</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
         <filter-name>remotingFilter</filter-name>
         <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
     </filter>
@@ -94,12 +112,12 @@
     </filter-mapping>
 
     <filter-mapping>
-        <filter-name>remotingFilter</filter-name>
+        <filter-name>managerRemotingFilter</filter-name>
         <url-pattern>/ssg/manager/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
-        <filter-name>remotingFilter</filter-name>
+        <filter-name>clusterRemotingFilter</filter-name>
         <url-pattern>/ssg/cluster/*</url-pattern>
     </filter-mapping>
 
@@ -174,15 +192,6 @@
     <servlet>
         <servlet-name>PasswdService</servlet-name>
         <servlet-class>com.l7tech.server.PasswdServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>xfire</servlet-name>
-        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-        <init-param>
-            <param-name>contextConfigLocation</param-name>
-            <param-value>classpath:com/l7tech/server/resources/xfire-servlet.xml</param-value>
-        </init-param>
     </servlet>
 
     <servlet>
@@ -278,12 +287,6 @@
     <servlet-mapping>
         <servlet-name>wsmfServlet</servlet-name>
         <url-pattern>/ssg/wsmf/*</url-pattern>
-    </servlet-mapping>
-
-    <!-- map the public admin API to the CXF servlet -->
-    <servlet-mapping>
-        <servlet-name>CXFServlet</servlet-name>
-        <url-pattern>/ssg/admin/services/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

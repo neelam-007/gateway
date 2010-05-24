@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.http.FeatureFilter;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.Subject;
@@ -27,10 +28,9 @@ import java.util.logging.Logger;
  * {@link <code>com.l7tech.server.security.rbac.SecuredMethodInterceptor</code>}.
  * </p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
  */
-public class SecureHttpFilter implements Filter {
+public class SecureHttpFilter extends FeatureFilter {
 
     //- PUBLIC
 
@@ -40,28 +40,12 @@ public class SecureHttpFilter implements Filter {
     public SecureHttpFilter() {
     }
 
-    /**
-     *
-     */
-    @Override
-    public void init( final FilterConfig filterConfig ) throws ServletException {
-    }
+    //- PROTECTED
 
-    /**
-     *
-     */
     @Override
-    public void destroy() {
-    }
-
-    /**
-     *
-     */
-    @Override
-    public void doFilter(final ServletRequest servletRequest,
-                         final ServletResponse servletResponse,
-                         final FilterChain filterChain) throws IOException, ServletException {
-
+    protected void doFilterInternal( final ServletRequest servletRequest,
+                                     final ServletResponse servletResponse,
+                                     final FilterChain filterChain ) throws IOException, ServletException {
         final HttpServletRequest hsr = (HttpServletRequest) servletRequest;
         final HttpServletResponse hresp = (HttpServletResponse) servletResponse;
 
@@ -101,7 +85,7 @@ public class SecureHttpFilter implements Filter {
                         }
                     });
 
-                    // rethrow exceptions 
+                    // rethrow exceptions
                     if (ioeHolder[0] != null) throw ioeHolder[0];
                     if (seHolder[0] != null) throw seHolder[0];
 

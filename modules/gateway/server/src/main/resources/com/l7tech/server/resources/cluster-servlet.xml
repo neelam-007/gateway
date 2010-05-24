@@ -2,7 +2,7 @@
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
 
-    <bean id="clusterHttpInvokerParent" abstract="true">
+    <bean id="clusterHttpInvokerParent" abstract="true" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter">
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.gateway.common.spring.remoting.http.SecureRemoteInvocationExecutor">
                 <constructor-arg index="0" value="CLUSTER"/>
@@ -12,9 +12,19 @@
         </property>
     </bean>
 
-    <bean name="/GenericLogAdmin" parent="clusterHttpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/GenericLogAdmin" parent="clusterHttpInvokerParent">
         <property name="service" ref="auditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
+        <property name="permittedClassNames">
+            <set>
+                <value>[Ljava.lang.Class;</value>
+                <value>[Ljava.lang.Object;</value>
+                <value>java.lang.Class</value>
+                <value>java.lang.String</value>
+                <value>java.util.Date</value>
+                <value>org.springframework.remoting.support.RemoteInvocation</value>
+            </set>
+        </property>
     </bean>
 
 </beans>

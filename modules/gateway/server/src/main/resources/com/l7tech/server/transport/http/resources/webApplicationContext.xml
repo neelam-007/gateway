@@ -23,6 +23,9 @@
                 <entry key="adminLoginHelper" value-ref="adminLoginHelper"/>
                 <entry key="trustedEsmManager" value-ref="trustedEsmManager"/>
                 <entry key="trustedEsmUserManager" value-ref="trustedEsmUserManager"/>
+                <entry key="ssgConnectorFinder">
+                    <bean class="com.l7tech.server.transport.http.DefaultSsgConnectorFinder"/>
+                </entry>
             </map>
         </property>
     </bean>

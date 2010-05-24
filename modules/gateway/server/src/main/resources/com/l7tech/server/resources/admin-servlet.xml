@@ -2,7 +2,7 @@
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
 
-    <bean id="httpInvokerParent" abstract="true">
+    <bean id="httpInvokerParent" abstract="true" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter">
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.gateway.common.spring.remoting.http.SecureRemoteInvocationExecutor">
                 <constructor-arg value="ADMIN"/>
@@ -10,104 +10,114 @@
                 <constructor-arg ref="remotingProvider"/>
             </bean>
         </property>
+        <property name="securityCallback" ref="remotingProvider"/>
     </bean>
 
-    <bean name="/AdminLogin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/AdminLogin" parent="httpInvokerParent">
         <property name="service" ref="adminLogin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.AdminLogin"/>
+        <property name="permittedClassNames">
+            <set>
+                <value>[Ljava.lang.Class;</value>
+                <value>[Ljava.lang.Object;</value>
+                <value>java.lang.Class</value>
+                <value>java.lang.String</value>
+                <value>org.springframework.remoting.support.RemoteInvocation</value>
+            </set>
+        </property>
     </bean>
 
-    <bean name="/IdentityAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/IdentityAdmin" parent="httpInvokerParent">
         <property name="service" ref="identityAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
     </bean>
 
-    <bean name="/AuditAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/AuditAdmin" parent="httpInvokerParent">
         <property name="service" ref="auditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
     </bean>
 
-    <bean name="/ServiceAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/ServiceAdmin" parent="httpInvokerParent">
         <property name="service" ref="serviceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
     </bean>
 
-    <bean name="/FolderAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/FolderAdmin" parent="httpInvokerParent">
         <property name="service" ref="folderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
     </bean>
 
-    <bean name="/SchemaAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/SchemaAdmin" parent="httpInvokerParent">
         <property name="service" ref="schemaAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
     </bean>
 
-    <bean name="/FtpAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/FtpAdmin" parent="httpInvokerParent">
         <property name="service" ref="ftpAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
     </bean>
 
-    <bean name="/JmsAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/JmsAdmin" parent="httpInvokerParent">
         <property name="service" ref="jmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
     </bean>
 
-    <bean name="/JdbcAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/JdbcAdmin" parent="httpInvokerParent">
         <property name="service" ref="jdbcAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
     </bean>
 
-    <bean name="/TrustedCertAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/TrustedCertAdmin" parent="httpInvokerParent">
         <property name="service" ref="trustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
     </bean>
 
-    <bean name="/CustomAssertionsRegistrar" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/CustomAssertionsRegistrar" parent="httpInvokerParent">
         <property name="service" ref="customAssertionsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.custom.CustomAssertionsRegistrar"/>
     </bean>
 
-    <bean name="/KerberosAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/KerberosAdmin" parent="httpInvokerParent">
         <property name="service" ref="kerberosAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
     </bean>
 
-    <bean name="/ClusterStatusAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/ClusterStatusAdmin" parent="httpInvokerParent">
         <property name="service" ref="clusterStatusAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
-    </bean>   
+    </bean>
 
-    <bean name="/RbacAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/RbacAdmin" parent="httpInvokerParent">
         <property name="service" ref="rbacAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
     </bean>
 
-    <bean name="/PolicyAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/PolicyAdmin" parent="httpInvokerParent">
         <property name="service" ref="policyAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
     </bean>
 
-    <bean name="/TransportAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/TransportAdmin" parent="httpInvokerParent">
         <property name="service" ref="transportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
     </bean>
 
-    <bean name="/LogSinkAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/LogSinkAdmin" parent="httpInvokerParent">
         <property name="service" ref="logSinkAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
     </bean>
 
-    <bean name="/EmailListenerAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/EmailListenerAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailListenerAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
     </bean>
 
-    <bean name="/EmailAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/EmailAdmin" parent="httpInvokerParent">
         <property name="service" ref="emailAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
     </bean>
 
-    <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+    <bean name="/UDDIRegistryAdmin" parent="httpInvokerParent">
         <property name="service" ref="uddiRegistryAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.UDDIRegistryAdmin"/>
     </bean>
