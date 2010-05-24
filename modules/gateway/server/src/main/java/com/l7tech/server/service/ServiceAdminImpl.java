@@ -104,7 +104,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.uddiRegistryAdmin = uddiRegistryAdmin;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
 
-        int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 18);
+        int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue );
     }
