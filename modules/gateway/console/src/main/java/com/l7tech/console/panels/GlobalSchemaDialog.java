@@ -146,7 +146,16 @@ public class GlobalSchemaDialog extends JDialog {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                add((String)null, new ArrayList<SchemaEntry>());
+                try {
+                    add((String)null, new ArrayList<SchemaEntry>());
+                } catch (CircularReferenceException cre) {
+                    JOptionPane.showMessageDialog(
+                            GlobalSchemaDialog.this,
+                            "You are trying to import XML Schemas that refer to each other. Circular referencing is " +
+                            "currently not supported in XML Schemas.",
+                            "Circular Reference Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
@@ -244,7 +253,7 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void add( final String systemIdentifier,
-                      final java.util.List<SchemaEntry> dependencies ) {
+                      final java.util.List<SchemaEntry> dependencies ) throws CircularReferenceException {
         final SchemaEntry newEntry = new SchemaEntry();
         if ( systemIdentifier != null ) {
             newEntry.setName(systemIdentifier);
@@ -300,7 +309,7 @@ public class GlobalSchemaDialog extends JDialog {
      * @return true if there was at least one unresolved import
      */
     private boolean checkEntryForUnresolvedImports( final SchemaEntry schemaTobeSaved,
-                                                    final java.util.List<SchemaEntry> dependants ) {
+                                                    final java.util.List<SchemaEntry> dependants ) throws CircularReferenceException {
         final Document schemaDoc;
         try {
             String schemaString = schemaTobeSaved.getSchema();
@@ -345,6 +354,22 @@ public class GlobalSchemaDialog extends JDialog {
                 final boolean tnsFound = useNamespace && !schemaAdmin.findByTNS(dependencyNamespace).isEmpty();
                 final boolean locFound = !useNamespace && dependencyLocation != null && !matchNamespaceForIncludeOrRedefine(schemaAdmin.findByName(dependencyLocation),schemaTobeSaved.getTns()).isEmpty();
                 if ( !locFound && !tnsFound ) {
+                    // Check for circularity
+                    if ( dependants != null ) {
+                        boolean found = false;
+                        for ( final SchemaEntry schemaEntry : dependants ) {
+                            if ( dependencyLocation != null && dependencyLocation.equals( schemaEntry.getName() )) {
+                                found = true;
+                                break;
+                            }
+                            if ( hasTns && dependencyNamespace.equals( schemaEntry.getTns() ) ) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) throw new CircularReferenceException();
+                    }
+
                     if ( dependencyLocation != null ) {
                         unresolvedDependencyList.add(dependencyLocation);
                     } else if ( !tnsFound && hasTns ) {
@@ -515,4 +540,6 @@ public class GlobalSchemaDialog extends JDialog {
         me.setVisible(true);
         System.exit(0);
     }
+
+    private static class CircularReferenceException extends Exception {}
 }
