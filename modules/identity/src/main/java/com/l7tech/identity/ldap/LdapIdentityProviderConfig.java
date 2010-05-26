@@ -479,6 +479,28 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(GROUP_MAX_NESTING, depth);
     }
 
+    /**
+     * Get the case insensitivity flag for group membership checks.
+     *
+     * <p>The default value is false (checks are case sensitive), which is
+     * appropriate for most LDAP servers.</p>
+     *
+     * @return True if membership tests should be case insensitive.
+     */
+    @Transient
+    public boolean isGroupMembershipCaseInsensitive() {
+        return getBooleanProperty(GROUP_MEMBERSHIP_CASE_INSENSITIVE, false);
+    }
+
+    /**
+     * Set the case insensitivity flag for group membership checks.
+     *
+     * @param caseInsensitive True for case insensitive tests.
+     */
+    public void setGroupMembershipCaseInsensitive( final boolean caseInsensitive ) {
+        setProperty(GROUP_MEMBERSHIP_CASE_INSENSITIVE, caseInsensitive);
+    }
+
     public enum UserCertificateUseType { NONE, INDEX, INDEX_CUSTOM, SEARCH }
 
     public static final String URL = "ldapurl";
@@ -500,4 +522,5 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String GROUP_CACHE_SIZE = "groupCacheSize";
     private static final String GROUP_CACHE_MAX_AGE = "groupCacheMaxAge";
     private static final String GROUP_MAX_NESTING = "groupMaxNesting";
+    private static final String GROUP_MEMBERSHIP_CASE_INSENSITIVE = "groupMembershipCaseInsensitive";
 }

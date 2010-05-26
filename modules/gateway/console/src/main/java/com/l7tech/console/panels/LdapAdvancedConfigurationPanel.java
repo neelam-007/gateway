@@ -119,6 +119,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private JTextField groupCacheHierarchyMaxAgeTextField;
     private JTextField groupMaximumNestingTextField;
     private JComboBox hierarchyUnitcomboBox;
+    private JCheckBox groupMembershipCaseInsensitive;
 
     private void initComponents() {
         this.setLayout( new BorderLayout() );
@@ -128,6 +129,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         groupCacheSizeTextField.setEnabled( !readOnly );
         groupCacheHierarchyMaxAgeTextField.setEnabled( !readOnly );
         groupMaximumNestingTextField.setEnabled( !readOnly );
+        groupMembershipCaseInsensitive.setEnabled( !readOnly );
 
         RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable() {
             @Override
@@ -295,6 +297,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         groupCacheSizeTextField.setText( Integer.toString(groupCacheSize) );
         groupCacheHierarchyMaxAgeTextField.setText( Integer.toString(groupHierarchyMaxAge / hierarchyTimeUnit.getMultiplier()) );
         groupMaximumNestingTextField.setText( Integer.toString(groupMaxNesting) );
+        groupMembershipCaseInsensitive.setSelected( config.isGroupMembershipCaseInsensitive() );
 
         String[] attributes = config.getReturningAttributes();
         if ( attributes == null ) {
@@ -310,6 +313,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         config.setGroupCacheSize( getInteger(groupCacheSizeTextField) );
         config.setGroupCacheMaxAge( getInteger(groupCacheHierarchyMaxAgeTextField, ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier()) );
         config.setGroupMaxNesting( getInteger(groupMaximumNestingTextField) );
+        config.setGroupMembershipCaseInsensitive(groupMembershipCaseInsensitive.isSelected());
 
         if ( retrieveAllAttributesRadioButton.isSelected() ) {
             config.setReturningAttributes( null );

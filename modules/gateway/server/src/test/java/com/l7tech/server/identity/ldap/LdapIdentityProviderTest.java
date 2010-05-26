@@ -27,12 +27,14 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.test.BugNumber;
 
 import java.util.Properties;
 import java.util.NoSuchElementException;
 import java.net.URL;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 /**
  * LDAP Identity Provider tests that use an embedded Apache Directory Server
@@ -42,8 +44,11 @@ import java.io.InputStream;
  *
  * <p><code>./build.sh repository-install-remote -Dorg=org.apache.directory.server -Dmod=apacheds-server-integ -Drev=1.5.5</code></p>
  *
- * NOTE: If this doesn't work (after rebuilding your idea project ...) check the file
- * "lib/repository/org.apache.mina/mina-core-2.0.0-M6.jar" is present.
+ * <p>NOTE: If this doesn't work (after rebuilding your idea project ...) check
+ * the file "lib/repository/org.apache.mina/mina-core-2.0.0-M6.jar" is present,
+ * if not this should fix it (rebuild idea project):</p>
+ *
+ * <p><code>wget http://mirrors.ibiblio.org/pub/mirrors/maven2/org/apache/mina/mina-core/2.0.0-M6/mina-core-2.0.0-M6.jar -O lib/repository/org.apache.mina/mina-core-2.0.0-M6.jar</code></p>
  */
 //@RunWith( SiRunner.class )
 //@CleanupLevel( Level.CLASS )
@@ -184,6 +189,53 @@ public class LdapIdentityProviderTest {
     }
 
     /**
+     * Basic group membership tests for case insensitive matching
+     */
+    @BugNumber(8703)
+    @Test
+    public void testGroupIsMemberBug8703() throws Exception {
+        init();
+
+        LdapIdentityProvider ldapIdentityProvider = getLdapIdentityProvider(true);
+        LdapUserManager ldapUserManager = ldapIdentityProvider.getUserManager();
+        LdapGroupManager ldapGroupManager = ldapIdentityProvider.getGroupManager();
+
+        LdapUser user1 = ldapUserManager.findByLogin("jdawson");
+        Assert.assertNotNull( "Test jdawson found", user1 );
+
+        LdapUser user2 = ldapUserManager.findByLogin("jjensen"); // user with mismatched case in group membership
+        Assert.assertNotNull( "Test jjensen found", user2 );
+
+        LdapGroup group = ldapGroupManager.findByName("CORESALES_ECS");
+        Assert.assertNotNull( "Test group found", group );
+
+        Assert.assertTrue( "Member of group (jdawson)", ldapGroupManager.isMember( user1, group ));
+        Assert.assertTrue( "Member of group (jjensen)", ldapGroupManager.isMember( user2, group ));
+    }
+
+    /**
+     * Negative group membership test for case sensitive matching
+     */
+    @BugNumber(8703)
+    @Test
+    public void testGroupIsMemberBug8703Negative() throws Exception {
+        init();
+
+        LdapIdentityProvider ldapIdentityProvider = getLdapIdentityProvider();
+        LdapUserManager ldapUserManager = ldapIdentityProvider.getUserManager();
+        LdapGroupManager ldapGroupManager = ldapIdentityProvider.getGroupManager();
+
+        LdapUser user2 = ldapUserManager.findByLogin("jjensen"); // user with mismatched case in group membership
+        Assert.assertNotNull( "Test jjensen found", user2 );
+
+        LdapGroup group = ldapGroupManager.findByName("CORESALES_ECS");
+        Assert.assertNotNull( "Test group found", group );
+
+        // Should fail due to case sensitive check
+        Assert.assertFalse( "Member of group (jjensen)", ldapGroupManager.isMember( user2, group ));
+    }
+
+    /**
      * Test user listings for groups
      */
     @Test
@@ -274,7 +326,8 @@ public class LdapIdentityProviderTest {
         expectedGroups.add( idh( ldapIdentityProvider, "ou=groups1, ou=system", "groups1", EntityType.GROUP ) );
         expectedGroups.add( idh( ldapIdentityProvider, "ou=groups2, ou=system", "groups2", EntityType.GROUP ) );
 
-        Assert.assertTrue( "Group listing user1", ldapGroupManager.getGroupHeaders( user1 ).containsAll( expectedGroups ));
+        Set<IdentityHeader> groups = ldapGroupManager.getGroupHeaders( user1 );
+        Assert.assertTrue( "Group listing user1", groups.containsAll( expectedGroups ));
     }
 
     /**
@@ -542,10 +595,19 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getLdapIdentityProvider() throws Exception {
-        return getLdapIdentityProvider(0);
+        return getLdapIdentityProvider(0, false);
+    }
+
+    private LdapIdentityProvider getLdapIdentityProvider( boolean caseInsensitiveGroupMembership ) throws Exception {
+        return getLdapIdentityProvider(0, caseInsensitiveGroupMembership);
     }
 
     private LdapIdentityProvider getLdapIdentityProvider( int groupNestingLimit ) throws Exception {
+        return getLdapIdentityProvider(groupNestingLimit, false);
+    }
+    
+    private LdapIdentityProvider getLdapIdentityProvider( int groupNestingLimit,
+                                                          boolean caseInsensitiveGroupMembership ) throws Exception {
         LdapRuntimeConfig ldapRuntimeConfig = new LdapRuntimeConfig( new MockConfig( new Properties() ) );
         LdapIdentityProviderImpl ldapProvider = new LdapIdentityProviderImpl(){
             @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
@@ -570,6 +632,7 @@ public class LdapIdentityProviderTest {
         LdapIdentityProviderConfig config = loadTemplate( getClass().getResource( "ldapTemplates/TestLDAP.xml" ), "TestLDAP" );
         config.setSearchBase( "ou=system" );
         config.setGroupMaxNesting( groupNestingLimit );
+        config.setGroupMembershipCaseInsensitive( caseInsensitiveGroupMembership );
         ldapProvider.setUserManager( ldapUserManager );
         ldapProvider.setGroupManager( ldapGroupManager );
         ldapProvider.setIdentityProviderConfig( config );

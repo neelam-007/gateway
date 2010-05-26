@@ -382,10 +382,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private boolean membershipEquality( final String value1, final String value2 ) {
         boolean equal;
 
-        if ( compareMembershipCaseSensitively ) {
-            equal = value1.equals( value2 );
-        } else {
+        // For backwards compatibility we'll support the old (global) system
+        // property setting in addition to the new per provider setting.
+        //
+        // The global setting should be ignored if it has the default value.
+        if ( getIdentityProviderConfig().isGroupMembershipCaseInsensitive() || !compareMembershipCaseSensitively ) {
             equal = value1.equalsIgnoreCase( value2 );
+        } else {
+            equal = value1.equals( value2 );
         }
 
         return equal;

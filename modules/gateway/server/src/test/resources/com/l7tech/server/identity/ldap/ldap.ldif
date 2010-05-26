@@ -116,3 +116,46 @@ objectClass: groupOfNames
 objectClass: top
 cn: sougroup2
 member: ou=users, ou=system
+
+#
+# Groups and users for bug 8703 - Authenticate User/Group compares LDAP DNs in a case sensitive manner
+#
+dn: o=Paychex Inc, ou=system
+objectClass: organization
+objectClass: top
+o: Paychex Inc
+
+dn: ou=Groups, o=Paychex Inc, ou=system
+objectClass: organizationalunit
+objectClass: top
+ou: Groups
+
+dn: ou=People, o=Paychex Inc, ou=system
+objectClass: organizationalunit
+objectClass: top
+ou: People
+
+dn: cn=CORESALES_ECS, ou=Groups, o=paychex inc, ou=system
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: CORESALES_ECS
+uniqueMember: uid=jjensen, ou=people, o=paychex inc, ou=system
+uniqueMember: uid=jdawson, ou=People, o=Paychex Inc, ou=system
+
+# User: jjensen
+dn: uid=jjensen, ou=People, o=Paychex Inc, ou=system
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+cn: pcxcn1
+sn: pcxsn1
+uid: jjensen
+
+dn: uid=jdawson, ou=People, o=Paychex Inc, ou=system
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: top
+cn: pcxcn2
+sn: pcxsn2
+uid: jdawson
+
