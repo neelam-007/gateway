@@ -36,7 +36,7 @@ public class DigestZipOutputStream extends OutputStream {
         for (String digestAlg : digests) {
             MessageDigest md = MessageDigest.getInstance(digestAlg);
             os = new DigestOutputStream(os, md);
-            digestStreams.put(md.getAlgorithm(), (DigestOutputStream) os);
+            digestStreams.put(digestAlg, (DigestOutputStream) os);
         }
     }
 
