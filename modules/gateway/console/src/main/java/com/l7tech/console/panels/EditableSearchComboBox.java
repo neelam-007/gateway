@@ -533,11 +533,12 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
 
             //only show drop down list when there are filtered items available to be displayed
 
+            if(normalBgColor == null){
+                normalBgColor = new Color(getBackground().getRGB());
+            }
+            
             if(model.getSize() > 0 || "".equals(getText())){
                 setPopupVisible(showPopUp);
-                if(normalBgColor == null){
-                    normalBgColor = new Color(getBackground().getRGB());
-                }
                 if(getBackground().equals(yellowBgColor)){
                     setBackground(normalBgColor);
                     EditableSearchComboBox.this.doNotFireEvents = true;
