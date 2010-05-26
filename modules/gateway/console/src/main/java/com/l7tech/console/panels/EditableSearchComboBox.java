@@ -8,6 +8,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.event.*;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,10 +23,19 @@ import java.awt.*;
  * This means some ActionEvents are ignored. This is due to the JComboBox being a compound component and can cause multiple
  * events to be fired for a single user action. However in some circumstances an event may be fired more than once.
  *
+ * This class is abstract but contains no abstract methods; when creating an instance create an anonomyous subclass and
+ * override no methods
+ * e.g. EditableSearchComboBox<AssertionTreeNode> editSearchBox = new EditableSearchComboBox<AssertionTreeNode>(filter){};
+ * This is done so that the type of T can be captured and used at runtime to work with setItem(Object), we only want
+ * Object's of the parameter type to be set. If an anonomyous class is not created we cannot do this, so the class is
+ * marked abstract to ensure this works.
+ * //todo this may not be required anymore, but leaving in for now as setObject seems to always have the correct type, but it needs more testing
+ * See: http://gafter.blogspot.com/2006/12/super-type-tokens.html
+ * 
  * @author dlee
  * @author darmstrong
  */
-public class EditableSearchComboBox<T> extends JComboBox {
+public abstract class EditableSearchComboBox<T> extends JComboBox {
     private final FilterableComboBoxModel model;
     private final SearchFieldEditor<T> editor;
     private final static int startIndex = -1;
@@ -52,10 +63,24 @@ public class EditableSearchComboBox<T> extends JComboBox {
     private boolean ignoreWhen = false;
 
     /**
+     * The captured type of T which is available at runtime to determine which Objects from setItem should be accecpted
+     */
+    private final Class paramaterizedType;
+
+    /**
      * Default constructor which will provide no list of search items.
      * @param filter Filter contains the filtering logic 
      */
     public EditableSearchComboBox(final Filter filter) {
+        Type superclass = getClass().getGenericSuperclass();
+        if (superclass instanceof Class) {
+            //caller did not supply a type parameter
+            paramaterizedType = Object.class;
+        }else{
+            Type type = ((ParameterizedType) superclass).getActualTypeArguments()[0];
+            paramaterizedType = (type instanceof Class)? (Class)type: Object.class;
+        }
+
         model = new FilterableComboBoxModel(filter);
         editor = new SearchFieldEditor<T>();
 
@@ -262,7 +287,6 @@ public class EditableSearchComboBox<T> extends JComboBox {
         private Object selectedItem;
         private final Filter filter;
         private Comparator<T> comparator;
-        private String modelItemsClass;
 
         public FilterableComboBoxModel(final Filter filter) {
             items = new ArrayList<T>();
@@ -341,10 +365,6 @@ public class EditableSearchComboBox<T> extends JComboBox {
         public void updateSearchableItems(List<T> searchableItems) {
             items.clear();
             items.addAll(searchableItems);
-            if(searchableItems.size() > 0){
-                final Object t = searchableItems.get(0);
-                modelItemsClass = t.getClass().getName();
-            }
             updateFilteredItems();
         }
 
@@ -468,11 +488,8 @@ public class EditableSearchComboBox<T> extends JComboBox {
             if (anObject != null) {
                 //do not set the text of the text field. This overwrites what the user has typed
                 //and causes various bugs where going back into the text field populates it with a previous selection
-                if(model.modelItemsClass != null){
-                    final String anObjectType = anObject.getClass().getName();
-                    if(anObjectType.equals(model.modelItemsClass)){
-                        selectedObject = (T) anObject;
-                    }
+                if(paramaterizedType.isAssignableFrom(anObject.getClass())){
+                    selectedObject = (T) anObject;
                 }
             }
             isSetting = false;
@@ -604,7 +621,7 @@ public class EditableSearchComboBox<T> extends JComboBox {
             public boolean accept(Object obj) {
                 return true;
             }
-        });
+        }){};
 
         combo.addActionListener(new ActionListener() {
 

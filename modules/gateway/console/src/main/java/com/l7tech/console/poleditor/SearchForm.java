@@ -228,7 +228,7 @@ public class SearchForm {
             }
         };
 
-        searchComboBox = new EditableSearchComboBox<AssertionTreeNode>(filter);
+        searchComboBox = new EditableSearchComboBox<AssertionTreeNode>(filter){};
     }
 
     public JPanel getSearchPanel() {

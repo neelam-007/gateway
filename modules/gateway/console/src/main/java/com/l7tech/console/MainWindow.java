@@ -2530,7 +2530,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     return matches;
                 }
-            });
+            }){};
             
             searchComboBox.setEnabled(false);
             searchLabel.setEnabled(false);
