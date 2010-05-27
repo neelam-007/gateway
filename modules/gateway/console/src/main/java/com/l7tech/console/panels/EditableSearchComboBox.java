@@ -90,7 +90,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
 
         super.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 if(doNotFireEvents) {
                     return;
                 }
@@ -114,7 +114,16 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                             !"".equals(filter.getFilterText()) &&
                             !popUpCancelled &&
                             ( !editor.isEditorShowingNoResults() || editor.getAndClearIsEnterLastKeyPressed() )) {
-                        fireActionPerformed(e);
+                        // The action events may cause the scrollpane to scroll, which can caues the pop up menu to
+                        // scroll also; which can 'disconnect' it from the combo box. Avoid this by invoking the
+                        // action events later; to ensure the UI has had time to redraw itself following the dismissing
+                        // of the pop up menu, which is currently in the process of happening.
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                fireActionPerformed(e);
+                            }
+                        });
                     }
 
                     lastEvent = eventTime;
