@@ -147,7 +147,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         final boolean validateTimestamps = config.getBooleanProperty( SERVICE_VALIDATE_WSS_TIMESTAMPS, true );
 
         // Compile with license enforcement disabled (dogfood policy can use any assertion it wants)
-        this.tokenServicePolicy.set( policyFactory.compilePolicy(getGenericEnforcementPolicy( validateTimestamps ), false) );
+        final ServerAssertion newPolicy = policyFactory.compilePolicy(getGenericEnforcementPolicy( validateTimestamps ), false);
+        final ServerAssertion oldPolicy = this.tokenServicePolicy.getAndSet( newPolicy );
+        ResourceUtils.closeQuietly( oldPolicy );
     }
 
     public class TokenServiceException extends Exception {
