@@ -130,6 +130,8 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
         } catch (SAXException e) {
             auditNotXml();
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "SAXException during XPath processing: " + ExceptionUtils.getMessage(e), e);
             //can't proceed cause the XML message probably isn't well formed ... FAILED
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
             return AssertionStatus.FAILED;
