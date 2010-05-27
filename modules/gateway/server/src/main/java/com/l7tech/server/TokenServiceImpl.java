@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
@@ -59,6 +60,8 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -68,6 +71,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -81,21 +85,42 @@ import java.util.regex.Pattern;
  * User: flascell<br/>
  * Date: Aug 6, 2004<br/>
  */
-public class TokenServiceImpl extends ApplicationObjectSupport implements TokenService {
+public class TokenServiceImpl extends ApplicationObjectSupport implements TokenService, PropertyChangeListener {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(TokenServiceImpl.class.getName());
 
+    private static final String SERVICE_VALIDATE_WSS_TIMESTAMPS = "service.validateWssTimestamps";
+
+    private static final String WST_RST_RESPONSE_INFIX =
+                  "</wst:RequestedSecurityToken>";
+    private static final String WST_RST_RESPONSE_SUFFIX =
+                "</wst:RequestSecurityTokenResponse>" +
+              "</soap:Body>" +
+            "</soap:Envelope>";
+
+    /**
+     * a key in the Map returned by getTrustTokenTypeAndRequestTypeValues that tells us the ws trust ns value used in the RST
+     * so that we can use the same ns in the response document
+     */
+    private static final String TRUSTNS = "trustns";
+    private static final String SCNS = "scns";
+    private static final String SOAPNS = "soapns";
+
+    private final Config config;
     private final DefaultKey defaultKey;
-    private final ServerAssertion tokenServicePolicy;
+    private final ServerPolicyFactory policyFactory;
+    private final AtomicReference<ServerAssertion> tokenServicePolicy = new AtomicReference<ServerAssertion>();
     private final SecurityTokenResolver securityTokenResolver;
     private final SecureConversationContextManager secureConversationContextManager;
 
     /**
-     * specify the server key and cert at construction time instead of letting the object try to retreive them
+     * specify the server key and cert at construction time instead of letting the object try to retrieve them
      * @param defaultKey     used to find the default SSL private key
      * @param policyFactory  used to compile policies into server policies
      * @param securityTokenResolver used to locate security tokens
      */
-    public TokenServiceImpl( final DefaultKey defaultKey,
+    public TokenServiceImpl( final Config config,
+                             final DefaultKey defaultKey,
                              final ServerPolicyFactory policyFactory,
                              final SecurityTokenResolver securityTokenResolver,
                              final SecureConversationContextManager secureConversationContextManager ) {
@@ -103,17 +128,26 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             throw new IllegalArgumentException("DefaultKey must be provided to create a TokenService");
         }
 
+        this.config = config;
         this.defaultKey = defaultKey;
+        this.policyFactory = policyFactory;
         this.securityTokenResolver = securityTokenResolver;
         this.secureConversationContextManager = secureConversationContextManager;
+
         try {
-            // Compile with license enforcement disabled (dogfood policy can use any assertion it wants)
-            this.tokenServicePolicy = policyFactory.compilePolicy(getGenericEnforcementPolicy(), false);
+            buildTokenServicePolicy();
         } catch (ServerPolicyException e) {
             throw new RuntimeException(e); // can't happen
         } catch ( LicenseException e) {
             throw new RuntimeException(e); // can't happen, we said no license enforcement
         }
+    }
+
+    private void buildTokenServicePolicy() throws ServerPolicyException, LicenseException {
+        final boolean validateTimestamps = config.getBooleanProperty( SERVICE_VALIDATE_WSS_TIMESTAMPS, true );
+
+        // Compile with license enforcement disabled (dogfood policy can use any assertion it wants)
+        this.tokenServicePolicy.set( policyFactory.compilePolicy(getGenericEnforcementPolicy( validateTimestamps ), false) );
     }
 
     public class TokenServiceException extends Exception {
@@ -169,7 +203,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
 
             try {
-                status = tokenServicePolicy.checkRequest(context);
+                status = tokenServicePolicy.get().checkRequest(context);
             } catch (IOException e) {
                 throw new ProcessorException(e);
             } catch (PolicyAssertionException e) {
@@ -276,6 +310,20 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
     }
 
+    @Override
+    public void propertyChange( final PropertyChangeEvent evt ) {
+        if ( SERVICE_VALIDATE_WSS_TIMESTAMPS.equals( evt.getPropertyName() ) ) {
+            logger.info( "Rebuilding token service policy." );
+            try {
+                buildTokenServicePolicy();
+            } catch (ServerPolicyException e) {
+                logger.log( Level.SEVERE, "Error rebuilding token service policy.", e );
+            } catch ( LicenseException e) {
+                logger.log( Level.SEVERE, "Error rebuilding token service policy.", e );
+            }            
+        }
+    }
+
     /*
      * Constructs the following policy (server-side version)<br/>
      * <pre>
@@ -296,7 +344,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      *         HttpClientCert
      * </pre>
      */
-    private Assertion getGenericEnforcementPolicy() {
+    private Assertion getGenericEnforcementPolicy( boolean validateTimestamps ) {
         AllAssertion base = new AllAssertion();
         OneOrMoreAssertion root = new OneOrMoreAssertion();
 
@@ -306,6 +354,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         validCredsOverMsgLvlSec.addChild(new RequireWssSaml());
         validCredsOverMsgLvlSec.addChild(new SecureConversation());
         msgLvlBranch.addChild(validCredsOverMsgLvlSec);
+        if ( validateTimestamps ) {
+            msgLvlBranch.addChild( RequireWssTimestamp.newInstance() );
+        }
         OneOrMoreAssertion signedBody = new OneOrMoreAssertion();
         signedBody.addChild(new RequireWssSignedElement());
         signedBody.addChild(new RequireWssSignedElement( XpathExpression.soap12BodyXpathValue() ));
@@ -722,18 +773,4 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                   "xmlns:wsc=\"" + wsscns + "\">" +
                   "<wst:RequestedSecurityToken>";
     }
-    private static final String WST_RST_RESPONSE_INFIX =
-                  "</wst:RequestedSecurityToken>";
-    private static final String WST_RST_RESPONSE_SUFFIX =
-                "</wst:RequestSecurityTokenResponse>" +
-              "</soap:Body>" +
-            "</soap:Envelope>";
-
-    /**
-     * a key in the Map returned by getTrustTokenTypeAndRequestTypeValues that tells us the ws trust ns value used in the RST
-     * so that we can use the same ns in the response document
-     */
-    private static final String TRUSTNS = "trustns";
-    private static final String SCNS = "scns";
-    private static final String SOAPNS = "soapns";
 }

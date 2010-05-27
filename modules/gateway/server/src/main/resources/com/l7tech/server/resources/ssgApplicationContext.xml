@@ -282,6 +282,11 @@
                                 <value>ioJmsConnectionCacheSize</value>
                             </list>
                         </entry>
+                        <entry key="tokenService">
+                            <list>
+                                <value>service.validateWssTimestamps</value>
+                            </list>
+                        </entry>
 
                     </map>
                 </constructor-arg>
@@ -983,6 +988,7 @@
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="securityTokenResolver"/>
