@@ -2523,7 +2523,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         final String routingUri = serviceNode.getEntityHeader().getRoutingUri();
                         if (routingUri != null){
                             if(searchText.startsWith("/")){
-                                matches = routingUri.contains(searchText.substring(1));
+                                matches = routingUri.toLowerCase().contains(searchText.substring(1));
                             }
                         }
                     }
