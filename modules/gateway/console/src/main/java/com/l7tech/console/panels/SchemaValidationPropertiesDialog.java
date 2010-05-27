@@ -102,6 +102,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private JButton readFileButton;
     private JRadioButton rbApplyToBody;
     private JRadioButton rbApplyToArgs;
+    private JRadioButton rbApplyToEnvelope;
     private JPanel xmlDisplayPanel;
     private XMLContainer xmlContainer;
 
@@ -311,11 +312,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private void modelToView() {
-        if (schemaValidationAssertion.isApplyToArguments()) {
-            rbApplyToArgs.setSelected(true);
-        } else {
-            rbApplyToBody.setSelected(true);
-        }
+        SchemaValidation.ValidationTarget target = schemaValidationAssertion.getValidationTarget();
+        rbApplyToArgs.setSelected(SchemaValidation.ValidationTarget.ARGUMENTS == target);
+        rbApplyToBody.setSelected(SchemaValidation.ValidationTarget.BODY == target);
+        rbApplyToEnvelope.setSelected(SchemaValidation.ValidationTarget.ENVELOPE == target);
 
         AssertionResourceInfo ri = schemaValidationAssertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -904,7 +904,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         targetMessagePanel.updateModel(schemaValidationAssertion);
 
         // save new schema
-        schemaValidationAssertion.setApplyToArguments(rbApplyToArgs.isSelected());
+        if (rbApplyToArgs.isSelected())
+            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.ARGUMENTS);
+        else if (rbApplyToBody.isSelected())
+            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.BODY);
+        else if (rbApplyToEnvelope.isSelected())
+            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.ENVELOPE);
 
         // exit
         changesCommitted = true;
@@ -919,9 +924,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
               " is not " + SchemaValidation.TOP_SCHEMA_ELNAME + ")");
             return false;
         }
-        if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
+        if (!XmlUtil.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
             log.log(Level.WARNING, "document is not schema (namespace is not + " +
-              SchemaValidation.W3C_XML_SCHEMA + ")");
+              XmlUtil.W3C_XML_SCHEMA + ")");
             return false;
         }
         return true;
@@ -1209,6 +1214,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         ButtonGroup bg = new ButtonGroup();
+        bg.add(rbApplyToEnvelope);
         bg.add(rbApplyToBody);
         bg.add(rbApplyToArgs);
     }

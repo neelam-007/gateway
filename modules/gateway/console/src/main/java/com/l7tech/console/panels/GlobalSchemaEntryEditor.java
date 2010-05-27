@@ -257,7 +257,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         Element rootEl = doc.getDocumentElement();
 
         return SchemaValidation.TOP_SCHEMA_ELNAME.equals( rootEl.getLocalName() ) &&
-               SchemaValidation.W3C_XML_SCHEMA.equals( rootEl.getNamespaceURI() );
+               XmlUtil.W3C_XML_SCHEMA.equals( rootEl.getNamespaceURI() );
     }
 
     private void displayError(String msg, String title) {

@@ -213,42 +213,64 @@ public class ServerSchemaValidation
             SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
             SAXException validationException = null;
 
-            if (assertion.isApplyToArguments()) {
-                final Document soapMessage;
-
-                soapMessage = xmlKnob.getDocumentReadOnly();
-                final Element[] elementsToValidate;
+            Document doc = xmlKnob.getDocumentReadOnly();
+            if ( ! SoapUtil.isSoapMessage(doc)) {
                 try {
-                    Element[] result;
-                    if ( SoapUtil.isSoapMessage(soapMessage)) {
-                        logger.finest("validating against the body 'arguments'");
-                        result = getBodyArguments(soapMessage);
-                    } else {
-                        result = new Element[]{soapMessage.getDocumentElement()};
-                    }
-                    elementsToValidate = result;
-                } catch ( InvalidDocumentFormatException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate does not respect the expected format");
-                    return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
-                }
-                if (elementsToValidate == null || elementsToValidate.length < 1) {
-                    logger.fine("There is nothing to validate. This is legal because setting is set " +
-                            "to validate arguments only and certain rpc operations do not have any " +
-                            "argument elements.");
-                    return AssertionStatus.NONE;
-                }
-
-                try {
-                    ps.validateElements(elementsToValidate, reporter);
+                    // Validate entire message
+                    ps.validateMessage(message, reporter);
                 } catch (SAXException e) {
                     validationException = e;
                 }
             } else {
-                // Validate entire message
-                try {
-                    ps.validateMessage(message, reporter);
-                } catch (SAXException e) {
-                    validationException = e;
+                SchemaValidation.ValidationTarget target = assertion.getValidationTarget();
+                switch (target) {
+                    case BODY:
+                        try {
+                            // Validate entire message
+                            ps.validateMessage(message, reporter);
+                        } catch (SAXException e) {
+                            validationException = e;
+                        }
+                        break;
+
+                    case ENVELOPE:
+                        try {
+                            logger.finest("validating the whole message, including envelope");
+                            ps.validateElements(new Element[]{xmlKnob.getDocumentReadOnly().getDocumentElement()}, reporter);
+                        } catch (SAXException e) {
+                            validationException = e;
+                        }
+                        break;
+
+                    case ARGUMENTS:
+                        final Element[] elementsToValidate;
+                        try {
+                            if ( SoapUtil.isSoapMessage(doc)) {
+                                logger.finest("validating against the body 'arguments'");
+                                elementsToValidate = getBodyArguments(doc);
+                            } else {
+                                elementsToValidate = new Element[]{doc.getDocumentElement()};
+                            }
+                        } catch ( InvalidDocumentFormatException e) {
+                            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate does not respect the expected format");
+                            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+                        }
+                        if (elementsToValidate == null || elementsToValidate.length < 1) {
+                            logger.fine("There is nothing to validate. This is legal because setting is set " +
+                                    "to validate arguments only and certain rpc operations do not have any " +
+                                    "argument elements.");
+                            return AssertionStatus.NONE;
+                        }
+
+                        try {
+                            ps.validateElements(elementsToValidate, reporter);
+                        } catch (SAXException e) {
+                            validationException = e;
+                        }
+                        break;
+
+                    default:
+                        throw new IllegalArgumentException("Unexpected schema validation target: " + target );
                 }
             }
 

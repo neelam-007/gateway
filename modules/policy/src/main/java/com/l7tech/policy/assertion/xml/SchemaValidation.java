@@ -15,12 +15,16 @@ import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -30,6 +34,10 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 @HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
 public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables, SetsVariables {
     public static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
+
+    public enum ValidationTarget {
+        ENVELOPE, BODY, ARGUMENTS
+    }
 
     public SchemaValidation() {
         super(false);
@@ -45,20 +53,35 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
      * where the schema in  wsdl/types element describes only the arguments (rpc/lit) and
      * not the whole content of the soap:body.
      *
+     * @deprecated replaced by schemaTarget property 
+     * @see #getValidationTarget()
      * @return true if schema applies to arguments only, false otherwise
      */
+    @Deprecated
     public boolean isApplyToArguments() {
-        return applyToArguments;
+        return ValidationTarget.ARGUMENTS == this.validationTarget;
     }
 
     /**
      * Set whether the schema validation applies to arguments o
+     *
      * @param applyToArguments set true to apply to arguments, false to apply to whole body.
      *                         The default is false.
+     * @deprecated replaced by schemaTarget property
+     * @see #setSchemaTarget()
      * @see #isApplyToArguments()
      */
+    @Deprecated
     public void setApplyToArguments(boolean applyToArguments) {
-        this.applyToArguments = applyToArguments;
+        this.validationTarget = applyToArguments ? ValidationTarget.ARGUMENTS : ValidationTarget.BODY;
+    }
+
+    public ValidationTarget getValidationTarget() {
+        return validationTarget;
+    }
+
+    public void setValidationTarget(ValidationTarget validationTarget) {
+        this.validationTarget = validationTarget;
     }
 
     @Override
@@ -79,13 +102,9 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         this.resourceInfo = sri;
     }
 
-    //todo: this constants should probably find a better home
-    public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
-    public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
-    public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
     public static final String TOP_SCHEMA_ELNAME = "schema";
 
-    private boolean applyToArguments;
+    private ValidationTarget validationTarget = ValidationTarget.BODY;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
 
     @Override
@@ -131,6 +150,9 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SchemaValidationPropertiesAction");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "XML Schema Validation Properties");
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                    new Java5EnumTypeMapping(ValidationTarget.class, "validationTarget")
+        )));
 
         return meta;
     }
