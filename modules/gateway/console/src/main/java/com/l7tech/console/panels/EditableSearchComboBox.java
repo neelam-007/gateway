@@ -545,7 +545,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
             if(normalBgColor == null){
                 normalBgColor = new Color(getBackground().getRGB());
             }
-            
+
             if(model.getSize() > 0 || "".equals(getText())){
                 setPopupVisible(showPopUp);
                 if(getBackground().equals(yellowBgColor)){
@@ -576,12 +576,13 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
         public boolean isEditorShowingNoResults(){
             return getBackground().equals(yellowBgColor);
         }
+
         /**
-         * Clears the text field and sets background back to white.
+         * Clear the text field. Note: this will cause the document listener to fire which will cause the
+         * background color to be reset.
          */
         public void clearSearch() {
             setText("");
-            setBackground(Color.white);
         }
     }
 
