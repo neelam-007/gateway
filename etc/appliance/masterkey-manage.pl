@@ -63,7 +63,7 @@ END {
 }
 
 sub usage() {
-    die "Usage: $0 [probe|init|backup|restore|lock] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
+    die "Usage: $0 [probe|init|createkeystore|backup|restore|lock] <SOPASSWORD> <BACKUPFILE> <BACKUPPASS>\n";
 }
 
 sub fatal($$) {
@@ -300,7 +300,7 @@ sub restoreMasterKeyFromPath($$$) {
         qr/The board is ready to be administered./               => "\n";
 }
 
-sub initializeKeystore($) { 
+sub initializeHSM($) { 
     my $soPass = shift; 
   
     my $exp = spawnScamgr(); 
@@ -312,10 +312,9 @@ sub initializeKeystore($) {
 
     dialog $exp,  
         [@trustTheTrustedKey,
-         ["Security Officer Login: "                              =>  sub { fatal ERR_BOARD_IS_INIT,
+         [qr/.*Select Keystore:.* /s                             =>  sub { fatal ERR_BOARD_IS_INIT,
                                                                             "Unable to initialize -- board already initialized." }],
-         [qr/1. Initialize the board with a new keystore.*> /s     => "1\n" ]],
-        "Keystore Name:"                                          => "$keystoreName\n",
+	 [qr/.*Initialize board with new configuration.*> /s     => "1\n" ]],
         qr/Run in FIPS 140-2 mode.*: /                            => "y\n",
         "Initial Security Officer Name: "                         => "$soUsername\n",
         "Initial Security Officer Password: "                     => "$soPass\n",
@@ -330,12 +329,47 @@ sub initializeKeystore($) {
     dialog $exp,
         "Security Officer Login: "                                => "$soUsername\n",
         "Security Officer Password: "                             => "$soPass\n",
+        $prompt                                                   => "quit\n";
+
+    createKeystore($soPass,"ssg");
+} 
+
+sub createKeystore($$) { 
+    my $ksPass = shift; 
+    my $keystoreName = shift;
+  
+    my $exp = spawnScamgr(); 
+ 
+    my $soUsername   = 'so';
+    my $userUsername = 'gateway';
+    my $soPass = $ksPass;	
+    my $userPass = $ksPass;
+
+    dialog $exp,  
+	 [@trustTheTrustedKey,
+          ["This board is uninitialized."               => sub { fatal ERR_BOARD_IS_UNINIT, "Unable to back up key -- board not initialized." } ],
+          [qr/1. Create new keystore.*> /s              => "1\n"]],
+	qr/.*Keystore Name.* /					  => "$keystoreName\n",
+	qr/.*Keystore type.* /					  => "L\n",
+        "Initial Security Officer Name: "                         => "$soUsername\n",
+        "Initial Security Officer Password: "                     => "$soPass\n",
+        [["Passwords must (be|have) at least"                     => sub { fatal ERR_PASSWORD_TOO_WEAK, 
+                                                                           "New HSM password too weak" }],
+         ["Confirm password: "                                    => "$soPass\n"]],
+        qr/Keystore creation parameters.*Is this correct?.*: /s => "y\n",
+        '-timeout' => 20,
+        qr/successfully created/;
+
+    # Restart dialog to reset timout to the default short one
+    dialog $exp,
+        "Security Officer Login: "                                => "$soUsername\n",
+        "Security Officer Password: "                             => "$soPass\n",
         $prompt                                                   => "create user $userUsername\n",
-        "Enter new user password: "                               => "$userPassword\n",
-        "Confirm password: "                                      => "$userPassword\n",
-        [["Failed creating user "                                 => sub { fatal ERR_CREATING_USER,
-                                                                           "Unable to create new HSM user $userUsername" }],
-         [qr/User .* created successfully.*> /s                   => "quit\n" ]];
+        "Enter new user password: "				  => "$userPass\n",
+	"Confirm password: "					  => "$userPass\n",
+	qr/User.*created successfully.*/		  	  => "",
+	$prompt						  	  => "enable user $userUsername\n",
+	$prompt                                                   => "quit\n";
 } 
 
 sub lockKeystore($) {
@@ -398,7 +432,12 @@ MAIN: {
     } elsif ($command eq 'init') {
         usage() unless $soPass;
         $commandProc = sub {
-            initializeKeystore($soPass);
+            initializeHSM($soPass);
+        };
+    } elsif ($command eq 'createkeystore') {
+        usage() unless $soPass;
+        $commandProc = sub {
+            createKeystore($soPass,"ssg");
         };
     } elsif ($command eq 'backup') {
         usage() unless $backupPass;
