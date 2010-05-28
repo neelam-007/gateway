@@ -1158,19 +1158,17 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
         }
 
-        if( !( tarariWanted && wssInPolicy && multipartInPolicy ) ) {
-            // need to check included policies also (which must have been cached before calling)
-            for( Long usedPolicyOid : usedPolicyOids ) {
-                PolicyCacheEntry entry = cacheGet( usedPolicyOid );
-                if( entry != null && entry.isValid() ) {
-                    PolicyMetadata metadata = entry.handle.getPolicyMetadata();
-                    tarariWanted = tarariWanted || metadata.isTarariWanted();
-                    wssInPolicy = wssInPolicy || metadata.isWssInPolicy();
-                    multipartInPolicy = multipartInPolicy || metadata.isMultipart();
-                    String[] varsUsed = metadata.getVariablesUsed();
-                    if (varsUsed != null) allVarsUsed.addAll(Arrays.asList(varsUsed));
-                    mergeVariablesSet(allVarsSet, PolicyVariableUtils.getVariablesSetNoThrow(metadata));
-                }
+        // need to check included policies also (which must have been cached before calling)
+        for( Long usedPolicyOid : usedPolicyOids ) {
+            PolicyCacheEntry entry = cacheGet( usedPolicyOid );
+            if( entry != null && entry.isValid() ) {
+                PolicyMetadata metadata = entry.handle.getPolicyMetadata();
+                tarariWanted = tarariWanted || metadata.isTarariWanted();
+                wssInPolicy = wssInPolicy || metadata.isWssInPolicy();
+                multipartInPolicy = multipartInPolicy || metadata.isMultipart();
+                String[] varsUsed = metadata.getVariablesUsed();
+                if (varsUsed != null) allVarsUsed.addAll(Arrays.asList(varsUsed));
+                mergeVariablesSet(allVarsSet, PolicyVariableUtils.getVariablesSetNoThrow(metadata));
             }
         }
 
