@@ -979,12 +979,13 @@
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
-        <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="policyFactory"/>
-        <constructor-arg ref="policyFilterManager"/>
-        <constructor-arg ref="securityTokenResolver"/>
-        <constructor-arg ref="policyPathBuilderFactory"/>
-        <constructor-arg ref="securityContextFinder"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="defaultKey"/>
+        <constructor-arg index="2" ref="policyFactory"/>
+        <constructor-arg index="3" ref="policyFilterManager"/>
+        <constructor-arg index="4" ref="securityTokenResolver"/>
+        <constructor-arg index="5" ref="policyPathBuilderFactory"/>
+        <constructor-arg index="6" ref="securityContextFinder"/>
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
