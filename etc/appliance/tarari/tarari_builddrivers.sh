@@ -17,7 +17,8 @@ RPM_SPEC="tarari.spec"
 RPM_SOURCES_ALL="tarari.tar.gz"
 RPM_SOURCES="tarari-kernel-drivers.tar.gz tarari.tar.gz"
 # 64 bit!
-RPM_SERVER="http://tyan64/rhel4/rhel/4/i386/"
+RPM_SERVER="http://rhel5/rhel5/"
+
 
 do_usage() {
 	cat >&1 <<-EOF
@@ -61,7 +62,8 @@ do_make() {
 		echo "installing drivers for ${WHICHKERNEL}"
 		echo "********************************************************"
 		(make KERNELSOURCE=${KERNELSOURCEROOT}/${WHICHKERNEL} install)
-		ver=`echo ${WHICHKERNEL} | awk -F '-' '{print $1"-"$2$3}'`
+		#ver=`echo ${WHICHKERNEL} | awk -F '-' '{print $1"-"$2$3}'`
+		ver=`echo ${WHICHKERNEL} | awk -F '-' '{print $1"-"$2}'`
 		mv ${TARARIROOT}/drivers/cpp_base.ko ${TARARIROOT}/drivers/cpp_base-${ver}.ko
 		
 		echo "********************************************************"
@@ -179,6 +181,16 @@ exitfail() {
         exit 1
 }
 
+
+check_flags() {
+	WRONGFLAGS=`grep "#LSI_FLAGS += -D__DISABLE_MULTI_READ__" "${TARARIROOT}/src/drivers/cpp_base/linux/Makefile"`
+	if [ -n "${WRONGFLAGS}" ] ; then
+		echo ""
+		echo "************************************************"
+		exitfail "you are building the 5.1.1.125s (astoria) drivers without disabling multi-read which is needed. Uncomment #LSI_FLAGS += -D__DISABLE_MULTI_READ__ in ${TARARIROOT}/src/drivers/cpp_base/linux/Makefile"
+	fi
+}
+
 check_root() {
 	if [ ! -z "${TARARIROOT}" ]; then
         	if [ -d "${TARARIROOT}/src/drivers" ] ; then
@@ -204,7 +216,8 @@ case ${1} in
 	   do_clean
 	   ;;
 	rpm)
-           check_root
+       check_root
+       check_flags
 	   do_rpm
 	   ;;
 	fetch) 
@@ -214,11 +227,13 @@ case ${1} in
 	   do_unpack "${2}"
 	   ;;
 	make)
-           check_root
+       check_root
+	   check_flags
 	   do_make
            ;;
 	all)
-           check_root
+       check_root
+       check_flags
 	   do_all
            ;;
 	*)
