@@ -44,6 +44,7 @@ import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,9 +74,15 @@ import java.util.logging.Logger;
  * Date: Aug 23, 2004<br/>
  */
 public class PolicyService extends ApplicationObjectSupport {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(PolicyService.class.getName());
+    private static final boolean disableSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceSkipSecurityChecks", false);
+    private static final boolean fullSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceFullSecurityChecks", false);
+    private static final String SERVICE_VALIDATE_WSS_TIMESTAMPS = "service.validateWssTimestamps";
 
-    private final List<Assertion> allCredentialAssertions;
+    private final List<Assertion> allMessageCredentialAssertions;
+    private final List<Assertion> allTransportCredentialAssertions;
+    private final Config config;
     private final DefaultKey serverCertFinder;
     private final ServerPolicyFactory policyFactory;
     private final FilterManager filterManager;
@@ -83,18 +91,25 @@ public class PolicyService extends ApplicationObjectSupport {
     private final SecurityContextFinder securityContextFinder;
 
     /**
-     * The supported credential sources used to determine whether the requester is
+     * The supported message credential sources used to determine whether the requester is
      * allowed to download the policy
      */
-    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
+    private static final Assertion[] ALL_MESSAGE_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
         RequireWssSaml.newHolderOfKey(),
         new RequireWssX509Cert(),
         new SecureConversation(),
-        new HttpDigest(),
-        new WssBasic(),
-        new HttpBasic(),
-        new SslAssertion(true),
         new RequestWssKerberos()
+    };
+
+    /**
+     * The supported transport credential sources used to determine whether the requester is
+     * allowed to download the policy
+     */
+    private static final Assertion[] ALL_TRANSPORT_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
+            new HttpDigest(),
+            new WssBasic(), // included as transport since it requires a secure transport
+            new HttpBasic(),
+            new SslAssertion(true),
     };
 
     public interface ServiceInfo {
@@ -111,18 +126,21 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(DefaultKey serverCertFinder,
-                         ServerPolicyFactory policyFactory,
-                         FilterManager filterManager,
-                         SecurityTokenResolver securityTokenResolver,
-                         PolicyPathBuilderFactory policyPathBuilderFactory,
-                         SecurityContextFinder securityContextFinder )
+    public PolicyService( final Config config,
+                          final DefaultKey serverCertFinder,
+                          final ServerPolicyFactory policyFactory,
+                          final FilterManager filterManager,
+                          final SecurityTokenResolver securityTokenResolver,
+                          final PolicyPathBuilderFactory policyPathBuilderFactory,
+                          final SecurityContextFinder securityContextFinder )
     {
-        if (serverCertFinder == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        if (config == null) throw new IllegalArgumentException("Config is required");
+        if (serverCertFinder == null) throw new IllegalArgumentException("Server cert finder is required");
         if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
         if (filterManager == null) throw new IllegalArgumentException("Filter Manager is required");
         if (policyPathBuilderFactory == null) throw new IllegalArgumentException("Policy Path Builder Factory is required");
 
+        this.config = config;
         this.serverCertFinder = serverCertFinder;
         this.policyFactory = policyFactory;
         this.filterManager = filterManager;
@@ -131,8 +149,14 @@ public class PolicyService extends ApplicationObjectSupport {
         this.securityContextFinder = securityContextFinder;
 
         // populate all possible credentials sources
-        this.allCredentialAssertions = new ArrayList<Assertion>();
-        for (Assertion assertion : ALL_CREDENTIAL_ASSERTIONS_TYPES) {
+        this.allMessageCredentialAssertions = buildCredentialAssertions( ALL_MESSAGE_CREDENTIAL_ASSERTIONS_TYPES );
+        this.allTransportCredentialAssertions = buildCredentialAssertions( ALL_TRANSPORT_CREDENTIAL_ASSERTIONS_TYPES );
+    }
+
+    private List<Assertion> buildCredentialAssertions( final Assertion[] assertions ) {
+        final List<Assertion> allCredentialAssertions = new ArrayList<Assertion>();
+
+        for ( final Assertion assertion : assertions ) {
             if (assertion instanceof RequireWssSaml) {
                 // Lighten saml requirements for policy download
                 RequireWssSaml requestWssSaml = (RequireWssSaml) assertion;
@@ -146,6 +170,8 @@ public class PolicyService extends ApplicationObjectSupport {
 
             allCredentialAssertions.add(assertion);
         }
+
+        return Collections.unmodifiableList( allCredentialAssertions );
     }
 
     /**
@@ -296,8 +322,10 @@ public class PolicyService extends ApplicationObjectSupport {
         AssertionStatus status = null;
         if (!canSkipMetaPolicyStep) {
             logger.fine("Running meta-policy.");
+            ServerAssertion policyPolicy = null;
             try {
-                ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
+                final boolean validateTimestamps = config.getBooleanProperty( SERVICE_VALIDATE_WSS_TIMESTAMPS, true );
+                policyPolicy = constructPolicyPolicy(targetPolicy, validateTimestamps);
                 status = policyPolicy.checkRequest(context);
                 context.setPolicyResult(status);
             } catch (IOException e) {
@@ -310,6 +338,8 @@ public class PolicyService extends ApplicationObjectSupport {
                 logger.log(Level.WARNING, "problem running policy download policy", ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
+            } finally {
+                ResourceUtils.closeQuietly( policyPolicy );
             }
         }
 
@@ -510,13 +540,44 @@ public class PolicyService extends ApplicationObjectSupport {
      * Constructs a policy that determines if a requestor should be allowed to download a policy.
      *
      * @param targetPolicy the policy targeted by a requestor.
+     * @param validateTimestamps True to validate WS-Security timestamps
      * @return the policy that should be validated by the policy download request for the passed target
      * @throws ServerPolicyException if targetPolicy could not be compiled into server assertion instances
      */
-    ServerAssertion constructPolicyPolicy(Assertion targetPolicy) throws ServerPolicyException {
-        AllAssertion base = new AllAssertion();
-        base.addChild(new OneOrMoreAssertion(allCredentialAssertions));
-        List<Assertion> allTargetIdentities = new ArrayList<Assertion>();
+    ServerAssertion constructPolicyPolicy(Assertion targetPolicy, boolean validateTimestamps) throws ServerPolicyException {
+        final AllAssertion messageAll = new AllAssertion();
+        messageAll.addChild( new OneOrMoreAssertion(allMessageCredentialAssertions) );
+        if ( validateTimestamps ) {
+            messageAll.addChild( RequireWssTimestamp.newInstance() );
+        }
+        if (!disableSecurityChecks) {
+            final OneOrMoreAssertion signedBody = new OneOrMoreAssertion();
+            signedBody.addChild( new RequireWssSignedElement() );
+            signedBody.addChild( new RequireWssSignedElement( XpathExpression.soap12BodyXpathValue() ) );
+            messageAll.addChild( signedBody );
+            if ( fullSecurityChecks ) {
+                messageAll.addChild( new RequireWssSignedElement( new XpathExpression("/*[local-name()='Envelope']/*[local-name()='Header']/*[namespace-uri()='"+SoapUtil.L7_MESSAGEID_NAMESPACE+"']") ) );
+            } else {
+                // Prior to 5.4 some addressing elements were not signed, to allow
+                // for this we only validate the service id by default
+                messageAll.addChild( new RequireWssSignedElement( new XpathExpression("/*[local-name()='Envelope']/*[local-name()='Header']/*[namespace-uri()='"+SoapUtil.L7_MESSAGEID_NAMESPACE+"' and local-name()='"+SoapUtil.L7_SERVICEID_ELEMENT+"']") ) );
+            }
+        }
+        
+        final AllAssertion transportAll = new AllAssertion();
+        if (!disableSecurityChecks) {
+            transportAll.addChild( new SslAssertion() );
+        }
+        transportAll.addChild( new OneOrMoreAssertion(allTransportCredentialAssertions) );
+
+        final OneOrMoreAssertion messageOrTransport = new OneOrMoreAssertion();
+        messageOrTransport.addChild( messageAll );
+        messageOrTransport.addChild( transportAll );
+
+        final AllAssertion base = new AllAssertion();
+        base.addChild(messageOrTransport);
+
+        final List<Assertion> allTargetIdentities = new ArrayList<Assertion>();
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));

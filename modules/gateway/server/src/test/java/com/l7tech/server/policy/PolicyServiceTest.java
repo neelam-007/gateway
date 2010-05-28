@@ -32,11 +32,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.MockConfig;
 import com.l7tech.xml.xpath.XpathExpression;
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -44,54 +44,56 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
  * Unit tests for PolicyService.
  */
-public class PolicyServiceTest extends TestCase {
-    private static Logger log = Logger.getLogger(PolicyServiceTest.class.getName());
-    static ApplicationContext applicationContext = null;
+public class PolicyServiceTest {
+    private static final Logger log = Logger.getLogger(PolicyServiceTest.class.getName());
+    private static ApplicationContext applicationContext;
 
-    public PolicyServiceTest(String name) {
-        super(name);
-    }
+    private static final String TESTUSER_UID = "666";
+    private static final String TESTUSER_LOGIN = "franco";
+    private static final String TESTUSER_PASSWD = "password";
+    private static final String BAD_PASSWD = "drowssap";
+    private static final SpecificUser TESTUSER_IDASSERTION = new SpecificUser(TestIdentityProvider.PROVIDER_ID,
+                                                                 TESTUSER_LOGIN,
+                                                                 TESTUSER_UID,
+                                                                 TESTUSER_LOGIN);
+    private static final LoginCredentials NONE = LoginCredentials.makeLoginCredentials(new HttpBasicToken("", new char[0]), HttpBasic.class);
 
-    public static Test suite() {
-         final TestSuite suite = new TestSuite(PolicyServiceTest.class);
-        return new TestSetup(suite) {
-            @Override
-            protected void setUp() throws Exception {
-                applicationContext = createApplicationContext();
-            }
+    @BeforeClass
+    public static void init() {
+        // Set to true to ensure that all "addressing" elements in the request are signed
+        System.setProperty( "com.l7tech.server.policy.policyServiceFullSecurityChecks", "true" );
 
-            private ApplicationContext createApplicationContext() {
-                return ApplicationContexts.getTestApplicationContext();
-            }
-        };
-    }
+        applicationContext =  ApplicationContexts.getTestApplicationContext();
 
-    @Override
-    protected void setUp() throws Exception {
         UserBean francoBean = new UserBean();
         francoBean.setName(TESTUSER_LOGIN);
         francoBean.setLogin(TESTUSER_LOGIN);
         francoBean.setUniqueIdentifier(TESTUSER_UID);
         francoBean.setProviderId(TestIdentityProvider.PROVIDER_ID);
         TestIdentityProvider.addUser(francoBean, TESTUSER_LOGIN, TESTUSER_PASSWD.toCharArray());
+
+        UserBean johnSmith = new UserBean();
+        johnSmith.setName("John Smith");
+        johnSmith.setLogin("John Smith");
+        johnSmith.setUniqueIdentifier("112313418");
+        johnSmith.setProviderId(TestIdentityProvider.PROVIDER_ID);
+        TestIdentityProvider.addUser(johnSmith, "John Smith", TESTUSER_PASSWD.toCharArray(), "C=US, ST=California, L=Cupertino, O=IBM, OU=Java Technology Center, CN=John Smith");
     }
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    private PolicyEnforcementContext getPolicyRequestContext(LoginCredentials loginCredentials) throws GeneralSecurityException, IOException {
+    private PolicyEnforcementContext getPolicyRequestContext( final LoginCredentials loginCredentials ) throws GeneralSecurityException, IOException {
         Document requestDoc;
         Message request = new Message();
         Message response = new Message();
 
         final MockHttpServletRequest hrequest = new MockHttpServletRequest();
         hrequest.setMethod("POST");
+        if ( loginCredentials != null ) hrequest.setSecure( true );
         final MockHttpServletResponse hresponse = new MockHttpServletResponse();
         final HttpServletRequestKnob httpRequestKnob = new HttpServletRequestKnob(hrequest);
         final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(hresponse);
@@ -101,8 +103,8 @@ public class PolicyServiceTest extends TestCase {
         response.attachHttpResponseKnob(httpResponseKnob);
 
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
-        context.getDefaultAuthenticationContext().addCredentials(loginCredentials);
         if (loginCredentials != null) {
+            if (loginCredentials != NONE ) context.getDefaultAuthenticationContext().addCredentials(loginCredentials);
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
         }
         else {
@@ -116,7 +118,9 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context) throws Exception {
-        PolicyService ps = new PolicyService(new TestDefaultKey(),
+        PolicyService ps = new PolicyService(
+                new MockConfig(new Properties()),
+                new TestDefaultKey(),
                 (ServerPolicyFactory) applicationContext.getBean("policyFactory"),
                 (FilterManager) applicationContext.getBean("policyFilterManager"),
                 (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),
@@ -152,7 +156,7 @@ public class PolicyServiceTest extends TestCase {
         }
     }
 
-    private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
+    private void testPolicy(final Assertion policyToTest, final LoginCredentials loginCredentials) throws Exception {
         final PolicyEnforcementContext context = getPolicyRequestContext(loginCredentials);
         Message request = context.getRequest();
         Document response = getPolicyResponse(policyToTest, context);
@@ -187,10 +191,12 @@ public class PolicyServiceTest extends TestCase {
 
     }
 
+    @Test
     public void testSimplePolicyService() throws Exception {
-        testPolicy(new TrueAssertion(), null);
+        testPolicy(new TrueAssertion(), NONE);
     }
 
+    @Test
     public void testWithIdentities() throws Exception {
         AllAssertion root = new AllAssertion();
         root.addChild(new HttpBasic());
@@ -206,6 +212,23 @@ public class PolicyServiceTest extends TestCase {
         testWithValidCredentials(root);
     }
 
+    @Test
+    public void testWithIdentitiesSigned() throws Exception {
+        AllAssertion root = new AllAssertion();
+        root.addChild(new HttpBasic());
+        OneOrMoreAssertion or = new OneOrMoreAssertion();
+        root.addChild(or);
+        or.addChild(TESTUSER_IDASSERTION);
+        or.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "John Smith", "112313418", "John Smith"));
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.setChildren(root.getChildren());
+        or.setChildren(or.getChildren());
+        log.info(root.toString());
+
+        testPolicy(root, null);
+    }
+
+    @Test
     public void testWithTwoBranchForTwoIdentities() throws Exception {
         AllAssertion root = new AllAssertion();
         root.addChild(new HttpBasic());
@@ -232,6 +255,7 @@ public class PolicyServiceTest extends TestCase {
         testWithValidCredentials(root);
     }
 
+    @Test
     public void testAnonymousBranch() throws Exception {
         AllAssertion root = new AllAssertion();
         OneOrMoreAssertion or = new OneOrMoreAssertion();
@@ -257,9 +281,10 @@ public class PolicyServiceTest extends TestCase {
         or.setChildren(or.getChildren());
         log.info(root.toString());
 
-        testPolicy(root, null);
+        testPolicy(root, NONE);
     }
 
+    @Test
     public void testFullAnonymous() throws Exception {
         AllAssertion root = new AllAssertion();
         OneOrMoreAssertion or = new OneOrMoreAssertion();
@@ -277,9 +302,10 @@ public class PolicyServiceTest extends TestCase {
         or.setChildren(or.getChildren());
         log.info(root.toString());
 
-        testPolicy(root, null);
+        testPolicy(root, NONE);
     }
 
+    @Test
     public void testFailedAuthentication() throws Exception {
         AllAssertion root = new AllAssertion();
         root.addChild(new HttpBasic());
@@ -300,6 +326,7 @@ public class PolicyServiceTest extends TestCase {
         }
     }
 
+    @Test
     public void testReplayedPolicyResponse() throws Exception {
         final PolicyEnforcementContext context = getPolicyRequestContext(null);
         Document firstResponse = getPolicyResponse(new TrueAssertion(), context);
@@ -316,13 +343,4 @@ public class PolicyServiceTest extends TestCase {
             log.info("The correct exception was thrown: " + e);
         }
     }
-
-    private static final String TESTUSER_UID = "666";
-    private static final String TESTUSER_LOGIN = "franco";
-    private static final String TESTUSER_PASSWD = "password";
-    private static final String BAD_PASSWD = "drowssap";
-    private SpecificUser TESTUSER_IDASSERTION = new SpecificUser(TestIdentityProvider.PROVIDER_ID,
-                                                                 TESTUSER_LOGIN,
-                                                                 TESTUSER_UID,
-                                                                 TESTUSER_LOGIN);
 }

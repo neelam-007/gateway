@@ -89,8 +89,11 @@ public class PolicyServiceClient {
                 Element body = SoapUtil.getBodyElement(msg);
                 Element sid = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                     SoapUtil.L7_SERVICEID_ELEMENT);
+                Element cver = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
+                                                                    SoapUtil.L7_CLIENTVERSION_ELEMENT);
                 Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
                 req.getElementsToSign().add(sid);
+                req.getElementsToSign().add(cver);
                 req.getElementsToSign().add(body);
                 req.getElementsToSign().add(mid);
             }
