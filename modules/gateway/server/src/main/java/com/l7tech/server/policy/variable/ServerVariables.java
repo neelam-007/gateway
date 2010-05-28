@@ -332,7 +332,8 @@ public class ServerVariables {
                 String routingUrl = null;
 
                 try {
-                    routingUrl = context.getService().serviceUrl().toString();
+                    final URL url = context.getService().serviceUrl();
+                    routingUrl = url==null ? null : url.toString();
                 } catch (WSDLException e) {
                     logger.log(
                             Level.WARNING,
