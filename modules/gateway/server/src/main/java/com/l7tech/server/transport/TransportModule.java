@@ -216,21 +216,27 @@ public abstract class TransportModule extends LifecycleBean {
      * Utility method that looks up accepted issuer certificates that should be advertised by an X509TrustManager
      * acting on behalf of the specified SsgConnector for this TransportModule.
      *
-     * @param connector the connector to inquire about, or null if not known or not relevant.
+     * @param connector the connector to inquire about.  Required.
      * @return an array of X509Certificate instances that should be accepted as issuers at TLS handshake time for this connector.
      *         Never null or empty.
      * @throws com.l7tech.objectmodel.FindException if there is an error while attempting to look up the required information.
      */
     public X509Certificate[] getAcceptedIssuersForConnector(SsgConnector connector) throws FindException {
-        if (connector != null) {
-            // Suppress inclusion of accepted issuers list of so configured for this connector
-            if (Boolean.valueOf(connector.getProperty("noAcceptedIssuers")))
-                return new X509Certificate[0];
+        // Suppress inclusion of accepted issuers list if so configured for this connector
+        if (Boolean.valueOf(connector.getProperty("noAcceptedIssuers")))
+            return new X509Certificate[0];
 
-            // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
-            if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
-                return new X509Certificate[0];
-        }
+        // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
+        if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
+            return new X509Certificate[0];
+
+        String protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
+        boolean onlyTls10 = protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2"));
+
+        // If only TLS 1.0 is enabled, behave as we did pre-5.3, unless "acceptedIssuers" is forced to "true" (Bug #8727)
+        // "acceptedIssuers" connector property not to be documented -- will be removed in future release
+        if (onlyTls10 && !Boolean.valueOf(connector.getProperty("acceptedIssuers")))
+            return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
         List<X509Certificate> certs = new ArrayList<X509Certificate>();
@@ -238,8 +244,9 @@ public abstract class TransportModule extends LifecycleBean {
             certs.add(trustedCert.getCertificate());
         }
 
-        // If the issuers list is completely empty, and we are using SSL-J, include our own server cert in the list just to keep SSL-J happy.
-        if (certs.isEmpty() && isUsingTls11OrHigher(connector)) {
+        // SSL-J requires at least one accepted issuer when client auth is set to ALWAYS.  If using SSL-J with CLIENT_AUTH_ALWAYS,
+        // and the list would otherwise be empty, we'll add our own server cert to the list to keep it from failing.
+        if (!onlyTls10 && certs.isEmpty() && connector.getClientAuth() == SsgConnector.CLIENT_AUTH_ALWAYS) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {
@@ -250,10 +257,5 @@ public abstract class TransportModule extends LifecycleBean {
         }
 
         return certs.toArray(new X509Certificate[certs.size()]);
-    }
-
-    private boolean isUsingTls11OrHigher(SsgConnector c) {
-        String protocols = c.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
-        return protocols != null && (protocols.contains("TLSv1.1") || protocols.contains("TLSv1.2"));
     }
 }
