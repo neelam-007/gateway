@@ -10,7 +10,7 @@ Source0: /tmp/sca6000drv.tgz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: sca6000drv-l7
 requires: kernel >= 2.6.18-128.el5
-requires: kernel <= 2.6.18-194.3.1.el5
+requires: kernel <= 2.6.18-164.6.1.el5
 requires: sun-sca6000
 # Prevents rpm build from erroring and halting
 %undefine       __check_files

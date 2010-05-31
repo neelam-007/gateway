@@ -55,15 +55,10 @@ do_make() {
 		echo "installing drivers for ${WHICHKERNEL}"
 		echo "********************************************************"
 		(KERNEL_VER=${WHICHKERNEL} make install)
-		
-		echo "********************************************************"
-		echo "cleaning up build for ${WHICHKERNEL}"
-		echo "********************************************************"
-		(KERNEL_VER=${WHICHKERNEL} make clean)
 	done
         TAR_OUT=$RPM_SOURCE
 	pushd ${PWD}/.. &>/dev/null
-	        tar -czvhf "${TAR_OUT}" /etc/init.d/sca* ${SCADRVDIR}/*smp.ko
+	        tar -czvhf "${TAR_OUT}" /etc/init.d/sca* ${SCADRVDIR}/*.ko
 	popd &>/dev/null
 
 	unpatch_makefile
