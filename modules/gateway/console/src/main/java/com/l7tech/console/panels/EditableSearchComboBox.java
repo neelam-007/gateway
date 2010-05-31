@@ -29,7 +29,7 @@ import java.awt.*;
  * This is done so that the type of T can be captured and used at runtime to work with setItem(Object), we only want
  * Object's of the parameter type to be set. If an anonomyous class is not created we cannot do this, so the class is
  * marked abstract to ensure this works.
- * //todo this may not be required anymore, but leaving in for now as setObject seems to always have the correct type, but it needs more testing
+ * 
  * See: http://gafter.blogspot.com/2006/12/super-type-tokens.html
  * 
  * @author dlee
@@ -352,15 +352,10 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
             }
             
             if (anItem != null) {
-                //only accept selection based on the recognized type from our searchable items
-                boolean recognizedType = false;
-                for (Object item : items) {
-                    if (item.getClass().equals(anItem.getClass())) {
-                        recognizedType = true;
-                        break;
-                    }
+                //anItem may be a String if the user typed something which matched nothing in the list
+                if(!paramaterizedType.isAssignableFrom(anItem.getClass())){
+                    return;
                 }
-                if (!recognizedType) return;
             }
 
             selectedItem = anItem;
