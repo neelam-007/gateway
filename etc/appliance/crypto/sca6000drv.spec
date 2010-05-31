@@ -41,6 +41,13 @@ fi
 
 %post
 
+#open cryptoki is built incorrectly and expects a file that it put somewhere else. Make the dir and symlink to the right place.
+mkdir -p /usr/lib/pkcs11/methods/
+ln -s /usr/sbin/pkcs11_startup /usr/lib/pkcs11/methods/pkcs11_startup
+
+#link in the startup of pkcsslotd at runlevel 3
+ln -s /etc/init.d/pkcsslotd /etc/rc.d/rc3.d/S04pkcsslotd
+
 %preun
 
 if [ -e /etc/profile.d/scapath.sh ] ; then
@@ -54,3 +61,4 @@ fi
 - Rebuild with better version number
 * Thu Jun 7 2007 JWT
 - Build First version - binaries only
+
