@@ -16,6 +16,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -25,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -283,6 +286,19 @@ public class XmlUtilTest {
         assertTrue(nodes.size() > 0);
         assertEquals(nodes.getNodeName(0), "xml-stylesheet");
         assertEquals(nodes.getNodeValue(0), "href=\"foo\" type=\"text/xsl\"");
+    }
+
+    @Test
+    public void testVisitNodes() throws Exception {
+        final Document document = XmlUtil.parse( "<a><b><c></c></b><d></d><e><f><g></g></f></e></a>" );
+        final List<String> nodeNames = new ArrayList<String>();
+        XmlUtil.visitNodes( document, new Functions.UnaryVoid<Node>(){
+            @Override
+            public void call( final Node node ) {
+                nodeNames.add( node.getLocalName() );
+            }
+        } );
+        assertEquals("Node local names", Arrays.asList( null, "a", "b", "c", "d", "e", "f", "g" ), nodeNames );
     }
 
     @Test

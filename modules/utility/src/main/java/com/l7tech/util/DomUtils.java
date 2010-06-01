@@ -735,7 +735,11 @@ public class DomUtils {
 
             // visit siblings
             if ( visitSiblings ) {
-                visitNodes( node.getNextSibling(), visitor, true );
+                Node sibling = node.getNextSibling();
+                while ( sibling != null ) {
+                    visitNodes(sibling , visitor, false );
+                    sibling = sibling.getNextSibling();
+                }
             }
         }
     }
