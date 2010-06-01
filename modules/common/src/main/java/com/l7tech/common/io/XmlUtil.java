@@ -126,42 +126,6 @@ public class XmlUtil extends DomUtils {
             }
         }
     };
-    @SuppressWarnings({"deprecation"})
-    private static final ThreadLocal<XMLSerializer> formattedXMLSerializer = new ThreadLocal<XMLSerializer>() {
-        @Override
-        @SuppressWarnings({"deprecation"})
-        protected XMLSerializer initialValue() {
-            XMLSerializer xmlSerializer = new XMLSerializer();
-            OutputFormat of = new OutputFormat();
-            of.setIndent(4);
-            xmlSerializer.setOutputFormat(of);
-            return xmlSerializer;
-        }
-    };
-    @SuppressWarnings({"deprecation"})
-    private static final ThreadLocal<XMLSerializer> encodingXMLSerializer = new ThreadLocal<XMLSerializer>() {
-        @Override
-        @SuppressWarnings({"deprecation"})
-        protected XMLSerializer initialValue() {
-            return new XMLSerializer();
-        }
-    };
-    @SuppressWarnings({"deprecation"})
-    private static final ThreadLocal<XMLSerializer> transparentXMLSerializer = new ThreadLocal<XMLSerializer>() {
-        @Override
-        @SuppressWarnings({"deprecation"})
-        protected XMLSerializer initialValue() {
-            OutputFormat format = new OutputFormat();
-            format.setLineWidth(0);
-            format.setIndenting(false);
-            format.setPreserveSpace(true);
-            format.setOmitXMLDeclaration(true);
-            format.setOmitComments(false);
-            format.setOmitDocumentType(true);
-            format.setPreserveEmptyAttributes(true);
-            return new XMLSerializer(format);
-        }
-    };
     private static final ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
         @Override
         protected Canonicalizer initialValue() {
@@ -412,12 +376,16 @@ public class XmlUtil extends DomUtils {
 
     @SuppressWarnings({"deprecation"})
     private static XMLSerializer getFormattedXmlSerializer() {
-        return formattedXMLSerializer.get();
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        OutputFormat of = new OutputFormat();
+        of.setIndent(4);
+        xmlSerializer.setOutputFormat(of);
+        return xmlSerializer;
     }
 
     @SuppressWarnings({"deprecation"})
     private static XMLSerializer getEncodingXmlSerializer() {
-        return encodingXMLSerializer.get();
+        return new XMLSerializer();
     }
 
     private static Canonicalizer getTransparentXMLSerializer_XSS4J_W3C() {
@@ -426,7 +394,15 @@ public class XmlUtil extends DomUtils {
 
     @SuppressWarnings({"deprecation"})
     private static XMLSerializer getTransparentXMLSerializer() {
-        return transparentXMLSerializer.get();
+        OutputFormat format = new OutputFormat();
+        format.setLineWidth(0);
+        format.setIndenting(false);
+        format.setPreserveSpace(true);
+        format.setOmitXMLDeclaration(true);
+        format.setOmitComments(false);
+        format.setOmitDocumentType(true);
+        format.setPreserveEmptyAttributes(true);
+        return new XMLSerializer(format);
     }
 
     private static Canonicalizer getExclusiveCanonicalizer() {
