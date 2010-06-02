@@ -52,6 +52,7 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
      * @param context the context for the request.
      * @return the status
      */
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
         AssertionStatus status;
@@ -283,7 +284,7 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
                             if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
-                            onRequestNonCompliance(details[0], details[1]);
+                            onRequestNonCompliance(trimId(details[0]), details[1]);
                             success = false;
                             if (isFailOnNonCompliantRequest()) break; // fail fast
                         }
@@ -342,7 +343,7 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
                             if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
-                            onResponseNonCompliance(details[0], details[1]);
+                            onResponseNonCompliance(trimId(details[0]), details[1]);
                             success = false;
                             if (isFailOnNonCompliantResponse()) break;
                         }
@@ -507,20 +508,33 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
         return new NamespaceContextImpl(namespaceMap);
     }
 
+    private String trimId( final String fullRuleId ) {
+        final String ruleId;
+
+        if ( fullRuleId.indexOf( "." ) > 0 ) {
+            ruleId = fullRuleId.substring( 0, fullRuleId.lastIndexOf( "." ) );
+        } else {
+            ruleId = fullRuleId;
+        }
+
+        return ruleId;
+    }
+
     private void loadRules(XPathFactory xpf, Properties props, Map<XPathExpression,String> newRules) {
         for (Object o : props.entrySet()) {
-            Map.Entry entry = (Map.Entry) o;
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
+            final Map.Entry entry = (Map.Entry) o;
+            final String key = (String) entry.getKey();
+            final String value = (String) entry.getValue();
 
             if (key != null && value != null) {
                 if (key.endsWith(PATH_POSTFIX)) {
                     // Load rule
-                    String ruleId = key.substring(0, key.length() - PATH_POSTFIX.length());
+                    final String fullRuleId = key.substring(0, key.length() - PATH_POSTFIX.length());
+                    final String ruleId = trimId(fullRuleId);
                     String description = props.getProperty(ruleId + RULE_POSTFIX);
 
                     if (description == null) description = "No description for rule.";
-                    description = ruleId + ": " + description;
+                    description = fullRuleId + ": " + description;
 
                     XPath xpath = xpf.newXPath();
                     xpath.setNamespaceContext(namespaceContext);
@@ -528,9 +542,9 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
                         XPathExpression xpe = xpath.compile(value);
                         newRules.put(xpe, description);
                     }
-                    catch (XPathExpressionException xpee) {
+                    catch (XPathExpressionException e) {
                         logger.log(Level.WARNING, "Error parsing XPath for rule '" + ruleId
-                                + "', xpath is '" + value + "',", xpee);
+                                + "', xpath is '" + value + "',", e);
                     }
                 }
             }

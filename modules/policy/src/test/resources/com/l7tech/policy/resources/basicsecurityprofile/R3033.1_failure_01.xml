@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+        xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+        xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+        xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Header>
+        <wsse:Security>
+            <wsse:SecurityTokenReference>
+                <wsse:Embedded>
+                    <!-- invalid ValueType -->
+                    <wsse:BinarySecurityToken wsu:Id='SomeCert'
+                                              ValueType="invalid"
+                                              EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">
+                        MIICVTCCAb6gAwIBAgIBADANBgkqhkiG9w0BAQQFADAsMRQwEgYDVQQKEwtyb290LnNpZ25lcjEUMBIGA1UEAxMLcm9vdC5zaWduZXIwHhcNMDQwOTA4MjIwMzE4WhcNMTQwOTA2MjIwMzE4WjAsMRQwEgYDVQQKEwtyb290LnNpZ25lcjEUMBIGA1UEAxMLcm9vdC5zaWduZXIwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMmo643E3S3PliomvxRcC4U7iiyCLYmfU1e+wZ5MXruiMvHnvkLSKkf8r+rSGwCZ4tFxB2SaquhzjEf/rntd2Gvw4yyinqeFJ7BJ6QhZ90SGJqffor0cZw28a4w6tDfry/SkS9t9z4AeIRk0D/ljVUaJSpTsA3csKx/JcnKNnrGNAgMBAAGjgYYwgYMwHQYDVR0OBBYEFL4wKZb68QkZ+ngaYbRNdKeDLZQKMFQGA1UdIwRNMEuAFL4wKZb68QkZ+ngaYbRNdKeDLZQKoTCkLjAsMRQwEgYDVQQKEwtyb290LnNpZ25lcjEUMBIGA1UEAxMLcm9vdC5zaWduZXKCAQAwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQQFAAOBgQARksILNkjV2RzrAEKYxWi9DRPlFzNavP/NFCh6XBNdOGYglF0reZAWL8qJ8i5Ejm1Rq0IP2mKhou9bE9Y6xLd9a1T4VvhyAI1kWzZtJsc7VTwZz1jCAX3Wh2DYN0o4NyTJ0tFOO21ndWTrQ+/MlYWJaCfIMABAZODuJg/yOeGtbw==
+                    </wsse:BinarySecurityToken>
+                </wsse:Embedded>
+            </wsse:SecurityTokenReference>
+        </wsse:Security>
+    </soap:Header>
+    <soap:Body>
+        <tns:listProducts xmlns:tns="http://warehouse.acme.com/ws"/>
+    </soap:Body>
+</soap:Envelope>
