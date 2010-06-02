@@ -64,7 +64,7 @@ public class ScaHsmKeystoreConfigurator {
     public static final String HSMINIT_PASSWORD_KEY_PREFIX="hsm.initialize.password.msg";
     public static final String MKEY_BACKUP_PASSWORD_KEY_PREFIX="hsm.masterkeybackup.password.msg";
 
-    private  static final String MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak";
+    private  static final String MASTER_KEY_BACKUP_FILE_NAME="ssgscabk";
     private static final String GATEWAY_CONFIG_DIR = "/opt/SecureSpan/Gateway/node/default/etc/conf";
 
 

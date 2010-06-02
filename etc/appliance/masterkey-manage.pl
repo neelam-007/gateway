@@ -239,8 +239,8 @@ sub dialog($@) {
     }
 }
 
-sub spawnScamgr() {
-    my $exp = Expect->spawn($SCAMGR);
+sub spawnScamgr {
+    my $exp = Expect->spawn($SCAMGR, @_);
     fatal ERR_SCAMGR_SPAWN, "Couldn't exec $SCAMGR: $!" unless $exp;
     push @onexit, sub { 
         print "Closing scamgr process\n";
@@ -249,6 +249,10 @@ sub spawnScamgr() {
     $exp->log_stdout(1);
     return $exp;
 }
+
+my @selectTheKeyStore = (
+    [ qr/Select Keystore.*3\. ssg\..*> /s => "3\n" => 'repeat' ],
+);
 
 my @trustTheTrustedKey= (
     [ qr/3. Trust the board for all future sessions.*> /s   => "3\n" => 'repeat' ],
@@ -260,18 +264,41 @@ sub backupMasterKeyToPath($$$) {
     my $backupPath = shift;
     my $backupPass = shift;
 
-    $? = system 'touch', $backupPath;
+    # Ensure target directory is writable and that target files already exist (for overwrite=>y step of script)
+    $? = system 'touch', "${backupPath}.dev", "${backupPath}.ks";
     checkSubprocess ERR_WRITE_USB, "Unable to touch $backupPath";
 
-    my $exp = spawnScamgr();
+    # We'll back up both the device and the ssg keystore (the entire thing, not just the master key)
+    # This will require two scamgr sessions since backing up the device requires connecting as the Device Security Officer.
 
+    # Back up the device as the DSO
+    my $exp = spawnScamgr('-D');
     dialog $exp,
-        [@trustTheTrustedKey,
-	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT, 
-                                                                          "Unable to back up key -- board not initialized." } ],
+        [@trustTheTrustedKey, @selectTheKeyStore,
+	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT,
+                                                                          "Unable to back up keystore -- board not initialized." } ],
 	 ["Security Officer Login: "                             => "$soUsername\n" ]],
 	"Security Officer Password: "                            => "$soPass\n",
-	$prompt                                                  => "backup $backupPath\n",
+	$prompt                                                  => "backup device ${backupPath}.dev\n",
+        "already exists.  Overwrite it.*: "                      => "y\n",
+	"Enter a password to protect the data: "                 => "$backupPass\n",
+        [[qr/^Passwords must have / => sub { fatal ERR_WEAK_PASSWORD, "Backup password too weak" } ],
+	 ["Confirm password: "                                     => "$backupPass\n"]],
+        '-timeout' => 35,
+        [["Keystore is locked" => sub { fatal ERR_KEYSTORE_LOCKED, "Keystore is locked" } ],
+	 ["Backup to .* successful."                               => "quit\n"]];
+
+    $exp->soft_close();
+
+    # Now back up the keystore as the KSO
+    $exp = spawnScamgr();
+    dialog $exp,
+        [@trustTheTrustedKey, @selectTheKeyStore,
+	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT,
+                                                                          "Unable to back up keystore -- board not initialized." } ],
+	 ["Security Officer Login: "                             => "$soUsername\n" ]],
+	"Security Officer Password: "                            => "$soPass\n",
+	$prompt                                                  => "backup keystore ${backupPath}.ks\n",
         "already exists.  Overwrite it.*: "                      => "y\n",
 	"Enter a password to protect the data: "                 => "$backupPass\n",
         [[qr/^Passwords must have / => sub { fatal ERR_WEAK_PASSWORD, "Backup password too weak" } ],
@@ -286,18 +313,42 @@ sub restoreMasterKeyFromPath($$$) {
     my $backupPath = shift;
     my $backupPass = shift;
  
-    my $exp = spawnScamgr();
+    # We will do two invocations of scamgr:  one to restore from the device file, and a second to restore from the keystore file.
 
-    dialog $exp, 
+    # First restore the device
+    my $exp = spawnScamgr();
+    dialog $exp,
         [@trustTheTrustedKey,
+         [qr/.*Select Keystore:.* /s  =>  sub { fatal ERR_BOARD_IS_INIT,
+                                                      "Unable to restore key -- board already initialized." } ],
          ["Security Officer Login: "  =>  sub { fatal ERR_BOARD_IS_INIT,
                                                       "Unable to restore key -- board already initialized." } ],
-         [qr/2. Initialize the board to use an existing keystore.*> /s => "2\n" ]],
-        "Enter the path to the backup file: "                    => "$backupPath\n",
+         [qr/2. Initialize board from device backup file.*> /s => "2\n" ]],
+        "Enter the path to the backup file: "                    => "${backupPath}.dev\n",
         "Password for restore file: "                            => "$backupPass\n",
         qr/Is this correct.*: /                                  => "y\n",
         '-timeout' => 45,
-        qr/The board is ready to be administered./               => "\n";
+        qr/The board is ready to be administered.*Security Officer Login: /s  => "$soUsername\n",
+        "Security Officer Password: "                             => "$soPass\n",
+        $prompt => "quit\n";
+    $exp->soft_close();
+
+    # Now restore the ssg keystore
+    $exp = spawnScamgr();
+    dialog $exp,
+        [@trustTheTrustedKey,
+         ["Security Officer Login: "  =>  sub { fatal ERR_BOARD_IS_INIT,
+                                                      "Unable to restore key -- board already initialized." } ],
+         [qr/No keystore data returned by card.*2. Load keystore from backup.*> /s => "2\n" ]],
+        "Enter the path to the backup file: "                    => "${backupPath}.ks\n",
+        qr/1. Load full keystore.*> /s                           => "1\n",
+        qr/Do you wish to rename the keystore.*: /s              => "n\n",
+        "Password for restore file: "                            => "$backupPass\n",
+        qr/Is this correct.*: /                                  => "y\n",
+        '-timeout' => 45,
+        qr/ssg\..* successfully created\..*Security Officer Login: /s  => "$soUsername\n",
+        "Security Officer Password: "                             => "$soPass\n",
+        $prompt => "quit\n";
 }
 
 sub initializeHSM($) { 
@@ -378,7 +429,7 @@ sub lockKeystore($) {
     my $exp = spawnScamgr();
 
     dialog $exp,
-        [@trustTheTrustedKey,
+        [@trustTheTrustedKey, @selectTheKeyStore,
 	 ["This board is uninitialized."                         => sub { fatal ERR_BOARD_IS_UNINIT, 
                                                                           "Unable to lock keystore -- board not initialized." } ],
 	 ["Security Officer Login: "                             => "$soUsername\n" ]],

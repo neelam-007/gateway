@@ -13,7 +13,7 @@ CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
 PATCHTOOL="/opt/SecureSpan/Controller/bin/patch.sh"
 
 GETROOT="su -"
-MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
+MASTER_KEY_BACKUP_FILE_NAME="ssgscabk"
 
 checkForSca() {
     SCADIAG="/opt/sun/sca6000/sbin/scadiag"
