@@ -31,7 +31,7 @@ public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
 
     public ValidationInterceptor() {
         super( Phase.RECEIVE );
-        addBefore( AttachmentInInterceptor.class.getName() );
+        addAfter( AttachmentInInterceptor.class.getName() );
     }
 
     @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
