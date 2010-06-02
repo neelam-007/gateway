@@ -96,8 +96,12 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                 // due to com.sun.xml.messaging.saaj.soap.ver1_1.SOAPPart1_1Impl not serializable.
                 // (bugzilla 6856)
                 throw new ReportException( "Cannot contact gateway '"+(host+":"+port)+"'.", ce );
+            } else {
+                final Throwable cause = sfe.getCause();
+                throw new ReportException(
+                        "Error submitting report generation to gateway '"+(host+":"+port)+"', due to '"+ExceptionUtils.getMessage(sfe)+"'.",
+                        ExceptionUtils.getDebugException(cause) );
             }
-            throw sfe;
         } catch ( FailoverException fo ) {
             throw new ReportException("Cluster unavailable.", fo);
         } catch ( GatewayException ge ) {
