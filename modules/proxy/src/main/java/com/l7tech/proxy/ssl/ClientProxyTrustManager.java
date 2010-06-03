@@ -16,7 +16,8 @@ import com.l7tech.security.cert.KeyUsageException;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,7 +66,8 @@ public class ClientProxyTrustManager implements X509TrustManager {
         String expectedHostname = peer.getHostname();
         X509Certificate cert = x509Certificates[0];
 
-        List<String> cns = CertUtils.extractCommonNamesFromCertificate(cert);
+        Set<String> cns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        cns.addAll(CertUtils.extractCommonNamesFromCertificate(cert));
         if (!cns.contains(expectedHostname)) {
             final String peerdn = cert.getSubjectDN().getName();
             final String msg = "Server certificate name (" + peerdn +
