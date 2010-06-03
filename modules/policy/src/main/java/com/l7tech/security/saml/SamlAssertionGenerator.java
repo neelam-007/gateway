@@ -321,6 +321,7 @@ public class SamlAssertionGenerator {
         try {
             context.sign(signatureElement, signingKey);
         } catch (XSignatureException e) {
+            DsigUtil.repairXSignatureException(e);
             throw new SignatureException(e.getMessage(), e);
         }
     }

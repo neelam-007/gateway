@@ -1423,6 +1423,7 @@ public class WssProcessorImpl implements WssProcessor {
             dataList = dc.getDataAsNodeList();
         } catch (XSignatureException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
+            DsigUtil.repairXSignatureException(e);
             throw new ProcessorException(e);
         } catch (StructureException e) {
             logger.log(Level.WARNING, "Error decrypting", e);

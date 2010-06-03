@@ -572,25 +572,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         return buffer.toString();
     }
 
-    private static class CausedSignatureException extends SignatureException {
-        public CausedSignatureException() {
-        }
-
-        public CausedSignatureException(String msg) {
-            super(msg);
-        }
-
-        public CausedSignatureException(Throwable cause) {
-            super();
-            initCause(cause);
-        }
-
-        public CausedSignatureException(String msg, Throwable cause) {
-            super(msg);
-            initCause(cause);
-        }
-    }
-
     private static void addElement(Element parent, String indent, String ns, String p, String name, String value) {
         parent.appendChild(DomUtils.createTextNode(parent, indent));
         Element e = DomUtils.createAndAppendElementNS(parent, name, ns, p);
@@ -666,11 +647,11 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SignatureStructureException e) {
-            throw new CausedSignatureException(e);
+            throw new SignatureException(e);
         } catch (XSignatureException e) {
-            throw new CausedSignatureException(e);
+            throw new SignatureException(e);
         } catch (IOException e) {
-            throw new CausedSignatureException(e);
+            throw new SignatureException(e);
         }
     }
 

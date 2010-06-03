@@ -113,6 +113,7 @@ public class RequestSigner {
         try {
             context.sign(signatureElement, signingKey);
         } catch (XSignatureException e) {
+            DsigUtil.repairXSignatureException(e);
             throw new SignatureException(e.getMessage());
         }
     }

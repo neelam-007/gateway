@@ -147,7 +147,24 @@ public class DsigUtil {
             throw new SignatureException(e);
         }
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
-        return sigContext.sign(sigElement, senderSigningKey);
+        try {
+            return sigContext.sign(sigElement, senderSigningKey);
+        } catch (XSignatureException e) {
+            repairXSignatureException(e);
+            throw e;
+        }
+    }
+
+    /**
+     * Repair broken exception chaining for an XSignatureException.
+     *
+     * @param e XSignatureException to repair.  If it has a wrapped exception but no cause, we'll init its cause to its wrapped exception.
+     */
+    public static void repairXSignatureException(XSignatureException e) {
+        // Repair broken exception chaining mechanism
+        if (e.getCause() == null && e.getException() != null) {
+            e.initCause(e.getException());
+        }
     }
 
     /**

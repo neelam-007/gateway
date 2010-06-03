@@ -245,6 +245,7 @@ public class KeyInfoThumbprintTestMessage extends TestCase {
         try {
             sigContext.sign(signatureEl, senderSigningKey);
         } catch (XSignatureException e) {
+            DsigUtil.repairXSignatureException(e);
             String msg = e.getMessage();
             if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
                 throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI.", e);

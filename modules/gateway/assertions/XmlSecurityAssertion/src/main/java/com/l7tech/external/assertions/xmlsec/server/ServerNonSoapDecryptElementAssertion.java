@@ -7,7 +7,6 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
-import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -38,6 +37,8 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 
 /**
  * Server side implementation of the NonSoapDecryptElementAssertion.
@@ -122,7 +123,12 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         dc.setEncryptedType(encryptedDataEl, EncryptedData.ELEMENT, null, null);
         dc.setKey(flexKey);
 
-        dc.decrypt();
+        try {
+            dc.decrypt();
+        } catch (XSignatureException e) {
+            DsigUtil.repairXSignatureException(e);
+            throw e;
+        }
         NodeList decryptedNodes = dc.getDataAsNodeList();
         dc.replace();
 
