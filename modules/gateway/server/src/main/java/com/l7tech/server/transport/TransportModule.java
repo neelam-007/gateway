@@ -244,9 +244,9 @@ public abstract class TransportModule extends LifecycleBean {
             certs.add(trustedCert.getCertificate());
         }
 
-        // SSL-J requires at least one accepted issuer when client auth is set to ALWAYS.  If using SSL-J with CLIENT_AUTH_ALWAYS,
+        // SSL-J requires at least one accepted issuer when client auth is set to anything but NEVER.  If using SSL-J with client auth,
         // and the list would otherwise be empty, we'll add our own server cert to the list to keep it from failing.
-        if (!onlyTls10 && certs.isEmpty() && connector.getClientAuth() == SsgConnector.CLIENT_AUTH_ALWAYS) {
+        if (!onlyTls10 && certs.isEmpty()) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {
