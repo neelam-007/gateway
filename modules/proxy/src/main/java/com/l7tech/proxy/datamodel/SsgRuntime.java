@@ -472,7 +472,7 @@ public class SsgRuntime {
                 sslContext = CurrentSslPeer.doWithSslPeer(ssg, new Callable<SSLContext>() {
                     @Override
                     public SSLContext call() throws Exception {
-                        String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER, "SunJSSE");
+                        String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER);
                         SSLContext sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
                         sslContext.init(new X509KeyManager[] {keyManager},
                                         new X509TrustManager[] {trustManager},

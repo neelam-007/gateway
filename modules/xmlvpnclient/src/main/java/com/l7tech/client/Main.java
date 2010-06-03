@@ -52,7 +52,6 @@ public class Main {
 
         String instDirPath = new File(Ssg.PROXY_CONFIG, "../logging.properties").getAbsolutePath();
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties", instDirPath, false, true);
-        System.setProperty("com.l7tech.security.tlsProvider", "SunJSSE");
         JceProvider.init();
     }
 
