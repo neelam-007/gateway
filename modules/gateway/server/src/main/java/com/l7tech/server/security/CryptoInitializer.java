@@ -2,8 +2,10 @@ package com.l7tech.server.security;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.Initialized;
 import com.l7tech.server.event.system.Starting;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
@@ -35,6 +37,8 @@ public class CryptoInitializer implements ApplicationListener {
             permafips = true;
             SyspropUtil.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");
         }
+        // We won't actually call JceProvider.init() or JceProvider.getInstance() yet,
+        // since we need to give the override jce provider name cluster property a chance to load first
     }
 
     @Override
@@ -45,6 +49,9 @@ public class CryptoInitializer implements ApplicationListener {
                 logger.severe(msg);
                 throw new IllegalStateException(msg);
             }
+            WssProcessorAlgorithmFactory.clearAlgorithmPools();
+        } else if (applicationEvent instanceof Initialized) {
+            WssProcessorAlgorithmFactory.clearAlgorithmPools();
         }
     }
 }

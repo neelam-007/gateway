@@ -129,6 +129,13 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         return checkDigestMethod(md);
     }
 
+    public static void clearAlgorithmPools() {
+        rsaPool.clear();
+        dsaPool.clear();
+        sha1Pool.clear();
+        hmacPool.clear();
+    }
+
     private MessageDigest checkDigestMethod(MessageDigest md) throws NoSuchAlgorithmException {
         // Ensure that the digest method uses a digest algorithm which is enabled
         if (!enabledDigestSet.contains(md.getAlgorithm().toUpperCase()))
