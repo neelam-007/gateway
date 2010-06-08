@@ -2,6 +2,7 @@ package com.l7tech.server.admin.ws;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SAXParsingCompleteException;
 import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.interceptor.AttachmentInInterceptor;
@@ -18,18 +19,17 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * CXF Interceptor for basic request validation.
+ *
  */
-public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
+public class XMLValidationInterceptor extends AbstractPhaseInterceptor<Message> {
 
     //- PUBLIC
 
-    public ValidationInterceptor() {
+    public XMLValidationInterceptor() {
         super( Phase.RECEIVE );
         addAfter( AttachmentInInterceptor.class.getName() );
     }
@@ -41,25 +41,19 @@ public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
             return;
         }
 
-        // Limit content size
+        // Check for DOCTYPE
         final InputStream in = message.getContent( InputStream.class );
-        final BufferedInputStream limited;
-        if ( in != null && limit > 0 ) {
-            limited = new BufferedInputStream( new ByteLimitInputStream( in, 32, limit ), dtdLimit );
-        } else if ( in != null ) {
-            limited = new BufferedInputStream( in, dtdLimit );
-        } else {
-            limited = null;
-        }
+        if ( in != null ) {
+            message.setContent( InputStream.class, in );
 
-        if ( limited != null ) {
-            message.setContent( InputStream.class, limited );
-
-            // Check for DOCTYPE
             try {
-                ensureNoDoctype( limited );
+                ensureNoDoctype( in );
             } catch ( SAXException se ) {
-                throw new Fault( new SAXException("Invalid request, DOCTYPE not permitted", se) );
+                if ( ExceptionUtils.getMessage(se).toLowerCase().contains( "doctype" )) {
+                    throw new Fault( new SAXException("Invalid request, DOCTYPE not permitted", se) );
+                } else {
+                    throw new Fault( new SAXException("Invalid request, " + ExceptionUtils.getMessage(se), se) );
+                }
             } catch ( IOException ioe ) {
                 throw new Fault( ioe );
             }
@@ -68,7 +62,6 @@ public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
 
     //- PRIVATE
 
-    private static final int limit = SyspropUtil.getInteger( "com.l7tech.server.admin.ws.requestSizeLimit", 4*1024*1024 );
     private static final int dtdLimit = SyspropUtil.getInteger( "com.l7tech.server.admin.ws.dtdLimit", 4096 );
 
     private void ensureNoDoctype( final InputStream in ) throws SAXException, IOException {
@@ -96,11 +89,7 @@ public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
             reader.parse( new InputSource( pin ) );
         } catch ( SAXParsingCompleteException e ) {
             // Success, reset stream
-            try {
-                in.reset();
-            } catch ( IOException e1 ) {
-                throw new Fault(e);
-            }
+            in.reset();
         }
     }
 
@@ -118,5 +107,4 @@ public class ValidationInterceptor extends AbstractPhaseInterceptor<Message> {
         public void fatalError( final SAXParseException exception ) throws SAXException {
             throw exception;
         }
-    }
-}
+    }}

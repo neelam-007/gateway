@@ -88,11 +88,6 @@ public class NodeApiImpl implements NodeApi {
         logger.fine("ping");
     }
 
-    public Set<SsgConnector> getConnectors() throws FindException {
-        checkRequest();
-        return new HashSet<SsgConnector>(ssgConnectorManager.findAll());
-    }
-
     public NodeStatus getNodeStatus() {
         checkRequest();
         logger.fine("getNodeStatus");

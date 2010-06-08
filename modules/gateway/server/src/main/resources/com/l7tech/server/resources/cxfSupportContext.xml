@@ -23,12 +23,14 @@
     <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
                     address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl">
         <jaxws:inInterceptors>
-            <ref bean="validationInterceptor"/>
+            <ref bean="streamValidationInterceptor"/>
+            <ref bean="xmlValidationInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
 
-    <bean id="validationInterceptor" class="com.l7tech.server.admin.ws.ValidationInterceptor"/>
+    <bean id="streamValidationInterceptor" class="com.l7tech.server.admin.ws.StreamValidationInterceptor"/>
+    <bean id="xmlValidationInterceptor" class="com.l7tech.server.admin.ws.XMLValidationInterceptor"/>
 
     <bean id="esmSecurityInterceptor" class="com.l7tech.server.admin.ws.EsmApiInterceptor">
         <constructor-arg index="0" ref="licenseManager"/>
@@ -43,7 +45,8 @@
     <jaxws:endpoint id="gatewayApiEndpoint" implementor="#gatewayApiImpl"
                     address="/gatewayApi" depends-on="gatewayApiImpl">
         <jaxws:inInterceptors>
-            <ref bean="validationInterceptor"/>
+            <ref bean="streamValidationInterceptor"/>
+            <ref bean="xmlValidationInterceptor"/>
             <ref bean="esmSecurityInterceptor"/>
         </jaxws:inInterceptors>
         <jaxws:outFaultInterceptors>
@@ -55,7 +58,8 @@
     <jaxws:endpoint id="reportApiEndpoint" implementor="#reportApiImpl"
                     address="/reportApi" depends-on="reportApiImpl">
         <jaxws:inInterceptors>
-            <ref bean="validationInterceptor"/>
+            <ref bean="streamValidationInterceptor"/>
+            <ref bean="xmlValidationInterceptor"/>
             <ref bean="esmSecurityInterceptor"/>
         </jaxws:inInterceptors>
         <jaxws:outFaultInterceptors>
@@ -67,7 +71,8 @@
     <jaxws:endpoint id="migrationApiEndpoint" implementor="#migrationApiImpl"
                     address="/migrationApi" depends-on="migrationApiImpl">
         <jaxws:inInterceptors>
-            <ref bean="validationInterceptor"/>
+            <ref bean="streamValidationInterceptor"/>
+            <ref bean="xmlValidationInterceptor"/>
             <ref bean="esmSecurityInterceptor"/>
         </jaxws:inInterceptors>
         <jaxws:outFaultInterceptors>
