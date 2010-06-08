@@ -40,8 +40,8 @@ public class ApplicationContextTest  {
 
     private static final Set<String> NON_ADMIN_PROXY_BEANS = new HashSet<String>( Collections.<String>emptySet());
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
-    private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
-    private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
+    private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin", "customAssertionRegistrar" ) );
+    private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionRegistrar" ) );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = new HashSet<String>( Arrays.asList( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" ) );
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = new HashSet<String>( Arrays.asList( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager" ) );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList(

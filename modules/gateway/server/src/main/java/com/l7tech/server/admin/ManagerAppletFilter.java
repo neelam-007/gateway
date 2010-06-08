@@ -127,7 +127,7 @@ public class ManagerAppletFilter implements Filter {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionsAdmin", CustomAssertionsRegistrar.class);
+        customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionRegistrar", CustomAssertionsRegistrar.class);
         ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
         assertionRegistry = (ServerAssertionRegistry)getBean("assertionRegistry", ServerAssertionRegistry.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);

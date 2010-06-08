@@ -73,7 +73,7 @@
     </bean>
 
     <bean name="/CustomAssertionsRegistrar" parent="httpInvokerParent">
-        <property name="service" ref="customAssertionsAdmin"/>
+        <property name="service" ref="customAssertionRegistrar"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.custom.CustomAssertionsRegistrar"/>
     </bean>
 

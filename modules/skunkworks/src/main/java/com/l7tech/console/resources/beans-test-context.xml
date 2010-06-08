@@ -23,7 +23,7 @@
     <bean id="jmsAdmin" class="com.l7tech.gateway.common.service.JmsAdminStub">
     </bean>
 
-    <bean id="customAssertionsAdmin" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarStub">
+    <bean id="customAssertionRegistrar" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarStub">
     </bean>
 
     <bean id="auditAdmin" class="com.l7tech.gateway.common.audit.AuditAdminStub">

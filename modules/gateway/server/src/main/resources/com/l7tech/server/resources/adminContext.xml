@@ -304,11 +304,6 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <!-- custom assertions admin servant -->
-    <bean id="customAssertionsAdmin" class="com.l7tech.server.admin.CustomAssertionsRegistrarImpl">
-        <property name="delegate" ref="customAssertionRegistrar"/>
-    </bean>
-
     <!-- kerberos admin servant -->
     <bean id="kerberosAdmin" class="com.l7tech.server.KerberosAdminImpl">
         <constructor-arg ref="clusterPropertyManager"/>
