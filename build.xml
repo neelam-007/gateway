@@ -175,6 +175,7 @@
         java.specification.version=${java.specification.version}
         java.runtime.name=${java.runtime.name}
         java.runtime.version=${java.runtime.version}
+        ant.version=${ant.version}
         </echo>
 
         <property name="build.dir" value="${src.root}/build"/>
@@ -801,8 +802,8 @@
                 <pathelement location="modules/skunkworks/build/classes"/>
                 <fileset dir="lib">
                     <include name="ant.jar"/>
-                    <include name="**/jcommon-1.0.5.jar"/>
-                    <include name="**/jfreechart-1.0.2.jar"/>
+                    <include name="**/jcommon-1.0.15.jar"/>
+                    <include name="**/jfreechart-1.0.12.jar"/>
                     <include name="xercesImpl.jar"/>
                     <include name="**/commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
