@@ -198,6 +198,20 @@ public class FtpServerManager extends TransportModule implements ApplicationList
             throw new RuntimeException(e); // shouldn't be possible
         }
 
+        for ( final String propertyName : connector.getPropertyNames() ) {
+            if (propertyName.equals(SsgConnector.PROP_BIND_ADDRESS) ||
+                propertyName.equals(SsgConnector.PROP_PORT_RANGE_START) ||
+                propertyName.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
+                propertyName.equals(SsgConnector.PROP_TLS_CIPHERLIST) ||
+                propertyName.equals(SsgConnector.PROP_TLS_PROTOCOLS))
+                continue;
+
+            final String propertyValue = connector.getProperty( propertyName );
+            if ( propertyValue != null ) {
+                props.setProperty( propertyName, propertyValue );
+            }
+        }
+
         String address = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
         address = ssgConnectorManager.translateBindAddress(address, connector.getPort());
         if (address == null) address = "0.0.0.0";
