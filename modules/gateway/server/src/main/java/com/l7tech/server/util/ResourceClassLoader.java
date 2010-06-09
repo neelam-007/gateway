@@ -78,6 +78,18 @@ public class ResourceClassLoader extends ClassLoader {
 
             InputStream resIn = resUrl.openStream();
             byte[] classData = IOUtils.slurpStream(new ByteLimitInputStream(resIn, 1024, 102400));
+
+            // Check package and define if required
+            // TODO package sealing support?
+            int i = name.lastIndexOf( '.' );
+            if ( i != -1 ) {
+                String pkgname = name.substring( 0, i );
+                Package pkg = getPackage( pkgname );
+                if ( pkg == null ) {
+                    definePackage( pkgname, null, null, null, null, null, null, null );
+                }
+            }
+
             return defineClass(name, classData, 0, classData.length);
         } catch(IOException ioe) {
             throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);

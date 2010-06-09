@@ -120,6 +120,18 @@ public class CustomAssertionClassLoader extends ClassLoader {
         byte[] classBytes = findResourceBytes(path);
         if (classBytes == null || classBytes.length < 1)
             throw new ClassNotFoundException(name);
+
+        // Check package and define if required
+        // TODO package sealing support?
+        int i = name.lastIndexOf( '.' );
+        if ( i != -1 ) {
+            String pkgname = name.substring( 0, i );
+            Package pkg = getPackage( pkgname );
+            if ( pkg == null ) {
+                definePackage( pkgname, null, null, null, null, null, null, null );
+            }
+        }
+
         return defineClass(name, classBytes, 0, classBytes.length);
     }
 
