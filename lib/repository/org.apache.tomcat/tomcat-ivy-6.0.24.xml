@@ -16,7 +16,7 @@
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="catalina-ha" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="coyote" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.tomcat" name="coyote" rev="6.0.24-l7p1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="dbcp" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="el-api" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="jasper" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

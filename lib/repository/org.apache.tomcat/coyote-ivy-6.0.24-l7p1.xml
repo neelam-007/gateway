@@ -2,7 +2,7 @@
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
 	<info organisation="org.apache.tomcat"
 		module="coyote"
-		revision="6.0.24"
+		revision="6.0.24-l7p1"
 		status="release"
 		publication="20100128082202"
 	>
