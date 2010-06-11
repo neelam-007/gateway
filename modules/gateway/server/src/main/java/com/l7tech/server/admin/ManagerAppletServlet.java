@@ -3,6 +3,9 @@
  */
 package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.server.transport.ListenerException;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -68,6 +71,16 @@ public class ManagerAppletServlet extends HttpServlet {
         if (got == null)
             throw new ServletException("Configuration error; could not get " + name);
         return got;
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            HttpTransportModule.requireEndpoint(req, SsgConnector.Endpoint.ADMIN_APPLET);
+            super.service(req, resp);
+        } catch (ListenerException e) {
+            resp.sendError(404, "Service unavailable on this port");
+        }
     }
 
     @Override
