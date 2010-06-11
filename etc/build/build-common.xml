@@ -104,6 +104,7 @@
                source="${module.compile.source}"
                target="${module.compile.target}"
                excludes="${module.compile.excludes}"
+               includeAntRuntime="no"
                 >
             <compilerarg value="-Xlint" compiler="modern"/>
             <compilerarg value="-Xlint:-serial" compiler="modern"/>
@@ -152,6 +153,7 @@
                 target="${module.compile.target}"
                 failonerror="true"
                 optimize="on"
+                includeAntRuntime="no"
                 >
             <include name="**/*.form"/>
             <exclude name="${module.forms.excludes}"/> 
