@@ -41,9 +41,9 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.Lifecycle;
 import org.w3c.dom.Element;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -65,7 +65,7 @@ import java.util.logging.Logger;
  * Manages ESM subscriptions
  */
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
-public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationContextAware {
+public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationContextAware, Lifecycle {
     private static final Logger logger = Logger.getLogger(SubscriptionNotifier.class.getName());
 
     public static final String ESM_SUBSCRIPTION_SERVICE_NAME = "ESM Subscription Service";
@@ -111,6 +111,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     private Aggregator aggregator;
 
     private final String clusterNodeId;
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     private TimerTask maintenanceTask;
     private TimerTask notificationTask ;
@@ -124,8 +125,8 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         this.clusterNodeId = clusterNodeId;
     }
 
-    @PostConstruct
-    private void start() {
+    @Override
+    public void start() {
         loadNotificationProperties(true);
 
         String hostname = serverConfig.getHostname();
@@ -191,6 +192,18 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         };
 
         scheduleTasks( false, notificationEnabled.get() ? notificationPeriod.get() : 0 );
+
+        started.set( true );
+    }
+
+    @Override
+    public void stop() {
+        started.set( false );
+    }
+
+    @Override
+    public boolean isRunning() {
+        return started.get();
     }
 
     /**

@@ -19,8 +19,7 @@ import java.util.logging.Logger;
  *
  * <p>Exceptions in listeners are caught and logged.</p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * TODO see if we can remove this now the spring multicaster supports registration
  */
 public class SafeApplicationEventMulticaster implements ApplicationEventMulticaster {
 
@@ -33,6 +32,16 @@ public class SafeApplicationEventMulticaster implements ApplicationEventMulticas
     public void addApplicationListener(ApplicationListener listener) {
         if(listener==null) throw new IllegalArgumentException("listener must not be null.");
         listeners.add(listener);
+    }
+
+    @Override
+    public void addApplicationListenerBean( final String s ) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void removeApplicationListenerBean( final String s ) {
+        throw new UnsupportedOperationException();
     }
 
     public void multicastEvent(ApplicationEvent event) {

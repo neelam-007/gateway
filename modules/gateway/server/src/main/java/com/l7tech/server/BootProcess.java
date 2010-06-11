@@ -39,7 +39,6 @@ import java.util.logging.Logger;
  */
 public class BootProcess
     extends ApplicationObjectSupport
-    implements DisposableBean
 {
     private static final Logger logger = Logger.getLogger(BootProcess.class.getName());
     private boolean wasStarted = false;
@@ -154,9 +153,8 @@ public class BootProcess
     }
 
     /**
-     * Invoked by a BeanFactory on destruction of a singleton.
+     * 
      */
-    @Override
     public void destroy() {
         try {
             stop();

@@ -29,16 +29,16 @@
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
 
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.6" force="true" conf="core"/>
-    	<dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.2.7" force="true" conf="core"/>
+        <dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.2.7" force="true" conf="core"/>
 
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
-    	<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.8" force="true" conf="core"/>
+        <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
 
         <dependency org="org.slf4j" name="slf4j-api" rev="1.5.8" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.8" force="true" conf="core"/>
         <dependency org="org.snmp4j" name="snmp4j" rev="1.10.1" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-web" rev="2.5.6" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-web" rev="3.0.2.RELEASE" force="true" conf="core"/>
 
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="143" force="true" conf="core"/>
 
@@ -46,7 +46,7 @@
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
 
-        <dependency org="org.springframework" name="spring-test" rev="2.5.6" force="true" conf="test"/>
+        <dependency org="org.springframework" name="spring-test" rev="3.0.2.RELEASE" force="true" conf="test"/>
         <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
 
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />

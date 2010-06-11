@@ -167,6 +167,7 @@ public class GatewayBoot {
         } catch ( InterruptedException e ) {
             logger.info("Continuing shutdown (interrupted).");                        
         }
+        destroyBootProcess();
         applicationContext.close();
         running.set(false);
     }
@@ -238,17 +239,28 @@ public class GatewayBoot {
     }
 
     private String startBootProcess() throws LifecycleException {
-        BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
+        applicationContext.start();
+        BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
         boot.start();
         return boot.getIpAddress();
     }
 
     private void stopBootProcess() {
         try {
-            BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
+            BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
             boot.stop();
+            applicationContext.stop();
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+        }
+    }
+
+    private void destroyBootProcess() {
+        try {
+            BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
+            boot.destroy();
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Error destroying boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
     }
 

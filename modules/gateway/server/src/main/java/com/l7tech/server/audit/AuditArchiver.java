@@ -12,6 +12,9 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.beans.PropertyChangeEvent;
@@ -31,7 +34,7 @@ import java.util.logging.Logger;
  *
  * @author jbufu
  */
-public class AuditArchiver implements InitializingBean, ApplicationContextAware, PropertyChangeListener {
+public class AuditArchiver implements InitializingBean, ApplicationContextAware, PropertyChangeListener, ApplicationListener {
 
     private static final Logger logger = Logger.getLogger(AuditArchiver.class.getName());
 
@@ -91,8 +94,14 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
-        reloadConfig();
-        logger.info("Audit Archiver initialized.");
+    }
+
+    @Override
+    public void onApplicationEvent( final ApplicationEvent event ) {
+        if ( event instanceof ContextStartedEvent ) {
+            reloadConfig();
+            logger.info("Audit Archiver initialized.");
+        }
     }
 
     private void reschedule() {

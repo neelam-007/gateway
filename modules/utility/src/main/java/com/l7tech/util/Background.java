@@ -180,10 +180,14 @@ public final class Background {
         }
 
         // Ensure purge happens after any active call returns
-        timer.schedule(new TimerTask() {
-            public void run() {
-                timer.purge();
-            }
-        }, 0);
+        try {
+            timer.schedule(new TimerTask() {
+                public void run() {
+                    timer.purge();
+                }
+            }, 0);
+        } catch ( IllegalStateException ise ) {
+            // Timer cancelled already.            
+        }
     }
 }

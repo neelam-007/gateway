@@ -19,9 +19,10 @@ import com.l7tech.util.Background;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.Phased;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.ByteArrayInputStream;
@@ -30,8 +31,11 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -42,7 +46,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-public abstract class AbstractLicenseManager extends ApplicationObjectSupport implements InitializingBean, ApplicationListener, AssertionLicense, UpdatableLicenseManager {
+public abstract class AbstractLicenseManager extends ApplicationObjectSupport implements ApplicationListener, AssertionLicense, UpdatableLicenseManager, org.springframework.context.Lifecycle, Phased {
 
     //- PUBLIC
 
@@ -186,10 +190,6 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         }
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-    }
-
     /** Listen for the license property being changed, and update the license immediately. */
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
@@ -201,6 +201,35 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
                 requestReload();
             }
         }
+    }
+
+    @Override
+    public int getPhase() {
+        return -10000;
+    }
+
+    @Override
+    public void start() {
+        started.set( true );
+
+        final ApplicationContext applicationContext = getApplicationContext();
+        synchronized( events ) {
+            for ( final ApplicationEvent event : events ) {
+                applicationContext.publishEvent( event );
+            }
+
+            events.clear();
+        }
+    }
+
+    @Override
+    public void stop() {
+        started.set( false );
+    }
+
+    @Override
+    public boolean isRunning() {
+        return started.get();
     }
 
     //- PROTECTED
@@ -222,6 +251,8 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private static final Object LICENSE_PROPERTY_VAL = getVal();
     private static final long TIME_CHECK_NOW = -20000L;// Filled in by Spring
 
+    private final List<ApplicationEvent> events = new ArrayList<ApplicationEvent>();
+    private final AtomicBoolean started = new AtomicBoolean(false);
     private final Logger logger;
     private final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
@@ -399,13 +430,27 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
 
     private void fireEvent(final AuditDetailMessage message, final String suffix, final String action) {
         // Avoid firing the event while still holding the license manage lock
-        Background.scheduleOneShot(new TimerTask() {
-            @Override
-            public void run() {
-                String suffix2 = suffix == null ? "" : ": " + suffix;
-                getApplicationContext().publishEvent(new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix2));
+
+        String suffix2 = suffix == null ? "" : ": " + suffix;
+        final LicenseEvent event = new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix2);
+
+        if ( !isRunning() ) {
+            // Sending events too early in startup is causing a deadlock, so
+            // for now we save these and send them out later.
+            // This is not strictly thread safe, but is sufficiently so for
+            // our current usage (should set/recheck started flag when
+            // synchronized)
+            synchronized(events) {
+                events.add( event );
             }
-        }, 0);
+        } else {
+            Background.scheduleOneShot(new TimerTask() {
+                @Override
+                public void run() {
+                    getApplicationContext().publishEvent( event );
+                }
+            }, 0);
+        }
     }
 
     private X509Certificate[] getTrustedIssuers() {

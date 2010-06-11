@@ -36,9 +36,9 @@
         <dependency org="org.apache.ws.commons.policy" name="policy" rev="1.0" force="true" conf="core"/>
         <dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="core"/>
         <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.3" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-beans" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-context" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-core" rev="2.5.6" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-beans" rev="3.0.2.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-context" rev="3.0.2.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-core" rev="3.0.2.RELEASE" force="true" conf="core"/>
         <!-- Tarari is optional -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional,test"/>
         <dependency org="org.apache.xmlbeans" name="xmlbeans" rev="2.4.0" force="true" conf="core"/>

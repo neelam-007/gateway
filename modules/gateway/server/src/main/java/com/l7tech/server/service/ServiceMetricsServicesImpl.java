@@ -75,10 +75,12 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     /**
      * @return whether collection of service metrics is currently enabled
      */
+    @Override
     public boolean isEnabled() {
         return _enabled.get();
     }
 
+    @Override
     public int getFineInterval() {
         return fineBinInterval;
     }
@@ -90,10 +92,12 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
      * @param serviceOid    OID of published service
      * @return null if service metrics processing is disabled
      */
+    @Override
     public void trackServiceMetrics(final long serviceOid) {
         getServiceMetrics( serviceOid );
     }
 
+    @Override
     public void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime) {
         ServiceMetrics metrics = getServiceMetrics( serviceOid );
         if ( metrics != null ) {
@@ -235,7 +239,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
                 // not from memory.
                 if (_fineArchiver != null) { _fineArchiver.cancel(); _fineArchiver = null; }
                 if (_hourlyArchiver != null) { _hourlyArchiver.cancel(); _hourlyArchiver.doRun(); _hourlyArchiver = null; }
-                if (_dailyArchiver != null) { _dailyArchiver.cancel(); _dailyArchiver.doRun(); _dailyArchiver = null; }
+                if (_dailyArchiver != null) { _dailyArchiver.cancel(); _dailyArchiver.performTask(false); _dailyArchiver = null; }
                 if (_fineDeleter != null) { _fineDeleter.cancel(); _fineDeleter = null; }
                 if (_hourlyDeleter != null) { _hourlyDeleter.cancel(); _hourlyDeleter = null; }
                 if (_dailyDeleter != null) { _dailyDeleter.cancel(); _dailyDeleter = null; }
@@ -304,6 +308,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (!(event instanceof EntityInvalidationEvent))
             return;
@@ -342,6 +347,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
      * <p>Also archives an empty uptime bin (since 4.0).
      */
     private class FineTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
             synchronized(_serviceMetricsMapLock) {
@@ -384,6 +390,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
      * current hourly bins and start new ones.
      */
     private class HourlyTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
@@ -429,7 +436,12 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
      * current daily bins and start new ones.
      */
     private class DailyTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
+            performTask(true);
+        }
+
+        private void performTask( final boolean reschedule ) {
             Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
                 list.addAll(_serviceMetricsMap.keySet());
@@ -467,12 +479,14 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Daily archiving task completed; archived " + list.size() + " daily bins.");
 
-            // Schedule the next timer execution at the end of current period
-            // (with a new task instance because a task cannot be reused).
-            Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
-            timer.schedule(new DailyTask(), nextTimerDate);
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("Scheduled next daily flush task for " + nextTimerDate);
+            if ( reschedule ) {
+                // Schedule the next timer execution at the end of current period
+                // (with a new task instance because a task cannot be reused).
+                Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
+                timer.schedule(new DailyTask(), nextTimerDate);
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("Scheduled next daily flush task for " + nextTimerDate);
+            }
         }
     }
 
@@ -488,6 +502,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             _resolution = resolution;
         }
 
+        @Override
         protected void doRun() {
             final long oldestSurvivor = System.currentTimeMillis() - _ttl;
             try {
@@ -507,6 +522,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         if (CLUSTER_PROP_ENABLED.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
@@ -545,6 +561,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             }
         }
 
+        @Override
         public void run() {
             logger.info("Database flusher beginning");
             while (true) {
