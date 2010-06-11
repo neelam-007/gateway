@@ -913,8 +913,10 @@ public class GatewayManagementClient {
 
                 if ( "accept".equals( importInstruction )) {
                     instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.IGNORE );
+                    instructions.add( instruction );
                 } else if ( "remove".equals( importInstruction )) {
                     instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.DELETE );
+                    instructions.add( instruction );
                 } else if ( "rename".equals( importInstruction )) {
                     final String importName = getArg( instructionArguments, ++i );
                     instruction.setPolicyReferenceInstructionType( PolicyReferenceInstruction.PolicyReferenceInstructionType.RENAME );
