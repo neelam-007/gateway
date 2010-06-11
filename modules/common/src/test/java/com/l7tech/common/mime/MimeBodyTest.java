@@ -1,16 +1,13 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.util.IOUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -21,21 +18,10 @@ import java.util.logging.Logger;
 /**
  * Test for MimeBody class.
  */
-public class MimeBodyTest extends TestCase {
+public class MimeBodyTest {
     private static Logger log = Logger.getLogger(MimeBodyTest.class.getName());
 
-    public MimeBodyTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(MimeBodyTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testEmptySinglePartMessage() throws Exception {
         MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         assertEquals(-1, mm.getFirstPart().getContentLength()); // size of part not yet known
@@ -44,6 +30,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(0, mm.getFirstPart().getContentLength()); // size now known
     }
 
+    @Test
     public void testSimple() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -79,6 +66,66 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
+    public void testReadWriteIdentityEncoded() throws Exception {
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+
+        // read parts
+        PartInfo rubyPart = mm.getPart(1);
+        byte[] rubyData = IOUtils.slurpStream( rubyPart.getInputStream(false) );
+        log.info("Ruby part retrieved " + rubyData.length + " bytes: \n[" + new String(rubyData)+ "]");
+        assertArrayEquals("Ruby part equality", RUBY.getBytes(), rubyData);
+
+        PartInfo soapPart = mm.getPart(0);
+        byte[] soapData = IOUtils.slurpStream( soapPart.getInputStream(false) );
+        log.info("Soap part retrieved " + soapData.length + " bytes: \n" + new String(soapData));
+        assertArrayEquals("SOAP part equality", SOAP.getBytes(), soapData);
+
+        // update parts
+        rubyPart.setBodyBytes( SOAP.getBytes() );
+        soapPart.setBodyBytes( RUBY.getBytes() );
+
+        rubyPart.getHeaders().add( MimeHeader.parseValue("X-a", "v") );
+        byte[] body = IOUtils.slurpStream( mm.getEntireMessageBodyAsInputStream( false ) );
+        String bodyString = new String(body);
+        log.info( "Message body : " + bodyString );
+
+        assertTrue("Body contains raw SOAP", bodyString.contains( "version=\"1.0\"" ));
+        assertTrue("Body contains raw Ruby", bodyString.contains( "require 'soap/rpc/driver'" ));
+        assertTrue("Ruby comes before SOAP" , bodyString.indexOf( "version=\"1.0\"" ) > bodyString.indexOf( "require 'soap/rpc/driver'" ));
+    }
+
+    @Test
+    public void testReadWriteContentTransferEncoded() throws Exception {
+        MimeBody mm = makeMessage(MESS_ENC, MESS_CONTENT_TYPE);
+
+        // read parts
+        PartInfo rubyPart = mm.getPart(1);
+        byte[] rubyData = IOUtils.slurpStream( rubyPart.getInputStream(false) );
+        rubyData = new String(rubyData).replaceAll("\r","").getBytes(); // quoted printable will replace \n with \r\n
+        log.info("Ruby part retrieved " + rubyData.length + " bytes: \n[" + new String(rubyData)+ "]");
+        assertArrayEquals("Ruby part equality", RUBY.getBytes(), rubyData);
+
+        PartInfo soapPart = mm.getPart(0);
+        byte[] soapData = IOUtils.slurpStream( soapPart.getInputStream(false) );
+        log.info("Soap part retrieved " + soapData.length + " bytes: \n" + new String(soapData));
+        assertArrayEquals("SOAP part equality", SOAP.getBytes(), soapData);
+
+        // update parts after switching the encoding
+        rubyPart.getHeaders().replace( MimeHeader.parseValue( MimeUtil.CONTENT_TRANSFER_ENCODING, MimeUtil.TRANSFER_ENCODING_BASE64 ));
+        rubyPart.setBodyBytes( RUBY.getBytes() );
+        soapPart.getHeaders().replace( MimeHeader.parseValue( MimeUtil.CONTENT_TRANSFER_ENCODING, MimeUtil.TRANSFER_ENCODING_QUOTED_PRINTABLE ));
+        soapPart.setBodyBytes( SOAP.getBytes() );
+        
+        byte[] body = IOUtils.slurpStream( mm.getEntireMessageBodyAsInputStream( false ) );
+        String bodyString = new String(body);
+        log.info( "Message body : " + bodyString );
+
+        assertTrue("Body contains escaped SOAP", bodyString.contains( "version=3D\"1.0\"" ));
+        assertTrue("Body contains escaped Ruby", bodyString.contains( "cmVxdWlyZSAnc2" ));
+    }
+
+    @Test
     public void testSimpleWithNoPreamble() throws Exception {
         MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
@@ -120,6 +167,7 @@ public class MimeBodyTest extends TestCase {
         return mm;
     }
 
+    @Test
     public void testSinglePart() throws Exception {
         final String body = "<foo/>";
         MimeBody mm = makeMessage(body, "text/xml");
@@ -130,6 +178,7 @@ public class MimeBodyTest extends TestCase {
 
     }
 
+    @Test
     public void testStreamAllWithNoPreamble() throws Exception {
         MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
@@ -141,6 +190,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(MESS2.substring(MESS2.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
+    @Test
     public void testStreamAllWithPreamble() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -159,6 +209,7 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testStreamAllConsumedRubyPart() throws Exception {
         MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
@@ -173,6 +224,7 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testStreamAllWithAllStashed() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -191,6 +243,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
+    @Test
     public void testStreamAllWithFirstPartStashed() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -205,6 +258,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
+    @Test
     public void testLookupsByCid() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -240,6 +294,7 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testByteArrayCtorNullByteArray() {
         try {
             new MimeBody(null, ContentTypeHeader.XML_DEFAULT);
@@ -255,6 +310,7 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testIterator() throws Exception {
         MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
@@ -272,6 +328,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId(true));
     }
 
+    @Test
     public void testIterator2() throws Exception {
         SwaTestcaseFactory stfu = new SwaTestcaseFactory(23, 888, 29);
         byte[] testMsg = stfu.makeTestMessage();
@@ -302,6 +359,7 @@ public class MimeBodyTest extends TestCase {
      * There was an off by one error in the part iteration logic that could
      * cause the last part to be missed when iterating.
      */
+    @Test
     public void testIterationWithoutConsumption() throws Exception {
         SwaTestcaseFactory stfu = new SwaTestcaseFactory(4, 1024*50, 33);
         byte[] testMsg = stfu.makeTestMessage();
@@ -321,6 +379,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(4, parts.size());
     }
 
+    @Test
     public void testContentLengthThatLies() throws Exception {
         final ContentTypeHeader ct = ContentTypeHeader.parseValue("multipart/related; boundary=blah");
         final String mess = "--blah\r\nContent-Length: 10\r\n\r\n\r\n--blah\r\n\r\n--blah--";
@@ -350,6 +409,7 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testFailureToStartAtPartZero() throws Exception {
         try {
             makeMessage(MESS3, MESS3_CONTENT_TYPE);
@@ -359,10 +419,12 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    @Test
     public void testBug2180() throws Exception {
         makeMessage(BUG_2180, MESS_BUG_2180_CTYPE);
     }
 
+    @Test
     public void testStreamValidatedParts() throws Exception {
         MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
         mm.setEntireMessageBodyAsInputStreamIsValidatedOnly();
@@ -379,6 +441,7 @@ public class MimeBodyTest extends TestCase {
         assertEquals(1,rebuilt.getNumPartsKnown());
     }
     
+    @Test
     public void testGetBytesIfAlreadyAvailable() throws Exception {
         SwaTestcaseFactory stfu = new SwaTestcaseFactory(1, 50000, 29);
         InputStream in = new ByteArrayInputStream(stfu.makeTestMessage());
@@ -403,6 +466,14 @@ public class MimeBodyTest extends TestCase {
             assertEquals(got, null);
         } finally {
             stashManager.close();
+        }
+    }
+
+    private static String encode( final String text, final String encoding ) {
+        try {
+            return new String( IOUtils.slurpStream( MimeUtil.getEncodingInputStream( text.getBytes(), encoding )));
+        } catch ( IOException e ) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -457,6 +528,22 @@ public class MimeBodyTest extends TestCase {
             "Content-ID: <-76392836.15558>\r\n" +
             "\r\n" +
              RUBY +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299--\r\n";
+
+    public static final String MESS_ENC = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: BAsE64\r\n" +
+            "Content-Type: text/xml; charset=utf-8\r\n" +
+            "Content-ID: -76394136.15558\r\n" +
+            "\r\n" +
+            encode(SOAP, "base64") +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299\r\n" +
+            "cOntent-transfEr-encOding: qUoTeD-prinTaBLE\r\n" +
+            "Content-Type: aPplication/octeT-stream\r\n" +
+            "Content-ID: <-76392836.15558>\r\n" +
+            "\r\n" +
+            encode(RUBY, "quoted-printable") +
             "\r\n" +
             "------=Part_-763936460.407197826076299--\r\n";
 

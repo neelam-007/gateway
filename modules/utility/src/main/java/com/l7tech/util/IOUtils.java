@@ -327,4 +327,74 @@ public class IOUtils {
         }
         return size;
     }
+
+    /**
+     * Create an input stream for the given data that filters through the callback output stream.
+     *
+     * <p>This method can be used to convert a filtering output stream to a
+     * filtering input stream in cases where the output stream can be flushed
+     * with partial data.</p>
+     *
+     * <p>WARNING: This should not be used if the filtering output stream
+     * expands the content to 400% of the input size or more or if the stream
+     * cannot be flushed with partial data.</p>
+     *
+     * <p>The output stream passed to the callback is assumed to be closed by
+     * closing the returned stream. If this is not the case then the callback
+     * should otherwise handle closing the stream.</p>
+     *
+     * @param data The data to be read
+     * @param outputBuilder Callback for construction of the filtering output stream.
+     * @return The filtered input stream.
+     */
+    public static InputStream toInputStream( final byte[] data,
+                                             final Functions.Unary<OutputStream,OutputStream> outputBuilder ) {
+        return new InputStream(){
+            private final int[] out = new int[400];
+            private int outReadIndex = 0;
+            private int outWriteIndex = 0;
+            private int dataIndex = 0;
+            private IOException toThrow = null;
+            private final OutputStream encoderOut = outputBuilder.call( new OutputStream(){
+                @Override
+                public void write( final int b ) throws IOException {
+                    out[outWriteIndex] = ((byte)b) & 0xFF; // this should not be necessary
+                    outWriteIndex = ++outWriteIndex % 400;
+                }
+            } );
+
+            @Override
+            public int read() throws IOException {
+                if ( toThrow != null ) {
+                    throw toThrow;
+                }
+
+                if ( outReadIndex == outWriteIndex ) {
+                    if ( (dataIndex + 100) < data.length ) {
+                        encoderOut.write( data, dataIndex, 100 );
+                        encoderOut.flush();
+                        dataIndex += 100;
+                    } else if ( dataIndex < data.length ) {
+                        encoderOut.write( data, dataIndex, data.length - dataIndex );
+                        encoderOut.flush();
+                        encoderOut.close();
+                        dataIndex = data.length;
+                    }
+                }
+
+                if ( outReadIndex == outWriteIndex ) {
+                    return -1;
+                } else {
+                    int read = out[outReadIndex];
+                    outReadIndex = ++outReadIndex % 400;
+                    return read;
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                ResourceUtils.closeQuietly( encoderOut );
+            }
+        };
+    }
 }

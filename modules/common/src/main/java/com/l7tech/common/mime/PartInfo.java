@@ -12,6 +12,10 @@ import java.io.InputStream;
 /**
  * Encapsulates a MIME part and its metadata, and provides a way to
  * access the part's body content (wherever it might currently be stored).
+ * <p>
+ * Changing the content transfer encoding for a part will not automatically
+ * re-encode the contents. To re-encode, the data should be read, the encoding
+ * changed and the data written.
  */
 public interface PartInfo {
     /** @return the specified MIME header (ie, "Content-Disposition") or null if this Part did not include it. */
@@ -28,6 +32,9 @@ public interface PartInfo {
      * If destroyAsRead is true, the caller must consume the returned InputStream before calling getInputStream()
      * on other PartInfos from the MimeBody that produced this PartInfo, or any methods in the
      * MimeBody.
+     * <p>
+     * If the parts content transfer encoding requires decoding this is performed automatically, this means that
+     * in some cases the data read from the stream can be more or less than the content length of the part.
      *
      * @param destroyAsRead if false, the InputStream will be stashed and subsequent callers will be able to
      *                      obtain it and read it from the beginning again.  If true, the InputStream's contents
@@ -43,6 +50,8 @@ public interface PartInfo {
      * Get this part's body as a byte array, but only if it is already available internally in that form.
      * Use this method only as an optimization in cases where you would always have slurped the entire InputStream
      * into a byte array anyway.
+     * <p>
+     * If the parts content transfer encoding requires decoding the bytes are always considered unavailable.
      *
      * @return the body bytes of this part, if they are already available as a byte array, or null if they are not
      *         available in that form.
@@ -61,6 +70,9 @@ public interface PartInfo {
      * <b>Note:</b> this method is intended to be used for debugging and logging purposes.  Production code should
      * generally avoid assuming that part bodies are small enough to fit in memory -- even the XML part.
      * Only use this method if your only alternative would be to just make a new byte array yourself.
+     * <p>
+     * If the parts content transfer encoding requires decoding this is performed automatically, this means that the
+     * actual size of the data could be greater than the given maximum.
      *
      * @param maxSize  Mamimum size if a new byte array needs to be created.  Ignored if a byte array is already
      *                 available.
@@ -77,6 +89,9 @@ public interface PartInfo {
      * old content, and will result in the new content being stashed.
      * <p>
      * The Content-Length will be updated with the new length.
+     * <p>
+     * If the parts content transfer encoding requires encoding this is performed automatically on the given
+     * data.
      *
      * @param newBody         the new body content to substitute.  May be empty but not null.
      * @throws IOException    if there is a problem reading past the original part body in the main InputStream; or,
@@ -100,6 +115,9 @@ public interface PartInfo {
      * otherwize, if the Part's body has not yet been read, -1 will be returned.
      * <p>
      * To force the body to be read if it hasn't been already, use {@link #getActualContentLength} instead.
+     * <p>
+     * The length is for the encoded data, so if the part has a content transfer encoding that requires encoding
+     * the size of data that can be accessed from the part may be larger or smaller than this value.
      *
      * @return the content length known or declared for this Part, or -1 if this information is not available.
      */
@@ -109,6 +127,9 @@ public interface PartInfo {
      * Get the actual length of this Part's body in bytes.  Any length declared in a Content-Length: header will
      * be ignored.  This will read and stash the entire body, if necessary, in order to obtain an accurate answer.
      * The Content-Length header will be updated with the new, accurate information.
+     * <p>
+     * The length is for the encoded data, so if the part has a content transfer encoding that requires encoding
+     * the size of data that can be accessed from the part may be larger or smaller than this value.
      *
      * @return The length of this part in bytes.  Always nonnegative, and always accurate.
      * @throws IOException  if the main InputStream could not be read; or,

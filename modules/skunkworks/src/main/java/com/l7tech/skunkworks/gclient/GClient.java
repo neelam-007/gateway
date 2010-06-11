@@ -1172,6 +1172,7 @@ public class GClient {
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
             }
             //noinspection unchecked
+            boolean setContentLength = true;
             Collection<GenericHttpHeader> headers = new ArrayList();
             if (cookies != null && cookies.trim().length() > 0) {
                 headers.add(new GenericHttpHeader("Cookie", cookies));
@@ -1184,6 +1185,10 @@ public class GClient {
             }
             if (!httpHeaderNameTextField.getText().trim().isEmpty()) {
                 headers.add(new GenericHttpHeader(httpHeaderNameTextField.getText().trim(), httpHeaderValueTextField.getText()));
+                if ( "Transfer-Encoding".equalsIgnoreCase(httpHeaderNameTextField.getText().trim()) &&
+                     "chunked".equalsIgnoreCase(httpHeaderValueTextField.getText())) {
+                    setContentLength = false;
+                }
             }
             if (!headers.isEmpty())
                 params.setExtraHeaders(headers.toArray(new GenericHttpHeader[headers.size()]));
@@ -1198,7 +1203,9 @@ public class GClient {
                 params.setSslSocketFactory(getSSLSocketFactory());
             }
 
-            params.setContentLength((long)requestBytes.length);
+            if ( setContentLength ) {
+                params.setContentLength((long)requestBytes.length);
+            }
 
             request = client.createRequest(HttpMethod.POST, params);
             if (request instanceof RerunnableHttpRequest) {

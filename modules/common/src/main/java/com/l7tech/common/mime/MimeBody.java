@@ -4,15 +4,15 @@
 
 package com.l7tech.common.mime;
 
- import com.l7tech.common.io.*;
+import com.l7tech.common.io.*;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.ResourceUtils;
- import com.l7tech.util.IOUtils;
- import com.l7tech.util.BufferPoolByteArrayOutputStream;
- import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.SyspropUtil;
 
- import java.io.ByteArrayInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -49,6 +49,7 @@ public class MimeBody implements Iterable<PartInfo> {
 
     private static final long PREAMBLE_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
+    private static final boolean RAW_PARTS = SyspropUtil.getBoolean( "com.l7tech.common.mime.rawParts", false );
 
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
@@ -134,6 +135,7 @@ public class MimeBody implements Iterable<PartInfo> {
                 final MimeHeaders outerHeaders = new MimeHeaders();
                 outerHeaders.add(outerContentType);
                 final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
+                    @Override
                     public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
                         InputStream stashedStream = preparePartInputStream();
                         if (stashedStream != null)
@@ -292,10 +294,12 @@ public class MimeBody implements Iterable<PartInfo> {
      *
      * @return a {@link PartIterator} ready to iterate all parts of this message from beginning to end.  Never null.
      */
+    @Override
     public PartIterator iterator() {
         return new PartIterator() {
             int nextPart = 0;
 
+            @Override
             public boolean hasNext() throws UncheckedIOException {
                 try {
                     return nextPart < partInfos.size() || isMorePartsPossible() && readUpToPartNoThrow(nextPart);
@@ -304,6 +308,7 @@ public class MimeBody implements Iterable<PartInfo> {
                 }
             }
 
+            @Override
             public PartInfo next() throws UncheckedIOException, NoSuchElementException {
                 try {
                     return getPart(nextPart++);
@@ -314,6 +319,7 @@ public class MimeBody implements Iterable<PartInfo> {
                 }
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
@@ -417,10 +423,12 @@ public class MimeBody implements Iterable<PartInfo> {
             private boolean sentFinalCrap = false;
             private boolean done = false;
 
+            @Override
             public boolean hasMoreElements() {
                 return !done;
             }
 
+            @Override
             public Object nextElement() {
                 if (errorCondition != null)
                     //noinspection ThrowableInstanceNeverThrown
@@ -811,10 +819,12 @@ public class MimeBody implements Iterable<PartInfo> {
             this.headers = headers;
         }
 
+        @Override
         public MimeHeader getHeader(String name) {
             return headers.get(name);
         }
 
+        @Override
         public int getPosition() {
             return ordinal;
         }
@@ -842,10 +852,12 @@ public class MimeBody implements Iterable<PartInfo> {
             return stashManager.peek(ordinal);
         }
 
+        @Override
         public void setContentType(ContentTypeHeader newContentType) {
             headers.replace(newContentType);
         }
 
+        @Override
         public void setBodyBytes(byte[] newBody) throws IOException {
             checkErrorIO();
 
@@ -860,19 +872,34 @@ public class MimeBody implements Iterable<PartInfo> {
                     throw new CausedIllegalStateException("getInputStream threw unexpectedly even though moreParts is true", e);
                 }
 
-            stashManager.stash(ordinal, newBody);
+            final String contentTransferEncoding = getContentTransferEncoding();
+            if ( !RAW_PARTS && MimeUtil.isProcessedTransferEncoding(contentTransferEncoding) ) {
+                InputStream in = null;
+                try {
+                    in = MimeUtil.getEncodingInputStream( newBody, contentTransferEncoding );
+                    stashManager.stash(ordinal, in );
+                } finally {
+                    ResourceUtils.closeQuietly(in);
+                }
+            } else if ( RAW_PARTS || MimeUtil.isIdentityTransferEncoding(contentTransferEncoding) ) {
+                stashManager.stash(ordinal, newBody);
+            } else {
+                throw new IOException( "Unsupported content transfer encoding '"+contentTransferEncoding+"'." );
+            }
             headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(newBody.length), null));
         }
 
+        @Override
         public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
             InputStream is = preparePartInputStream();
 
             if (is != null)
-                return is;
+                return decodeIfNecessary(is, true);
 
             // Prepare to read this Part's body
             is = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
             ((MimeBoundaryTerminatedInputStream)is).setEndOfStreamHook(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         bodyRead = true;
@@ -887,6 +914,7 @@ public class MimeBody implements Iterable<PartInfo> {
                 }
             });
             ((MimeBoundaryTerminatedInputStream)is).setFinalBoundaryHook(new Runnable() {
+                @Override
                 public void run() {
                     bodyRead = true;
                     moreParts = false;
@@ -896,21 +924,26 @@ public class MimeBody implements Iterable<PartInfo> {
             // We are ready to return an InputStream.  Do we need to stash the data first?
             if (destroyAsRead) {
                 // No -- allow caller to consume it.
-                return is;
+                return decodeIfNecessary(is, false);
             }
 
             // Yes -- stash it first, then recall it.
-            return stashAndRecall(is);
+            return decodeIfNecessary(stashAndRecall(is), true);
         }
 
+        @Override
         public byte[] getBytesIfAlreadyAvailable() {
+            final boolean decodingNotRequired = RAW_PARTS || MimeUtil.isIdentityTransferEncoding(getContentTransferEncoding());
             try {
-                return stashManager.isByteArrayAvailable(ordinal) ? stashManager.recallBytes(ordinal) : null;
+                return decodingNotRequired && stashManager.isByteArrayAvailable(ordinal) ?
+                        stashManager.recallBytes(ordinal) :
+                        null;
             } catch (NoSuchPartException e) {
                 throw new RuntimeException(e); // can't happen -- we checked first
             }
         }
 
+        @Override
         public byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException {
             byte[] bytes = getBytesIfAlreadyAvailable();
             if (bytes != null)
@@ -924,7 +957,7 @@ public class MimeBody implements Iterable<PartInfo> {
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream((int)len);
             try {
                 is = stashManager.recall(ordinal);
-                IOUtils.copyStream(is, baos);
+                IOUtils.copyStream(is = decodeIfNecessary(is, false), baos);
                 return baos.toByteArray();
             } finally {
                 ResourceUtils.closeQuietly(baos);
@@ -984,10 +1017,12 @@ public class MimeBody implements Iterable<PartInfo> {
             return is;
         }
 
+        @Override
         public MimeHeaders getHeaders() {
             return this.headers;
         }
 
+        @Override
         public long getContentLength() {
             long size = stashManager.getSize(ordinal);
             if (size >= 0)
@@ -1001,6 +1036,7 @@ public class MimeBody implements Iterable<PartInfo> {
             return -1;
         }
 
+        @Override
         public long getActualContentLength() throws IOException, NoSuchPartException {
             getInputStream(false).close(); // force stash
             long size = stashManager.getSize(ordinal);
@@ -1009,10 +1045,12 @@ public class MimeBody implements Iterable<PartInfo> {
             return size;
         }
 
+        @Override
         public ContentTypeHeader getContentType() {
             return headers.getContentType();
         }
 
+        @Override
         public String getContentId(boolean stripAngleBrackets) {
             return headers.getContentId(stripAngleBrackets);
         }
@@ -1025,6 +1063,7 @@ public class MimeBody implements Iterable<PartInfo> {
          *
          * @return The validation status.
          */
+        @Override
         public boolean isValidated() {
             return validated;
         }
@@ -1036,6 +1075,7 @@ public class MimeBody implements Iterable<PartInfo> {
          *
          * @param validated True if this part is validated.
          */
+        @Override
         public void setValidated(boolean validated) {
             this.validated = validated;
         }
@@ -1093,6 +1133,40 @@ public class MimeBody implements Iterable<PartInfo> {
             if (got == null) throw new IllegalStateException(); // can't happen
             return got;
         }
+
+        private InputStream decodeIfNecessary( final InputStream in, boolean closeOnError ) throws IOException {
+            final String contentTransferEncoding = getContentTransferEncoding();
+            InputStream decodedStream = in;
+
+            if ( !RAW_PARTS ) {
+                if ( MimeUtil.isProcessedTransferEncoding(contentTransferEncoding) ) {
+                    try {
+                        decodedStream = MimeUtil.getDecodingInputStream( in, contentTransferEncoding );
+                    } catch ( IOException e ) {
+                        if ( closeOnError ) {
+                            ResourceUtils.closeQuietly( in );
+                        }
+                        throw e;
+                    }
+                } else if ( MimeUtil.isIdentityTransferEncoding(contentTransferEncoding) ) {
+                    // nothing to do
+                } else {
+                    if ( closeOnError ) {
+                        ResourceUtils.closeQuietly( in );
+                    }
+                    throw new IOException( "Unsupported content transfer encoding '"+contentTransferEncoding+"'." );
+                }
+            }
+
+            return decodedStream;
+        }
+
+        private String getContentTransferEncoding() {
+            final MimeHeader contentTransferEncodingHeader = headers.get( MimeUtil.CONTENT_TRANSFER_ENCODING );
+            return contentTransferEncodingHeader==null ?
+                    MimeUtil.TRANSFER_ENCODING_DEFAULT :
+                    contentTransferEncodingHeader.getMainValue().toLowerCase();
+        }
     }
 
     private class FlaggingByteLimitInputStream extends ByteLimitInputStream {
@@ -1106,6 +1180,7 @@ public class MimeBody implements Iterable<PartInfo> {
             super(mainInputStream, pushbackSize);
         }
 
+        @Override
         public void setSizeLimit(long newLimit) throws IOException {
             limitCustomized = true;
             super.setSizeLimit(newLimit);

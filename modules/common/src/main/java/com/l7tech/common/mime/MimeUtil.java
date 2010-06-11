@@ -1,14 +1,20 @@
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.IOExceptionThrowingOutputStream;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 
 import javax.mail.Header;
 import javax.mail.MessagingException;
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.InternetHeaders;
+import javax.mail.internet.MimeUtility;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 
@@ -32,6 +38,13 @@ public class MimeUtil {
     public static final String MULTIPART_BOUNDARY_PREFIX = "--";
     private static final SecureRandom random = new SecureRandom();
     public static final byte[] CRLF = "\r\n".getBytes();
+
+    public static final String TRANSFER_ENCODING_BASE64 = "base64";
+    public static final String TRANSFER_ENCODING_QUOTED_PRINTABLE = "quoted-printable";
+    public static final String TRANSFER_ENCODING_7BIT = "7bit";
+    public static final String TRANSFER_ENCODING_8BIT = "8bit";
+    public static final String TRANSFER_ENCODING_BINARY = "binary";
+    public static final String TRANSFER_ENCODING_DEFAULT = TRANSFER_ENCODING_7BIT;
 
     /**
      * Read a set of MIME headers and the delimiter line, and leave the InputStream positioned at the first byte
@@ -142,4 +155,74 @@ public class MimeUtil {
             throw new RuntimeException(e); // can't happen
         }
     }
+
+    /**
+     * Get an input stream that encodes the given data with the specified encoding.
+     *
+     * <p>If the encoding is not supported then the returned stream will throw an
+     * exception on first use.</p>
+     *
+     * @param data The data to encode
+     * @param contentTransferEncoding The encoding to use
+     * @return The input stream
+     */
+    public static InputStream getEncodingInputStream( final byte[] data,
+                                                      final String contentTransferEncoding ) {
+        // We need an input stream but MimeUtility only provides an
+        // output stream so we'll convert on the fly.
+        return IOUtils.toInputStream( data, new Functions.Unary<OutputStream,OutputStream>(){
+            @Override
+            public OutputStream call( final OutputStream outputStream ) {
+                OutputStream outStream;
+                try {
+                    outStream = MimeUtility.encode( outputStream, contentTransferEncoding );
+                } catch ( MessagingException e ) {
+                    outStream = new IOExceptionThrowingOutputStream(new IOException( ExceptionUtils.getMessage(e), e ));
+                }
+
+                return outStream;
+            }
+        });
+    }
+
+    /**
+     * Get an input stream that decodes the given data with the specified encoding.
+     *
+     * @param in The data to decode
+     * @param contentTransferEncoding The encoding to use
+     * @return The input stream
+     * @throws IOException If the specified encoding is not supported.
+     */
+    public static InputStream getDecodingInputStream( final InputStream in,
+                                                      final String contentTransferEncoding ) throws IOException {
+        try {
+            return MimeUtility.decode( in, contentTransferEncoding );
+        } catch ( MessagingException e ) {
+            throw new IOException( ExceptionUtils.getMessage(e), e );
+        }
+    }
+
+    /**
+     * Is the given encoding a supported encoding that requires processing.
+     *
+     * @param contentTransferEncoding The encoding to check.
+     * @return True if encoding/decoding is required.
+     */
+    public static boolean isProcessedTransferEncoding( final String contentTransferEncoding ) {
+        return TRANSFER_ENCODING_BASE64.equals(contentTransferEncoding) ||
+               TRANSFER_ENCODING_QUOTED_PRINTABLE.equals(contentTransferEncoding);
+    }
+
+    /**
+     * Is the given encoding an identity encoding that does not require processing.
+     *
+     * @param contentTransferEncoding The encoding to check.
+     * @return True if encoding/decoding is not required.
+     */
+    public static boolean isIdentityTransferEncoding( final String contentTransferEncoding ) {
+        return TRANSFER_ENCODING_7BIT.equals(contentTransferEncoding) ||
+               TRANSFER_ENCODING_8BIT.equals(contentTransferEncoding) ||
+               TRANSFER_ENCODING_BINARY.equals(contentTransferEncoding);
+    }
+
 }
