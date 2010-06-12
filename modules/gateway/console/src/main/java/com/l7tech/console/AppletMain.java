@@ -244,7 +244,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     private SsmApplication getApplication() {
         //todo add comment why this lazy initialization of application is required
         if (application != null) return application;
-        application = (SsmApplication)getApplicationContext().getBean("ssmApplication", SsmApplication.class);
+        application = getApplicationContext().getBean("ssmApplication", SsmApplication.class);
         return application;
     }
 
@@ -364,7 +364,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         String appletName = "com/l7tech/console/resources/beans-applet.xml";
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{appletName, ctxName});
 
-        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+        Registry.setDefault( context.getBean("registry", Registry.class) );
         
         return context;
     }

@@ -19,8 +19,8 @@ public abstract class NodePropertySampler<V extends Serializable> extends Proper
 
     protected NodePropertySampler(ComponentType componentType, String componentId, String propertyName, ApplicationContext spring) {
         super(componentType, componentId, propertyName);
-        this.processController = (ProcessController) spring.getBean("processController", ProcessController.class);
-        this.configService = (ConfigService) spring.getBean("configService", ConfigService.class);
+        this.processController = spring.getBean("processController", ProcessController.class);
+        this.configService = spring.getBean("configService", ConfigService.class);
     }
 
     protected <T> T invokeNodeApi(Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {

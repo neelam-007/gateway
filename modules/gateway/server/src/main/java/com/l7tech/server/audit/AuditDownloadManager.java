@@ -52,7 +52,7 @@ public class AuditDownloadManager implements ApplicationContextAware  {
             throw new RuntimeException("Unable to sign exported audits: no default SSL key is currently designated");
         }
             
-        final AuditExporter exporter = (AuditExporter) applicationContext.getBean("auditExporter", AuditExporter.class);
+        final AuditExporter exporter = applicationContext.getBean("auditExporter", AuditExporter.class);
         final DownloadContext downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, exporter , signingCert, signingKey);
         downloadContext.checkForException();
 

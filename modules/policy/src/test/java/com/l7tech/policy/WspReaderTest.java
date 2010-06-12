@@ -103,7 +103,7 @@ public class WspReaderTest {
         Assertion parsedPolicy = wspReader.parseStrictly(serialized, INCLUDE_DISABLED);
         assertTrue(parsedPolicy instanceof AllAssertion);
         AllAssertion all = (AllAssertion)parsedPolicy;
-        Assertion kid = (Assertion)all.getChildren().get(0);
+        Assertion kid = all.getChildren().get(0);
         assertTrue(kid instanceof RequestSwAAssertion);
         RequestSwAAssertion swa = (RequestSwAAssertion)kid;
 

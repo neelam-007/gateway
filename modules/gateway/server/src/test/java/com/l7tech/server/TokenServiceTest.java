@@ -156,7 +156,7 @@ public class TokenServiceTest {
                                                           new TestDefaultKey(issuerCertificate, issuerPrivateKey),
                                                           (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
                                                           (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"),
-                                                          (SecureConversationContextManager)applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class));
+                applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class) );
 
         final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 

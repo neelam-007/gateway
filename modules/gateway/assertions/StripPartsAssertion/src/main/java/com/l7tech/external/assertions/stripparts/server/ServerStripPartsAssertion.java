@@ -37,7 +37,7 @@ public class ServerStripPartsAssertion extends AbstractServerAssertion<StripPart
 
         //noinspection ThisEscapedInObjectConstruction
         this.auditor = new Auditor(this, context, logger);
-        this.stashManagerFactory = (StashManagerFactory)context.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.stashManagerFactory = context.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

@@ -42,7 +42,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         this.assertion = assertion;
         auditor = new Auditor(this, context, logger);
         variablesUsed = assertion.getVariablesUsed();
-        jdbcQueryingManager = (JdbcQueryingManager) context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
+        jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

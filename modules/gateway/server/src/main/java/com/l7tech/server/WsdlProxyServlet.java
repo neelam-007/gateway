@@ -116,12 +116,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        serverConfig = (ServerConfig)appcontext.getBean("serverConfig", ServerConfig.class);
-        clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
-        wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
-        serviceDocumentManager = (ServiceDocumentManager)appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
-        Auditor.AuditorFactory auditorFactory = (Auditor.AuditorFactory)appcontext.getBean("auditorFactory", Auditor.AuditorFactory.class);
-        PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) appcontext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
+        serverConfig = appcontext.getBean("serverConfig", ServerConfig.class);
+        clientPolicyFilterManager = appcontext.getBean("policyFilterManager", FilterManager.class);
+        wsspFilterManager = appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
+        serviceDocumentManager = appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
+        Auditor.AuditorFactory auditorFactory = appcontext.getBean("auditorFactory", Auditor.AuditorFactory.class);
+        PolicyPathBuilderFactory pathBuilderFactory = appcontext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
         policyPathBuilder = pathBuilderFactory.makePathBuilder();
 
         sactionResolver = new SoapActionResolver(auditorFactory);

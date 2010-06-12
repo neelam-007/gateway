@@ -107,7 +107,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
 
     public EsmModuleApplicationListener(ApplicationContext spring) {
         this.serviceTemplateManager = (ServiceTemplateManager)spring.getBean("serviceTemplateManager");
-        this.applicationEventProxy = (ApplicationEventProxy)spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
     }

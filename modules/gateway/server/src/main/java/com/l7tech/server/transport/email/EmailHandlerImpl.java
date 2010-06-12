@@ -47,10 +47,10 @@ public class EmailHandlerImpl implements EmailHandler {
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
-        messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
-        messageProcessingEventChannel = (EventChannel) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
+        messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = ctx.getBean("auditContext", AuditContext.class);
+        stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
     @Override

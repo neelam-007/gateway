@@ -31,7 +31,7 @@ class CpuTemperatureSampler extends HostPropertySampler<Integer> {
 
     public CpuTemperatureSampler(String componentId, ApplicationContext applicationContext) {
         super(componentId, BuiltinMonitorables.CPU_TEMPERATURE.getName());
-        this.config = (ConfigService)applicationContext.getBean("configService", ConfigService.class);
+        this.config = applicationContext.getBean("configService", ConfigService.class);
     }
 
     public Integer sample() throws PropertySamplingException {

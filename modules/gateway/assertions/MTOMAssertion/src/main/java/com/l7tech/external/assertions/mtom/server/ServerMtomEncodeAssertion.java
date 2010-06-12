@@ -47,7 +47,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
         super( assertion, assertion );
 
         this.auditor = new Auditor(this, context, logger);
-        this.stashManagerFactory = (StashManagerFactory) context.getBean( "stashManagerFactory", StashManagerFactory.class );
+        this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
         this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
     }
 

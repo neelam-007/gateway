@@ -59,7 +59,7 @@ public class Main {
 
                 ApplicationContext ctx = createApplicationContext();
 
-                SsmPreferences prefs = (SsmPreferences) ctx.getBean("preferences", SsmPreferences.class);
+                SsmPreferences prefs = ctx.getBean("preferences", SsmPreferences.class);
                 try {
                     copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
                 } catch (IOException e) {
@@ -67,7 +67,7 @@ public class Main {
                 }
                 initializeUIPreferences(prefs);
 
-                SsmApplication app = (SsmApplication) ctx.getBean("ssmApplication", SsmApplication.class);
+                SsmApplication app = ctx.getBean("ssmApplication", SsmApplication.class);
                 app.run();
             } finally {
                 screen.dispose();
@@ -201,7 +201,7 @@ public class Main {
         String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
 
-        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+        Registry.setDefault( context.getBean("registry", Registry.class) );
 
         return context;
     }

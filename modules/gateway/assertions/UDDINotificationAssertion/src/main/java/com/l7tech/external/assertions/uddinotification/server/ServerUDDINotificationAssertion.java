@@ -35,7 +35,7 @@ public class ServerUDDINotificationAssertion extends AbstractServerAssertion<UDD
     public ServerUDDINotificationAssertion( final UDDINotificationAssertion assertion,
                                             final ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
-        this.uddiCoordinator = (UDDICoordinator) context.getBean( "uddiCoordinator", UDDICoordinator.class );
+        this.uddiCoordinator = context.getBean( "uddiCoordinator", UDDICoordinator.class );
     }
 
     @Override

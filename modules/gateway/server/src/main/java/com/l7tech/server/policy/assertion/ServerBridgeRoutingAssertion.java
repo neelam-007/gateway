@@ -92,12 +92,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
 
-        AssertionRegistry assertionRegistry = (AssertionRegistry)applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
+        AssertionRegistry assertionRegistry = applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
         Managers.setAssertionRegistry(assertionRegistry);
 
-        hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-        trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
-        wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
+        hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        trustedCertManager = applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
+        wspReader = applicationContext.getBean("wspReader", WspReader.class);
 
         try {
             signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);

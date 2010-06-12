@@ -262,7 +262,7 @@ public class CustomAssertionsRegistrarImpl
      */
     @Override
     public Assertion resolvePolicy(String xml) throws IOException {
-        return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml, WspReader.OMIT_DISABLED);
+        return getApplicationContext().getBean("wspReader", WspReader.class).parsePermissively(xml, WspReader.OMIT_DISABLED);
     }
 
     /**
@@ -397,7 +397,7 @@ public class CustomAssertionsRegistrarImpl
         try {
             if (contextClassLoader != null) Thread.currentThread().setContextClassLoader(null);
             for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) {
-                Object o = (Object)iterator.next();
+                Object o = iterator.next();
                 String key = o.toString();
                 if (key.endsWith(".class")) {
                     loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props, classLoader);

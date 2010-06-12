@@ -21,7 +21,7 @@ public class ModularAssertionErrorHandler implements ErrorHandler {
         if (assreg == null || !assreg.isAnyModularAssertionRegistered())
             return false;
 
-        NoClassDefFoundError ncdfe = (NoClassDefFoundError)ExceptionUtils.getCauseIfCausedBy(t, NoClassDefFoundError.class);
+        NoClassDefFoundError ncdfe = ExceptionUtils.getCauseIfCausedBy(t, NoClassDefFoundError.class);
         if (ncdfe != null) {
             String path = ncdfe.getMessage();
 

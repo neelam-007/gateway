@@ -75,7 +75,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private static void initializeAssertionExecutor(BeanFactory beanFactory) {
-        ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : (ServerConfig)beanFactory.getBean("serverConfig", ServerConfig.class);
+        ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : beanFactory.getBean("serverConfig", ServerConfig.class);
         int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
         int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
         int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 64);
@@ -190,7 +190,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                 public KidResult call() throws Exception {
                     try {
                         // Configure the thread-local audit context to buffer detail messages
-                        AuditContext auditContext = (AuditContext)beanFactory.getBean("auditContext", AuditContext.class);
+                        AuditContext auditContext = beanFactory.getBean("auditContext", AuditContext.class);
                         auditContext.clear();
 
                         AssertionStatus status = doCall();
@@ -262,7 +262,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private void importAuditDetails(Map<Object, List<AuditDetail>> details) {
-        AuditContext auditContext = (AuditContext)beanFactory.getBean("auditContext", AuditContext.class);
+        AuditContext auditContext = beanFactory.getBean("auditContext", AuditContext.class);
         if (details != null) for (Map.Entry<Object, List<AuditDetail>> objectListEntry : details.entrySet()) {
             Object source = objectListEntry.getKey();
             List<AuditDetail> detailList = objectListEntry.getValue();

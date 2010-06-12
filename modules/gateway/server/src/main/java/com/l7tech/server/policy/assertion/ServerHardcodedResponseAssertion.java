@@ -50,7 +50,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
     {
         super(ass);
         auditor = new Auditor(this, springContext, logger);
-        stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
 
         ContentTypeHeader ctype;
         try {

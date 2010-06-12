@@ -58,7 +58,7 @@ public class PolicyExportUtils {
                 ResourceUtils.closeQuietly(in);
             }
 
-            final WspReader wspReader = (WspReader) TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
+            final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
             final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
             final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder );
             final Assertion newRoot = (result != null) ? result.assertion : null;

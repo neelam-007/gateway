@@ -75,10 +75,10 @@ public class TokenServiceServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
         try {
-            tokenService = (TokenService)applicationContext.getBean("tokenService", TokenService.class);
-            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
-            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-            stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+            tokenService = applicationContext.getBean("tokenService", TokenService.class);
+            auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+            soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+            stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         }
         catch(BeansException be) {
             throw new ServletException("Configuration error; could not get required beans.", be);

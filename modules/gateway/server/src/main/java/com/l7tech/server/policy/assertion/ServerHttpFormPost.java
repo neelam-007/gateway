@@ -36,14 +36,14 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
-        this.stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Message request = context.getRequest();
         MimeKnob reqMime = request.getMimeKnob();
         ContentTypeHeader ctype = reqMime.getOuterContentType();
-        HttpRequestKnob reqHttp = (HttpRequestKnob) request.getKnob(HttpRequestKnob.class);
+        HttpRequestKnob reqHttp = request.getKnob(HttpRequestKnob.class);
 
         if (reqHttp == null) {
             auditor.logAndAudit(AssertionMessages.HTTPFORM_NON_HTTP);

@@ -63,15 +63,15 @@ public class JmsTestCase {
         }
 
         if (mapper == null) {
-            mapper = (JmsPropertyMapper) appCtx.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
+            mapper = appCtx.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
         }
 
         if (serverConfig == null) {
-            serverConfig = (ServerConfig) appCtx.getBean("serverConfig", ServerConfig.class);
+            serverConfig = appCtx.getBean("serverConfig", ServerConfig.class);
         }
 
         if (licenseManager == null) {
-            licenseManager = (LicenseManager) appCtx.getBean("licenseManager", LicenseManager.class);
+            licenseManager = appCtx.getBean("licenseManager", LicenseManager.class);
         }
 
         // reset objects

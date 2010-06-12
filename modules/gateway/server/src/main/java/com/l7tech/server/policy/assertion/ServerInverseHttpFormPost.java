@@ -40,7 +40,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
-        this.stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
         try {
             this.contentType = ContentTypeHeader.parseValue("application/" + HttpFormPost.X_WWW_FORM_URLENCODED);
         } catch (IOException e) {

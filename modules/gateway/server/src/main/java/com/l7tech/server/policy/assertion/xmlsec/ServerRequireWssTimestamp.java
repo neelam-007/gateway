@@ -53,7 +53,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                 ? new Auditor(this, (ApplicationContext) spring, logger)
                 : new LogOnlyAuditor(logger);
         this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
-        this.serverConfig = (ServerConfig)spring.getBean("serverConfig", ServerConfig.class);
+        this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
     }
 
     @Override

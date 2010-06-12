@@ -418,7 +418,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     // Can be called from any thread
     public void onFrontEndRequest(PolicyApplicationContext context) {
         if (!isRecordFromClient()) return;
-        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
+        HttpHeadersKnob hhk = context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
             appendMessage(new SavedXmlMessage("From Client",
                     XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()),
@@ -435,7 +435,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         if (!isRecordToClient()) return;
         try {
             final Message response = context.getResponse();
-            final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
+            final HttpHeadersKnob hhk = response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
                 appendMessage(new SavedTextMessage("To Client",
@@ -472,7 +472,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         if (!isRecordFromServer()) return;
         try {
             final Message response = context.getResponse();
-            final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
+            final HttpHeadersKnob hhk = response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
                 appendMessage(new SavedTextMessage(FROM_SERVER,

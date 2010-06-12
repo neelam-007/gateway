@@ -51,7 +51,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         this.auditor = springContext instanceof ApplicationContext
                 ? new Auditor(this, (ApplicationContext) springContext, logger)
                 : new LogOnlyAuditor(logger);
-        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
     
     @Override

@@ -93,10 +93,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         this.auditor = new Auditor(this, context, logger);
         this.variablesUsed = rla.getVariablesUsed();
         this.counterNameRaw = rla.getCounterName();
-        this.clusterInfoManager = (ClusterInfoManager)context.getBean("clusterInfoManager", ClusterInfoManager.class);
+        this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
         if (clusterInfoManager == null) throw new PolicyAssertionException(rla, "Missing clusterInfoManager bean");
 
-        this.serverConfig = (ServerConfig)context.getBean("serverConfig", ServerConfig.class);
+        this.serverConfig = context.getBean("serverConfig", ServerConfig.class);
         if (serverConfig == null) throw new PolicyAssertionException(rla, "Missing serverConfig bean");
     }
 

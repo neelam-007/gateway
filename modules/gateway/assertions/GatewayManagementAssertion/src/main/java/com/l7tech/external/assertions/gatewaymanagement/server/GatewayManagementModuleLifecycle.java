@@ -77,8 +77,8 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
     }
 
     public GatewayManagementModuleLifecycle( final ApplicationContext spring ) {
-        this.serviceTemplateManager = (ServiceTemplateManager) spring.getBean("serviceTemplateManager", ServiceTemplateManager.class);
-        this.applicationEventProxy = (ApplicationEventProxy) spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this.serviceTemplateManager = spring.getBean("serviceTemplateManager", ServiceTemplateManager.class);
+        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
     }
@@ -162,7 +162,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
     }
 
     private boolean isLicensed() {
-        LicenseManager licMan = (LicenseManager) spring.getBean("licenseManager", LicenseManager.class);
+        LicenseManager licMan = spring.getBean("licenseManager", LicenseManager.class);
         return licMan.isFeatureEnabled(new GatewayManagementAssertion().getFeatureSetName());
     }
 

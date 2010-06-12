@@ -77,17 +77,17 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         super(data, spring, logger);
         this.spring = spring;
         this.auditor = new Auditor(this, spring, logger);
-        this.serverConfig = (ServerConfig)spring.getBean("serverConfig", ServerConfig.class);
+        this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
         this.jmsEndpointManager = (JmsEndpointManager)spring.getBean("jmsEndpointManager");
         this.jmsConnectionManager = (JmsConnectionManager)spring.getBean("jmsConnectionManager");
-        this.stashManagerFactory = (StashManagerFactory)spring.getBean("stashManagerFactory", StashManagerFactory.class);
-        this.jmsPropertyMapper = (JmsPropertyMapper)spring.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
-        this.jmsResourceManager = (JmsResourceManager)spring.getBean("jmsResourceManager", JmsResourceManager.class);
-        ApplicationEventProxy aep = (ApplicationEventProxy) spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this.stashManagerFactory = spring.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.jmsPropertyMapper = spring.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
+        this.jmsResourceManager = spring.getBean("jmsResourceManager", JmsResourceManager.class);
+        ApplicationEventProxy aep = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         aep.addApplicationListener(new JmsInvalidator(this));
         SignerInfo signerInfo = null;
         try {
-            DefaultKey ku = (DefaultKey)spring.getBean("defaultKey", DefaultKey.class);
+            DefaultKey ku = spring.getBean("defaultKey", DefaultKey.class);
             signerInfo = ku.getSslInfo();
         } catch(Exception e) {
             logger.log(Level.WARNING, "Error getting SAML signer information.", e);

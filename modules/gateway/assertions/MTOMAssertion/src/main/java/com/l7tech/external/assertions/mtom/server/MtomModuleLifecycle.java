@@ -56,8 +56,8 @@ public class MtomModuleLifecycle implements ApplicationListener {
     }
 
     public MtomModuleLifecycle( final ApplicationContext spring ) {
-        this.policyCache = (PolicyCache) spring.getBean("policyCache", PolicyCache.class);
-        this.applicationEventProxy = (ApplicationEventProxy) spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this.policyCache = spring.getBean("policyCache", PolicyCache.class);
+        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
         this.mtomDecodePolicy = loadResource(MTOM_POLICY_RESOURCE);

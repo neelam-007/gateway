@@ -66,7 +66,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         super(ass);
         auditor = new Auditor(this, spring, logger);
 
-        ServerConfig config = (ServerConfig) spring.getBean( "serverConfig", ServerConfig.class );
+        ServerConfig config = spring.getBean( "serverConfig", ServerConfig.class );
         long connectTimeout = config.getTimeUnitPropertyCached( "ioMailConnectTimeout", 60000, 30000 );
         long readTimeout = config.getTimeUnitPropertyCached( "ioMailReadTimeout", 60000, 30000 );
         propertyMap = buildProperties( ass, connectTimeout, readTimeout );

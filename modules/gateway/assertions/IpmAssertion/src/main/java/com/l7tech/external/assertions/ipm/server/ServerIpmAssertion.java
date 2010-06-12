@@ -67,7 +67,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
                                 new String[] { "Unable to compile template; assertion will always fail: " + ExceptionUtils.getMessage(e) }, e);
         }
 
-        serverConfig = context == null ? null : (ServerConfig)context.getBean("serverConfig", ServerConfig.class);
+        serverConfig = context == null ? null : context.getBean("serverConfig", ServerConfig.class);
 
         if (ctClass == null) {
             threadLocalCompiledTemplate = null;

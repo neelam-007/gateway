@@ -175,7 +175,7 @@ public class TopComponents {
         if (context == null)
             throw new ApplicationContextException("No ApplicationContext");
         //noinspection unchecked
-        T ret = (T) context.getBean(beanName, desiredClass);
+        T ret = context.getBean(beanName, desiredClass);
         if (ret == null)
             throw new NoSuchBeanDefinitionException("No bean found named \"" + beanName + "\" of class " + desiredClass);
         return ret;

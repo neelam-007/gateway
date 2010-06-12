@@ -70,7 +70,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     public ServerXacmlPdpAssertion(XacmlPdpAssertion ea, ApplicationContext applicationContext) throws ServerPolicyException {
         super(ea);
         auditor = new Auditor(this, applicationContext, logger);
-        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         envModule = new CurrentEnvModule();
 
         this.variablesUsed = ea.getVariablesUsed();

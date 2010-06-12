@@ -179,7 +179,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         DispatchingTransactionSynchronization dts = null;
 
         //noinspection unchecked
-        for ( TransactionSynchronization ts : (List<TransactionSynchronization>) TransactionSynchronizationManager.getSynchronizations() ) {
+        for ( TransactionSynchronization ts : TransactionSynchronizationManager.getSynchronizations() ) {
             if ( ts instanceof DispatchingTransactionSynchronization ) {
                 dts = (DispatchingTransactionSynchronization) ts;
                 break;

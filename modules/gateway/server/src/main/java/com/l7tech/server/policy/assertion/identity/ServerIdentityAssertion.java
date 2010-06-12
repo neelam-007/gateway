@@ -47,7 +47,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             throw new IllegalArgumentException("Application Context is required");
         }
         this.auditor = new Auditor(this, ctx, Logger.getLogger(getClass().getName()));
-        this.identityProviderFactory = (IdentityProviderFactory) ctx.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        this.identityProviderFactory = ctx.getBean("identityProviderFactory", IdentityProviderFactory.class);
     }
 
     /**

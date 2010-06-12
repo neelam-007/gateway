@@ -336,8 +336,7 @@ public class BootProcess
         Collection<ServerComponentLifecycle> comps = discoveredComponents;
 
         if (comps == null) {
-            comps = (Collection<ServerComponentLifecycle>)
-                    getApplicationContext().getBeansOfType(ServerComponentLifecycle.class, false, false).values();
+            comps = getApplicationContext().getBeansOfType(ServerComponentLifecycle.class, false, false).values();
             discoveredComponents = comps;
         }
 

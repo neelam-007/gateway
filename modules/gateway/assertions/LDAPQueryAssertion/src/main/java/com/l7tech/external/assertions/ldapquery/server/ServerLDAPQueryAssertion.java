@@ -51,10 +51,10 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                                      final ApplicationContext applicationContext ) {
         super(assertion);
         auditor = new Auditor(this, applicationContext, logger);
-        identityProviderFactory = (IdentityProviderFactory) applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        identityProviderFactory = applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
         varsUsed = assertion.getVariablesUsed();
         cachedAttributeValues = Collections.synchronizedMap( assertion.getCacheSize() > 0 ? new LRUMap( assertion.getCacheSize() ) : new HashMap());
-        Timer timer = (Timer) applicationContext.getBean( "managedBackgroundTimer", Timer.class );
+        Timer timer = applicationContext.getBean( "managedBackgroundTimer", Timer.class );
         timer.schedule( cacheCleanupTask, 5393L, cacheCleanupInterval );
     }
 

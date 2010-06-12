@@ -86,7 +86,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             throw new PolicyAssertionException(assertion, "NTLM and Kerberos delegated authentication are not supported when an HTTP proxy is configured");
         }
 
-        serverConfig = (ServerConfig) ctx.getBean( "serverConfig", ServerConfig.class );
+        serverConfig = ctx.getBean( "serverConfig", ServerConfig.class );
 
         // remember if we need to resolve the url at runtime
         String tmp = assertion.getProtectedServiceUrl();
@@ -124,7 +124,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
-            hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+            hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = SyspropUtil.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
@@ -139,7 +139,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         StashManagerFactory smFactory;
         try {
-            smFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+            smFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not create stash manager factory.", e);
             smFactory = DefaultStashManagerFactory.getInstance();
@@ -184,7 +184,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if (proxyHost == null) {
             GenericHttpClientFactory factory;
             try {
-                factory = (GenericHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
+                factory = applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Could not create HTTP client factory.", e);
                 factory = new IdentityBindingHttpClientFactory();

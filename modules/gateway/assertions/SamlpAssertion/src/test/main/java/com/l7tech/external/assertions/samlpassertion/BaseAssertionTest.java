@@ -46,7 +46,7 @@ public abstract class BaseAssertionTest<A extends Assertion> extends TestCase {
 
         // grab the policyFactory
         if (factory == null) {
-            factory = (ServerPolicyFactory) appCtx.getBean("policyFactory", ServerPolicyFactory.class);
+            factory = appCtx.getBean("policyFactory", ServerPolicyFactory.class);
             assertNotNull("Fail - Unable to obtain \"policyFactory\" from the application context", factory);
         }
     }

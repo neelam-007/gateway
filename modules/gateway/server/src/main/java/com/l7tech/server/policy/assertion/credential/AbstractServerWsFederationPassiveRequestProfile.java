@@ -56,7 +56,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         try {
             sslContext = SSLContext.getInstance("TLS");
             final X509TrustManager trustManager = (X509TrustManager) springContext.getBean("trustManager");
-            hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);
+            hostnameVerifier = springContext.getBean("hostnameVerifier", HostnameVerifier.class);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);

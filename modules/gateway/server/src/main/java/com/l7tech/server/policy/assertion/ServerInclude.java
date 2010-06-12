@@ -40,7 +40,7 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
         super(assertion);
         this.auditor = new Auditor(this, spring, logger);
         try {
-            PolicyCache policyCache = (PolicyCache) spring.getBean("policyCache", PolicyCache.class);
+            PolicyCache policyCache = spring.getBean("policyCache", PolicyCache.class);
             String guid = assertion.getPolicyGuid();
             // avoid NPE with invalid policy
             this.serverPolicy = guid == null ? null : policyCache.getServerPolicy(guid);

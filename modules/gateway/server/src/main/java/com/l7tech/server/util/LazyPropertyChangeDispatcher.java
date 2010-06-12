@@ -127,7 +127,7 @@ public class LazyPropertyChangeDispatcher implements ApplicationContextAware, Pr
                         for (Map.Entry<String, List<String>> entry : configMap.entrySet()) {
                             String beanName = entry.getKey();
                             try {
-                                PropertyChangeListener listener = (PropertyChangeListener) ac.getBean(beanName, PropertyChangeListener.class);
+                                PropertyChangeListener listener = ac.getBean(beanName, PropertyChangeListener.class);
                                 listenerList.add(new ListenerInfo(listener, Collections.unmodifiableSet(new HashSet(entry.getValue()))));
                             } catch (BeansException be) {
                                 logger.log(Level.WARNING, "Could not get property change listener '"+beanName+"'.", be);

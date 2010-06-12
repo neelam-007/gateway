@@ -93,7 +93,7 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
     private ApplicationContext applicationContext;
     private ThreadLocal<AuditContext> threadLocalDelegate = new ThreadLocal<AuditContext>(){
         protected AuditContext initialValue() {
-            return (AuditContext) applicationContext.getBean(targetId, AuditContext.class);
+            return applicationContext.getBean(targetId, AuditContext.class);
         }
     };
 }

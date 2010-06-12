@@ -48,13 +48,13 @@ public class KerberosOutboundRoutingTest extends KerberosTest {
 
         // grab the wspReader
         if (policyReader == null) {
-            policyReader = (WspReader) appCtx.getBean("wspReader", WspReader.class);
+            policyReader = appCtx.getBean("wspReader", WspReader.class);
             Assert.assertNotNull("Fail - Unable to obtain \"wspReader\" from the application context", policyReader);
         }
 
         // grab the policyFactory
         if (factory == null) {
-            factory = (ServerPolicyFactory) appCtx.getBean("policyFactory", ServerPolicyFactory.class);
+            factory = appCtx.getBean("policyFactory", ServerPolicyFactory.class);
             Assert.assertNotNull("Fail - Unable to obtain \"policyFactory\" from the application context", factory);
         }
 

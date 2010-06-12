@@ -140,7 +140,7 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
     @SuppressWarnings({"unchecked"})
     private <T> T getBean( final String name, final Class<T> beanClass ) throws FatalUpgradeException {
         if (applicationContext == null) throw new FatalUpgradeException("ApplicationContext is required");
-        return (T) applicationContext.getBean(name, beanClass);
+        return applicationContext.getBean(name, beanClass);
     }
 
     /**

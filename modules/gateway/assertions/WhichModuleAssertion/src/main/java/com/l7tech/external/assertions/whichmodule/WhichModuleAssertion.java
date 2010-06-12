@@ -79,8 +79,8 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         public ServerImpl(WhichModuleAssertion assertion, ApplicationContext context) {
             super(assertion);
             this.auditor = new Auditor(this, context, logger);
-            this.wspReader = (WspReader)context.getBean("wspReader", WspReader.class);
-            this.assertionRegistry = (ServerAssertionRegistry)context.getBean("assertionRegistry", ServerAssertionRegistry.class);
+            this.wspReader = context.getBean("wspReader", WspReader.class);
+            this.assertionRegistry = context.getBean("assertionRegistry", ServerAssertionRegistry.class);
         }
 
         @Override

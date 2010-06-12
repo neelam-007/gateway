@@ -269,7 +269,7 @@ public class XmlFacet extends MessageFacet {
         public ElementCursor getElementCursor() throws SAXException, IOException {
             // Use a Tarari accelerated cursor if possible
             getMessage().isSoap(); // force Tarari evaluation, if hardware is available
-            TarariKnob tk = (TarariKnob)getMessage().getKnob(TarariKnob.class);
+            TarariKnob tk = getMessage().getKnob(TarariKnob.class);
             if (tk != null) {
                 try {
                     TarariMessageContext tmc = tk.getContext();

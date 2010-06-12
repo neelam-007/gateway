@@ -299,7 +299,7 @@ public final class RegistryImpl extends Registry
     }
     @Override
     public SecurityProvider getSecurityProvider() {
-        return (SecurityProvider)applicationContext.getBean("securityProvider", SecurityProvider.class);
+        return applicationContext.getBean("securityProvider", SecurityProvider.class);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -314,14 +314,14 @@ public final class RegistryImpl extends Registry
     public PolicyValidator getPolicyValidator() {
         checkAdminContext();
         if (policyValidator != null) return policyValidator;
-        return policyValidator = (PolicyValidator) applicationContext.getBean("defaultPolicyValidator", PolicyValidator.class);
+        return policyValidator = applicationContext.getBean("defaultPolicyValidator", PolicyValidator.class);
     }
 
     @Override
     public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
         checkAdminContext();
         if (policyPathBuilderFactory != null) return policyPathBuilderFactory;
-        return policyPathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
+        return policyPathBuilderFactory = applicationContext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
     }
 
     @Override

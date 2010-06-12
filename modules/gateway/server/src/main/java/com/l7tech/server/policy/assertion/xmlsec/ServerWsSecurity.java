@@ -53,7 +53,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
     public ServerWsSecurity( final WsSecurity assertion, final ApplicationContext context ) {
         super( assertion, assertion );
         this.auditor = new Auditor(this, context, logger);
-        this.trustedCertCache =  (TrustedCertCache) context.getBean( "trustedCertCache", TrustedCertCache.class );
+        this.trustedCertCache = context.getBean( "trustedCertCache", TrustedCertCache.class );
     }
 
     //- PROTECTED

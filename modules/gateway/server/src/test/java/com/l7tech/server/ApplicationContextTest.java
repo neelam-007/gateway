@@ -88,8 +88,8 @@ public class ApplicationContextTest  {
             ConstructorArgumentValues cav = bd.getConstructorArgumentValues();
             if (cav != null) {
                 List<ConstructorArgumentValues.ValueHolder> constructorArgs = new ArrayList<ConstructorArgumentValues.ValueHolder>();
-                constructorArgs.addAll((Collection<ConstructorArgumentValues.ValueHolder>) cav.getGenericArgumentValues());
-                constructorArgs.addAll((Collection<ConstructorArgumentValues.ValueHolder>) cav.getIndexedArgumentValues().values());
+                constructorArgs.addAll( cav.getGenericArgumentValues() );
+                constructorArgs.addAll( cav.getIndexedArgumentValues().values() );
                 for (ConstructorArgumentValues.ValueHolder holder : constructorArgs) {
                     Object value = holder.getValue();
                     if (value instanceof RuntimeBeanReference) {

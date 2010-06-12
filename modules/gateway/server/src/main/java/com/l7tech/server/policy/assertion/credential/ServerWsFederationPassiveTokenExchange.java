@@ -204,9 +204,9 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
      *
      */
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws AuthRequiredException, StopAndAuditException {
-        XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+        XmlKnob requestXml = context.getRequest().getKnob(XmlKnob.class);
         ensureXmlRequest(requestXml);
-        SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
+        SecurityKnob requestSec = context.getRequest().getKnob(SecurityKnob.class);
         ensureSecurityKnob(requestSec);
 
         // Try to get credentials from WSS processor results

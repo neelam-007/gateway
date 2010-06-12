@@ -105,9 +105,9 @@ public class SsgCacheManager {
             if (ret != null)
                 return ret;
 
-            StashManagerFactory smf = (StashManagerFactory)beanFactory.getBean("messageCacheStashManagerFactory", StashManagerFactory.class);
-            ApplicationEventProxy aep = (ApplicationEventProxy)beanFactory.getBean("applicationEventProxy", ApplicationEventProxy.class);
-            ClusterPropertyManager cpm = (ClusterPropertyManager) beanFactory.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+            StashManagerFactory smf = beanFactory.getBean("messageCacheStashManagerFactory", StashManagerFactory.class);
+            ApplicationEventProxy aep = beanFactory.getBean("applicationEventProxy", ApplicationEventProxy.class);
+            ClusterPropertyManager cpm = beanFactory.getBean("clusterPropertyManager", ClusterPropertyManager.class);
             ret = new SsgCacheManager(smf, aep, cpm);
             INSTANCE.set(ret);
             return ret;

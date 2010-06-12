@@ -50,7 +50,7 @@ public class ServerHttpRoutingAssertionTest {
                 new GenericHttpHeader("Content-Type", "text/xml"),
         });
 
-        TestingHttpClientFactory testingHttpClientFactory = (TestingHttpClientFactory) appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
         final String expectedResponse = "<bar/>";
         testingHttpClientFactory.setMockHttpClient(

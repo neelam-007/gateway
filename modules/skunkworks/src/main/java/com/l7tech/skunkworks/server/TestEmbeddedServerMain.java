@@ -95,7 +95,7 @@ public class TestEmbeddedServerMain {
     }
 
     private void startBootProcess() throws ServletException, com.l7tech.server.LifecycleException {
-        BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
+        BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
         boot.start();
     }
 

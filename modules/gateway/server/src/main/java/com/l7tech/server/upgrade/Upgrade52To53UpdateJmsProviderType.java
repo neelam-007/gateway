@@ -21,7 +21,7 @@ public class Upgrade52To53UpdateJmsProviderType implements UpgradeTask {
 
         JmsConnectionManager connectionManager;
         try {
-            connectionManager = (JmsConnectionManager) applicationContext.getBean("jmsConnectionManager", JmsConnectionManager.class);
+            connectionManager = applicationContext.getBean("jmsConnectionManager", JmsConnectionManager.class);
         } catch (BeansException be) {
             throw new FatalUpgradeException("Error accessing  bean 'jmsConnectionManager' from ApplicationContext.");
         }

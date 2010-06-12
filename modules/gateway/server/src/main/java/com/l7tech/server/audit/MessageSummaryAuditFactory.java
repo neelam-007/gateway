@@ -131,7 +131,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
                 requestContentLength = requestContentLengths[0];
             }
 
-            TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
+            TcpKnob reqTcp = request.getKnob(TcpKnob.class);
             if (reqTcp != null)
                 clientAddr = reqTcp.getRemoteAddress();
         }
@@ -147,7 +147,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             }
 
             responseHttpStatus = -1;
-            HttpResponseKnob respKnob = (HttpResponseKnob) response.getKnob(HttpResponseKnob.class);
+            HttpResponseKnob respKnob = response.getKnob(HttpResponseKnob.class);
             if (respKnob != null) {
                 responseHttpStatus = respKnob.getStatus();
             }
@@ -258,7 +258,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
     private String getMessageBodyText(Message msg, int[] lengthHolder, boolean isRequest) {
         String what = isRequest ? "request" : "response";
         try {
-            final MimeKnob mk = (MimeKnob) msg.getKnob(MimeKnob.class);
+            final MimeKnob mk = msg.getKnob(MimeKnob.class);
             if (mk == null) {
                 logger.fine(MessageFormat.format("{0} has not been initialized; not attempting to save body text", what));
                 lengthHolder[0] = 0;

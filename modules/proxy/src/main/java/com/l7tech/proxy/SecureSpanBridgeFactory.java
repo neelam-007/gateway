@@ -258,7 +258,7 @@ public class SecureSpanBridgeFactory {
                 context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
                 // Copy results out before context gets closed
-                final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                final HttpResponseKnob responseHttp = context.getResponse().getKnob(HttpResponseKnob.class);
                 final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
                 // MimeResult can't use context, request, or response because they are closed by the time
                 // the user calls any methods on it, so we'll save the DOM if we have one otherwise

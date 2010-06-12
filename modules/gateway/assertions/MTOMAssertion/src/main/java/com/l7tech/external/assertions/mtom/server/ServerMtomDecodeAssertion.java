@@ -40,8 +40,8 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
         super( assertion, assertion );
 
         this.auditor = new Auditor(this, context, logger);
-        this.stashManagerFactory = (StashManagerFactory) context.getBean( "stashManagerFactory", StashManagerFactory.class );
-        this.config = (Config) context.getBean( "serverConfig", Config.class );
+        this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
+        this.config = context.getBean( "serverConfig", Config.class );
     }
 
     //- PROTECTED

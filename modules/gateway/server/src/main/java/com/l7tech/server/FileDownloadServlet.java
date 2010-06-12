@@ -49,7 +49,7 @@ public class FileDownloadServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
 
-        timer = (Timer)applicationContext.getBean("managedBackgroundTimer", Timer.class);
+        timer = applicationContext.getBean("managedBackgroundTimer", Timer.class);
         timer.schedule(new TimerTask() {
             public void run() {
                 removeExpiredFiles();

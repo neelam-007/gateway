@@ -80,8 +80,7 @@ public class SslUtils {
         ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
         if (scue == null) {
             // No, that wasn't the problem.  Was it a cert hostname mismatch?
-            HostnameMismatchException hme = (HostnameMismatchException)
-              ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
+            HostnameMismatchException hme = ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
             if (hme != null) {
                 // Notify user of the hostname mismatch and then abort this request
                 String wanted = hme.getWhatWasWanted();

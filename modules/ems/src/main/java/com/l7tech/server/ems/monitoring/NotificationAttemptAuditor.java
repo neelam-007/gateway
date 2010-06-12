@@ -96,7 +96,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.execute( new TransactionCallbackWithoutResult() {
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+                AuditContext auditContext = applicationContext.getBean("auditContext", AuditContext.class);
                 try {
                     ProcessControllerContext nodeContext = gatewayContextFactory.createProcessControllerContext(node);
                     long timeBeforeQuery = System.currentTimeMillis();

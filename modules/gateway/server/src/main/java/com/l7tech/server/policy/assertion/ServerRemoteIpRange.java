@@ -41,7 +41,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion implements Serv
         String input;
         // get remote address
         if (rule.getIpSourceContextVariable() == null) {
-            TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+            TcpKnob tcp = context.getRequest().getKnob(TcpKnob.class);
             if (tcp == null) {
                 auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
                 return AssertionStatus.BAD_REQUEST;

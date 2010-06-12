@@ -39,7 +39,7 @@ public class GenericIdentityProviderFactorySpi implements IdentityProviderFactor
     @Override
     public IdentityProvider createIdentityProvider( final IdentityProviderConfig configuration,
                                                     final boolean start ) throws InvalidIdProviderCfgException {
-        IdentityProvider provider = (IdentityProvider) beanFactory.getBean(identityProviderBeanName, IdentityProvider.class);
+        IdentityProvider provider = beanFactory.getBean(identityProviderBeanName, IdentityProvider.class);
 
         if ( !(provider instanceof ConfigurableIdentityProvider) ) {
             throw new InvalidIdProviderCfgException("IdentityProvider does not support configuration interface.");

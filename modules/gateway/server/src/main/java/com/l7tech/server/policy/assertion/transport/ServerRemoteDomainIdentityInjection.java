@@ -44,7 +44,7 @@ public class ServerRemoteDomainIdentityInjection extends AbstractServerAssertion
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        HttpRequestKnob knob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
+        HttpRequestKnob knob = context.getRequest().getKnob(HttpRequestKnob.class);
         if (knob == null) {
             auditor.logAndAudit(AssertionMessages.DOMAINID_REQUEST_NOT_HTTP);
             return AssertionStatus.NOT_APPLICABLE;

@@ -463,7 +463,7 @@ public class EsmApplication extends WebApplication {
         EsmSecurityManager esmSecurityManager = this.esmSecurityManager;
         if ( esmSecurityManager == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            esmSecurityManager = (EsmSecurityManager) beanFactory.getBean( "securityManager", EsmSecurityManager.class );
+            esmSecurityManager = beanFactory.getBean( "securityManager", EsmSecurityManager.class );
             this.esmSecurityManager = esmSecurityManager;
         }
         return esmSecurityManager;
@@ -476,7 +476,7 @@ public class EsmApplication extends WebApplication {
         UserPropertyManager userPropertyManager = this.userPropertyManager;
         if ( userPropertyManager == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            userPropertyManager = (UserPropertyManager) beanFactory.getBean( "userPropertyManager", UserPropertyManager.class );
+            userPropertyManager = beanFactory.getBean( "userPropertyManager", UserPropertyManager.class );
             this.userPropertyManager = userPropertyManager;
         }
         return userPropertyManager;
@@ -486,7 +486,7 @@ public class EsmApplication extends WebApplication {
         RoleManager roleManager = this.roleManager;
         if ( roleManager == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            roleManager = (RoleManager) beanFactory.getBean( "roleManager", RoleManager.class );
+            roleManager = beanFactory.getBean( "roleManager", RoleManager.class );
             this.roleManager = roleManager;
         }
         return roleManager;
@@ -496,7 +496,7 @@ public class EsmApplication extends WebApplication {
         ServerConfig config = this.config;
         if ( config == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            config = (ServerConfig) beanFactory.getBean( "serverConfig", ServerConfig.class );
+            config = beanFactory.getBean( "serverConfig", ServerConfig.class );
             this.config = config;
         }
         return config;
@@ -506,7 +506,7 @@ public class EsmApplication extends WebApplication {
         DefaultKey defaultKey = this.defaultKey;
         if ( defaultKey == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            defaultKey = (DefaultKey) beanFactory.getBean( "defaultKey", DefaultKey.class );
+            defaultKey = beanFactory.getBean( "defaultKey", DefaultKey.class );
             this.defaultKey = defaultKey;
         }
         return defaultKey;

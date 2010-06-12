@@ -54,7 +54,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
         super(assertion, logger, beanFactory, eventPub);
-        this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
     @Override

@@ -64,7 +64,7 @@ public class Upgrade51To52UpdateRoles implements UpgradeTask {
                            final Class<T> beanClass ) throws FatalUpgradeException {
         if (applicationContext == null) throw new FatalUpgradeException("ApplicationContext is required");
         try {
-            return (T) applicationContext.getBean(name, beanClass);
+            return applicationContext.getBean(name, beanClass);
         } catch ( BeansException be ) {
             throw new FatalUpgradeException("Error accessing  bean '"+name+"' from ApplicationContext.");
         }

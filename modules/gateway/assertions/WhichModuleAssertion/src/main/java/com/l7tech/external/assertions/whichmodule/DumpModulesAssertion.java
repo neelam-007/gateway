@@ -49,7 +49,7 @@ public class DumpModulesAssertion extends Assertion implements SetsVariables {
 
         public ServerImpl(DumpModulesAssertion assertion, ApplicationContext context) {
             super(assertion);
-            this.assertionRegistry = (ServerAssertionRegistry)context.getBean("assertionRegistry", ServerAssertionRegistry.class);
+            this.assertionRegistry = context.getBean("assertionRegistry", ServerAssertionRegistry.class);
         }
 
         @Override

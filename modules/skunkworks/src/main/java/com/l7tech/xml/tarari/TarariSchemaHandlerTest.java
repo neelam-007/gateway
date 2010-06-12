@@ -45,7 +45,7 @@ public class TarariSchemaHandlerTest extends TestCase {
 
         Message msg = new Message( XmlUtil.stringToDocument(MESSAGE));
         assertTrue(msg.isSoap());
-        TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+        TarariKnob tk = msg.getKnob(TarariKnob.class);
         assertNotNull(tk);
 
         TarariMessageContext tmc = tk.getContext();

@@ -107,9 +107,9 @@ public class CaWsdmObserver implements ApplicationListener {
      * @param applicationContext the Spring application context.  Required.
      */
     public CaWsdmObserver(ApplicationContext applicationContext) {
-        this._serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
-        this._applicationEventProxy = (ApplicationEventProxy)applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        this._messageProcessingEventChannel = (EventChannel)applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+        this._serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this._applicationEventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this._messageProcessingEventChannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         _applicationEventProxy.addApplicationListener(this);
         _messageProcessingEventChannel.addApplicationListener(this);
     }

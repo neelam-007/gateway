@@ -342,7 +342,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
-        this.auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+        this.auditContext = applicationContext.getBean("auditContext", AuditContext.class);
     }
 
     public class ServiceStatusNotificationContext {

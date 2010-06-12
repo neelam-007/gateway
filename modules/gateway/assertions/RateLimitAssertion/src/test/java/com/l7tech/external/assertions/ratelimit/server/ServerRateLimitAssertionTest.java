@@ -112,7 +112,7 @@ public class ServerRateLimitAssertionTest {
         });
 
         // Ensure cleaner doesn't run during the test
-        serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfigStub.class);
         serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(86400L * 1000L));
 
         // Make test use our fake time source

@@ -418,7 +418,7 @@ public abstract class Assertion implements Cloneable, Serializable {
             CompositeAssertion ca = (CompositeAssertion) translated;
 
             for ( int c=0; c<ca.getChildren().size(); c++ ) {
-                Assertion childAssertion = (Assertion) ca.getChildren().get(c);
+                Assertion childAssertion = ca.getChildren().get(c);
                 Assertion transAssertion = translate(childAssertion, translator);
                 if ( childAssertion != transAssertion ) {
                     ca.replaceChild( childAssertion, transAssertion );

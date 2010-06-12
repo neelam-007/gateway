@@ -52,7 +52,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         super.init(config);
 
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        this.passwordEnforcerManager = (PasswordEnforcerManager)appcontext.getBean("passwordEnforcerManager", PasswordEnforcerManager.class);
+        this.passwordEnforcerManager = appcontext.getBean("passwordEnforcerManager", PasswordEnforcerManager.class);
     }
 
     protected String getFeature() {

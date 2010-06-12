@@ -41,7 +41,7 @@ public class ServerAssertionUtils {
                     final long keystoreId = keyable.getNonDefaultKeystoreId();
                     final String keyAlias = keyable.getKeyAlias();
                     com.l7tech.server.security.keystore.SsgKeyStoreManager sksm =
-                            (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
+                            ctx.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
                     SsgKeyEntry keyEntry = sksm.lookupKeyByKeyAlias(keyAlias, keystoreId);
                     X509Certificate[] certChain = keyEntry.getCertificateChain();
                     PrivateKey privateKey = keyEntry.getPrivateKey();
@@ -50,7 +50,7 @@ public class ServerAssertionUtils {
             }
 
             // Default keystore
-            DefaultKey ku = (DefaultKey)ctx.getBean("defaultKey", DefaultKey.class);
+            DefaultKey ku = ctx.getBean("defaultKey", DefaultKey.class);
             return ku.getSslInfo();
         } catch (IOException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);

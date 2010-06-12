@@ -34,7 +34,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
     public ServerEchoRoutingAssertion(EchoRoutingAssertion ea, ApplicationContext applicationContext) {
         super(ea, applicationContext, logger);
         auditor = new Auditor(this, applicationContext, logger);
-        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -45,7 +45,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
         request.notifyMessage(response, MessageRole.RESPONSE);
         response.notifyMessage(request, MessageRole.REQUEST);
 
-        final MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
+        final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
         final ContentTypeHeader cth = mimeKnob == null ? null : mimeKnob.getOuterContentType();
 
         if (cth == null) {

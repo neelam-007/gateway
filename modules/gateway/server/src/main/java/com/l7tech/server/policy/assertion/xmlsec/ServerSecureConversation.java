@@ -48,7 +48,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
         super(assertion);
         // nothing to remember from the passed assertion
         this.auditor = new Auditor(this, springContext, logger);
-        this.secureConversationContextManager = (SecureConversationContextManager) springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
+        this.secureConversationContextManager = springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {

@@ -72,7 +72,7 @@ abstract class ClusterPropertyUpgradeTask implements UpgradeTask {
                            final Class<T> type ) throws FatalUpgradeException {
         if (applicationContext == null) throw new FatalUpgradeException("ApplicationContext is required");
         try {
-            return (T) applicationContext.getBean(name, type);
+            return applicationContext.getBean(name, type);
         } catch ( BeansException be ) {
             throw new FatalUpgradeException("No bean " + name + " is available", be);
         }

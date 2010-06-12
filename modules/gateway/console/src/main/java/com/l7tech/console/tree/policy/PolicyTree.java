@@ -82,7 +82,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
      */
     public PolicyTree(ApplicationContext applicationContext) {
         super((PolicyTreeModel)null);
-        wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
+        wspReader = applicationContext.getBean("wspReader", WspReader.class);
         initialize();
         setSelectionModel(getTreeSelectionModel());
     }

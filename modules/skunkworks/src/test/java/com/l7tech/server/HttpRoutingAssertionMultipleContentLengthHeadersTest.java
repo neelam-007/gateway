@@ -27,7 +27,7 @@ public class HttpRoutingAssertionMultipleContentLengthHeadersTest {
     @BeforeClass
     public static void setUp() throws Exception {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
-        testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
     }
 
     @Test

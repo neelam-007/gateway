@@ -81,7 +81,7 @@ public class SsgAdminSession {
         String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
 
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
-        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+        Registry.setDefault( context.getBean("registry", Registry.class) );
 
         checkCertStoreDependency(ssgHost);
 

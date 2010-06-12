@@ -662,7 +662,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         private ResourceFactoryRegistry getResourceFactoryRegistry() {
             if ( resourceFactoryRegistry == null ) {
                 resourceFactoryRegistry =
-                    (ResourceFactoryRegistry) getBeanFactory().getBean("resourceFactoryRegistry", ResourceFactoryRegistry.class);
+                        getBeanFactory().getBean("resourceFactoryRegistry", ResourceFactoryRegistry.class);
             }
             return resourceFactoryRegistry;
         }

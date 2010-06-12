@@ -34,7 +34,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         this.auditor = new Auditor(this, springContext, logger);
-        this.kerberosSessionContextManager = (KerberosSessionContextManager) springContext.getBean( "kerberosSessionContextManager", KerberosSessionContextManager.class );
+        this.kerberosSessionContextManager = springContext.getBean( "kerberosSessionContextManager", KerberosSessionContextManager.class );
     }
 
     @SuppressWarnings({"RedundantArrayCreation"})

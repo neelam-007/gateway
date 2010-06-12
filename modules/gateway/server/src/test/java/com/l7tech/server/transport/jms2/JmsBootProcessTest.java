@@ -36,7 +36,7 @@ public class JmsBootProcessTest extends JmsTestCase {
     public void xxxtestLifecycle() {
 
         try {
-            bootProcess = (JmsBootProcess) appCtx.getBean("jmsBootprocess", JmsBootProcess.class);
+            bootProcess = appCtx.getBean("jmsBootprocess", JmsBootProcess.class);
             Assert.assertNotNull("Could not obtain jmsBootProcess bean from applicationContext", bootProcess);
             startBootProcess();
 

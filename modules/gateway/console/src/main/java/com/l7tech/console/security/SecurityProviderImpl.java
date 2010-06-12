@@ -216,7 +216,7 @@ public class SecurityProviderImpl extends SecurityProvider
         this.sessionHost = remoteHost;
         TopComponents.getInstance().setSsgURL(URI.create("http://" + remoteHost));
 
-        AdminContextFactory factory = (AdminContextFactory) applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
+        AdminContextFactory factory = applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
         AdminContext ac = factory.buildAdminContext( getHost(remoteHost), getPort(remoteHost), sessionCookie );
 
         synchronized (this) {

@@ -50,7 +50,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
 
         //noinspection ThisEscapedInObjectConstruction
         this.auditor = new Auditor(this, context, logger);
-        this.stashManagerFactory = (StashManagerFactory)context.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.stashManagerFactory = context.getBean("stashManagerFactory", StashManagerFactory.class);
         String prefix = assertion.getVariablePrefix();
         payloadsVariable = prefix + SUFFIX_PAYLOADS;
         contentTypesVariable = prefix + SUFFIX_CONTENT_TYPES;

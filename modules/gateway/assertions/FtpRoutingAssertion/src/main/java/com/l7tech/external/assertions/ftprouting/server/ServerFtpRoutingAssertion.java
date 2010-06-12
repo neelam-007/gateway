@@ -48,9 +48,9 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext, _logger);
         _auditor = new Auditor(this, applicationContext, _logger);
-        _trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager", X509TrustManager.class);
-        _hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
-        _keyFinder = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
+        _trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
+        _hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        _keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
     }
 
     @Override

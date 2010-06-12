@@ -69,11 +69,11 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
-        messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        serverConfig = (ServerConfig)ctx.getBean("serverConfig", ServerConfig.class);
-        stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
-        messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
+        messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = ctx.getBean("auditContext", AuditContext.class);
+        serverConfig = ctx.getBean("serverConfig", ServerConfig.class);
+        stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
 
@@ -294,7 +294,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                         // Copies the JMS message properties from the response JmsKnob to the response JMS message.
                         // Propagation rules has already been enforced in the knob by the JMS routing assertion.
-                        final JmsKnob jmsResponseKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
+                        final JmsKnob jmsResponseKnob = context.getResponse().getKnob(JmsKnob.class);
                         if (jmsResponseKnob != null) {
                             final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
                             for (String name : respJmsMsgProps.keySet()) {

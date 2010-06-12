@@ -79,7 +79,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         if (applicationContext == null) {
             this.messageProcessingEventChannel = new EventChannel();
         } else {
-            ApplicationEventPublisher mpchannel = (EventChannel) applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+            ApplicationEventPublisher mpchannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
             this.messageProcessingEventChannel = mpchannel != null ? mpchannel : applicationContext;             
         }
         this.logger = logger != null ? logger : sraLogger;

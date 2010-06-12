@@ -217,7 +217,7 @@ public class WspUpgradeUtilFrom21 {
         }
 
         // Prevent empty OR assertion
-        Assertion enforcement = enforcementOr.getChildren().size() > 0 ? (Assertion)enforcementOr : new TrueAssertion();
+        Assertion enforcement = enforcementOr.getChildren().size() > 0 ? enforcementOr : new TrueAssertion();
 
         AllAssertion root = new AllAssertion();
         if (isCredentialSource && !isResponse)

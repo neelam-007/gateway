@@ -91,14 +91,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         super.init(config);
         try {
             ApplicationContext applicationContext = getApplicationContext();
-            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            auditContext = applicationContext.getBean("auditContext", AuditContext.class);
             soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
-            DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
+            DefaultKey ku = applicationContext.getBean("defaultKey", DefaultKey.class);
             serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
-            policyCache = (PolicyCache) applicationContext.getBean( "policyCache", PolicyCache.class );
+            policyCache = applicationContext.getBean( "policyCache", PolicyCache.class );
         } catch (BeansException be) {
             throw new ServletException(be);
         }catch (IOException e) {

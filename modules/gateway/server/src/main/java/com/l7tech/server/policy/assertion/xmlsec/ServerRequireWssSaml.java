@@ -58,8 +58,8 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
         assertionValidate = new SamlAssertionValidate(sa);
         auditor = new Auditor(this, beanFactory, eventPub, logger);
-        securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
-        messageIdManager = (MessageIdManager)beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
+        securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        messageIdManager = beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
     }
 
     /**

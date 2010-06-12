@@ -48,8 +48,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     @Override
     public void init( final ServletConfig config ) throws ServletException {
         super.init(config);
-        defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
-        providerConfigManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
+        defaultKey = getApplicationContext().getBean("defaultKey", DefaultKey.class);
+        providerConfigManager = getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
     }
 
     @Override

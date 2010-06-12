@@ -48,10 +48,10 @@ class JmsRequestHandler {
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
-        messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
-        stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
-        messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
+        messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = ctx.getBean("auditContext", AuditContext.class);
+        stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
     /**

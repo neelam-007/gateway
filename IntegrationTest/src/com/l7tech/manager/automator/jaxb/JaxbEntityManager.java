@@ -1015,7 +1015,7 @@ public class JaxbEntityManager {
             IdentityProviderConfig providerCfg = this.identityAdmin.findIdentityProviderConfigByID(h.getOid());
 
             if(providerCfg.getTypeVal() == 1){
-                IdentityProviderConfig config = (IdentityProviderConfig) providerCfg;
+                IdentityProviderConfig config = providerCfg;
                 downloadGroupsForIdentityProvider(config, "IdentityProviders/Internal/InternalGroups");
                 downloadUsersForIdentityProvider(config,"IdentityProviders/Internal/InternalUsers/");
             }else if(providerCfg.getTypeVal() == 2){

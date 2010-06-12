@@ -78,8 +78,8 @@ public class InterceptorEventListener implements ApplicationListener {
      * @param applicationContext the Spring application context.  Required.
      */
     InterceptorEventListener(ApplicationContext applicationContext) {
-        this.serverConfig = (ServerConfig) applicationContext.getBean("serverConfig", ServerConfig.class);
-        this.applicationEventProxy = (ApplicationEventProxy) applicationContext.getBean("messageProcessingEventChannel", ApplicationEventProxy.class);
+        this.serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this.applicationEventProxy = applicationContext.getBean("messageProcessingEventChannel", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
         initialize();
     }

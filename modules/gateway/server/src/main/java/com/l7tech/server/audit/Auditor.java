@@ -68,13 +68,13 @@ public class Auditor implements Audit {
     private static AuditLogListener findListener(BeanFactory beanFactory) {
         if (beanFactory == null)
             return null;
-        return beanFactory.containsBean("auditLogListener") ? (AuditLogListener) beanFactory.getBean("auditLogListener", AuditLogListener.class) : null;
+        return beanFactory.containsBean("auditLogListener") ? beanFactory.getBean("auditLogListener", AuditLogListener.class) : null;
     }
 
     private static AuditDetailFilter findFilter(BeanFactory beanFactory) {
         if (beanFactory == null)
             return null;
-        return beanFactory.containsBean("auditDetailFilter") ? (AuditDetailFilter) beanFactory.getBean("auditDetailFilter", AuditDetailFilter.class) : null;
+        return beanFactory.containsBean("auditDetailFilter") ? beanFactory.getBean("auditDetailFilter", AuditDetailFilter.class) : null;
     }
 
     /**

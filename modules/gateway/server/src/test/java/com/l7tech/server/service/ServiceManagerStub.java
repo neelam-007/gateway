@@ -76,7 +76,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
     }
 
     private ServiceCache getServiceCache() {
-        return (ServiceCache) applicationContext.getBean("serviceCache", ServiceCache.class);
+        return applicationContext.getBean("serviceCache", ServiceCache.class);
     }
 
     public void addManageServiceRole(PublishedService service) throws SaveException {

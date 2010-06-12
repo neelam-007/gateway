@@ -67,8 +67,8 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
 
     public ServerNonSoapVerifyElementAssertion(NonSoapVerifyElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
         super(assertion, logger, beanFactory, eventPub);
-        this.securityTokenResolver = (SecurityTokenResolver)beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
-        this.trustedCertCache = (TrustedCertCache) beanFactory.getBean( "trustedCertCache", TrustedCertCache.class );
+        this.securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.trustedCertCache = beanFactory.getBean( "trustedCertCache", TrustedCertCache.class );
     }
 
     private static <T> Collection<T> getColumn(List<Object[]> table, int column, Class<T> clazz) {

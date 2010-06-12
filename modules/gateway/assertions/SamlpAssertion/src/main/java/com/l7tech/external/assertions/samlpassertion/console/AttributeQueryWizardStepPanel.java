@@ -116,7 +116,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
 
             attributes.add(att);
         }
-        statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        statement.setAttributes( attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]) );
     }
 
     /**

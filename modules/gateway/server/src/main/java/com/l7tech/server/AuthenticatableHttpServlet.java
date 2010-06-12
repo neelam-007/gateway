@@ -101,7 +101,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     @SuppressWarnings({"unchecked"})
     protected <T> T getBean(String name, Class<T> clazz) throws ServletException {
-        T bean = (T)applicationContext.getBean(name, clazz);
+        T bean = applicationContext.getBean(name, clazz);
         if (bean == null)
             throw new ServletException("Configuration error; could not get " + name);
         if (clazz != null && !clazz.isAssignableFrom(bean.getClass()))

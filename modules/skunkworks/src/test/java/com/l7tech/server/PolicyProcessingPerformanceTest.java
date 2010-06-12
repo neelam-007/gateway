@@ -143,11 +143,11 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     public static void setUpClass() throws Exception {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
-        messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
-        soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-        testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
-        secureConversationContextManager = (SecureConversationContextManager) applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+        soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+        testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+        secureConversationContextManager = applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
 
         // well known test session
         if (secureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
@@ -159,9 +159,9 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                     new byte[16]);
         }
 
-        buildServices( (ServiceManager) applicationContext.getBean("serviceManager", ServiceManager.class) );
+        buildServices( applicationContext.getBean("serviceManager", ServiceManager.class) );
 
-        ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
+        ServiceCacheStub cache = applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
 
         auditContext.flush(); // ensure clear

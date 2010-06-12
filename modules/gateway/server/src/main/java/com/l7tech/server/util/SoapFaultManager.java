@@ -139,7 +139,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     @Override
     public void setApplicationContext( ApplicationContext applicationContext ) {
         setBeanFactory( applicationContext );
-        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        clusterPropertiesManager = applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
         final SoapFaultManager soapFaultManager = this;
         TimerTask task = new TimerTask() {
             @Override
@@ -594,7 +594,7 @@ public class SoapFaultManager implements ApplicationContextAware {
 
     private void updateOverrides() {
         if (clusterPropertiesManager == null) {
-            clusterPropertiesManager = (ClusterPropertyManager)context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+            clusterPropertiesManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
             if (clusterPropertiesManager == null) {
                 logger.info("cant get handle on ClusterPropertiesManager");
                 return;

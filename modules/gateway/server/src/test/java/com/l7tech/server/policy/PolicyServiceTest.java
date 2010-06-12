@@ -125,7 +125,7 @@ public class PolicyServiceTest {
                 (FilterManager) applicationContext.getBean("policyFilterManager"),
                 (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),
                 (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"),
-                (SecureConversationContextManager)applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class));
+                applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class) );
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             @Override

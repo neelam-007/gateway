@@ -76,8 +76,8 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
     }
 
     public UDDINotificationModuleLifecycle( final ApplicationContext spring ) {
-        this.serviceTemplateManager = (ServiceTemplateManager) spring.getBean("serviceTemplateManager", ServiceTemplateManager.class);
-        this.applicationEventProxy = (ApplicationEventProxy) spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this.serviceTemplateManager = spring.getBean("serviceTemplateManager", ServiceTemplateManager.class);
+        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
     }
