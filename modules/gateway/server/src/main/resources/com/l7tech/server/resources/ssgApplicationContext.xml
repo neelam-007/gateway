@@ -35,6 +35,8 @@
         <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
     </bean>
 
+    <bean id="gatewayState" class="com.l7tech.server.GatewayState"/>
+
     <!-- Crypto init -->
     <bean id="initLunaPinFinder" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder"/>
