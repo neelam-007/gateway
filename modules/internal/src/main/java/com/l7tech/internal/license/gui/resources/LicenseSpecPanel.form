@@ -528,7 +528,7 @@
           <editable value="true"/>
           <model>
             <item value="Layer 7 SecureSpan Suite"/>
-            <item value="Layer 7 Enterprise Manager"/>
+            <item value="Layer 7 Enterprise Service Manager"/>
           </model>
         </properties>
       </component>
