@@ -5,19 +5,23 @@ import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.xml.DOMResultXMLStreamWriter;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.xml.DOMResultXMLStreamWriter;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.util.PolicyFactory;
 import org.apache.ws.policy.util.StAXPolicyWriter;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -30,6 +34,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Iterator;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Steve Jones, $Author$
@@ -119,6 +125,17 @@ public class WsspWriterTest {
         final Document doc = XmlUtil.stringToDocument(PING_WSDL);
         WsspWriter.decorate(doc, parseL7(L7_POLICY_T1), false, null, null, null);
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(XmlUtil.nodeToString(doc))));
+    }
+
+    // Currently expected to fail -- arbitrary non-Header non-Body XPaths aren't supported by WsspWriter currently
+    @Test(expected = PolicyAssertionException.class)
+    public void testEncryptedElements() throws Exception {
+        AllAssertion all = new AllAssertion();
+        all.addChild(new RequireWssX509Cert());
+        all.addChild(new RequireWssEncryptedElement(new XpathExpression("//*[local-name() = \"blah\"]")));
+        final Document doc = XmlUtil.stringToDocument(PING_WSDL);
+        WsspWriter.decorate(doc, all, false, null, null, null);
+        System.out.println("Decorated: " + XmlUtil.nodeToFormattedString(doc));
     }
 
     private void test(String l7policyXmlStr, String expectedOutput) throws Exception {
