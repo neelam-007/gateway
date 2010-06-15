@@ -68,7 +68,6 @@ import java.text.ParseException;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -215,7 +214,13 @@ public class ServerXslTransformation
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        // 1. Get document to transform
+        // Reset variables
+        final String xsltMsgVarName = getXsltMessagesContextVariableName();
+        context.setVariable(xsltMsgVarName, new String[] {""});
+        context.setVariable(xsltMsgVarName + ".first", "");
+        context.setVariable(xsltMsgVarName + ".last", "");
+
+        // Get document to transform
         final Message message;
         final TargetMessageType isrequest = assertion.getTarget();
 
@@ -245,38 +250,28 @@ public class ServerXslTransformation
                 return AssertionStatus.SERVER_ERROR;
         }
 
+        final List<String> xsltMessages = new ArrayList<String>();
         try {
-            return doCheckRequest(message, context);
+            return doCheckRequest(message, context, xsltMessages);
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } finally {
-            // Get the name of XSLT Message context variable.
-            String xsltMsgVarName = getXsltMessagesContextVariableName();
-
-            // Get the XSLT Message context variable.
-            Object xsltMsgVar;
-            try {
-                xsltMsgVar = context.getVariable(xsltMsgVarName);
-            } catch (NoSuchVariableException e) {
-                xsltMsgVar = null;
-            }
-
-            // Set the XSLT Message context variable
-            if (xsltMsgVar == null) {
-                context.setVariable(xsltMsgVarName, new String[] {""});
-                context.setVariable(xsltMsgVarName + ".first", "");
-                context.setVariable(xsltMsgVarName + ".last", "");
+            if ( !xsltMessages.isEmpty() ) {
+                context.setVariable(xsltMsgVarName, xsltMessages.toArray( new String[xsltMessages.size()] ));
+                context.setVariable(xsltMsgVarName + ".first", xsltMessages.get( 0 ));
+                context.setVariable(xsltMsgVarName + ".last", xsltMessages.get( xsltMessages.size()-1 ));
             }
         }
     }
 
 
     /*
-     * performes the transformation
-     * @param context  the context for the current request.  required
+     * Performs the transformation
      */
-    private AssertionStatus doCheckRequest(final Message message, final PolicyEnforcementContext context)
+    private AssertionStatus doCheckRequest( final Message message,
+                                            final PolicyEnforcementContext context,
+                                            final List<String> xsltMessages )
             throws IOException, PolicyAssertionException, SAXException
     {
 
@@ -335,8 +330,8 @@ public class ServerXslTransformation
 
             // These variables are used ONLY for interpolation into a remote URL; variables used inside
             // the stylesheet itself are fed in via the variableGetter inside TransformInput
-            Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
-            return transform(transformInput, transformOutput, urlVars, context);
+            Map<String,Object> urlVars = context.getVariableMap(urlVarsUsed, auditor);
+            return transform(transformInput, transformOutput, urlVars, xsltMessages);
         } finally {
             if (transformInput instanceof Closeable) {
                 ((Closeable)transformInput).close();
@@ -345,7 +340,10 @@ public class ServerXslTransformation
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
-    private AssertionStatus transform(TransformInput input, TransformOutput output, Map urlVars, PolicyEnforcementContext context)
+    private AssertionStatus transform( final TransformInput input,
+                                       final TransformOutput output,
+                                       final Map<String,Object> urlVars,
+                                       final List<String> xsltMessages )
             throws IOException, PolicyAssertionException
     {
         try {
@@ -363,7 +361,7 @@ public class ServerXslTransformation
                 return AssertionStatus.SERVER_ERROR;
             }
 
-            resource.transform(input, output, getErrorListener(context));
+            resource.transform(input, output, getErrorListener(xsltMessages));
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
@@ -398,52 +396,27 @@ public class ServerXslTransformation
         }
     }
 
-    private ErrorListener getErrorListener(final PolicyEnforcementContext context) {
+    private ErrorListener getErrorListener( final List<String> xsltMessages ) {
         return new ErrorListener() {
             @Override
             public void warning(TransformerException exception) throws TransformerException {
-                addXsltMessageIntoVariable(context, exception.getMessage());
+                xsltMessages.add( ExceptionUtils.getMessage(exception) );
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
             }
             @Override
             public void error(TransformerException exception) throws TransformerException {
+                xsltMessages.add( ExceptionUtils.getMessage(exception) );
                 auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
             }
             @Override
             public void fatalError(TransformerException exception) throws TransformerException {
+                final String message = ExceptionUtils.getMessage(exception);
+                if ( !xsltMessages.contains(message) ) { // can be reported more than once
+                    xsltMessages.add( message );
+                }
                 throw exception;
             }
         };
-    }
-
-    /**
-     * Add a message into the XSLT Messages context variable.
-     *
-     * @param context: PolicyEnforcementContext
-     * @param message: An XSLT message to be added.
-     */
-    private void addXsltMessageIntoVariable(PolicyEnforcementContext context, String message) {
-        // Get the name of the context variable
-        final String msgVarName = getXsltMessagesContextVariableName();
-
-        // Initialize a message list by adding all previous messages.
-        List<String> messageList = new ArrayList<String>();
-        try {
-            Object existing = context.getVariable(msgVarName);
-            if (existing != null && existing.getClass().isArray() && String.class.equals(existing.getClass().getComponentType())) {
-                messageList.addAll(Arrays.asList((String[])existing));
-            }
-        } catch (NoSuchVariableException e) {
-            // nothing to carry over
-        }
-
-        // Insert the current message
-        messageList.add(message);
-
-        // Update these context variables
-        context.setVariable(msgVarName, messageList.toArray(new String[messageList.size()]));
-        context.setVariable(msgVarName + ".first", messageList.isEmpty()? null : messageList.get(0));
-        context.setVariable(msgVarName + ".last", messageList.isEmpty()? null : messageList.get(messageList.size() - 1));
     }
 
     private String getXsltMessagesContextVariableName() {
@@ -574,7 +547,7 @@ public class ServerXslTransformation
     }
 
     private static abstract class CloseableTransformInput extends TransformInput implements Closeable {
-        public CloseableTransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
+        private CloseableTransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
             super(elementCursor, variableGetter);
         }
     }
