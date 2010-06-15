@@ -3,7 +3,7 @@
 	<info organisation="org.apache.derby"
 		module="derby"
 		revision="10.4.1.3"
-		status="integration"
+		status="release"
 		publication="20080425125942"
 	/>
 	<configurations>

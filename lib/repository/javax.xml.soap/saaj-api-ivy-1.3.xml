@@ -3,7 +3,7 @@
 	<info organisation="javax.xml.soap"
 		module="saaj-api"
 		revision="1.3"
-		status="integration"
+		status="release"
 		publication="20060719054346"
 	/>
 	<configurations>

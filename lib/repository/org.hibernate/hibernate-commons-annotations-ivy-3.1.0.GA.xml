@@ -3,7 +3,7 @@
 	<info organisation="org.hibernate"
 		module="hibernate-commons-annotations"
 		revision="3.1.0.GA"
-		status="integration"
+		status="release"
 		publication="20081027182120"
 	>
 		<license name="GNU LESSER GENERAL PUBLIC LICENSE" url="http://www.gnu.org/licenses/lgpl.txt" />

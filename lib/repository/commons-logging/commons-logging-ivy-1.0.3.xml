@@ -3,7 +3,7 @@
 	<info organisation="commons-logging"
 		module="commons-logging"
 		revision="1.0.3"
-		status="integration"
+		status="release"
 		publication="20051117052222"
 	/>
 	<configurations>

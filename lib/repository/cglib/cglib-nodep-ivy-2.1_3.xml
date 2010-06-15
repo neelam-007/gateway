@@ -3,7 +3,7 @@
 	<info organisation="cglib"
 		module="cglib-nodep"
 		revision="2.1_3"
-		status="integration"
+		status="release"
 		publication="20051108141406"
 	/>
 	<configurations>

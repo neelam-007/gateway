@@ -3,7 +3,7 @@
 	<info organisation="dom4j"
 		module="dom4j"
 		revision="1.6.1"
-		status="integration"
+		status="release"
 		publication="20060210043318"
 	/>
 	<configurations>

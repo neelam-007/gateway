@@ -3,7 +3,7 @@
 	<info organisation="jfree"
 		module="jfreechart"
 		revision="1.0.9"
-		status="integration"
+		status="release"
 		publication="20080117184427"
 	>
 		<license name="GNU Lesser General Public Licence" url="http://www.gnu.org/licenses/lgpl.txt" />

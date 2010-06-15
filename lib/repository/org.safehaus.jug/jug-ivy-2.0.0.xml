@@ -3,7 +3,7 @@
 	<info organisation="org.safehaus.jug"
 		module="jug"
 		revision="2.0.0"
-		status="integration"
+		status="release"
 		publication="20060708070604"
 	/>
 	<configurations>

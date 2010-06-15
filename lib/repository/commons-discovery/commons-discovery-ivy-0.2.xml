@@ -3,7 +3,7 @@
 	<info organisation="commons-discovery"
 		module="commons-discovery"
 		revision="0.2"
-		status="integration"
+		status="release"
 		publication="20070312100136"
 	/>
 	<configurations>

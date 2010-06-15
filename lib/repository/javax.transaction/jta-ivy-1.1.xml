@@ -3,7 +3,7 @@
 	<info organisation="javax.transaction"
 		module="jta"
 		revision="1.1"
-		status="integration"
+		status="release"
 		publication="20081027182721"
 	>
 		<description homepage="http://java.sun.com/products/jta">

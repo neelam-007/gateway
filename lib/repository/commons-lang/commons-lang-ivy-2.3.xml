@@ -3,7 +3,7 @@
 	<info organisation="commons-lang"
 		module="commons-lang"
 		revision="2.3"
-		status="integration"
+		status="release"
 		publication="20070213103202"
 	/>
 	<configurations>

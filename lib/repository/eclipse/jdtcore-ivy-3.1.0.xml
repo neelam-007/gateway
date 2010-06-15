@@ -3,7 +3,7 @@
 	<info organisation="eclipse"
 		module="jdtcore"
 		revision="3.1.0"
-		status="integration"
+		status="release"
 		publication="20051108135154"
 	>
 		<description homepage="" />

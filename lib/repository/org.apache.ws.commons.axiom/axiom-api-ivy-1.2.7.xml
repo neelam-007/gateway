@@ -3,7 +3,7 @@
 	<info organisation="org.apache.ws.commons.axiom"
 		module="axiom-api"
 		revision="1.2.7"
-		status="integration"
+		status="release"
 		publication="20080417021616"
 	>
 		<m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>1.2</m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>

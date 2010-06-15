@@ -3,7 +3,7 @@
 	<info organisation="commons-lang"
 		module="commons-lang"
 		revision="2.4"
-		status="integration"
+		status="release"
 		publication="20080318224228"
 	>
 		<m:properties__commons.jira.id>LANG</m:properties__commons.jira.id>

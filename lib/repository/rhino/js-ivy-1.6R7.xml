@@ -3,7 +3,7 @@
 	<info organisation="rhino"
 		module="js"
 		revision="1.6R7"
-		status="integration"
+		status="release"
 		publication="20070826073352"
 	/>
 	<configurations>

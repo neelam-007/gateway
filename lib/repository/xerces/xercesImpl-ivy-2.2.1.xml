@@ -3,7 +3,7 @@
 	<info organisation="xerces"
 		module="xercesImpl"
 		revision="2.2.1"
-		status="integration"
+		status="release"
 		publication="20051227075421"
 	/>
 	<configurations>

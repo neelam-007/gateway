@@ -3,7 +3,7 @@
 	<info organisation="log4j"
 		module="log4j"
 		revision="1.2.8"
-		status="integration"
+		status="release"
 		publication="20051108140835"
 	/>
 	<configurations>

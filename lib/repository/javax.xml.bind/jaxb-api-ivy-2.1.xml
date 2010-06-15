@@ -3,7 +3,7 @@
 	<info organisation="javax.xml.bind"
 		module="jaxb-api"
 		revision="2.1"
-		status="integration"
+		status="release"
 		publication="20071001005213"
 	/>
 	<configurations>

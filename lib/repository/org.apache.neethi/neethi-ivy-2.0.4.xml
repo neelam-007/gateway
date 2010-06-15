@@ -3,7 +3,7 @@
 	<info organisation="org.apache.neethi"
 		module="neethi"
 		revision="2.0.4"
-		status="integration"
+		status="release"
 		publication="20080417021648"
 	>
 		<m:properties__failIfNoTests>false</m:properties__failIfNoTests>

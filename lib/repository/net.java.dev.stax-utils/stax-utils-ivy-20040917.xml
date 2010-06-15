@@ -3,7 +3,7 @@
 	<info organisation="net.java.dev.stax-utils"
 		module="stax-utils"
 		revision="20040917"
-		status="integration"
+		status="release"
 		publication="20060502210644"
 	/>
 	<configurations>

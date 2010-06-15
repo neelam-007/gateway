@@ -3,7 +3,7 @@
 	<info organisation="com.sun.xml.bind"
 		module="jaxb-impl"
 		revision="2.1.7"
-		status="integration"
+		status="release"
 		publication="20081003185000"
 	>
 		<description homepage="" />

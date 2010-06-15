@@ -3,7 +3,7 @@
 	<info organisation="jasperreports"
 		module="jasperreports"
 		revision="3.1.2-p1"
-		status="integration"
+		status="release"
 		publication="20080926130913"
 	>
 		<license name="GNU Lesser General Public License" url="http://jasperreports.sourceforge.net/license.html" />

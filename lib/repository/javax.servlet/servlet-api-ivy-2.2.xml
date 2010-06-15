@@ -3,7 +3,7 @@
 	<info organisation="javax.servlet"
 		module="servlet-api"
 		revision="2.2"
-		status="integration"
+		status="release"
 		publication="20051108135813"
 	/>
 	<configurations>

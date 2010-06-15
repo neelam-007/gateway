@@ -3,7 +3,7 @@
 	<info organisation="commons-logging"
 		module="commons-logging"
 		revision="1.1.1"
-		status="integration"
+		status="release"
 		publication="20071126122410"
 	>
 		<m:properties__organization.logo>http://www.apache.org/images/asf_logo_wide.gif</m:properties__organization.logo>

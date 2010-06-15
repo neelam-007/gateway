@@ -3,7 +3,7 @@
 	<info organisation="javax.xml.ws"
 		module="jaxws-api"
 		revision="2.1"
-		status="integration"
+		status="release"
 		publication="20061014081242"
 	>
 		<description homepage="" />

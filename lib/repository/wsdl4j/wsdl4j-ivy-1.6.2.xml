@@ -3,7 +3,7 @@
 	<info organisation="wsdl4j"
 		module="wsdl4j"
 		revision="1.6.2"
-		status="integration"
+		status="release"
 		publication="20080605095327"
 	/>
 	<configurations>

@@ -3,7 +3,7 @@
 	<info organisation="commons-beanutils"
 		module="commons-beanutils"
 		revision="1.7.0"
-		status="integration"
+		status="release"
 		publication="20051108142021"
 	/>
 	<configurations>

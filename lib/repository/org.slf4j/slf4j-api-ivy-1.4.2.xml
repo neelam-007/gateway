@@ -3,7 +3,7 @@
 	<info organisation="org.slf4j"
 		module="slf4j-api"
 		revision="1.4.2"
-		status="integration"
+		status="release"
 		publication="20070712132849"
 	>
 		<m:dependency.management__log4j__log4j>1.2.13</m:dependency.management__log4j__log4j>

@@ -3,7 +3,7 @@
 	<info organisation="xml-apis"
 		module="xml-apis"
 		revision="1.0.b2"
-		status="integration"
+		status="release"
 		publication="20070208163046"
 	/>
 	<configurations>

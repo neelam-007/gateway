@@ -3,7 +3,7 @@
 	<info organisation="c3p0"
 		module="c3p0"
 		revision="0.9.1.2"
-		status="integration"
+		status="release"
 		publication="20070823030640"
 	/>
 	<configurations>

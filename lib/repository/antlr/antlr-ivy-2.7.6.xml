@@ -3,7 +3,7 @@
 	<info organisation="antlr"
 		module="antlr"
 		revision="2.7.6"
-		status="integration"
+		status="release"
 		publication="20060130173534"
 	/>
 	<configurations>

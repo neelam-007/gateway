@@ -3,7 +3,7 @@
 	<info organisation="com.lowagie"
 		module="itext"
 		revision="2.1.0"
-		status="integration"
+		status="release"
 		publication="20080404100358"
 	>
 		<license name="Mozilla Public License" url="http://www.mozilla.org/MPL/MPL-1.1.html" />

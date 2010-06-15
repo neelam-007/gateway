@@ -3,7 +3,7 @@
 	<info organisation="org.jvnet.staxex"
 		module="stax-ex"
 		revision="1.2"
-		status="integration"
+		status="release"
 		publication="20081003180946"
 	>
 		<license name="Common Development And Distribution License (CDDL) Version 1.0" url="http://www.sun.com/cddl/cddl.html" />

@@ -3,7 +3,7 @@
 	<info organisation="xml-apis"
 		module="xml-apis"
 		revision="1.3.02"
-		status="integration"
+		status="release"
 		publication="20051118211715"
 	>
 		<description homepage="http://xml.apache.org/commons/#external" />

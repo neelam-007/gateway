@@ -3,7 +3,7 @@
 	<info organisation="jfree"
 		module="jcommon"
 		revision="1.0.12"
-		status="integration"
+		status="release"
 		publication="20071115200725"
 	>
 		<license name="GNU Lesser General Public Licence" url="http://www.gnu.org/licenses/lgpl.txt" />

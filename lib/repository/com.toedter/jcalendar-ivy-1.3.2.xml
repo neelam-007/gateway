@@ -3,7 +3,7 @@
 	<info organisation="com.toedter"
 		module="jcalendar"
 		revision="1.3.2"
-		status="integration"
+		status="release"
 		publication="20080126173757"
 	/>
 	<configurations>

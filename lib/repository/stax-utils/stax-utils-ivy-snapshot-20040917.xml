@@ -3,7 +3,7 @@
 	<info organisation="stax-utils"
 		module="stax-utils"
 		revision="snapshot-20040917"
-		status="integration"
+		status="release"
 		publication="20060502210508"
 	/>
 	<configurations>

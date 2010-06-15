@@ -3,7 +3,7 @@
 	<info organisation="commons-io"
 		module="commons-io"
 		revision="1.4"
-		status="integration"
+		status="release"
 		publication="20080120124407"
 	>
 		<m:properties__organization.logo>http://www.apache.org/images/asf_logo_wide.gif</m:properties__organization.logo>

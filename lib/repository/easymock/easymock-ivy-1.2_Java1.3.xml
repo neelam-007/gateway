@@ -3,7 +3,7 @@
 	<info organisation="easymock"
 		module="easymock"
 		revision="1.2_Java1.3"
-		status="integration"
+		status="release"
 		publication="20051108140904"
 	/>
 	<configurations>

@@ -3,7 +3,7 @@
 	<info organisation="jaxen"
 		module="jaxen"
 		revision="1.1.1"
-		status="integration"
+		status="release"
 		publication="20070505143021"
 	/>
 	<configurations>

@@ -3,7 +3,7 @@
 	<info organisation="com.ibm.icu"
 		module="icu4j"
 		revision="2.6.1"
-		status="integration"
+		status="release"
 		publication="20060221041503"
 	/>
 	<configurations>

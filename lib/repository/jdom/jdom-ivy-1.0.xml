@@ -3,7 +3,7 @@
 	<info organisation="jdom"
 		module="jdom"
 		revision="1.0"
-		status="integration"
+		status="release"
 		publication="20051222042056"
 	/>
 	<configurations>

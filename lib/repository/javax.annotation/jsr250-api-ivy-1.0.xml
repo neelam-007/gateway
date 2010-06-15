@@ -3,7 +3,7 @@
 	<info organisation="javax.annotation"
 		module="jsr250-api"
 		revision="1.0"
-		status="integration"
+		status="release"
 		publication="20070515132559"
 	/>
 	<configurations>

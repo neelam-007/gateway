@@ -3,7 +3,7 @@
 	<info organisation="junit"
 		module="junit"
 		revision="3.8.1"
-		status="integration"
+		status="release"
 		publication="20070514143418"
 	/>
 	<configurations>

@@ -3,7 +3,7 @@
 	<info organisation="asm"
 		module="asm"
 		revision="2.2.3"
-		status="integration"
+		status="release"
 		publication="20060827184938"
 	>
 		<m:dependency.management__asm__asm-analysis>2.2.3</m:dependency.management__asm__asm-analysis>

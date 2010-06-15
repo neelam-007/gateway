@@ -3,7 +3,7 @@
 	<info organisation="xom"
 		module="xom"
 		revision="1.0"
-		status="integration"
+		status="release"
 		publication="20070521095014"
 	/>
 	<configurations>

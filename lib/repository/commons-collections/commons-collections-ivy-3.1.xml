@@ -3,7 +3,7 @@
 	<info organisation="commons-collections"
 		module="commons-collections"
 		revision="3.1"
-		status="integration"
+		status="release"
 		publication="20051108143131"
 	/>
 	<configurations>

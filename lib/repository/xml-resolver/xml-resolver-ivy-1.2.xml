@@ -3,7 +3,7 @@
 	<info organisation="xml-resolver"
 		module="xml-resolver"
 		revision="1.2"
-		status="integration"
+		status="release"
 		publication="20061222053752"
 	/>
 	<configurations>

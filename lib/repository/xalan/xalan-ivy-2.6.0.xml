@@ -3,7 +3,7 @@
 	<info organisation="xalan"
 		module="xalan"
 		revision="2.6.0"
-		status="integration"
+		status="release"
 		publication="20051108140738"
 	/>
 	<configurations>

@@ -3,7 +3,7 @@
 	<info organisation="com.sun.xml.ws"
 		module="jaxws-rt"
 		revision="2.1.4"
-		status="integration"
+		status="release"
 		publication="20081003184308"
 	>
 		<license name="

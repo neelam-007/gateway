@@ -3,7 +3,7 @@
 	<info organisation="com.sun.xml.stream.buffer"
 		module="streambuffer"
 		revision="0.7"
-		status="integration"
+		status="release"
 		publication="20081003175830"
 	>
 		<description homepage="" />

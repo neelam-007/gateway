@@ -3,7 +3,7 @@
 	<info organisation="servletapi"
 		module="servletapi"
 		revision="2.2"
-		status="integration"
+		status="release"
 		publication="20051108141821"
 	/>
 	<configurations>
