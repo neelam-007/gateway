@@ -24,8 +24,6 @@ public class ModuleLoadListener {
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "Simple raw transport module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
-
-            // TODO register new schemes with some new global transport management facility, then have the SSM connector properties dialog pick them up
         }
     }
 

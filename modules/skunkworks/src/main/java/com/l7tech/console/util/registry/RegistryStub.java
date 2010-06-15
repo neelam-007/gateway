@@ -251,6 +251,11 @@ public class RegistryStub extends Registry {
             public InetAddress[] getAvailableBindAddresses() {
                 return null;
             }
+
+            @Override
+            public String[] getAllRegisteredProtocolNames() {
+                return new String[0];
+            }
         };
     }
 

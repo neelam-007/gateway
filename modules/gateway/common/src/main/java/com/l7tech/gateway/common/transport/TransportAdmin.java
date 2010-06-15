@@ -1,15 +1,16 @@
 package com.l7tech.gateway.common.transport;
 
-import static com.l7tech.objectmodel.EntityType.SSG_CONNECTOR;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.InetAddress;
 import java.util.Collection;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.SSG_CONNECTOR;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
  * Provides a remote interface for creating, reading, updating and deleting Gateway HTTP/HTTPS/FTP/FTPS listen ports.
@@ -110,5 +111,15 @@ public interface TransportAdmin {
      */
     @Transactional(readOnly=true)
     InetAddress[] getAvailableBindAddresses();
+
+    /**
+     * Get all protocols that have registered as handlers for SsgConnector-type listen ports.
+     * Only handlers that are currently licensed will be included.
+     *
+     * @return an array of protocol names, ie { "http", "https", "ftp", "ftps" }.  Never null,
+     *         and normally never empty (unless perhaps an extremely unusual custom Gateway config is in use).
+     */
+    @Transactional(readOnly=true)
+    String[] getAllRegisteredProtocolNames();
 
 }

@@ -78,9 +78,28 @@ public class SimpleRawTransportModule extends TransportModule {
     @Override
     protected void doStart() throws LifecycleException {
         super.doStart();
+        registerCustomProtocols();
         if (gatewayState.isReadyForMessages()) {
             startInitialConnectors();
         }
+    }
+
+    private void registerCustomProtocols() {
+        for (String scheme : SUPPORTED_SCHEMES) {
+            ssgConnectorManager.registerCustomProtocol(scheme, this);
+        }
+    }
+
+    @Override
+    protected void doClose() throws LifecycleException {
+        super.doClose();
+        unregisterCustomProtocols();
+    }
+
+    private void unregisterCustomProtocols() {
+        for (String scheme : SUPPORTED_SCHEMES) {
+            ssgConnectorManager.unregisterCustomProtocol(scheme, this);
+        }        
     }
 
     @Override

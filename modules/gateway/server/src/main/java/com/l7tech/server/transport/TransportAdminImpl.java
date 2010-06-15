@@ -128,4 +128,8 @@ public class TransportAdminImpl implements TransportAdmin {
         }
     }
 
+    @Override
+    public String[] getAllRegisteredProtocolNames() {
+        return connectorManager.getCustomProtocols();
+    }
 }

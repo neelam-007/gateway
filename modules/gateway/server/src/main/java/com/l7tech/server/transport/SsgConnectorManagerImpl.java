@@ -30,6 +30,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,6 +49,7 @@ public class SsgConnectorManagerImpl
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
+    private final ConcurrentMap<String, TransportModule> transportModulesByScheme = new ConcurrentSkipListMap<String, TransportModule>(String.CASE_INSENSITIVE_ORDER);
 
     private final AtomicReference<Pair<String, Set<InterfaceTag>>> interfaceTags = new AtomicReference<Pair<String, Set<InterfaceTag>>>(null);
     private ApplicationEventPublisher applicationEventPublisher;
@@ -190,6 +193,22 @@ public class SsgConnectorManagerImpl
             throw new ListenerException("No address pattern for interface named " + bindAddress + " matches any network address on this node (for listen port " + port + ")");
 
         return match.getHostAddress();
+    }
+
+    @Override
+    public void registerCustomProtocol(String protocolName, TransportModule transportModule) {
+        transportModulesByScheme.put(protocolName, transportModule);
+    }
+
+    @Override
+    public void unregisterCustomProtocol(String protocolName, TransportModule transportModule) {
+        transportModulesByScheme.remove(protocolName, transportModule);
+    }
+
+    @Override
+    public String[] getCustomProtocols() {
+        final Set<String> schemes = transportModulesByScheme.keySet();
+        return schemes.toArray(new String[schemes.size()]);
     }
 
     protected boolean looksLikeInterfaceTagName(String maybeTagname) {

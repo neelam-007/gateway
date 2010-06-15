@@ -169,12 +169,18 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         };
         privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
-        protocolComboBox.setModel(new DefaultComboBoxModel(new Object[] {
-                SCHEME_HTTP,
-                SCHEME_HTTPS,
-                SCHEME_FTP,
-                SCHEME_FTPS,
-        }));
+        Set<String> schemes = new LinkedHashSet<String>();
+        schemes.add(SCHEME_HTTP.toUpperCase());
+        schemes.add(SCHEME_HTTPS.toUpperCase());
+        schemes.add(SCHEME_FTP.toUpperCase());
+        schemes.add(SCHEME_FTPS.toUpperCase());
+        String[] otherProtos = Registry.getDefault().getTransportAdmin().getAllRegisteredProtocolNames();
+        for (String proto : otherProtos) {
+            String up = proto.toUpperCase();
+            if (!schemes.contains(up))
+                schemes.add(up);
+        }
+        protocolComboBox.setModel(new DefaultComboBoxModel(schemes.toArray()));
 
         protocolComboBox.addItemListener(new ItemListener() {
             @Override
@@ -681,8 +687,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String proto = getSelectedProtocol();
         boolean ssl = isSslProto(proto);
         boolean ftp = isFtpProto(proto);
+        boolean http = isHttpProto(proto);
+        boolean custom = !ftp && !http;
 
-        if (ftp) {
+        if (custom) {
+            setEnableAndSelect(false, true, "Enabled because it is required for a modular transport", cbEnableMessageInput);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices, cbEnablePCAPI);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
+        } else if (ftp) {
             setEnableAndSelect(false, true, "Enabled because it is required for FTP", cbEnableMessageInput);
             setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices, cbEnablePCAPI);
             setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
