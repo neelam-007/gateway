@@ -796,22 +796,18 @@ public class WssDecoratorImpl implements WssDecorator {
      * If there are any L7a or WSA headers in the message, and we are signing anything else, then sign them too
      */
     private void addAddressingElements( final Document soapMsg, final Set<Element> signList ) throws InvalidDocumentFormatException {
-        {
-            Element messageId = SoapUtil.getL7aMessageIdElement(soapMsg);
-            if (messageId != null && !signList.isEmpty())
-                signList.add(messageId);
-            Element relatesTo = SoapUtil.getL7aRelatesToElement(soapMsg);
-            if (relatesTo != null && !signList.isEmpty())
-                signList.add(relatesTo);
-        }
-        {
-            Element messageId = SoapUtil.getWsaMessageIdElement(soapMsg, null);
-            if (messageId != null && !signList.isEmpty())
-                signList.add(messageId);
-            Element relatesTo = SoapUtil.getWsaRelatesToElement(soapMsg);
-            if (relatesTo != null && !signList.isEmpty())
-                signList.add(relatesTo);
-        }
+        // L7a addressing
+        Element messageId = SoapUtil.getL7aMessageIdElement(soapMsg);
+        if (messageId != null && !signList.isEmpty())
+            signList.add(messageId);
+        Element relatesTo = SoapUtil.getL7aRelatesToElement(soapMsg);
+        if (relatesTo != null && !signList.isEmpty())
+            signList.add(relatesTo);
+
+        // WSA addressing
+        final List<Element> addressingElements = SoapUtil.getWsaAddressingElements(soapMsg);
+        if (addressingElements != null && !addressingElements.isEmpty() && !signList.isEmpty())
+            signList.addAll(addressingElements);
     }
 
     private Boolean getMustUnderstand( final DecorationRequirements dreq ) {

@@ -810,6 +810,59 @@ public class SoapUtil extends SoapConstants {
     }
 
     /**
+     * Get all WS-Addressing elements from the specified message.
+     *
+     * <p>The elements can be from any (single) supported addressing namespace.</p>
+     *
+     * @param soapMsg The soap envelope to examine
+     * @return The addressing elements (may be empty, never null)
+     */
+    public static List<Element> getWsaAddressingElements(Document soapMsg) throws InvalidDocumentFormatException {
+        return getWsaAddressingElements(soapMsg, null);
+    }
+
+    /**
+     * Get all WS-Addressing elements from the specified message.
+     *
+     * <p>The elements can be from any (single) supported addressing namespace.</p>
+     *
+     * @param soapMsg The soap envelope to examine
+     * @param otherNamespaces The namespaces to check instead of the default addressing namespaces
+     * @return The addressing elements (may be empty, never null)
+     */
+    public static List<Element> getWsaAddressingElements(Document soapMsg, String[] otherNamespaces) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
+        if (header == null) return Collections.emptyList();
+
+        final List<Element> addressingElements = new ArrayList<Element>();
+        final String[] namespaces;
+        if (otherNamespaces == null) {
+            namespaces = SoapConstants.WSA_NAMESPACE_ARRAY;
+        } else {
+            namespaces = otherNamespaces;
+        }
+
+        for ( final String namespace : namespaces ) {
+            Node childNode = header.getFirstChild();
+            while ( childNode != null ) {
+                if ( childNode.getNodeType() == Node.ELEMENT_NODE ) {
+                    if ( namespace.equals( childNode.getNamespaceURI() )) {
+                        addressingElements.add( (Element) childNode );
+                    }
+                }
+                childNode = childNode.getNextSibling();
+            }
+
+            // break if found
+            if ( !addressingElements.isEmpty() ) {
+                break;
+            }
+        }
+
+        return addressingElements;
+    }
+
+    /**
      * Get the L7a:RelatesTo URI from the specified message, or null if there isn't one.
      *
      * @param soapMsg the soap envelope to examine

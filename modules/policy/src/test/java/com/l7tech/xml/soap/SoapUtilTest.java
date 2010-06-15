@@ -20,6 +20,7 @@ import org.w3c.dom.Element;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Operation;
+import java.util.List;
 
 /**
  * For testing stuff in SoapUtil class
@@ -176,6 +177,31 @@ public class SoapUtilTest  {
         assertEquals(4, bits[2].length());
         assertEquals(4, bits[3].length());
         assertEquals(12, bits[4].length());
+    }
+
+    @Test
+    public void testWsAddressing() throws Exception {
+        try {
+            SoapUtil.getWsaAddressingElements( XmlUtil.parse( "<a/>" ));
+            fail("Expected exception for non SOAP message.");
+        } catch ( InvalidDocumentFormatException e ) {
+            // expected
+        }
+
+        final List<Element> empty = SoapUtil.getWsaAddressingElements(  XmlUtil.parse( "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Body/></soap:Envelope>" ) );
+        assertNotNull( "Empty list not null", empty );
+        assertTrue("Empty list", empty.isEmpty());
+        
+        final Document soapDoc = TestDocuments.getTestDocument(TestDocuments.DIR + "dotNetSignedSoapRequest.xml");
+        final List<Element> elements = SoapUtil.getWsaAddressingElements( soapDoc );
+        assertEquals("Element count", 4, elements.size());
+
+        final List<Element> notFound = SoapUtil.getWsaAddressingElements( soapDoc, new String[]{SoapUtil.WSA_NAMESPACE_10} );
+        assertNotNull( "Empty list not null", notFound );
+        assertTrue("Empty list", notFound.isEmpty());
+
+        final List<Element> found = SoapUtil.getWsaAddressingElements( soapDoc, new String[]{SoapUtil.WSA_NAMESPACE} );
+        assertEquals("Element count", 4, found.size());
     }
 
     public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT =
