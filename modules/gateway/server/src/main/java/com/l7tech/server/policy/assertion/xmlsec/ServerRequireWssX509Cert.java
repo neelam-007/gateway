@@ -11,6 +11,7 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -21,6 +22,7 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.BeanFactory;
@@ -134,7 +136,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
 
         Element processedSignatureElement = null;
         for (XmlSecurityToken tok : tokens) {
-            if (tok instanceof X509SigningSecurityToken) {
+            if (isX509Token(tok)) {
                 X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
                 if ( x509Tok.isPossessionProved() &&
                      isTargetSignature(requiredSignatureElements,requiredSignatureReferenceElements,x509Tok)) {
@@ -173,9 +175,18 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerRequireWssX509Cert.class.getName());
+    private static final boolean strictTokenTypeCheck = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.xmlsec.x509StrictTokenTypeCheck", true );
 
     private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
+
+    private boolean isX509Token( XmlSecurityToken tok ) {
+        if ( strictTokenTypeCheck ) {
+            return tok instanceof X509BinarySecurityTokenImpl; 
+        } else {
+            return tok instanceof X509SigningSecurityToken;
+        }
+    }
 
     private AssertionStatus getBadAuthStatus( final PolicyEnforcementContext context ) {
         AssertionStatus status;
