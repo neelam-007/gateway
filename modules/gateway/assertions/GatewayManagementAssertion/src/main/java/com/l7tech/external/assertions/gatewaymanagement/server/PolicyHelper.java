@@ -31,6 +31,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -77,6 +78,7 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -180,7 +182,8 @@ public class PolicyHelper {
                         includedPolicy.setOid( Policy.DEFAULT_OID );
                         includedPolicy.setFolder( null );
 
-                        if ( !referenceFinder.rbacServices.isPermittedForEntity(referenceFinder.getUser(), includedPolicy, OperationType.CREATE, null ) )
+                        if ( referenceFinder.getUser()==null ||
+                             !referenceFinder.rbacServices.isPermittedForEntity(referenceFinder.getUser(), includedPolicy, OperationType.CREATE, null ) )
                             throw new PermissionDeniedException( OperationType.CREATE, EntityType.POLICY );
                         long oid = referenceFinder.policyManager.save( includedPolicy );
 
@@ -381,7 +384,7 @@ public class PolicyHelper {
         private <E extends Entity> E filter( final E entity ) throws FindException {
             E filtered = null;
 
-            if ( entity != null && rbacServices.isPermittedForEntity( getUser(), entity, OperationType.READ, null ) ) {
+            if ( entity != null && getUser() != null && rbacServices.isPermittedForEntity( getUser(), entity, OperationType.READ, null ) ) {
                 filtered = entity;
             }
 
@@ -402,10 +405,13 @@ public class PolicyHelper {
                 }
             }
 
-            if ( entityType != null && rbacServices.isPermittedForAnyEntityOfType(getUser(), OperationType.READ, entityType) ) {
+            final User user = getUser();
+            if ( user == null ) {
+                filtered = Collections.emptyList();
+            } else if ( entityType != null && rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, entityType) ) {
                 filtered = entitiesOrEntityHeaders;
             } else {
-                filtered = securityFilter.filter( entitiesOrEntityHeaders, getUser(), OperationType.READ, null );
+                filtered = securityFilter.filter( entitiesOrEntityHeaders, user, OperationType.READ, null );
             }
 
             return filtered;
@@ -423,7 +429,11 @@ public class PolicyHelper {
 
         @Override
         public SsgKeyEntry findKeyEntry( final String alias, final long keystoreOid ) throws FindException, KeyStoreException {
-            return filter(ssgKeyStoreManager.lookupKeyByKeyAlias( alias, keystoreOid ) );
+            try {
+                return filter(ssgKeyStoreManager.lookupKeyByKeyAlias( alias, keystoreOid ) );
+            } catch ( ObjectNotFoundException e ) {
+                return null;
+            }
         }
 
         @Override
