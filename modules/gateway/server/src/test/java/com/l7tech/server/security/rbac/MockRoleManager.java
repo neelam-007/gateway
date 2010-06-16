@@ -136,6 +136,12 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     }
 
     @Override
+    public boolean isPermittedForSomeEntityOfType(User authenticatedUser, OperationType requiredOperation, EntityType requiredType)
+        throws FindException {
+        return rbacServices.isPermittedForSomeEntityOfType(authenticatedUser, requiredOperation, requiredType);
+    }
+
+    @Override
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName)
         throws FindException {
         return rbacServices.isPermittedForEntity(user, entity, operation, otherOperationName);

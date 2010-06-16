@@ -75,9 +75,24 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
         throws FindException {
         if (authenticatedUser == null || requiredType == null) throw new NullPointerException();
         logger.log(Level.FINE, "Checking for permission to {0} any {1}", new Object[] { requiredOperation.getName(), requiredType.getName()});
-        for (Role role : roleManager.getAssignedRoles(authenticatedUser)) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
+        return isPermittedForEntityOfType( authenticatedUser, requiredOperation, requiredType, true );
+    }
+
+    @Override
+    public boolean isPermittedForSomeEntityOfType(User authenticatedUser, OperationType requiredOperation, EntityType requiredType)
+        throws FindException {
+        if (authenticatedUser == null || requiredType == null) throw new NullPointerException();
+        logger.log(Level.FINE, "Checking for permission to {0} some {1}", new Object[] { requiredOperation.getName(), requiredType.getName()});
+        return isPermittedForEntityOfType( authenticatedUser, requiredOperation, requiredType, false );
+    }
+
+    private boolean isPermittedForEntityOfType( final User authenticatedUser,
+                                                final OperationType requiredOperation,
+                                                final EntityType requiredType,
+                                                final boolean allEntities ) throws FindException {
+        for ( final Role role : roleManager.getAssignedRoles(authenticatedUser)) {
+            for ( final Permission perm : role.getPermissions() ) {
+                if (allEntities && perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
                 EntityType ptype = perm.getEntityType();
                 if (ptype == ANY || ptype == requiredType) return true;

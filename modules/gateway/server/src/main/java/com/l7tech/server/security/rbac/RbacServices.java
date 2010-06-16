@@ -37,6 +37,10 @@ public interface RbacServices {
 
     /**
      * Returns <em>true</em> if the specified operation is permitted against any entity of the specified type; false otherwise.
+     *
+     * <p>Another way to phrase this is that permission to perform the
+     * specified operation against all entities of a type is required.</p>
+     *
      * @param authenticatedUser the User who was authenticated; must not be null
      * @param requiredOperation the operation required; must be non-null and a member of {@link com.l7tech.gateway.common.security.rbac.OperationType#ALL_CRUD}
      * @param requiredType the type against which the operation must be permitted; must not be null or empty
@@ -44,6 +48,21 @@ public interface RbacServices {
      * @throws FindException in the event of a database problem
      */
     boolean isPermittedForAnyEntityOfType(User authenticatedUser,
+                                                 OperationType requiredOperation,
+                                                 EntityType requiredType)
+            throws FindException;
+
+
+    /**
+     * Returns <em>true</em> if the specified operation is permitted against at least one entity of the specified type; false otherwise.
+     *
+     * @param authenticatedUser the User who was authenticated; must not be null
+     * @param requiredOperation the operation required; must be non-null and a member of {@link com.l7tech.gateway.common.security.rbac.OperationType#ALL_CRUD}
+     * @param requiredType the type against which the operation must be permitted; must not be null or empty
+     * @return true if the specified operation is permitted for some entity of the specified type; false otherwise
+     * @throws FindException in the event of a database problem
+     */
+    boolean isPermittedForSomeEntityOfType(User authenticatedUser,
                                                  OperationType requiredOperation,
                                                  EntityType requiredType)
             throws FindException;

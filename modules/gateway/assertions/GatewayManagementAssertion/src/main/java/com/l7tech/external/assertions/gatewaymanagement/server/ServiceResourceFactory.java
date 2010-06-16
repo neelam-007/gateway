@@ -11,10 +11,12 @@ import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.ServiceDetail;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.UpdateException;
@@ -75,6 +77,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
             @Override
             public PolicyImportResult execute() throws ObjectModelException, ResourceFactoryException {
                 final PublishedService service = selectEntity( selectorMap );
+                checkPermitted( OperationType.UPDATE, null, service );
                 PolicyImportResult result = policyHelper.importPolicy( service.getPolicy(), resource );
                 serviceManager.update( service );
                 return result;
@@ -88,6 +91,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
             @Override
             public PolicyExportResult execute() throws ObjectModelException, ResourceNotFoundException {
                 final PublishedService service = selectEntity( selectorMap );
+                checkPermitted( OperationType.READ, null, service );
                 return policyHelper.exportPolicy( service.getPolicy() );
             }
         }, true, ResourceNotFoundException.class );
@@ -99,13 +103,16 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         return transactional( new TransactionalCallback<PolicyValidationResult,ResourceFactoryException>(){
             @Override
             public PolicyValidationResult execute() throws ObjectModelException, ResourceFactoryException {
+                checkPermittedForSomeEntity( OperationType.READ, EntityType.SERVICE );
                 return policyHelper.validatePolicy( resource, new PolicyHelper.PolicyResolver(){
                     private PublishedService service;
 
                     private PublishedService getService() throws ResourceNotFoundException {
                         PublishedService service = this.service;
                         if ( service == null ) {
-                            service = this.service = selectEntity( selectorMap );
+                            service = selectEntity( selectorMap );
+                            checkPermitted( OperationType.READ, null, service );
+                            this.service = service;
                         }
                         return service;
                     }

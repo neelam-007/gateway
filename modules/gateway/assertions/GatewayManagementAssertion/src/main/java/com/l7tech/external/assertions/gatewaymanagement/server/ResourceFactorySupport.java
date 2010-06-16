@@ -243,7 +243,6 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         return id;
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     protected final void checkPermitted( final OperationType operationType,
                                          final String otherOperationName,
                                          final Entity entity ) {
@@ -258,6 +257,18 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                 } else {
                     throw new PermissionDeniedException( operationType, entityType );
                 }
+            }
+        } catch ( FindException fe ) {
+            throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);
+        }
+    }
+
+    protected final void checkPermittedForSomeEntity( final OperationType operationType,
+                                                      final EntityType entityType ) {
+        final User user = JaasUtils.getCurrentUser();
+        try {
+            if ( user==null || !rbacServices.isPermittedForSomeEntityOfType( user, operationType, entityType ) ) {
+                throw new PermissionDeniedException( operationType, entityType );
             }
         } catch ( FindException fe ) {
             throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);

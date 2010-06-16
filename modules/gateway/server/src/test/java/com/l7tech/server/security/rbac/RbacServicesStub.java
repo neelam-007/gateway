@@ -27,6 +27,11 @@ public class RbacServicesStub implements RbacServices, SecurityFilter {
     }
 
     @Override
+    public boolean isPermittedForSomeEntityOfType( final User authenticatedUser, final OperationType requiredOperation, final EntityType requiredType ) throws FindException {
+        return true;
+    }
+
+    @Override
     public boolean isPermittedForEntity( final User user, final Entity entity, final OperationType operation, final String otherOperationName ) throws FindException {
         return true;
     }

@@ -144,6 +144,16 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
     @Override
+    @Transactional(readOnly=true)
+    public boolean isPermittedForSomeEntityOfType(final User authenticatedUser,
+                                                 final OperationType requiredOperation,
+                                                 final EntityType requiredType)
+            throws FindException
+    {
+        return rbacServices.isPermittedForSomeEntityOfType(authenticatedUser, requiredOperation, requiredType);
+    }
+
+    @Override
     public void update(Role role) throws UpdateException {
         // Quick pre-check for admin role assignment
         if (role.getTag() == Role.Tag.ADMIN && role.getRoleAssignments().isEmpty())

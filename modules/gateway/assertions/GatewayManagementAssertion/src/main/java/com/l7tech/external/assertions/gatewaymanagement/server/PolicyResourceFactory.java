@@ -10,6 +10,8 @@ import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -52,6 +54,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             @Override
             public PolicyImportResult execute() throws ObjectModelException, ResourceFactoryException {
                 final Policy policy = selectEntity( selectorMap );
+                checkPermitted( OperationType.UPDATE, null, policy );
                 PolicyImportResult result = policyHelper.importPolicy( policy, resource );
                 policyManager.update( policy );
                 return result;
@@ -65,6 +68,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             @Override
             public PolicyExportResult execute() throws ObjectModelException, ResourceNotFoundException {
                 final Policy policy = selectEntity( selectorMap );
+                checkPermitted( OperationType.READ, null, policy );
                 return policyHelper.exportPolicy( policy );
             }
         }, true, ResourceNotFoundException.class );
@@ -76,10 +80,13 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         return transactional( new TransactionalCallback<PolicyValidationResult,ResourceFactoryException>(){
             @Override
             public PolicyValidationResult execute() throws ObjectModelException, ResourceFactoryException {
+                checkPermittedForSomeEntity( OperationType.READ, EntityType.POLICY );
                 return policyHelper.validatePolicy( resource, new PolicyHelper.PolicyResolver(){
                     @Override
                     public Policy resolve() throws ResourceNotFoundException {
-                        return selectEntity( selectorMap );
+                        final Policy policy = selectEntity( selectorMap );
+                        checkPermitted( OperationType.READ, null, policy );
+                        return policy;
                     }
                     @Override
                     public Wsdl resolveWsdl() throws ResourceNotFoundException {
