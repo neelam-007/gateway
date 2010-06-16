@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -34,6 +36,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -66,6 +69,7 @@ import java.util.logging.Logger;
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected final Logger logger = Logger.getLogger(getClass().getName());
+    private static final boolean checkCertificatePresent = SyspropUtil.getBoolean( "com.l7tech.server.services.checkCertificatePresent", true );
 
     private WebApplicationContext applicationContext;
 
@@ -249,9 +253,14 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 if (!req.isSecure()) {
                     logger.info("HTTP Basic is being permitted without SSL");
                     authResults.add(authResult);
-                } else {
+                } else if ( !checkCertificatePresent ) {
+                    logger.finest("Certificate check is disabled.");
+                    authResults.add(authResult);
+                }else {
                     X509Certificate requestCert = ServletUtils.getRequestCert(req);
-                    Certificate dbCert = clientCertManager.getUserCert(u);
+                    Certificate dbCert = isLdapCerts(provider) ?
+                            ((LdapUser) u).getCertificate() :
+                            clientCertManager.getUserCert(u);
                     if (dbCert == null) {
                         logger.finest("User " + u.getLogin() + " does not have a cert in database, but authenticated successfully with HTTP Basic over SSL");
                         authResults.add(authResult);
@@ -297,6 +306,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new IssuedCertNotPresentedException(msg);
         }
         return new AhsAuthResult(sawCreds, authResults.toArray(new AuthenticationResult[authResults.size()]));
+    }
+
+    private boolean isLdapCerts( final IdentityProvider provider ) {
+        return provider.getConfig() instanceof LdapIdentityProviderConfig &&
+               ((LdapIdentityProviderConfig)provider.getConfig()).getUserCertificateUseType() != LdapIdentityProviderConfig.UserCertificateUseType.NONE ;     
     }
 
     /**
