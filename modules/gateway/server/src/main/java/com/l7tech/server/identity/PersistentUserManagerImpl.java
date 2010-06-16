@@ -59,8 +59,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             out.setProviderId(getProviderOid());
             return out;
         } catch (NumberFormatException nfe) {
-            logger.log(Level.SEVERE, null, nfe);
-            throw new FindException(nfe.toString(), nfe);
+            logger.fine("findByPrimaryKey called with invalid arg '"+oid+"'.");
+            return null;
         }
     }
 
