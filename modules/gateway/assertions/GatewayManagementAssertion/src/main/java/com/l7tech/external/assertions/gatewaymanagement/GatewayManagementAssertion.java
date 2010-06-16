@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
@@ -107,6 +108,30 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
                                    assertion,
                                    path,
                                    "Assertion is for use only with a Gateway Management Service",
+                                   null));
+            }
+
+            boolean seenIdentity = false;
+            for ( final Assertion assertion : path.getPath() ) {
+                if ( assertion == this.assertion ) {
+                    break;
+                }
+
+                if ( !assertion.isEnabled() || !Assertion.isRequest(assertion) ) {
+                    continue;
+                }
+
+                if ( assertion instanceof IdentityAssertion ) {
+                    seenIdentity = true;
+                    break;
+                }
+            }
+
+            if ( !seenIdentity ) {
+                result.addWarning(new PolicyValidatorResult.Warning(
+                                   assertion,
+                                   path,
+                                   "An authentication assertion should precede this assertion, anonymous users have no access permissions.",
                                    null));
             }
         }
