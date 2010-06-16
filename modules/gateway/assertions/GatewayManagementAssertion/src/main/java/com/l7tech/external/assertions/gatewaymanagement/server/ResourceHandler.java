@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.StaleUpdateException;
+import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
@@ -38,6 +39,7 @@ import com.sun.ws.management.framework.enumeration.EnumerationHandler;
 import org.dmtf.schemas.wbem.wsman._1.wsman.MixedDataType;
 import org.dmtf.schemas.wbem.wsman._1.wsman.SelectorType;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -591,6 +593,13 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             } else if ( ExceptionUtils.causedBy( e, StaleUpdateException.class) ) {
                 setOperationInfo( context, null, null, null, "Incorrect version (stale update)" );
                 throw new ConcurrencyFault();
+            } else if ( ExceptionUtils.causedBy( e, PolicyDeletionForbiddenException.class) ) {
+                setOperationInfo( context, null, null, null, "Policy in use, deletion forbidden." );
+                throw new ConcurrencyFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(ExceptionUtils.getCauseIfCausedBy( e, PolicyDeletionForbiddenException.class )), null, null, null));
+            } else if ( ExceptionUtils.causedBy( e, DataIntegrityViolationException.class) ) {
+                logger.log( Level.INFO, "Resource deletion forbidden (in use), '"+ExceptionUtils.getMessage(ExceptionUtils.getCauseIfCausedBy( e, DataIntegrityViolationException.class ))+"'", ExceptionUtils.getDebugException(e) );
+                setOperationInfo( context, null, null, null, "Entity in use, deletion forbidden." );
+                throw new ConcurrencyFault(SOAP.createFaultDetail("Entity in use, deletion forbidden.", null, null, null));
             } else {
                 setOperationInfo( context, null, null, null, "Error: " + ExceptionUtils.getMessage(e) );
                 logger.log( Level.WARNING, "Resource access error processing management request", e );
