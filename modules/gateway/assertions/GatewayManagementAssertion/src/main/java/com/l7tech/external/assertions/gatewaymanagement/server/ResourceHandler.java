@@ -1,11 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
@@ -81,39 +79,51 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
     /**
      * Extend handle to provide the correct context for an administrator action.
      */
+    @SuppressWarnings({ "unchecked" })
     @Override
     public void handle( final String action,
                         final String resourceURI,
                         final HandlerContext context,
                         final Management request,
                         final Management response ) throws Exception {
-        final String remoteAddress = (String)context.getRequestProperties().get("com.l7tech.remoteAddr");
+        final Map<String,Object> properties = (Map<String,Object>)context.getRequestProperties();
+        final String remoteAddress = (String)properties.get("com.l7tech.remoteAddr");
         final Subject subject = new Subject();
         if ( context.getPrincipal() != null ) {
             subject.getPrincipals().add( context.getPrincipal() );
         }
-        Subject.doAs( subject, new PrivilegedExceptionAction<Void>(){
-            @Override
-            public Void run() throws Exception {
-                final Exception[] exceptionHolder = new Exception[1];
-                RemoteUtils.runWithConnectionInfo(remoteAddress, null, new Runnable(){
-                    @Override
-                    public void run() {
-                        try {
-                            ResourceHandler.super.handle(action, resourceURI, context, request, response);
-                            setOperationInfo( context, null, null, null, "Success" );
-                        } catch (Exception e) {
-                            exceptionHolder[0] = e;
+        try {
+            Subject.doAs( subject, new PrivilegedExceptionAction<Void>(){
+                @Override
+                public Void run() throws Exception {
+                    EntityContext.reset();
+                    final Exception[] exceptionHolder = new Exception[1];
+                    RemoteUtils.runWithConnectionInfo(remoteAddress, null, new Runnable(){
+                        @Override
+                        public void run() {
+                            try {
+                                ResourceHandler.super.handle(action, resourceURI, context, request, response);
+                                setOperationInfo( context, null, "Success" );
+                            } catch (Exception e) {
+                                exceptionHolder[0] = e;
+                            }
                         }
-                    }
-                });
+                    });
 
-                if ( exceptionHolder[0] != null )
-                    throw exceptionHolder[0];
+                    if ( exceptionHolder[0] != null )
+                        throw exceptionHolder[0];
 
-                return null;
+                    return null;
+                }
+            } );
+        } finally {
+            properties.put( "com.l7tech.status.entityId", EntityContext.getEntityId() );
+            properties.put( "com.l7tech.status.entityType", EntityContext.getEntityTypeName() );
+            if ( properties.get( "com.l7tech.status.message" ) == null ) {
+                properties.put( "com.l7tech.status.message", EntityContext.getMessage() );
             }
-        } );
+            EntityContext.reset();
+        }
     }
 
     /**
@@ -126,14 +136,13 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         final OperationContext opContext = new OperationContext( context, request );
         final ResourceFactory<?> factory = opContext.getResourceFactory();
         final Map<String,String> selectorMap = buildSelectorMap( context, request, factory.getSelectors() );
-        setOperationInfo( context, "Read", null, getEntityType(factory), null );
+        setOperationInfo( context, "Read", null );
 
         try {
             final TransferExtensions transferRequest = new TransferExtensions(request);
             final TransferExtensions transferResponse = new TransferExtensions(response);
 
             final Object resource = factory.getResource( selectorMap );
-            setOperationInfo( context, null, getEntityId(resource), null, null );
 
             addNamespaces(transferResponse);
             transferResponse.setFragmentGetResponse( transferRequest.getFragmentHeader(), resource );
@@ -151,7 +160,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                      final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
         final ResourceFactory<?> factory = opContext.getResourceFactory();
-        setOperationInfo( context, "Update", null, getEntityType(factory), null );
+        setOperationInfo( context, "Update", null );
 
         if ( factory.isReadOnly() ) {
             throw new ActionNotSupportedFault(Transfer.PUT_ACTION_URI);
@@ -167,13 +176,12 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             final Object resourcePayload = getResourceWithFragmentUpdate( factory, selectorMap, transferRequest, fragmentHeader );
 
             final Object resource = factory.putResource( selectorMap, resourcePayload );
-            setOperationInfo( context, null, getEntityId(resource), null, null );
 
             addNamespaces(transferResponse);
             if ( resource == null ) {
                 transferResponse.setPutResponse();
             } else if ( fragmentHeader != null ) {
-			    transferResponse.setFragmentPutResponse( fragmentHeader, resource );
+                transferResponse.setFragmentPutResponse( fragmentHeader, resource );
             } else {
                 transferResponse.setPutResponse( resource );
             }
@@ -191,7 +199,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                         final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
         final ResourceFactory<?> factory = opContext.getResourceFactory();
-        setOperationInfo( context, "Delete", null, getEntityType(factory), null );
+        setOperationInfo( context, "Delete", null );
 
         if ( factory.isReadOnly() ) {
             throw new ActionNotSupportedFault(Transfer.DELETE_ACTION_URI);
@@ -201,10 +209,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
 
         try {
             final TransferExtensions transferResponse = new TransferExtensions(response);
-
-            String id = factory.deleteResource( selectorMap );
-            setOperationInfo( context, null, id, null, null );
-
+            factory.deleteResource( selectorMap );
             transferResponse.setDeleteResponse();
         } catch (Exception e) {
             handleOperationException(context, e);
@@ -220,7 +225,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                         final Management response ) {
         final OperationContext opContext = new OperationContext( context, request );
         final ResourceFactory<?> factory = opContext.getResourceFactory();
-        setOperationInfo( context, "Create", null, getEntityType(factory), null );
+        setOperationInfo( context, "Create", null );
 
         if ( factory.isReadOnly() ) {
             throw new ActionNotSupportedFault(Transfer.CREATE_ACTION_URI);
@@ -233,14 +238,13 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             final Object resourcePayload = getResource( transferRequest );
 
             final Map<String,String> selectorMap = factory.createResource( resourcePayload );
-            setOperationInfo( context, null, selectorMap.get( "id" ), null, null );
 
             final EndpointReferenceType epr = TransferSupport.createEpr(
-					request.getTo(),
+                    request.getTo(),
                     request.getResourceURI(),
                     selectorMap);
 
-	        transferResponse.setCreateResponse(epr);
+            transferResponse.setCreateResponse(epr);
         } catch (Exception e) {
             handleOperationException(context, e);
         }
@@ -255,7 +259,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                                    final Management request,
                                    final Management response ) throws Exception {
         boolean handled = false;
-        setOperationInfo( context, "Invoke", null, null, null );
+        setOperationInfo( context, "Invoke", null );
 
         if ( action != null && action.startsWith(MANAGEMENT_NAMESPACE+"/") ) {
             final OperationContext opContext = new OperationContext( context, request );
@@ -268,7 +272,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             final Method method = getCustomMethod( factory.getClass(), customMethod );
             final ResourceFactory.ResourceMethod resourceMethod = method.getAnnotation(ResourceFactory.ResourceMethod.class);
 
-            setOperationInfo( context, "Invoke ("+customMethod+")", null, getEntityType(factory), null );
+            setOperationInfo( context, "Invoke ("+customMethod+")", null );
             response.setAction( action + "Response" );
 
             try {
@@ -313,7 +317,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      */
     @Override
     public void release( final HandlerContext context, final Enumeration enuRequest, final Enumeration enuResponse ) {
-        setOperationInfo( context, "Enumerate (Release)", null, null, null );
+        setOperationInfo( context, "Enumerate (Release)", null );
         enumHandler.release( context, enuRequest, enuResponse );
     }
 
@@ -322,7 +326,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      */
     @Override
     public void pull( final HandlerContext context, final Enumeration enuRequest, final Enumeration enuResponse ) {
-        setOperationInfo( context, "Enumerate (Pull)", null, null, null );
+        setOperationInfo( context, "Enumerate (Pull)", null );
         enumHandler.pull( context, enuRequest, enuResponse );
     }
 
@@ -331,7 +335,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      */
     @Override
     public void enumerate( final HandlerContext context, final Enumeration enuRequest, final Enumeration enuResponse ) {
-        setOperationInfo( context, "Enumerate", null, null, null );
+        setOperationInfo( context, "Enumerate", null );
         enumHandler.enumerate( context, enuRequest, enuResponse );
     }
 
@@ -340,7 +344,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      */
     @Override
     public void getStatus( final HandlerContext context, final Enumeration enuRequest, final Enumeration enuResponse ) {
-        setOperationInfo( context, "Enumerate (Status)", null, null, null );
+        setOperationInfo( context, "Enumerate (Status)", null );
         enumHandler.getStatus( context, enuRequest, enuResponse );
     }
 
@@ -349,7 +353,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
      */
     @Override
     public void renew( final HandlerContext context, final Enumeration enuRequest, final Enumeration enuResponse ) {
-        setOperationInfo( context, "Enumerate (Renew)", null, null, null );
+        setOperationInfo( context, "Enumerate (Renew)", null );
         enumHandler.renew( context, enuRequest, enuResponse );
     }
 
@@ -521,34 +525,13 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         }} );
     }
 
-    private String getEntityType( final ResourceFactory<?> factory ) {
-        final EntityType type = factory.getType();
-        return type==null ? null : type.getName();
-    }
-
-    private String getEntityId( final Object resource ) {
-        String id = null;
-
-        if ( resource instanceof ManagedObject ) {
-            id = ((ManagedObject) resource).getId();
-        }
-
-        return id;
-    }
-
     @SuppressWarnings({ "unchecked" })
     private void setOperationInfo( final HandlerContext context,
                                    final String action,
-                                   final String entityId,
-                                   final String entityType,
                                    final String message ) {
         Map<String,Object> properties = (Map<String,Object>) context.getRequestProperties();
         if ( action != null )
             properties.put( "com.l7tech.status.action", action );
-        if ( entityId != null )
-            properties.put( "com.l7tech.status.entityId", entityId );
-        if ( entityType != null )
-            properties.put( "com.l7tech.status.entityType", entityType );
         if ( message != null )
             properties.put( "com.l7tech.status.message", message );
     }
@@ -559,10 +542,8 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
     private void handleOperationException( final HandlerContext context,
                                            final Throwable e ) {
         if ( e instanceof ResourceFactory.InvalidResourceSelectors ) {
-            setOperationInfo( context, null, null, null, "Entity not found" );
             throw new InvalidSelectorsFault(InvalidSelectorsFault.Detail.INSUFFICIENT_SELECTORS);
         } else if ( e instanceof ResourceFactory.ResourceNotFoundException ) {
-            setOperationInfo( context, null, null, null, "Entity not found" );
             throw new InvalidSelectorsFault(InvalidSelectorsFault.Detail.INVALID_VALUE);
         } else if ( e instanceof ResourceFactory.InvalidResourceException ) {
             ResourceFactory.InvalidResourceException ire = (ResourceFactory.InvalidResourceException) e;
@@ -578,39 +559,39 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                     detail = InvalidRepresentationFault.Detail.INVALID_NAMESPACE.toString();
                     break;
             }
-            setOperationInfo( context, null, null, null, ExceptionUtils.getMessage( e ) );
+            setOperationInfo( context, null, ExceptionUtils.getMessage( e ) );
             throw new InvalidRepresentationFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( e ), detail, null, null));
         } else if ( e instanceof PermissionDeniedException ) {
             String userId = JaasUtils.getCurrentUser()==null ? "<unauthenticated>" : JaasUtils.getCurrentUser().getLogin();
             logger.warning( ExceptionUtils.getMessage(e) + ", for user '"+userId+"'.");
-            setOperationInfo( context, null, null, null, "Access denied" );
+            setOperationInfo( context, null, "Access denied" );
             throw new AccessDeniedFault();
         } else if ( e instanceof ResourceFactory.ResourceAccessException ) {
             if ( ExceptionUtils.causedBy( e, DuplicateObjectException.class ) ) {
                 final DuplicateObjectException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateObjectException.class );
-                setOperationInfo( context, null, null, null, ExceptionUtils.getMessage( cause ) );
+                setOperationInfo( context, null, ExceptionUtils.getMessage( cause ) );
                 throw new AlreadyExistsFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( cause ), null, null, null));
             } else if ( ExceptionUtils.causedBy( e, StaleUpdateException.class) ) {
-                setOperationInfo( context, null, null, null, "Incorrect version (stale update)" );
+                setOperationInfo( context, null, "Incorrect version (stale update)" );
                 throw new ConcurrencyFault();
             } else if ( ExceptionUtils.causedBy( e, PolicyDeletionForbiddenException.class) ) {
-                setOperationInfo( context, null, null, null, "Policy in use, deletion forbidden." );
+                setOperationInfo( context, null, "Policy in use, deletion forbidden." );
                 throw new ConcurrencyFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(ExceptionUtils.getCauseIfCausedBy( e, PolicyDeletionForbiddenException.class )), null, null, null));
             } else if ( ExceptionUtils.causedBy( e, DataIntegrityViolationException.class) ) {
                 logger.log( Level.INFO, "Resource deletion forbidden (in use), '"+ExceptionUtils.getMessage(ExceptionUtils.getCauseIfCausedBy( e, DataIntegrityViolationException.class ))+"'", ExceptionUtils.getDebugException(e) );
-                setOperationInfo( context, null, null, null, "Entity in use, deletion forbidden." );
+                setOperationInfo( context, null, "Entity in use, deletion forbidden." );
                 throw new ConcurrencyFault(SOAP.createFaultDetail("Entity in use, deletion forbidden.", null, null, null));
             } else {
-                setOperationInfo( context, null, null, null, "Error: " + ExceptionUtils.getMessage(e) );
+                setOperationInfo( context, null, "Error: " + ExceptionUtils.getMessage(e) );
                 logger.log( Level.WARNING, "Resource access error processing management request", e );
                 throw (InternalErrorFault) new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
             }
         } else if ( e instanceof FaultException ) {
-            setOperationInfo( context, null, null, null, ExceptionUtils.getMessage(e) );
+            setOperationInfo( context, null, ExceptionUtils.getMessage(e) );
             throw (FaultException) e;
         } else {
             logger.log( Level.WARNING, "Error processing management request", e );
-            setOperationInfo( context, null, null, null, "Error processing request '" + ExceptionUtils.getMessage(e) + "'" );
+            setOperationInfo( context, null, "Error processing request '" + ExceptionUtils.getMessage(e) + "'" );
             throw (InternalErrorFault) new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(e), null, ExceptionUtils.getDebugException(e), null)).initCause(e);
         }
     }

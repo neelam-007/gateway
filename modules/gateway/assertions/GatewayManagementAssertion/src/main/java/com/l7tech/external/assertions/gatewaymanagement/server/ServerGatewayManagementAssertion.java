@@ -78,10 +78,10 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         // Validate content type
         final String contentTypeText = mimeKnob.getOuterContentType().getFullValue();
         final ContentType contentType = ContentType.createFromHttpContentType(contentTypeText);
-		if (contentType == null || !contentType.isAcceptable()) {
+        if (contentType == null || !contentType.isAcceptable()) {
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Content-Type not supported : " + contentTypeText );
-			return AssertionStatus.FALSIFIED;
-		}
+            return AssertionStatus.FALSIFIED;
+        }
 
         //
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -248,7 +248,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             final Charset charEncoding = contentTypeHeader.getEncoding();
             final HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
             final String url = httpRequestKnob.getRequestUrl();
-            final Map<String, Object> properties = new HashMap<String, Object>(1);
+            final Map<String, Object> properties = new HashMap<String, Object>();
             properties.put( "com.sun.ws.management.server.handler", "com.l7tech.external.assertions.wsmanagment.invalidhandlers" );
             properties.put( "com.l7tech.context", assertionContext );
             properties.put( "com.l7tech.remoteAddr", httpRequestKnob.getRemoteAddress() );
@@ -307,7 +307,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ACTION, properties.get( "com.l7tech.status.action" )  );
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ENTITY_ID, properties.get( "com.l7tech.status.entityId" )  );
             context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_ENTITY_TYPE, properties.get( "com.l7tech.status.entityType" )  );
-            context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_MESSAGE, properties.get( "com.l7tech.status.message" ) );           
+            context.setVariable( prefix + "." + GatewayManagementAssertion.SUFFIX_MESSAGE, properties.get( "com.l7tech.status.message" ) );
         }
     }
 

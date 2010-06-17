@@ -159,6 +159,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
         if ( ssgKeyEntry == null ) {
             throw new ResourceNotFoundException("Resource not found " + toExternalId(keyStoreId, alias));
+        } else {
+            EntityContext.setEntityInfo( getType(), toExternalId(keyStoreId, alias) );            
         }
 
         checkPermitted( OperationType.READ, null, ssgKeyEntry );

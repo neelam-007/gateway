@@ -158,10 +158,12 @@ public interface ResourceFactory<R> {
     static class ResourceNotFoundException extends ResourceFactoryException {
         public ResourceNotFoundException( final String message ) {
             super(message);
+            EntityContext.setNotFound();
         }
 
         public ResourceNotFoundException( final String message, final Throwable cause ) {
             super(message, cause);
+            EntityContext.setNotFound();
         }
     }
 

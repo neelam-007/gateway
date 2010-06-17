@@ -87,6 +87,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                     ((RoleAwareEntityManager<E>)manager).createRoles( entityBag.getEntity() );
                 }
 
+                EntityContext.setEntityInfo( getType(), Long.toString(id) );                
+
                 return id;
             }
         }, false, InvalidResourceException.class );
@@ -348,6 +350,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
         if ( entity == null ) {
             throw new ResourceNotFoundException("Resource not found " + selectorMap);
+        } else {
+            EntityContext.setEntityInfo( getType(), entity.getId() );
         }
 
         return entity;
