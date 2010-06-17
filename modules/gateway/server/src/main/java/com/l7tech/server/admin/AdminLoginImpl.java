@@ -218,7 +218,7 @@ public class AdminLoginImpl
         try {
             String digestWith = null;
 
-            if (username != null) {
+            if ( username != null && serverConfig.getBooleanProperty( "admin.certificateDiscoveryEnabled", true ) ) {
                 try {
                     InternalUser user = getInternalIdentityProvider().getUserManager().findByLogin(username);
                     if (user != null) digestWith = user.getHashedPassword(); 
