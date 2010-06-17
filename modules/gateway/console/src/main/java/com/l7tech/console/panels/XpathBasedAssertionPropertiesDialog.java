@@ -256,10 +256,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
         isEncryption = assertion instanceof RequireWssEncryptedElement ||
                 assertion instanceof WssEncryptElement;
-        final EntityWithPolicyNode ewpn = TopComponents.getInstance().getPolicyEditorPanel().getPolicyNode();
-        serviceNode = ewpn instanceof ServiceNode ? (ServiceNode) ewpn : null;
+        final EntityWithPolicyNode entityWithPolicyNode = TopComponents.getInstance().getPolicyEditorPanel().getPolicyNode();
+        serviceNode = entityWithPolicyNode instanceof ServiceNode ? (ServiceNode) entityWithPolicyNode : null;
         if ( serviceNode == null ) {
-            policyNode = ewpn;
+            policyNode = entityWithPolicyNode;
             if ( policyNode == null ) {
                 throw new IllegalStateException("Unable to determine the PolicyEntityNode for " + assertion);
             }
@@ -352,6 +352,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         if (assertion.getXpathExpression() != null) {
             initialvalue = assertion.getXpathExpression().getExpression();
         }
+        messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
         messageViewerToolBar.getxpathField().setText(initialvalue);
 
         populateSampleMessages(null, 0);
@@ -538,7 +539,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     }
 
     private static class SampleMessageComboEntry {
-        public SampleMessageComboEntry(SampleMessage message) {
+        private SampleMessageComboEntry(SampleMessage message) {
             this.message = message;
             if (message == null) return;
             try {
@@ -569,20 +570,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         namespaceButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final NamespaceMapEditor nseditor = new NamespaceMapEditor(
+                final NamespaceMapEditor namespaceMapEditor = new NamespaceMapEditor(
                         XpathBasedAssertionPropertiesDialog.this,
                         namespaces,
                         Collections.unmodifiableMap(new HashMap<String,String>(requiredNamespaces)));
-                nseditor.pack();
-                Utilities.centerOnScreen(nseditor);
-                DialogDisplayer.display(nseditor, new Runnable() {
+                namespaceMapEditor.pack();
+                Utilities.centerOnScreen(namespaceMapEditor);
+                DialogDisplayer.display(namespaceMapEditor, new Runnable() {
                     @Override
                     public void run() {
-                        Map<String,String> newMap = nseditor.newNSMap();
+                        Map<String,String> newMap = namespaceMapEditor.newNSMap();
                         if (newMap != null) {
                             namespaces = newMap;
 
                             // update feedback for new namespaces
+                            messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
                             JTextField xpathTextField = messageViewerToolBar.getxpathField();
                             xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
                         }
@@ -606,10 +608,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 // then save it in assertion
                 JTextField xpathTextField = messageViewerToolBar.getxpathField();
                 String xpath = xpathTextField.getText();
-
-                // Before finishing OK, update namespaces from the message viewer panel.
-                updateNamespaces();
-
                 XpathFeedBack res = getFeedBackMessage(namespaces, xpathTextField);
                 if (res != null && !res.valid()) {
                     if (xpath == null || xpath.trim().equals("")) {
@@ -1168,17 +1166,29 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             org.w3c.dom.Document doc;
             try {
                 doc = XmlUtil.stringToDocument(soapMessage);
-                Map docns = DomUtils.findAllNamespaces(doc.getDocumentElement());
-                for (Object o : docns.keySet()) {
-                    String prefix = (String) o;
-                    String uri = (String) docns.get(prefix);
+                Map<String,String> docns = DomUtils.findAllNamespaces(doc.getDocumentElement());
+                for ( final String prefix : docns.keySet( )) {
+                    String uri = docns.get(prefix);
                     if (!namespaces.containsValue(uri)) {
-                        namespaces.put(prefix, uri);
+                        if ( !namespaces.containsKey(prefix)) {
+                            namespaces.put(prefix, uri);
+                        } else {
+                            for ( int i=0; i<1000; i++ ) {
+                                String generatedPrefix = prefix + i;
+                                if ( !namespaces.containsKey(generatedPrefix) ) {
+                                    namespaces.put(generatedPrefix, uri);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
+            messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
+            JTextField xpathTextField = messageViewerToolBar.getxpathField();
+            xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
             exchangerDocument.load(soapMessage);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -1428,7 +1438,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String xpathExpression = null;
         XpathFeedBack hardwareAccelFeedback = null;
 
-        public XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
+        private XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
             this.errorPosition = errorPosition;
             this.xpathExpression = expression;
             this.detailedMessage = lm;
@@ -1463,74 +1473,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private static class MsgSrcComboBoxItem {
         private final String _variableName;
         private final String _displayName;
-                public MsgSrcComboBoxItem(String variableName, String displayName) {
+        private MsgSrcComboBoxItem(String variableName, String displayName) {
             _variableName = variableName;
             _displayName = displayName;
         }
         public String getVariableName() { return _variableName; }
         @Override
         public String toString() { return _displayName; }
-    }
-
-    /**
-     * Update the variable, namespaces after user chooses an XPath from the messageviewer panel.
-     */
-    private void updateNamespaces() {
-        try {
-            String inputXmlNotAUrl = messageViewer.getContent();
-            org.w3c.dom.Document doc = XmlUtil.stringToDocument(inputXmlNotAUrl);
-
-            Map<String, String> prefixMap = getPrefixesMap(doc);
-            HashSet<String> keys = new HashSet<String>(prefixMap.size() + namespaces.size());
-            keys.addAll(namespaces.keySet());
-            keys.addAll(prefixMap.keySet());
-
-            for(String key : keys) {
-                if(namespaces.containsKey(key) && !prefixMap.containsKey(key)) {
-                    //noinspection UnnecessaryContinue
-                    continue;
-                } else if(!namespaces.containsKey(key) && prefixMap.containsKey(key)) {
-                    namespaces.put(key, prefixMap.get(key));
-                } else if(namespaces.containsKey(key) && prefixMap.containsKey(key)) {
-                    if(!namespaces.get(key).equals(prefixMap.get(key))) {
-                        JOptionPane.showMessageDialog(this,
-                            "The prefix \"" + key + "\" does not match the prefix in the namespace table.",
-                            "Invalid Prefix",
-                            JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                "The XML is not valid: " + e.toString(),
-                "Invalid XML",
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private Map<String, String> getPrefixesMap(org.w3c.dom.Document doc) {
-        Map<String, String> prefixesMap = new HashMap<String, String>();
-        addPrefixesToMap(doc.getDocumentElement(), prefixesMap);
-
-        return prefixesMap;
-    }
-
-    private void addPrefixesToMap(Element element, Map<String, String> prefixesMap) {
-        NamedNodeMap attributes = element.getAttributes();
-        for(int i = 0; i < attributes.getLength(); i++) {
-            Attr attribute = (Attr)attributes.item(i);
-            if(attribute.getName().startsWith("xmlns:")) {
-                prefixesMap.put(attribute.getName().substring(6), attribute.getValue());
-            }
-        }
-
-        NodeList children = element.getChildNodes();
-        for(int i = 0; i < children.getLength(); i++) {
-            if(children.item(i) instanceof Element) {
-                Element child = (Element)children.item(i);
-                addPrefixesToMap(child, prefixesMap);
-            }
-        }
     }
 }

@@ -54,6 +54,19 @@ public class XmlUtilTest {
         logger.info("Found namespaces: " + foo);
     }
 
+        @Test
+    public void testFindAllNamespaces2() throws Exception {
+        String soapDoc = "<soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'><soap:Body><noprefix xmlns='urn:noprefix'><a:A xmlns:a='urn:A'/><a:B xmlns:a='urn:B'/><a:C xmlns:a='urn:C'/><noprefix2 xmlns='urn:noprefix2'/></noprefix></soap:Body></soap:Envelope>";
+        Map<String,String> namespaces = DomUtils.findAllNamespaces( XmlUtil.parse( soapDoc ).getDocumentElement() );
+        System.out.println(namespaces);
+        assertTrue( "Found namespace soap env", namespaces.containsValue( "http://www.w3.org/2003/05/soap-envelope" ));
+        assertTrue( "Found namespace noprefix", namespaces.containsValue( "urn:noprefix" ));
+        assertTrue( "Found namespace noprefix2", namespaces.containsValue( "urn:noprefix2" ));
+        assertTrue( "Found namespace A", namespaces.containsValue( "urn:A" ));
+        assertTrue( "Found namespace B", namespaces.containsValue( "urn:B" ));
+        assertTrue( "Found namespace C", namespaces.containsValue( "urn:C" ));
+    }
+
     private void assertElementEquals( Element element, String nsuri, String name ) {
         assertTrue(element != null);
         assertTrue(nsuri.equals(element.getNamespaceURI()));

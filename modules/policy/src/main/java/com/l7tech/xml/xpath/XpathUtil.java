@@ -149,7 +149,7 @@ public class XpathUtil {
      * @return the namespace <code>Map</code> as {prefix, URI}
      * @throws javax.xml.soap.SOAPException on SOAP processing error
      */
-    public static Map getNamespaces(SOAPMessage sm) throws SOAPException {
+    public static Map<String,String> getNamespaces(SOAPMessage sm) throws SOAPException {
         Map<String, String> namespaces = new HashMap<String, String>();
         SOAPPart sp = sm.getSOAPPart();
         SOAPEnvelope env = sp.getEnvelope();
@@ -174,24 +174,26 @@ public class XpathUtil {
      * @param namespaces the collecting <code>Map</code>
      * @param element    the <code>SOAPElement</code>
      */
-    public static void addNamespaces(Map<String, String> namespaces, SOAPElement element) {
-        String ePrefix = element.getElementName().getPrefix();
-        String eNamespace = element.getElementName().getURI();
-        if (ePrefix != null && ePrefix.length()>0)
-            namespaces.put(ePrefix, eNamespace);
-        Iterator iterator = element.getNamespacePrefixes();
+    public static void addNamespaces( final Map<String, String> namespaces,
+                                      final SOAPElement element) {
+        final String ePrefix = element.getElementName().getPrefix();
+        final String eNamespace = element.getElementName().getURI();
+        if ( eNamespace != null ) {
+            putNamespaceWithPreferredPrefix( namespaces, ePrefix, eNamespace );
+        }
+
+        final Iterator iterator = element.getNamespacePrefixes();
         while (iterator.hasNext()) {
-            String prefix = (String)iterator.next();
-            String uri = element.getNamespaceURI(prefix);
-            if (prefix != null && uri != null) {
-                if (prefix.length() > 0 && uri.length() > 0) {
-                    namespaces.put(prefix, uri);
-                }
+            final String prefix = (String)iterator.next();
+            final String uri = element.getNamespaceURI(prefix);
+            if ( uri != null ) {
+                putNamespaceWithPreferredPrefix( namespaces, prefix, uri );
             }
         }
-        Iterator itchildren = element.getChildElements();
+        
+        final Iterator itchildren = element.getChildElements();
         while(itchildren.hasNext()) {
-            Object o = itchildren.next();
+            final Object o = itchildren.next();
             if (o instanceof SOAPElement) {
                 final SOAPElement childElement = (SOAPElement)o;
                 addNamespaces(namespaces, childElement);
@@ -294,6 +296,62 @@ public class XpathUtil {
     }
 
     /**
+     * Create an XPath expression for the given literal text.
+     *
+     * <p>This is for XPaths outside of XML documents where it is not possible
+     * to escape the " and ' characters. This means that text containing both
+     * characters must be represented using concatenated literals.</p>
+     *
+     * @param text The text to process
+     * @return The expression.
+     */
+    public static String literalExpression( final String text ) {
+        final StringBuffer expressionBuffer = new StringBuffer();
+
+        if ( text.indexOf( '\'' ) < 0 ) {
+            // use single quoted string literal
+            expressionBuffer.append( '\'' );
+            expressionBuffer.append( text );
+            expressionBuffer.append( '\'' );
+        } else if ( text.indexOf( '"' ) < 0 ) {
+            // use double quoted string literal
+            expressionBuffer.append( '"' );
+            expressionBuffer.append( text );
+            expressionBuffer.append( '"' );
+        } else {
+            // concatenate sub-strings with appropriate quoting
+            expressionBuffer.append( "concat(" );
+            int lastIndex = 0;
+            int index = 0;
+            while ( index < text.length() & (index = text.indexOf( '\'', index )) > -1 ) {
+                if ( lastIndex != 0 ) {
+                    expressionBuffer.append( ", " );
+                }
+                if ( index == lastIndex ) {
+                    expressionBuffer.append( "\"'\"" );
+                } else {
+                    expressionBuffer.append( '\'' );
+                    expressionBuffer.append( text.substring( lastIndex, index ));
+                    expressionBuffer.append( "', \"'\"" );
+                }
+
+                lastIndex = index+1;
+                index++;
+            }
+
+            if ( lastIndex != text.length() ) {
+                expressionBuffer.append( ", '" );
+                expressionBuffer.append( text.substring( lastIndex, text.length() ));
+                expressionBuffer.append( '\'' );
+            }
+
+            expressionBuffer.append( ')' );
+        }
+
+        return expressionBuffer.toString();
+    }
+
+    /**
      * Use Jaxen to immediately compile and evaluate the specified XPath against the root of the specified document, using
      * the specified namespace map and variable finder, and returning the evaluation result.
      *
@@ -332,5 +390,27 @@ public class XpathUtil {
         if (variableFinder != null)
             dx.setVariableContext(new XpathVariableFinderVariableContext(variableFinder));
         return dx;
+    }
+    
+    private static void putNamespaceWithPreferredPrefix( final Map<String, String> namespaces,
+                                                         String ePrefix,
+                                                         final String eNamespace ) {
+        if (ePrefix == null || ePrefix.length()==0) {
+            ePrefix = "ns";
+        }
+
+        if ( !namespaces.containsKey(ePrefix) ) {
+            namespaces.put(ePrefix, eNamespace);
+        } else if ( !eNamespace.equals(namespaces.get(ePrefix)) &&
+                    !namespaces.containsValue(eNamespace) ) {
+            // add with an alternative prefix to avoid overwriting an existing mapping
+            for ( int i=1; i<1000; i++ ) {
+                final String prefix = ePrefix + i;
+                if ( !namespaces.containsKey(prefix) ) {
+                    namespaces.put(prefix, eNamespace);
+                    break;
+                }
+            }
+        }
     }
 }

@@ -870,12 +870,18 @@ public class DomUtils {
             }
         }
 
-        Map<String,String> result = new HashMap<String,String>();
-        int ns = 1;
-        for (String uri : entries.keySet()) {
+        final Map<String,String> result = new HashMap<String,String>();
+        outer:
+        for ( final String uri : entries.keySet() ) {
+            int ns = 1;
             String prefix = entries.get(uri);
-            if (prefix == null) prefix = "ns" + ns++;
-            result.put(prefix, uri);
+            if ( prefix == null ) prefix = "ns";
+            String checkedPrefix = prefix;
+            while ( result.containsKey( checkedPrefix ) ) {
+                if ( ns > 1000 ) continue outer;
+                checkedPrefix = prefix + ns++;
+            }
+            result.put(checkedPrefix, uri);
         }
 
         return result;

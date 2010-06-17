@@ -2,6 +2,8 @@ package com.l7tech.console.xmlviewer;
 
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
+import com.l7tech.xml.xpath.XpathUtil;
+import org.dom4j.Element;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -9,6 +11,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.Map;
 
 /**
  * Insert comments here.
@@ -22,6 +25,7 @@ public class ViewerToolBar extends JToolBar {
     private JTextField xpathField = null;
     private CollapseAllAction collapse = null;
     private ExpandAllAction expand = null;
+    private Map<String,String> namespaces;
 
     public ViewerToolBar(ViewerProperties props, Viewer v) {
         viewer = v;
@@ -56,16 +60,19 @@ public class ViewerToolBar extends JToolBar {
         addSeparator();
 
         viewer.tree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent e) {
-                TreePath path = viewer.tree.getSelectionPath();
-                if (path != null) {
+                final TreePath path = viewer.tree.getSelectionPath();
+                if ( path != null ) {
                     XmlElementNode node = (XmlElementNode)path.getLastPathComponent();
                     ExchangerElement element = node.getElement();
 
-                    if (element != null) {
-                        xpathField.setText(node.getElement().getPath());
+                    if ( element != null ) {
+                        final StringBuilder builder = new StringBuilder();
+                        buildPath(builder, namespaces, node.getElement());
+                        xpathField.setText( builder.toString() );
                     } else {
-                        xpathField.setText(null);
+                        xpathField.setText( null );
                     }
                 }
             }
@@ -98,4 +105,57 @@ public class ViewerToolBar extends JToolBar {
     public String getXPath() {
         return xpathField.getText();
     }
+
+    public Map<String, String> getNamespaces() {
+        return namespaces;
+    }
+
+    public void setNamespaces( final Map<String, String> namespaces ) {
+        this.namespaces = namespaces;
+    }
+
+    private void buildPath( final StringBuilder builder,
+                            final Map<String, String> namespaces,
+                            final Element element ) {
+
+        if ( element.getParent() != null ) {
+            buildPath( builder, namespaces, element.getParent() );
+        }
+
+        builder.append( '/' );
+
+        String prefix = element.getNamespacePrefix();
+        String namespace = element.getNamespaceURI();
+
+        if ( namespace == null ) {
+            builder.append( element.getName() );
+        } else if ( prefix == null || !namespace.equals(namespaces.get(prefix)) ) {
+            if ( namespaces.containsValue( namespace )) {
+                builder.append( findPrefix(namespaces, namespace) );
+                builder.append( ':' );
+                builder.append( element.getName() );
+            } else {
+                builder.append( "*[local-name()='" );
+                builder.append( element.getName() ); // name cannot contain "'"
+                builder.append( "' and namespace-uri()=" );
+                builder.append( XpathUtil.literalExpression(namespace) );
+                builder.append( ']' );
+            }
+        } else {
+            builder.append( element.getQualifiedName() );
+        }
+    }
+
+    private String findPrefix( final Map<String,String> namespaces, final String namespace ) {
+        String prefix = null;
+
+        for ( final Map.Entry<String,String> entry : namespaces.entrySet() ) {
+            if ( namespace.equals(entry.getValue()) ) {
+                prefix = entry.getKey();
+                break;
+            }
+        }
+
+        return prefix;
+    }    
 }

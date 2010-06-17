@@ -9,6 +9,11 @@ import static org.junit.Assert.*;
 import org.junit.*;
 import org.w3c.dom.Document;
 
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.MimeHeaders;
+import javax.xml.soap.SOAPConstants;
+import javax.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,6 +152,23 @@ public class XpathUtilTest {
         } catch (UnresolvableException e) {
             // ok
         }
+    }
+
+    @Test
+    public void testGetNamespaces() throws Exception {
+        String soapDoc = "<soap:Envelope xmlns:soap='http://www.w3.org/2003/05/soap-envelope'><soap:Body><noprefix xmlns='urn:noprefix'><a:A xmlns:a='urn:A'/><a:B xmlns:a='urn:B'/><a:C xmlns:a='urn:C'/><noprefix2 xmlns='urn:noprefix2'/></noprefix></soap:Body></soap:Envelope>";
+        MessageFactory factory = MessageFactory.newInstance( SOAPConstants.SOAP_1_2_PROTOCOL );
+        MimeHeaders headers = new MimeHeaders();
+        headers.addHeader( "Content-Type", "application/soap+xml" );
+        SOAPMessage message = factory.createMessage( headers, new ByteArrayInputStream( soapDoc.getBytes() ) );
+        Map<String,String> namespaces = XpathUtil.getNamespaces( message );
+        System.out.println(namespaces);
+        assertTrue( "Found namespace soap env", namespaces.containsValue( "http://www.w3.org/2003/05/soap-envelope" ));
+        assertTrue( "Found namespace noprefix", namespaces.containsValue( "urn:noprefix" ));
+        assertTrue( "Found namespace noprefix2", namespaces.containsValue( "urn:noprefix2" ));
+        assertTrue( "Found namespace A", namespaces.containsValue( "urn:A" ));
+        assertTrue( "Found namespace B", namespaces.containsValue( "urn:B" ));
+        assertTrue( "Found namespace C", namespaces.containsValue( "urn:C" ));
     }
 
     @Test
@@ -334,5 +356,31 @@ public class XpathUtilTest {
         XpathUtil.removeNamespaces( "/soap:Envelope", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
         XpathUtil.removeNamespaces( " # 2#$@%  @@", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
         XpathUtil.removeNamespaces( "//://///!!$@%  @@", Collections.<String,String>emptyMap(), Collections.<String>emptySet() );
+    }
+
+    @Test
+    public void testXpathLiteral() throws Exception {
+        literalTest("blah");
+        literalTest("'blah");
+        literalTest("\"blah");
+        literalTest("'blah'");
+        literalTest("\"blah\"");
+        literalTest("\"blah's\"");
+        literalTest("\"'\"'\"'\"'\"'\"'\"'\"'\"'\"'\"'\"'\"'");
+        literalTest("");
+        literalTest("'");
+        literalTest("\"");
+        literalTest("''''''");
+        literalTest("\"\"\"\"\"\"\"");
+        literalTest("'''\"\"\"e'r'r\"w'r'\"\"\"\"'''");
+        literalTest("aaaaaa'aaaa");
+        literalTest("aaaaaa\"aaaa");
+        literalTest("aaa'aaa\"aa'aa");
+        literalTest("aaaaaa\"aaaa'");
+    }
+
+    private void literalTest( final String value ) throws Exception {
+        String result = (String) evaluate( null, XpathUtil.literalExpression(value) );
+        assertEquals( value, result );
     }
 }
