@@ -16,21 +16,21 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.Charsets;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -38,6 +38,7 @@ import org.springframework.mock.web.MockServletContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -50,66 +51,30 @@ import java.util.regex.Pattern;
 public class ServerJSONSchemaAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerJSONSchemaAssertionTest.class.getName());
-    private ApplicationContext context;
+    private GenericApplicationContext context;
     private StashManager stashManager;
 
     @Before
     public void setUp() throws Exception{
-        final ApplicationContext delegateContext = ApplicationContexts.getTestApplicationContext();
-
         final TestingHttpClientFactory testFactory = new TestingHttpClientFactory();
         final byte[] bytes = jsonSchema.getBytes();
         MockGenericHttpClient mockClient = new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}),
                 ContentTypeHeader.APPLICATION_JSON, (long) bytes.length, bytes);
         testFactory.setMockHttpClient(mockClient);
 
-        //todo find the better way of doing this custom application context behaviour in other test cases
-        context = new AbstractApplicationContext() {
-            @Override
-            public Object getBean(String name) throws BeansException {
-                if(name.equals("httpClientFactory")){
-                    System.out.println("Returned mock client");
-                    return testFactory;
-                }
+        DefaultListableBeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
+            put("serverConfig", ServerConfig.getInstance());
+            put("httpClientFactory", testFactory);
+            put("stashManagerFactory", TestStashManagerFactory.getInstance());
+            put("auditContext", new AuditContextStub());
+        }});
 
-                return delegateContext.getBean(name);
-            }
-
-            @Override
-            public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-                return delegateContext.getBean(name, requiredType);
-            }
-
-            @Override
-            public <T> T getBean(Class<T> requiredType) throws BeansException {
-                return delegateContext.getBean(requiredType);
-            }
-
-            @Override
-            protected void refreshBeanFactory() throws BeansException, IllegalStateException {}
-
-            @Override
-            protected void closeBeanFactory() {}
-
-            @Override
-            public ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException {
-                return null;
-            }
-
-            @Override
-            public boolean containsBean(String name) {
-                return delegateContext.containsBean(name);
-            }
-
-            @Override
-            public void publishEvent(ApplicationEvent event) {
-                //do nothing
-            }
-        };
+        context  = new GenericApplicationContext(beanFactory);
+        context.refresh();
 
         //not needed for any tests, just doing to remove the warning messages and to allow for testing of the
         //cluster properties if needed
-        ServerConfig serverConfig = (ServerConfig) delegateContext.getBean("serverConfig");
+        ServerConfig serverConfig = (ServerConfig) context.getBean("serverConfig");
         final AssertionMetadata assertionMetadata = new JSONSchemaAssertion().meta();
         final Map<String, String[]> props = assertionMetadata.get(AssertionMetadata.CLUSTER_PROPERTIES);
         List<String[]> toAdd = new ArrayList<String[]>();
