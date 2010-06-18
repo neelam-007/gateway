@@ -1063,7 +1063,9 @@
         <mkdir dir="${build.reports}"/>
         <junitreport todir="${build.reports}">
             <fileset dir="${src.root}/modules">
-                <include name="**/build/reports/tests/TEST-*.xml"/>
+                <include name="*/build/reports/tests/TEST-*.xml"/>
+                <include name="*/*/build/reports/tests/TEST-*.xml"/>
+                <include name="*/*/*/build/reports/tests/TEST-*.xml"/>
             </fileset>
             <report format="frames" todir="${build.reports}/html"/>
         </junitreport>
