@@ -22,5 +22,5 @@
     <!-- 
       Note that this can cause an NPE if used when installing dependencies
     -->
-    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache"/>
+    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache" memorySize="25000"/>
 </ivysettings>
