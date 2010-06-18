@@ -356,7 +356,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
      *
      * The only restriction on the url after http:// is that it is at least 5 characters long
      */
-    static final String linkHeaderPattern = "<(http://.{5,}?)>\\s*;\\s*rel=\"describedby\"";
+    static final String linkHeaderPattern = "<([h|H][t|T][t|T][p|P][s|S]?+://.{5,}?)>\\s*;\\s*rel=\"describedby\"";
 
     private static HttpObjectCache<JSONSchema> httpObjectCache = null;
     private static final Logger logger = Logger.getLogger(ServerJSONSchemaAssertion.class.getName());

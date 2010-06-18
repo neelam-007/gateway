@@ -370,11 +370,13 @@ public class ServerJSONSchemaAssertionTest {
 
         final String[] patterns = {"<http://irishman:8080/templateschema>;rel=\"describedby\"",
         "<http://json.com/my-hyper-schema> ;    rel=\"describedby\"",
-        "<http://123.au>; rel=\"describedby\""};
+        "<hTtpS://123.au>; rel=\"describedby\"",
+        "<https://123.au>; rel=\"describedby\""};
 
         final String[] urls = {"http://irishman:8080/templateschema",
                 "http://json.com/my-hyper-schema",
-                "http://123.au"
+                "hTtpS://123.au",
+                "https://123.au"
         };
 
         for (int i = 0, patternsLength = patterns.length; i < patternsLength; i++) {
