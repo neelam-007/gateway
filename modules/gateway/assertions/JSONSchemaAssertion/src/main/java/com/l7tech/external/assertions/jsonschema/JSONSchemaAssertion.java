@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.jsonschema;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
@@ -44,7 +45,9 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
             if (doc != null) {
                 variables.addAll(Arrays.asList(Syntax.getReferencedNames(doc)));
             }
-
+        } else if (resourceInfo instanceof SingleUrlResourceInfo) {
+            SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
+            variables.addAll(Arrays.asList(Syntax.getReferencedNames(suri.getUrl())));
         }
 
         if ( getTarget() == TargetMessageType.OTHER ) {
