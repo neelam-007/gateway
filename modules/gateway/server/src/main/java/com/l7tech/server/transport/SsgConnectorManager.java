@@ -12,7 +12,9 @@ public interface SsgConnectorManager extends EntityManager<SsgConnector, EntityH
      * Translate a bind address that references an interface tag into a concrete IP address.
      *
      * @param bindAddress either an IP address or the name of a configured interface tag, ie "vmnet8"
+     * @param port TCP or UDP port number, for logging purposes.
      * @return dotted decimal IP for the corresponding local interface, ie "192.168.1.1"
+     * @throws ListenerException if the bind address appears to be an interface tag but the tag cannot be matched to a local interface
      */
     String translateBindAddress(String bindAddress, int port) throws ListenerException;
 
