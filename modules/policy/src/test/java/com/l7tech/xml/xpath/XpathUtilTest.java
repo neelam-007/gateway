@@ -6,6 +6,8 @@ import com.l7tech.xml.InvalidXpathException;
 import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
 import static org.junit.Assert.*;
+
+import org.jaxen.saxpath.SAXPathException;
 import org.junit.*;
 import org.w3c.dom.Document;
 
@@ -124,6 +126,32 @@ public class XpathUtilTest {
 
     private Object evaluate(Document doc, String xpath) throws JaxenException {
         return evaluate(doc, namespaces, xpath);
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        // OK, no namespaced used or provided
+        XpathUtil.validate( "/a/b/c/d/e", null );
+
+        // OK, namespaced used and provided (includes a duplicate unused namespace which is fine)
+        XpathUtil.validate( "/a/prefix1:b/c/prefix2:d/e", new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix2", "urn:p2"); put("prefix3", "urn:p2");}} );
+
+        // Fail, missing namespaces
+        try {
+            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", null );
+            fail("Expected validation exception");
+        } catch ( SAXPathException e ) {
+            assertTrue( "Message identifies prefix1", e.getMessage().contains( "prefix1" ));
+            assertTrue( "Message identifies prefix2", e.getMessage().contains( "prefix2" ));
+        }
+
+        // Fail, missing a namespace
+        try {
+            XpathUtil.validate( "/prefix1:b/c/d/prefix2:f", new HashMap<String,String>(){{put("prefix1","urn:p1"); put("prefix3", "urn:p3");}} );
+            fail("Expected validation exception");
+        } catch ( SAXPathException e ) {
+            assertTrue( "Message identifies prefix2", e.getMessage().contains( "prefix2" ));
+        }
     }
 
     @Test

@@ -368,6 +368,40 @@ public class XpathUtil {
     }
 
     /**
+     * Validate the given XPath expression.
+     *
+     * <p>This may detect XPath errors not found by running compileAndEvaluate with a
+     * test document (such as unbound namespace prefixes)</p>
+     *
+     * @param expression     the expression to test.  Required.
+     * @param namespaceMap   the namespace map to use.  May be null if the expression uses no namespace prefixes.
+     * @throws JaxenException if the expression is invalid.
+     */
+    public static void validate( final String expression,
+                                 final Map<String, String> namespaceMap ) throws SAXPathException {
+        final Set<String> invalidPrefixes = new LinkedHashSet<String>();
+
+        final XPathHandler handler = new XPathHandlerAdapter() {
+            @Override
+            public void startNameStep( final int axis,
+                                       final String prefix,
+                                       final String localName ) throws SAXPathException {
+                if ( prefix != null && !prefix.isEmpty() && (namespaceMap==null || !namespaceMap.containsKey( prefix ))) {
+                    invalidPrefixes.add( prefix );
+                }
+            }
+        };
+
+        XPathReader reader = new XPathReader();
+        reader.setXPathHandler(handler);
+        reader.parse( expression );
+
+        if ( !invalidPrefixes.isEmpty() ) {
+            throw new JaxenException("Namespace not found for prefix" + (invalidPrefixes.size()>1 ? "es " : " ") + invalidPrefixes);
+        }
+    }
+
+    /**
      * Use Jaxen to immediately compile and select nodes against the specified XPath against the root of the specified document, using
      * the specified namespace map and variable finder, and returning the evaluation result.
      *

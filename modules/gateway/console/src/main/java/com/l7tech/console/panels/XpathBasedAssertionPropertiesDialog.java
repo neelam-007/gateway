@@ -54,6 +54,7 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
+import org.jaxen.saxpath.SAXPathException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -1349,6 +1350,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
         try {
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+            XpathUtil.validate( xpath, namespaces );
             XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
@@ -1356,7 +1358,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } catch (XPathSyntaxException e) {
             log.log(Level.FINE, e.getMessage(), e);
             return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
-        } catch (JaxenException e) {
+        } catch (SAXPathException e) {
             log.log(Level.FINE, e.getMessage(), e);
             return new XpathFeedBack(-1, xpath, ExceptionUtils.getMessage( e ), ExceptionUtils.getMessage( e ));
         } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
