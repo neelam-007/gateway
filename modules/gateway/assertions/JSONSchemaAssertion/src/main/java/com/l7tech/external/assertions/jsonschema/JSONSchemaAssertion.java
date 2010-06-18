@@ -12,7 +12,10 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
+ * Configuration for the 'Validate JSON Schema' assertion. JSON schema can be configured in advance or obtained from a
+ * URL which can either be configured in advance or obtained via the target message, if it matches a white list.
  *
+ * @author darmstrong 
  */
 public class JSONSchemaAssertion extends MessageTargetableAssertion implements UsesVariables, UsesResourceInfo, SetsVariables {
     public static final String JSON_SCHEMA_FAILURE_VARIABLE = "jsonschema.failure";
