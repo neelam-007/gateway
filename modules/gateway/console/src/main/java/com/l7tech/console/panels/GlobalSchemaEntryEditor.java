@@ -39,6 +39,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -352,7 +354,17 @@ public class GlobalSchemaEntryEditor extends JDialog {
                                                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
+            try {
+                new URI(systemId);
+            } catch ( URISyntaxException e ) {
+                JOptionPane.showMessageDialog(this, "You must provide a valid system id (name) for this schema to be referenced by another schema:\n" +
+                                                    ExceptionUtils.getMessage( e ),
+                                                    "Invalid Schema",
+                                                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             // save it
             subject.setName(systemId.trim());
             subject.setSchema(contents);
