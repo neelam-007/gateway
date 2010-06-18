@@ -627,7 +627,8 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
          * Create a user object from the specified response.  The response may have any status code, and may or
          * may not have a non-empty InputStream.
          *
-         * @param url       the URL that was fetched to obtain this response.  Never null.
+         * @param url       the URL that was fetched to obtain this response. Can be null when no URL was used to obtain
+         * the response e.g. it was programmatically created from a static resource.
          * @param response  The successful response, already slurped.  Never null.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws java.io.IOException if this response was not accepted for caching, in which case this request will

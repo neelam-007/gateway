@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
@@ -119,9 +120,12 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 hasPolicyVariable = Syntax.getReferencedNames(doc).length > 0;
         }
 
-        ResourceGetter<PolicyFinder> resourceGetter;
+        if (resourceInfo instanceof MessageUrlResourceInfo)
+            throw new ServerPolicyException(assertion, "MessageUrlResourceInfo is not yet supported.");
+        
+        ResourceGetter<PolicyFinder, Void> resourceGetter;//Void as no UrlFinder is provided. Change if support for MessageUrlResourceInfo is added
         try {
-            resourceGetter = hasPolicyVariable ? null : ResourceGetter.createResourceGetter(
+            resourceGetter = hasPolicyVariable ? null : ResourceGetter.<PolicyFinder, Void>createResourceGetter(
                     assertion,
                     assertion.getResourceInfo(),
                     resourceObjectfactory,
@@ -361,7 +365,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     }
 
     private CurrentEnvModule envModule;
-    private final ResourceGetter<PolicyFinder> resourceGetter;
+    private final ResourceGetter<PolicyFinder, Void> resourceGetter;
     private final String[] variablesUsed;
 
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());

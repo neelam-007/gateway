@@ -1,0 +1,5 @@
+<project name="layer7-json" default="compile">
+    <property name="module.package.root" value="com/l7tech/json"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

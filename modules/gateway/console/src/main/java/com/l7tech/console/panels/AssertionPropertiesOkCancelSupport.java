@@ -138,8 +138,9 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
      * @param ve a ValidationException, or null.
      */
     protected void showValidationErrorMessage(ValidationException ve) {
-        String msg = ve == null ? "invalid data" : ExceptionUtils.getMessage(ve);
-        DialogDisplayer.showMessageDialog(this, "Error", "Unable to save: " + msg, null);
+        final String msg = ve == null ? "invalid data" : ExceptionUtils.getMessage(ve);
+        final String title = (ve == null || ve.getErrorMessageTitle() == null) ? "Error" : ve.getErrorMessageTitle();
+        DialogDisplayer.showMessageDialog(this, title, "Unable to save: " + msg, ExceptionUtils.getDebugException(ve));
     }
 
     /**
@@ -295,8 +296,19 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
             super(message, cause);
         }
 
+        public ValidationException(String message, String errorMessageTitle, Throwable cause) {
+            super(message, cause);
+            this.errorMessageTitle = errorMessageTitle;
+        }
+
         public ValidationException(Throwable cause) {
             super(cause);
         }
+
+        public String getErrorMessageTitle() {
+            return errorMessageTitle;
+        }
+
+        private String errorMessageTitle;
     }
 }

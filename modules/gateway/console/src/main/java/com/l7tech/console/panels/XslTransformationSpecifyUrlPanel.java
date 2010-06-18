@@ -5,23 +5,26 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ResourceBundle;
 
 /**
  * @author mike
  */
-class XslTransformationSpecifyUrlPanel extends JPanel {
+public class XslTransformationSpecifyUrlPanel extends JPanel {//todo [Donal] rename class following Json schema commit
     private JPanel mainPanel;
     private JTextField urlField;
-    private XslTransformationPropertiesDialog xslTransformationPropertiesDialog;
+    private JLabel fetchUrlDescription;
+    private JLabel urlToMonitorLabel;
+    private ResourceBundle resourceBundle;
 
-    public XslTransformationSpecifyUrlPanel(XslTransformationPropertiesDialog xslTransformationPropertiesDialog, XslTransformation assertion) {
-        this.xslTransformationPropertiesDialog = xslTransformationPropertiesDialog;
+    public XslTransformationSpecifyUrlPanel(UsesResourceInfo assertion, ResourceBundle resourceBundle) {
+        this.resourceBundle = resourceBundle;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         if (assertion.getResourceInfo() instanceof SingleUrlResourceInfo) {
@@ -29,22 +32,24 @@ class XslTransformationSpecifyUrlPanel extends JPanel {
             urlField.setText(suri.getUrl());
         }
 
+        fetchUrlDescription.setText(resourceBundle.getString("fetchUrlTextBox.description"));
+        urlToMonitorLabel.setText(resourceBundle.getString("fetchUrlTextBox.label"));
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    String check() {
+    public String check() {
         String url = urlField.getText();
         if (url != null && !url.trim().isEmpty() ) {
             if ( !ValidationUtils.isValidUrl(url.trim()) ) {
-                return xslTransformationPropertiesDialog.getResources().getString("error.badurl");
+                return resourceBundle.getString("error.badurl");
             }
             return null;
         }
-        return xslTransformationPropertiesDialog.getResources().getString("error.nourl");
+        return resourceBundle.getString("error.nourl");
     }
 
-    void updateModel(XslTransformation assertion) {
+    public void updateModel(UsesResourceInfo assertion) {
         SingleUrlResourceInfo ri = new SingleUrlResourceInfo();
         ri.setUrl(urlField.getText().trim());
         assertion.setResourceInfo(ri);

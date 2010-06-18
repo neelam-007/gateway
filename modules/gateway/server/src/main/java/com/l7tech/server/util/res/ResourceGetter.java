@@ -6,7 +6,6 @@ package com.l7tech.server.util.res;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.url.UrlResolver;
-import com.l7tech.xml.ElementCursor;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
@@ -23,9 +22,14 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
+ * <p>
  * An object that is created with a ResourceInfo and can thereafter fetch a resource given a message.
+ * <p>
+ * R - The type which should be returned by the ResourceGetter's {@link #getResource(Object, java.util.Map)}()} method.
+ * <p>
+ * M - The type of Object to search for URL's for subclass {@link MessageUrlResourceGetter}
  */
-public abstract class ResourceGetter<R> {
+public abstract class ResourceGetter<R, M> {
     protected static final Pattern MATCH_ALL = Pattern.compile(".");
     protected final Audit audit;
 
@@ -33,6 +37,8 @@ public abstract class ResourceGetter<R> {
         this.audit = audit;
     }
 
+    //fyi: all impls are no-ops. Resources obtained are just garbage collected.
+    //todo if a resource is being closed it should supply which resource, so that impl's can track the created resources and close the required resource.
     public abstract void close();
 
     // Some handy exceptions to ensure that information of interest is preserved until it gets back up
@@ -129,7 +135,7 @@ public abstract class ResourceGetter<R> {
      * @throws ResourceParseException if an external resource is fetched but is found to be invalid
      * @throws GeneralSecurityException  if an SSL context is needed but cannot be created
      */
-    public abstract R getResource(ElementCursor message, Map vars)
+    public abstract R getResource(M message, Map vars)
             throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException,
                    UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException;
 
@@ -139,46 +145,54 @@ public abstract class ResourceGetter<R> {
     // ---------- BEGIN STATIC FACTORY METHOD ----------
 
     /**
-     * Create a ResourceGetter that will obtain resource objects for messages using the given configuration
+     * Create a ResourceGetter that will obtain resource objects for messages using the given configuration. The
+     * configuration used depends on the type of AssertionResourceInfo passed. All supported sub classes are tested
+     * for.
+     * <p/>
+     * MessageUrlResourceInfo requires a UrlResolver and UrlFinder. The Url Finder is used to obtain URLs from an object
+     * of type M, and the UrlResolver is used to resolve the URL's into a resource of type R.
+     * SingleUrlResourceInfo requires a UrlResolver.
+     * StaticResourceInfo requires a ResourceObjectFactory.
+     * <p/>
      * (AssertionResourceInfo and ResourceObjectFactory).
      *
-     * @param assertion the assertion bean that owns the configuration of the type and paramaters for fetching the resource
-     *                  (static, single URL, URL from message, etc).  Must not be null.
-     * @param ri      instance of AssertionResourceInfo that describes how to fetch the resource.  Must not be null.
-     * @param rof  strategy for converting the raw resource strings into the consumer's preferred resource object format
-     *             for caching/reuse/metadata etc.  Must not be null.
-     * @param urlFinder strategy for finding a URL within a message.  Must not be null if assertion.getResourceInfo()
-     *                   might be MessageUrlResourceInfo.
-     * @param urlResolver  strategy for converting a URL into the consumer's preferred resource object format,
-     *                     possibly by downloading and parsing it
-     * @return a ResourceGetter that will fetch resources for future messages.  Never null.
-     * @throws NullPointerException if assertion or rof is null
-     * @throws ServerPolicyException if the assertion contains no ResourceInfo
-     * @throws ServerPolicyException if a ResourceGetter could not be created from the provided configuration
+     * @param assertion   the assertion bean that owns the configuration of the type and paramaters for fetching the resource
+     *                    (static, single URL, URL from message, etc).  Must not be null.
+     * @param ri          instance of AssertionResourceInfo that describes how to fetch the resource.  Must not be null.
+     * @param rof         strategy for converting static raw resource strings into the consumer's preferred resource object format
+     *                    for caching/reuse/metadata etc.  Must not be null if assertion.getResourceInfo() is of type StaticResourceInfo.
+     * @param urlFinder   strategy for finding a URL within an Object of type M.  Must not be null if assertion.getResourceInfo()
+     *                    might be MessageUrlResourceInfo.
+     * @param urlResolver strategy for converting a URL into the consumer's preferred resource object format of type R,
+     *                    possibly by downloading and parsing it
+     * @param audit       Audit used by instances of ResourceGetter for auditing
+     * @return a ResourceGetter that will fetch resources for future Objects of type M.  Never null.
+     * @throws NullPointerException     if assertion or a required parameter for the assertion.getResourceInfo() type is null
+     * @throws ServerPolicyException    if the assertion contains no ResourceInfo or if a ResourceGetter could not be
+     *                                  created from the provided configuration
      * @throws IllegalArgumentException if the resource info type if MessageUrlResourceInfo but urlFinder is null
      */
-    public static <R>
-    ResourceGetter<R> createResourceGetter(Assertion assertion,
-                                           AssertionResourceInfo ri,
-                                           ResourceObjectFactory<R> rof,
-                                           UrlFinder urlFinder,
-                                           UrlResolver<R> urlResolver,
-                                           Audit audit)
-            throws ServerPolicyException
-    {
+    public static <R, M>
+    ResourceGetter<R, M> createResourceGetter(Assertion assertion,
+                                              AssertionResourceInfo ri,
+                                              ResourceObjectFactory<R> rof,
+                                              UrlFinder<M> urlFinder,
+                                              UrlResolver<R> urlResolver,
+                                              Audit audit)
+            throws ServerPolicyException {
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
 
         // TODO move this entire factory method to an instance method of ResourceInfo, as soon as generics are
         // allowed inside the top-level policy package.
         try {
             if (ri instanceof MessageUrlResourceInfo) {
-                return new MessageUrlResourceGetter<R>((MessageUrlResourceInfo)ri, urlResolver, urlFinder, audit);
+                return new MessageUrlResourceGetter<R, M>((MessageUrlResourceInfo) ri, urlResolver, urlFinder, audit);
             } else if (ri instanceof SingleUrlResourceInfo) {
-                return new SingleUrlResourceGetter<R>(assertion, (SingleUrlResourceInfo)ri, urlResolver, audit);
+                return new SingleUrlResourceGetter<R, M>(assertion, (SingleUrlResourceInfo) ri, urlResolver, audit);
             } else if (ri instanceof StaticResourceInfo) {
-                return new StaticResourceGetter<R>(assertion, (StaticResourceInfo)ri, rof, audit);
+                return new StaticResourceGetter<R, M>(assertion, (StaticResourceInfo) ri, rof, audit);
             } else
-                throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
+                throw new ServerPolicyException(assertion, "Unsupported resource info: " + ri.getClass().getName());
         } catch (PatternSyntaxException e) {
             throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + e.getPattern() + "'", e);
         }
@@ -193,14 +207,14 @@ public abstract class ResourceGetter<R> {
      * @param exception The exception to throw.
      * @return The resource getter, never null
      */
-    public static <R> ResourceGetter<R> createErrorResourceGetter( final Exception exception ) {
-        return new ResourceGetter<R>(null){
+    public static <R, M> ResourceGetter<R, M> createErrorResourceGetter( final Exception exception ) {
+        return new ResourceGetter<R, M>(null){
             @Override
             public void close() {
             }
 
             @Override
-            public R getResource( ElementCursor message, Map vars ) throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException, UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException {
+            public R getResource( M message, Map vars ) throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException, UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException {
                 if ( exception instanceof IOException ) {
                     throw (IOException) exception;
                 } else if ( exception instanceof InvalidMessageException ) {

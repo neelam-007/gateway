@@ -25,6 +25,7 @@ public interface ResourceObjectFactory<R> {
     /**
      * Close the given resource object.
      *
+     * //fyi: all impls are no-ops. Resources obtained are usually just garbage collected
      * @param resourceObject The object (may be null)
      */
     void closeResourceObject(R resourceObject);

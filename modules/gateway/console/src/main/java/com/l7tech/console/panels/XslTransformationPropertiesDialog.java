@@ -77,8 +77,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
         whichMimePartLabel.setLabelFor(whichMimePartSpinner);
 
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
-        fetchPanel = new XslTransformationFetchPanel(this, assertion);
-        specifyUrlPanel = new XslTransformationSpecifyUrlPanel(this, assertion);
+        fetchPanel = new XslTransformationFetchPanel(this, assertion, getResources());
+        specifyUrlPanel = new XslTransformationSpecifyUrlPanel(assertion, getResources());
 
         innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
         innerPanel.add(specifyPanel);
@@ -93,6 +93,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         cbXslLocation.setModel(new DefaultComboBoxModel(MODES));
         cbXslLocation.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateModeComponents();
             }
@@ -153,11 +154,13 @@ public class XslTransformationPropertiesDialog extends JDialog {
         // create callbacks
         okButton.setEnabled( !readOnly );
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }

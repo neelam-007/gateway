@@ -110,7 +110,7 @@ public class ServerXslTransformation
     private static UrlResolver<CompiledStylesheet> httpObjectCache = null;
 
     private final Auditor auditor;
-    private final ResourceGetter<CompiledStylesheet> resourceGetter;
+    private final ResourceGetter<CompiledStylesheet, ElementCursor> resourceGetter;
     private final boolean allowMessagesWithNoProcessingInstruction;
     private final String[] urlVarsUsed;
 
@@ -156,7 +156,13 @@ public class ServerXslTransformation
                     }
                 };
 
-        UrlFinder urlFinder = new UrlFinder() {
+        UrlFinder<ElementCursor> urlFinder = new UrlFinder<ElementCursor>() {
+            /**
+             *
+             * @param message the ElementCursor to inspect.  Never null. The cursor may be moved by this method.
+             * @return String URL found from the message
+             * @throws ResourceGetter.InvalidMessageException
+             */
             @Override
             public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
                 try {

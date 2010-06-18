@@ -7,8 +7,8 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.util.Functions;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.assertion.UsesResourceInfo;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -20,28 +20,46 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.ResourceBundle;
 
 /**
- * Part of {@link XslTransformationPropertiesDialog}.
+ *
  * @author alex
+ * @author darmstrong - updated to be usable outside of XSL.
  */
-public class XslTransformationFetchPanel extends JPanel {
+public class XslTransformationFetchPanel extends JPanel {//todo[Donal] rename class after json commit
     private JButton removeButton;
     private JButton editButton;
     private JButton addButton;
     private JList regexList;
     private JPanel mainPanel;
-    private JCheckBox allowWithoutStylesheetCheckbox;
+    private JCheckBox noUrlFoundCheckBox;
     private JScrollPane scrollPane;
+    private JLabel regexInfoLabel;
+    private JLabel regexDescriptionLabel;
 
     private final DefaultListModel regexListModel = new DefaultListModel();
-    private final XslTransformationPropertiesDialog xslDialog;
+    private final JDialog parentDialog;
     private String regexTitle;
     private String regexPrompt;
+    private ResourceBundle resourceBundle;
 
-    XslTransformationFetchPanel(final XslTransformationPropertiesDialog parent, XslTransformation assertion) {
-        this.xslDialog = parent;
-
+    /**
+     * The following keys are required in the resource bundle:
+     * regexDialog.title
+     * regexDialog.prompt
+     * error.noregexes
+     * noUrlFoundCheckbox.text
+     * fetchRegexList.label
+     * fetchRegexList.description
+     *
+     * @param parent JDialog parent
+     * @param assertion UsesResourceInfo assertion bean
+     * @param resourceBundle ResourceBundle which contains the above keys
+     */
+    public XslTransformationFetchPanel(final JDialog parent, UsesResourceInfo assertion, ResourceBundle resourceBundle) {
+        this.parentDialog = parent;
+        this.resourceBundle = resourceBundle;
         String[] regexes = null;
         MessageUrlResourceInfo muri = null;
         if (assertion.getResourceInfo() instanceof MessageUrlResourceInfo) {
@@ -56,11 +74,13 @@ public class XslTransformationFetchPanel extends JPanel {
         }
         regexList.setModel(regexListModel);
         regexList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
         });
         regexList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() >= 2) {
                     if (editButton.isEnabled()) edit();
@@ -68,13 +88,15 @@ public class XslTransformationFetchPanel extends JPanel {
             }
         });
 
-        allowWithoutStylesheetCheckbox.setSelected(muri != null && muri.isAllowMessagesWithoutUrl());
+        noUrlFoundCheckBox.setSelected(muri != null && muri.isAllowMessagesWithoutUrl());
 
-        regexTitle = parent.getResources().getString("regexDialog.title");
-        regexPrompt = parent.getResources().getString("regexDialog.prompt");
+        regexTitle = resourceBundle.getString("regexDialog.title");
+        regexPrompt = resourceBundle.getString("regexDialog.prompt");
         addButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 pop(null, new Functions.UnaryVoid<Object>() {
+                    @Override
                     public void call(Object val) {
                         if (val != null) {
                             regexListModel.addElement(val);
@@ -86,18 +108,24 @@ public class XslTransformationFetchPanel extends JPanel {
         });
 
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 edit();
             }
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int which = regexList.getSelectedIndex();
                 regexListModel.removeElement(regexList.getSelectedValue());
                 regexList.setSelectedIndex(which);
             }
         });
+
+        noUrlFoundCheckBox.setText(resourceBundle.getString("noUrlFoundCheckbox.text"));
+        regexInfoLabel.setText(resourceBundle.getString("fetchRegexList.label"));
+        regexDescriptionLabel.setText(resourceBundle.getString("fetchRegexList.description"));
 
         enableButtons();
 
@@ -107,10 +135,11 @@ public class XslTransformationFetchPanel extends JPanel {
     }
 
     private void pop(String initialValue, final Functions.UnaryVoid<Object> result) {
-        final OkCancelDialog regexDialog = new OkCancelDialog(xslDialog, regexTitle, true, new RegexPanel(regexPrompt, initialValue));
+        final OkCancelDialog regexDialog = new OkCancelDialog(parentDialog, regexTitle, true, new RegexPanel(regexPrompt, initialValue));
         regexDialog.pack();
         Utilities.centerOnScreen(regexDialog);
         DialogDisplayer.display(regexDialog, new Runnable() {
+            @Override
             public void run() {
                 result.call(regexDialog.getValue());
             }
@@ -122,6 +151,7 @@ public class XslTransformationFetchPanel extends JPanel {
         final int pos = regexList.getSelectedIndex();
 
         pop(oval, new Functions.UnaryVoid<Object>() {
+            @Override
             public void call(Object object) {
                 String nval = (String)object;
                 if (nval == null || oval.equals(nval)) return;
@@ -140,14 +170,14 @@ public class XslTransformationFetchPanel extends JPanel {
         removeButton.setEnabled(editremove);
     }
 
-    String check() {
+    public String check() {
         if (regexListModel.isEmpty()) {
-            return xslDialog.getResources().getString("error.noregexes");
+            return resourceBundle.getString("error.noregexes");
         }
         return null;
     }
 
-    void updateModel(XslTransformation assertion) {
+    public void updateModel(UsesResourceInfo assertion) {
         ArrayList regexes = new ArrayList();
         for (Enumeration e = regexListModel.elements(); e.hasMoreElements();) {
             String regex = (String)e.nextElement();
@@ -155,7 +185,7 @@ public class XslTransformationFetchPanel extends JPanel {
         }
         MessageUrlResourceInfo rinfo = new MessageUrlResourceInfo();
         rinfo.setUrlRegexes((String[])regexes.toArray(new String[0]));
-        rinfo.setAllowMessagesWithoutUrl(allowWithoutStylesheetCheckbox.isSelected());
+        rinfo.setAllowMessagesWithoutUrl(noUrlFoundCheckBox.isSelected());
         assertion.setResourceInfo(rinfo);
     }
 
@@ -171,7 +201,7 @@ public class XslTransformationFetchPanel extends JPanel {
         return addButton;
     }
 
-    public JCheckBox getAllowWithoutStylesheetCheckbox() {
-        return allowWithoutStylesheetCheckbox;
+    public JCheckBox getNoUrlFoundCheckBox() {
+        return noUrlFoundCheckBox;
     }
 }

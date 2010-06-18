@@ -24,7 +24,7 @@ import java.util.Map;
  * A ResourceGetter that has a single statically-configured URL that it watches to download the latest value of
  * the resource, corresponding to {@link com.l7tech.policy.SingleUrlResourceInfo}.
  */
-class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
+class SingleUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
     private final String url;
 
     SingleUrlResourceGetter(Assertion assertion,
@@ -52,7 +52,7 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
     }
 
     @Override
-    public R getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
+    public R getResource(M notUsed, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
         String actualUrl = vars == null ? url : ExpandVariables.process(url, vars, audit);
         try {
             return fetchObject(actualUrl);

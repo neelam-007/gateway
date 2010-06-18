@@ -24,6 +24,7 @@ import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -55,7 +56,7 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final ResourceGetter<String> resourceGetter;
+    private final ResourceGetter<String, ElementCursor> resourceGetter;
     private final String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
@@ -202,6 +203,8 @@ public class ServerSchemaValidation
                 Map vars = context.getVariableMap(varsUsed, auditor);
                 String schemaUrl = null;
                 try {
+                    //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
+                    //xmlKnob.getElementCursor() is not needed, but will be used if support for MessageUrlResourceInfo's are allowed in this server assertion.
                     schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
                     ps = schemaManager.getSchemaByUrl(schemaUrl);
                 } catch (IOException e) {

@@ -53,6 +53,7 @@ public final class Message {
     private SoapKnob soapKnob;
     private MimeKnob mimeKnob;
     private SecurityKnob securityKnob;
+    private JsonKnob jsonKnob;
 
     /**
      * Create a Message with no facets.
@@ -193,6 +194,26 @@ public final class Message {
     }
 
     /**
+     * Get the knob for the JSON facet of this Message, creating one if necessary and possible.
+     * If no JSON facet is currently installed, one will be created if there is a MIME facet whose first part's
+     * conent-type is application/json
+     * @return
+     */
+    public JsonKnob getJsonKnob(){
+        if(this.jsonKnob != null)
+           return this.jsonKnob;
+
+        JsonKnob jsonKnob = getKnob(JsonKnob.class);
+        if(jsonKnob == null) {
+            rootFacet = new JsonFacet(this, rootFacet);
+            invalidateCachedKnobs();
+            jsonKnob = getKnob(JsonKnob.class);
+            if (jsonKnob == null) throw new IllegalStateException(); // can't happen, we just made one
+        }
+        return jsonKnob;
+    }
+
+    /**
      * Get the knob for the XML facet of this Message, creating one if necessary and possible.
      * If no XML facet is currently installed, one will be created if there is a MIME facet whose
      * first part's content type is text/xml.
@@ -233,6 +254,45 @@ public final class Message {
             if (secKnob == null) throw new IllegalStateException();
         }
         return secKnob;
+    }
+
+    /**
+     * Check if this message is declared as containing JSON.  Does not actually parse the JSON, if it's there.
+     * No exceptions are thrown except IOException, and that only in a situation that would be fatal to the Message
+     * anyway.
+     * <p>
+     * If this method returns true, an JsonKnob will be present on this Message.
+     *
+     * @return true if this message has a first part declared as application/json, which has some content;
+     *         false if this message has no first part or its first part isn't declared as JSON or has a length of 0.
+     * @throws IOException if thrown while access the first part of the mime knob
+     */
+    public boolean isJson() throws IOException {
+
+        if (jsonKnob != null)
+            return true;
+
+        if (getKnob(JsonKnob.class) != null)
+            return true;
+
+        MimeKnob mimeKnob = getKnob(MimeKnob.class);
+        if (mimeKnob == null)
+            return false;
+        if (!mimeKnob.getFirstPart().getContentType().isJson())
+            return false;
+
+        // It's declared as JSON, check that there is some content
+        HttpRequestKnob knob = getKnob(HttpRequestKnob.class);
+        if (knob != null) {
+            int length = knob.getIntHeader(HttpConstants.HEADER_CONTENT_LENGTH);
+            if (length == 0) {
+                return false;
+            }
+        }
+
+        getJsonKnob();
+
+        return true;
     }
 
     /**
@@ -379,6 +439,14 @@ public final class Message {
      */
     public boolean isHttpRequest() {
         return getKnob(HttpRequestKnob.class) != null;
+    }
+
+    /**
+     * Check if this message is a Http response.
+     * @return true if the message is a Http response
+     */
+    public boolean isHttpResponse() {
+        return getKnob(HttpResponseKnob.class) != null;
     }
 
     /**
@@ -582,6 +650,8 @@ public final class Message {
             return securityKnob != null ? (T)securityKnob : (T)(securityKnob = (SecurityKnob)findKnob(c));
         if (c == SoapKnob.class)
             return soapKnob != null ? (T)soapKnob : (T)(soapKnob = (SoapKnob)findKnob(c));
+        if (c == JsonKnob.class)
+            return jsonKnob != null ? (T)jsonKnob : (T)(jsonKnob = (JsonKnob)findKnob(c));
 
         return (T)findKnob(c);
     }
@@ -600,6 +670,7 @@ public final class Message {
         soapKnob = null;
         mimeKnob = null;
         securityKnob = null;
+        jsonKnob = null;
     }
 
     public static boolean isDefaultEnableOriginalDocument() {

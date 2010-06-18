@@ -403,7 +403,16 @@ public class DialogDisplayer {
             if (title != null) {
                 dialogTitle = title;
             }
-            showMessageDialog(parent, message, dialogTitle, JOptionPane.WARNING_MESSAGE, null);
+            final FontMetrics fontMetrics = parent.getFontMetrics(component.getFont());
+            final int width = Utilities.computeStringWidth(fontMetrics, message);
+            final Object object;
+            if(width > 600){
+                object = Utilities.getTextDisplayComponent( message, 600, 100, -1, -1 );
+            }else{
+                object = message;
+            }
+
+            showMessageDialog(parent, object, dialogTitle, JOptionPane.WARNING_MESSAGE, null);
         } else {                 // Otherwise, use an error dialog to display an error message:
             // Create an error dialog
             ErrorMessageDialog emd;

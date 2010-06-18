@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="json-schema-validator"
+		module="json-schema-validator"
+		revision="0.0.1-SNAPSHOT"
+		status="release"
+		publication="20100602154858"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="json-schema-validator" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

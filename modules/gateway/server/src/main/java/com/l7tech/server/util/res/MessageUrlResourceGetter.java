@@ -21,8 +21,8 @@ import java.util.regex.PatternSyntaxException;
  * A ResourceGetter that finds URLs inside the message, then fetches the appropriate resource (with caching),
  * corresponding to {@link com.l7tech.policy.MessageUrlResourceInfo}.
  */
-class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
-    private final UrlFinder urlFinder;
+class MessageUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
+    private final UrlFinder<M> urlFinder;
     private final boolean allowMessagesWithoutUrl;
     private final Pattern[] urlWhitelist;
 
@@ -30,7 +30,7 @@ class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
 
     MessageUrlResourceGetter(MessageUrlResourceInfo ri,
                              UrlResolver<R> urlResolver,
-                             UrlFinder urlFinder,
+                             UrlFinder<M> urlFinder,
                              Audit audit)
             throws PatternSyntaxException
     {
@@ -47,7 +47,7 @@ class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
     }
 
     @Override
-    public R getResource(ElementCursor message, Map vars)
+    public R getResource(M message, Map vars)
             throws IOException, MalformedResourceUrlException, UrlNotPermittedException,
             ResourceIOException, InvalidMessageException, ResourceParseException, GeneralSecurityException, UrlNotFoundException
     {

@@ -14,7 +14,7 @@ import java.text.ParseException;
 /**
  * Superclass for ResourceGetters that fetch the resource from an external URL.
  */
-abstract class UrlResourceGetter<R> extends ResourceGetter<R> {
+abstract class UrlResourceGetter<R, M> extends ResourceGetter<R, M> {
 
     // --- Member fields
     private final UrlResolver<R> urlResolver;

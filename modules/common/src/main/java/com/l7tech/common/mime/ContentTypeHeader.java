@@ -34,6 +34,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final ContentTypeHeader SOAP_1_2_DEFAULT; // appliacation/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
+    public static final ContentTypeHeader APPLICATION_JSON; // appliacation//json; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
     public static final Charset DEFAULT_HTTP_ENCODING = Charset.forName("ISO8859-1"); // See RFC2616 s3.7.1
@@ -47,6 +48,7 @@ public class ContentTypeHeader extends MimeHeader {
             XML_DEFAULT.getEncoding();
             SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
+            APPLICATION_JSON = parseValue("application/json");
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -277,6 +279,10 @@ public class ContentTypeHeader extends MimeHeader {
 
     public boolean isApplication() {
         return "application".equalsIgnoreCase(getType());
+    }
+
+    public boolean isJson() {
+        return "application".equalsIgnoreCase(getType()) && "json".equalsIgnoreCase(getSubtype());
     }
 
     /** @return true if the type is "multipart" */

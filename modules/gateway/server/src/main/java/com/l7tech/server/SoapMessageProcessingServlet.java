@@ -62,6 +62,7 @@ import java.util.zip.GZIPOutputStream;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 
 /**
+ * TODO: update class name and javadoc as this class processes non soap requests e.g. XML and JSON
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
  * and formats the response as a reasonable approximation of an HTTP response.
  * <p/>

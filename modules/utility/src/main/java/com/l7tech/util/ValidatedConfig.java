@@ -22,6 +22,13 @@ public class ValidatedConfig implements Config {
         } );
     }
 
+    /**
+     *
+     * @param config Config to decorate with validation.
+     * @param logger Logger to write warning logs to when validation for a property fails.
+     * @param nameResolver Resolver. Used to convert the internal server name for a cluster property into the user
+     * visible name for error reporting when validation fails and a default value is used via a getXXXProperty method.
+     */
     public ValidatedConfig( final Config config,
                             final Logger logger,
                             final Resolver<String,String> nameResolver ) {
