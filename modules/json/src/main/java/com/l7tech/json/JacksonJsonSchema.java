@@ -39,7 +39,7 @@ class JacksonJsonSchema implements JSONSchema{
     }
 
     @Override
-    public List<String> validate(JSONData jsonData) throws IOException{
+    public List<String> validate(JSONData jsonData) throws InvalidJsonException{
         if (jsonData instanceof JacksonJsonData){
             JacksonJsonData jacksonJson = (JacksonJsonData) jsonData;
             final JsonNode jsonInstanceNode = jacksonJson.getJsonNode();
@@ -49,7 +49,7 @@ class JacksonJsonSchema implements JSONSchema{
         try {
             return jacksonSchema.validate(jsonData.getJsonData());
         } catch (JSONSchemaException e) {
-            throw new IOException(e);
+            throw new InvalidJsonException(e);
         }
     }
 

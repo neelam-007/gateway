@@ -710,9 +710,10 @@ public class AssertionMessages extends Messages {
     public static final M JDBC_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to: {0}");
     public static final M JDBC_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9105, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
 
-    public static final M JSON_SCHEMA_VALIDATION_FAILED              = m(9130, Level.INFO, "JSON Schema validation failure: {0}");
-    public static final M JSON_SCHEMA_INVALID_JSON                   = m(9131, Level.INFO, "{0} is not well-formed JSON; cannot validate");
-    public static final M JSON_SCHEMA_VALIDATION_VALIDATING          = m(9132, Level.FINEST, "Validating {0} against JSON Schema");
+    public static final M JSON_SCHEMA_VALIDATION_FAILED     = m(9130, Level.INFO, "JSON Schema validation failure. {0}");
+    public static final M JSON_SCHEMA_INVALID_JSON          = m(9131, Level.INFO, "{0} is not well-formed JSON; cannot validate.");
+    public static final M JSON_SCHEMA_VALIDATION_VALIDATING = m(9132, Level.FINEST, "Validating {0} against JSON Schema.");
+    public static final M JSON_VALIDATION_SUCCEEDED         = m(9133, Level.FINEST, "JSON Schema validation success.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

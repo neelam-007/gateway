@@ -23,6 +23,7 @@ public interface JSONSchema {
 
      * @param jsonData JSON instance data to validate
      * @return List of String, a value for each validation error. Never null. Empty when there were no validation errors.
+     * @throws InvalidJsonException if the JSON schema is invalid JSON data.
      */
-    public List<String> validate(JSONData jsonData) throws IOException;
+    public List<String> validate(JSONData jsonData) throws InvalidJsonException;
 }

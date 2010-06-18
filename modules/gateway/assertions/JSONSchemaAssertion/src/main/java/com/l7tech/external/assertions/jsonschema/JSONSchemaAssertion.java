@@ -4,7 +4,9 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -23,6 +25,13 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
     public static final String PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
 
     @Override
+    public VariableMetadata[] getVariablesSet() {
+        return mergeVariablesSet(new VariableMetadata[] {
+                new VariableMetadata(JSON_SCHEMA_FAILURE_VARIABLE, false, true, JSON_SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
+        });
+    }
+
+    @Override
     public String[] getVariablesUsed() {
         List<String> variables = new ArrayList<String>();
 
@@ -39,10 +48,11 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
             variables.add(getOtherTargetMessageVariable());
         }
 
-        variables.add(JSON_SCHEMA_FAILURE_VARIABLE);
         return variables.toArray( new String[variables.size()] );
     }
 
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -74,7 +84,7 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         meta.put(AssertionMetadata.LONG_NAME, "Validate JSON data against a JSON Schema");
         meta.put(AssertionMetadata.DESCRIPTION, "Validate structure, properties and values of JSON data against a JSON Schema");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions"); //todo which should it belong to?
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         
