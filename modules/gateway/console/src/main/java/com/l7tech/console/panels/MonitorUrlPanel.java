@@ -14,16 +14,28 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 /**
+ * Panel that allows the user to enter a URL to monitor.
+ *
  * @author mike
  */
-public class XslTransformationSpecifyUrlPanel extends JPanel {//todo [Donal] rename class following Json schema commit
+public class MonitorUrlPanel extends JPanel {
     private JPanel mainPanel;
     private JTextField urlField;
     private JLabel fetchUrlDescription;
     private JLabel urlToMonitorLabel;
     private ResourceBundle resourceBundle;
 
-    public XslTransformationSpecifyUrlPanel(UsesResourceInfo assertion, ResourceBundle resourceBundle) {
+    /**
+     * The following keys are required in the resource bundle:
+     * fetchUrlTextBox.description
+     * fetchUrlTextBox.label
+     * error.badurl
+     * error.nourl
+     *
+     * @param assertion UsesResourceInfo assertion bean
+     * @param resourceBundle ResourceBundle which contains the above keys
+     */
+    public MonitorUrlPanel(UsesResourceInfo assertion, ResourceBundle resourceBundle) {
         this.resourceBundle = resourceBundle;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 

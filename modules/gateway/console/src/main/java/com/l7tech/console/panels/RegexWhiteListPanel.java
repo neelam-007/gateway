@@ -23,11 +23,12 @@ import java.util.Enumeration;
 import java.util.ResourceBundle;
 
 /**
+ * Panel that allows a user to enter in a list of URL white list regexes.
  *
  * @author alex
  * @author darmstrong - updated to be usable outside of XSL.
  */
-public class XslTransformationFetchPanel extends JPanel {//todo[Donal] rename class after json commit
+public class RegexWhiteListPanel extends JPanel {
     private JButton removeButton;
     private JButton editButton;
     private JButton addButton;
@@ -57,7 +58,7 @@ public class XslTransformationFetchPanel extends JPanel {//todo[Donal] rename cl
      * @param assertion UsesResourceInfo assertion bean
      * @param resourceBundle ResourceBundle which contains the above keys
      */
-    public XslTransformationFetchPanel(final JDialog parent, UsesResourceInfo assertion, ResourceBundle resourceBundle) {
+    public RegexWhiteListPanel(final JDialog parent, UsesResourceInfo assertion, ResourceBundle resourceBundle) {
         this.parentDialog = parent;
         this.resourceBundle = resourceBundle;
         String[] regexes = null;

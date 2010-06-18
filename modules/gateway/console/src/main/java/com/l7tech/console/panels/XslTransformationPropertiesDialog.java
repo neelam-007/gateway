@@ -43,8 +43,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
-    private final XslTransformationFetchPanel fetchPanel;
-    private final XslTransformationSpecifyUrlPanel specifyUrlPanel;
+    private final RegexWhiteListPanel fetchPanel;
+    private final MonitorUrlPanel specifyUrlPanel;
     private boolean wasoked = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
@@ -77,8 +77,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
         whichMimePartLabel.setLabelFor(whichMimePartSpinner);
 
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
-        fetchPanel = new XslTransformationFetchPanel(this, assertion, getResources());
-        specifyUrlPanel = new XslTransformationSpecifyUrlPanel(assertion, getResources());
+        fetchPanel = new RegexWhiteListPanel(this, assertion, getResources());
+        specifyUrlPanel = new MonitorUrlPanel(assertion, getResources());
 
         innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
         innerPanel.add(specifyPanel);

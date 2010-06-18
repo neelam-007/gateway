@@ -21,7 +21,6 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -41,8 +40,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSupport<JSONSchemaAssertion> {
-    private XslTransformationSpecifyUrlPanel urlPanel;
-    private XslTransformationFetchPanel fetchPanel;
+    private MonitorUrlPanel urlPanel;
+    private RegexWhiteListPanel fetchPanel;
 
     public JSONSchemaPropertiesDialog(final Window parent, final JSONSchemaAssertion assertion) {
         super(JSONSchemaAssertion.class, parent, assertion, true);
@@ -141,10 +140,10 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         innerPanel.add(monitorUrlPanel);
         innerPanel.add(retrieveUrlPanel);
 
-        fetchPanel = new XslTransformationFetchPanel(this, assertion, resources);
+        fetchPanel = new RegexWhiteListPanel(this, assertion, resources);
         retrieveUrlPanel.add(fetchPanel, BorderLayout.CENTER);
 
-        urlPanel = new XslTransformationSpecifyUrlPanel(assertion, resources);
+        urlPanel = new MonitorUrlPanel(assertion, resources);
         monitorUrlPanel.add(urlPanel, BorderLayout.CENTER);
 
         cbSchemaLocation.setModel(new DefaultComboBoxModel(MODES));
