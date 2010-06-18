@@ -5,7 +5,7 @@ import com.l7tech.console.panels.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -240,10 +240,10 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             logger.log(Level.FINE, errorMsg, e);
         }
 
-        final SchemaAdmin schemaAdmin = getSchemaAdmin();
+        final ServiceAdmin schemaAdmin = getServiceAdmin();
         final String jsonSchema;
         try {
-            jsonSchema = schemaAdmin.resolveSchemaTarget(url);
+            jsonSchema = schemaAdmin.resolveUrlTarget(url, JSONSchemaAssertion.CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
@@ -265,18 +265,16 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         jsonTextArea.setText(jsonSchema);
     }
 
-    private SchemaAdmin getSchemaAdmin() {
+    private ServiceAdmin getServiceAdmin() {
+        final ServiceAdmin serviceAdmin;
         final Registry reg = Registry.getDefault();
-        if ( reg == null ) {
-            throw new RuntimeException("No access to registry. Cannot locate schema admin.");
+        if (reg == null || reg.getServiceManager() == null) {
+            throw new RuntimeException("No access to registry. Cannot download document.");
+        } else {
+            serviceAdmin = reg.getServiceManager();
         }
 
-        final SchemaAdmin schemaAdmin = reg.getSchemaAdmin();
-        if ( schemaAdmin == null ) {
-            throw new RuntimeException("Unable to access schema admin.");
-        }
-
-        return schemaAdmin;
+        return serviceAdmin;
     }
 
     private void readFromFile() {
