@@ -14,6 +14,14 @@ import org.codehaus.jackson.map.ObjectMapper;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Implementation has been provided via http://gitorious.org/json-schema-validation-in-java.
+ *
+ * The source code has been reviewed and deemed thread safe based on it's implementation.
+ *
+ * If any issues arise, then the JacksonSchema instance variable should be removed and an instance created inside of
+ * validate to guarantee thread safety.
+ */
 class JacksonJsonSchema implements JSONSchema{
 
     public JacksonJsonSchema(ObjectMapper mapper, JSONData jsonData) throws IOException, InvalidJsonException{
