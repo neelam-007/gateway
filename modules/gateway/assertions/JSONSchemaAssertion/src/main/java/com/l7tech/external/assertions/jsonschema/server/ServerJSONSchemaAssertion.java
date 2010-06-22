@@ -66,7 +66,9 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
             message = context.getTargetMessage(assertion, true);
             //this message may be a context variable backed Message
         } catch (NoSuchVariableException e) {
-            logger.log(Level.WARNING, "Could not find variable '" + assertion.getOtherTargetMessageVariable() + "'");
+            final String msg = "Could not find variable '" + assertion.getOtherTargetMessageVariable() + "'";
+            logger.log(Level.WARNING, msg);
+            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, msg);
             return AssertionStatus.FAILED;
         }
 
@@ -85,8 +87,10 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                         logger.log(Level.FINE, "JSON data received from target '" + messageDesc+"' is not of content-type application/json");
                     }
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Cannot get JSON data from message target '" + messageDesc +
-                            "'. Details: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    final String msg = "Cannot get JSON data from message target '" + messageDesc +
+                            "'. Details: " + ExceptionUtils.getMessage(e);
+                    logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                    context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, msg);
                     return AssertionStatus.SERVER_ERROR;
                 }
                 
@@ -94,7 +98,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
             }
         } catch (InvalidJsonException e) {
             auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_INVALID_JSON, messageDesc);
-            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, "Target JSON data is invalid JSON.");
+            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, messageDesc+" data is not well-formed JSON.");
             return AssertionStatus.FAILED;
         }
 
@@ -115,7 +119,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             }
-            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, ExceptionUtils.getMessage(e));
+            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, "Cannot retrieve JSON Schema: " + ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -132,7 +136,9 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
             return AssertionStatus.NONE;
         } else if(jsonSchema == null){
             //this should never happen if resource getters were setup correctly
-            logger.log(Level.WARNING, "No JSON Schema found.");
+            final String msg = "No JSON Schema found.";
+            logger.log(Level.WARNING, msg);
+            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, msg);
             return AssertionStatus.SERVER_ERROR;
         }
 
