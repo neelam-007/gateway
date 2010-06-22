@@ -101,10 +101,21 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         final JSONSchema jsonSchema;
         try {
             jsonSchema = getJsonSchema(context, message);
-        } catch (InvalidPolicyException e) {
-            logger.log(Level.INFO, "Unable to retrieve JSON Schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+        } catch (Exception e){
+            boolean cantRetrieveException = e instanceof ResourceGetter.ResourceParseException ||
+                    e instanceof ResourceGetter.ResourceIOException ||
+                    e instanceof ParseException;
+
+            if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Unable to retrieve JSON Schema");
+
+            if (cantRetrieveException) {
+                auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_IO_ERROR,
+                        new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            } else {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            }
+            context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -159,20 +170,20 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         }
     }
 
-    private JSONSchema getJsonSchema(PolicyEnforcementContext context, Message message) throws IOException, InvalidPolicyException {
+    private JSONSchema getJsonSchema(PolicyEnforcementContext context, Message message)
+            throws IOException, InvalidPolicyException, ResourceGetter.ResourceIOException, ResourceGetter.ResourceParseException {
         try {
             return resourceGetter.getResource(message, context.getVariableMap(variablesUsed, auditor));
-        } catch (ResourceGetter.ResourceIOException e) {
-            throw new InvalidPolicyException("Error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            //don't catch UrlResourceException as it will stop non caught subclasses from propagating out
         } catch (GeneralSecurityException e) {
             throw new InvalidPolicyException("Error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-        } catch (ResourceGetter.ResourceParseException e) {
-            throw new InvalidPolicyException("Invalid JSON Schema '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-        } catch (ResourceGetter.UrlResourceException e) { // should not happen since we are not examining the message
-            throw new InvalidPolicyException("URL error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
         } catch (ResourceGetter.UrlNotFoundException e) { // should not happen since we are not examining the message
             throw new InvalidPolicyException("URL error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
         } catch (ResourceGetter.InvalidMessageException e) { // should not happen since we are not examining the message
+            throw new InvalidPolicyException("URL error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+        } catch (ResourceGetter.UrlNotPermittedException e) {
+            throw new InvalidPolicyException("URL error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+        } catch (ResourceGetter.MalformedResourceUrlException e) {
             throw new InvalidPolicyException("URL error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
         }
     }
@@ -343,7 +354,17 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     String response = responseSource.getString(false);
                     try {
                         return jsonFactory.newJsonSchema(response);
-                    } catch (Exception pe) {
+                    } catch (InvalidJsonException pe) {
+                        //Explicitly create the ParseException so that the ResourceGetter.getResource() exception handling
+                        //can identify the case when the json data could not be parsed
+                        if(logger.isLoggable(Level.FINE)){
+                            //the actual message is usually not helpful. It's implementation specific and is low level.
+                            //all the user will normally need to know is that the json is invalid.
+                            logger.log(Level.FINE, "Response contained invalid JSON. Details: " + ExceptionUtils.getMessage(pe));
+                        }
+                        final ParseException parseException = new ParseException("Response contained invalid JSON.", 0);
+                        throw new CausedIOException(parseException.getMessage(), parseException);
+                    } catch (IOException pe) {
                         throw new CausedIOException(ExceptionUtils.getMessage(pe), pe);
                     }
                 }

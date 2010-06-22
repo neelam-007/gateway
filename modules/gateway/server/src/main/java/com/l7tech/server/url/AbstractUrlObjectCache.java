@@ -332,7 +332,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             if (e != null && logger.isLoggable(Level.WARNING))
                 logger.log(Level.WARNING,
                            "Reusing previously-cached copy of remote resource: URL: " + url + ": " +
-                                   ExceptionUtils.getMessage(e), e);
+                                   ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return obj;
         }
 

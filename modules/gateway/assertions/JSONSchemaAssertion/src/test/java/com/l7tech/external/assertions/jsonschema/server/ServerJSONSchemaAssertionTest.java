@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.jsonschema.server;
 
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
@@ -37,6 +36,7 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,51 +51,7 @@ import java.util.regex.Pattern;
 public class ServerJSONSchemaAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerJSONSchemaAssertionTest.class.getName());
-    private GenericApplicationContext context;
     private StashManager stashManager;
-
-    @Before
-    public void setUp() throws Exception{
-        final TestingHttpClientFactory testFactory = new TestingHttpClientFactory();
-        final byte[] bytes = jsonSchema.getBytes();
-        MockGenericHttpClient mockClient = new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}),
-                ContentTypeHeader.APPLICATION_JSON, (long) bytes.length, bytes);
-        testFactory.setMockHttpClient(mockClient);
-
-        DefaultListableBeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("serverConfig", ServerConfig.getInstance());
-            put("httpClientFactory", testFactory);
-            put("stashManagerFactory", TestStashManagerFactory.getInstance());
-            put("auditContext", new AuditContextStub());
-        }});
-
-        context  = new GenericApplicationContext(beanFactory);
-        context.refresh();
-
-        //not needed for any tests, just doing to remove the warning messages and to allow for testing of the
-        //cluster properties if needed
-        ServerConfig serverConfig = (ServerConfig) context.getBean("serverConfig");
-        final AssertionMetadata assertionMetadata = new JSONSchemaAssertion().meta();
-        final Map<String, String[]> props = assertionMetadata.get(AssertionMetadata.CLUSTER_PROPERTIES);
-        List<String[]> toAdd = new ArrayList<String[]>();
-
-        for (Map.Entry<String, String[]> entry : props.entrySet()) {
-
-            String clusterPropertyName = entry.getKey();
-            String[] tuple = entry.getValue();
-            // Dynamically register this new cluster property
-            String desc = tuple[0];
-            String dflt = tuple[1];
-            String serverConfigName = ClusterProperty.asServerConfigPropertyName(clusterPropertyName);
-
-            toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt });
-        }
-        if (!toAdd.isEmpty()) serverConfig.registerServerConfigProperties(toAdd.toArray(new String[toAdd.size()][]));
-
-//        context = delegateContext;
-        StashManagerFactory factory = (StashManagerFactory) context.getBean("stashManagerFactory");
-        stashManager = factory.createStashManager();
-    }
 
     // -  STATIC RESOURCE
 
@@ -104,8 +60,9 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new StaticResourceInfo(jsonSchema));
         assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, buildContext(), ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -116,6 +73,7 @@ public class ServerJSONSchemaAssertionTest {
         final String schemaVar = "JSON_SCHEMA";
         assertion.setResourceInfo(new StaticResourceInfo("${" + schemaVar + "}"));
         assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(schemaVar, jsonSchema);
@@ -128,6 +86,7 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new StaticResourceInfo(jsonSchema));
         assertion.setTarget(TargetMessageType.RESPONSE);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, false, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -141,6 +100,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         final String varName = "STRING_VARIABLE";
         assertion.setOtherTargetMessageVariable(varName);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(varName, jsonInstance);
@@ -155,6 +115,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         final String varName = "STRING_VARIABLE";
         assertion.setOtherTargetMessageVariable(varName);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
         final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(jsonInstance.getBytes()));
@@ -168,6 +129,7 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new StaticResourceInfo(jsonSchema));
         assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -179,6 +141,7 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new StaticResourceInfo(jsonSchema));
         assertion.setTarget(TargetMessageType.RESPONSE);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(invalidJsonInstance, false, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -192,6 +155,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         final String varName = "STRING_VARIABLE";
         assertion.setOtherTargetMessageVariable(varName);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(varName, invalidJsonInstance);
@@ -206,6 +170,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         final String varName = "STRING_VARIABLE";
         assertion.setOtherTargetMessageVariable(varName);
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
         final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidJsonInstance.getBytes()));
@@ -221,6 +186,7 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new SingleUrlResourceInfo("http://imaurl.com"));
         assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -232,10 +198,47 @@ public class ServerJSONSchemaAssertionTest {
         JSONSchemaAssertion assertion = new JSONSchemaAssertion();
         assertion.setResourceInfo(new SingleUrlResourceInfo("http://imaurl.com"));
         assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.BAD_REQUEST, assertionStatus);
+    }
+
+    /**
+     * Logs should contain the correct audit code: 9134. This is an expected error when a url returns status 404 (or 500 etc)
+     * @throws Exception
+     */
+    @Test
+    public void testMonitorUrl_InValidUrl() throws Exception {
+
+        final byte[] bytes = "".getBytes();
+        final GenericApplicationContext context = buildContext(bytes);
+        JSONSchemaAssertion assertion = new JSONSchemaAssertion();
+        assertion.setResourceInfo(new SingleUrlResourceInfo("http://imaurlwith404.com"));
+        assertion.setTarget(TargetMessageType.REQUEST);
+
+        ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
+    }
+
+    /**
+     * Logs should contain the correct audit code: 9134. This is an expected error when a url provides invalid json data
+     * @throws Exception
+     */
+    @Test
+    public void testMonitorUrl_InValidRuntimeSchema() throws Exception {
+
+        JSONSchemaAssertion assertion = new JSONSchemaAssertion();
+        assertion.setResourceInfo(new SingleUrlResourceInfo("http://imaurlwithinvalidschema.com"));
+        assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext(invalidJsonSchema.getBytes());
+        ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
 
     // - RETRIEVE URL FROM HEADER
@@ -246,6 +249,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://.*"}));
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -258,6 +262,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://wontmatch.*"}));
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -270,6 +275,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://.*"})); //this matches the url set up in getContext
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), linkHeader);
@@ -283,6 +289,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://.*"})); //this matches the url set up in getContext
         assertion.setTarget(TargetMessageType.RESPONSE);
 
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
         PolicyEnforcementContext pec = getContext(jsonInstance, false, null, context, ContentTypeHeader.create("application/json"), linkHeader);
@@ -296,6 +303,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://nomatch.*"})); //this matches the url set up in getContext
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), linkHeader);
@@ -309,6 +317,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(new MessageUrlResourceInfo(new String[]{"http://.*"})); //this matches the url set up in getContext
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -323,6 +332,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setResourceInfo(resourceInfo); //this matches the url set up in getContext
         assertion.setTarget(TargetMessageType.REQUEST);
 
+        final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -406,6 +416,64 @@ public class ServerJSONSchemaAssertionTest {
         return policyEnforcementContext;
     }
 
+    public GenericApplicationContext buildContext() throws Exception{
+        return buildContext(null);
+    }
+
+    public GenericApplicationContext buildContext(byte[] bytes) throws Exception{
+        final TestingHttpClientFactory testFactory = new TestingHttpClientFactory();
+        if(bytes != null){
+            MockGenericHttpClient mockClient = new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}),
+                    ContentTypeHeader.APPLICATION_JSON, (long) bytes.length, bytes);
+            testFactory.setMockHttpClient(mockClient);
+        }
+        
+        DefaultListableBeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
+            put("serverConfig", ServerConfig.getInstance());
+            put("httpClientFactory", testFactory);
+            put("stashManagerFactory", TestStashManagerFactory.getInstance());
+            put("auditContext", new AuditContextStub());
+        }});
+
+        GenericApplicationContext context  = new GenericApplicationContext(beanFactory);
+        context.refresh();
+
+        //not needed for any tests, just doing to remove the warning messages and to allow for testing of the
+        //cluster properties if needed
+        ServerConfig serverConfig = (ServerConfig) context.getBean("serverConfig");
+        final AssertionMetadata assertionMetadata = new JSONSchemaAssertion().meta();
+        final Map<String, String[]> props = assertionMetadata.get(AssertionMetadata.CLUSTER_PROPERTIES);
+        List<String[]> toAdd = new ArrayList<String[]>();
+
+        for (Map.Entry<String, String[]> entry : props.entrySet()) {
+            String clusterPropertyName = entry.getKey();
+            String[] tuple = entry.getValue();
+            // Dynamically register this new cluster property
+            String desc = tuple[0];
+            String dflt;
+
+            if (clusterPropertyName.equals(JSONSchemaAssertion.CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES)) {
+                dflt = "0";//no cache
+            } else {
+                dflt = tuple[1];
+            }
+            String serverConfigName = ClusterProperty.asServerConfigPropertyName(clusterPropertyName);
+
+            toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt });
+        }
+        if (!toAdd.isEmpty()) serverConfig.registerServerConfigProperties(toAdd.toArray(new String[toAdd.size()][]));
+
+
+        StashManagerFactory factory = (StashManagerFactory) context.getBean("stashManagerFactory");
+        stashManager = factory.createStashManager();
+
+        final Field field = ServerJSONSchemaAssertion.class.getDeclaredField("httpObjectCache");
+        field.setAccessible(true);
+        field.set(null, null);
+        
+        return context;
+    }
+
     private static String jsonSchema = "{\n" +
             "   \"type\":\"object\",\n" +
             "   \"properties\": {\n" +
@@ -444,5 +512,26 @@ public class ServerJSONSchemaAssertionTest {
             "   \"summaryReport\" : false,\n" +
             "   \"reportName\" : \"My Report\"\n" +
             "}";
+
+    private static String invalidJsonSchema = "{\n" +
+            "   \"type\":\"object\",\n" +
+            "   \"properties\": {\n" +
+            "\t\t\"reportType\": {\"type\":\"string\"},\n" +
+            "\t\t\"entityType\": {\"type\":\"string\"},\n" +
+            "\t\t\"isIgnoringPagination\": {\"type\":\"boolean\"},\n" +
+            "\t\t\"entities\": {\n" +
+            "\t\t\t\"type\":\"array\",\n" +
+            "\t\t\t\"items\": {\n" +
+            "\t\t\t\t\"type\":\"object\",\n" +
+            "\t\t\t\t\"properties\":{\"clusterId\":{\"type\":\"string\"}},\n" +
+            "\t\t\t\t\"additionalProperties\":false\n" +
+            "\t\t\t}\n" +
+            "\t\t},\n" +
+            "\t\t\"summaryChart\": {\"type\":\"boolean\"},\n" +
+            "\t\t\"summaryReport\": {\"type\":\"boolean\"},\n" +
+            "\t\t\"reportName\": {\"type\":\"string\"}\n" +
+            "\t},\n" +
+            "\t\"additionalProperties\":false\n" +
+            "";
 
 }

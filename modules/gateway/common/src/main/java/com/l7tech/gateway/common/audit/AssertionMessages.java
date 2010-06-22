@@ -714,6 +714,6 @@ public class AssertionMessages extends Messages {
     public static final M JSON_SCHEMA_INVALID_JSON          = m(9131, Level.INFO, "{0} is not well-formed JSON; cannot validate.");
     public static final M JSON_SCHEMA_VALIDATION_VALIDATING = m(9132, Level.FINEST, "Validating {0} against JSON Schema.");
     public static final M JSON_VALIDATION_SUCCEEDED         = m(9133, Level.FINEST, "JSON Schema validation success.");
-
+    public static final M JSON_SCHEMA_VALIDATION_IO_ERROR   = m(9134, Level.WARNING, "Cannot validate JSON schema because JSON schema information cannot be retrieved: {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
