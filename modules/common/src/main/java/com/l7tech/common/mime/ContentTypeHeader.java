@@ -272,6 +272,16 @@ public class ContentTypeHeader extends MimeHeader {
         return getParam(MimeUtil.MULTIPART_BOUNDARY);
     }
 
+    /**
+     * See if this content type can be represented as text. This only checks the type and possibly the subtype of
+     * this content type. It is still possible that the first part of the mime knob is not text.
+     *
+     * @return
+     */
+    public boolean isTextualContentType(){
+        return isText() || isXml() || isJson();
+    }
+    
     /** @return true if the type is "text" */
     public boolean isText() {
         return "text".equalsIgnoreCase(getType());

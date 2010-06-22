@@ -3,6 +3,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
@@ -26,6 +27,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -42,6 +44,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -55,6 +58,7 @@ public class ServerVariablesTest {
     private static final LogOnlyAuditor auditor = new LogOnlyAuditor(logger);
     private static final String REQUEST_BODY = "<myrequest/>";
     private static final String RESPONSE_BODY = "<myresponse/>";
+    private static final String JSON_MESSAGE = "{\"result\":\"success\"}";    
 
     /*
     * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
@@ -104,6 +108,23 @@ public class ServerVariablesTest {
     @Test
     public void testResponse() throws Exception {
         doTestMessage("response", RESPONSE_BODY);
+    }
+
+    /**
+     * Test support for .mainpart on Message variables of type 'application/json'.
+     * @throws Exception
+     */
+    @Test
+    public void testJsonMainPart() throws Exception{
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
+        StashManagerFactory factory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory");
+        StashManager stashManager = factory.createStashManager();
+
+        Message m = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON_MESSAGE.getBytes()));
+        context.setVariable("jsonmessage", m);
+        expandAndCheck(context, "${jsonmessage.mainpart}", JSON_MESSAGE);
     }
 
     private void doTestMessage(String prefix, String messageBody) throws Exception {

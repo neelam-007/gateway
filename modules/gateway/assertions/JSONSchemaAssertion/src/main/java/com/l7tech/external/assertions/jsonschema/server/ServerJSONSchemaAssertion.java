@@ -315,25 +315,10 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
             @Override
             public JSONSchema createResourceObject(final String resourceString) throws ParseException {
                 try {
-                    //reuse the jsonSchemaObjectFactory so creation of JSONSchema is only done in one place for this server assertion
-                    return jsonSchemaObjectFactory.createUserObject(null, new AbstractUrlObjectCache.UserObjectSource() {
-                        @Override
-                        public ContentTypeHeader getContentType(){
-                            //not required for how this object will be used.
-                            return null;
-                        }
-
-                        @Override
-                        public String getString(boolean isXml) throws IOException {
-                            if(isXml) throw new IOException("XML is not supported.");
-                            return resourceString;
-                        }
-
-                        @Override
-                        public byte[] getBytes() throws IOException {
-                            throw new IOException("Not supported");
-                        }
-                    });
+                    return createJsonSchema(resourceString);
+                } catch (InvalidJsonException e) {
+                    throw (ParseException)new ParseException("Unable to parse: " +
+                            ExceptionUtils.getMessage(e), 0).initCause(e);
                 } catch (IOException e) {
                     throw (ParseException)new ParseException("Unable to parse: " +
                             ExceptionUtils.getMessage(e), 0).initCause(e);
@@ -353,15 +338,10 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                         throws IOException {
                     String response = responseSource.getString(false);
                     try {
-                        return jsonFactory.newJsonSchema(response);
+                        return createJsonSchema(response);
                     } catch (InvalidJsonException pe) {
-                        //Explicitly create the ParseException so that the ResourceGetter.getResource() exception handling
-                        //can identify the case when the json data could not be parsed
-                        if(logger.isLoggable(Level.FINE)){
-                            //the actual message is usually not helpful. It's implementation specific and is low level.
-                            //all the user will normally need to know is that the json is invalid.
-                            logger.log(Level.FINE, "Response contained invalid JSON. Details: " + ExceptionUtils.getMessage(pe));
-                        }
+                        //Create a ParseException so that the ResourceGetter.getResource() exception handling
+                        //can identify the case when the json data could not be parsed. Not including pe as too low level
                         final ParseException parseException = new ParseException("Response contained invalid JSON.", 0);
                         throw new CausedIOException(parseException.getMessage(), parseException);
                     } catch (IOException pe) {
@@ -369,6 +349,19 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     }
                 }
             };
+
+    private static JSONSchema createJsonSchema(String jsonSchemaString) throws InvalidJsonException, IOException{
+        try {
+            return jsonFactory.newJsonSchema(jsonSchemaString);
+        } catch (InvalidJsonException e) {
+            if(logger.isLoggable(Level.FINE)){
+                //the actual message is usually not helpful. It's implementation specific and is low level.
+                //all the user will normally need to know is that the json is invalid.
+                logger.log(Level.FINE, "Invalid JSON. Details: " + ExceptionUtils.getMessage(e));
+            }
+            throw new InvalidJsonException("JSON schema is invalid");//no full stop due to AssertionMessage #4 formatting.
+        }
+    }
 
     private final JSONSchemaAssertion assertion;
     private final Auditor auditor;

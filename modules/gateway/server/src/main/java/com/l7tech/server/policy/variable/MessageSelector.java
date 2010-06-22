@@ -279,7 +279,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                     return null;
                 }
                 ContentTypeHeader cth = mk.getFirstPart().getContentType();
-                if (cth.isText() || cth.isXml()) {
+                if (cth.isTextualContentType()) {
                     // TODO maximum size? This could be huge and OOM
                     byte[] bytes = IOUtils.slurpStream(mk.getFirstPart().getInputStream(false));
                     return new Selection(new String(bytes, cth.getEncoding()));

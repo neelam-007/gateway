@@ -46,7 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Test the JSONSchemaAssertion.
+ * Test the ServerJSONSchemaAssertion.
  */
 public class ServerJSONSchemaAssertionTest {
 
@@ -411,16 +411,15 @@ public class ServerJSONSchemaAssertionTest {
         if(addLinkHeader  != null && !useRequest){
             response.getHttpResponseKnob().addHeader("Link", addLinkHeader);
         }
-        
 
         return policyEnforcementContext;
     }
 
-    public GenericApplicationContext buildContext() throws Exception{
+    private GenericApplicationContext buildContext() throws Exception{
         return buildContext(null);
     }
 
-    public GenericApplicationContext buildContext(byte[] bytes) throws Exception{
+    private GenericApplicationContext buildContext(byte[] bytes) throws Exception{
         final TestingHttpClientFactory testFactory = new TestingHttpClientFactory();
         if(bytes != null){
             MockGenericHttpClient mockClient = new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}),
