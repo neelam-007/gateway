@@ -19,6 +19,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -42,9 +43,12 @@ public class XMLValidationInterceptor extends AbstractPhaseInterceptor<Message> 
         }
 
         // Check for DOCTYPE
-        final InputStream in = message.getContent( InputStream.class );
+        InputStream in = message.getContent( InputStream.class );
         if ( in != null ) {
-            message.setContent( InputStream.class, in );
+            if ( !in.markSupported() ) {
+                in = new BufferedInputStream( in, dtdLimit );
+                message.setContent( InputStream.class, in );
+            }
 
             try {
                 ensureNoDoctype( in );
