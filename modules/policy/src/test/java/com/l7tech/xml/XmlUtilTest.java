@@ -524,35 +524,35 @@ public class XmlUtilTest {
 
     public static final String BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64 =
             "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCFET0NUWVBFIEVudmVsb3Bl\n" +
-            "IFNZU1RFTSAid2FhaPSAgJMuZHRkIj4gICAgICAgIAo8c29hcDpFbnZlbG9wZQl4bWxuczpzb2Fw\n" +
-            "PSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VudmVsb3BlLyIgeG1sbnM6eHNpPSJo\n" +
-            "dHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSIgeG1sbnM6eHNkPSJodHRw\n" +
-            "Oi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6d3NhPSJodHRwOi8vc2NoZW1hcy54\n" +
-            "bWxzb2FwLm9yZy93cy8yMDA0LzAzL2FkZHJlc3NpbmciIHhtbG5zOndzc2U9Imh0dHA6Ly9kb2Nz\n" +
-            "Lm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS1z\n" +
-            "ZWNleHQtMS4wLnhzZCIgeG1sbnM6d3N1PSJodHRwOi8vZG9jcy5vYXNpcy1vcGVuLm9yZy93c3Mv\n" +
-            "MjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXdzc2VjdXJpdHktdXRpbGl0eS0xLjAueHNkIj4KCTxz\n" +
-            "b2FwOkhlYWRlcj4KCQk8d3NhOkFjdGlvbj5odHRwOi8vd2FyZWhvdXNlLmFjbWUuY29tL3dzL2xp\n" +
-            "c3RQcm9kdWN0czwvd3NhOkFjdGlvbj4KCQk8d3NhOk1lc3NhZ2VJRD51dWlkOjQwYTFkYjI2LTI2\n" +
-            "OTctNDc5OC1hMmI3LTgwM2M3M2IwN2IyZjwvd3NhOk1lc3NhZ2VJRD4KCQk8d3NhOlJlcGx5VG8+\n" +
-            "CgkJCTx3c2E6QWRkcmVzcz5odHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA0LzAzL2Fk\n" +
-            "ZHJlc3Npbmcvcm9sZS9hbm9ueW1vdXM8L3dzYTpBZGRyZXNzPgoJCTwvd3NhOlJlcGx5VG8+CgkJ\n" +
-            "PHdzYTpUbz5odHRwOi8vcmlrZXI6ODg4OC9BQ01FV2FyZWhvdXNlV1MvU2VydmljZTEuYXNteDwv\n" +
-            "d3NhOlRvPgoJCTx3c3NlOlNlY3VyaXR5IHNvYXA6bXVzdFVuZGVyc3RhbmQ9IjEiPgoJCQk8d3N1\n" +
-            "OlRpbWVzdGFtcCB3c3U6SWQ9IlRpbWVzdGFtcC1kZjA5YmIzZC1kNjA1LTQ4NzAtYjdhNS1jZWIx\n" +
-            "ZmJjZDQ3YmIiPgoJCQkJPHdzdTpDcmVhdGVkPjIwMDQtMDYtMTRUMTg6NDk6MDVaPC93c3U6Q3Jl\n" +
-            "YXRlZD4KCQkJCTx3c3U6RXhwaXJlcz4yMDA0LTA2LTE0VDE4OjU0OjA1Wjwvd3N1OkV4cGlyZXM+\n" +
-            "CgkJCTwvd3N1OlRpbWVzdGFtcD4KCQkJPHdzc2U6VXNlcm5hbWVUb2tlbiB4bWxuczp3c3U9Imh0\n" +
-            "dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3Nz\n" +
-            "ZWN1cml0eS11dGlsaXR5LTEuMC54c2QiIHdzdTpJZD0iU2VjdXJpdHlUb2tlbi0wM2FkYzdmMy0x\n" +
-            "NjVmLTRhZmMtOGMyOS1kYTNjNmEzZjg1YmYiPgoJCQkJPHdzc2U6VXNlcm5hbWU+dXNlcm5hbWU8\n" +
-            "L3dzc2U6VXNlcm5hbWU+CgkJCQk8d3NzZTpQYXNzd29yZCBUeXBlPSJodHRwOi8vZG9jcy5vYXNp\n" +
-            "cy1vcGVuLm9yZy93c3MvMjAwNC8wMS9vYXNpcy0yMDA0MDEtd3NzLXVzZXJuYW1lLXRva2VuLXBy\n" +
-            "b2ZpbGUtMS4wI1Bhc3N3b3JkVGV4dCI+cGFzc3dvcmQ8L3dzc2U6UGFzc3dvcmQ+CgkJCQk8d3Nz\n" +
-            "ZTpOb25jZT5SSGlrUXJhZU43d0Myc2M5OGg2VWNRPT08L3dzc2U6Tm9uY2U+CgkJCQk8d3N1OkNy\n" +
-            "ZWF0ZWQ+MjAwNC0wNi0xNFQxODo0OTowNVo8L3dzdTpDcmVhdGVkPgoJCQk8L3dzc2U6VXNlcm5h\n" +
-            "bWVUb2tlbj4KCQk8L3dzc2U6U2VjdXJpdHk+Cgk8L3NvYXA6SGVhZGVyPgoJPHNvYXA6Qm9keSB3\n" +
-            "c3U6SWQ9IklkLTNhODUzOTRiLWU2ZGMtNDY5ZC1hYTVhLWRiYTRkNzg3YzAzNSI+CgkJPGxpc3RQ\n" +
-            "cm9kdWN0cyB4bWxucz0iaHR0cDovL3dhcmVob3VzZS5hY21lLmNvbS93cyIgLz4KCTwvc29hcDpC\n" +
-            "b2R5Pgo8L3NvYXA6RW52ZWxvcGU+";
+            "IFNZU1RFTSAid2FhaO+/vi5kdGQiPiAgICAgICAgCjxzb2FwOkVudmVsb3BlCXhtbG5zOnNvYXA9\n" +
+            "Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczp4c2k9Imh0\n" +
+            "dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4bWxuczp4c2Q9Imh0dHA6\n" +
+            "Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hIiB4bWxuczp3c2E9Imh0dHA6Ly9zY2hlbWFzLnht\n" +
+            "bHNvYXAub3JnL3dzLzIwMDQvMDMvYWRkcmVzc2luZyIgeG1sbnM6d3NzZT0iaHR0cDovL2RvY3Mu\n" +
+            "b2FzaXMtb3Blbi5vcmcvd3NzLzIwMDQvMDEvb2FzaXMtMjAwNDAxLXdzcy13c3NlY3VyaXR5LXNl\n" +
+            "Y2V4dC0xLjAueHNkIiB4bWxuczp3c3U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8y\n" +
+            "MDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS11dGlsaXR5LTEuMC54c2QiPgoJPHNv\n" +
+            "YXA6SGVhZGVyPgoJCTx3c2E6QWN0aW9uPmh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MvbGlz\n" +
+            "dFByb2R1Y3RzPC93c2E6QWN0aW9uPgoJCTx3c2E6TWVzc2FnZUlEPnV1aWQ6NDBhMWRiMjYtMjY5\n" +
+            "Ny00Nzk4LWEyYjctODAzYzczYjA3YjJmPC93c2E6TWVzc2FnZUlEPgoJCTx3c2E6UmVwbHlUbz4K\n" +
+            "CQkJPHdzYTpBZGRyZXNzPmh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDQvMDMvYWRk\n" +
+            "cmVzc2luZy9yb2xlL2Fub255bW91czwvd3NhOkFkZHJlc3M+CgkJPC93c2E6UmVwbHlUbz4KCQk8\n" +
+            "d3NhOlRvPmh0dHA6Ly9yaWtlcjo4ODg4L0FDTUVXYXJlaG91c2VXUy9TZXJ2aWNlMS5hc214PC93\n" +
+            "c2E6VG8+CgkJPHdzc2U6U2VjdXJpdHkgc29hcDptdXN0VW5kZXJzdGFuZD0iMSI+CgkJCTx3c3U6\n" +
+            "VGltZXN0YW1wIHdzdTpJZD0iVGltZXN0YW1wLWRmMDliYjNkLWQ2MDUtNDg3MC1iN2E1LWNlYjFm\n" +
+            "YmNkNDdiYiI+CgkJCQk8d3N1OkNyZWF0ZWQ+MjAwNC0wNi0xNFQxODo0OTowNVo8L3dzdTpDcmVh\n" +
+            "dGVkPgoJCQkJPHdzdTpFeHBpcmVzPjIwMDQtMDYtMTRUMTg6NTQ6MDVaPC93c3U6RXhwaXJlcz4K\n" +
+            "CQkJPC93c3U6VGltZXN0YW1wPgoJCQk8d3NzZTpVc2VybmFtZVRva2VuIHhtbG5zOndzdT0iaHR0\n" +
+            "cDovL2RvY3Mub2FzaXMtb3Blbi5vcmcvd3NzLzIwMDQvMDEvb2FzaXMtMjAwNDAxLXdzcy13c3Nl\n" +
+            "Y3VyaXR5LXV0aWxpdHktMS4wLnhzZCIgd3N1OklkPSJTZWN1cml0eVRva2VuLTAzYWRjN2YzLTE2\n" +
+            "NWYtNGFmYy04YzI5LWRhM2M2YTNmODViZiI+CgkJCQk8d3NzZTpVc2VybmFtZT51c2VybmFtZTwv\n" +
+            "d3NzZTpVc2VybmFtZT4KCQkJCTx3c3NlOlBhc3N3b3JkIFR5cGU9Imh0dHA6Ly9kb2NzLm9hc2lz\n" +
+            "LW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3MtdXNlcm5hbWUtdG9rZW4tcHJv\n" +
+            "ZmlsZS0xLjAjUGFzc3dvcmRUZXh0Ij5wYXNzd29yZDwvd3NzZTpQYXNzd29yZD4KCQkJCTx3c3Nl\n" +
+            "Ok5vbmNlPlJIaWtRcmFlTjd3QzJzYzk4aDZVY1E9PTwvd3NzZTpOb25jZT4KCQkJCTx3c3U6Q3Jl\n" +
+            "YXRlZD4yMDA0LTA2LTE0VDE4OjQ5OjA1Wjwvd3N1OkNyZWF0ZWQ+CgkJCTwvd3NzZTpVc2VybmFt\n" +
+            "ZVRva2VuPgoJCTwvd3NzZTpTZWN1cml0eT4KCTwvc29hcDpIZWFkZXI+Cgk8c29hcDpCb2R5IHdz\n" +
+            "dTpJZD0iSWQtM2E4NTM5NGItZTZkYy00NjlkLWFhNWEtZGJhNGQ3ODdjMDM1Ij4KCQk8bGlzdFBy\n" +
+            "b2R1Y3RzIHhtbG5zPSJodHRwOi8vd2FyZWhvdXNlLmFjbWUuY29tL3dzIiAvPgoJPC9zb2FwOkJv\n" +
+            "ZHk+Cjwvc29hcDpFbnZlbG9wZT4=";
 }
