@@ -32,6 +32,7 @@ import com.l7tech.util.TimeSource;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -182,7 +183,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                     logPush(Level.INFO, NOFINALPUSH, nodeInfo, e, false);
                 } catch (GatewayException e) {
                     logPush(Level.WARNING, NOFINALPUSH, nodeInfo, e, false);
-                } catch (javax.xml.ws.ProtocolException e) {
+                } catch (WebServiceException e) {
                     if ( ProcessControllerContext.isNetworkException(e) ) {
                         logPush(Level.WARNING, NOFINALPUSHNET, nodeInfo, ExceptionUtils.unnestToRoot(e), false);
                     } else {
@@ -296,7 +297,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             logPush(Level.INFO, NOPUSH, nodeInfo, e, false);
         } catch (GatewayException e) {
             logPush(Level.WARNING, NOPUSH, nodeInfo, e, false);
-        } catch (javax.xml.ws.ProtocolException e) {
+        } catch (WebServiceException e) {
             if ( ProcessControllerContext.isNetworkException(e) ) {
                 logPush(Level.WARNING, NOPUSHNET, nodeInfo, ExceptionUtils.unnestToRoot(e), false);
             } else {

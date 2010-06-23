@@ -6,7 +6,7 @@ import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.objectmodel.FindException;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,8 +42,8 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
             valid = true;
         } catch ( FindException fe ) {
             logger.log(Level.WARNING, "Error listing nodes", fe );
-        } catch ( SOAPFaultException sf ) {
-            logger.log(Level.WARNING, "Error listing nodes", sf );
+        } catch ( WebServiceException e ) {
+            logger.log(Level.WARNING, "Error listing nodes", e );
         }
 
         return valid;

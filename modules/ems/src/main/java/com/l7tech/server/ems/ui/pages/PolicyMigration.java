@@ -42,7 +42,7 @@ import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Level;
@@ -193,7 +193,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                     popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
                 } catch ( GatewayException ge ) {
                     popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
-                } catch ( SOAPFaultException e ) {
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fo));
+                } catch ( WebServiceException e ) {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
@@ -204,8 +206,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                         logger.log( Level.WARNING, "Error loading previous mappings '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", failureMessage);
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fo));
                 }
             }
         };
@@ -352,7 +352,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
                     dialogContainer.replace( resultDialog );
                     target.addComponent( dialogContainer );
-                } catch ( SOAPFaultException e ) {
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fo));
+                } catch ( WebServiceException e ) {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
@@ -363,8 +365,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                         logger.log( Level.WARNING, "Error identifiying dependencies '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", failureMessage);
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fo));
                 }
             }
             @Override
@@ -426,7 +426,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                                             }
                                             dialogContainer.replace( resultDialog );
                                             target.addComponent( dialogContainer );
-                                        } catch ( SOAPFaultException e ) {
+                                        } catch (FailoverException fo) {
+                                            popupCloseDialog(dialogContainer, target, "Could not connect to cluster", ExceptionUtils.getMessage(fo));
+                                        } catch ( WebServiceException e ) {
                                             String failureMessage;
                                             if ( GatewayContext.isNetworkException( e ) ) {
                                                 failureMessage = "Could not connect to cluster.";
@@ -437,8 +439,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                                                 logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                                             }
                                             popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
-                                        } catch (FailoverException fo) {
-                                            popupCloseDialog(dialogContainer, target, "Could not connect to cluster", ExceptionUtils.getMessage(fo));
                                         }
                                     } else {
                                         dialogContainer.replace( new EmptyPanel("dialog") );
@@ -467,7 +467,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                         dialogContainer.replace( resultDialog );
                         target.addComponent( dialogContainer );
                     }
-                } catch ( SOAPFaultException e ) {
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, target, "Could not connect to cluster.", ExceptionUtils.getMessage(fo));
+                } catch ( WebServiceException e ) {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
@@ -478,8 +480,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                         logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, target, "Could not connect to cluster.", ExceptionUtils.getMessage(fo));
                 }
             }
             @Override
@@ -762,12 +762,12 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     } catch ( MigrationApi.MigrationException me ) {
                         logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
-                    } catch ( SOAPFaultException sfe ) {
+                    } catch ( FailoverException fo ) {
+                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
+                    } catch ( WebServiceException sfe ) {
                         if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
                             logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
                         }
-                    } catch ( FailoverException fo ) {
-                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
                     } catch ( GatewayException ge ) {
                         logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
                     } catch ( FindException fe ) {
@@ -1248,12 +1248,12 @@ public class PolicyMigration extends EsmStandardWebPage {
             logger.log( Level.WARNING, "Error while gettings dependency options.", fe );
         } catch ( MigrationApi.MigrationException me ) {
             logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(me)+"'.", ExceptionUtils.getDebugException(me) );
-        } catch ( SOAPFaultException sfe ) {
-            if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
-                logger.log( Level.WARNING, "Error while gettings dependency options'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
-            }
         } catch ( FailoverException fo ) {
             logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
+        } catch ( WebServiceException e ) {
+            if ( !GatewayContext.isNetworkException( e ) && !GatewayContext.isConfigurationException( e ) ) {
+                logger.log( Level.WARNING, "Error while gettings dependency options'"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+            }
         }
 
         return deps;
@@ -1368,12 +1368,12 @@ public class PolicyMigration extends EsmStandardWebPage {
             logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while reloading previous migration.", fe );
-        } catch ( SOAPFaultException sfe ) {
-            if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
-                logger.log( Level.WARNING, "Error while reloading previous migrations'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
-            }
         } catch ( FailoverException fo ) {
             logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
+        } catch ( WebServiceException e ) {
+            if ( !GatewayContext.isNetworkException( e ) && !GatewayContext.isConfigurationException( e ) ) {
+                logger.log( Level.WARNING, "Error while reloading previous migrations'"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+            }
         }
     }
 

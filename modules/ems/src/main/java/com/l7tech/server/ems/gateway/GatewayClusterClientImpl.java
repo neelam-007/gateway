@@ -13,7 +13,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
-import javax.xml.ws.ProtocolException;
+import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationHandler;
@@ -43,7 +43,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     private final Cached<GatewayApi.ClusterInfo> clusterInfo = new Cached<GatewayApi.ClusterInfo>();
     private final Cached<Collection<GatewayApi.GatewayInfo>> gatewayInfo = new Cached<Collection<GatewayApi.GatewayInfo>>();
 
-    public GatewayClusterClientImpl(SsgCluster ssgCluster, List<GatewayContext> nodeContexts) {
+    GatewayClusterClientImpl(SsgCluster ssgCluster, List<GatewayContext> nodeContexts) {
         if (ssgCluster == null) throw new NullPointerException("ssgCluster");
         if (nodeContexts == null) throw new NullPointerException("nodeContexts");
         this.ssgCluster = ssgCluster;
@@ -215,7 +215,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      * @throws java.lang.reflect.InvocationTargetException if the API method throws a checked exception
      */
     public static <R> R callWithFailover(FailoverStrategy<GatewayContext> failover, int numAttempts, GatewayContextUser<R> contextUser) throws GatewayException, InvocationTargetException {
-        ProtocolException lastNetworkException = null;
+        WebServiceException lastNetworkException = null;
 
         for (int i = 0; i < numAttempts; ++i) {
             GatewayContext context = failover.selectService();
@@ -228,11 +228,11 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
                 R result = contextUser.callUsingContext(context);
                 success = true;
                 return result;
-            } catch (ProtocolException sfe) {
-                if (GatewayContext.isNetworkException(sfe)) {
-                    lastNetworkException = sfe;
+            } catch (WebServiceException e) {
+                if (GatewayContext.isNetworkException(e)) {
+                    lastNetworkException = e;
                 } else {
-                    throw new GatewayException(sfe.getMessage(), sfe);
+                    throw new GatewayException(e.getMessage(), e);
                 }
             } finally {
                 if (success)

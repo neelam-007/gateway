@@ -14,7 +14,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.ExceptionUtils;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.*;
 import java.util.logging.Level;
 import java.net.InetAddress;
@@ -45,8 +45,8 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
             valid = headers!=null && !headers.isEmpty();
         } catch ( FindException fe ) {
             logger.log(Level.WARNING, "Error listing nodes", fe );
-        } catch ( SOAPFaultException sf ) {
-            logger.log(Level.WARNING, "Error listing nodes", sf );
+        } catch ( WebServiceException e ) {
+            logger.log(Level.WARNING, "Error listing nodes", e );
         }
 
         return valid;
@@ -106,9 +106,9 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
             throw new ConfigurationException( "Error when deleting node '"+ome.getMessage()+"'" );
         } catch (NodeManagementApi.DatabaseDeletionException dde) {
             throw new ConfigurationException( "Error deleting database '"+dde.getMessage()+"'" );
-        } catch ( SOAPFaultException sf ) {
-            String message = "Unexpected error saving configuration '"+sf.getMessage()+"'";
-            logger.log( Level.WARNING, message, sf);
+        } catch ( WebServiceException e ) {
+            String message = "Unexpected error saving configuration '"+e.getMessage()+"'";
+            logger.log( Level.WARNING, message, e);
             throw new ConfigurationException( message );
         }
     }

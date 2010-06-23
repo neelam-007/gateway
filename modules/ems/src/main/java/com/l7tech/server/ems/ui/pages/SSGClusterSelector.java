@@ -11,7 +11,7 @@ import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +64,9 @@ public class SSGClusterSelector extends EsmBaseWebPage {
                     } );
                     addChildren(entities, rootFolder);
                     return entities;
-                } catch (SOAPFaultException e) {
+                } catch (FailoverException fo) {
+                    return new JSONException(fo);
+                } catch (WebServiceException e) {
                     if ( GatewayContext.isNetworkException(e) ) {
                         return new JSONException("Gateway not available.");
                     } else if ( GatewayContext.isConfigurationException(e) ) {
@@ -73,8 +75,6 @@ public class SSGClusterSelector extends EsmBaseWebPage {
                         logger.warning(e.toString());
                         return new JSONException(e);
                     }
-                } catch (FailoverException fo) {
-                    return new JSONException(fo);
                 } catch (FindException fe) {
                     logger.log( Level.WARNING, "Error loading enterprise folders.", fe );
                     return new JSONException(new Exception("Error loading folders.", fe));

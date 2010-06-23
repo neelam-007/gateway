@@ -16,7 +16,6 @@ import com.l7tech.server.ems.enterprise.SsgNodeManager;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
-import com.l7tech.server.ems.gateway.FailoverException;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -29,7 +28,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,8 +61,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
 
     private TimerTask makeNotificationAuditorTask() {
         return new TimerTask() {
+            @Override
             public void run() {
                 AuditContextUtils.doAsSystem(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             collectAndAuditNotifications();
@@ -78,6 +79,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         };
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         timer.schedule(notificationAuditorTask, DELAY_UNTIL_FIRST_AUDIT_CHECK, DELAY_BETWEEN_AUDIT_CHECKS);
     }
@@ -95,6 +97,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
     private void collectAndAuditNotifications(final SsgNode node) {
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.execute( new TransactionCallbackWithoutResult() {
+            @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 AuditContext auditContext = applicationContext.getBean("auditContext", AuditContext.class);
                 try {
@@ -108,12 +111,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                     logger.log(Level.INFO, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (UpdateException e) {
                     logger.log(Level.WARNING, "Unable to update last notification time for node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                } catch (SOAPFaultException e) {
+                } catch (WebServiceException e) {
                     if ( !ProcessControllerContext.isNetworkException(e) && !ProcessControllerContext.isConfigurationException(e) ) {
                         logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
-                } catch (FailoverException fo) {
-                    logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(fo), ExceptionUtils.getDebugException(fo));
                 }
             }
         });
@@ -177,6 +178,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         context.addDetail(new AuditDetail(msg, arg == null ? "<none>" : arg), this);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }

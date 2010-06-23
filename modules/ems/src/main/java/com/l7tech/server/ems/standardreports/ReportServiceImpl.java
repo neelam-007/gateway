@@ -19,7 +19,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -88,8 +88,10 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
             GatewayContext context = contextFactory.createGatewayContext( user, cluster.getGuid(), host, port );
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
-        } catch ( SOAPFaultException sfe ) {
-            final ConnectException ce = ExceptionUtils.getCauseIfCausedBy(sfe, ConnectException.class);
+        } catch ( FailoverException fo ) {
+            throw new ReportException("Cluster unavailable.", fo);
+        } catch ( WebServiceException e ) {
+            final ConnectException ce = ExceptionUtils.getCauseIfCausedBy(e, ConnectException.class);
             if (ce != null) {
                 // Return the ConnectionException as the direct cause of ReportException.
                 // The reason to skip SOAPFaultException is because Wicket throws WicketNotSerializableException
@@ -97,13 +99,11 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                 // (bugzilla 6856)
                 throw new ReportException( "Cannot contact gateway '"+(host+":"+port)+"'.", ce );
             } else {
-                final Throwable cause = sfe.getCause();
+                final Throwable cause = e.getCause();
                 throw new ReportException(
-                        "Error submitting report generation to gateway '"+(host+":"+port)+"', due to '"+ExceptionUtils.getMessage(sfe)+"'.",
+                        "Error submitting report generation to gateway '"+(host+":"+port)+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
                         ExceptionUtils.getDebugException(cause) );
             }
-        } catch ( FailoverException fo ) {
-            throw new ReportException("Cluster unavailable.", fo);
         } catch ( GatewayException ge ) {
             throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
@@ -251,16 +251,16 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                         logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", re );
                         report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
                         report.setStatusTime( System.currentTimeMillis() );
-                    } catch ( SOAPFaultException sfe ) {
-                        if ( GatewayContext.isNetworkException(sfe) ) {
-                            logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
-                        } else if ( "Authentication Required".equals(sfe.getMessage()) ){
-                            logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
-                        } else{
-                            logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", sfe );
-                        }
                     } catch ( FailoverException fo ) {
                         logger.log( Level.FINE, "Cluster unavailable: '" + host + "', " + ExceptionUtils.getMessage(fo), ExceptionUtils.getDebugException(fo));
+                    } catch ( WebServiceException e ) {
+                        if ( GatewayContext.isNetworkException(e) ) {
+                            logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
+                        } else if ( "Authentication Required".equals(e.getMessage()) ){
+                            logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
+                        } else{
+                            logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", e );
+                        }
                     }
 
                     try {

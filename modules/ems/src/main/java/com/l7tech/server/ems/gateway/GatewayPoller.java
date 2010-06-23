@@ -23,7 +23,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
@@ -138,21 +138,19 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     if ( "Authentication Required".equals(ge.getMessage()) ) {
                                         deleteAccessAccountMapping( user, cluster );
                                     }
-                                } catch ( SOAPFaultException sfe ) {
-                                    if ( GatewayContext.isNetworkException(sfe) ) {
+                                } catch ( WebServiceException e ) {
+                                    if ( GatewayContext.isNetworkException(e) ) {
                                         // ok, can't update status
-                                    } else if ( "Access Denied".equals(sfe.getMessage()) ) {
+                                    } else if ( "Access Denied".equals(e.getMessage()) ) {
                                         deleteAccessAccountMapping( user, cluster );   
-                                    } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                                    } else if ( "Authentication Required".equals(e.getMessage()) ){
                                         // ok, don't update status since the certificate trust failed
-                                    } else if ( "Not Licensed".equals(sfe.getMessage()) ) {
+                                    } else if ( "Not Licensed".equals(e.getMessage()) ) {
                                         // ok, can't update status
                                     } else {
-                                        logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
+                                        logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
                                     }
-                                } catch (FailoverException fo) {
-                                    logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
-                                }
+                                } 
                             }
                         }
                     } catch ( ObjectModelException ome ) {
@@ -208,15 +206,15 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     if ( gatewayInfoCollection != null ) {
                                         newInfoSet = new HashSet<GatewayApi.GatewayInfo>( gatewayInfoCollection );
                                     }
-                                } catch ( SOAPFaultException sfe ) {
-                                    if ( GatewayContext.isNetworkException(sfe) ) {
-                                        logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
-                                    } else {
-                                        throw sfe;
-                                    }
-                                    skipStatusUpdate = true;
                                 } catch ( FailoverException fo ) {
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
+                                } catch ( WebServiceException e ) {
+                                    if ( GatewayContext.isNetworkException(e) ) {
+                                        logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
+                                    } else {
+                                        throw e;
+                                    }
+                                    skipStatusUpdate = true;
                                 }
 
                                 // Periodically update SSG Nodes.
@@ -258,28 +256,26 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                 }
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
-                            } catch ( SOAPFaultException sfe ) {
-                                if ( GatewayContext.isNetworkException(sfe) ) {
+                            } catch ( WebServiceException e ) {
+                                if ( GatewayContext.isNetworkException(e) ) {
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
-                                } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                                } else if ( "Authentication Required".equals(e.getMessage()) ){
                                     skipStatusUpdate = true;
                                     if ( cluster.getTrustStatus() ) {
                                         logger.info("Trust lost for gateway cluster '"+host+":"+port+"'.");
                                         cluster.setTrustStatus( false );
                                         ssgClusterManager.update( cluster );
                                     }
-                                } else if ( "Not Licensed".equals(sfe.getMessage()) ) {
+                                } else if ( "Not Licensed".equals(e.getMessage()) ) {
                                     skipStatusUpdate = true;
                                     logger.fine("Gateway cluster is not licensed '"+host+":"+port+"'.");
-                                } else if ( "Could not send Message.".equals(sfe.getMessage()) && ExceptionUtils.causedBy(sfe, IOException.class)) {
+                                } else if ( "Could not send Message.".equals(e.getMessage()) && ExceptionUtils.causedBy(e, IOException.class)) {
                                     logger.info("Unexpected response from Gateway cluster '"+host+":"+port+"'.");
-                                } else if ( sfe.getMessage() != null && sfe.getMessage().startsWith("Response was of unexpected ") && sfe.getMessage().contains("ContentType") ) {
+                                } else if ( e.getMessage() != null && e.getMessage().startsWith("Response was of unexpected ") && e.getMessage().contains("ContentType") ) {
                                     logger.info("Unexpected response from Gateway cluster '"+host+":"+port+"'.");
                                 } else{
-                                    logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
+                                    logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
                                 }
-                            } catch ( FailoverException fo ) {
-                                logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
                             } finally {
                                 if ( !skipStatusUpdate ) {
                                     // don't change any registration details, since the cluster is not
@@ -395,19 +391,17 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                     }
                 }
             }
-        } catch ( SOAPFaultException sfe ) {
-            if ( GatewayContext.isNetworkException(sfe) ) {
+        } catch ( WebServiceException e ) {
+            if ( GatewayContext.isNetworkException(e) ) {
                 logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+"'." );
                 // perhaps we don't have a process controller that works, let's check the node directly
                 checkGatewayDirectly = true;
-            } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+            } else if ( "Authentication Required".equals(e.getMessage()) ){
                 trusted = false;
             } else{
-                logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
+                logger.log( Level.WARNING, "Gateway error when polling gateways", e );
             }
-        } catch ( FailoverException fo ) {
-            logger.log( Level.WARNING, "Gateway error when polling gateways", fo );
-        } catch (GatewayException e) {
+        }catch (GatewayException e) {
             logger.log( Level.WARNING, "Error when polling gateways", e );
         } catch (FindException fe) {
             logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fe)+"'.", ExceptionUtils.getDebugException(fe));
@@ -422,13 +416,11 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                 } catch (GatewayException e) {
                     // don't care
                     logger.log( Level.FINE, "Error checking gateway status using gateway api for '"+host+"'.", ExceptionUtils.getDebugException(e) );
-                } catch ( SOAPFaultException sfe2 ) {
+                } catch ( WebServiceException e ) {
                     // don't care
-                    if ( !GatewayContext.isNetworkException(sfe2) ) {
-                        logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(sfe2)  );
+                    if ( !GatewayContext.isNetworkException(e) ) {
+                        logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(e)  );
                     }
-                } catch ( FailoverException fo2 ) {
-                    logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(fo2)  );
                 }
 
             }
@@ -483,13 +475,11 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                 logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
             } catch ( FindException fe ) {
                 logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(fe)+"'.", ExceptionUtils.getDebugException(fe) );
-            } catch ( SOAPFaultException sfe ) {
-                if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe)) {
-                    logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
+            } catch ( WebServiceException e ) {
+                if ( !GatewayContext.isNetworkException(e) && !GatewayContext.isConfigurationException(e)) {
+                    logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
                 }
-            } catch ( FailoverException fo ) {
-                logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
-            }
+            } 
         }
 
         return hosts;

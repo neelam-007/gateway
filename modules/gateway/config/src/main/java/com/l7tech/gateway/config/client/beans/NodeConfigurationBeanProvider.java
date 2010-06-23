@@ -14,7 +14,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.NodeConfig.ClusterType;
 import com.l7tech.common.io.InetAddressUtil;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.*;
 import java.util.logging.Level;
 import java.net.InetAddress;
@@ -83,9 +83,9 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
             throw new ConfigurationException( "Error creating database when saving configuration '"+dce.getMessage()+"'" );
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error saving configuration '"+ome.getMessage()+"'" );
-        } catch ( SOAPFaultException sf ) {
-            String message = "Unexpected error saving configuration '"+sf.getMessage()+"'";
-            logger.log( Level.WARNING, message, sf);
+        } catch ( WebServiceException e ) {
+            String message = "Unexpected error saving configuration '"+e.getMessage()+"'";
+            logger.log( Level.WARNING, message, e);
             throw new ConfigurationException( message );            
         } catch ( NodeManagementApi.RestartRequiredException rre ) {
             logger.log( Level.WARNING, "Restart required to apply configuration." );

@@ -6,7 +6,7 @@ import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Collection;
@@ -18,6 +18,7 @@ public abstract class NodeConfigurationBeanProviderSupport<C> implements Configu
 
     //- PUBLIC
 
+    @Override
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
         try {
@@ -44,6 +45,7 @@ public abstract class NodeConfigurationBeanProviderSupport<C> implements Configu
         return toBeans( config );
     }
 
+    @Override
     public boolean isValid() {
         boolean valid = false;
 
@@ -53,8 +55,8 @@ public abstract class NodeConfigurationBeanProviderSupport<C> implements Configu
             valid = true;
         } catch ( FindException fe ) {
             logger.log(Level.WARNING, "Error listing nodes", fe );
-        } catch ( SOAPFaultException sf ) {
-            logger.log(Level.WARNING, "Error listing nodes", sf );
+        } catch ( WebServiceException e ) {
+            logger.log(Level.WARNING, "Error listing nodes", e );
         }
 
         return valid;
