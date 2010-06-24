@@ -64,8 +64,7 @@ fi
 
 
 if [ -z "${CARD}" ]; then
-	#if $CARD is already set then it's an astoria card, otherwise look for one on the pci bus using the old vendor id
-	and the appropriate CARD_ID.
+	#if $CARD is already set then it's an astoria card, otherwise look for one on the pci bus using the old vendor id and the appropriate CARD_ID.
 	CARD=`/sbin/lspci -nv  |grep "1863" |grep "${CARD_ID}"`
 fi
 
