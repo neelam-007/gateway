@@ -28,19 +28,18 @@ test)
 
 ERROR=0
 # Confirm SSL card is loaded and works
-MCA=`dmesg | grep mca | grep Firmware`
+MCA=`scadiag -v mca0 | grep Firmware`
 if [ "$MCA" ] ; then
 	echo ""
 	echo "SSL Card loaded:"
 	echo $MCA
 	echo "" 
-	MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
-	echo "Driver version is $MCA_DRIVER_VERSION"
-	MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
-	if [ $MCA_DRIVER_MINOR_VERSION -lt 8 ] ; then
+	MCA_FIRMWARE_VERSION="`echo $MCA | cut -d ' ' -f 3`"
+	echo "Firmware version is $MCA_FIRMWARE_VERSION"
+	if [ ! "$MCA_FIRMWARE_VERSION" = "1.1.2" ] ; then
 		echo "ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
 	fi
-else 
+else
 	echo ""
 	echo "SSL Card NOT loaded."
 	echo ""
@@ -345,14 +344,13 @@ else
 	UPGRADE_REQUIRED=0
 
 	# re-run the check for MCA firmware version
-	MCA=`dmesg | grep mca | grep Firmware`
+    MCA=`scadiag -v mca0 | grep Firmware`
 	if [ "$MCA" ] ; then
 		echo "SSL Card loaded:"
 		echo $MCA
-		MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
-		MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
-		if [ "$MCA_DRIVER_MINOR_VERSION" -lt 8 ] ; then
-			echo "Upgrade is required (Minor = $MCA_DRIVER_MINOR_VERSION)."
+		MCA_FIRMWARE_VERSION="`echo $MCA | cut -d ' ' -f 3`"
+		if [ ! "$MCA_FIRMWARE_VERSION" = "1.1.2" ] ; then
+			echo "Upgrade is required (Minor = $MCA_FIRMWARE_VERSION)."
 			UPGRADE_REQUIRED=1
 		fi
 	else 
