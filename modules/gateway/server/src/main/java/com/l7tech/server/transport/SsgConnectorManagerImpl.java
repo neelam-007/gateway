@@ -2,6 +2,7 @@ package com.l7tech.server.transport;
 
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.objectmodel.Entity;
@@ -49,7 +50,8 @@ public class SsgConnectorManagerImpl
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
-    private final ConcurrentMap<String, TransportModule> transportModulesByScheme = new ConcurrentSkipListMap<String, TransportModule>(String.CASE_INSENSITIVE_ORDER);
+    private final ConcurrentMap<String, Pair<TransportDescriptor, TransportModule>> modularTransportsByScheme =
+            new ConcurrentSkipListMap<String, Pair<TransportDescriptor, TransportModule>>(String.CASE_INSENSITIVE_ORDER);
 
     private final AtomicReference<Pair<String, Set<InterfaceTag>>> interfaceTags = new AtomicReference<Pair<String, Set<InterfaceTag>>>(null);
     private ApplicationEventPublisher applicationEventPublisher;
@@ -196,19 +198,30 @@ public class SsgConnectorManagerImpl
     }
 
     @Override
-    public void registerCustomProtocol(String protocolName, TransportModule transportModule) {
-        transportModulesByScheme.put(protocolName, transportModule);
+    public void registerTransportProtocol(TransportDescriptor transportDescriptor, TransportModule transportModule) {
+        String scheme = transportDescriptor.getScheme();
+        if (scheme == null || scheme.trim().length() < 1)
+            throw new IllegalArgumentException("The transportDescriptor must provide a protocol scheme.");
+        Pair<TransportDescriptor, TransportModule> prev = modularTransportsByScheme.put(scheme, new Pair<TransportDescriptor, TransportModule>(transportDescriptor, transportModule));
+        if (prev != null && prev.left != transportDescriptor) {
+            logger.log(Level.WARNING, "More than one attempt to register custom transport protocol " + scheme);
+        }
     }
 
     @Override
-    public void unregisterCustomProtocol(String protocolName, TransportModule transportModule) {
-        transportModulesByScheme.remove(protocolName, transportModule);
+    public TransportModule unregisterTransportProtocol(String protocolName) {
+        Pair<TransportDescriptor, TransportModule> prev = modularTransportsByScheme.remove(protocolName);
+        return prev != null ? prev.right : null;
     }
 
     @Override
-    public String[] getCustomProtocols() {
-        final Set<String> schemes = transportModulesByScheme.keySet();
-        return schemes.toArray(new String[schemes.size()]);
+    public TransportDescriptor[] getCustomProtocols() {
+        List<TransportDescriptor> ret = new ArrayList<TransportDescriptor>();
+        Collection<Pair<TransportDescriptor, TransportModule>> pairs = modularTransportsByScheme.values();
+        for (Pair<TransportDescriptor, TransportModule> pair : pairs) {
+            ret.add(pair.left);
+        }
+        return ret.toArray(new TransportDescriptor[ret.size()]);
     }
 
     protected boolean looksLikeInterfaceTagName(String maybeTagname) {

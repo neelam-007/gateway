@@ -2,6 +2,7 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -398,6 +399,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         try {
             embedded.stop();
             running.set(false);
+            unregisterProtocols();
             for ( org.apache.catalina.Executor embeddedExecutor : embedded.findExecutors() ) {
                 if ( embeddedExecutor != null )
                     embeddedExecutor.stop();                
@@ -654,6 +656,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (isStarted())
             return;
         try {
+            registerProtocols();
             startServletEngine();
             startInitialConnectors(false); // ensure we can find some initial connectors but don't start them yet (Bug #4500)
         } catch (ListenerException e) {
@@ -771,6 +774,23 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
 
         return connectorExecutor;
+    }
+
+    private void registerProtocols() {
+        final TransportDescriptor http = new TransportDescriptor("HTTP", false);
+        http.setHttpBased(true);
+        http.setSupportedEndpoints(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT, SsgConnector.Endpoint.OTHER_SERVLETS, SsgConnector.Endpoint.NODE_COMMUNICATION, SsgConnector.Endpoint.PC_NODE_API));
+        ssgConnectorManager.registerTransportProtocol(http, this);
+
+        final TransportDescriptor https = new TransportDescriptor("HTTPS", true);
+        https.setHttpBased(true);
+        https.setSupportedEndpoints(EnumSet.allOf(SsgConnector.Endpoint.class));
+        ssgConnectorManager.registerTransportProtocol(https, this);
+    }
+
+    private void unregisterProtocols() {
+        ssgConnectorManager.unregisterTransportProtocol("HTTP");
+        ssgConnectorManager.unregisterTransportProtocol("HTTPS");
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {

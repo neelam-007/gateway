@@ -1,5 +1,6 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.objectmodel.DeleteException;
@@ -129,7 +130,7 @@ public class TransportAdminImpl implements TransportAdmin {
     }
 
     @Override
-    public String[] getAllRegisteredProtocolNames() {
+    public TransportDescriptor[] getModularConnectorInfo() {
         return connectorManager.getCustomProtocols();
     }
 }

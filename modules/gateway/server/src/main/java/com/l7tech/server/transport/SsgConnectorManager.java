@@ -1,8 +1,9 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.gateway.common.transport.TransportDescriptor;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.gateway.common.transport.SsgConnector;
 
 /**
  * Interface that provides the ability to do CRUD operations on SsgConnector rows in the database.
@@ -19,30 +20,30 @@ public interface SsgConnectorManager extends EntityManager<SsgConnector, EntityH
     String translateBindAddress(String bindAddress, int port) throws ListenerException;
 
     /**
-     * Begin advertising that a transport module is available for the specified custom protocol.
+     * Begin advertising that a transport module is available for the specified transport protocol.
      * <p/>
      * Note that all this does is make available to the SSM the information that the specified protocol
      * is supported by this Gateway.  There is no other effect -- in particular, the transport module is
      * itself responsible for listening for application events indicating that a connector has been added,
      * removed, changed, enabled, or disabled.
      *
-     * @param protocolName the name of the protocol, ie "ftp". Required.
+     * @param transportDescriptor description of the custom transport that will be provided by the module.  Required.  Must have a non-empty scheme.
      * @param transportModule the TransportModule that will be handling the specified protocol.  Required.
      */
-    void registerCustomProtocol(String protocolName, TransportModule transportModule);
+    void registerTransportProtocol(TransportDescriptor transportDescriptor, TransportModule transportModule);
 
     /**
      * Stop advertising a transport module's willingness to handle the specified protocol.
      *
-     * @param protocolName the name of the protocol, ie "ftps".  Required.
-     * @param transportModule the transport module that will no longer be handling the specified protocol.  Required.
+     * @param scheme the name of the protocol that was registered, ie "l7.raw.tcp".  Required.
+     * @return the transport module that was previously handling the specified protocol, or null.
      */
-    void unregisterCustomProtocol(String protocolName, TransportModule transportModule);
+    TransportModule unregisterTransportProtocol(String scheme);
 
     /**
      * Get the custom protocols that currently have registered transport modules on this Gateway.
      *
      * @return an array of protocols, ie { "http", "https", "ftp", "ftps", "l7.raw.tcp", "l7.raw.udp" }.  Never null.
      */
-    String[] getCustomProtocols();
+    TransportDescriptor[] getCustomProtocols();
 }

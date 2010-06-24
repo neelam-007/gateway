@@ -1,45 +1,49 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.cluster.ClusterStatusAdminStub;
 import com.l7tech.common.audit.AuditAdminStub;
-import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.common.log.LogSinkAdminStub;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityAdminStub;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.service.*;
-import com.l7tech.gateway.common.admin.*;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
-import com.l7tech.gateway.common.log.LogSinkAdmin;
-import com.l7tech.identity.IdentityAdminStub;
-import com.l7tech.cluster.ClusterStatusAdminStub;
+import com.l7tech.service.FtpAdminStub;
+import com.l7tech.service.JmsAdminStub;
 
 import javax.security.auth.login.LoginException;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
-import java.security.cert.X509Certificate;
 
 
 /**
@@ -253,8 +257,8 @@ public class RegistryStub extends Registry {
             }
 
             @Override
-            public String[] getAllRegisteredProtocolNames() {
-                return new String[0];
+            public TransportDescriptor[] getModularConnectorInfo() {
+                return new TransportDescriptor[0];
             }
         };
     }

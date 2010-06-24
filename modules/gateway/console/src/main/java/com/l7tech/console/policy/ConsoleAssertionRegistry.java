@@ -1,13 +1,5 @@
 package com.l7tech.console.policy;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.util.ConstructorInvocation;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ClassUtils;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.panels.DefaultAssertionPropertiesEditor;
@@ -17,37 +9,34 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
+import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
-import com.l7tech.util.FilterClassLoader;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
+import com.l7tech.util.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.CodeSource;
-import java.security.Permissions;
-import java.security.SecureClassLoader;
-import java.security.ProtectionDomain;
-import java.security.AllPermission;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.io.InputStream;
-import java.io.IOException;
+
+import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 
 /**
  * The AssertionRegistry for the SecureSpan Manager.  Extends the basic registry by adding functionality
@@ -293,6 +282,21 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     /** @return true if at least one modular assertion is currently registered. */
     public boolean isAnyModularAssertionRegistered() {
         return !modulePrototypes.isEmpty();
+    }
+
+    /**
+     * Get the classloader to use for loading classes or resources related to the specified already-registered
+     * assertion classname.
+     *
+     * @param assertionClassname the full classname of a registered assertion.
+     * @return the classloader to use for loading resources and classes related to this assertion.  Never null.
+     * @throws IllegalArgumentException if the assertion is not registered
+     */
+    public ClassLoader getClassLoaderForAssertion(String assertionClassname) {
+        Assertion ass = findByClassName(assertionClassname);
+        if (ass == null)
+            throw new IllegalArgumentException("Unknown assertion classname: " + assertionClassname);
+        return ass.getClass().getClassLoader();
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

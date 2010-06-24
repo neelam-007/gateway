@@ -19,6 +19,7 @@ public class ModuleLoadListener {
             logger.log(Level.WARNING, "Simple raw transport module is already initialized");
         } else {
             instance = SimpleRawTransportModule.createModule(context);
+            instance.registerApplicationEventListenerAndCustomProtocols();
             try {
                 instance.start();
             } catch (LifecycleException e) {

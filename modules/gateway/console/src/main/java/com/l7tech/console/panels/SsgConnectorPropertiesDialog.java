@@ -1,10 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -39,6 +41,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
     private static final int TAB_FTP = 3;
+    private static final int TAB_CUSTOM = 4;
     private static final int DEFAULT_POOL_SIZE = 20;
 
     private static class ClientAuthType {
@@ -100,6 +103,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox tls10CheckBox;
     private JCheckBox tls11CheckBox;
     private JCheckBox tls12CheckBox;
+    private JPanel otherSettingsPanel;
+    private JComboBox contentTypeComboBox;
+    private JCheckBox overrideContentTypeCheckBox;
+    private JCheckBox hardwiredServiceCheckBox;
+    private JComboBox serviceNameComboBox;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -119,6 +127,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             tls11CheckBox,
             tls12CheckBox
     };
+
+    private Map<String, TransportDescriptor> transportsByScheme = new TreeMap<String, TransportDescriptor>(String.CASE_INSENSITIVE_ORDER);
+    private Map<String, CustomTransportPropertiesPanel> customGuisByScheme = new TreeMap<String, CustomTransportPropertiesPanel>(String.CASE_INSENSITIVE_ORDER);
+    private Map<String, Set<String>> reservedPropertyNamesByScheme = new TreeMap<String, Set<String>>(String.CASE_INSENSITIVE_ORDER);
 
     public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE, SsgConnectorPropertiesDialog.DEFAULT_MODALITY_TYPE);
@@ -169,18 +181,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         };
         privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
-        Set<String> schemes = new LinkedHashSet<String>();
-        schemes.add(SCHEME_HTTP.toUpperCase());
-        schemes.add(SCHEME_HTTPS.toUpperCase());
-        schemes.add(SCHEME_FTP.toUpperCase());
-        schemes.add(SCHEME_FTPS.toUpperCase());
-        String[] otherProtos = Registry.getDefault().getTransportAdmin().getAllRegisteredProtocolNames();
-        for (String proto : otherProtos) {
-            String up = proto.toUpperCase();
-            if (!schemes.contains(up))
-                schemes.add(up);
+        otherSettingsPanel.setLayout(new CardLayout());
+        transportsByScheme.clear();
+        Set<TransportDescriptor> protocols = new TreeSet<TransportDescriptor>(new ModularConnectorInfoComparator());
+        TransportDescriptor[] ssgProtocols = Registry.getDefault().getTransportAdmin().getModularConnectorInfo();
+        protocols.addAll(Arrays.asList(ssgProtocols));
+        for (TransportDescriptor descriptor : protocols) {
+            transportsByScheme.put(descriptor.getScheme(), descriptor);
+            String customPropertiesPanelClassname = descriptor.getCustomPropertiesPanelClassname();
+            CustomTransportPropertiesPanel panel = getCustomPropertiesPanel(descriptor, customPropertiesPanelClassname);
+            if (panel != null)
+                otherSettingsPanel.add(panel, descriptor.getScheme());
         }
-        protocolComboBox.setModel(new DefaultComboBoxModel(schemes.toArray()));
+        protocolComboBox.setModel(new ModularConnectorInfoComboBoxModel(protocols));
 
         protocolComboBox.addItemListener(new ItemListener() {
             @Override
@@ -374,6 +387,43 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         modelToView();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
+    }
+
+    private CustomTransportPropertiesPanel getCustomPropertiesPanel(TransportDescriptor descriptor, String customPropertiesPanelClassname) {
+        if (customPropertiesPanelClassname == null)
+            return null;
+
+        final String scheme = descriptor.getScheme();
+        CustomTransportPropertiesPanel panel = customGuisByScheme.get(scheme);
+        if (panel != null)
+            return panel;
+
+        String owningAssertionClassname = descriptor.getModularAssertionClassname();
+        ClassLoader panelLoader = owningAssertionClassname == null ? Thread.currentThread().getContextClassLoader()
+                : TopComponents.getInstance().getAssertionRegistry().getClassLoaderForAssertion(owningAssertionClassname);
+
+        try {
+            //noinspection unchecked
+            panel = (CustomTransportPropertiesPanel) panelLoader.loadClass(customPropertiesPanelClassname).newInstance();
+            customGuisByScheme.put(scheme, panel);
+            String[] reservedPropertyNames = panel.getAdvancedPropertyNamesUsedByGui();
+            if (reservedPropertyNames == null) {
+                reservedPropertyNamesByScheme.put(scheme, Collections.<String>emptySet());
+            } else {
+                reservedPropertyNamesByScheme.put(scheme, new HashSet<String>(Arrays.asList(reservedPropertyNames)));
+            }
+
+            return panel;
+        } catch (InstantiationException e) {
+            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            return null;
+        } catch (IllegalAccessException e) {
+            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            return null;
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     private boolean isEccCertButHasRsaCiphersEnabled() {
@@ -627,20 +677,20 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
     }
 
-    private String getSelectedProtocol() {
-        return protocolComboBox.getSelectedItem().toString();
+    private TransportDescriptor getSelectedProtocol() {
+        return (TransportDescriptor)protocolComboBox.getSelectedItem();
     }
 
-    private static boolean isSslProto(String protocol) {
-        return SCHEME_HTTPS.equals(protocol) || SCHEME_FTPS.equals(protocol);
+    private static boolean isSslProto(TransportDescriptor protocol) {
+        return protocol != null && protocol.isUsesTls();
     }
 
-    private static boolean isFtpProto(String protocol) {
-        return SCHEME_FTP.equals(protocol) || SCHEME_FTPS.equals(protocol);
+    private static boolean isFtpProto(TransportDescriptor protocol) {
+        return protocol != null && protocol.isFtpBased();
     }
 
-    private static boolean isHttpProto(String protocol) {
-        return SCHEME_HTTP.equals(protocol) || SCHEME_HTTPS.equals(protocol);
+    private static boolean isHttpProto(TransportDescriptor protocol) {
+        return protocol != null && protocol.isHttpBased();
     }
 
     private void enableOrDisableComponents() {
@@ -658,7 +708,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableTabs() {
-        String proto = getSelectedProtocol();
+        TransportDescriptor proto = getSelectedProtocol();
         boolean isSsl = isSslProto(proto);
         boolean isFtp = isFtpProto(proto);
         boolean isHttp = isHttpProto(proto);
@@ -681,39 +731,52 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         clientAuthComboBox.setEnabled(isSsl);
         privateKeyComboBox.setEnabled(isSsl);
         managePrivateKeysButton.setEnabled(isSsl);
+
+        // Show custom controls, if any
+        if (proto != null && proto.getCustomPropertiesPanelClassname() != null) {
+            ((CardLayout)otherSettingsPanel.getLayout()).show(otherSettingsPanel, proto.getScheme());
+            tabbedPane.setEnabledAt(TAB_CUSTOM, true);
+        } else {
+            tabbedPane.setEnabledAt(TAB_CUSTOM, false);
+        }
+    }
+
+    private void disableOrRestoreEndpointCheckBox(Set<Endpoint> endpoints, SsgConnector.Endpoint endpoint, JCheckBox checkBox) {
+        if (endpoints.contains(endpoint)) {
+            enableAndRestore(checkBox);
+        } else {
+            setEnableAndSelect(false, false, "Disabled because it is not supported with the selected transport protocol", checkBox);
+        }
     }
 
     private void enableOrDisableEndpoints() {
-        String proto = getSelectedProtocol();
+        TransportDescriptor proto = getSelectedProtocol();
         boolean ssl = isSslProto(proto);
-        boolean ftp = isFtpProto(proto);
-        boolean http = isHttpProto(proto);
-        boolean custom = !ftp && !http;
 
-        if (custom) {
-            setEnableAndSelect(false, true, "Enabled because it is required for a modular transport", cbEnableMessageInput);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices, cbEnablePCAPI);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
-        } else if (ftp) {
-            setEnableAndSelect(false, true, "Enabled because it is required for FTP", cbEnableMessageInput);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices, cbEnablePCAPI);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
-        } else {
-            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices, cbEnablePCAPI);
-            if (ssl) {
-                if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
-                    setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
-                } else {
-                    enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
-                }
-                enableAndRestore(cbEnableNode);
+        Set<Endpoint> endpoints = proto.getSupportedEndpoints();
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.MESSAGE_INPUT, cbEnableMessageInput);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.PC_NODE_API, cbEnablePCAPI);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE, cbEnableSsmRemote);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_APPLET, cbEnableSsmApplet);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.NODE_COMMUNICATION, cbEnableNode);
 
-                if (!cbEnableSsmRemote.isSelected()) {
-                    setEnableAndSelect(false, false, "Disabled because it requires enabling SecureSpan Manager access", cbEnableSsmApplet);
-                }
-            } else {
-                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
-            }
+        // If this transport supports nothing but message input, hardwire that checkbox
+        if (endpoints.size() == 1 && endpoints.contains(SsgConnector.Endpoint.MESSAGE_INPUT)) {
+            setEnableAndSelect(false, true, "Enabled because it is required for the selected transport protocol", cbEnableMessageInput);
+        }
+
+        if (!ssl) {
+            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
+        }
+
+        // Disable SSM remote and applet access if client auth is set to "required"
+        if ((cbEnableSsmApplet.isSelected() || cbEnableSsmRemote.isEnabled()) && ssl && (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem()))) {
+            setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
+        }
+
+        if (!cbEnableSsmRemote.isSelected()) {
+            setEnableAndSelect(false, false, "Disabled because it requires enabling SecureSpan Manager access", cbEnableSsmApplet);
         }
     }
 
@@ -794,8 +857,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean node = false;
         boolean pcapi = false;
 
-        // Currently the GUI only has four checkboxes, so we'll try to behave sensibly if the endpoint
-        // list has been customized in more detail than our GUI allows.
+        // Currently the GUI has fewer checkboxes than there are endpoint types, with multiple endpoints bundled inside
+        // a single "built-in services" checkbox, so we'll try to behave sensibly if the endpoint
+        // list has been customized in more detail than our GUI allows.  On load, we'll check the checkbox
+        // if any builtin service is enabled.
         for (String name : names) {
             try {
                 Endpoint endpoint = Endpoint.valueOf(name);
@@ -831,7 +896,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * Configure the GUI control states with information gathered from the connector instance.
      */
     private void modelToView() {
-        protocolComboBox.setSelectedItem(connector.getScheme().trim().toUpperCase());
+        protocolComboBox.setSelectedItem(transportsByScheme.get(connector.getScheme().trim()));
         nameField.setText(connector.getName());
         portField.setText(String.valueOf(connector.getPort()));
         enabledCheckBox.setSelected(connector.isEnabled());
@@ -868,6 +933,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
 
         List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
+
         // Don't show properties that are already exposed via specialized controls
         propNames.remove(SsgConnector.PROP_BIND_ADDRESS);
         propNames.remove(SsgConnector.PROP_TLS_CIPHERLIST);
@@ -875,6 +941,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
+
+        // Also hide properties reserved for use by custom GUI panels
+        // TODO should only really hide them when the corresponding transport protocol is selected
+        for (Set<String> reserved : reservedPropertyNamesByScheme.values()) {
+            propNames.removeAll(reserved);
+        }
+
         propertyListModel.removeAllElements();
         for (String propName : propNames) {
             final String value = connector.getProperty(propName);
@@ -892,6 +965,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             tls10CheckBox.setSelected(protos.contains("TLSv1"));
             tls11CheckBox.setSelected(protos.contains("TLSv1.1"));
             tls12CheckBox.setSelected(protos.contains("TLSv1.2"));
+        }
+
+        // Update any custom GUI panels
+        for (Map.Entry<String, CustomTransportPropertiesPanel> entry : customGuisByScheme.entrySet()) {
+            CustomTransportPropertiesPanel customPanel = entry.getValue();
+            Set<String> varsUsedByPanel = reservedPropertyNamesByScheme.get(entry.getKey());
+            Map<String, String> varHolder = new HashMap<String, String>();
+            for (String var : varsUsedByPanel) {
+                varHolder.put(var, connector.getProperty(var));
+            }
+            customPanel.setData(varHolder);
         }
 
         saveCheckBoxState(savedStateCheckBoxes);
@@ -913,8 +997,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * Assumes caller has already checked view state against the inputValidator.
      */
     private void viewToModel() {
-        String proto = protocolComboBox.getSelectedItem().toString();
-        connector.setScheme(proto);
+        TransportDescriptor proto = (TransportDescriptor)protocolComboBox.getSelectedItem();
+        if (proto != null) connector.setScheme(proto.getScheme());
         connector.setName(nameField.getText());
         connector.setPort(Integer.parseInt(portField.getText()));
         connector.setEnabled(enabledCheckBox.isSelected());
@@ -969,6 +1053,21 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         for (String propertyName: toBeRemovedProperties)
             connector.removeProperty(propertyName);
 
+        // Save custom GUI panel properties, but only if the active protocol uses them
+        CustomTransportPropertiesPanel customPanel = customGuisByScheme.get(connector.getScheme());
+        if (customPanel != null) {
+            Map<String, String> updated = customPanel.getData();
+            for (Map.Entry<String, String> entry : updated.entrySet()) {
+                String prop = entry.getKey();
+                String value = entry.getValue();
+                if (value == null) {
+                    connector.removeProperty(prop);
+                } else {
+                    connector.putProperty(prop, value);
+                }
+            }
+        }
+
         // Save user-overridden properties last
         //noinspection unchecked
         List<Pair<String,String>> props = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
@@ -991,5 +1090,63 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     /** @return true if the dialog has been dismissed with the ok button */
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    private static class ModularConnectorInfoComboBoxModel extends SortedListModel<TransportDescriptor> implements ComboBoxModel {
+        TransportDescriptor selectedObject = null;
+
+        public ModularConnectorInfoComboBoxModel(Collection<TransportDescriptor> items) {
+            super(new ModularConnectorInfoComparator());
+            addAll(items);
+        }
+
+        @Override
+        public void setSelectedItem(Object anItem) {
+            if (anItem != null && !(anItem instanceof TransportDescriptor))
+                throw new ClassCastException("expected " + TransportDescriptor.class + ", got" + anItem.getClass());
+            TransportDescriptor ci = (TransportDescriptor) anItem;
+            int size = getSize();
+            if (ci != null) for (int i = 0; i < size; ++i) {
+                TransportDescriptor desc = getElementAt(i);
+                if (desc.getScheme().equalsIgnoreCase(ci.getScheme())) {
+                    selectedObject = desc;
+                    return;
+                }
+            }
+            selectedObject = null;
+        }
+
+        @Override
+        public Object getSelectedItem() {
+            return selectedObject;
+        }
+    }
+
+    /**
+     * A comparator for TransportDescriptor that sorts by URL scheme, but with HTTP, HTTPS, FTP, and FTPS
+     * sorted to the front of the list in that order.
+     */
+    private static class ModularConnectorInfoComparator implements Comparator<TransportDescriptor> {
+        @Override
+        public int compare(TransportDescriptor a, TransportDescriptor b) {
+            return toSortKey(a).compareTo(toSortKey(b));
+        }
+
+        private String toSortKey(TransportDescriptor connectorInfo) {
+            String scheme = connectorInfo.getScheme();
+            if (scheme == null) {
+                return "99";
+            } else if (scheme.equalsIgnoreCase(SCHEME_HTTP)) {
+                return "01" + scheme.toUpperCase();
+            } else if (scheme.equalsIgnoreCase(SCHEME_HTTPS)) {
+                return "02" + scheme.toUpperCase();
+            } else if (scheme.equalsIgnoreCase(SCHEME_FTP)) {
+                return "03" + scheme.toUpperCase();
+            } else if (scheme.equalsIgnoreCase(SCHEME_FTPS)) {
+                return "04" + scheme.toUpperCase();
+            } else {
+                return "50" + scheme.toUpperCase();
+            }
+        }
     }
 }

@@ -2,14 +2,6 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
-import static com.l7tech.policy.assertion.AssertionMetadata.CLIENT_ASSERTION_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
-import static com.l7tech.policy.assertion.AssertionMetadata.SERVER_ASSERTION_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.USED_BY_CLIENT;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE;
-import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ClassUtils;
@@ -32,6 +24,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.CLIENT_ASSERTION_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.SERVER_ASSERTION_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.USED_BY_CLIENT;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE;
+import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 
 /**
  * An AssertionRegistry keeps track of a set of Assertion classes, each represented by a single prototype
@@ -172,6 +173,10 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
 
     public Assertion findByExternalName(String externalName) {
         return byExternalName.get(externalName);
+    }
+
+    public Assertion findByClassName(String className) {
+        return prototypes.get(className);
     }
 
     /**

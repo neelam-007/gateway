@@ -116,10 +116,9 @@ public interface TransportAdmin {
      * Get all protocols that have registered as handlers for SsgConnector-type listen ports.
      * Only handlers that are currently licensed will be included.
      *
-     * @return an array of protocol names, ie { "http", "https", "ftp", "ftps" }.  Never null,
-     *         and normally never empty (unless perhaps an extremely unusual custom Gateway config is in use).
+     * @return an array of protocol descriptors, ie { "http", "https", "ftp", "ftps", "svn+ssh", "itms", "l7.raw.tcp" }.  Never null.
      */
     @Transactional(readOnly=true)
-    String[] getAllRegisteredProtocolNames();
+    TransportDescriptor[] getModularConnectorInfo();
 
 }

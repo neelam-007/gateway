@@ -3,7 +3,7 @@ package com.l7tech.message;
 /**
  * Interface for message knobs that can provide a service OID for service resolution.
  */
-public interface HasServiceOid {
+public interface HasServiceOid extends MessageKnob {
 
     /**
      * Get the service OID.

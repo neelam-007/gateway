@@ -2,6 +2,7 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
@@ -130,6 +131,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         // Start on the refresh event since the auditing system won't work before the initial
         // refresh is completed
         try {
+            registerProtocols();
             startInitialConnectors();
         } catch(Exception e) {
             auditError("Error during startup.", e);
@@ -139,6 +141,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     @Override
     protected void doStop() throws LifecycleException {
         try {
+            unregisterProtocols();
             List<Long> oidsToStop;
             oidsToStop = new ArrayList<Long>(ftpServers.keySet());
             for (Long oid : oidsToStop) {
@@ -350,6 +353,21 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
 
         return auditor;
+    }
+
+    private void registerProtocols() {
+        final TransportDescriptor ftp = new TransportDescriptor("FTP", false);
+        ftp.setFtpBased(true);
+        ssgConnectorManager.registerTransportProtocol(ftp, this);
+
+        final TransportDescriptor ftps = new TransportDescriptor("FTPS", true);
+        ftps.setFtpBased(true);
+        ssgConnectorManager.registerTransportProtocol(ftps, this);
+    }
+
+    private void unregisterProtocols() {
+        ssgConnectorManager.unregisterTransportProtocol("FTP");
+        ssgConnectorManager.unregisterTransportProtocol("FTPS");
     }
 
     /**
