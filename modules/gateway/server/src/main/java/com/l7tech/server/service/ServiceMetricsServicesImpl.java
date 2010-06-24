@@ -17,8 +17,12 @@ import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -36,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServiceMetricsServicesImpl implements ServiceMetricsServices, ApplicationListener, PropertyChangeListener {
+public class ServiceMetricsServicesImpl implements ServiceMetricsServices, ApplicationContextAware, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(ServiceMetricsServicesImpl.class.getName());
     private static final Random random = new Random();
 
@@ -309,7 +313,17 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     }
 
     @Override
-    public void onApplicationEvent(ApplicationEvent event) {
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                ServiceMetricsServicesImpl.this.onApplicationEvent( event );
+            }
+        } );
+    }
+
+    private void onApplicationEvent(ApplicationEvent event) {
         if (!(event instanceof EntityInvalidationEvent))
             return;
 

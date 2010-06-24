@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.setup.SslSetupManager;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.*;
@@ -31,7 +32,6 @@ import java.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.Serializable;
 
-import com.l7tech.server.ems.setup.SetupManager;
 import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
@@ -45,7 +45,7 @@ public class SslEditPanel extends Panel {
     private static final int MAX_KEYSTORE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.keystoreFile.maxBytes", 1024 * 500);
 
     @SpringBean
-    private SetupManager setupManager;
+    private SslSetupManager sslSetupManager;
 
     private String successScript = null;
 
@@ -70,7 +70,7 @@ public class SslEditPanel extends Panel {
 
         TextField alias = new TextField("alias");
 
-        List<String> rsaKeys = SetupManager.RsaKeySize.getAllKeySizes();
+        List<String> rsaKeys = SslSetupManager.RsaKeySize.getAllKeySizes();
         final DropDownChoice<String> rsaKeySizeChoice = new DropDownChoice<String>("rsaKeySize",rsaKeys);
         
         final Component[] generateComponents = new Component[]{ hostname, rsaKeySizeChoice };
@@ -113,8 +113,8 @@ public class SslEditPanel extends Panel {
                     
                     if ( hostValueOk && rsaKeyOk ) {
                         try {
-                            final SetupManager.RsaKeySize rsakeySize = SetupManager.RsaKeySize.getRsaKeySize(rsaKey);
-                            alias = setupManager.generateSsl( hostValue, rsakeySize);
+                            final SslSetupManager.RsaKeySize rsakeySize = SslSetupManager.RsaKeySize.getRsaKeySize(rsaKey);
+                            alias = sslSetupManager.generateSsl( hostValue, rsakeySize);
                         } catch ( SetupException se ) {
                             feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );
                             logger.log( Level.WARNING, "Error configuring ssl for hostname '"+hostValue+"'.", se );
@@ -149,7 +149,7 @@ public class SslEditPanel extends Panel {
                                     X509Certificate[] xcerts = new X509Certificate[certs.length];
                                     System.arraycopy(certs, 0, xcerts, 0, certs.length);
 
-                                    alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
+                                    alias = sslSetupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
                                 } else {
                                     feedback.error( "Alias not found '"+aliasValue+"'." );
                                 }
@@ -184,7 +184,7 @@ public class SslEditPanel extends Panel {
                 if ( alias != null ) {
                     try {
                         Thread.sleep(100L); // keystore mutation occurs in another thread ...
-                        setupManager.setSslAlias( alias );
+                        sslSetupManager.setSslAlias( alias );
                         Thread.sleep(100L); // default key invalidation occurs in another thread ...
                     } catch ( SetupException se ) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", se );
@@ -220,7 +220,7 @@ public class SslEditPanel extends Panel {
 
                     try{
                         //validate the key size
-                        SetupManager.RsaKeySize.getRsaKeySize(rsaKeyValueObj.toString());
+                        SslSetupManager.RsaKeySize.getRsaKeySize(rsaKeyValueObj.toString());
                     }catch(Exception ex){
                         form.error( new StringResourceModel("message.rsakeysize.invalid", SslEditPanel.this, null,
                                 new Object[]{rsaKeyValueObj.toString()}).getString() );
@@ -272,7 +272,7 @@ public class SslEditPanel extends Panel {
         private String hostname = "";
         private String password = "";
         private String alias = "";
-        private String rsaKeySize = SetupManager.RsaKeySize.rsa1024.toString();
+        private String rsaKeySize = SslSetupManager.RsaKeySize.rsa1024.toString();
 
         public String getRsaKeySize() {
             return rsaKeySize;

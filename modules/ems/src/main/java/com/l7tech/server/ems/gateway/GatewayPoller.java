@@ -14,9 +14,13 @@ import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -32,7 +36,7 @@ import java.util.logging.Logger;
 /**
  * 
  */
-public class GatewayPoller implements InitializingBean, ApplicationListener {
+public class GatewayPoller implements InitializingBean, ApplicationContextAware {
 
     //- PUBLIC
 
@@ -78,6 +82,16 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     }
 
     @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                GatewayPoller.this.onApplicationEvent( event );
+            }
+        } );
+    }
+
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof GatewayRegistrationEvent ) {
             timer.schedule( timerTask, 0 );   

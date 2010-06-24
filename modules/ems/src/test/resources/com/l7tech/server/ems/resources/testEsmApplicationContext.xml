@@ -18,6 +18,9 @@
     <!-- Setup Manager -->
     <bean name="setupManager" class="com.l7tech.server.ems.setup.MockSetupManager"/>
 
+    <!-- SSL Setup Manager -->
+    <bean name="sslSetupManager" class="com.l7tech.server.ems.setup.MockSslSetupManager"/>
+
     <!-- Audit Mock -->
     <bean name="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerStub"/>
 

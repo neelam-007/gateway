@@ -80,16 +80,24 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                     TransactionTemplate template = new TransactionTemplate(transactionManager);
                     template.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
                     final IOException[] holder = new IOException[1];
-                    SsgKeyEntry entry = (SsgKeyEntry) template.execute(new TransactionCallback(){
-                        public Object doInTransaction(TransactionStatus transactionStatus) {
-                            try {
-                                return generateSelfSignedSslCert();
-                            } catch (IOException ioe) {
-                                holder[0] = ioe;
-                                return null;
+
+                    final boolean wasSystem = AuditContextUtils.isSystem();
+                    AuditContextUtils.setSystem(true);
+                    SsgKeyEntry entry;
+                    try {
+                        entry = (SsgKeyEntry) template.execute(new TransactionCallback(){
+                            public Object doInTransaction(TransactionStatus transactionStatus) {
+                                try {
+                                    return generateSelfSignedSslCert();
+                                } catch (IOException ioe) {
+                                    holder[0] = ioe;
+                                    return null;
+                                }
                             }
-                        }
-                    });
+                        });
+                    } finally {
+                        AuditContextUtils.setSystem(wasSystem);
+                    }
 
                     if ( holder[0] != null ) {
                         throw holder[0];

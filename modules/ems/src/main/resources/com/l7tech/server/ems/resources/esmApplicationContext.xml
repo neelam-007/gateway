@@ -122,7 +122,11 @@
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
             </list>
         </property>
-        <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
+        <property name="hibernateProperties">
+            <value>
+                hibernate.dialect=org.hibernate.dialect.DerbyDialect
+            </value>
+        </property>
         <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
         <property name="schemaUpdate" value="true"/>
     </bean>
@@ -297,12 +301,12 @@
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener" depends-on="serverConfig">
-        <constructor-arg ref="esmId"/>
+        <constructor-arg value="#{serverConfig.getProperty('em.server.id')}"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener" depends-on="serverConfig">
-        <constructor-arg ref="esmId"/>
+        <constructor-arg value="#{serverConfig.getProperty('em.server.id')}"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 
@@ -399,7 +403,13 @@
         <constructor-arg index="5" ref="enterpriseFolderManager" />
         <constructor-arg index="6" ref="keystoreFileManager"/>
         <constructor-arg index="7" ref="clusterPropertyManager"/>
-        <property name="keyStoreManager" ref="ssgKeyStoreManager"/>
+    </bean>
+
+    <!-- Ssl setup manager -->
+    <bean id="sslSetupManager" class="com.l7tech.server.ems.setup.SslSetupManagerImpl">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
     </bean>
 
     <bean id="esmId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -423,7 +433,7 @@
     <bean id="userPropertyManager" class="com.l7tech.server.ems.user.UserPropertyManagerImpl" parent="hibernateBean"/>
 
     <bean id="setAuditResourceAuditDownloadManager"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.ui.AuditResource.setAuditDownloadManager"/>
         <property name="arguments">
@@ -434,7 +444,7 @@
     </bean>
 
     <bean id="setReportResourceStandardReportManager"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.standardreports.ReportResource.setStandardReportManager"/>
         <property name="arguments">
@@ -445,7 +455,7 @@
     </bean>
 
     <bean id="setReportViewResourceStandardReportManager"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.standardreports.ReportViewResource.setStandardReportManager"/>
         <property name="arguments">
@@ -456,7 +466,7 @@
     </bean>
 
     <bean id="setMigrationResourceMigrationRecordManager"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.migration.MigrationArtifactResource.setMigrationRecordManager"/>
         <property name="arguments">
@@ -467,7 +477,7 @@
     </bean>
 
     <bean id="setResourceSecurityManager"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.ui.SecureResource.setSecurityManager"/>
         <property name="arguments">

@@ -11,8 +11,12 @@ import com.l7tech.server.event.admin.Updated;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -22,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Implementation of {@link GatewayClusterClientManager}.
  */
-public class GatewayClusterClientManagerImpl implements GatewayClusterClientManager, ApplicationListener {
+public class GatewayClusterClientManagerImpl implements GatewayClusterClientManager, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(GatewayClusterClientManagerImpl.class.getName());
     private static final String PROP_CONN_TIMEOUT = "com.l7tech.server.ems.gateway.clusterConnectTimeout";
     private static final String PROP_READ_TIMEOUT = "com.l7tech.server.ems.gateway.clusterReadTimeout";
@@ -135,6 +139,16 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
     }
 
     @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                GatewayClusterClientManagerImpl.this.onApplicationEvent( event );
+            }
+        } );
+    }
+
     public void onApplicationEvent(ApplicationEvent event) {
         Entity entity = null;
         if (event instanceof Deleted) {
@@ -158,7 +172,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
         final long userProviderOid;
         final String userId;
 
-        public ClientKey(String clusterId, User user) {
+        ClientKey(String clusterId, User user) {
             this(clusterId, user.getProviderId(), user.getId());
         }
 

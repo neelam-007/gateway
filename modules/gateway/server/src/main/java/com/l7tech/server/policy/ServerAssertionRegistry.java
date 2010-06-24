@@ -15,6 +15,8 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -99,6 +101,14 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             if (!isAssertionRegistered(assertion.getClass().getName()))
                 registerAssertion(assertion.getClass());
         }
+
+        ApplicationEventMulticaster eventMulticaster = getApplicationContext().getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                ServerAssertionRegistry.this.onApplicationEvent( event );
+            }
+        } );
     }
 
     public synchronized Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
@@ -708,8 +718,6 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         if (isShuttingDown())
             // Ignore events once shutdown starts
             return;
-
-        super.onApplicationEvent(applicationEvent);
 
         if (applicationEvent instanceof LicenseEvent) {
             // License has changed.  Ensure that module rescan occurs.

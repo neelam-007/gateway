@@ -35,6 +35,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.BeansException;
+import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
@@ -45,7 +46,7 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 /**
  * The UDDICoordinator handles events and task processing for UDDI
  */
-public class UDDICoordinator implements ApplicationContextAware, ApplicationListener, InitializingBean {
+public class UDDICoordinator implements ApplicationContextAware, InitializingBean {
 
     //- PUBLIC
 
@@ -113,7 +114,6 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
         timer.schedule(new CheckPublishedEndpointsTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
-    @Override
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
         if ( applicationEvent instanceof EntityInvalidationEvent ) {
             EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) applicationEvent;
@@ -211,6 +211,13 @@ public class UDDICoordinator implements ApplicationContextAware, ApplicationList
     public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
         eventPublisher = applicationContext;
         auditor = new Auditor( this, applicationContext, logger );
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                UDDICoordinator.this.onApplicationEvent( event );
+            }
+        } );
     }
 
     //- PRIVATE

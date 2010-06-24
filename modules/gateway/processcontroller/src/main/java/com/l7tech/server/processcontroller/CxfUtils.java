@@ -1,5 +1,6 @@
 package com.l7tech.server.processcontroller;
 
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -83,17 +84,22 @@ public class CxfUtils {
         }
 
         public <T> T build(Class<T> apiType) {
-            final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
+            final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean(){
+                @Override
+                protected ClientProxy clientClientProxy( final Client c ) {
+                    final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+                    httpConduit.setTlsClientParameters(tlsClientParams);
+                    if (clientPolicy != null) {
+                        httpConduit.setClient(clientPolicy);
+                    }
+                    
+                    return super.clientClientProxy( c );
+                }
+            };
             pfb.setServiceClass(apiType);
             pfb.setAddress(endpoint);
             if (dataBinding != null) {
                 pfb.setDataBinding(dataBinding);
-            }
-            final Client c = pfb.getClientFactoryBean().create();
-            final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
-            httpConduit.setTlsClientParameters(tlsClientParams);
-            if (clientPolicy != null) {
-                httpConduit.setClient(clientPolicy);
             }
             pfb.getInInterceptors().addAll(inInterceptors);
             pfb.getOutInterceptors().addAll(outInterceptors);

@@ -27,9 +27,6 @@
 
     <context:annotation-config/>
 
-    <!-- export beans to JMX -->
-    <context:mbean-export/>
-
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
         <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
         <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
@@ -91,11 +88,11 @@
         </property>
     </bean>    
 
-    <bean id="originalRequestUpdator" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="originalRequestUpdator" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod" value="com.l7tech.message.Message.setDefaultEnableOriginalDocument"/>
         <property name="arguments">
             <list>
-                <bean class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+                <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
                     <property name="targetObject" ref="clusterPropertyCache"/>
                     <property name="targetMethod" value="getPropertyValue"/>
                     <property name="arguments">
@@ -935,19 +932,22 @@
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 
     <!-- TODO sslKeyEntry, sslKeystoreCertificate, and sslKeyManagers should be removed so the default SSL key can be changed without a restart -->
-    <bean id="sslKeyEntry" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="sslKeyEntry" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetObject" ref="defaultKey"/>
         <property name="targetMethod" value="getSslInfo"/>
+        <property name="objectType" value="com.l7tech.gateway.common.security.keystore.SsgKeyEntry"/>
     </bean>
 
-    <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="sslKeystoreCertificate" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetObject" ref="sslKeyEntry"/>
         <property name="targetMethod" value="getCertificate"/>
+        <property name="objectType" value="java.security.cert.X509Certificate"/>        
     </bean>
 
-    <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="sslKeyManagers" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetObject" ref="defaultKey"/>
         <property name="targetMethod" value="getSslKeyManagers"/>
+        <property name="objectType" value="javax.net.ssl.KeyManager[]"/>        
     </bean>
 
     <bean id="nodeProperties"
@@ -1020,7 +1020,7 @@
     </bean>
 
     <!-- Status Update Manager Task Scheduler -->
-    <bean id="statusUpdateManagerSchedulerTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+    <bean id="statusUpdateManagerSchedulerTask" class="org.springframework.scheduling.timer.ScheduledTimerTask" depends-on="clusterBoot">
         <!-- wait 10 seconds before starting repeated execution -->
         <property name="delay" value="8000"/> <!-- 8 seconds -->
         <property name="period" value="4000"/> <!-- repeat every 4 seconds -->
@@ -1778,4 +1778,8 @@
             </list>
         </constructor-arg>
     </bean>
+
+    <!-- export beans to JMX -->
+    <context:mbean-export/>
+
 </beans>

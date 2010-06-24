@@ -6,6 +6,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
@@ -165,50 +166,54 @@ public abstract class ApiContext {
         cfb.setServiceClass( apiClass );
         cfb.setAddress( url );
 
-        Client c = cfb.create();
-        if ( logger.isLoggable( Level.FINEST ) ) {
-            c.getInInterceptors().add( new LoggingInInterceptor() );
-            c.getOutInterceptors().add( new LoggingOutInterceptor() );
-            c.getInFaultInterceptors().add( new LoggingInInterceptor() );
-            c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
-        }
-
-        HTTPConduit hc = (HTTPConduit) c.getConduit();
-        HTTPClientPolicy policy = hc.getClient();
-        policy.setCookie( cookie );
-        policy.setConnectionTimeout( connectionTimeout );
-        policy.setReceiveTimeout( readTimeout );
-        hc.setTlsClientParameters(new TLSClientParameters() {
+        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(cfb){
             @Override
-            public String getJsseProvider() {
-                final Provider provider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10);
-                return provider == null ? null : provider.getName();
-            }
+            protected ClientProxy clientClientProxy( final Client c ) {
+                if ( logger.isLoggable( Level.FINEST ) ) {
+                    c.getInInterceptors().add( new LoggingInInterceptor() );
+                    c.getOutInterceptors().add( new LoggingOutInterceptor() );
+                    c.getInFaultInterceptors().add( new LoggingInInterceptor() );
+                    c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
+                }
 
-            @Override
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
+                HTTPConduit hc = (HTTPConduit) c.getConduit();
+                HTTPClientPolicy policy = hc.getClient();
+                policy.setCookie( cookie );
+                policy.setConnectionTimeout( connectionTimeout );
+                policy.setReceiveTimeout( readTimeout );
+                hc.setTlsClientParameters(new TLSClientParameters() {
                     @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    public String getJsseProvider() {
+                        final Provider provider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10);
+                        return provider == null ? null : provider.getName();
+                    }
+
                     @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    public TrustManager[] getTrustManagers() {
+                        return new TrustManager[] { new X509TrustManager() {
+                            @Override
+                            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                            @Override
+                            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                            @Override
+                            public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                        }};
+                    }
+
                     @Override
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                }};
-            }
+                    public KeyManager[] getKeyManagers() {
+                        return defaultKey==null ? new KeyManager[0] : defaultKey.getSslKeyManagers();
+                    }
 
-            @Override
-            public KeyManager[] getKeyManagers() {
-                return defaultKey==null ? new KeyManager[0] : defaultKey.getSslKeyManagers();
+                    @Override
+                    public boolean isDisableCNCheck() {
+                        return true;
+                    }
+                });
+                
+                return super.clientClientProxy( c );
             }
-
-            @Override
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-        });
-
-        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(cfb);
+        };
         return (T) factory.create();
     }
 }

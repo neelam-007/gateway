@@ -29,8 +29,12 @@ import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeSource;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 
 import javax.xml.ws.WebServiceException;
 import java.io.IOException;
@@ -45,7 +49,7 @@ import java.util.logging.Logger;
  * Sends the monitoring configuration to all known process controllers on ESM startup and whenever
  * the configuration changes.
  */
-public class MonitoringConfigurationSynchronizer implements ApplicationListener {
+public class MonitoringConfigurationSynchronizer implements ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
 
     private static final String PROP_PREFIX = "com.l7tech.server.ems.monitoring.configPush.";
@@ -115,6 +119,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     }
 
     @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                MonitoringConfigurationSynchronizer.this.onApplicationEvent( event );
+            }
+        } );
+    }
+
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof PersistenceEvent) {
             PersistenceEvent pe = (PersistenceEvent) event;

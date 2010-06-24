@@ -29,7 +29,6 @@ import org.apache.ftpserver.listener.ConnectionManager;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.mina.MinaConnection;
 import org.apache.mina.common.support.BaseIoSession;
-import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  * Creates and controls an embedded FTP server for each configured SsgConnector
  * with an FTP or FTPS scheme.
  */
-public class FtpServerManager extends TransportModule implements ApplicationListener {
+public class FtpServerManager extends TransportModule {
 
     //- PUBLIC
 

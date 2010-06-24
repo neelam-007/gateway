@@ -27,6 +27,7 @@ import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -45,7 +46,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class SimpleRawTransportModule extends TransportModule {
+public class SimpleRawTransportModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(SimpleRawTransportModule.class.getName());
     private static final String SCHEME_RAW_TCP = "l7.raw.tcp";
     private static final String SCHEME_RAW_UDP = "l7.raw.udp";

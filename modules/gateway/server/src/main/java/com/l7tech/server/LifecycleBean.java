@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
  *
  * @author Steve Jones
  */
-public abstract class LifecycleBean implements Lifecycle, InitializingBean, ApplicationContextAware, ApplicationListener, ServerComponentLifecycle, DisposableBean {
+public abstract class LifecycleBean implements Lifecycle, InitializingBean, ApplicationContextAware, ServerComponentLifecycle, DisposableBean {
 
     //- PUBLIC
 
@@ -36,6 +37,14 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
         this.applicationContext = applicationContext;
+
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                LifecycleBean.this.onApplicationEvent( event );
+            }
+        } );
     }
 
     public boolean isLicensed() {
@@ -94,36 +103,6 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
     }
 
     @Override
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if ( licenseFeature != null ) {
-            if (applicationEvent instanceof LicenseEvent) {
-                // If the subsystem becomes licensed after bootup, start it now
-                // We do not, however, support de-licensing an already-active subsystem without a reboot
-                startedRwLock.readLock().lock();
-                try {
-                    if (started)
-                        return;  //avoid cost of scheduling oneshot timertask if we have already started
-                } finally {
-                    startedRwLock.readLock().unlock();
-                }
-
-                if (isLicensed()) {
-                    Background.scheduleOneShot(new TimerTask() {
-                        @Override
-                        public void run() {
-                            try {
-                                start();
-                            } catch (LifecycleException e) {
-                                logger.log(Level.SEVERE, "Unable to start subsystem: " + ExceptionUtils.getMessage(e), e);
-                            }
-                        }
-                    }, 250);
-                }
-            }
-        }
-    }
-
-    @Override
     public String toString() {
         return componentName;
     }
@@ -154,6 +133,35 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     protected ApplicationContext getApplicationContext() {
         return applicationContext;
+    }
+
+    protected void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if ( licenseFeature != null ) {
+            if (applicationEvent instanceof LicenseEvent) {
+                // If the subsystem becomes licensed after bootup, start it now
+                // We do not, however, support de-licensing an already-active subsystem without a reboot
+                startedRwLock.readLock().lock();
+                try {
+                    if (started)
+                        return;  //avoid cost of scheduling oneshot timertask if we have already started
+                } finally {
+                    startedRwLock.readLock().unlock();
+                }
+
+                if (isLicensed()) {
+                    Background.scheduleOneShot(new TimerTask() {
+                        @Override
+                        public void run() {
+                            try {
+                                start();
+                            } catch (LifecycleException e) {
+                                logger.log(Level.SEVERE, "Unable to start subsystem: " + ExceptionUtils.getMessage(e), e);
+                            }
+                        }
+                    }, 250);
+                }
+            }
+        }
     }
 
     //- PRIVATE

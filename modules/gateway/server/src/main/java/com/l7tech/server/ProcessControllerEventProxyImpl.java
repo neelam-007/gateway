@@ -14,6 +14,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -23,7 +24,7 @@ import org.springframework.context.ApplicationEvent;
 
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
-import javax.xml.ws.soap.SOAPFaultException;
+import javax.xml.ws.WebServiceException;
 import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +48,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
     private ProcessControllerApi processControllerApi;
 
     private final TimerTask task = new TimerTask() {
+        @Override
         public void run() {
             if (isProcessControllerPresent()) getProcessControllerApi(false);
         }
@@ -60,20 +62,24 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
             return Arrays.asList(SyspropUtil.getString(PROP_SSL_CIPHERS,DEFAULT_SSL_CIPHERS).split(","));
         }
 
+        @Override
         public boolean isDisableCNCheck() {
             return true;
         }
 
         // TODO should we explicitly trust the PC cert?
+        @Override
         public TrustManager[] getTrustManagers() {
             return new TrustManager[] { trustManager };
         }
     };
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         start();
     }
 
+    @Override
     public void destroy() throws Exception {
         stop();
     }
@@ -122,15 +128,21 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
 
     // TODO make this a util method
     private static JaxWsProxyFactoryBean makeSslStub(String url, final Class<ProcessControllerApi> apiClass) {
-        final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean(new JaxWsClientFactoryBean());
+        final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean(new JaxWsClientFactoryBean()){
+            @Override
+            protected ClientProxy clientClientProxy( final Client c ) {
+                final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+                httpConduit.setTlsClientParameters(tlsClientParameters);
+
+                return super.clientClientProxy( c );
+            }
+        };
         pfb.setServiceClass(apiClass);
         pfb.setAddress(url);
-        final Client c = pfb.getClientFactoryBean().create();
-        final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
-        httpConduit.setTlsClientParameters(tlsClientParameters);
         return pfb;
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (!isProcessControllerPresent()) return;
 
@@ -168,11 +180,11 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, String.format("Unable to find recently %s SsgConnector #%d", what, oid), e);
-        } catch (SOAPFaultException sfe) {
-            if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
+        } catch (WebServiceException e) {
+            if ( ExceptionUtils.causedBy( e, ConnectException.class ) ) {
                 logger.log(Level.WARNING, String.format("Connection error while notifying process controller of %s connector %d", what, oid));
             } else {
-                logger.log(Level.WARNING, String.format("Error while notifying process controller of %s connector %d", what, oid), sfe);
+                logger.log(Level.WARNING, String.format("Error while notifying process controller of %s connector %d", what, oid), e);
             }
         }
     }

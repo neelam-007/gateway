@@ -38,11 +38,12 @@ public class LazyPropertyChangeDispatcher implements ApplicationContextAware, Pr
      *
      * @param beansToProps The map of String bean names to List<String> server config property names.
      */
-    public LazyPropertyChangeDispatcher(Map beansToProps) {
+    public LazyPropertyChangeDispatcher(Map<?,?> beansToProps) {
         Map<String, List<String>> config = new LinkedHashMap<String, List<String>>();
+        Set<String> allPropertyNames = new HashSet<String>();
 
         if (beansToProps != null) {
-            for (Map.Entry entry : (Set<Map.Entry>)beansToProps.entrySet()) {
+            for (Map.Entry<?,?> entry : beansToProps.entrySet()) {
                 Object key = entry.getKey();
                 Object value = entry.getValue();
 
@@ -55,17 +56,20 @@ public class LazyPropertyChangeDispatcher implements ApplicationContextAware, Pr
                         if (prop instanceof String) propertyNames.add((String) prop);
                     }
 
+                    allPropertyNames.addAll( propertyNames );
                     config.put(beanName, propertyNames);
                 }
             }
         }
 
         configMap = Collections.unmodifiableMap(config);
+        propertyNames = Collections.unmodifiableSet(allPropertyNames);
     }
 
     /**
      *
      */
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         if (applicationContext == null) throw new IllegalArgumentException("applicationContext must not be null");
         listenerLock.writeLock().lock();
@@ -81,8 +85,9 @@ public class LazyPropertyChangeDispatcher implements ApplicationContextAware, Pr
     /**
      *
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
-        for (ListenerInfo listenerInfo : getListeners()) {
+        for (ListenerInfo listenerInfo : getListeners(evt.getPropertyName())) {
             if (listenerInfo.propertySet.contains(evt.getPropertyName())) {
                 try {
                     listenerInfo.listener.propertyChange(evt);
@@ -98,48 +103,53 @@ public class LazyPropertyChangeDispatcher implements ApplicationContextAware, Pr
     private static final Logger logger = Logger.getLogger(LazyPropertyChangeDispatcher.class.getName());
 
     private final Map<String, List<String>> configMap;
+    private final Set<String> propertyNames;
     private final ReadWriteLock listenerLock = new ReentrantReadWriteLock(false);
     private ApplicationContext applicationContext;
     private Collection<ListenerInfo> listeners = null;
 
-    private Collection<ListenerInfo> getListeners() {
+    private Collection<ListenerInfo> getListeners( final String propertyName ) {
         Collection<ListenerInfo> info;
         listenerLock.readLock().lock();
         try {
             info = listeners;
         } finally {
-            listenerLock.readLock().unlock();            
+            listenerLock.readLock().unlock();
         }
 
         if (info == null) {
-            listenerLock.writeLock().lock();
-            try {
-                info = listeners;
-                if (info == null) {
-                    Map<String, List<String>> configMap = this.configMap;
-                    ApplicationContext ac = applicationContext;
-                    if (configMap == null) {
-                        info = Collections.emptyList();
-                        listeners = info;
-                    }
-                    else {
-                        List listenerList = new ArrayList<ListenerInfo>();
-                        for (Map.Entry<String, List<String>> entry : configMap.entrySet()) {
-                            String beanName = entry.getKey();
-                            try {
-                                PropertyChangeListener listener = ac.getBean(beanName, PropertyChangeListener.class);
-                                listenerList.add(new ListenerInfo(listener, Collections.unmodifiableSet(new HashSet(entry.getValue()))));
-                            } catch (BeansException be) {
-                                logger.log(Level.WARNING, "Could not get property change listener '"+beanName+"'.", be);
-                            }
+            if ( !propertyNames.contains(propertyName) ) {
+                info = Collections.emptyList(); // don't create the listener list until it is needed
+            } else {
+                listenerLock.writeLock().lock();
+                try {
+                    info = listeners;
+                    if (info == null) {
+                        Map<String, List<String>> configMap = this.configMap;
+                        ApplicationContext ac = applicationContext;
+                        if (configMap == null) {
+                            info = Collections.emptyList();
+                            listeners = info;
                         }
+                        else {
+                            List<ListenerInfo> listenerList = new ArrayList<ListenerInfo>();
+                            for (Map.Entry<String, List<String>> entry : configMap.entrySet()) {
+                                String beanName = entry.getKey();
+                                try {
+                                    PropertyChangeListener listener = ac.getBean(beanName, PropertyChangeListener.class);
+                                    listenerList.add(new ListenerInfo(listener, Collections.unmodifiableSet(new HashSet<String>(entry.getValue()))));
+                                } catch (BeansException be) {
+                                    logger.log(Level.WARNING, "Could not get property change listener '"+beanName+"'.", be);
+                                }
+                            }
 
-                        info = Collections.unmodifiableList(listenerList);
-                        listeners = info;
+                            info = Collections.unmodifiableList(listenerList);
+                            listeners = info;
+                        }
                     }
+                } finally {
+                    listenerLock.writeLock().unlock();
                 }
-            } finally {
-                listenerLock.writeLock().unlock();
             }
         }
 

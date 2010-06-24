@@ -16,6 +16,7 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 
@@ -89,29 +90,34 @@ public class NodeManagementApiFactory {
     private NodeManagementApi managementService;
 
     private NodeManagementApi buildPCManagementService( final String url ) {
-        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(){
+            @Override
+            protected ClientProxy clientClientProxy( final Client c ) {
+                HTTPConduit hc = (HTTPConduit)c.getConduit();
+                hc.setTlsClientParameters(new TLSClientParameters() {
+                    @Override
+                    public TrustManager[] getTrustManagers() {
+                        return new TrustManager[] { new X509TrustManager() {
+                            @Override
+                            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                            @Override
+                            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                            @Override
+                            public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                        }};
+                    }
+
+                    @Override
+                    public boolean isDisableCNCheck() {
+                        return true;
+                    }
+                });
+
+                return super.clientClientProxy( c );
+            }
+        };
         factory.setServiceClass(NodeManagementApi.class);
         factory.setAddress(url);
-        Client c = factory.getClientFactoryBean().create();
-        HTTPConduit hc = (HTTPConduit)c.getConduit();
-        hc.setTlsClientParameters(new TLSClientParameters() {
-            @Override
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                }};
-            }
-
-            @Override
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-        });
 
         return (NodeManagementApi) factory.create();
     }

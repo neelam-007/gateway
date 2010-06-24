@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @author jbufu
  */
-public class AuditArchiver implements InitializingBean, ApplicationContextAware, PropertyChangeListener, ApplicationListener {
+public class AuditArchiver implements InitializingBean, ApplicationContextAware, PropertyChangeListener {
 
     private static final Logger logger = Logger.getLogger(AuditArchiver.class.getName());
 
@@ -96,8 +97,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
 
-    @Override
-    public void onApplicationEvent( final ApplicationEvent event ) {
+    private void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof ContextStartedEvent ) {
             reloadConfig();
             logger.info("Audit Archiver initialized.");
@@ -336,6 +336,13 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
 
+        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
+        eventMulticaster.addApplicationListener( new ApplicationListener(){
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                AuditArchiver.this.onApplicationEvent( event );
+            }
+        } );
     }
 
     public ApplicationContext getApplicationContext() {

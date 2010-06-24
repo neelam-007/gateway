@@ -1,9 +1,6 @@
 package com.l7tech.server.ems.setup;
 
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -18,17 +15,13 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
-import com.l7tech.server.ems.listener.ListenerConfigurationUpdatedEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.Resource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -36,24 +29,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
-import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,7 +48,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * Encapsulates behavior for initial setup of a new EMS instance.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class SetupManagerImpl implements InitializingBean, SetupManager, ApplicationListener {
+public class SetupManagerImpl implements InitializingBean, SetupManager {
 
     //- PUBLIC
 
@@ -88,11 +73,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
 
     @Override
     public String getEsmId() {
-        return  serverConfig.getProperty( "em.server.id" );
-    }
-
-    public void setKeyStoreManager( final SsgKeyStoreManager keyStoreManager ) {
-        this.keyStoreManager = keyStoreManager;
+        return serverConfig.getProperty( "em.server.id" );
     }
 
     @Override
@@ -115,45 +96,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
             serverConfig.putProperty( "em.server.listenaddr", "0.0.0.0" );
         } else {
             serverConfig.putProperty( "em.server.listenaddr", ipaddress );
-        }
-    }
-
-    @Override
-    public String saveSsl( final PrivateKey key, final X509Certificate[] certificateChain ) throws SetupException {
-        try {
-            // save key
-            String alias = findUnusedAlias();
-            SsgKeyStore sks = findFirstMutableKeystore();
-            SsgKeyEntry entry = new SsgKeyEntry( sks.getOid(), alias, certificateChain, key );
-            sks.storePrivateKeyEntry(null, entry, false );
-            return alias;
-        } catch ( KeyStoreException kse ) {
-            throw new SetupException( "Error during keystore configuration.", kse );
-        } catch ( IOException ioe ) {
-            throw new SetupException( "Error during keystore configuration.", ioe );
-        }
-    }
-
-    @Override
-    public String generateSsl(final String hostname, final RsaKeySize rsaKeySize) throws SetupException {
-        try {
-            // generate key and save
-            String alias = findUnusedAlias();
-            SsgKeyStore sks = findFirstMutableKeystore();
-            generateKeyPair( hostname, sks, alias, rsaKeySize );
-            return alias;
-        } catch ( IOException ioe ) {
-            throw new SetupException( "Error during keystore configuration.", ioe );
-        }
-    }
-
-    @Override
-    public void setSslAlias( final String alias ) throws SetupException {
-        try {
-            SsgKeyStore sks = findFirstMutableKeystore();
-            configureAsDefaultSslCert(sks, alias);
-        } catch ( IOException ioe ) {
-            throw new SetupException( "Error during keystore configuration.", ioe );
         }
     }
 
@@ -226,8 +168,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
      */
     @Override
     public void afterPropertiesSet() {
-        final String[] uuidHolder = new String[1];
-
         final boolean wasSystem = AuditContextUtils.isSystem();
         try {
             AuditContextUtils.setSystem(true);
@@ -238,8 +178,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                     try {
                         if ( clusterPropertyManager.findByUniqueName("esm.id") == null ) {
-                            uuidHolder[0] = UUID.randomUUID().toString().replaceAll("-","");
-                            clusterPropertyManager.save( new ClusterProperty( "esm.id", uuidHolder[0] ) );
+                            String esmId = UUID.randomUUID().toString().replaceAll("-","");
+                            serverConfig.putProperty( "em.server.id", esmId );
+                            clusterPropertyManager.save( new ClusterProperty( "esm.id", esmId ) );
                         }
 
                         if ( identityProviderConfigManager.findAll().isEmpty() &&
@@ -328,24 +269,11 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
         } finally {
             AuditContextUtils.setSystem( wasSystem );
         }
-
-        if ( uuidHolder[0] != null ) {
-            serverConfig.putProperty( "em.server.id", uuidHolder[0] ); // work around for application events not yet available
-        }
-    }
-
-    @Override
-    public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof ListenerConfigurationUpdatedEvent) {
-            cleanupAlias( ((ListenerConfigurationUpdatedEvent) event).getAlias() );
-        }
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
-
-    private static final String BASE_ALIAS = "ssl";
 
     private final ServerConfig serverConfig;
     private final PlatformTransactionManager transactionManager;
@@ -355,7 +283,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     private final EnterpriseFolderManager enterpriseFolderManager;
     private final KeystoreFileManager keystoreFileManager;
     private final ClusterPropertyManager clusterPropertyManager;
-    private SsgKeyStoreManager keyStoreManager;
 
     private static void runScripts( final Connection connection,
                                     final Resource[] scripts,
@@ -429,131 +356,5 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
         keystoreFile.setName( name );
         keystoreFile.setFormat( format );
         return keystoreFile;
-    }
-
-    private void generateKeyPair(final String hostname, final SsgKeyStore sks, final String alias,
-                                 final RsaKeySize rsaKeySize) throws IOException {
-        X500Principal dn = new X500Principal("cn=" + hostname);
-        try {
-            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(rsaKeySize.getKeySize()), new CertGenParams(dn, 365 * 10, false, null));
-            job.get();
-        } catch (GeneralSecurityException e) {
-            throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (ExecutionException e) {
-            throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (InterruptedException e) {
-            throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private SsgKeyEntry configureAsDefaultSslCert( final SsgKeyStore sks, final String alias) throws IOException {
-        try {
-            SsgKeyEntry entry = sks.getCertificateChain(alias);
-            String name = serverConfig.getClusterPropertyName(ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
-            if (name == null)
-                throw new IOException("Unable to configure default SSL key: no cluster property defined for ServerConfig property " + ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
-            String value = entry.getKeystoreId() + ":" + alias;
-            clusterPropertyManager.putProperty(name, value);
-            return entry;
-        } catch (KeyStoreException e) {
-            throw new IOException("Unable to find default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
-            throw new IOException("Unable to configure default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (UpdateException e) {
-            throw new IOException("Unable to configure default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (SaveException e) {
-            throw new IOException("Unable to configure default SSL key: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private SsgKeyStore findFirstMutableKeystore() throws IOException {
-        SsgKeyStore sks = null;
-        try {
-            List<SsgKeyFinder> got = keyStoreManager.findAll();
-            for (SsgKeyFinder ssgKeyFinder : got) {
-                if (ssgKeyFinder.isMutable()) {
-                    sks = ssgKeyFinder.getKeyStore();
-                    break;
-                }
-            }
-            if (sks == null)
-                throw new IOException("No mutable keystores found in which to store default SSL key");
-        } catch (FindException e) {
-            throw new IOException("Unable to find keystore in which to store default SSL key: " + ExceptionUtils.getMessage(e), e);
-        } catch (KeyStoreException e) {
-            throw new IOException("Unable to find keystore in which to store default SSL key: " + ExceptionUtils.getMessage(e), e);
-        }
-        return sks;
-    }
-
-    private String findUnusedAlias() throws IOException {
-        String alias = BASE_ALIAS;
-        int count = 1;
-        while (aliasAlreadyUsed(alias)) {
-            alias = BASE_ALIAS + (count++);
-        }
-        return alias;
-    }
-
-    private boolean aliasAlreadyUsed( final String alias ) throws IOException {
-        try {
-            keyStoreManager.lookupKeyByKeyAlias(alias, -1);
-            return true;
-        } catch (ObjectNotFoundException e) {
-            return false;
-        } catch (FindException e) {
-            throw new IOException("Unable to check if alias \"" + alias + "\" is already used: " + ExceptionUtils.getMessage(e), e);
-        } catch (KeyStoreException e) {
-            throw new IOException("Unable to check if alias \"" + alias + "\" is already used: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    /**
-     * Delete all aliases and keys except for the given value and the currently
-     * configured default. 
-     */
-    private void cleanupAlias( final String alias ) {
-        String configAlias = serverConfig.getProperty("keyStoreDefaultSslKey");
-        if ( configAlias != null ) {
-            int index = configAlias.indexOf(':');
-            if ( index > -1 ) {
-                configAlias = configAlias.substring( index+1 );
-            }
-        }
-
-        try {
-            String currentAlias = BASE_ALIAS;
-            for ( int i=1; i<100; i++ ) {
-                if ( !currentAlias.equalsIgnoreCase(alias) &&
-                     (configAlias == null || !currentAlias.equalsIgnoreCase(configAlias)) ) {
-                    try {
-                        SsgKeyEntry entry = keyStoreManager.lookupKeyByKeyAlias(currentAlias, -1);
-                        long keystoreId = entry.getKeystoreId();
-                        SsgKeyFinder finder = keyStoreManager.findByPrimaryKey( keystoreId );
-                        if ( finder.isMutable() ) {
-                            if ( finder.getKeyStore().deletePrivateKeyEntry(null, currentAlias ).get() ) {
-                                logger.config("Deleted old private key entry for alias '"+currentAlias+"'.");
-                            } else {
-                                logger.config("Deletion of old private key entry for alias '"+currentAlias+"' failed.");
-                            }
-                        } else {
-                            logger.warning("Cannot delete alias in read-only store '"+currentAlias+"'.");
-                        }
-                    } catch (ObjectNotFoundException e) {
-                        // ok, the alias is not in use check next
-                    }
-                }
-
-                currentAlias = BASE_ALIAS + (i);
-            }
-        } catch (FindException e) {
-            logger.log( Level.WARNING, "Error deleting old private keys.", e );
-        } catch (KeyStoreException e) {
-            logger.log( Level.WARNING, "Error deleting old private keys.", e );
-        } catch (ExecutionException e) {
-            logger.log( Level.WARNING, "Error deleting old private keys.", e );
-        } catch (InterruptedException e) {
-            logger.log( Level.WARNING, "Interrupted when deleting old private keys.", ExceptionUtils.getDebugException(e) );
-        }
     }
 }
