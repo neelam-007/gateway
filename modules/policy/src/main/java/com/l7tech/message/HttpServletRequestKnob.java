@@ -5,8 +5,10 @@ package com.l7tech.message;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +20,7 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,6 +29,8 @@ import java.util.regex.Pattern;
  * from a servlet request.
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
+    private static final Logger logger = Logger.getLogger(HttpServletRequestKnob.class.getName());
+
     /** parameters found in the URL query string. */
     private Map<String, String[]> queryParams;
     /** parameters found in the request message body. */
@@ -45,7 +50,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
-    private static final int MAX_FORM_POST = 512 * 1024;
+    private static final int MAX_FORM_POST = SyspropUtil.getInteger( "com.l7tech.message.httpParamsMaxFormPost", 512 * 1024 );
+    private static final boolean VALIDATE_PARAMETERS = SyspropUtil.getBoolean( "com.l7tech.message.httpParamsValidate", true );
 
     public HttpServletRequestKnob(HttpServletRequest request) {
         this.request = request;
@@ -98,7 +104,11 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             queryParams = Collections.emptyMap();
         } else {
             final TreeMap<String, String[]> newmap = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
-            newmap.putAll(ParameterizedString.parseQueryString(q, true));
+            try {
+                newmap.putAll(ParameterizedString.parseQueryString(q, VALIDATE_PARAMETERS));
+            } catch (IllegalArgumentException iae) {
+                logger.warning( "Ignoring query string parameters due to invalid content " + ExceptionUtils.getMessage(iae) );
+            }
             this.queryParams = Collections.unmodifiableMap(newmap);
         }
 
@@ -129,7 +139,11 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         byte[] buf = IOUtils.slurpStream(request.getInputStream());
         String blob = new String(buf, enc);
         requestBodyParams = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
-        ParameterizedString.parseParameterString(requestBodyParams, blob, true);
+        try {
+            ParameterizedString.parseParameterString(requestBodyParams, blob, VALIDATE_PARAMETERS);
+        } catch (IllegalArgumentException iae) {
+            logger.warning( "Ignoring form parameters due to invalid content " + ExceptionUtils.getMessage(iae) );
+        }
 
         if (queryParams.isEmpty() && requestBodyParams.isEmpty()) {
             // Nothing left to do

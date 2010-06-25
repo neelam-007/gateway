@@ -173,9 +173,9 @@ public class ParameterizedString {
     //- PRIVATE
 
     /**
-     * It is debatable whether to allow "/", ":", "@" and "$" in the qs names.
+     * It is debatable whether to allow "/", "\", ":", "@", "|", "{", "}", "[", "]", "=", ";", "?", "#", """, "`", "^", "<", ">" and "~" in the qs names.
      */
-    private static Pattern validcomponent = Pattern.compile("[a-zA-Z0-9+%-_.!~*'()|/:@$,]*");
+    private static Pattern validcomponent = Pattern.compile("[a-zA-Z0-9$\\-_.+!*'(),%/\\\\:@|{}\\[\\]=;?#\"`^<>~]*");
 
     /**
      * Map of parsed parameters name (string) -> values (string array)
@@ -221,7 +221,7 @@ public class ParameterizedString {
 
             int splitIndex = nvp.indexOf('=');
             if(splitIndex<0) {
-                throw new IllegalArgumentException("Invalid at '"+nvp+"', '"+paramStr+"'.");
+                continue; // ignore parameter with no value
             }
 
             String name = nvp.substring(0, splitIndex);
