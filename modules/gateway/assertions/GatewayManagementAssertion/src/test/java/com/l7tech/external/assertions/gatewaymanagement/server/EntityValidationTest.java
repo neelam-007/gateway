@@ -412,12 +412,25 @@ public class EntityValidationTest {
         
         // Test WSDL url 255 chars
         service.setWsdlUrl( "http://GW/" + string(245,'a') );
+        service.setWsdlXml( "" );
         valid( service, "wsdl url 255 ");
 
         service.setWsdlUrl( "http://GW/" + string(246,'a') );
+        service.setWsdlXml( "" );
         invalid( service, "wsdl url 256" );
 
         service.setWsdlUrl( null );
+        service.setWsdlXml( "" );
+
+        // Test WSDL xml required for SOAP
+        service.setWsdlXml( null );
+        invalid( service, "null wsdl xml" );
+
+        service.setSoap( false );
+        valid( service, "null wsdl xml" );
+
+        service.setSoap( true );
+        service.setWsdlXml( "" );
 
         // Test Default routing url 4096 chars
         service.setDefaultRoutingUrl( string(4096,'a') );
@@ -572,6 +585,7 @@ public class EntityValidationTest {
         service.setName( "Test Service" );
         service.setPolicy( new Policy( PolicyType.INTERNAL, "Policy for test service", "<policy/>", true ) );
         service.getPolicy().setGuid( UUID.randomUUID().toString() );
+        service.setWsdlXml( "" );
         return service;
     }
 }

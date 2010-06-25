@@ -18,6 +18,7 @@ import com.l7tech.xml.soap.SoapVersion;
 
 import javax.persistence.Transient;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.wsdl.BindingOperation;
@@ -149,6 +150,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      * @return A String containing the WSDL document or  null if not set.
      */
+    @NotNull(groups=SoapValidationGroup.class, message="WSDL is required for SOAP services")
     @Size(max=5242880)
     public String getWsdlXml() {
         return _wsdlXml;
@@ -615,6 +617,11 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
         return builder.toString();
     }
+
+    /**
+     * Validation group with additional constraints for SOAP services.
+     */
+    public interface SoapValidationGroup {}
 
     // ************************************************
     // PRIVATES

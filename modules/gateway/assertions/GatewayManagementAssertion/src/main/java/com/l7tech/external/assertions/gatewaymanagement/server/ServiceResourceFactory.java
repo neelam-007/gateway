@@ -240,10 +240,6 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         }
 
         if ( wsdlUpdated ) {
-            if ( oldPublishedService.isSoap() && newPublishedService.getWsdlXml()==null ) {
-                throw new InvalidResourceException( InvalidResourceException.ExceptionType.MISSING_VALUES, "WSDL is required for SOAP services." );
-            }
-            
             try {
                 oldPublishedService.setWsdlUrl( newPublishedService.getWsdlUrl() );
             } catch ( MalformedURLException e ) {
@@ -260,7 +256,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final ServiceEntityBag serviceEntityBag = cast( entityBag, ServiceEntityBag.class );
         final PublishedService service = serviceEntityBag.getPublishedService();
         final Policy policy = service.getPolicy();
-                                             
+
         final Folder root = new Folder("Root Node", null);
         root.setOid( -5002 );
         service.setFolder( root );

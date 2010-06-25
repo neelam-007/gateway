@@ -79,6 +79,11 @@ class EntityPropertiesHelper {
             if ( !connection.isTemplate() ) {
                 groups = new Class[]{ Default.class, JmsConnection.StandardValidationGroup.class };
             }
+        } else if ( bean instanceof PublishedService ) {
+            PublishedService service = (PublishedService) bean;
+            if ( service.isSoap() ) {
+                groups = new Class[]{ Default.class, PublishedService.SoapValidationGroup.class };
+            }
         }
 
         return groups;
