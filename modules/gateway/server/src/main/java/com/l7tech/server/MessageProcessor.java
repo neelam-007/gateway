@@ -20,6 +20,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SecurityTokenResolver;
@@ -210,6 +211,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(e)}, e);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            return AssertionStatus.SERVER_ERROR;
+        } catch (VariableNameSyntaxException e) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Missing or invalid context variable: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             return AssertionStatus.SERVER_ERROR;
         } finally {
