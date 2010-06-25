@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="org.hibernate"
+		module="hibernate-commons-annotations"
+		revision="3.2.0.Final"
+		status="release"
+		publication="20100621175850"
+		default="true"
+	/>
+	<configurations defaultconfmapping="core->default">
+        <conf name="core" visibility="private"/>
+        <conf name="default" extends="runtime,master"/>
+        <conf name="runtime" extends="core"/>
+        <conf name="master"/>
+	</configurations>
+	<publications>
+		<artifact name="hibernate-commons-annotations" type="jar" ext="jar" conf="default"/>
+	</publications>
+	<dependencies>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.5.8" force="true" conf="core"/>
+	</dependencies>
+</ivy-module>

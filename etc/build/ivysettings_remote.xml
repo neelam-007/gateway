@@ -37,6 +37,11 @@
                      pattern="[organisation]/[type]s/[artifact]-[revision].[ext]"
                     />
             -->
+            <!--
+            <url name="java.net" m2compatible="true" checksums="md5,sha1">
+                <artifact pattern="http://download.java.net/maven/2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            </url>
+            -->
 
             <!--
               Jasper reports
@@ -61,11 +66,12 @@
 -->
 
             <!--
-              JBoss repository
+              JBoss repository (one works for JBoss Cache/JGroups/Javassist, the other for Hibernate)
             <url name="jboss" m2compatible="true" checksums="md5,sha1">
-                <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-            </url>
+                <artifact pattern="http://repository.jboss.com/maven2-brew/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/> 
             -->
+                <!--<artifact pattern="http://repository.jboss.com/nexus/content/groups/public/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>-->
+            <!--</url>-->
             <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
         </chain>
     </resolvers>

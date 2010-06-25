@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="org.hibernate"
+		module="hibernate-core"
+		revision="3.5.3-Final"
+		status="release"
+		publication="20100621173747"
+		default="true"
+	/>
+	<configurations defaultconfmapping="core->default">
+        <conf name="core" visibility="private"/>
+        <conf name="default" extends="runtime,master"/>
+        <conf name="runtime" extends="core"/>
+        <conf name="master"/>
+        <conf name="optional"/>
+        <conf name="provided"/>
+        <conf name="test"/>
+	</configurations>
+	<publications>
+		<artifact name="hibernate-core" type="jar" ext="jar" conf="master"/>
+	</publications>
+	<dependencies>
+		<dependency org="antlr" name="antlr" rev="2.7.6" force="true" conf="core"/>
+		<dependency org="commons-collections" name="commons-collections" rev="3.1" force="true" conf="core"/>
+		<dependency org="dom4j" name="dom4j" rev="1.6.1" force="true" conf="core"/>
+		<dependency org="javassist" name="javassist" rev="3.12.0.GA" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="cglib" name="cglib" rev="2.2" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="javax.transaction" name="jta" rev="1.1" force="true" conf="core"/>
+		<dependency org="javax.security" name="jaas" rev="1.0.01" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="javax.security" name="jacc" rev="1.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="ant" name="ant" rev="1.6.5" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.5.8" force="true" conf="core"/>
+		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.5.8" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.5.8" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="commons-logging" name="commons-logging" rev="99.0-does-not-exist" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="commons-logging" name="commons-logging-api" rev="99.0-does-not-exist" force="true" conf="test->runtime(*),master(*)"/>
+		<override org="cglib" module="cglib" matcher="exact" rev="2.2"/>
+		<override org="javassist" module="javassist" matcher="exact" rev="3.12.0.GA"/>
+		<override org="org.slf4j" module="slf4j-api" matcher="exact" rev="1.5.8"/>
+		<override org="commons-collections" module="commons-collections" matcher="exact" rev="3.1"/>
+		<override org="antlr" module="antlr" matcher="exact" rev="2.7.6"/>
+		<override org="dom4j" module="dom4j" matcher="exact" rev="1.6.1"/>
+	</dependencies>
+</ivy-module>

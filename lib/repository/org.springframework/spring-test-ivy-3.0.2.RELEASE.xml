@@ -46,7 +46,7 @@
 		<!--<dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>-->
 		<dependency org="javax.el" name="el-api" rev="1.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="javax.persistence" name="persistence-api" rev="1.0.2.GA" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="javax.persistence" name="persistence-api" rev="2.0.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<!--<dependency org="javax.portlet" name="portlet-api" rev="2.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="javax.servlet" name="servlet-api" rev="2.5" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="javax.servlet.jsp" name="jsp-api" rev="2.1" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>

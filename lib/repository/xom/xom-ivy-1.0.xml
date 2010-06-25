@@ -20,7 +20,7 @@
 		<artifact name="xom" type="jar" ext="jar" conf="master"/>
 	</publications>
 	<dependencies>
-		<dependency org="xerces" name="xmlParserAPIs" rev="2.6.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<!--<dependency org="xerces" name="xmlParserAPIs" rev="2.6.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>-->
 		<dependency org="xerces" name="xercesImpl" rev="2.6.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="xalan" name="xalan" rev="2.6.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.ibm.icu" name="icu4j" rev="2.6.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

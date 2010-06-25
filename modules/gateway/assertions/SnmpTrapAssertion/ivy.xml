@@ -23,7 +23,7 @@
         <artifact name="SnmpTrapAssertion" type="aar" ext="aar" conf="master"/>
     </publications>
     <dependencies>
-        <dependency org="org.snmp4j" name="snmp4j" rev="1.10.1" force="true" conf="core"/>
+        <dependency org="org.snmp4j" name="snmp4j" rev="1.11.1" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
     </dependencies>

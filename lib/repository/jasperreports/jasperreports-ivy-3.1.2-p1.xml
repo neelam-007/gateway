@@ -29,7 +29,7 @@
 		<artifact name="jasperreports" type="source" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies>
-		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.7.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-collections" name="commons-collections" rev="[2.1,)" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-digester" name="commons-digester" rev="[1.7,)" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-logging" name="commons-logging" rev="[1.0,)" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

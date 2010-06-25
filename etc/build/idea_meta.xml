@@ -1,24 +1,23 @@
 <layer7-project-info>
   <!-- Spring -->
-  <library name="org.springframework.spring-agent" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-aop" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-beans" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-context" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-context-support" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-core" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-jdbc" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-orm" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-test" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-tx" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-web" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
-  <library name="org.springframework.spring-webmvc" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-agent" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-aop" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-beans" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-context" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-context-support" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-core" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-jdbc" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-orm" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-test" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-tx" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-web" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
+  <library name="org.springframework.spring-webmvc" javadoc-url="http://static.springsource.org/spring/docs/3.0.x/javadoc-api/"/>
 
   <!-- Hibernate -->
   <library name="org.hibernate.hibernate-core" javadoc-url="http://docs.jboss.org/hibernate/stable/core/api/"/>
-  <library name="org.hibernate.hibernate-annotations" javadoc-url="http://www.hibernate.org/hib_docs/annotations/api/"/>
 
   <!-- Commons -->
-  <library name="commons-beanutils.commons-beanutils" javadoc-url="http://commons.apache.org/beanutils/commons-beanutils-1.7.0/docs/api/"/>
+  <library name="commons-beanutils.commons-beanutils" javadoc-url="http://commons.apache.org/beanutils/v1.8.3/apidocs/"/>
   <library name="commons-codec.commons-codec" javadoc-url="http://commons.apache.org/codec/apidocs/"/>
   <library name="commons-collections.commons-collections" javadoc-url="http://commons.apache.org/collections/api-release/"/>
   <library name="commons-configuration.commons-configuration" javadoc-url="http://commons.apache.org/configuration/apidocs/"/>

@@ -20,7 +20,7 @@
 		<artifact name="xalan" type="jar" ext="jar" conf="master"/>
 	</publications>
 	<dependencies>
-		<dependency org="xml-apis" name="xml-apis" rev="2.0.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="xml-apis" name="xml-apis" rev="1.4.01" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="xerces" name="xercesImpl" rev="2.6.0" force="true" conf="optional->compile(*),master(*)"/>
 	</dependencies>
 </ivy-module>

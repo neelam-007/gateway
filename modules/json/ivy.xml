@@ -22,12 +22,13 @@
         <dependency org="json-schema-validator" name="json-schema-validator" rev="0.0.1-SNAPSHOT" force="true" conf="core"/>
         <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.5.1" force="true" conf="core"/>
         <dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.5.1" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.8" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.8" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.11" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.11" force="true" conf="core"/>
 
         <!-- Test dependencies -->
         <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
         <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
         
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.5.11"/>
     </dependencies>
 </ivy-module>
