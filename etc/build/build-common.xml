@@ -509,7 +509,7 @@
     <target name="package.work" if="module.package.jar.required" unless="module.package.jar.disabled"
             depends="compile, package.dependencies, package.init, package.classpath, package.custom, package.obfuscate">
         <property name="package.classes.dir" value="${classes.main.dir}"/>
-        <property name="ivy.extra.title" value="ivy.module"/>
+        <property name="ivy.extra.title" value="${ivy.module}"/>
         <mkdir dir="${build.etc.dir}"/>
         <touch file="${build.etc.dir}/MANIFEST.MF"/>
         <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF" index="${module.jar.index}">
