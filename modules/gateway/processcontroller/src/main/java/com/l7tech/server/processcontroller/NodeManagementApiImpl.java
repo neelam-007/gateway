@@ -214,16 +214,6 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         NodeStateType tempState = processController.getNodeStatus(nodeName).getType();
         if (tempState == null) tempState = NodeStateType.UNKNOWN;

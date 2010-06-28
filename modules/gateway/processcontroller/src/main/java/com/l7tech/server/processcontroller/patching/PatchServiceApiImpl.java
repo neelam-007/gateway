@@ -162,7 +162,6 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     /** Builds the parameter list to be passed to the patch installer */
     private void getInstallParams(List<String> commandLine, PatchPackage patch, Collection<String> nodes) {
         commandLine.add("-D" + ApiWebEndpoint.NODE_MANAGEMENT.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.NODE_MANAGEMENT));
-        commandLine.add("-D" + ApiWebEndpoint.OS.getPropName() + "=" + config.getApiEndpoint(ApiWebEndpoint.OS));
         //commandLine.add("-Xdebug");
         //commandLine.add("-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8998");
         if(nodes != null && ! nodes.isEmpty()) {

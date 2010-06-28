@@ -1477,8 +1477,6 @@
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
 
-    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl" depends-on="cxf"/>
-
     <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterInfoManager"/>

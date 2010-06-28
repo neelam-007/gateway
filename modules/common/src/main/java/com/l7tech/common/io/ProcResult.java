@@ -3,7 +3,6 @@ package com.l7tech.common.io;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /** Holds the result of invoking a subprocess using the {@link ProcUtils} utility class. */
-@XmlJavaTypeAdapter(ProcResultJaxbType.Adapter.class)
 public class ProcResult {
     private final int exitStatus;
     private final byte[] output;

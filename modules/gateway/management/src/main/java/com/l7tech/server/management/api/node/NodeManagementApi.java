@@ -189,33 +189,6 @@ public interface NodeManagementApi {
         throws DeleteException;
 
     /**
-     * Uploads a new Node software bundle.  Note that uploading software bundles does not affect any existing
-     * Nodes on the host; {@link #upgradeNode} must be called separately as needed to upgrade each node to
-     * use the new software as desired.
-     * 
-     * @param softwareData a MIME blob containing the software bundle
-     * @return the version of the Node software
-     * @throws IOException if the software bundle could not be received or saved
-     * @throws UpdateException if the software bundle is incompatible with this PC or Host
-     */
-    String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException;
-
-    /**
-     * Attempts to upgrade the node with the specified name to the specified version.  A Node software bundle
-     * corresponding to the specified version must already have been uploaded to the host via
-     * {@link #uploadNodeSoftware}.  If the specified node is still running, a {@link RestartRequiredException}
-     * is thrown, indicating that the node must first be stopped using {@link #stopNode} before the upgrade can be
-     * retried.  In the event of an upgrade failure, the PC will make a best-effort attempt to restore the
-     * node's operational capability, but no guarantee is offered.
-     *
-     * @param nodeName the name of the node to be upgraded
-     * @param targetVersion the version to upgrade the node to
-     * @throws RestartRequiredException if the node is still running when this method is called
-     * @throws UpdateException if the upgrade fails.
-     */
-    void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException;
-
-    /**
      * Attempts to start the node with the specified name.  If the specified node is already starting or running, no
      * action is taken.
      * 

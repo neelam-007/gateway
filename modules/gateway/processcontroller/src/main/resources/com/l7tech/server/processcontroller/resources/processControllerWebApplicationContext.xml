@@ -15,11 +15,7 @@
 
     <bean id="nodeManagementApiImpl" class="com.l7tech.server.processcontroller.NodeManagementApiImpl"/>
 
-    <bean id="processControllerApiImpl" class="com.l7tech.server.processcontroller.ProcessControllerApiImpl"/>
-
     <bean id="monitoringApiImpl" class="com.l7tech.server.processcontroller.MonitoringApiImpl"/>
-
-    <bean id="osApiImpl" class="com.l7tech.server.processcontroller.OSApiImpl"/>
 
     <bean id="patchServiceApiImpl" class="com.l7tech.server.processcontroller.patching.PatchServiceApiImpl"/>
 
@@ -35,19 +31,7 @@
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
-    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="${processcontroller.api.endpoint}">
-        <jaxws:inInterceptors>
-            <ref bean="securityInterceptor"/>
-        </jaxws:inInterceptors>
-    </jaxws:endpoint>
-
     <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="${monitoring.api.endpoint}">
-        <jaxws:inInterceptors>
-            <ref bean="securityInterceptor"/>
-        </jaxws:inInterceptors>
-    </jaxws:endpoint>
-
-    <jaxws:endpoint id="osApiEndpoint" implementor="#osApiImpl" address="${os.api.endpoint}">
         <jaxws:inInterceptors>
             <ref bean="securityInterceptor"/>
         </jaxws:inInterceptors>

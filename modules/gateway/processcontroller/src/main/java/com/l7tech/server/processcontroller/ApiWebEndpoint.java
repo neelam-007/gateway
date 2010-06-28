@@ -7,9 +7,7 @@ package com.l7tech.server.processcontroller;
  */
 public enum ApiWebEndpoint {
 
-    PROCESS_CONTROLLER("processcontroller.api.endpoint"),
     NODE_MANAGEMENT("node.management.api.endpoint"),
-    OS("os.api.endpoint"),
     PATCH_SERVICE("patch.service.api.endpoint"),
     MONITORING("monitoring.api.endpoint");
 

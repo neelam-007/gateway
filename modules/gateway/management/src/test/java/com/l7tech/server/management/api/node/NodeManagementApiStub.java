@@ -40,15 +40,6 @@ public class NodeManagementApiStub implements NodeManagementApi {
     }
 
     @Override
-    public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException {
-        return null;
-    }
-
-    @Override
-    public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException {
-    }
-
-    @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         return null;
     }
