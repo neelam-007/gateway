@@ -339,6 +339,7 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="rbacServices"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 

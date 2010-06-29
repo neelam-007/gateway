@@ -22,15 +22,17 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
     @Override
     public void handle(ErrorEvent e) {
         final Throwable t = e.getThrowable();
-        if (t instanceof PermissionDeniedException) {
-            PermissionDeniedException pde = (PermissionDeniedException) t;
-            OperationType op = pde.getOperation();
-            String opname = op == null ? null : (op == OperationType.OTHER) ? pde.getOtherOperationName() : op.getName();
-            EntityType type = pde.getType();
-            Entity entity = pde.getEntity();
-            String message;
+        // Check for a PermissionDeniedException wrapped inside a RuntimeException which seems like a common anti-pattern
+        if (t instanceof PermissionDeniedException ||
+            (t != null && RuntimeException.class.equals(t.getClass()) && t.getCause() instanceof PermissionDeniedException)) {
+            final PermissionDeniedException pde = ExceptionUtils.getCauseIfCausedBy( t, PermissionDeniedException.class );
+            final OperationType op = pde.getOperation();
+            final String opname = op == null ? null : (op == OperationType.OTHER) ? pde.getOtherOperationName() : op.getName();
+            final EntityType type = pde.getType();
+            final Entity entity = pde.getEntity();
+            final String message;
             if (opname != null && (type != null || entity instanceof NamedEntity)) {
-                String ename;
+                final String ename;
                 if (entity instanceof NamedEntity) {
                     ename = ((NamedEntity)entity).getName();
                 } else {

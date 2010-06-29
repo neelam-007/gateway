@@ -5,7 +5,10 @@ package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -14,7 +17,9 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
@@ -39,6 +44,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyVersionManager policyVersionManager;
     private final ServiceManager serviceManager;
     private final ClusterPropertyManager clusterPropertyManager;
+    private final RbacServices rbacServices;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -46,12 +52,13 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     private ServerConfig serverConfig;
 
-    public PolicyAdminImpl(PolicyManager policyManager,
-                           PolicyAliasManager policyAliasManager,
-                           PolicyCache policyCache,
-                           PolicyVersionManager policyVersionManager,
-                           ServiceManager serviceManager,
-                           ClusterPropertyManager clusterPropertyManager)
+    public PolicyAdminImpl(final PolicyManager policyManager,
+                           final PolicyAliasManager policyAliasManager,
+                           final PolicyCache policyCache,
+                           final PolicyVersionManager policyVersionManager,
+                           final ServiceManager serviceManager,
+                           final ClusterPropertyManager clusterPropertyManager,
+                           final RbacServices rbacServices)
     {
         this.policyManager = policyManager;
         this.policyAliasManager = policyAliasManager;
@@ -59,6 +66,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         this.policyVersionManager = policyVersionManager;
         this.serviceManager = serviceManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.rbacServices = rbacServices;
     }
 
     @Override
@@ -273,7 +281,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
             return new SavePolicyWithFragmentsResult(savePolicy(policy, activateAsWell), fragmentNameGuidMap);
         } catch(SaveException e) {
             throw e;
-        } catch(Exception e) {
+        } catch (ObjectModelException e) {
+            throw new SaveException("Couldn't update policy", e);
+        } catch(IOException e) {
             throw new SaveException("Couldn't update policy", e);
         }
     }
@@ -283,7 +293,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         boolean visited = false;
         Set<PolicyDependencyTreeNode> dependants = new HashSet<PolicyDependencyTreeNode>();
 
-        public PolicyDependencyTreeNode(Policy policy) {
+        private PolicyDependencyTreeNode(Policy policy) {
             this.policy = policy;
         }
     }
@@ -331,6 +341,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 }
 
                 if (action == FragmentImportAction.CREATE) {
+                    checkPermitted( OperationType.CREATE, EntityType.POLICY );
+
                     dependencyNode.policy.setOid(Policy.DEFAULT_OID);
                     policyManager.save(dependencyNode.policy);
                     policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
@@ -348,6 +360,16 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
             // Switch to the next level down
             dependencyTree = newRoots;
+        }
+    }
+
+    /**
+     * Ensure the user is permitted to perform the specified action. 
+     */
+    private void checkPermitted( final OperationType operationType, final EntityType entityType ) throws ObjectModelException {
+        final User user = JaasUtils.getCurrentUser();
+        if ( user == null || !rbacServices.isPermittedForAnyEntityOfType( user, operationType, entityType ) ) {
+            throw new PermissionDeniedException(operationType, entityType);
         }
     }
 
