@@ -1,22 +1,22 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
+import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp1MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
-import com.l7tech.external.assertions.samlpassertion.server.SamlpRequestConstants;
-import com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator;
+import com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
-import saml.v2.assertion.AttributeType;
-import saml.v2.assertion.NameIDType;
-import saml.v2.protocol.AttributeQueryType;
+import saml.v1.assertion.AttributeDesignatorType;
+import saml.v1.protocol.AttributeQueryType;
+import saml.v1.protocol.RequestType;
 
 import javax.xml.bind.JAXBElement;
+import java.math.BigInteger;
 import java.util.HashMap;
 
 /**
  * User: vchan
  */
-public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<AttributeQueryType> {
+public class AttributeQueryGeneratorV1Test extends SamlpMessageGeneratorTestCase<RequestType> {
 
     protected final String ATTR_STATEMENT_EMPTY =
             "<L7p:AttributeStatement samlAttributeInfo=\"included\">\n" +
@@ -30,8 +30,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
             "    <L7p:item samlAttributeElementInfo=\"included\">\n" +
             "        <L7p:FriendlyName stringValue=\"IAMFRIEND\"/>\n" +
             "        <L7p:Name stringValue=\"aaaa\"/>\n" +
-            "        <L7p:NameFormat stringValue=\"format\"/>\n" +
-            "        <L7p:Namespace stringValue=\"\"/>\n" +
+            "        <L7p:Namespace stringValue=\"testNs\"/>\n" +
             "        <L7p:Value stringValue=\"Hello\"/>\n" +
             "    </L7p:item>\n" +
             "  </L7p:Attributes>\n" +
@@ -43,8 +42,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
             "    <L7p:item samlAttributeElementInfo=\"included\">\n" +
             "        <L7p:FriendlyName stringValue=\"IAMFRIEND\"/>\n" +
             "        <L7p:Name stringValue=\"aaaa\"/>\n" +
-            "        <L7p:NameFormat stringValue=\"format\"/>\n" +
-            "        <L7p:Namespace stringValue=\"\"/>\n" +
+            "        <L7p:Namespace stringValue=\"testNs\"/>\n" +
             "        <L7p:Value stringValue=\"Hello\"/>\n" +
             "    </L7p:item>\n" +
             "  </L7p:Attributes>\n" +
@@ -55,8 +53,8 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
 
         try {
 
-            AttributeQueryType result = doTest(createAssertionXml(TEST_POLICY_TEMPLATE, ATTR_STATEMENT_EMPTY));
-            assertTrue("expected attributeList to be empty", result.getAttribute().isEmpty());
+            RequestType result = doTest(createAssertionXml(TEST_POLICY_TEMPLATE, ATTR_STATEMENT_EMPTY));
+            assertTrue("expected attributeList to be empty", result.getAttributeQuery().getAttributeDesignator().isEmpty());
 
         } catch (Exception ex) {
             failUnexpected(ex);
@@ -67,19 +65,19 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
     public void testCreateAttributeRequest1() {
 
         try {
-            AttributeQueryType result = doTest(createAssertionXml(TEST_POLICY_TEMPLATE, ATTR_STATEMENT_1));
-            assertTrue(!result.getAttribute().isEmpty());
-            assertEquals("expected attributeList.size = 1", 1, result.getAttribute().size());
+            RequestType req = doTest(createAssertionXml(TEST_POLICY_TEMPLATE, ATTR_STATEMENT_1));
+            AttributeQueryType result = req.getAttributeQuery();
+            assertTrue(!result.getAttributeDesignator().isEmpty());
+            assertEquals("expected attributeList.size = 1", 1, result.getAttributeDesignator().size());
 
-            AttributeType at = result.getAttribute().get(0);
+            AttributeDesignatorType at = result.getAttributeDesignator().get(0);
             assertNotNull(at);
-            assertEquals("aaaa", at.getName());
-            assertEquals("format", at.getNameFormat());
-            assertEquals("IAMFRIEND", at.getFriendlyName());
+            assertEquals("aaaa", at.getAttributeName());
+            assertEquals("testNs", at.getAttributeNamespace());
 
-            assertEquals(1, at.getAttributeValue().size());
-            assertNotNull(at.getAttributeValue().get(0));
-            assertTrue(at.getAttributeValue().get(0) instanceof String);
+//            assertEquals(1, at.getAttributeValue().size());
+//            assertNotNull(at.getAttributeValue().get(0));
+//            assertTrue(at.getAttributeValue().get(0) instanceof String);
 
         } catch (Exception ex) {
             failUnexpected(ex);
@@ -102,15 +100,13 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
             "            </L7p:item>\n" +
             "            <L7p:item samlAttributeElementInfo=\"included\">\n" +
             "                <L7p:Name stringValue=\"hello\"/>\n" +
-            "                <L7p:NameFormat stringValue=\"aaaa\"/>\n" +
-            "                <L7p:Namespace stringValue=\"\"/>\n" +
+            "                <L7p:Namespace stringValue=\"testNs\"/>\n" +
             "                <L7p:Value stringValue=\"asdfsadf\"/>\n" +
             "            </L7p:item>\n" +
             "            <L7p:item samlAttributeElementInfo=\"included\">\n" +
             "                <L7p:FriendlyName stringValue=\"friendlyTest\"/>\n" +
             "                <L7p:Name stringValue=\"stupid\"/>\n" +
-            "                <L7p:NameFormat stringValue=\"urn:oasis:names:tc:SAML:2.0:attrname-format:uri\"/>\n" +
-            "                <L7p:Namespace stringValue=\"\"/>\n" +
+            "                <L7p:Namespace stringValue=\"testNs\"/>\n" +
             "                <L7p:RepeatIfMulti booleanValue=\"true\"/>\n" +
             "                <L7p:Value stringValue=\"asdfsdf\"/>\n" +
             "            </L7p:item>\n" +
@@ -121,25 +117,22 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
             "    <L7p:NameIdentifierType nameIdentifierType=\"FROM_USER\"/>\n" +
             "    <L7p:NameQualifier stringValue=\"\"/>\n" +
             "    <L7p:RequestId boxedIntegerValue=\"0\"/>\n" +
-            "    <L7p:SamlVersion boxedIntegerValue=\"2\"/>\n" +
+            "    <L7p:SamlVersion boxedIntegerValue=\"1\"/>\n" +
             "    <L7p:SoapVersion boxedIntegerValue=\"1\"/>\n" +
             "</L7p:SamlpRequestBuilder>" +
             "    </wsp:All>" +
             "</wsp:Policy>";
 
         try {
-            AttributeQueryType result = doTest(policy);
-            assertTrue(!result.getAttribute().isEmpty());
+            RequestType result = doTest(policy);
+            assertTrue(!result.getAttributeQuery().getAttributeDesignator().isEmpty());
         } catch (Exception ex) {
             failUnexpected(ex);
         }
     }
 
-    protected int getSamlVersion() {
-        return 2;
-    }
 
-    protected AbstractSamlp2MessageGenerator<AttributeQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
+    protected AbstractSamlp1MessageGenerator<AttributeQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
             Auditor auditor = new Auditor(this, appCtx, null);
@@ -168,35 +161,20 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
         return null;
     }
 
-    protected void checkCommonRequestElements(AttributeQueryType request) {
-        // ID
-        assertNotNull(request.getID());
-        assertTrue(request.getID().startsWith("samlp2-"));
-        // Version
-        assertEquals(SamlpRequestConstants.SAML_VERSION_2_0, request.getVersion());
-        // Issue Instant
-        assertNotNull(request.getIssueInstant());
-        // Optional attributes
-        assertEquals("http://consent", request.getConsent());
-        assertEquals("http://dest", request.getDestination());
-        // Issuer
-        assertNotNull(request.getIssuer());
-        // Extension
-        assertNull(request.getExtensions());
-        // Signature
-        assertNull(request.getSignature());
+    protected int getSamlVersion() {
+        return 1;
     }
-
-    private AttributeQueryType doTest(String policyXml) throws Exception {
+    
+    private RequestType doTest(String policyXml) throws Exception {
         // create Assertion instance
         SamlpRequestBuilderAssertion assertion = getAssertionFromXml( policyXml );
 
         // create request generator
-        AbstractSamlp2MessageGenerator<AttributeQueryType> generator = createMessageGenerator(assertion);
+        AbstractSamlp1MessageGenerator<AttributeQueryType> generator = createMessageGenerator(assertion);
         assertNotNull(generator);
 
         // generate the request message
-        AttributeQueryType result = generator.create(assertion);
+        RequestType result = generator.create(assertion);
         assertNotNull(result);
 
         // common checks
@@ -208,21 +186,24 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTest<Att
         return result;
     }
 
-    private void doCommonCheck(AttributeQueryType msg) {
+    protected void checkCommonRequestElements(RequestType request) {
+        // more to come
+        // ID
+        assertNotNull(request.getRequestID());
+        assertTrue(request.getRequestID().startsWith("samlp-"));
+        // Version
+        assertEquals(BigInteger.valueOf(1), request.getMajorVersion());
+        assertEquals(BigInteger.valueOf(1), request.getMinorVersion());
+        // Issue Instant
+        assertNotNull(request.getIssueInstant());
+        // Signature
+        assertNull(request.getSignature());
+    }
+
+    private void doCommonCheck(RequestType msg) {
 
         checkCommonRequestElements(msg);
-        assertNotNull(msg.getSubject());
-//        assertEquals(2, msg.getSubject().getContent().size());
-
-        // NameIdentifier
-        JAXBElement<?> elem1 = msg.getSubject().getContent().get(0);
-        assertTrue(elem1.getValue() instanceof NameIDType);
-        assertEquals("somebody@email-exchange.com", ((NameIDType) elem1.getValue()).getValue());
-        assertEquals(SamlConstants.NAMEIDENTIFIER_EMAIL, ((NameIDType) elem1.getValue()).getFormat());
-
-        // SubjectConfirmation
-//        JAXBElement<?> elem2 = msg.getSubject().getContent().get(1);
-//        assertTrue(elem2.getValue() instanceof SubjectConfirmationType);
+        assertNotNull(msg.getAttributeQuery());
     }
 
     private void outputRequest(JAXBElement<?> reqElement) {

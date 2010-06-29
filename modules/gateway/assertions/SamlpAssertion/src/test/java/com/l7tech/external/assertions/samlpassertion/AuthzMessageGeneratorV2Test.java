@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.external.assertions.samlpassertion.server.*;
 import com.l7tech.external.assertions.samlpassertion.server.v2.AuthzDecisionQueryGenerator;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
@@ -14,7 +14,7 @@ import java.util.HashMap;
 /**
  * User: vchan
  */
-public class AuthzMessageGeneratorV2Test extends SamlpMessageGeneratorTest<AuthzDecisionQueryType> {
+public class AuthzMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<AuthzDecisionQueryType> {
 
 
     public void testCreateEmptyAuthzRequest() {

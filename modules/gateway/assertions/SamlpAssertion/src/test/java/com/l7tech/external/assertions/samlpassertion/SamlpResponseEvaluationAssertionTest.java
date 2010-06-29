@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.samlpassertion;
 /**
  * User: vchan
  */
-public class SamlpResponseEvaluationAssertionTest extends BaseAssertionTest<SamlpResponseEvaluationAssertion> {
+public class SamlpResponseEvaluationAssertionTest extends BaseAssertionTestCase<SamlpResponseEvaluationAssertion> {
 
 
     public void testParseAssertion() {

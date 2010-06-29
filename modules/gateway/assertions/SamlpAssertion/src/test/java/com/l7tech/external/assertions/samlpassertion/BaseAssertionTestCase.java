@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import junit.framework.TestCase;
@@ -16,7 +16,7 @@ import java.io.IOException;
 /**
  * User: vchan
  */
-public abstract class BaseAssertionTest<A extends Assertion> extends TestCase {
+public abstract class BaseAssertionTestCase<A extends Assertion> extends TestCase {
 
     protected ApplicationContext appCtx;
     protected WspReader policyReader;
@@ -58,7 +58,7 @@ public abstract class BaseAssertionTest<A extends Assertion> extends TestCase {
 
     protected A parseAssertionFromXml(String policyXml) throws IOException, ServerPolicyException {
 
-        Assertion as = policyReader.parsePermissively(policyXml);
+        Assertion as = policyReader.parsePermissively(policyXml, WspReader.Visibility.omitDisabled);
         assertNotNull(as);
         assertTrue(as instanceof AllAssertion);
         AllAssertion all = (AllAssertion) as;

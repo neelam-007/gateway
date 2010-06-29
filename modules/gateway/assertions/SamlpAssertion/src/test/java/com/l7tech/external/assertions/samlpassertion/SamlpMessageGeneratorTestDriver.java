@@ -10,7 +10,7 @@ import junit.framework.TestSuite;
 public class SamlpMessageGeneratorTestDriver {
 
     public static Test suite() {
-        TestSuite suite = new TestSuite("SamlpMessageGeneratorTest Driver");
+        TestSuite suite = new TestSuite("SamlpMessageGeneratorTestCase Driver");
 
         suite.addTestSuite(AuthzMessageGeneratorV2Test.class);
         suite.addTestSuite(AttributeQueryGeneratorV2Test.class);

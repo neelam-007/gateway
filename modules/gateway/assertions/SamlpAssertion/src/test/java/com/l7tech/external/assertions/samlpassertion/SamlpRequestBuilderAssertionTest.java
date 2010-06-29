@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.samlpassertion;
 /**
  * User: vchan
  */
-public class SamlpRequestBuilderAssertionTest extends BaseAssertionTest<SamlpRequestBuilderAssertion> {
+public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<SamlpRequestBuilderAssertion> {
 
 
     public void testParseAssertion() {

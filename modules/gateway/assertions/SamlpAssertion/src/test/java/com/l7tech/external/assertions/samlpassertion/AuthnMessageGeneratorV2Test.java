@@ -1,17 +1,12 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp1MessageGenerator;
-import com.l7tech.external.assertions.samlpassertion.server.InetAddressResolver;
-import com.l7tech.external.assertions.samlpassertion.server.MessageValueResolver;
-import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
-import com.l7tech.external.assertions.samlpassertion.server.v1.AuthorizationDecisionQueryGenerator;
+import com.l7tech.external.assertions.samlpassertion.server.*;
+import com.l7tech.external.assertions.samlpassertion.server.v2.AuthnRequestGenerator;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
-import saml.v1.protocol.AuthorizationDecisionQueryType;
-import saml.v1.protocol.RequestType;
+import saml.v2.protocol.AuthnRequestType;
 
 import javax.xml.bind.JAXBElement;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -19,23 +14,26 @@ import java.util.HashMap;
 /**
  * User: vchan
  */
-public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTest<RequestType> {
+public class AuthnMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<AuthnRequestType> {
 
+    protected final String AUTHN_STATEMENT =
+            "<L7p:AuthenticationStatement samlAuthenticationInfo=\"included\">\n" +
+                    "    <L7p:AuthenticationMethods stringArrayValue=\"included\"/>\n" +
+                    "</L7p:AuthenticationStatement>";
 
     public void testCreateEmptyAuthzRequest() {
 
         try {
-            SamlpRequestBuilderAssertion assertion = getAssertionFromXml(TEST_POLICY_SIMPLE);
-            AbstractSamlp1MessageGenerator<AuthorizationDecisionQueryType> generator = createMessageGenerator(assertion);
+            SamlpRequestBuilderAssertion assertion = getAssertionFromXml(createAssertionXml(TEST_POLICY_TEMPLATE, AUTHN_STATEMENT));
+            AbstractSamlp2MessageGenerator<AuthnRequestType> generator = createMessageGenerator(assertion);
             assertNotNull(generator);
 
-            RequestType result = generator.create(assertion);
+            AuthnRequestType result = generator.create(assertion);
             assertNotNull(result);
 
             checkCommonRequestElements(result);
 
-            assertNotNull(result.getAuthorizationDecisionQuery());
-            assertNotNull(result.getAuthorizationDecisionQuery().getSubject());
+            assertNotNull(result.getSubject());
 
             JAXBElement<?> reqElement = generator.createJAXBElement(result);
             System.out.println( toXml(reqElement) );
@@ -46,36 +44,28 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
     }
 
     protected int getSamlVersion() {
-        return 1;
+        return 2;
     }
 
-    protected AbstractSamlp1MessageGenerator<AuthorizationDecisionQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
+    protected AbstractSamlp2MessageGenerator<AuthnRequestType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
             Auditor auditor = new Auditor(this, appCtx, null);
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(varMap, auditor);
+            AuthnRequestGenerator gen = new AuthnRequestGenerator(varMap, auditor);
 
             gen.setNameResolver( new NameIdentifierResolver(assertion) {
-
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
                 }
             });
             gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
-
                 protected void parse() {
                     this.nameValue = "Bob-the-issuer";
                 }
             });
-//            gen.setClientCertResolver( new MessageValueResolver<X509Certificate>(assertion) {
-//
-//                protected void parse() {
-//
-//                }
-//            });
             gen.setAuthnMethodResolver( new MessageValueResolver<String>(assertion) {
                 protected void parse() {
                     this.value = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
@@ -83,9 +73,9 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
             });
             gen.setAddressResolver( new InetAddressResolver(assertion) {
                 protected void parse() {
-                    try {
-                        this.address = InetAddress.getByName("vinsanity.l7tech.com");
-                    } catch (UnknownHostException uhex) {
+                    try{
+                        this.address = InetAddress.getByName("192.168.1.144");
+                    } catch (UnknownHostException badHost) {
                         fail("can't create InetAddress for AddressResolver");
                     }
                 }
@@ -99,16 +89,21 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
         return null;
     }
 
-    protected void checkCommonRequestElements(RequestType request) {
-        // more to come
+    protected void checkCommonRequestElements(AuthnRequestType request) {
         // ID
-        assertNotNull(request.getRequestID());
-        assertTrue(request.getRequestID().startsWith("samlp-"));
+        assertNotNull(request.getID());
+        assertTrue(request.getID().startsWith("samlp2-"));
         // Version
-        assertEquals(BigInteger.valueOf(1), request.getMajorVersion());
-        assertEquals(BigInteger.valueOf(1), request.getMinorVersion());
+        assertEquals(SamlpRequestConstants.SAML_VERSION_2_0, request.getVersion());
         // Issue Instant
         assertNotNull(request.getIssueInstant());
+        // Optional attributes
+        assertEquals("http://consent", request.getConsent());
+        assertEquals("http://dest", request.getDestination());
+        // Issuer
+        assertNotNull(request.getIssuer());
+        // Extension
+        assertNull(request.getExtensions());
         // Signature
         assertNull(request.getSignature());
     }

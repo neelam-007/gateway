@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpMessageGenerator;
 import org.w3c.dom.Document;
 
@@ -17,8 +17,8 @@ import java.text.MessageFormat;
 /**
  * User: vchan
  */
-public abstract class SamlpMessageGeneratorTest<SAMLP_MSG>
-    extends BaseAssertionTest<SamlpRequestBuilderAssertion>
+public abstract class SamlpMessageGeneratorTestCase<SAMLP_MSG>
+    extends BaseAssertionTestCase<SamlpRequestBuilderAssertion>
 {
     protected static boolean PRINT_STACK = false;
 
