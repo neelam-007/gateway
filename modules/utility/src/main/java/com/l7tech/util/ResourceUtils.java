@@ -50,7 +50,7 @@ public final class ResourceUtils {
                 resultSet.close();
             }
             catch(SQLException se) {
-                logger.log(Level.INFO, "SQL error when closing result set.", se);
+                logger.log(Level.INFO, "SQL error when closing result set '"+message(se)+"'", debug(se));
             }
             catch(Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing result set.", e);
@@ -71,7 +71,7 @@ public final class ResourceUtils {
                 statement.close();
             }
             catch(SQLException se) {
-                logger.log(Level.INFO, "SQL error when closing statement.", se);
+                logger.log(Level.INFO, "SQL error when closing statement '"+message(se)+"'", debug(se));
             }
             catch(Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing statement.", e);
@@ -92,7 +92,7 @@ public final class ResourceUtils {
                 connection.close();
             }
             catch(SQLException se) {
-                logger.log(Level.INFO, "SQL error when closing connection.", se);
+                logger.log(Level.INFO, "SQL error when closing connection '"+message(se)+"'", debug(se));
             }
             catch(Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing connection.", e);
@@ -111,7 +111,7 @@ public final class ResourceUtils {
                 closeable.close();
             }
             catch(IOException ioe) {
-                logger.log(Level.INFO, "IO error when closing closeable.", ioe);
+                logger.log(Level.INFO, "IO error when closing closeable '"+message(ioe)+"'", debug(ioe));
             }
             catch (Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing object", e);
@@ -136,7 +136,7 @@ public final class ResourceUtils {
         try {
             context.close();
         } catch (NamingException e) {
-            logger.log(Level.INFO, "JNDI error when closing JNDI Context.", e);
+            logger.log(Level.INFO, "JNDI error when closing JNDI Context '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing JNDI Context", e);
         }
@@ -148,7 +148,7 @@ public final class ResourceUtils {
         try {
             answer.close();
         } catch (NamingException e) {
-            logger.log(Level.INFO, "JNDI error when closing JNDI NamingEnumeration.", e);
+            logger.log(Level.INFO, "JNDI error when closing JNDI NamingEnumeration '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing JNDI NamingEnumeration", e);
         }
@@ -160,7 +160,7 @@ public final class ResourceUtils {
         try {
             lock.release();
         } catch (IOException e) {
-            logger.log(Level.INFO, "IO error when releasing FileLock.", e);
+            logger.log(Level.INFO, "IO error when releasing FileLock '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when releasing FileLock.", e);
         }
@@ -171,7 +171,7 @@ public final class ResourceUtils {
         try {
             socket.close();
         } catch (IOException e) {
-            logger.log(Level.INFO, "IOException when closing Socket", e);
+            logger.log(Level.INFO, "IOException when closing Socket '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing Socket", e);
         }
@@ -182,7 +182,7 @@ public final class ResourceUtils {
         try {
             zipFile.close();
         } catch (IOException e) {
-            logger.log(Level.INFO, "IOException when closing ZipFile", e);
+            logger.log(Level.INFO, "IOException when closing ZipFile '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing ZipFile", e);
         }
@@ -193,7 +193,7 @@ public final class ResourceUtils {
         try {
             reader.close();
         } catch ( XMLStreamException e) {
-            logger.log(Level.INFO, "XMLStreamException when closing XMLStreamReader", e);
+            logger.log(Level.INFO, "XMLStreamException when closing XMLStreamReader '"+message(e)+"'", debug(e));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing XMLStreamReader", e);
         }
@@ -327,4 +327,11 @@ public final class ResourceUtils {
 
     private static final String REGEX_HTTP_URL = "^[hH][tT][tT][pP][sS]?://([\\p{Graph} ]{1,255}@|)[a-zA-Z0-9\\._-]{1,255}[/:]";
 
+    private static String message( final Throwable throwable ) {
+        return ExceptionUtils.getMessage( throwable );
+    }
+
+    private static Throwable debug( final Throwable throwable ) {
+        return ExceptionUtils.getDebugException( throwable );
+    }
 }
