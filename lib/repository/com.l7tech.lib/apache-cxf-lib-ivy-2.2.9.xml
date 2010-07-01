@@ -29,7 +29,6 @@
         <dependency org="javax.xml.bind" name="jaxb-api" rev="2.1" conf="core"/>
 
         <exclude org="avalon-framework" module="avalon-framework" ext="jar" matcher="exact" />
-        <exclude org="com.ibm.icu" module="icu4j" ext="jar" matcher="exact" /> 
         <exclude org="com.sun.xml.bind" module="jaxb-xjc" ext="jar" matcher="exact" />
         <exclude org="javax.xml.stream" module="stax-api" ext="jar" matcher="exact" />
         <exclude org="log4j" module="log4j" ext="jar" matcher="exact" />
