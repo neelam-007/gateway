@@ -347,6 +347,10 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(GLOBAL_ACTION_CLASSNAMES, new String[0]);
+
+        put(GLOBAL_ACTIONS, null); // installed by ConsoleAssertionRegistry because it relies on swing classes
+
         put("", new MetadataFinder() {
             @Override
             public Object get(AssertionMetadata meta, String key) {

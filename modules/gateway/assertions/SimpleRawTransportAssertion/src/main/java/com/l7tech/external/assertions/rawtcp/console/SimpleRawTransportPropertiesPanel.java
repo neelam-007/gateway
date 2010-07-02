@@ -15,6 +15,9 @@ public class SimpleRawTransportPropertiesPanel extends CustomTransportProperties
     private JCheckBox usePrivateThreadPoolCheckBox;
     private JSpinner threadPoolSizeSpinner;
     private JPanel mainPanel;
+    private JTextField requestSizeField;
+    private JTextField socketTimeoutField;
+    private JTextField requestReadTimeoutField;
 
     public SimpleRawTransportPropertiesPanel() {
         setLayout(new BorderLayout());

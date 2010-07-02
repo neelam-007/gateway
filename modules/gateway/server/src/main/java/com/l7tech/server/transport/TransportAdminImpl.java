@@ -131,6 +131,6 @@ public class TransportAdminImpl implements TransportAdmin {
 
     @Override
     public TransportDescriptor[] getModularConnectorInfo() {
-        return connectorManager.getCustomProtocols();
+        return connectorManager.getTransportProtocols();
     }
 }

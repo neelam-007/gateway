@@ -33,6 +33,8 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
@@ -111,6 +113,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenu newProviderSubMenu = null;
     private JMenu filterServiceAndPolicyTreeMenu = null;
     private JMenu sortServiceAndPolicyTreeMenu = null;
+    private JMenu customGlobalActionsMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -321,7 +324,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSearchComboBox().setEnabled(false);
         searchLabel.setEnabled(false);
         getSearchComboBox().clearSearch();
-
+        getCustomGlobalActionsMenu().removeAll();
+        getCustomGlobalActionsMenu().setEnabled(false);
     }
 
     public boolean isDisconnected() {
@@ -937,6 +941,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
 
+            menu.add(getCustomGlobalActionsMenu());
 
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
@@ -1877,8 +1882,26 @@ public class MainWindow extends JFrame implements SheetHolder {
         addComponentToGridBagContainer(getMainSplitPaneRight(), getWorkSpacePanel());
 
         Registry.getDefault().getLicenseManager().addLicenseListener(paletteTreeLicenseListener);
+
+        updateCustomGlobalActionsMenu();
     }
 
+    private void updateCustomGlobalActionsMenu() {
+        JMenu menu = getCustomGlobalActionsMenu();
+        menu.removeAll();
+
+        boolean added = false;
+        Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
+        for (Assertion assertion : assertions) {
+            Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
+            if (actions != null) for (Action action : actions) {
+                menu.add(action);
+                added = true;
+            }
+        }
+
+        menu.setEnabled(added);
+    }
 
     /**
      * Return the MainJMenuBar property value.
@@ -1963,6 +1986,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         SecureAction action = new ManageTrustedEsmUsersAction();
         disableUntilLogin(action);
         return manageTrustedEsmUsersAction = (ManageTrustedEsmUsersAction) action;
+    }
+
+    private JMenu getCustomGlobalActionsMenu() {
+        if (customGlobalActionsMenu != null)
+            return customGlobalActionsMenu;
+
+        JMenu menu = new JMenu("Additional Actions");
+        return customGlobalActionsMenu = menu;
     }
 
     private void disableUntilLogin(SecureAction action) {
@@ -2265,6 +2296,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
+
+            menu.add(getCustomGlobalActionsMenu());
+
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 

@@ -215,7 +215,7 @@ public class SsgConnectorManagerImpl
     }
 
     @Override
-    public TransportDescriptor[] getCustomProtocols() {
+    public TransportDescriptor[] getTransportProtocols() {
         List<TransportDescriptor> ret = new ArrayList<TransportDescriptor>();
         Collection<Pair<TransportDescriptor, TransportModule>> pairs = modularTransportsByScheme.values();
         for (Pair<TransportDescriptor, TransportModule> pair : pairs) {

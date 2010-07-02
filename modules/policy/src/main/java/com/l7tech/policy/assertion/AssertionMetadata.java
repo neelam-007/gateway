@@ -611,6 +611,39 @@ public interface AssertionMetadata {
      */
     String IS_ROUTING_ASSERTION = "isRoutingAssertion";
 
+    /**
+     * String[] classnames.  SSM only.  Names of additional Action subclasses to make available in the Tasks menu
+     * when this assertion is available on the Gateway.  Each Action subclass must have a public nullary constructor.
+     * <p/>
+     * This value is ignored if {@link #GLOBAL_ACTIONS} is specified directly.
+     * <p/>
+     * Currently the actions are always added to the Tasks menu, but future versions of the SSM may support
+     * additional configuration of where the Action should be exposed in the UI using custom Action property values.
+     * <p/>
+     * If this is null or empty, no additional global actions will be exposed in the SSM GUI when this assertion
+     * is available.
+     * <p/>
+     * The default value is an empty array.
+     * <p/>
+     * This key was introduced in SecureSpan Manager version 5.4.
+     */
+    String GLOBAL_ACTION_CLASSNAMES = "globalActionClassnames";
+
+    /**
+     * Action[].  SSM only.  Additional Action instances to make available in the Tasks menu
+     * when this assertion is available on the Gateway.
+     * <p/>
+     * Currently the actions are always added to the Tasks menu, but future versions of the SSM may support
+     * additional configuration of where the Action should be exposed in the UI using custom Action property values.
+     * <p/>
+     * If this is null or empty, no additional global actions will be exposed in the SSM GUI when this assertion
+     * is available.
+     * <p/>
+     * The default value is an array of instances of each element of @{link #GLOBAL_ACTION_CLASSNAMES}, each instantiated
+     * using a nullary constructor; or an empty array if GLOBAL_ACTION_CLASSNAMES is null or empty. 
+     */
+    String GLOBAL_ACTIONS = "globalActions";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     <T extends Assertion> Class<T> getAssertionClass();
 

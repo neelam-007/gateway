@@ -181,7 +181,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         };
         privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
-        otherSettingsPanel.setLayout(new CardLayout());
+        otherSettingsPanel.setLayout(new CardLayout(8, 8));
         transportsByScheme.clear();
         Set<TransportDescriptor> protocols = new TreeSet<TransportDescriptor>(new ModularConnectorInfoComparator());
         TransportDescriptor[] ssgProtocols = Registry.getDefault().getTransportAdmin().getModularConnectorInfo();

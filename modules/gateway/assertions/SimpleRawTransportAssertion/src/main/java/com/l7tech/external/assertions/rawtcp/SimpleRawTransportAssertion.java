@@ -135,6 +135,12 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         // Ensure inbound transport gets wired up
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.rawtcp.server.ModuleLoadListener");
 
+        // Set up extra tasks menu actions
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] {
+                "com.l7tech.external.assertions.rawtcp.console.RawTcpStatusAction",
+                "com.l7tech.external.assertions.rawtcp.console.RawUdpStatusAction"
+        });
+
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Raw TCP/UDP Routing");
         meta.put(AssertionMetadata.DESCRIPTION, "Send a request over raw TCP or UDP");

@@ -41,9 +41,9 @@ public interface SsgConnectorManager extends EntityManager<SsgConnector, EntityH
     TransportModule unregisterTransportProtocol(String scheme);
 
     /**
-     * Get the custom protocols that currently have registered transport modules on this Gateway.
+     * Get the listen port transport protocols that currently have registered transport modules on this Gateway.
      *
      * @return an array of protocols, ie { "http", "https", "ftp", "ftps", "l7.raw.tcp", "l7.raw.udp" }.  Never null.
      */
-    TransportDescriptor[] getCustomProtocols();
+    TransportDescriptor[] getTransportProtocols();
 }

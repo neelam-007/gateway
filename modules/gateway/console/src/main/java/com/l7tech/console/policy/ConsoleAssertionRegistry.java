@@ -90,6 +90,13 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             }
         });
 
+        putDefaultGetter(GLOBAL_ACTIONS, new MetadataFinder() {
+            @Override
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, getTasksActions(meta));
+            }
+        });
+
     }
 
     private String getDefaultName(final AssertionMetadata meta) {
@@ -175,7 +182,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     }
 
     /**
-     * Get the shared parent package for the given assertoin classes.
+     * Get the shared parent package for the given assertion classes.
      *
      *   com.l7tech.external.assertions.myass.MyAssertion
      *   com.l7tech.external.assertions.myass.MyAssertion2
@@ -186,6 +193,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
      *   com.l7tech.external.assertions.myass2.MyAssertion2
      *
      * parent is "com.l7tech.external.assertions"
+     *
+     * @param assertionClassnames the full classname of the assertion
+     * @return the root package to use for the assertion.  Never null.
      */
     private String getRootPackage( final Collection<String> assertionClassnames ) {
         String packageName = "com.l7tech.external.assertions";
@@ -208,10 +218,14 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     /**
      * Get the classloader to use for the modular assertion.
-     *
+     * <p/>
      * If untrusted, this is the regular classloader. If trusted a
      * classloader is created to load only the modular assertion classes
      * as trusted classes.
+     *
+     * @param assertionPackage the root package name of the assertion.  Required.
+     * @return the ClassLoader to use for the specified assertion package.  Never null: if necessary, will default
+     *         to the ClassLoader that loaded this ConsoleAssertionRegistry class.
      */
     private ClassLoader getAppletModularAssertionClassLoader( final String assertionPackage ) {
         ClassLoader loader = getClass().getClassLoader();
@@ -694,4 +708,31 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         return null;
     }
 
+    private static Action[] getTasksActions(AssertionMetadata meta) {
+        final Class<? extends Assertion> assclass = meta.getAssertionClass();
+        String[] actionClassnames = (String[])meta.get(GLOBAL_ACTION_CLASSNAMES);
+        if (actionClassnames == null || actionClassnames.length < 1)
+            return new Action[0];
+
+        Collection<Action> ret = new ArrayList<Action>();
+        for (String actionClassname : actionClassnames) {
+            try {
+                Object maybeAction = assclass.getClassLoader().loadClass(actionClassname).newInstance();
+                if (maybeAction instanceof Action) {
+                    Action action = (Action) maybeAction;
+                    ret.add(action);
+                } else {
+                    logger.log(Level.WARNING, String.format("Unable to instantiate custom action for assertion %s: action class %s is not a subclass of Action", assclass, actionClassname));
+                }
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
+            } catch (InstantiationException e) {
+                logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
+            } catch (IllegalAccessException e) {
+                logger.log(Level.WARNING, String.format("Unable to instantiate custom action %s for assertion %s: %s", actionClassname, assclass, ExceptionUtils.getMessage(e)), e);
+            }
+        }
+
+        return ret.toArray(new Action[ret.size()]);
+    }
 }
