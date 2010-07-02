@@ -327,7 +327,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             }
 
             if ( session == null ) {
-                sessionRef.set(session);
+                sessionRef.set(null);
                 fireDisconnected();
                 try {
                     Thread.sleep(getAndIncReconnectSleep());

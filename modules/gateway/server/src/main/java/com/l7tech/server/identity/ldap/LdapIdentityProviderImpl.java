@@ -693,7 +693,7 @@ public class LdapIdentityProviderImpl
     public DirContext getBrowseContext() throws NamingException {
         String ldapurl = getLastWorkingLdapUrl();
         if (ldapurl == null) {
-            ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(null);
         }
         while (ldapurl != null) {
             Hashtable<? super String, ? super String> env = LdapUtils.newEnvironment();

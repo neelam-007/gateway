@@ -342,7 +342,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                                     lastMessageId = message.getMessageNumber();
                                 }
 
-                                if ( message != null && !isStop() ) {
+                                if ( !isStop() ) {
                                     log(Level.FINE, EmailMessages.INFO_LISTENER_RECEIVE_MSG, emailListenerCfg.getEmailListener().getName());
                                     oopses = 0;
 

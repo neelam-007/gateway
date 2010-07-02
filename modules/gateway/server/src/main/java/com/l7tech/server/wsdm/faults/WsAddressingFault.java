@@ -46,10 +46,6 @@ public class WsAddressingFault extends FaultMappableException {
         return wsaFaultDetails;
     }
 
-    public void addWsaFaultDetail(WsaFaultDetailType detailType, String detailValue) {
-        addWsaFaultDetail(detailType, null, detailValue);
-    }
-
     public void addWsaFaultDetail(WsaFaultDetailType detailType, Map<String,String> detailAttrs, String detailValue) {
         wsaFaultDetails.add(new WsaFaultDetail(detailType, detailAttrs, detailValue));
     }

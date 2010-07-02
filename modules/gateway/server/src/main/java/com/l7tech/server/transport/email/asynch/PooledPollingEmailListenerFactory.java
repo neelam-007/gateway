@@ -20,8 +20,8 @@ public class PooledPollingEmailListenerFactory implements PollingEmailListenerFa
     private long connectionTimeout;
     private long timeout;
 
-    private final String IN_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
-    private final String IN_TIMEOUT = "ioMailInTimeout";
+    private static final String IN_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
+    private static final String IN_TIMEOUT = "ioMailInTimeout";
 
     /**
      * Constructor

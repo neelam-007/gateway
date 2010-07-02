@@ -248,7 +248,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         } else {
             IOException ioe = fr.getException();
             if (ioe == null) {
-                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult(), ioe);
+                throw new CausedIOException("Unable to access CRL from HTTP cache, status is: " + fr.getResult());
             }
             throw ioe;
         }

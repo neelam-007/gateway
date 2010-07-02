@@ -21,5 +21,5 @@ public class UDDISystemEvent extends SystemEvent implements RoutineSystemEvent {
 
     //- PRIVATE
 
-    private final String action = "Registry Update";
+    private static final String action = "Registry Update";
 }

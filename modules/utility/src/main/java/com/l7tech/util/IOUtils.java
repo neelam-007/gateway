@@ -354,7 +354,6 @@ public class IOUtils {
             private int outReadIndex = 0;
             private int outWriteIndex = 0;
             private int dataIndex = 0;
-            private IOException toThrow = null;
             private final OutputStream encoderOut = outputBuilder.call( new OutputStream(){
                 @Override
                 public void write( final int b ) throws IOException {
@@ -365,10 +364,6 @@ public class IOUtils {
 
             @Override
             public int read() throws IOException {
-                if ( toThrow != null ) {
-                    throw toThrow;
-                }
-
                 if ( outReadIndex == outWriteIndex ) {
                     if ( (dataIndex + 100) < data.length ) {
                         encoderOut.write( data, dataIndex, 100 );
@@ -386,7 +381,7 @@ public class IOUtils {
                     return -1;
                 } else {
                     int read = out[outReadIndex];
-                    outReadIndex = ++outReadIndex % 400;
+                    outReadIndex = (outReadIndex+1) % 400;
                     return read;
                 }
             }

@@ -481,7 +481,7 @@ public class AuditRecordManagerImpl
                     deleteStmt.setLong(2, maxTime);
                     numDeleted = deleteStmt.executeUpdate();
                 } catch( SQLException se ) {
-                    if ( ismysql & "42X01".equals(se.getSQLState()) ) {
+                    if ( ismysql && "42X01".equals(se.getSQLState()) ) {
                         mySql.set(ismysql = false);
                         retry = true;
                     } else {

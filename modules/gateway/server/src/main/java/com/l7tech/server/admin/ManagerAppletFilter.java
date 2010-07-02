@@ -365,7 +365,7 @@ public class ManagerAppletFilter implements Filter {
                 }
 
                 //new password and confirm password don't match, do not allow them to proceed
-                if (username != null && (newPassword != null || confirmPassword != null) && !(newPassword.equals(confirmPassword)) ) {
+                if (username != null && (newPassword != null || confirmPassword != null) && (newPassword==null || !(newPassword.equals(confirmPassword))) ) {
                     throw new InvalidPasswordException("New password does not match with confirm password.  Please retry.");
                 }
 

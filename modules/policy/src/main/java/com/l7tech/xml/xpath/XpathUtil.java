@@ -323,7 +323,7 @@ public class XpathUtil {
             expressionBuffer.append( "concat(" );
             int lastIndex = 0;
             int index = 0;
-            while ( index < text.length() & (index = text.indexOf( '\'', index )) > -1 ) {
+            while ( index < text.length() && (index = text.indexOf( '\'', index )) > -1 ) {
                 if ( lastIndex != 0 ) {
                     expressionBuffer.append( ", " );
                 }

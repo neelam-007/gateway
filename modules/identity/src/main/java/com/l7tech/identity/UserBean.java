@@ -92,7 +92,7 @@ public class UserBean implements User, Serializable {
             if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
             this.hashedPassword = HexUtils.encodePasswd(login, password, HttpDigest.REALM);
         } else {
-            this.hashedPassword = password;
+            this.hashedPassword = null;
         }
     }
 

@@ -158,7 +158,7 @@ public class AuthorizationStatementWizardStepPanel extends SamlpWizardStepPanel 
             act = (String) actionTable.getValueAt(i, 0);
             act = (act != null ? act.trim() : "");
             ns = (String) actionTable.getValueAt(i, 1);
-            ns = (ns != null ? ns.trim() : ns);
+            ns = (ns != null ? ns.trim() : null);
             actions[i] = new StringBuffer(act).append("||").append(ns).toString();
         }
 

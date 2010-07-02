@@ -71,13 +71,11 @@ public class EsmMain {
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
                 @Override
                 public void run() {
-                    synchronized(shutdown) {
-                        shutdown.countDown();
-                        try {
-                            exit.await(); // wait for shutdown to complete
-                        } catch(InterruptedException ie) {
-                            // exit
-                        }
+                    shutdown.countDown();
+                    try {
+                        exit.await(); // wait for shutdown to complete
+                    } catch(InterruptedException ie) {
+                        // exit
                     }
                 }
             }));

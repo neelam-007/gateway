@@ -275,7 +275,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         String ldapurl = identityProvider.getLastWorkingLdapUrl();
         if (ldapurl == null) {
-            ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(null);
         }
         while (ldapurl != null) {
             DirContext userCtx = null;

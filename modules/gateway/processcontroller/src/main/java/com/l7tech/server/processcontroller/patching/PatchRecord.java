@@ -51,7 +51,7 @@ public class PatchRecord {
     }
 
     public void setNodes(Collection<String> nodes) {
-        this.nodes = nodes == null ? nodes : Collections.unmodifiableCollection(nodes);
+        this.nodes = nodes == null ? null : Collections.unmodifiableCollection(nodes);
     }
 
     public String getLogMessage() {

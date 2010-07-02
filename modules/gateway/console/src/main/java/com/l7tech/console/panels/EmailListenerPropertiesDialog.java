@@ -390,7 +390,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         try {
             //check if edited value is invalid
              Integer interval = new Integer(((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().getText());
-            if (interval > Integer.MAX_VALUE || interval <= 0) {
+            if (interval <= 0) {
                 DialogDisplayer.showMessageDialog(this, "Interval value must be between 1 - " + Integer.MAX_VALUE,"Invalid value", JOptionPane.ERROR_MESSAGE, null);
             } else {
                 checkInterval.commitEdit(); //commit the edited value into the spinner

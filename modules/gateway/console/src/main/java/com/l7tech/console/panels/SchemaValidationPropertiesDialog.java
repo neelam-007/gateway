@@ -696,7 +696,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
-            final String newSchemaContent = fetchSchemaByTargetNamespace(dependencyNamespace, dependencySchemaContent==null);
+            final String newSchemaContent = fetchSchemaByTargetNamespace(dependencyNamespace, true);
             if ( newSchemaContent != null ) {
                 updatedContent = true;
                 dependencySchemaContent = newSchemaContent;

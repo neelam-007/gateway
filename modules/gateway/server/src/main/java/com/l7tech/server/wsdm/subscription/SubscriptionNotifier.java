@@ -834,9 +834,9 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             }
 
             if (esmRoutingUri == null) {
+                esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
                 // there are no esm subscription services, use the special address "none"
                 auditor.logAndAudit(ServiceMessages.ESM_NO_SUBSCRIPTION_SERVICE, Long.toString(serviceOid), esmRoutingUri);
-                esmRoutingUri = SoapConstants.WSA_NO_ADDRESS;
             }
         }
         return esmRoutingUri;
