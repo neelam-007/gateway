@@ -404,15 +404,17 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JMenuItem
      */
-    private JMenuItem getMenuItemPreferences() {
+    private JMenuItem getMenuItemPreferences(boolean accel) {
         if (menuItemPref == null) {
             menuItemPref = new JMenuItem(getPreferencesAction());
             //menuItemPref.setFocusable(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
             menuItemPref.setIcon(icon);
-            int mnemonic = menuItemPref.getText().toCharArray()[0];
-            menuItemPref.setMnemonic(mnemonic);
-            menuItemPref.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            if (accel) {
+                int mnemonic = menuItemPref.getText().toCharArray()[0];
+                menuItemPref.setMnemonic(mnemonic);
+                menuItemPref.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            }
         }
         return menuItemPref;
     }
@@ -485,7 +487,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getDisconnectMenuItem());
             menu.add(getChangePasswordMenuItem(true));
             if (!isApplet()) {
-                menu.add(getMenuItemPreferences());
+                menu.add(getMenuItemPreferences(true));
                 menu.add(getExitMenuItem());
             }
             int mnemonic = menu.getText().toCharArray()[0];
@@ -1526,7 +1528,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                   SwingUtilities.invokeLater(new Runnable() {
                   @Override
                   public void run() {
-                      PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
+                      PreferencesDialog dialog = new PreferencesDialog(TopComponents.getInstance().getTopParent(), true, isApplet());
                       dialog.pack();
                       Utilities.centerOnScreen(dialog);
                       dialog.setResizable(false);
@@ -2279,6 +2281,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             getEditMenu();
 
             JPopupMenu menu = new JPopupMenu("Manage...");
+            menu.add(getMenuItemPreferences(false));
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManagePrivateKeysMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());

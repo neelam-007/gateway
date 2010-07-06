@@ -7,6 +7,7 @@ package com.l7tech.console;
 
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
+import com.l7tech.console.util.AppletSsmPreferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.ErrorMessageDialog;
@@ -238,6 +239,8 @@ public class AppletMain extends JApplet implements SheetHolder {
     private ApplicationContext getApplicationContext() {
         if (applicationContext != null) return applicationContext;
         applicationContext = createApplicationContext();
+        AppletSsmPreferences ssmPreferences = applicationContext.getBean( "preferences", AppletSsmPreferences.class );
+        ssmPreferences.setContext( this.getAppletContext(), this.getDocumentBase() );
         return applicationContext;
     }
 

@@ -440,6 +440,17 @@ public class HttpCookie {
         return sb.toString();
     }
 
+    public static Collection<HttpCookie> fromCookieHeader( final URL url,
+                                                           final String cookieHeader ) throws HttpCookie.IllegalFormatException {
+        final Collection<HttpCookie> cookies = new ArrayList<HttpCookie>();
+
+        for ( String cookieNVP : cookieHeader.split( ";" )) {
+            cookies.add( new HttpCookie( url, cookieNVP ) );           
+        }
+
+        return cookies;
+    }
+
     /** @return the underlying cookie data as a Cookie Spec conformant string in the format:
      *      name=value; domain=thedomain.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT;secure
      *  this is identical to the string that was used to construct this object.
@@ -452,9 +463,7 @@ public class HttpCookie {
      * Exception for format errors
      */
     public static class IllegalFormatException extends Exception {
-        public IllegalFormatException() {
-            super();
-        }
+        public IllegalFormatException() {}
 
         public IllegalFormatException(Throwable cause) {
             super(cause);

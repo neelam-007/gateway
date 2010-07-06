@@ -63,10 +63,10 @@ public class PreferencesDialog extends JDialog {
     /**
      * Creates new form Preferences
      */
-    public PreferencesDialog(Frame parent, boolean modal, boolean isConnected) {
+    public PreferencesDialog(Frame parent, boolean modal, boolean isApplet) {
         super(parent, modal);
         initResources();
-        initComponents();
+        initComponents(isApplet);
         loadPreferences();
         pack();
     }
@@ -85,7 +85,7 @@ public class PreferencesDialog extends JDialog {
      *
      * Called from the constructor to initialize this window
      */
-    private void initComponents() {
+    private void initComponents( final boolean isApplet ) {
 
         // initialize the window
         setTitle(resources.getString("window.title"));
@@ -383,6 +383,15 @@ public class PreferencesDialog extends JDialog {
             lfComboBox.setVisible(false);
         }
 
+        if ( isApplet ) {
+            // hide settings that do not apply
+            inactivityLabel.setVisible( false );
+            inactivityTextField.setVisible( false );
+            rememberLastIdLabel.setVisible( false );
+            rememberLastIdCheckBox.setVisible( false );
+            numHostsHistoryLabel.setVisible( false );
+            numHostsHistoryTextField.setVisible( false );
+        }
     }
 
 
