@@ -29,10 +29,15 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.mysql.jdbc.PacketTooBigException",
             "com.mysql.jdbc.RowDataDynamic$OperationNotSupportedException",
 
-            // Luna exceptions
+            // Luna v4 exceptions
             "com.chrysalisits.crypto.LunaCryptokiException",
             "com.chrysalisits.crypto.LunaException",
             "com.chrysalisits.crypto.LunaPartitionFullException",
+
+            // Luna v5 exceptions
+            "com.safenetinc.luna.LunaCryptokiException",
+            "com.safenetinc.luna.LunaException",
+            "com.safenetinc.luna.LunaPartitionFullException",
     };
 
     @SuppressWarnings( { "deprecation" } )

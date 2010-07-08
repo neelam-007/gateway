@@ -14,40 +14,44 @@ import java.util.logging.Logger;
 public class LunaProber {
     private static final Logger logger = Logger.getLogger(LunaProber.class.getName());
 
-    private final boolean lunaClientLibraryAvailable;
+    private static final String PROBER_V4_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna4ProberImpl";
+    private static final String PROBER_V5_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna5ProberImpl";
+
+    private final boolean lunaV4ClientLibraryAvailable;
+    private final boolean lunaV5ClientLibraryAvailable;
 
     public LunaProber() {
-        this.lunaClientLibraryAvailable = probeForLunaClientLibrary();
+        this.lunaV4ClientLibraryAvailable = probeForLunaClientLibrary("V4", PROBER_V4_IMPL_CLASSNAME);
+        this.lunaV5ClientLibraryAvailable = probeForLunaClientLibrary("V5", PROBER_V5_IMPL_CLASSNAME);
     }
 
-    private static boolean probeForLunaClientLibrary() {
+    private static boolean probeForLunaClientLibrary(String ver, String classname) {
         try {
-            Class prober = getProberClass();
+            Class prober = Class.forName(classname);
             Method probe = prober.getMethod("probeForLunaClientLibrary");
             return Boolean.TRUE.equals(probe.invoke(null));
 
         } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING, "Luna client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        } catch (UnsatisfiedLinkError e) {
+            logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (InvocationTargetException e) {
-            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class)) {
-                logger.log(Level.WARNING, "Luna client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class) || ExceptionUtils.causedBy(e, UnsatisfiedLinkError.class)) {
+                logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 return false;
             }
-            logger.log(Level.SEVERE, "Error checking for Luna client libraries: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.SEVERE, "Error checking for Luna " + ver + " client libraries: " + ExceptionUtils.getMessage(e), e);
             return false;
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "Error checking for Luna client libraries: " + ExceptionUtils.getMessage(t), t);
+            logger.log(Level.SEVERE, "Error checking for Luna " + ver + " client libraries: " + ExceptionUtils.getMessage(t), t);
             return false;
         }
     }
 
-    private static Class getProberClass() throws ClassNotFoundException {
-        return Class.forName("com.l7tech.security.prov.luna.LunaProberImpl");
-    }
-
     public static boolean isLunaClientLibraryAvailable() {
-        return Holder.INSTANCE.lunaClientLibraryAvailable;
+        return Holder.INSTANCE.lunaV4ClientLibraryAvailable || Holder.INSTANCE.lunaV5ClientLibraryAvailable;
     }
 
     public static void testHardwareTokenAvailability(int slotNum, char[] tokenPin) throws KeyStoreException {
@@ -55,7 +59,8 @@ public class LunaProber {
             throw new KeyStoreException("SafeNet HSM client software and JSP either not installed or not configured");
 
         try {
-            Class prober = getProberClass();
+            String classname = Holder.INSTANCE.lunaV5ClientLibraryAvailable ? PROBER_V5_IMPL_CLASSNAME : PROBER_V4_IMPL_CLASSNAME;
+            Class prober = Class.forName(classname);
             Method tester = prober.getMethod("testHardwareTokenAvailability", int.class, char[].class);
             tester.invoke(null, slotNum, tokenPin);
             

@@ -57,6 +57,8 @@
         <!-- Optional security provider -->
         <dependency org="com.chrysalisits.cryptox" name="luna-libs" rev="1" force="true" conf="optional"/>
         <!-- Optional security provider -->
+        <dependency org="com.safenetinc" name="luna-provider" rev="5.0.0-17" force="true" conf="optional"/>
+        <!-- Optional security provider -->
         <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
         <dependency org="com.rsa" name="jsafe-jce" rev="4.1.0.1" force="true" conf="test"/>

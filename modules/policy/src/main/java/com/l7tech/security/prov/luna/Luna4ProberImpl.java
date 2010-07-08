@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 /**
  * Holds Luna-specific code for checking to see if Luna client libraries are available and configured.
  */
-public class LunaProberImpl {
-    private static final Logger logger = Logger.getLogger(LunaProberImpl.class.getName());
+public class Luna4ProberImpl {
+    private static final Logger logger = Logger.getLogger(Luna4ProberImpl.class.getName());
 
     public static boolean probeForLunaClientLibrary() {
         return isAtLeastOneTokenPresent();
@@ -22,16 +22,15 @@ public class LunaProberImpl {
         LunaTokenManager tm = LunaTokenManager.getInstance();
         int numSlots = tm.GetNumberOfSlots();
         for (int i = 1; i < numSlots + 1; i++) {
-            String label = tm.GetTokenLabel(i);
             if (tm.IsTokenPresent(i)) {
-                logger.info("Luna Token #" + i + ": " + label + ": present");
+                logger.info("Luna Token #" + i + ": " + tm.GetTokenLabel(i) + ": present");
                 sawTokenPresent = true;
             } else {
-                logger.info("Luna Token #" + i + ": " + label + ": not present");
+                logger.info("Luna Token #" + i + ": not present");
             }
         }
         if (!sawTokenPresent)
-            logger.info("No Luna tokens are present");
+            logger.info("No Luna v4 tokens are present");
         return sawTokenPresent;
     }
 

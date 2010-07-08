@@ -3,83 +3,70 @@
  */
 package com.l7tech.security.prov.luna;
 
-import com.chrysalisits.crypto.LunaJCAProvider;
-import com.chrysalisits.crypto.LunaTokenManager;
-import com.chrysalisits.cryptox.LunaJCEProvider;
-import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.security.prov.DelegatingJceProvider;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
-import java.security.*;
-import java.util.concurrent.Callable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A set of JCE settings, translations, and installation behavior for the SafeNet HSM (formerly SafeNet Luna) network attached HSM.
  */
-public class LunaJceProviderEngine extends JceProvider {
-    private final Provider JCE_PROVIDER = new LunaJCEProvider();
-    private final Provider JCA_PROVIDER = new LunaJCAProvider();
-    private final Provider PBE_PROVIDER;
-    
+public class LunaJceProviderEngine extends DelegatingJceProvider {
+    private static final Logger logger = Logger.getLogger(LunaJceProviderEngine.class.getName());
+
+    private static final String PROBER_V4_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna4ProberImpl";
+    private static final String PROBER_V5_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna5ProberImpl";
+
+    private static final String PROVIDER_V4_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna4JceProviderEngine";
+    private static final String PROVIDER_V5_IMPL_CLASSNAME = "com.l7tech.security.prov.luna.Luna5JceProviderEngine";
+
     public LunaJceProviderEngine() {
-        Security.insertProviderAt(JCA_PROVIDER, 1);
-        Security.insertProviderAt(JCE_PROVIDER, 1);
-        PBE_PROVIDER = Security.getProvider("SunJCE"); // Can't use Luna providers for this; they advertise an impl but it is not compatible
-
-        logIntoPartition();
+        super(findDelegate());
     }
 
-    private static void logIntoPartition()  {
-        char[] pin = lookupClientPassword();
-        int slotNum = SyspropUtil.getInteger("com.l7tech.lunaSlotNum", -1);
-        if (slotNum >= 1) {
-            LunaTokenManager.getInstance().Login(slotNum, new String(pin));
-        } else {
-            LunaTokenManager.getInstance().Login(new String(pin));
-        }
-        LunaTokenManager.getInstance().SetSecretKeysExtractable(true);
+    private static JceProvider findDelegate() {
+        if (probeForLunaClientLibrary("V5", PROBER_V5_IMPL_CLASSNAME))
+            return makeProvider(PROVIDER_V5_IMPL_CLASSNAME);
+        if (probeForLunaClientLibrary("V4", PROBER_V4_IMPL_CLASSNAME))
+            return makeProvider(PROVIDER_V4_IMPL_CLASSNAME);
+        throw new IllegalStateException("Luna client libraries not present or not configured correctly (tried looking for both Luna v4 and Luna v5 libs)");
     }
 
-    /** @return the client password, ie "///6-6KWT-SCMH-N3FE". */
-    private static char[] lookupClientPassword() {
-        char[] pin;
-        String pinFinderClassName = SyspropUtil.getString("com.l7tech.lunaPinFinder", DefaultLunaPinFinder.class.getName());
+    private static JceProvider makeProvider(String classname) {
         try {
-            Callable pinFinder = (Callable) Class.forName(pinFinderClassName).newInstance();
-            pin = (char[]) pinFinder.call();
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to look up client password for Luna security provider (do you need to set either the com.l7tech.lunaPin or com.l7tech.lunaPinFinder system properties?): " + ExceptionUtils.getMessage(e), e);
+            return (JceProvider) Class.forName(classname).newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Unable to instantiate provider class: " + classname + ": " + ExceptionUtils.getMessage(e), e); // can't happen
+        } catch (InstantiationException e) {
+            throw new IllegalStateException("Unable to instantiate provider class: " + classname + ": " + ExceptionUtils.getMessage(e), e); // can't happen
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Unable to instantiate provider class: " + classname + ": " + ExceptionUtils.getMessage(e), e); // can't happen
         }
-        return pin;
     }
 
-    @Override
-    public boolean isFips140ModeEnabled() {
-        // TODO this method exists but its return value is not documented: LunaTokenManager.getInstance().GetCurrentFIPSSetting();
-        return true;
-    }
+    private static boolean probeForLunaClientLibrary(String ver, String classname) {
+        try {
+            Class prober = Class.forName(classname);
+            Method probe = prober.getMethod("probeForLunaClientLibrary");
+            return Boolean.TRUE.equals(probe.invoke(null));
 
-    @Override
-    public Provider getBlockCipherProvider() {
-        return JCE_PROVIDER;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return JCE_PROVIDER.toString() + " / " + JCA_PROVIDER.toString();
-    }
-
-    @Override
-    public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
-        throw new UnsupportedOperationException("LunaJceProviderEngine is unable to create new Certificate Signing Request using Luna KeyPair: Unsupported operation");
-    }
-
-    @Override
-    public Provider getProviderFor(String service) {
-        // Must override PBE since the Luna impl is not compatible with the Sun impl and so can't decrypt the cluster shared key
-        if (JceProvider.SERVICE_PBE_WITH_SHA1_AND_DESEDE.equalsIgnoreCase(service))
-            return PBE_PROVIDER;
-        return null;
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        } catch (InvocationTargetException e) {
+            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class)) {
+                logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return false;
+            }
+            logger.log(Level.SEVERE, "Error checking for Luna " + ver + " client libraries: " + ExceptionUtils.getMessage(e), e);
+            return false;
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "Error checking for Luna " + ver + " client libraries: " + ExceptionUtils.getMessage(t), t);
+            return false;
+        }
     }
 }
