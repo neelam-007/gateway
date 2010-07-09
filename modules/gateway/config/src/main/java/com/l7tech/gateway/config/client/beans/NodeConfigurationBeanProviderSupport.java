@@ -28,7 +28,7 @@ public abstract class NodeConfigurationBeanProviderSupport<C> implements Configu
                     if ( DEFAULT_NODE_NAME.equals(node.getName()) ) {
                         config = toConfig(node);
                     } else {
-                        logger.warning("Will not process configuration for unsupported node '"+DEFAULT_NODE_NAME+"'.");
+                        logger.warning("Will not process configuration for unsupported node '"+node.getName()+"'.");
                     }
                 }
 

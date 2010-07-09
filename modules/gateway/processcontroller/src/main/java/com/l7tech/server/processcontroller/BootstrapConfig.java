@@ -80,73 +80,68 @@ public class BootstrapConfig {
             createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
         }
 
-
-        doOverideProperties(hostPropertiesFile, overrideProperties);
+        doPropertiesUpdates(hostPropertiesFile, overrideProperties);
         logger.info( "Configuration bootstrap complete." );
         return 0;
     }
 
-    private static void doOverideProperties(File hostPropertiesFile, File overridePropertiesFile) {
-        if (!overridePropertiesFile.exists()) {
-            logger.fine("no override.properties found, no need to merge with host.properties");
-            return;
+    private static void doPropertiesUpdates( final File hostPropertiesFile,
+                                             final File overridePropertiesFile) {
+        boolean updated = false;
+
+        final Properties hostProperties = loadProperties(hostPropertiesFile);
+
+        boolean processedOverrides = false;
+        if ( !overridePropertiesFile.exists() ) {
+            logger.fine("No override properties found, no need to merge with host properties.");
+        } else {
+            updated = doOverrideProperties( hostProperties, overridePropertiesFile );
+            processedOverrides = true;
         }
 
-        //open the original
-        FileInputStream origFis = null;
-        Properties origProps;
-
-        try {
-            origFis = new FileInputStream(hostPropertiesFile);
-            origProps = new Properties();
-            origProps.load(origFis);
-        } catch (IOException e) {
-            throw new DieDieDie("Unable to open the default host.properties file", 5, e);
-        } finally {
-            ResourceUtils.closeQuietly(origFis);
+        if ( doPropertiesUpgrade( hostProperties ) ) {
+            updated = true;
         }
 
-        FileInputStream overrideFis = null;
-        Properties newProps;
-        try {
-            overrideFis = new FileInputStream(overridePropertiesFile);
-            newProps = new Properties();
-            newProps.load(overrideFis);
-        } catch (IOException e) {
-            throw new DieDieDie("Unable to open the default host.properties file", 5, e);
-        } finally {
-            ResourceUtils.closeQuietly(overrideFis);
+        if ( updated ) {
+            saveProperties( hostProperties, hostPropertiesFile );
+            logger.info("Updated " + hostPropertiesFile.getAbsolutePath());
         }
 
-        boolean wereChanges = false;
-        for (Object newPropKey : newProps.keySet()) {
-            String newPropvalue = newProps.getProperty((String) newPropKey);
-            String oldValue = (String) origProps.setProperty((String) newPropKey, newPropvalue);
+        if ( processedOverrides && !overridePropertiesFile.delete() ) {
+            logger.warning( "Unable to delete override properties file '"+overridePropertiesFile.getAbsolutePath()+"'." );
+        }
+    }
+
+    private static boolean doOverrideProperties( final Properties origProps,
+                                                 final File overridePropertiesFile ) {
+        boolean updated = false;
+
+        final Properties newProps = loadProperties(overridePropertiesFile);
+        for ( final String newPropKey : newProps.stringPropertyNames()) {
+            final String newPropvalue = newProps.getProperty(newPropKey);
+            final Object oldValue = origProps.setProperty(newPropKey, newPropvalue);
             if (oldValue != null) {
                 logger.info(MessageFormat.format("Overriding {0} (previous value = {1}) with new value ({2})", newPropKey, oldValue, newPropvalue));
             }
             else {
                 logger.info(MessageFormat.format("Setting {0} to value {1}", newPropKey, newPropvalue));
             }
-            wereChanges = true;
+            updated = true;
         }
 
-        if (wereChanges) {
-            FileOutputStream propsFos = null;
-            try {
-                propsFos = new FileOutputStream(hostPropertiesFile);
-                origProps.store(new OutputStreamWriter(propsFos), null);
-                logger.info("Created " + hostPropertiesFile.getAbsolutePath());
-            } catch (IOException e) {
-                throw new DieDieDie("Unable to create host.properties file with overrides", 5, e);
-            } finally {
-                ResourceUtils.closeQuietly(propsFos);
-            }
+        return updated;
+    }
+
+    private static boolean doPropertiesUpgrade(  final Properties hostProperties ) {
+        boolean updated = false;
+
+        if ( !hostProperties.stringPropertyNames().contains(ConfigService.HOSTPROPERTIES_SECRET)) {
+            hostProperties.setProperty(ConfigService.HOSTPROPERTIES_SECRET, UUID.randomUUID().toString());
+            updated = true;
         }
 
-        if ( !overridePropertiesFile.delete() ) {
-            logger.warning( "Unable to delete override properties file '"+overridePropertiesFile.getAbsolutePath()+"'." );
-        }
+        return updated;
     }
 
     private static String generatePassword() {
@@ -191,20 +186,39 @@ public class BootstrapConfig {
     private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {
         final Properties newProps = new Properties();
         newProps.setProperty(ConfigService.HOSTPROPERTIES_ID, UUID.randomUUID().toString());
+        newProps.setProperty(ConfigService.HOSTPROPERTIES_SECRET, UUID.randomUUID().toString());        
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
         newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
         newProps.setProperty(ConfigService.HOSTPROPERTIES_TYPE, PCUtils.isAppliance() ? HostConfig.HostType.APPLIANCE.name() : HostConfig.HostType.SOFTWARE.name());
 
-        FileOutputStream pfos = null;
+        saveProperties( newProps, hostPropertiesFile );
+        logger.info("Created " + hostPropertiesFile.getAbsolutePath());
+    }
+
+    private static Properties loadProperties( final File propertiesFile ) {
+        final Properties properties = new Properties();
+        FileInputStream fileInputStream = null;
         try {
-            pfos = new FileOutputStream(hostPropertiesFile);
-            newProps.store(new OutputStreamWriter(pfos), null);
-            logger.info("Created " + hostPropertiesFile.getAbsolutePath());
-        } catch (IOException e) {
-            throw new DieDieDie("Unable to create default host.properties file", 5, e);
+            fileInputStream = new FileInputStream( propertiesFile );
+            properties.load(fileInputStream);
+        } catch ( IOException e ) {
+            throw new DieDieDie("Unable to load " +propertiesFile.getName()+ " file.", 5, e);
         } finally {
-            ResourceUtils.closeQuietly(pfos);
+            ResourceUtils.closeQuietly(fileInputStream);
+        }
+        return properties;
+    }
+
+    private static void saveProperties( final Properties properties, final File propertiesFile ) {
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream( propertiesFile );
+            properties.store( new OutputStreamWriter(fileOutputStream), null );
+        } catch ( IOException e ) {
+            throw new DieDieDie("Unable to save " + propertiesFile.getName() + " file.", 5, e);
+        } finally {
+            ResourceUtils.closeQuietly(fileOutputStream);
         }
     }
 }

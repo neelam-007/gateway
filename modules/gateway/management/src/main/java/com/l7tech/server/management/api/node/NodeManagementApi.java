@@ -13,13 +13,11 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 
-import javax.activation.DataHandler;
 import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -104,9 +102,17 @@ public interface NodeManagementApi {
             return id;
         }
 
+        public void setId(String id) {
+            this.id = id;
+        }
+
         @XmlAttribute
         public String getName() {
             return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         @XmlAttribute
@@ -114,9 +120,17 @@ public interface NodeManagementApi {
             return enabled;
         }
 
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
         @XmlAttribute
         public String getVersion() {
             return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
         }
 
         @XmlAttribute
@@ -124,20 +138,8 @@ public interface NodeManagementApi {
             return sinceWhen;
         }
 
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
-        }
-
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
+        public void setSinceWhen( final Date sinceWhen ) {
+            this.sinceWhen = sinceWhen;
         }
 
         @XmlAttribute
@@ -149,16 +151,16 @@ public interface NodeManagementApi {
             this.state = state;
         }
 
-        public void setStateStartTime(Date stateStartTime) {
-            this.stateStartTime = stateStartTime;
-        }
-
         /**
          * @return the time when this state was first detected
          */
         @XmlAttribute
         public Date getStateStartTime() {
             return stateStartTime;
+        }
+
+        public void setStateStartTime(Date stateStartTime) {
+            this.stateStartTime = stateStartTime;
         }
     }
 
@@ -225,7 +227,6 @@ public interface NodeManagementApi {
      * <p>For security reasons this method cannot be used from a remote host.</p>
      *
      * @param dbconfig The db configuration, administration username/password is required.
-     * @throws DatabaseDeletionException if the database cannot be deleted
      */
     boolean testDatabaseConfig(@WebParam(name="databaseConfiguration") DatabaseConfig dbconfig );
 

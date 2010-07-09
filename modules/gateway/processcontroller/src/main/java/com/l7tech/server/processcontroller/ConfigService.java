@@ -35,6 +35,7 @@ public interface ConfigService {
     String HOSTPROPERTIES_PATCHES_LOG = "host.patches.logfile";
     String HOSTPROPERTIES_TYPE = "host.type";
     String HOSTPROPERTIES_ID = "host.id";
+    String HOSTPROPERTIES_SECRET = "host.secret";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_CONNECT= "host.sampler.timeout.slow.connect";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_READ = "host.sampler.timeout.slow.read";
     String HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT= "host.sampler.timeout.fast.connect";
@@ -84,6 +85,13 @@ public interface ConfigService {
 
     /** The certificates that are trusted to sign patches. */
     Set<X509Certificate> getTrustedPatchCerts();
+
+    /**
+     * Get the host local authentication secret.
+     *
+     * @return The secret or null if there is none.
+     */
+    String getHostSecret();
 
     /** The $JAVA_HOME/bin/java launcher */
     File getJavaBinary();

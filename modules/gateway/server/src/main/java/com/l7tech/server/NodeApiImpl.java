@@ -3,33 +3,34 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.boot.ShutdownWatcher;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
-import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.audit.AuditRecordManager;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +39,47 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class NodeApiImpl implements NodeApi {
+
+    //- PUBLIC
+
+    @PostConstruct
+    public void start() {
+        if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
+    }
+
+    @Override
+    public void shutdown() {
+        checkRequest();
+        logger.warning("Node Shutdown requested");
+        shutdowner.shutdownNow();
+    }
+
+    @Override
+    public void ping() {
+        checkRequest();
+        logger.fine("ping");
+    }
+
+    @Override
+    public NodeStatus getNodeStatus() {
+        checkRequest();
+        logger.fine("getNodeStatus");
+        return new NodeStatus(NodeStateType.RUNNING, new Date(), new Date()); // TODO
+    }
+
+    @Override
+    public String getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
+        checkRequest();
+        logger.fine("getProperty");
+        if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
+            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
+        } else {
+            throw new UnsupportedPropertyException("propertyId");
+        }
+    }
+
+    //- PRIVATE
+
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
     @Resource
@@ -52,20 +94,10 @@ public class NodeApiImpl implements NodeApi {
     @Resource
     private AuditRecordManager auditRecordManager;
 
-    @SuppressWarnings({"SpringJavaAutowiringInspection"})
     @Resource
     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
-    @PostConstruct
-    public void start() {
-        if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
-    }
-
-    public void shutdown() {
-        checkRequest();
-        logger.warning("Node Shutdown requested");
-        shutdowner.shutdownNow();
-    }
+    private X509Certificate processControllerCertificate;
 
     private void checkRequest() {
         final HttpServletRequest hsr = (HttpServletRequest)wscontext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
@@ -73,51 +105,61 @@ public class NodeApiImpl implements NodeApi {
         try {
             HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.PC_NODE_API);
 
+            final X509Certificate certificate = getRequestCertificate( hsr );
+            if ( certificate == null ) {
+                logger.fine( "Client certificate missing in request." );
+                throw new IllegalStateException("Request denied (no certificate).");
+            }
+
             if ( !InetAddress.getByName(hsr.getRemoteAddr()).isLoopbackAddress()) {
                 throw new IllegalStateException("Request denied for non-local address.");
+            }
+
+            final X509Certificate processControllerCertificate = getProcessControllerCertificate();
+            if ( processControllerCertificate != null ) {
+                if ( !CertUtils.certsAreEqual( processControllerCertificate, certificate )) {
+                    throw new IllegalStateException("Request denied (certificate mismatch).");
+                }
             }
         } catch (ListenerException e) {
             throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
         } catch (UnknownHostException uhe) {
             throw new IllegalStateException("Request denied for non-local address.", uhe);
+        } catch ( CertificateException e ) {
+            throw new IllegalStateException("Request denied (error processing certificate).", e);
+        } catch ( IOException e ) {
+            throw new IllegalStateException("Request denied (error processing certificate).", e);
         }
     }
 
-    public void ping() {
-        checkRequest();
-        logger.fine("ping");
-    }
-
-    public NodeStatus getNodeStatus() {
-        checkRequest();
-        logger.fine("getNodeStatus");
-        return new NodeStatus(NodeStateType.RUNNING, new Date(), new Date()); // TODO
-    }
-
-    public Set<EventSubscription> subscribeEvents(Set<String> eventIds) throws UnsupportedEventException, SaveException {
-        checkRequest();
-        logger.fine("subscribeEvents");
-        return null;
-    }
-
-    public Set<EventSubscription> renewEventSubscriptions(Set<String> subscriptionIds) throws UpdateException {
-        checkRequest();
-        logger.fine("renewEventSubscriptions");
-        return null;
-    }
-
-    public void releaseEventSubscriptions(Set<String> subscriptionIds) throws DeleteException {
-        checkRequest();
-        logger.fine("releaseEventSubscriptions");
-    }
-
-    public String getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
-        checkRequest();
-        logger.fine("getProperty");
-        if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
-            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
+    private X509Certificate getRequestCertificate( final HttpServletRequest hsr ) {
+        final Object maybeCert = hsr.getAttribute("javax.servlet.request.X509Certificate");
+        final X509Certificate certificate;
+        if (maybeCert instanceof X509Certificate) {
+            certificate = (X509Certificate)maybeCert;
+        } else if (maybeCert instanceof X509Certificate[]) {
+            X509Certificate[] certs = (X509Certificate[])maybeCert;
+            certificate = certs.length>0 ? certs[0] : null;
+        } else if (maybeCert != null) {
+            logger.warning( "Client certificate was a " + maybeCert.getClass().getName() + ", not an X509Certificate" );
+            certificate = null;
         } else {
-            throw new UnsupportedPropertyException("propertyId");
+            certificate = null;
         }
+        return certificate;
     }
+
+    private X509Certificate getProcessControllerCertificate() throws CertificateException, IOException {
+        X509Certificate processControllerCertificate = this.processControllerCertificate;
+        if ( processControllerCertificate == null ) {
+            String pcCertFile = SyspropUtil.getProperty( "com.l7tech.server.processControllerCert" );
+            if ( pcCertFile != null ) {
+                processControllerCertificate = CertUtils.decodeCert( IOUtils.slurpFile( new File(pcCertFile) ) );
+                this.processControllerCertificate = processControllerCertificate;
+            }
+        }
+        return processControllerCertificate;
+    }
+
+
 }

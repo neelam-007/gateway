@@ -20,7 +20,6 @@ import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.interceptor.InInterceptors;
 import org.apache.cxf.interceptor.OutFaultInterceptors;
 
-import javax.activation.DataHandler;
 import javax.annotation.Resource;
 import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;

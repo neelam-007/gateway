@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.Pair;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.mortbay.jetty.Server;
@@ -18,10 +19,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.*;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.security.PrivateKey;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -128,14 +132,28 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources/web"));
         root.setDisplayName("Layer 7 Process Controller");
-        File varTmp = new File("var/tmp");
-        if ( varTmp.getParentFile().exists() && (varTmp.exists() || varTmp.mkdir()) ) {
+        final File var = new File("var");
+        final File varTmp = new File(var, "tmp");
+        if ( var.exists() && (varTmp.exists() || varTmp.mkdir()) ) {
             root.setAttribute("javax.servlet.context.tempdir", varTmp);            
         } else {
             root.setAttribute("javax.servlet.context.tempdir", new File("/tmp"));
         }
         root.addEventListener(new PCContextLoaderListener());
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
+
+        //Write certificate to file
+        if ( var.exists() ) {
+            final File certificate = new File( var, "pc.cer");
+            try {
+                FileUtils.save( new ByteArrayInputStream(keypair.left[0].getEncoded()), certificate );
+                certificate.setReadable( true, false );
+            } catch ( CertificateEncodingException e ) {
+                logger.warning( "Unable to save certificate file '"+ExceptionUtils.getMessage( e )+"'." );
+            } catch ( IOException e ) {
+                logger.warning( "Unable to save certificate file '"+ExceptionUtils.getMessage( e )+"'." );
+            }
+        }
 
         //noinspection unchecked
         final Map<String, String> initParams = root.getInitParams();

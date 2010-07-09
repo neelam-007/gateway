@@ -10,7 +10,7 @@ HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
-PATCHTOOL="/opt/SecureSpan/Controller/bin/patch.sh"
+PATCHTOOL="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/patchcli_launch"
 
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssgscabk"
@@ -572,21 +572,55 @@ uploadPatch() {
         confirmedMessage "\"$whichone\""
         echo ""
         echo "Please wait while the patch is uploaded ..."
-        ($PATCHTOOL upload $whichone)
-        ERR=$?
-        if [ $ERR -ne 0 ] ; then
+
+        PATCHTMP=$(moveToTemp "${whichone}")
+        if [ $? -ne 0 ] ; then
             echo ""
             confirmedMessage "There was an error while uploading the patch."
             return 0
-        else
-            echo ""
-            confirmedMessage ""
-            return 0
         fi
+
+        (${PATCHTOOL} upload "${PATCHTMP}")
+        ERR=$?
+
+        mv "${PATCHTMP}" "${whichone}" && rmdir $(dirname "${PATCHTMP}") &>/dev/null
+
+        echo ""
+        if [ $ERR -ne 0 ] ; then
+            confirmedMessage "There was an error while uploading the patch."
+        else
+            confirmedMessage ""
+        fi
+        return 0
     else
         confirmedMessage "Patch file not found: $whichone"
         return $?
     fi
+}
+
+moveToTemp() {
+    whichone=$1
+    TMPDIR=$(mktemp -dt patch.XXXXXXXX)
+    if [ $? -ne 0 ] ; then
+        return 1
+    fi
+
+    chmod g+rx,a+rx "${TMPDIR}"
+    if [ $? -ne 0 ] ; then
+        rmdir "${TMPDIR}" &>/dev/null
+        return 1
+    fi
+
+    mv "${whichone}" "${TMPDIR}/" &>/dev/null
+    if [ $? -ne 0 ] ; then
+        rmdir "${TMPDIR}" &>/dev/null
+        return 1
+    fi
+
+    PATCHNAME=$(basename "${whichone}")
+    echo "${TMPDIR}/${PATCHNAME}"
+
+    return 0
 }
 
 installPatch() {
@@ -706,7 +740,7 @@ doPatchInstall() {
             old=$IFS
 IFS='
 '
-            REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
+            REGISTEREDPATCHES=(`IFS=" "; $PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
             IFS=$old
             LEN=${#REGISTEREDPATCHES[*]}
         fi
@@ -778,7 +812,7 @@ doPatchDelete() {
     old=$IFS
 IFS='
 '
-    REGISTEREDPATCHES=(`$PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
+    REGISTEREDPATCHES=(`IFS=" "; $PATCHTOOL list | egrep "UPLOADED|ROLLED_BACK" || true`)
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     if [ $LEN -eq 0 ] ; then
@@ -829,7 +863,7 @@ doPatchList() {
     old=$IFS
 IFS='
 '
-    REGISTEREDPATCHES=(`$PATCHTOOL list "::id::description::state::last_mod"`)
+    REGISTEREDPATCHES=(`IFS=" "; $PATCHTOOL list "::id::description::state::last_mod"`)
     IFS=$old
     LEN=${#REGISTEREDPATCHES[*]}
     clear;

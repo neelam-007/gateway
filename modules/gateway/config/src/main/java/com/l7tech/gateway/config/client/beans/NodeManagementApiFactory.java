@@ -14,15 +14,19 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
-import javax.activation.DataHandler;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,6 +35,8 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  *
@@ -86,6 +92,11 @@ public class NodeManagementApiFactory {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger( NodeManagementApiFactory.class.getName() );
+
+    private static final String DEFAULT_PC_HOSTCONFIG_PATH = "/opt/SecureSpan/Controller/etc/host.properties";
+    private static final String PC_HOSTCONFIG_PATH = SyspropUtil.getString( "com.l7tech.gateway.config.pcHostProperties" , DEFAULT_PC_HOSTCONFIG_PATH );
+
     private final URL nodeManagementUrl;
     private NodeManagementApi managementService;
 
@@ -94,6 +105,8 @@ public class NodeManagementApiFactory {
             @Override
             protected ClientProxy clientClientProxy( final Client c ) {
                 HTTPConduit hc = (HTTPConduit)c.getConduit();
+                HTTPClientPolicy policy = hc.getClient();
+                policy.setCookie( "PC-AUTH="+getHostSecret() );                
                 hc.setTlsClientParameters(new TLSClientParameters() {
                     @Override
                     public TrustManager[] getTrustManagers() {
@@ -120,6 +133,34 @@ public class NodeManagementApiFactory {
         factory.setAddress(url);
 
         return (NodeManagementApi) factory.create();
+    }
+
+    private String getHostSecret() {
+        String secret = SyspropUtil.getString( "com.l7tech.gateway.config.pcAuth", "" );
+        if ( secret.isEmpty() ) {
+            final File propertiesFile = new File(PC_HOSTCONFIG_PATH);
+            if ( propertiesFile.exists() ) {
+                try {
+                    final Properties properties = loadProperties( propertiesFile );
+                    secret = properties.getProperty( "host.secret", "" );
+                } catch ( IOException e ) {
+                    logger.warning( "Unable to load pc secret '"+ExceptionUtils.getMessage( e )+"'." );       
+                }
+            }
+        }
+        return secret;
+    }
+
+    private Properties loadProperties( final File propertiesFile ) throws IOException {
+        final Properties properties = new Properties();
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream( propertiesFile );
+            properties.load(fileInputStream);
+        } finally {
+            ResourceUtils.closeQuietly(fileInputStream);
+        }
+        return properties;
     }
 
     private NodeManagementApi buildDirectManagementService() throws IOException {

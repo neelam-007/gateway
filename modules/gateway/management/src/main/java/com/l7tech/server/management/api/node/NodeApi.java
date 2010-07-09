@@ -3,17 +3,13 @@
  */
 package com.l7tech.server.management.api.node;
 
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 
 import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import java.text.MessageFormat;
-import java.util.Set;
 
 /**
  * The API published by a Node for use by the Process Controller
@@ -39,35 +35,6 @@ public interface NodeApi {
     NodeStatus getNodeStatus();
 
     /**
-     * Asks the SN to register subscriptions for events with the provided IDs
-     *
-     * @param eventIds the IDs of the events to subscribe to; must not be null or empty.
-     * @return a set of any successful subscriptions; never null
-     * @throws UnsupportedEventException if any of the event IDs is unrecognized by the SN
-     * @throws SaveException if any of the subscriptions cannot be saved for some reason 
-     */
-    @WebResult(name="subscriptions")
-    Set<EventSubscription> subscribeEvents(@WebParam(name="eventIds") Set<String> eventIds) throws UnsupportedEventException,
-        SaveException;
-
-    /**
-     * Asks the SN to renew the subscriptions with the specified IDs
-     *
-     * @param subscriptionIds the IDs of the subscriptions (not events!) that the PC would like to renew
-     * @return the set of subscriptions with the provided IDs; some or all may have a new expiry time
-     * @throws UpdateException if the subscriptions cannot be renewed for some reason
-     */
-    @WebResult(name="subscriptions")
-    Set<EventSubscription> renewEventSubscriptions(@WebParam(name="subscriptionIds") Set<String> subscriptionIds) throws UpdateException;
-
-    /**
-     * Asks the Node to release the subscriptions with the specified IDs.  Unrecognized IDs will be silently ignored.
-     * @param subscriptionIds the {@link EventSubscription#eventId ids} of the subscriptions to release; must not be null.
-     * @throws DeleteException if the subscriptions cannot be released
-     */
-    void releaseEventSubscriptions(@WebParam(name="subscriptionIds") Set<String> subscriptionIds) throws DeleteException;
-
-    /**
      * Gets the value of the Node property with the specified ID.
      *
      * @param propertyId the ID of the property to retrieve
@@ -77,19 +44,6 @@ public interface NodeApi {
      */
     @WebResult(name="propertyValue")
     String getProperty(@WebParam(name="propertyId")String propertyId) throws UnsupportedPropertyException, FindException;
-
-    public class UnsupportedEventException extends Exception {
-        private final String eventId;
-
-        public UnsupportedEventException(final String eventId) {
-            super(MessageFormat.format("Unsuported Event: {0}", eventId));
-            this.eventId = eventId;
-        }
-
-        public String getEventId() {
-            return eventId;
-        }
-    }
 
     public class UnsupportedPropertyException extends Exception {
         private final String propertyId;

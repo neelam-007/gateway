@@ -48,7 +48,7 @@ public class CxfUtils {
             };
         }
 
-        public ApiBuilder tlsClientParame(TLSClientParameters tlsClientParams) {
+        public ApiBuilder tlsClientParameters(TLSClientParameters tlsClientParams) {
             this.tlsClientParams = tlsClientParams;
             return this;
         }

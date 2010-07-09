@@ -7,12 +7,14 @@ import com.l7tech.server.processcontroller.PCUtils;
 import com.l7tech.server.processcontroller.patching.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -99,6 +101,9 @@ public class PatchCli {
     private static final String DEFAULT_PC_HOME = "/opt/SecureSpan/Controller";
     private static final String DEFAULT_PATCH_API_ENDPOINT = "https://localhost:8765/services/patchServiceApi";
 
+    private static final String DEFAULT_PC_HOSTCONFIG_PATH = DEFAULT_PC_HOME + "/etc/host.properties";
+    private static final String PC_HOSTCONFIG_PATH = SyspropUtil.getString( "com.l7tech.server.processcontroller.hostProperties" , DEFAULT_PC_HOSTCONFIG_PATH );
+
     private static final long PATCH_API_CONNECT_TIMEOUT = 30000;
     private static final long PATCH_API_RECEIVE_TIMEOUT = 600000;
 
@@ -128,6 +133,7 @@ public class PatchCli {
             final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
             clientPolicy.setConnectionTimeout(PATCH_API_CONNECT_TIMEOUT);
             clientPolicy.setReceiveTimeout(PATCH_API_RECEIVE_TIMEOUT);
+            clientPolicy.setCookie( "PC-AUTH=" + getHostSecret() );
             System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
             return new CxfUtils.ApiBuilder(patchAction.getTarget()).clientPolicy(clientPolicy)
@@ -153,6 +159,34 @@ public class PatchCli {
                 throw new IllegalStateException("Error getting patch API: " + ExceptionUtils.getMessage(e));
             }
         }
+    }
+
+    private static String getHostSecret() {
+        String secret = SyspropUtil.getString( "com.l7tech.server.processcontroller.pcAuth", "" );
+        if ( secret.isEmpty() ) {
+            final File propertiesFile = new File(PC_HOSTCONFIG_PATH);
+            if ( propertiesFile.exists() ) {
+                try {
+                    final Properties properties = loadProperties( propertiesFile );
+                    secret = properties.getProperty( "host.secret", "" );
+                } catch ( IOException e ) {
+                    logger.warning( "Unable to load pc secret '"+ExceptionUtils.getMessage( e )+"'." );
+                }
+            }
+        }
+        return secret;
+    }
+
+    private static Properties loadProperties( final File propertiesFile ) throws IOException {
+        final Properties properties = new Properties();
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream( propertiesFile );
+            properties.load(fileInputStream);
+        } finally {
+            ResourceUtils.closeQuietly(fileInputStream);
+        }
+        return properties;
     }
 
     private static enum PatchAction {

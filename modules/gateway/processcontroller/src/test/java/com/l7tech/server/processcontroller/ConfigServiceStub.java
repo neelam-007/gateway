@@ -94,6 +94,11 @@ public class ConfigServiceStub implements ConfigService {
     }
 
     @Override
+    public String getHostSecret() {
+        return null; 
+    }
+
+    @Override
     public File getJavaBinary() {
         return JarUtils.getJavaBinary();
     }

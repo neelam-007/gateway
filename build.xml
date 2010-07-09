@@ -2960,6 +2960,7 @@
                     <include name="ssgconfig_launch"/>
                     <include name="systeminfo.sh"/>
                     <include name="patch_launcher"/>
+                    <include name="patchcli_launch"/>
                 </fileset>
             </copy>
             <copy file="${build.dir}/patchverifier/layer7-gateway-patchverifier.jar" tofile="@{dir}/${install.src.app.libexec}/patchVerifier.jar"/>

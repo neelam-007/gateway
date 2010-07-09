@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.ProcUtils;
+import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
@@ -16,16 +17,22 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.NodeFeature;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.*;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.annotation.Resource;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -756,6 +763,7 @@ public class ProcessController implements InitializingBean {
     private void addGatewaySystemProperties( final List<String> commands, final String propPrefix, final String ssgHome ) {
         commands.add( propPrefix + "com.l7tech.server.home=\"" + ssgHome + "\"" );
         commands.add( propPrefix + "com.l7tech.server.processControllerPresent=true" );
+        commands.add( propPrefix + "com.l7tech.server.processControllerCert=" + new File("var/pc.cer").getAbsolutePath() );
         commands.add( propPrefix + "java.util.logging.config.class=com.l7tech.server.log.JdkLogConfig" );
         commands.add( propPrefix + "com.l7tech.server.log.console=true" );
     }
@@ -881,7 +889,32 @@ public class ProcessController implements InitializingBean {
         clientPolicy.setConnectionTimeout(connectTimeout);
         clientPolicy.setReceiveTimeout(receiveTimeout);
 
-        return new CxfUtils.ApiBuilder(url).clientPolicy(clientPolicy).build(NodeApi.class);
+        return new CxfUtils.ApiBuilder(url).clientPolicy(clientPolicy).tlsClientParameters( new TLSClientParameters() {
+                @Override
+                public boolean isDisableCNCheck() {
+                    return true;
+                }
+
+            @Override
+            public KeyManager[] getKeyManagers() {
+                final Pair<X509Certificate[], PrivateKey> keyPair = configService.getSslKeypair();
+                return keyPair==null ? null : new KeyManager[]{
+                    new SingleCertX509KeyManager( keyPair.left, keyPair.right )        
+                };
+            }
+
+            @Override
+                public TrustManager[] getTrustManagers() {
+                    return new TrustManager[] { new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted( X509Certificate[] x509Certificates, String s) {}
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                    }};
+                }
+            } ).build(NodeApi.class);
     }
 
     private void spew(String what, byte[] outBytes) {

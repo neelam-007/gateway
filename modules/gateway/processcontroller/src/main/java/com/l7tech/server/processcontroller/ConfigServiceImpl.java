@@ -48,6 +48,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final Pair<X509Certificate[], PrivateKey> sslKeypair;
     private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
     private final Set<X509Certificate> trustedPatchCerts;
+    private final String secret;
     private final int sslPort;
     private final String sslIPAddress;
     private final File configDirectory;
@@ -141,6 +142,7 @@ public class ConfigServiceImpl implements ConfigService {
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
         this.trustedPatchCerts = readTrustedPatchCerts(hostProps);
+        this.secret = hostProps.getProperty(HOSTPROPERTIES_SECRET);
         this.useSca = Boolean.valueOf(hostProps.getProperty("host.sca", "false"));
 
         reverseEngineerIps(hostConfig);
@@ -482,6 +484,11 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public Set<X509Certificate> getTrustedPatchCerts() {
         return trustedPatchCerts;
+    }
+
+    @Override
+    public String getHostSecret() {
+        return secret;
     }
 
     @Override

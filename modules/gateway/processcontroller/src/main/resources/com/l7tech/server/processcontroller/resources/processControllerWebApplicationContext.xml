@@ -19,7 +19,13 @@
 
     <bean id="patchServiceApiImpl" class="com.l7tech.server.processcontroller.patching.PatchServiceApiImpl"/>
 
-    <bean id="securityInterceptor" class="com.l7tech.server.processcontroller.SecurityInterceptor"/>
+    <bean id="localAndRemoteSecurityInterceptor" class="com.l7tech.server.processcontroller.SecurityInterceptor">
+        <constructor-arg index="0" value="true"/>
+    </bean>
+
+    <bean id="remoteSecurityInterceptor" class="com.l7tech.server.processcontroller.SecurityInterceptor">
+        <constructor-arg index="0" value="false"/>
+    </bean>
 
     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="location" value="classpath:/com/l7tech/server/processcontroller/resources/processcontroller.properties"/>
@@ -27,19 +33,19 @@
 
     <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="${node.management.api.endpoint}">
         <jaxws:inInterceptors>
-            <ref bean="securityInterceptor"/>
+            <ref bean="localAndRemoteSecurityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
     <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="${monitoring.api.endpoint}">
         <jaxws:inInterceptors>
-            <ref bean="securityInterceptor"/>
+            <ref bean="remoteSecurityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
     <jaxws:endpoint id="patchServiceApiEndpoint" implementor="#patchServiceApiImpl" address="${patch.service.api.endpoint}">
         <jaxws:inInterceptors>
-            <ref bean="securityInterceptor"/>
+            <ref bean="localAndRemoteSecurityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
