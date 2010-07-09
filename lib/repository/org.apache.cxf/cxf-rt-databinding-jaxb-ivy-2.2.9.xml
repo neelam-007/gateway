@@ -47,7 +47,7 @@
 			<exclude org="javax.xml.bind" module="jsr173_api" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="com.sun.xml.bind" module="jaxb-impl" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
-		<dependency org="asm" name="asm" rev="2.2.3" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="asm" name="asm" rev="2.2.3" force="true" conf="compile->compile(*),master(*)"/>
 		<!--<dependency org="org.apache.geronimo.specs" name="geronimo-jaxws_2.1_spec" rev="1.0" force="true" conf="test->runtime(*),master(*)"/>-->
 		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
 		<override org="org.apache.maven" module="maven-core" matcher="exact" rev="2.0.4"/>
