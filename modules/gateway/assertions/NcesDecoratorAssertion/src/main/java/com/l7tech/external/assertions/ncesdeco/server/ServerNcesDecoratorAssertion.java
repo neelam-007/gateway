@@ -26,7 +26,6 @@ import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import org.safehaus.uuid.EthernetAddress;
@@ -154,9 +153,6 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         try {
             martha.decorateMessage(msg, decoReq);
             return AssertionStatus.NONE;
-        } catch (TooManyChildElementsException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)});
-            return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
@@ -176,35 +172,46 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         decoReq.getElementsToSign().add(SoapUtil.getBodyElement(msg));
     }
 
-    private void addMessageId(Document doc, DecorationRequirements decoReq) throws InvalidDocumentFormatException {
-        String uuid;
-        if (assertion.isNodeBasedUuid()) {
+    private void addMessageId( final Document doc,
+                               final DecorationRequirements decoReq ) throws InvalidDocumentFormatException {
+        final boolean reuseMessageId = assertion.isUseExistingWsa();
+
+        String wsaNs = assertion.getWsaNamespaceUri();
+        if (wsaNs == null || wsaNs.length() == 0) wsaNs = SoapUtil.WSA_NAMESPACE;
+
+        final Element header = SoapUtil.getHeaderElement(doc);
+
+        // bug 8340
+        // Depending on a flag set in the assertion, an existing wsa:MessageID
+        // will be either be re-created (per spec) or re-used
+        final Element existingMessageIdEl = XmlUtil.findFirstChildElementByName(header, wsaNs, SoapUtil.MESSAGEID_EL_NAME);
+        if ( existingMessageIdEl != null ) {
+            if ( reuseMessageId ) {
+                decoReq.getElementsToSign().add(existingMessageIdEl); // add in case an unknown addressing spec is in use
+                return;
+            } else {
+                header.removeChild( existingMessageIdEl );
+            }
+        }
+
+        final String uuid;
+        if ( assertion.isNodeBasedUuid() ) {
             uuid = UUIDGenerator.getInstance().generateTimeBasedUUID(macAddress).toString();
         } else {
             uuid = java.util.UUID.randomUUID().toString();
         }
-        String wsaNs = assertion.getWsaNamespaceUri();
-        if (wsaNs == null || wsaNs.length() == 0) wsaNs = SoapUtil.WSA_NAMESPACE;
 
-        Document messageIdDoc = XmlUtil.createEmptyDocument(SoapUtil.MESSAGEID_EL_NAME, "wsa", wsaNs);
-        Element messageIdEl = messageIdDoc.getDocumentElement();
-
-        messageIdEl.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", SoapUtil.generateUniqueId("MessageID", 1));
-        messageIdEl.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsu", SoapUtil.WSU_NAMESPACE);
-        StringBuilder sb = new StringBuilder();
-        String prefix = assertion.getMessageIdUriPrefix();
-        if (prefix != null && prefix.length() > 0) {
+        final Element messageIdEl = XmlUtil.createAndAppendElementNS( header, SoapUtil.MESSAGEID_EL_NAME, wsaNs, "wsa");
+        final StringBuilder sb = new StringBuilder();
+        final String prefix = assertion.getMessageIdUriPrefix();
+        if (prefix != null) {
             sb.append(prefix);
         }
         sb.append(uuid);
-        Text uuidText = messageIdDoc.createTextNode(sb.toString());
+        final Text uuidText = doc.createTextNode(sb.toString());
         messageIdEl.appendChild(uuidText);
 
-        messageIdEl = (Element) doc.importNode(messageIdEl, true);
-        Element header = SoapUtil.getHeaderElement(doc);
-        header.appendChild(messageIdEl);
-
-        decoReq.getElementsToSign().add(messageIdEl);
+        decoReq.getElementsToSign().add(messageIdEl); // add in case an unknown addressing spec is in use
     }
 
     private void addTimestamp(DecorationRequirements decoReq) {

@@ -42,6 +42,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private JRadioButton wsaOtherRadioButton;
     private JTextField wsaOtherTextField;
     private JPanel targetMessagePanelHolder;
+    private JCheckBox useExistingAddressingCheckBox;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
     private JCheckBox responseImmediateCheckBox;
 
@@ -98,6 +99,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             wsaOtherRadioButton.setSelected(true);
             wsaOtherTextField.setText(wsaNs);
         }
+        useExistingAddressingCheckBox.setSelected( assertion.isUseExistingWsa() );
 
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
             @Override
@@ -137,6 +139,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
                     return;
                 }
 
+                assertion.setUseExistingWsa(useExistingAddressingCheckBox.isSelected());
                 assertion.setMessageIdUriPrefix(uuidUriPrefixTextField.getText());
                 assertion.setNodeBasedUuid(macBasedUuidRadioButton.isSelected());
                 assertion.setDeferDecoration(!responseImmediateCheckBox.isSelected());

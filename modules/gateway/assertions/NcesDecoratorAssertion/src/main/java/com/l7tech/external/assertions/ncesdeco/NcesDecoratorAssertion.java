@@ -53,6 +53,7 @@ public class NcesDecoratorAssertion
     private long nonDefaultKeystoreId;
     private String keyAlias;
     private boolean deferDecoration = false;
+    private boolean useExistingWsa = false;
 
     public NcesDecoratorAssertion() {
         super(true);
@@ -120,6 +121,14 @@ public class NcesDecoratorAssertion
 
     public void setSamlAssertionTemplate(String samlAssertionTemplate) {
         this.samlAssertionTemplate = samlAssertionTemplate;
+    }
+
+    public boolean isUseExistingWsa() {
+        return useExistingWsa;
+    }
+
+    public void setUseExistingWsa(boolean useExistingWsa) {
+        this.useExistingWsa = useExistingWsa;
     }
 
     @Override
@@ -198,7 +207,6 @@ public class NcesDecoratorAssertion
             return AssertionUtils.decorateName(assertion, baseName);
         }
     };
-
 
     @Override
     public AssertionMetadata meta() {
