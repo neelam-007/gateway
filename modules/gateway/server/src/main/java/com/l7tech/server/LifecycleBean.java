@@ -60,6 +60,9 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     @Override
     public final void start() throws LifecycleException {
+        if (isStarted())
+            return;
+
         if ( isLicensed() ) {
             doStart();
             startedRwLock.writeLock().lock();
@@ -73,6 +76,9 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     @Override
     public void stop() throws LifecycleException {
+        if (!isStarted())
+            return;
+
         startedRwLock.writeLock().lock();
         try {
             this.started = false;
@@ -140,13 +146,8 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
             if (applicationEvent instanceof LicenseEvent) {
                 // If the subsystem becomes licensed after bootup, start it now
                 // We do not, however, support de-licensing an already-active subsystem without a reboot
-                startedRwLock.readLock().lock();
-                try {
-                    if (started)
-                        return;  //avoid cost of scheduling oneshot timertask if we have already started
-                } finally {
-                    startedRwLock.readLock().unlock();
-                }
+                if (isStarted())
+                    return;  //avoid cost of scheduling oneshot timertask if we have already started
 
                 if (isLicensed()) {
                     Background.scheduleOneShot(new TimerTask() {
