@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
 	<info organisation="org.apache.tomcat"
-		module="jasper"
-		revision="6.0.24"
+		module="jasper-jdt"
+		revision="6.0.28"
 		status="release"
-		publication="20100128082204"
+		publication="20100709134612"
 	>
 		<description homepage="">
-		Tomcats JSP Parser
+		Jasper javac compiler extension for Eclipse JDT
 		</description>
 	</info>
 	<configurations>
@@ -23,15 +23,6 @@
 		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
 	</configurations>
 	<publications>
-		<artifact name="jasper" type="jar" ext="jar" conf="master"/>
+		<artifact name="jasper-jdt" type="jar" ext="jar" conf="master"/>
 	</publications>
-	<dependencies>
-		<dependency org="org.apache.tomcat" name="servlet-api" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="juli" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="jsp-api" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="el-api" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="jasper-jdt" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="jasper-el" rev="6.0.24" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-	</dependencies>
 </ivy-module>

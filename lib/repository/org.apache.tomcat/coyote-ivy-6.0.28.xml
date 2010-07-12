@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
 	<info organisation="org.apache.tomcat"
-		module="annotations-api"
-		revision="6.0.24"
+		module="coyote"
+		revision="6.0.28"
 		status="release"
-		publication="20100128082157"
+		publication="20100709134616"
 	>
 		<description homepage="">
-		Annotations Package
+		Tomcat Connectors and HTTP parser
 		</description>
 	</info>
 	<configurations>
@@ -23,6 +23,11 @@
 		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
 	</configurations>
 	<publications>
-		<artifact name="annotations-api" type="jar" ext="jar" conf="master"/>
+		<artifact name="coyote" type="jar" ext="jar" conf="master"/>
 	</publications>
+	<dependencies>
+		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.28" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.tomcat" name="servlet-api" rev="6.0.28" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.tomcat" name="juli" rev="6.0.28" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+	</dependencies>
 </ivy-module>
