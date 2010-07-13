@@ -1,12 +1,10 @@
 package com.l7tech.server.transport.tls;
 
-import com.rsa.jsafe.provider.JsafeJCE;
-import com.rsa.jsse.JsseProvider;
-import com.rsa.ssl.SSLParams;
 import sun.misc.BASE64Decoder;
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -30,15 +28,21 @@ public class TlsProviderTestSuite {
     public String host = "127.0.0.1";
     public String port = "17443";
     public String tlsprov = null;
+    public String jceprov = "rsa";
     public String tlsversions = null;
     public String ciphers = null;
     public String certtype = "rsa";
     public String clientcert = "no";
     public String debug = "false";
     public String timeoutMillis = "15000";
-    public String includeRealIssuers = "false";
+    public String startupDelayMillis = "2500";
+    public String includeRealIssuers = "true";
     public String includeBogusIssuer = "false";
+    public String additionalProviders = null;
+    public String firstPlaceProviders = null;
+    public String tokenPin = null;
 
+    static long starttime;
 
     static final String testblock = "Test block of exactly 80 bytes: test test test test test test test test test tes";
     static final int testblocklen = testblock.getBytes().length;
@@ -71,7 +75,7 @@ public class TlsProviderTestSuite {
         "KyZu+sPE/g==";
 
     // A test ECC cert to use as a server or client cert
-    private static final String P256_CERT =
+    private static final String EC_P256_CERT =
             "MIIB2TCCAV6gAwIBAgIJAPZWUuHDi+LuMAoGCCqGSM49BAMDMB8xHTAbBgNVBAMTFHAzODQudGVz\n" +
             "dC5sN3RlY2guY29tMB4XDTA5MTEwNjAwNTE0NVoXDTI5MTEwMTAwNTE0NVowHzEdMBsGA1UEAxMU\n" +
             "cDM4NC50ZXN0Lmw3dGVjaC5jb20wdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASi0pX2+iG5oIM+swX2\n" +
@@ -82,7 +86,7 @@ public class TlsProviderTestSuite {
             "W+zlAZHlH34x5/tw6Fw9E+p70GfPK+Am6y93AjEAhFgh9yta3knMsUADb318EainJXlBt9A6kxJq\n" +
             "EfQoXA4ukVpWiwNgUFTU4ySlsXLh";
 
-    private static final String P256_PRIVATE_KEY =
+    private static final String EC_P256_PRIVATE_KEY =
             "ME4CAQAwEAYHKoZIzj0CAQYFK4EEACIENzA1AgEBBDDcXN71Qoa5XupsGUbrrVkCgGww2I3Acy2V\n" +
             "nHm/Vpl6FEhWeQAlK/G/SRxeJFELe6w=";
 
@@ -102,7 +106,7 @@ public class TlsProviderTestSuite {
         "M7k06VZ4UbqXmGilfpM+SsTL7qraLKH8cW+ZxtVbZQVczuly";
 
     static PrivateKey getPrivateKey(boolean ecc) throws GeneralSecurityException, IOException {
-        return getPrivateKey(ecc, ecc ? P256_PRIVATE_KEY : RSA_1024_KEY_PKCS8_B64);
+        return getPrivateKey(ecc, ecc ? EC_P256_PRIVATE_KEY : RSA_1024_KEY_PKCS8_B64);
     }
 
     static PrivateKey getPrivateKey(boolean ecc, String b64) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
@@ -110,7 +114,7 @@ public class TlsProviderTestSuite {
     }
 
     static X509Certificate getCertificate(boolean ecc) throws CertificateException, IOException {
-        return getCertificate(ecc ? P256_CERT : RSA_1024_CERT_X509_B64);
+        return getCertificate(ecc ? EC_P256_CERT : RSA_1024_CERT_X509_B64);
     }
 
     static X509Certificate getCertificate(String b64) throws CertificateException, IOException {
@@ -153,11 +157,18 @@ public class TlsProviderTestSuite {
                 "    port <port>                     server listens on, or client connects to, specified port\n" +
                 "    tlsversions <TLSv1|TLSv1.2>     comma delimited specific version of TLS to use, otherwise uses defaults\n" +
                 "    tlsprov <sun|rsa>               JSSE provider to use, either SunJSSE or RsaJsse\n" +
+                "    jceprov <sun|rsa|luna4|luna5>   extra JCE provider to register for test\n" +
+                "    tokenPin <token PIN>            Luna partition PIN; required if using jceprov luna4 or luna5\n" +
                 "    ciphers <suite,suite>           comma delimited cipher suites to enable, otherwise uses defaults\n" +
                 "    certtype <rsa|ecc>              whether to use an ECC or RSA key for this side's certificate\n" +
                 "    debug <true|false>              whether to output extra debugging information\n" +
                 "    includeRealIssuers <true|false> whether to include the ECC and RSA certs in the accepted issuers list\n" +
                 "    includeBogusIssuer <true|false> whether to include an unrelated RSA cert in the accepted issuers list\n" +
+                "    additionalProviders <com.abc.D> comma delimited extra Security Provider classnames to install\n" +
+                "    firstPlaceProviders <com.abc.D> comma delimited extra Provider classnames to install as first-preference\n" +
+                "    timeoutMillis <milliseconds>    number of milliseconds to use for socket timeouts\n" +
+                "    startupDelayMillis <millis>     minimum number of milliseconds to delay startup, to allow peer to init\n" +
+                "\n" +
                 "  server options:\n" +
                 "    clientcert <yes|no|optional>    whether to send a client cert challenge, and whether to require client cert\n" +
                 "  client options:\n" +
@@ -189,6 +200,7 @@ public class TlsProviderTestSuite {
      * Main entry point
      */
     public static void main(String[] args) throws Exception {
+        starttime = System.currentTimeMillis();
         if (args.length < 1) usage();
         Iterator<String> it = Arrays.asList(args).iterator();
         TlsProviderTestSuite suite = new TlsProviderTestSuite(it.next());
@@ -200,19 +212,66 @@ public class TlsProviderTestSuite {
         suite.start();
     }
 
+    private void addProv(String providerClassname, boolean insertAsHighestPreference) throws Exception {
+        Provider prov = (Provider) Class.forName(providerClassname).newInstance();
+        if (insertAsHighestPreference) {
+            Security.insertProviderAt(prov, 1);
+        } else {
+            Security.addProvider(prov);
+        }
+    }
+
+    private void addProvs(String provsList, boolean insertAsHighestPreference) throws Exception {
+        if (provsList != null && provsList.trim().length() > 0) {
+            String[] provs = provsList.trim().split("\\s*\\,\\s*");
+            for (String prov : provs) {
+                addProv(prov, insertAsHighestPreference);
+            }
+        }
+    }
+
+    private void initLuna(boolean useLuna5) throws Exception {
+        String classname = useLuna5
+                ? "com.safenetinc.luna.LunaSlotManager"
+                : "com.chrysalisits.crypto.LunaTokenManager";
+        Class tokenManagerClass = Class.forName(classname);
+        Method getInstanceMethod = tokenManagerClass.getMethod("getInstance", new Class[0]);
+        Object manager = getInstanceMethod.invoke(null);
+
+        String loginMethodName = useLuna5 ? "login" : "Login";
+        Method loginMethod = manager.getClass().getMethod(loginMethodName, new Class[] { String.class });
+        loginMethod.invoke(manager, tokenPin);
+
+        String secretKeysMethodName = useLuna5 ? "setSecretKeysExtractable" : "SetSecretKeysExtractable";
+        Method secretKeysMethod = manager.getClass().getMethod(secretKeysMethodName, new Class[] { boolean.class });
+        secretKeysMethod.invoke(manager, true);
+    }
+
     private void start() throws Exception {
+        if (Boolean.valueOf(debug)) System.setProperty("javax.net.debug", "ssl");
+
+        if ("rsa".equals(jceprov)) {
+            addProv("com.rsa.jsafe.provider.JsafeJCE", false);
+        } else if ("luna4".equals(jceprov)) {
+            addProv("com.chrysalisits.cryptox.LunaJCEProvider", true);
+            addProv("com.chrysalisits.crypto.LunaJCAProvider", true);
+            initLuna(false);
+        } else if ("luna5".equals(jceprov)) {
+            addProv("com.safenetinc.luna.provider.LunaProvider", true);
+            initLuna(true);
+        }
+
         String expectTlsProv = null;
         if ("rsa".equals(tlsprov)) {
             Security.removeProvider("SunJSSE");
-            Security.insertProviderAt(new JsseProvider(), 1);
-            Security.addProvider(new JsafeJCE());
-            if (Boolean.valueOf(debug)) SSLParams.setDebug(SSLParams.DEBUG_STATE | SSLParams.DEBUG_DATA);
+            addProv("com.rsa.jsse.JsseProvider", true);
             expectTlsProv = "RsaJsse";
         } else if ("sun".equals(tlsprov)) {
-            Security.addProvider(new JsafeJCE());
-            if (Boolean.valueOf(debug)) System.setProperty("javax.net.debug", "ssl");
             expectTlsProv = "SunJSSE";
         }
+
+        addProvs(additionalProviders, false);
+        addProvs(firstPlaceProviders, true);
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
         String gotTlsProv = sslContext.getProvider().getName();
@@ -249,7 +308,19 @@ public class TlsProviderTestSuite {
         return issuers.toArray(new X509Certificate[issuers.size()]);
     }
 
-    private void runServer(SSLContext sslContext) throws IOException {
+    private void delay() throws InterruptedException {
+        if (startupDelayMillis != null && startupDelayMillis.trim().length() > 0) {
+            long totalStartupTime = Long.parseLong(startupDelayMillis);
+            long startupTime = System.currentTimeMillis() - starttime;
+            long delayTime = totalStartupTime - startupTime;
+            if (delayTime > 0) {
+                System.out.println("Waiting for " + delayTime + " millis to allow peer to settle...");
+                Thread.sleep(delayTime);
+            }
+        }
+    }
+
+    private void runServer(SSLContext sslContext) throws IOException, InterruptedException {
         SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
         SSLServerSocket sock = (SSLServerSocket) ssf.createServerSocket(Integer.parseInt(port), 5, InetAddress.getByName(host));
         if (tlsversions != null) sock.setEnabledProtocols(tlsversions.split(","));
@@ -259,6 +330,7 @@ public class TlsProviderTestSuite {
         if ("no".equals(clientcert)) { sock.setNeedClientAuth(false); sock.setWantClientAuth(false); }
 
         byte buf[] = new byte[testblocklen];
+        delay();
         System.out.println("Awaiting connection on " + sock.getLocalSocketAddress());
         sock.setSoTimeout(Integer.parseInt(timeoutMillis));
         SSLSocket s = (SSLSocket) sock.accept();
@@ -281,6 +353,7 @@ public class TlsProviderTestSuite {
         SSLSocketFactory csf = sslContext.getSocketFactory();
         SSLSocket sock = (SSLSocket) csf.createSocket();
         sock.setSoTimeout(Integer.parseInt(timeoutMillis));
+        delay();
         sock.connect(new InetSocketAddress(host, Integer.parseInt(port)));
         if (tlsversions != null) sock.setEnabledProtocols(tlsversions.split(","));
         if (ciphers != null) sock.setEnabledCipherSuites(ciphers.split(","));

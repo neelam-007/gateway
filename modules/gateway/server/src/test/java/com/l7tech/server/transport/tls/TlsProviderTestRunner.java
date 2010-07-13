@@ -3,6 +3,7 @@ package com.l7tech.server.transport.tls;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
@@ -16,30 +17,119 @@ import java.util.regex.Pattern;
 public class TlsProviderTestRunner {
     private static boolean debug = Boolean.getBoolean("debug");
 
-    static String[] servers = {
-            "server tlsprov sun tlsversions TLSv1                 certtype rsa clientcert no",
-            "server tlsprov sun tlsversions TLSv1                 certtype rsa clientcert yes",
-            "server tlsprov sun tlsversions TLSv1                 certtype rsa clientcert optional",
-            "server tlsprov sun tlsversions TLSv1                 certtype ecc clientcert no",
-            "server tlsprov sun tlsversions TLSv1                 certtype ecc clientcert yes",
-            "server tlsprov sun tlsversions TLSv1                 certtype ecc clientcert optional",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert no",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert yes",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert optional",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert no",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert yes",
-            "server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional",
+    // SunJSSE on Sun JCE providers (no bundled ECC support as of JDK 6)
+    static String[] servers_SunJSSE_with_Sun = {
+            "server tlsprov sun jceprov sun                                tlsversions TLSv1 certtype rsa clientcert no      ",
+            "server tlsprov sun jceprov sun                                tlsversions TLSv1 certtype rsa clientcert yes     ",
+            "server tlsprov sun jceprov sun                                tlsversions TLSv1 certtype rsa clientcert optional",
     };
 
-    static String[] clients = {
-            "client tlsprov sun tlsversions TLSv1                 certtype rsa clientcert no",
-            "client tlsprov sun tlsversions TLSv1                 certtype rsa clientcert yes",
-            "client tlsprov sun tlsversions TLSv1                 certtype ecc clientcert no",
-            "client tlsprov sun tlsversions TLSv1                 certtype ecc clientcert yes",
-            "client tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert no",
-            "client tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert yes",
-            "client tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert no",
-            "client tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert yes",
+    // SunJSSE on RSA Crypto-J
+    static String[] servers_SunJSSE_with_CryptoJ = {
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert no      ",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert yes     ",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert optional",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert no      ",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert yes     ",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert optional",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert no       ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert yes      ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert optional ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+    };
+
+    // SunJSSE on Luna4 providers
+    static String[] servers_SunJSSE_with_Luna4 = {
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert no      ",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert yes     ",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert optional",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert no      ",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert yes     ",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert optional",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert no       ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert yes      ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert optional ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+    };
+
+    // SunJSSE on Luna5 provider
+    static String[] servers_SunJSSE_with_Luna5 = {
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype rsa clientcert no      ",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype rsa clientcert yes     ",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype rsa clientcert optional",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert no      ",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert yes     ",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert optional",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert no       ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert yes      ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert optional ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+    };
+
+    // RSA SSL-J on RSA Crypto-J provider
+    static String[] servers_RsaJsse_with_CryptoJ = {
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert no      ",
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert yes     ",
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert optional",
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert no      ", // TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 (TLSv1.2)
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert yes     ",
+            "server tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional",
+    };
+
+    // SunJSSE on Sun JCE providers (no bundled ECC support as of JDK 6)
+    static String[] clients_SunJSSE_with_Sun = {
+            "client tlsprov sun jceprov sun                                tlsversions TLSv1 certtype rsa clientcert no ",
+            "client tlsprov sun jceprov sun                                tlsversions TLSv1 certtype rsa clientcert yes",
+    };
+
+    // SunJSSE on RSA Crypto-J
+    static String[] clients_SunJSSE_with_CryptoJ = {
+            "client tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert no ",
+            "client tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert yes",
+    };
+
+    // SunJSSE on Luna4 provider
+    static String[] clients_SunJSSE_with_Luna4 = {
+            "client tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert no ",
+            "client tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert yes",
+            "client tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert no ",
+            "client tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype ecc clientcert yes",
+    };
+
+    // SunJSSE on Luna5 provider
+    static String[] clients_SunJSSE_with_Luna5 = {
+            "client tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype rsa clientcert no ",
+            "client tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype rsa clientcert yes",
+            "client tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert no ",
+            "client tlsprov sun jceprov luna5 tokenPin PASSWORD            tlsversions TLSv1 certtype ecc clientcert yes",
+    };
+
+    // RSA SSL-J on RSA Crypto-J provider
+    static String[] clients_RsaJsse_with_CryptoJ = {
+            "client tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert no ",
+            "client tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype rsa clientcert yes",
+            "client tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert no ",
+            "client tlsprov rsa jceprov rsa                tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert yes",
+    };
+
+
+    //
+    //  *** Servers to run in this test ***
+    //
+    static String[][] servers = {
+            //servers_SunJSSE_with_Sun,
+            //servers_SunJSSE_with_CryptoJ,
+            //servers_SunJSSE_with_Luna4,
+            servers_SunJSSE_with_Luna5,
+            //servers_RsaJsse_with_CryptoJ,
+    };
+
+    //
+    //  *** Clients to run in this test ***
+    //
+    static String[][] clients = {
+            clients_SunJSSE_with_Sun,
+            clients_SunJSSE_with_CryptoJ,
+            //clients_SunJSSE_with_Luna4,
+            clients_SunJSSE_with_Luna5,
+            clients_RsaJsse_with_CryptoJ,
     };
 
     enum Result {
@@ -138,13 +228,20 @@ public class TlsProviderTestRunner {
         }
     }
 
+    private static Collection<String> flatten(String[][] in) {
+        Collection<String> ret = new ArrayList<String>();
+        for (String[] strings : in)
+            ret.addAll(Arrays.asList(strings));
+        return ret;
+    }
+
     public static void main(String[] baseCommand) throws ExecutionException, InterruptedException {
         if (baseCommand.length < 1) usage();
 
-        for (String server : servers) {
+        for (String server : flatten(servers)) {
             System.out.println("Server: " + server);
             boolean serverRequiresClientCert = server.contains("clientcert yes");
-            for (String client : clients) {
+            for (String client : flatten(clients)) {
                 boolean clientHasClientCert = client.contains("clientcert yes");
                 if (serverRequiresClientCert && !clientHasClientCert) {
                     System.out.println("     Client: " + client + "\t\t" + "Skipped: expected to fail");
