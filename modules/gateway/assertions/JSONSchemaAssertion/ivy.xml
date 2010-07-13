@@ -21,6 +21,5 @@
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
-        <dependency name="layer7-json" rev="latest.integration" force="true" conf="core"/>
 	</dependencies>
 </ivy-module>
