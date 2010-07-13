@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.variable.Syntax;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -144,6 +145,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         return meta;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         if (dynamicJmsRoutingProperties != null) {

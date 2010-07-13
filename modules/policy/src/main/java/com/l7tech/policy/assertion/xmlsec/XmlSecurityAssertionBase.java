@@ -1,5 +1,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -10,6 +13,8 @@ import javax.xml.soap.SOAPConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Base class for XML Security Assertions (Confidentiality and Integrity). Shares the concept
@@ -76,6 +81,7 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
         return messageTargetableSupport.isTargetModifiedByGateway();
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         List<String> variables = new ArrayList<String>();

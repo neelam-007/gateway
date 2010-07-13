@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.Collections;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
 /**
  * Assertion for applying WS-Security to a message or removing security headers.
  *
@@ -94,6 +96,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.wsSecurityVersion = wsSecurityVersion;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         String[] usedVariables = super.getVariablesUsed();

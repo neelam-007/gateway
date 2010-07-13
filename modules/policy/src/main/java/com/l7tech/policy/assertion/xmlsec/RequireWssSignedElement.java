@@ -16,6 +16,8 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.*;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
 /**
  * Enforces that a specific element in a request is signed.
  * <p/>
@@ -82,6 +84,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         return vars.toArray(new VariableMetadata[vars.size()]);
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         String[] varsUsed = super.getVariablesUsed();

@@ -1,9 +1,10 @@
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
+import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
@@ -40,10 +41,18 @@ public class AllAssertionsTest {
         boolean messageTargetable = assertion instanceof MessageTargetable;
         boolean processesRequest = assertion.getClass().isAnnotationPresent(ProcessesRequest.class);
         boolean processesResponse = assertion.getClass().isAnnotationPresent(ProcessesResponse.class);
+        boolean usesVariables = assertion instanceof UsesVariables;
 
         assertTrue("MessageTargetable conflicts with @ProcessesRequest", !messageTargetable || messageTargetable != processesRequest);
         assertTrue("MessageTargetable conflicts with @ProcessesResponse", !messageTargetable || messageTargetable != processesResponse);
         assertTrue("@ProcessesRequest conflicts with @ProcessesResponse", !processesRequest || processesRequest != processesResponse);
+        try {
+            // all getVariablesUsed implemenations must be annotated as follows;
+            // @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+            assertTrue("Uses variables not annotated for migration", !usesVariables || assertion.getClass().getMethod( "getVariablesUsed" ).isAnnotationPresent( Migration.class ));
+        } catch ( NoSuchMethodException e ) {
+            // meh
+        }
     }
 
     /**

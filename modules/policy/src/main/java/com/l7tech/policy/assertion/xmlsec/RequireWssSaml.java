@@ -1,5 +1,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -10,6 +13,8 @@ import com.l7tech.util.Functions;
 import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.EnumSet;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
@@ -181,6 +186,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         return messageTargetableSupport.isTargetModifiedByGateway();
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         return messageTargetableSupport.getVariablesUsed();

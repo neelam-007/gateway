@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.jsonschema;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -11,6 +14,8 @@ import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Configuration for the 'Validate JSON Schema' assertion. JSON schema can be configured in advance or obtained from a
@@ -35,6 +40,7 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         });
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         List<String> variables = new ArrayList<String>();

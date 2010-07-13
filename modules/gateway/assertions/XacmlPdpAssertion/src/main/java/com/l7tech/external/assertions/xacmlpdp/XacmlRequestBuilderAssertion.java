@@ -1,6 +1,11 @@
 package com.l7tech.external.assertions.xacmlpdp;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.policy.variable.Syntax;
@@ -689,6 +694,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         environment = new Environment();
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         List<String[]> variables = new ArrayList<String[]>();

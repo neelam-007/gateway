@@ -1,5 +1,11 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
 /**
  * A utility assertion that can mark one or more variables as in use.
  */
@@ -16,6 +22,7 @@ public class ExportVariablesAssertion extends Assertion implements UsesVariables
         this.exportedVars = exportedVars;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         return exportedVars;

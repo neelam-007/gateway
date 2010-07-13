@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
 /**
  * Decorates SOAP messages so that they are compliant with the US DOD's NCES requirements, by adding the following:
  * <ul>
@@ -131,6 +133,7 @@ public class NcesDecoratorAssertion
         this.useExistingWsa = useExistingWsa;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
