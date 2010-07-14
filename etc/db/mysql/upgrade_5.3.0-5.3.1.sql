@@ -15,7 +15,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- Update the version
 --
 
-UPDATE ssg_version SET current_version = '5.4.0';
+UPDATE ssg_version SET current_version = '5.3.1';
 
 
 --
