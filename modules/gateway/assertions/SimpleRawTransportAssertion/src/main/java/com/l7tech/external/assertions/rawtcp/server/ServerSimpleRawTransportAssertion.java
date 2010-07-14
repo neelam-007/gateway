@@ -23,9 +23,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.util.logging.Logger;
 
@@ -48,7 +45,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
     {
         super(assertion);
         this.auditor = new Auditor(this, beanFactory, eventPub, logger);
-        this.stashManagerFactory = beanFactory == null ? new ByteArrayStashManagerFactory() : (StashManagerFactory)beanFactory.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.stashManagerFactory = beanFactory == null ? new ByteArrayStashManagerFactory() : beanFactory.getBean("stashManagerFactory", StashManagerFactory.class);
         this.responseContentType = ContentTypeHeader.parseValue(assertion.getResponseContentType());
     }
 
@@ -58,11 +55,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             Message request = assertion.getRequestTarget() == null ? null : context.getTargetMessage(assertion.getRequestTarget());
             Message response = assertion.getResponseTarget() == null ? null : context.getTargetMessage(assertion.getResponseTarget());
 
-            if (assertion.isUdp()) {
-                transmitAsDatagram(request);
-            } else {
-                transmitOverTcp(context, request, response);
-            }
+            transmitOverTcp(context, request, response);
 
             return AssertionStatus.NONE;
 
@@ -79,13 +72,6 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
         }
     }
 
-    private void transmitAsDatagram(Message request) throws IOException, NoSuchPartException {
-        DatagramSocket sock = new DatagramSocket();
-        sock.connect(InetAddress.getByName(assertion.getTargetHost()), assertion.getTargetPort());
-        byte[] bytes = request == null ? new byte[0] : messageToBytes(request, assertion.getMaxRequestBytes());
-        sock.send(new DatagramPacket(bytes, bytes.length));
-    }
-
     private void transmitOverTcp(PolicyEnforcementContext context, Message request, Message response) throws IOException, NoSuchPartException {
         Socket sock = null;
         OutputStream outputStream = null;
@@ -96,6 +82,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             inputStream = request == null ? new EmptyInputStream() : request.getMimeKnob().getEntireMessageBodyAsInputStream();
             outputStream = sock.getOutputStream();
             IOUtils.copyStream(inputStream, outputStream);
+            outputStream.flush();
             sock.shutdownOutput();
 
             if (response != null) {
@@ -116,16 +103,6 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
         } finally {
             ResourceUtils.closeQuietly(inputStream);
             ResourceUtils.closeQuietly(sock);
-        }
-    }
-
-    private byte[] messageToBytes(Message message, long maxLength) throws IOException, NoSuchPartException {
-        int intMax = maxLength > 4000000 ? 4000000 : (int)maxLength;
-        final InputStream is = message.getMimeKnob().getEntireMessageBodyAsInputStream();
-        try {
-            return IOUtils.slurpStream(is, intMax);
-        } finally {
-            ResourceUtils.closeQuietly(is);
         }
     }
 }

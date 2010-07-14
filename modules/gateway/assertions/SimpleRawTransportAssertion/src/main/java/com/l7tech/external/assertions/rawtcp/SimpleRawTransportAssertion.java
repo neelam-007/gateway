@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.rawtcp;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,26 +10,23 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Bean for configuring outbound raw TCP/UDP (and someday TLS) single-shot message.
+ * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
 public class SimpleRawTransportAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(SimpleRawTransportAssertion.class.getName());
 
+    public static final int DEFAULT_WRITE_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultWriteTimeout", 2000);
+    public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultReadTimeout", 2000);
+    public static final long DEFAULT_RESPONSE_SIZE_LIMIT = SyspropUtil.getLong("com.l7tech.external.assertions.rawtcp.defaultResponseSizeLimit", 1024 * 1024);
+
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
-    private long maxRequestBytes = Integer.MAX_VALUE;
-    private long maxResponseBytes = Integer.MAX_VALUE;
+    private long maxResponseBytes = DEFAULT_RESPONSE_SIZE_LIMIT;
     private String responseContentType = "text/xml; charset=UTF-8";
-    private int writeTimeoutMillis = 2000;
-    private int readTimeoutMillis = 2000;
+    private int writeTimeoutMillis = DEFAULT_WRITE_TIMEOUT;
+    private int readTimeoutMillis = DEFAULT_READ_TIMEOUT;
     private String targetHost = null;
     private int targetPort = 13224;
-    private boolean udp = false;
-
-    // TODO TLS support
-    //private boolean tls = false;
-    //private long clientKeystoreId = 0;
-    //private String clientKeyAlias = null;
 
     public String getTargetHost() {
         return targetHost;
@@ -44,20 +42,6 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
     public void setTargetPort(int targetPort) {
         this.targetPort = targetPort;
-    }
-
-    public boolean isUdp() {
-        return udp;
-    }
-
-    /**
-     * Set whether to use UDP or TCP.
-     *
-     * @param udp if true, the server assertion will attempt to fit the request into a single UDP datagram.
-     *            UDP routing requires a request target, and currently does not support waiting for a response.
-     */
-    public void setUdp(boolean udp) {
-        this.udp = udp;
     }
 
     public MessageTargetableSupport getResponseTarget() {
@@ -84,14 +68,6 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
      */
     public void setRequestTarget(MessageTargetableSupport requestTarget) {
         this.requestTarget = requestTarget;
-    }
-
-    public long getMaxRequestBytes() {
-        return maxRequestBytes;
-    }
-
-    public void setMaxRequestBytes(long maxRequestBytes) {
-        this.maxRequestBytes = maxRequestBytes;
     }
 
     public long getMaxResponseBytes() {
@@ -137,13 +113,12 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
         // Set up extra tasks menu actions
         meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] {
-                "com.l7tech.external.assertions.rawtcp.console.RawTcpStatusAction",
-                "com.l7tech.external.assertions.rawtcp.console.RawUdpStatusAction"
+                "com.l7tech.external.assertions.rawtcp.console.RawTcpStatusAction"
         });
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Raw TCP/UDP Routing");
-        meta.put(AssertionMetadata.DESCRIPTION, "Send a request over raw TCP or UDP");
+        meta.put(AssertionMetadata.SHORT_NAME, "Raw TCP Routing");
+        meta.put(AssertionMetadata.DESCRIPTION, "Send a request over raw TCP");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
@@ -152,6 +127,8 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportAssertionPropertiesDialog");
 
         //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
