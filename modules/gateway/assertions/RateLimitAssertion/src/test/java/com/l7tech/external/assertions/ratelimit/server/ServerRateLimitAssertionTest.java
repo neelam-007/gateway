@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertionTest {
     static {
-        System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
+        //System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
     }
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
