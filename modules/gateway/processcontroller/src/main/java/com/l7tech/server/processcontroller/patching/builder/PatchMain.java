@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller.patching.builder;
 
 import static com.l7tech.server.processcontroller.patching.builder.PatchTask.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -17,9 +18,13 @@ public class PatchMain {
 
     // - PUBLIC
 
+    public static final String RESOURCE_TEMP_PROPERTY = "com.l7tech.server.processcontroller.patching.builder.resourcetemp";
+
     public static void main(String[] args) {
 
         try {
+            System.setProperty(RESOURCE_TEMP_PROPERTY,
+                FileUtils.createTempDirectory("patchertemp", null, new File(System.getProperty("java.io.tmpdir")), true).getPath());
             InputStream tasksIn = PatchMain.class.getResourceAsStream(PatchTask.TASK_FILE);
             if (tasksIn != null) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(tasksIn));
@@ -47,6 +52,7 @@ public class PatchMain {
             "com.l7tech.util.ResourceUtils",
             "com.l7tech.util.ExceptionUtils",
             "com.l7tech.util.IOUtils",
+            "com.l7tech.util.IOUtils$1",
             "com.l7tech.util.BufferPool",
             "com.l7tech.util.BufferPool$Pool",
             "com.l7tech.util.BufferPool$HugePool",

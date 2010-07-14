@@ -19,7 +19,8 @@ public class ShellScriptPatchTask implements PatchTask {
     public void runPatch(String resourceDirEntry) throws Exception {
         String scriptName = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
 
-        File tempFile = File.createTempFile("patch_sh_script", "");
+        File resourceTempDir = new File(System.getProperty(PatchMain.RESOURCE_TEMP_PROPERTY));
+        File tempFile = File.createTempFile("patch_sh_script", "", resourceTempDir);
         tempFile.deleteOnExit();
         InputStream scriptIn = null;
         OutputStream tempOut = null;
@@ -33,7 +34,7 @@ public class ShellScriptPatchTask implements PatchTask {
         }
 
 
-        ProcResult result = ProcUtils.exec("/bin/bash " + tempFile.getAbsolutePath());
+        ProcResult result = ProcUtils.exec("/bin/bash " + tempFile.getAbsolutePath() + " " + resourceTempDir.getAbsolutePath());
         if(result.getExitStatus() != 0) {
             byte[] output = result.getOutput();
             throw new PatchException("Error executing patch task: '" + scriptName + (output == null ? "'" : "', error message: " + new String(output) + "\n"));

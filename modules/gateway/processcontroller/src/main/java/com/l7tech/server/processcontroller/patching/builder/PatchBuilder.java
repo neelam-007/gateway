@@ -71,7 +71,7 @@ public class PatchBuilder {
 
         // - PRIVATE
 
-        private Map<Option,List<String>> options = new HashMap<Option, List<String>>();
+        private Map<Option,List<String>> options = new LinkedHashMap<Option, List<String>>();
         public Map<JarSignerParams.Option, String> jarOptions = new LinkedHashMap<JarSignerParams.Option, String>();
 
         private boolean hasOption(Option o) {
@@ -95,8 +95,14 @@ public class PatchBuilder {
 
         private PatchSpec getPatchSpec(BuilderConfig config) {
             PatchSpec spec = new PatchSpec();
-            for (Option o : Option.values()) {
+            for (Option o : config.options.keySet()) {
                 o.update(spec, config);
+            }
+            for (Option o : Option.values()) {
+                if (! config.hasOption(o)) {
+                    // options required in the spec, but not in the command line
+                    o.update(spec, config);
+                }
             }
             spec.validate();
             return spec;
@@ -336,6 +342,35 @@ public class PatchBuilder {
                 for (String command : config.options.get(this)) {
                     PatchTaskBuilderUtils.addTask(spec, taskClass, new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(command.getBytes())));
                 }
+            }
+        },
+
+        RESOURCES("-resources", "<resource_list>", false, "Adds the specified resources to the patch, and makes them available under /tmp at patch runtime. Resource names must not start with a \"-\" character.") {
+            @Override
+            public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {
+                extractArg(args, getCommandLineArg(), getCommandLineArg()); // -resources
+                List<String> resources = new ArrayList<String>();
+                while(! args.isEmpty() && ! args.get(0).startsWith("-")) {
+                    resources.add(extractArg(args, getCommandLineArg(), null));
+                }
+                if (! resources.isEmpty()) {
+                    config.options.put(this, resources);
+                }
+                return Option.parseNextArg(args, config);
+            }
+            @Override
+            public void update(PatchSpec spec, BuilderConfig config) {
+                if ( ! config.hasOption(this)) return;
+                Class<? extends PatchTask> taskClass = ResourcesPatchTask.class;
+                List<String> baseNames = new ArrayList<String>();
+                List<PatchSpecEntry> resources = new ArrayList<PatchSpecEntry>();
+                for (String resourceName : config.options.get(this)) {
+                    String baseName = new File(resourceName).getName();
+                    baseNames.add(baseName);
+                    resources.add(new PatchSpecFileEntry(baseName, resourceName));
+                }
+                resources.add(new PatchSpecStreamEntry(PatchTask.TASK_RESOURCE_FILE, new ByteArrayInputStream(concat(baseNames, "\n").getBytes())));
+                PatchTaskBuilderUtils.addTask(spec, taskClass, PatchSpecTaskListEntry.Position.PRE, resources.toArray(new PatchSpecEntry[resources.size()]));
             }
         },
 
