@@ -2,7 +2,10 @@ package com.l7tech.external.assertions.whichmodule;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -68,9 +71,24 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, getClass().getName() + "$ServerImpl");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, getClass().getName() + "$PropDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, getClass().getName() + "$Validator");
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { getClass().getName() + "$CustomAction" });
+
         return meta;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static class CustomAction extends AbstractAction {
+        public CustomAction() {
+            super("Which Module Custom Action", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Bean16.gif"));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Hello from Which Module Assertion custom Tasks menu action!", null);
+        }
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
     public static class ServerImpl extends AbstractServerAssertion<WhichModuleAssertion> {
         private final Auditor auditor;
         private final WspReader wspReader;
