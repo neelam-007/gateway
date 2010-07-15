@@ -943,7 +943,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (mk != null) mk.getFirstPart().getActualContentLength();
             } catch (IOException e) {
                 // create fault to be sent
-                String fault = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context).right;
+                String fault = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context).getContent();
 
                 // there's no response message; substitute with the fault, so that the actual response that will be sent is audited
                 context.getResponse().initialize(

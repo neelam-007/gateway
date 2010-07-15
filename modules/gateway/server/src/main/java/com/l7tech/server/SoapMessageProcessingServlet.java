@@ -34,7 +34,6 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationEventPublisher;
@@ -53,6 +52,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,13 +104,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
-        messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
-        auditContext = (AuditContext)applicationContext.getBean("auditContext");
-        soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
-        licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
-        stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
-        messageProcessingEventChannel = (EventChannel)applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
+        soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+        licenseManager = applicationContext.getBean("licenseManager", LicenseManager.class);
+        stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         auditor = new Auditor(this, applicationContext, logger);
     }
 
@@ -207,7 +207,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
-        AssertionStatus status = null;
+        AssertionStatus status;
         try {
             if (gzipEncodedTransaction) {
                 request.initialize(stashManager, ctype, gis);
@@ -306,7 +306,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
             } else {
                 logger.fine("servlet transport returning 500");
-                returnFault(context, hrequest, hresponse, status);
+                returnFault(context, hrequest, hresponse);
             }
         } catch (Throwable e) {
             if (e instanceof PolicyAssertionException) {
@@ -354,9 +354,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             
             try {
                 if (e instanceof MessageResponseIOException) {
-                    sendExceptionFault(context, e.getMessage(), null, hrequest, hresponse, status);
+                    sendExceptionFault(context, e.getMessage(), null, null, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, hrequest, hresponse);
                 } else {
-                    sendExceptionFault(context, e, hrequest, hresponse, status);
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 }
             } catch (SAXException e1) {
                 throw new ServletException(e1);
@@ -433,12 +433,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * the new way to return soap faults
      */
     private void returnFault(PolicyEnforcementContext context,
-                             HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
+                             HttpServletRequest hreq,
+                             HttpServletResponse hresp) throws IOException, SAXException {
         OutputStream responseStream = null;
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
             final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
@@ -450,11 +450,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
             }
-            Pair<ContentTypeHeader, String> fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
-            if (fault != null && fault.right != null) {
-                hresp.setContentType(fault.left.getFullValue());
-                faultXml = fault.right;
-                responseStream.write(faultXml.getBytes());
+            final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            hresp.setStatus( fault.getHttpStatus() );
+            if ( fault.getContentBytes() != null ) {
+                hresp.setContentType(fault.getContentType().getFullValue());
+                faultXml = fault.getContent();
+                responseStream.write(fault.getContentBytes());
             }
         } finally {
             if (responseStream != null) responseStream.close();
@@ -464,13 +465,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
-                                    HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
-        Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context);
-        sendExceptionFault(context, faultInfo.right, faultInfo.left.getFullValue(), hreq, hresp, status);
+                                    HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+        final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context);
+        sendExceptionFault(context,
+                faultInfo.getContent(),
+                faultInfo.getContentType().getEncoding(),
+                faultInfo.getContentType().getFullValue(),
+                faultInfo.getHttpStatus(),
+                hreq,
+                hresp);
     }
 
-    private void sendExceptionFault(PolicyEnforcementContext context, String faultXml, String contentType,
-                                    HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
+    private void sendExceptionFault( final PolicyEnforcementContext context,
+                                     final String faultXml,
+                                     Charset faultEncoding,
+                                     final String contentType,
+                                     final int httpStatus,
+                                     final HttpServletRequest hreq,
+                                     final HttpServletResponse hresp ) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = hresp.getOutputStream();
@@ -478,10 +490,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresp.setContentType(contentType);
             } else if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
                 hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
+                faultEncoding = Charsets.UTF8;
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);
+                faultEncoding = Charsets.UTF8;
             }
-            hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
+            hresp.setStatus(httpStatus);
 
             final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
@@ -493,7 +507,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
             }
-            responseStream.write(faultXml.getBytes());
+            responseStream.write(faultXml.getBytes(faultEncoding));
         } finally {
             if (responseStream != null) responseStream.close();
         }

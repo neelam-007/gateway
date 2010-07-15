@@ -102,6 +102,7 @@ public class AllAssertions {
         new AddWssUsernameToken(),
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
+        new CustomizeErrorResponseAssertion(),
     };
 
 
@@ -185,5 +186,6 @@ public class AllAssertions {
         new AddWssUsernameToken(),
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
+        new CustomizeErrorResponseAssertion(),
     };
 }

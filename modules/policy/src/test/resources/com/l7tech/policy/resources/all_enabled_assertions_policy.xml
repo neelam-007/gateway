@@ -172,5 +172,6 @@
         <L7p:ExportVariables>
             <L7p:ExportedVars stringArrayValue="included"/>
         </L7p:ExportVariables>
+        <L7p:CustomizeErrorResponse/>
     </wsp:OneOrMore>
 </wsp:Policy>

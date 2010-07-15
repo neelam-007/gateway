@@ -8,6 +8,9 @@ import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.PrivateKeyableSupport;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Attached to a PolicyEnforcementContext and overridable through the FaultLevel assertion,
@@ -31,6 +34,8 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     private int level = GENERIC_FAULT;
     private String faultTemplate;
+    private String faultTemplateContentType;
+    private String faultTemplateHttpStatus;
     private boolean includePolicyDownloadURL = true;
     private boolean signSoapFault = false;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
@@ -81,11 +86,49 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
      */
     public void setFaultTemplate(String faultTemplate) {
         this.faultTemplate = faultTemplate;
-        if (faultTemplate != null) {
-            variablesUsed = Syntax.getReferencedNames(faultTemplate);
-        } else {
-            variablesUsed = new String[0];
-        }
+        updateVariableUse();
+    }
+
+    /**
+     * Get the content type for the fault response.
+     *
+     * <p>This value may contain variables that must be evaluated.</p>
+     *
+     * @return The content type (may be null)
+     */
+    public String getFaultTemplateContentType() {
+        return faultTemplateContentType;
+    }
+
+    /**
+     * Set the content type to use for the fault response.
+     *
+     * @param faultTemplateContentType The content type to use
+     */
+    public void setFaultTemplateContentType( final String faultTemplateContentType ) {
+        this.faultTemplateContentType = faultTemplateContentType;
+        updateVariableUse();
+    }
+
+    /**
+     * Get the HTTP status code to use for the fault response.
+     *
+     * <p>This value may contain variables that must be evaluated.</p>
+     *
+     * @return The HTTP status (may be null)
+     */
+    public String getFaultTemplateHttpStatus() {
+        return faultTemplateHttpStatus;
+    }
+
+    /**
+     * Set the HTTP status code to use for the fault response.
+     *
+     * @param faultTemplateHttpStatus The HTTP status code to use.
+     */
+    public void setFaultTemplateHttpStatus( final String faultTemplateHttpStatus ) {
+        this.faultTemplateHttpStatus = faultTemplateHttpStatus;
+        updateVariableUse();
     }
 
     /**
@@ -152,5 +195,22 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     public String[] getVariablesUsed() {
         return variablesUsed;
+    }
+
+    private void updateVariableUse() {
+        Set<String> variables = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        addVariables( variables, faultTemplateHttpStatus );
+        addVariables( variables, faultTemplateContentType );
+        addVariables( variables, faultTemplate );
+        variablesUsed = variables.toArray( new String[variables.size()] );
+    }
+
+    private void addVariables( final Set<String> variables, final String text ) {
+        if ( text != null ) {
+            String[] referencedNames = Syntax.getReferencedNames( text );
+            if ( referencedNames != null ) {
+                variables.addAll( Arrays.asList( referencedNames ) );
+            }
+        }
     }
 }

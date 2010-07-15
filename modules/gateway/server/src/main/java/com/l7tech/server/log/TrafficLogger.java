@@ -174,7 +174,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
                 AssertionStatus globalstatus = pec.getPolicyResult();
                 if (globalstatus != null && globalstatus != AssertionStatus.NONE) {
                     // if no response is yet available, we're about to return a soap fault
-                    responseXml = soapFaultManager.constructReturningFault(pec.getFaultlevel(), pec).right;
+                    responseXml = soapFaultManager.constructReturningFault(pec.getFaultlevel(), pec).getContent();
                 } else {
                     // sometimes, there is just no response
                     responseXml = "No response";

@@ -29,7 +29,6 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
@@ -58,7 +57,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 5, 2004<br/>
- * $Id$<br/>
  */
 public class TokenServiceServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
@@ -284,9 +282,9 @@ public class TokenServiceServlet extends HttpServlet {
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            Pair<ContentTypeHeader, String> fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
-            hresp.setContentType(fault.left.getFullValue());
-            responseStream.write(fault.right.getBytes());
+            final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            hresp.setContentType(fault.getContentType().getFullValue());
+            responseStream.write(fault.getContentBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -295,11 +293,11 @@ public class TokenServiceServlet extends HttpServlet {
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
         try {
-            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
+            final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(faultInfo.left.getFullValue());
+            hresp.setContentType(faultInfo.getContentType().getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
-            responseStream.write(faultInfo.right.getBytes(faultInfo.left.getEncoding()));
+            responseStream.write(faultInfo.getContentBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }

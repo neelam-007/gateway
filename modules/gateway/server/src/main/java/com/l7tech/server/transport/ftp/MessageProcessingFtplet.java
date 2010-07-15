@@ -43,12 +43,12 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /*
      * Bean constructor
      */
-    public MessageProcessingFtplet(final FtpServerManager ftpServerManager,
-                                   final MessageProcessor messageProcessor,
-                                   final AuditContext auditContext,
-                                   final SoapFaultManager soapFaultManager,
-                                   final StashManagerFactory stashManagerFactory,
-                                   final EventChannel messageProcessingEventChannel) {
+    MessageProcessingFtplet( final FtpServerManager ftpServerManager,
+                             final MessageProcessor messageProcessor,
+                             final AuditContext auditContext,
+                             final SoapFaultManager soapFaultManager,
+                             final StashManagerFactory stashManagerFactory,
+                             final EventChannel messageProcessingEventChannel ) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.auditContext = auditContext;
@@ -273,14 +273,14 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
                 } catch ( PolicyVersionException pve ) {
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
-                    faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).right;
+                    faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                 } catch ( Throwable t ) {
                     logger.log( Level.WARNING, "Exception while processing FTP message", t );
-                    faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).right;
+                    faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                 }
 
                 if ( status != AssertionStatus.NONE ) {
-                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).right;
+                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
                 }
 
                 if (faultXml != null)

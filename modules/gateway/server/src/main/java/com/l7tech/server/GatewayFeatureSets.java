@@ -452,6 +452,7 @@ public class GatewayFeatureSets {
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
             "Stealth fault, size limits, document structure threats, schema validation, and XTM (when it's done)",
             ass(FaultLevel.class),
+            ass(CustomizeErrorResponseAssertion.class),
             ass(OversizedTextAssertion.class),
             ass(RequestSizeLimit.class),
             ass(SqlAttackAssertion.class),
@@ -461,7 +462,8 @@ public class GatewayFeatureSets {
         fsr("set:Threats:Accel", "SecureSpan Accelerator threat protection",
             "Just document structure threats and schema validation",
             ass(SchemaValidation.class),
-            ass(FaultLevel.class));
+            ass(FaultLevel.class),
+            ass(CustomizeErrorResponseAssertion.class));
 
         GatewayFeatureSet threatFw =
         fsr("set:Threats:Firewall", "SecureSpan Firewall threat protection",

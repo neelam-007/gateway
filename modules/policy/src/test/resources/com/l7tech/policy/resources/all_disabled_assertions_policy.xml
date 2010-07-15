@@ -300,5 +300,8 @@
             <L7p:Enabled booleanValue="false"/>
             <L7p:ExportedVars stringArrayValue="included"/>
         </L7p:ExportVariables>
+        <L7p:CustomizeErrorResponse>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:CustomizeErrorResponse>
     </wsp:OneOrMore>
 </wsp:Policy>

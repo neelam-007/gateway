@@ -101,8 +101,8 @@ public class SoapFaultManager implements ApplicationContextAware {
      * 
      * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
      */
-    public Pair<ContentTypeHeader, String> constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
-                                                                    final PolicyEnforcementContext pec ) {
+    public FaultResponse constructReturningFault( final SoapFaultLevel inFaultLevelInfo,
+                                                  final PolicyEnforcementContext pec ) {
         return constructFault( inFaultLevelInfo, pec, false, "Policy Falsified", null );
     }
 
@@ -112,9 +112,9 @@ public class SoapFaultManager implements ApplicationContextAware {
      * <p>Receiving such a fault may generally be considered a bug (though in some cases it is expected
      * behaviour).</p>
      */
-    public Pair<ContentTypeHeader,String> constructExceptionFault( final Throwable throwable,
-                                                                   final SoapFaultLevel inFaultLevelInfo,
-                                                                   final PolicyEnforcementContext pec) {
+    public FaultResponse constructExceptionFault( final Throwable throwable,
+                                                  final SoapFaultLevel inFaultLevelInfo,
+                                                  final PolicyEnforcementContext pec ) {
         final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
         final boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
         if ( policyVersionFault ) {
@@ -152,6 +152,61 @@ public class SoapFaultManager implements ApplicationContextAware {
             }
         };
         checker.schedule(task, 10000, 56893);
+    }
+
+    /**
+     * A SOAP Fault or other error response.
+     */
+    public static class FaultResponse {
+        private final int httpStatus;
+        private final ContentTypeHeader contentType;
+        private final String content;
+
+        FaultResponse( final int httpStatus,
+                       final ContentTypeHeader contentType,
+                       final String content ) {
+            this.httpStatus = httpStatus;
+            this.contentType = contentType;
+            this.content = content;
+        }
+
+        /**
+         * Get the HTTP status for the response.
+         *
+         * @return The HTTP status code.
+         */
+        public int getHttpStatus() {
+            return httpStatus;
+        }
+
+        /**
+         * Get the content type for the response.
+         *
+         * @return The content type  (never null)
+         */
+        public ContentTypeHeader getContentType() {
+            return contentType;
+        }
+
+        /**
+         * Get the content for the response.
+         *
+         * @return The response body (never null)
+         */
+        public String getContent() {
+            return content;
+        }
+
+        /**
+         * Get the content for the response as bytes.
+         *
+         * <p>The encoding will be as per the content type.</p>
+         *
+         * @return The response body (never null)
+         */
+        public byte[] getContentBytes() {
+            return content.getBytes( contentType.getEncoding() );
+        }
     }
 
     //- PACKAGE
@@ -220,12 +275,13 @@ public class SoapFaultManager implements ApplicationContextAware {
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private final Timer checker;
 
-    private Pair<ContentTypeHeader, String>  constructFault( final SoapFaultLevel inFaultLevelInfo,
-                                                             final PolicyEnforcementContext pec,
-                                                             final boolean isClientFault,
-                                                             final String faultString,
-                                                             final String statusTextOverride ) {
+    private FaultResponse constructFault( final SoapFaultLevel inFaultLevelInfo,
+                                          final PolicyEnforcementContext pec,
+                                          final boolean isClientFault,
+                                          final String faultString,
+                                          final String statusTextOverride ) {
         final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
+        int httpStatus = 500;
         String output = "";
         AssertionStatus globalStatus = pec.getPolicyResult();
         ContentTypeHeader contentTypeHeader = ContentTypeHeader.XML_DEFAULT;
@@ -238,9 +294,28 @@ public class SoapFaultManager implements ApplicationContextAware {
             case SoapFaultLevel.DROP_CONNECTION:
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
-                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor), auditor);
-                if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
-                    contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
+                Map<String,Object> variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                if ( faultLevelInfo.getFaultTemplateHttpStatus() != null ) {
+                    String httpStatusText = ExpandVariables.process( faultLevelInfo.getFaultTemplateHttpStatus(), variables, auditor );
+                    try {
+                        httpStatus = Integer.parseInt( httpStatusText );
+                    } catch ( NumberFormatException nfe ) {
+                        logger.warning( "Ignoring invalid http status code for fault '"+httpStatusText+"'." );
+                    }
+                }
+                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), variables, auditor);
+                if ( faultLevelInfo.getFaultTemplateContentType() != null ) {
+                    String contentTypeText = ExpandVariables.process( faultLevelInfo.getFaultTemplateContentType(), variables, auditor );
+                    try {
+                        contentTypeHeader = ContentTypeHeader.parseValue( contentTypeText );
+                    } catch ( IOException e ) {
+                        contentTypeHeader = ContentTypeHeader.TEXT_DEFAULT;
+                        logger.warning( "Ignoring invalid content type for fault '"+contentTypeText+"', "+ExceptionUtils.getMessage( e )+"." );
+                    }
+                } else {
+                    if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
+                        contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
+                }
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
@@ -275,7 +350,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
         }
 
-        return new Pair<ContentTypeHeader, String>(contentTypeHeader, output);
+        return new FaultResponse(httpStatus, contentTypeHeader, output);
     }
 
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {

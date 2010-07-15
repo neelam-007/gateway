@@ -16,7 +16,6 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -527,10 +526,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             responseStream = hresp.getOutputStream();
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
-            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            Pair<ContentTypeHeader, String> fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
-            hresp.setContentType(fault.left.getFullValue());
-            responseStream.write(fault.right.getBytes());
+            final SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            hresp.setContentType(fault.getContentType().getFullValue());
+            responseStream.write(fault.getContentBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -552,11 +551,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                                     HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
         try {
-            Pair<ContentTypeHeader,String> faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
+            final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(faultInfo.left.getFullValue());
+            hresp.setContentType(faultInfo.getContentType().getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
-            responseStream.write(faultInfo.right.getBytes(faultInfo.left.getEncoding()));
+            responseStream.write(faultInfo.getContentBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
