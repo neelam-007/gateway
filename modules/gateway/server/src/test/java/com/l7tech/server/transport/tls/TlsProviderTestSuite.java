@@ -90,6 +90,21 @@ public class TlsProviderTestSuite {
             "ME4CAQAwEAYHKoZIzj0CAQYFK4EEACIENzA1AgEBBDDcXN71Qoa5XupsGUbrrVkCgGww2I3Acy2V\n" +
             "nHm/Vpl6FEhWeQAlK/G/SRxeJFELe6w=";
 
+    public static final String EC_secp384r1_CERT_X509_B64 =
+        "MIIB0zCCAVigAwIBAgIJAKnrAXajzLwoMAoGCCqGSM49BAMDMBwxGjAYBgNVBAMMEXRlc3RfZWNf" +
+        "c2VjcDM4NHIxMB4XDTA5MTIxNjIzNDEyMFoXDTM0MTIxMDIzNDEyMFowHDEaMBgGA1UEAwwRdGVz" +
+        "dF9lY19zZWNwMzg0cjEwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASp92Vv7qoY0+khqH8o3AY8zO17" +
+        "oIc2a9cdsvEqhUET4gmVuEmzjumtXKsNuichgF7v8D7fjcYYY8+df+bOUcoFduRKWMfIZFFThTKG" +
+        "PjyK3ZPNhmEVeOpTqCV43JoHNq+jZjBkMA4GA1UdDwEB/wQEAwIF4DASBgNVHSUBAf8ECDAGBgRV" +
+        "HSUAMB0GA1UdDgQWBBQ+sq0AVeZtKAcjXIXICsqVoC+MeTAfBgNVHSMEGDAWgBQ+sq0AVeZtKAcj" +
+        "XIXICsqVoC+MeTAKBggqhkjOPQQDAwNpADBlAjB6WrVTujB/QSFW7DUeLn1Cq2BWRFdqEvO7gIrb" +
+        "+Wc63Z4kUCYAzyvbsbY/hEM6IokCMQC3YWsaZ7uBe94fsDWv5Q4lyPpYyDRgf/7Tb2s+6E/wyckE" +
+        "MKAwqiaw+a36GodQWvMA";
+
+    public static final String EC_secp384r1_KEY_PKCS8_B64 =
+        "ME4CAQAwEAYHKoZIzj0CAQYFK4EEACIENzA1AgEBBDAhyd5V2T6UYn8t8G4Lj1qaICzJAxNNheJT" +
+        "Z1cvDsRYKxdMmcmMGh6Yl5slgqjUXZE=";
+
     // A certificate unrelated to the server or client certs
     public static final String RSA_1536_CERT_X509_B64 =
         "MIICkzCCAbygAwIBAgIIfWqcn+A0noswDQYJKoZIhvcNAQEMBQAwGDEWMBQGA1UEAwwNdGVzdF9y" +
@@ -105,19 +120,35 @@ public class TlsProviderTestSuite {
         "DQeBAk8bxd6sCiPJgb4mcyPjaW3FJXfvV2hEevVMF4B5JHzcSVtoTJ8dnDDEVeRWYKM4buWE8owh" +
         "M7k06VZ4UbqXmGilfpM+SsTL7qraLKH8cW+ZxtVbZQVczuly";
 
-    static PrivateKey getPrivateKey(boolean ecc) throws GeneralSecurityException, IOException {
-        return getPrivateKey(ecc, ecc ? EC_P256_PRIVATE_KEY : RSA_1024_KEY_PKCS8_B64);
+    static PrivateKey getPrivateKey(String name) throws GeneralSecurityException, IOException {
+        if ("rsa".equals(name)) {
+            return getPrivateKey(false, RSA_1024_KEY_PKCS8_B64);
+        } else if ("ecc".equals(name)) {
+            return getPrivateKey(true, EC_P256_PRIVATE_KEY);
+        } else if ("ecc2".equals(name)) {
+            return getPrivateKey(true, EC_secp384r1_KEY_PKCS8_B64);
+        } else {
+            throw new IllegalArgumentException("No private key named " + name);
+        }
     }
 
     static PrivateKey getPrivateKey(boolean ecc, String b64) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
         return KeyFactory.getInstance(ecc ? "EC" : "RSA").generatePrivate(new PKCS8EncodedKeySpec(new BASE64Decoder().decodeBuffer(b64)));
     }
 
-    static X509Certificate getCertificate(boolean ecc) throws CertificateException, IOException {
-        return getCertificate(ecc ? EC_P256_CERT : RSA_1024_CERT_X509_B64);
+    static X509Certificate getCertificate(String name) throws CertificateException, IOException {
+        if ("rsa".equals(name)) {
+            return getCertificateFromB64(RSA_1024_CERT_X509_B64);
+        } else if ("ecc".equals(name)) {
+            return getCertificateFromB64(EC_P256_CERT);
+        } else if ("ecc2".equals(name)) {
+            return getCertificateFromB64(EC_secp384r1_CERT_X509_B64);
+        } else {
+            throw new IllegalArgumentException("No cert named " + name);
+        }
     }
 
-    static X509Certificate getCertificate(String b64) throws CertificateException, IOException {
+    static X509Certificate getCertificateFromB64(String b64) throws CertificateException, IOException {
         return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(new BASE64Decoder().decodeBuffer(b64)));
     }
 
@@ -278,8 +309,7 @@ public class TlsProviderTestSuite {
         System.out.println("Using TLS provider: " + gotTlsProv);
         if (expectTlsProv != null) assertEquals(expectTlsProv, gotTlsProv);
 
-        boolean ecc = "ecc".equals(certtype);
-        X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(ecc), getPrivateKey(ecc))};
+        X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(certtype), getPrivateKey(certtype))};
         if (!server && !"yes".equals(clientcert)) km = null;
 
         sslContext.init(
@@ -297,8 +327,9 @@ public class TlsProviderTestSuite {
         List<X509Certificate> issuers = new ArrayList<X509Certificate>();
 
         if (Boolean.valueOf(includeRealIssuers)) {
-            issuers.add(getCertificate(false));
-            issuers.add(getCertificate(true));
+            issuers.add(getCertificate("rsa"));
+            issuers.add(getCertificate("ecc"));
+            issuers.add(getCertificate("ecc2"));
         }
 
         if (Boolean.valueOf(includeBogusIssuer)) {
@@ -330,7 +361,6 @@ public class TlsProviderTestSuite {
         if ("no".equals(clientcert)) { sock.setNeedClientAuth(false); sock.setWantClientAuth(false); }
 
         byte buf[] = new byte[testblocklen];
-        delay();
         System.out.println("Awaiting connection on " + sock.getLocalSocketAddress());
         sock.setSoTimeout(Integer.parseInt(timeoutMillis));
         SSLSocket s = (SSLSocket) sock.accept();
