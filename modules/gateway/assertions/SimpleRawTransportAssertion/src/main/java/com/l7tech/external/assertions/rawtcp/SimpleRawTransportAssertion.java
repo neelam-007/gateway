@@ -7,14 +7,11 @@ import com.l7tech.util.SyspropUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
 public class SimpleRawTransportAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
-    protected static final Logger logger = Logger.getLogger(SimpleRawTransportAssertion.class.getName());
-
     public static final int DEFAULT_WRITE_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultWriteTimeout", 2000);
     public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultReadTimeout", 2000);
     public static final long DEFAULT_RESPONSE_SIZE_LIMIT = SyspropUtil.getLong("com.l7tech.external.assertions.rawtcp.defaultResponseSizeLimit", 1024 * 1024);

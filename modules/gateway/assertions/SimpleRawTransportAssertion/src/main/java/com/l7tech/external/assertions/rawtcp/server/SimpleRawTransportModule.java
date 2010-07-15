@@ -33,7 +33,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -49,12 +48,10 @@ import java.util.logging.Logger;
 public class SimpleRawTransportModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(SimpleRawTransportModule.class.getName());
     private static final String SCHEME_RAW_TCP = "l7.raw.tcp";
-    private static final String SCHEME_RAW_UDP = "l7.raw.udp";
 
     private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     static {
         SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_RAW_TCP));
-        SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_RAW_UDP));
     }
 
     private static BlockingQueue<Runnable> requestQueue = new LinkedBlockingQueue<Runnable>();
@@ -69,21 +66,11 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         private final ExecutorService executor;
         private final boolean executorRequiresClose;
         private final ServerSocket tcpSocket;
-        private final DatagramSocket udpSocket;
         private Thread listenThread;
 
         private ServerSock(SsgConnector connector, ServerSocket tcpSocket, ExecutorService executor, boolean executorRequiresClose) {
             this.connector = connector;
             this.tcpSocket = tcpSocket;
-            this.udpSocket = null;
-            this.executor = executor;
-            this.executorRequiresClose = executorRequiresClose;
-        }
-
-        private ServerSock(SsgConnector connector, DatagramSocket datgraphSocket, ExecutorService executor, boolean executorRequiresClose) {
-            this.connector = connector;
-            this.udpSocket = datgraphSocket;
-            this.tcpSocket = null;
             this.executor = executor;
             this.executorRequiresClose = executorRequiresClose;
         }
@@ -94,7 +81,6 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                 closed.set(true);
                 closeThread();
                 closeExecutor();
-                if (udpSocket != null) udpSocket.close();
                 if (tcpSocket != null) tcpSocket.close();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Exception closing connector: " + ExceptionUtils.getMessage(e), e);
@@ -118,14 +104,11 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
         public synchronized void start() {
             closeThread();
-            String name = tcpSocket != null ? ("TCP " + tcpSocket.getLocalPort()) : ("UDP " + udpSocket.getLocalPort());
+            String name = "TCP " + tcpSocket.getLocalPort();
             Runnable listenerRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    if (tcpSocket != null)
-                        runTcpListener();
-                    else
-                        runUdpListener();
+                    runTcpListener();
                 }
             };
             listenThread = new Thread(listenerRunnable, "Raw transport listener thread " + name);
@@ -162,10 +145,6 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             } catch (InterruptedException e1) {
                 logger.log(Level.FINE, "raw TCP listen thread interrupted; exiting");
             }
-        }
-
-        private void runUdpListener() {
-            // TODO
         }
     }
 
@@ -274,13 +253,6 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         tcpInfo.setCustomPropertiesPanelClassname("com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportPropertiesPanel");
         tcpInfo.setModularAssertionClassname(SimpleRawTransportAssertion.class.getName());
         ssgConnectorManager.registerTransportProtocol(tcpInfo, this);
-
-        TransportDescriptor udpInfo = new TransportDescriptor();
-        udpInfo.setScheme(SCHEME_RAW_UDP);
-        udpInfo.setRequiresHardwiredServiceResolution(true);
-        udpInfo.setCustomPropertiesPanelClassname("com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportPropertiesPanel");
-        udpInfo.setModularAssertionClassname(SimpleRawTransportAssertion.class.getName());
-        ssgConnectorManager.registerTransportProtocol(udpInfo, this);
     }
 
     @Override
@@ -325,8 +297,6 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             final String scheme = connector.getScheme();
             if (SCHEME_RAW_TCP.equalsIgnoreCase(scheme)) {
                 addTcpConnector(connector);
-            } else if (SCHEME_RAW_UDP.equalsIgnoreCase(scheme)) {
-                addUdpConnector(connector);
             } else {
                 // Can't happen
                 logger.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
@@ -350,20 +320,24 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             }
         }
 
+        ExecutorService executor = requestExecutor;
+        boolean executorNeedsClose = false;
+        String poolSizeStr = connector.getProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
+        int poolSize = poolSizeStr != null ? Integer.parseInt(poolSizeStr) : 0;
+        if (poolSize > 0) {
+            executor = new ThreadPoolExecutor(poolSize, poolSize, KEEPALIVE_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+            executorNeedsClose = true;
+        }
+
         try {
             ServerSocket serverSocket = new ServerSocket(connector.getPort(), backlog, InetAddress.getByName(bindAddress));
-            final ServerSock serverSock = new ServerSock(connector, serverSocket, requestExecutor, false); // TODO create and pass in custom threadpool if any
+            final ServerSock serverSock = new ServerSock(connector, serverSocket, executor, executorNeedsClose);
             serverSock.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, ServerSock>(connector, serverSock));
 
         } catch (IOException e) {
             throw new ListenerException("Unable to create server socket: " + ExceptionUtils.getMessage(e), e);
         }
-    }
-
-    private void addUdpConnector(SsgConnector connector) {
-        logger.log(Level.WARNING, "Ignoring UDP connector -- not yet implemented");
-        // TODO UDP listen port
     }
 
     @Override
@@ -375,13 +349,10 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             ServerSock serverSock = entry.right;
             logger.info("Removing " + entry.left.getScheme() + " connector on port " + entry.left.getPort());
             try {
-                if (serverSock.udpSocket != null) serverSock.udpSocket.close();
-                if (serverSock.tcpSocket != null) serverSock.tcpSocket.close();
+                if (serverSock.tcpSocket != null) serverSock.close();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Unable to close TCP socket: " + ExceptionUtils.getMessage(e), e);
             }
-
-            // TODO close private thread pool, if any
         }
     }
 
@@ -405,11 +376,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             Message response = new Message();
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
-            // TODO get configured override content type
-            // TODO configure SO_TIMEOUT, configure max request read time limit, configure max request size
+            String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+
+           // TODO configure SO_TIMEOUT, configure max request read time limit, configure max request size
             byte[] bytes = IOUtils.slurpStream(sock.getInputStream());
 
-            ContentTypeHeader ctype = ContentTypeHeader.OCTET_STREAM_DEFAULT;
+            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
             if (hardwiredServiceOid != -1) {
                 final long finalHardwiredServiceOid = hardwiredServiceOid;
@@ -426,7 +398,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             if (response.getKnob(MimeKnob.class) != null) {
                 // Send response
                 responseStream = response.getMimeKnob().getEntireMessageBodyAsInputStream();
-                IOUtils.copyStream(responseStream, sock.getOutputStream());
+                byte[] responseBytes = IOUtils.slurpStream(responseStream);
+                IOUtils.copyStream(new ByteArrayInputStream(responseBytes), sock.getOutputStream());
+                sock.getOutputStream().flush();
             }
 
 

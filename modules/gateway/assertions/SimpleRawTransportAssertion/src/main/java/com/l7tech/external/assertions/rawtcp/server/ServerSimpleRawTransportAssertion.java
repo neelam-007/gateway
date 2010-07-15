@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
@@ -55,7 +56,9 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             Message request = assertion.getRequestTarget() == null ? null : context.getTargetMessage(assertion.getRequestTarget());
             Message response = assertion.getResponseTarget() == null ? null : context.getTargetMessage(assertion.getResponseTarget());
 
+            context.setRoutingStatus(RoutingStatus.ATTEMPTED);
             transmitOverTcp(context, request, response);
+            context.setRoutingStatus(RoutingStatus.ROUTED);
 
             return AssertionStatus.NONE;
 
@@ -96,7 +99,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
                         ResourceUtils.closeQuietly(finalSock);
                     }
                 });
-                // Force response first part to get read and stashed
+                // Force response first part to get read and stashed before socket gets closed
                 response.getMimeKnob().getEntireMessageBodyAsInputStream().close();
             }
 

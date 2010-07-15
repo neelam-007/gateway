@@ -88,8 +88,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /** If specified, this is the size of the thread pool for the connector (Currently HTTP(S) only). */
     public static final String PROP_THREAD_POOL_SIZE = "threadPoolSize";
 
-    /** If specified, service resolution should be bypassed for incoming requests, and they should be immediately routed to the specified service OID.  TODO: Replace with real field + foreign key */
-    public static final String PROP_HARDWIRED_SERVICE_ID = "hardwired.service.id";
+    /** If specified, service resolution should be bypassed for incoming requests, and they should be immediately routed to the specified service OID. */
+    public static final String PROP_HARDWIRED_SERVICE_ID = "hardwiredServiceId";
+
+    /** If specified, incoming messages should be assumed to use the specified content type. */
+    public static final String PROP_OVERRIDE_CONTENT_TYPE = "overrideContentType";
 
     /** Recognized endpoint names. */
     public static enum Endpoint {
