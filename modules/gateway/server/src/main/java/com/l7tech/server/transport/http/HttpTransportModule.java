@@ -2,8 +2,8 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.DefaultKey;
@@ -202,6 +202,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.addChild(dflt);
         context.addServletMapping("/", "default");
 
+        context.setParentClassLoader(getClass().getClassLoader());
         WebappLoader webappLoader = new WebappLoader(context.getParentClassLoader());
         webappLoader.setDelegate(context.getDelegate());
         webappLoader.setLoaderClass(WebappClassLoaderEx.class.getName());
