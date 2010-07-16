@@ -290,6 +290,8 @@ public class TlsProviderTestSuite {
         } else if ("luna5".equals(jceprov)) {
             addProv("com.safenetinc.luna.provider.LunaProvider", true);
             initLuna(true);
+        } else if ("bc".equals(jceprov)) {
+            addProv("org.bouncycastle.jce.provider.BouncyCastleProvider", false);            
         }
 
         String expectTlsProv = null;
