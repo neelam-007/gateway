@@ -1,9 +1,7 @@
 --
--- Script to update mysql ssg database from 5.3.0 to 5.4.0
+-- Script to update mysql ssg database from 5.3.0 to 5.3.1
 --
 -- Layer 7 Technologies, inc
---
--- PLACE HOLDER FOR UPGRADE SQL IN TRUNK POST PANDORA PRE NEXT DETERMINED RELEASE NUMBER
 --
 
 --
@@ -24,8 +22,8 @@ UPDATE ssg_version SET current_version = '5.3.1';
 ALTER TABLE uddi_proxied_service_info ADD COLUMN properties mediumtext;
 
 --
--- In Pandora only the hostname of the publishing cluster / gateway was persisted. This was then used to find and delete any
--- gateway endpoints in an original service in UDDI. In Maytag we track the full url, for all urls published. This statement
+-- In 5.3 only the hostname of the publishing cluster / gateway was persisted. This was then used to find and delete any
+-- gateway endpoints in an original service in UDDI. In 5.3.1 we track the full url, for all urls published. This statement
 -- populates the new properties field and inserts the value from 'published_hostname' into the list of published URLs.
 -- the protocol info in this update statement (http://) is not used and is just to satisfy the constrains inside EndpointPair
 --
