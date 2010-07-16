@@ -15,7 +15,10 @@ import java.util.regex.Pattern;
  * as these are expected to fail anyway.
  */
 public class TlsProviderTestRunner {
-    private static boolean debug = Boolean.getBoolean("debug");
+    static boolean debug = Boolean.getBoolean("debug");
+    static boolean eccOnly = false;
+    static boolean luna5Only = false;
+    static boolean showSkips = true;
 
     // SunJSSE on Sun JCE providers (no bundled ECC support as of JDK 6)
     static String[] servers_SunJSSE_with_Sun = {
@@ -35,6 +38,19 @@ public class TlsProviderTestRunner {
             "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert no       ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
             "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert yes      ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
             "server tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype ecc clientcert optional ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+    };
+
+    // SunJSSE on Bouncy Castle
+    static String[] servers_SunJSSE_with_BC = {
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype rsa clientcert no      ",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype rsa clientcert yes     ",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype rsa clientcert optional",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert no      ",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert yes     ",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert optional",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert no       ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert yes      ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+            "server tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype ecc clientcert optional ciphers TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
     };
 
     // SunJSSE on Luna4 providers
@@ -85,6 +101,12 @@ public class TlsProviderTestRunner {
             "client tlsprov sun jceprov rsa                                tlsversions TLSv1 certtype rsa clientcert yes",
     };
 
+    // SunJSSE on Bouncy Castle
+    static String[] clients_SunJSSE_with_BC = {
+            "client tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype rsa clientcert no ",
+            "client tlsprov sun jceprov bc                                 tlsversions TLSv1 certtype rsa clientcert yes",
+    };
+
     // SunJSSE on Luna4 provider
     static String[] clients_SunJSSE_with_Luna4 = {
             "client tlsprov sun jceprov luna4 tokenPin FGAA-3LJT-tsHW-NC3E tlsversions TLSv1 certtype rsa clientcert no ",
@@ -119,6 +141,7 @@ public class TlsProviderTestRunner {
             //servers_SunJSSE_with_Luna4,
             servers_SunJSSE_with_Luna5,
             //servers_RsaJsse_with_CryptoJ,
+            clients_SunJSSE_with_BC,
     };
 
     //
@@ -130,6 +153,7 @@ public class TlsProviderTestRunner {
             //clients_SunJSSE_with_Luna4,
             clients_SunJSSE_with_Luna5,
             clients_RsaJsse_with_CryptoJ,
+            clients_SunJSSE_with_BC,
     };
 
     enum Result {
@@ -239,12 +263,26 @@ public class TlsProviderTestRunner {
         if (baseCommand.length < 1) usage();
 
         for (String server : flatten(servers)) {
-            System.out.println("Server: " + server);
             boolean serverRequiresClientCert = server.contains("clientcert yes");
+            if (eccOnly && server.contains("certtype rsa")) {
+                if (showSkips) System.out.println("Server: " + server + ": Skipped: only testing ecc");
+                continue;
+            }
+            System.out.println("Server: " + server);
             for (String client : flatten(clients)) {
                 boolean clientHasClientCert = client.contains("clientcert yes");
                 if (serverRequiresClientCert && !clientHasClientCert) {
-                    System.out.println("     Client: " + client + "\t\t" + "Skipped: expected to fail");
+                    if (showSkips) System.out.println("     Client: " + client + "\t\t" + "Skipped: expected to fail");
+                    continue;
+                }
+
+                if (eccOnly && client.contains("certtype rsa")) {
+                    if (showSkips) System.out.println("     Client: " + client + "\t\t" + "Skipped: only testing ecc");
+                    continue;
+                }
+
+                if (luna5Only && (!server.contains("luna5") && !client.contains("luna5"))) {
+                    if (showSkips) System.out.println("     Client: " + client + "\t\t" + "Skipped: only testing luna5");
                     continue;
                 }
 
