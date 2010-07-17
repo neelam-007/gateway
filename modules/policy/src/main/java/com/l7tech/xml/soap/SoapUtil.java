@@ -1546,6 +1546,7 @@ public class SoapUtil extends SoapConstants {
     public interface OperationListener {
         void notifyNoStyle( String name );
         void notifyPartName( String name );
+        void notifyPartInvalid( String name );
         void notifyBadStyle( String operationStyle, String name );
         void notifyNoNames( String name );
     }
@@ -1704,7 +1705,12 @@ public class SoapUtil extends SoapConstants {
             } else {
                 parts = new ArrayList<Part>();
                 for (String name : partNames) {
-                    parts.add((Part) inputMessage.getParts().get(name));
+                    Part part = (Part) inputMessage.getParts().get(name);
+                    if (part != null) {
+                        parts.add( part );
+                    } else {
+                        if (listener != null) listener.notifyPartInvalid(name);
+                    }
                 }
             }
 
