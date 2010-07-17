@@ -69,6 +69,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
+    public static final String SERVICE_L7RAWTCP_MESSAGE_INPUT = "service:L7RawTcpMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
     public static final String SERVICE_REMOTE_MANAGEMENT = "service:RemoteManagement";
     public static final String SERVICE_POLICYDISCO = "service:Policy";
@@ -147,6 +148,15 @@ public class GatewayFeatureSets {
         fsr("set:ftp:front", "Allow incoming FTP messages",
             srv(SERVICE_FTP_MESSAGE_INPUT, "Accept incoming messages over FTP"),
             mass("assertion:FtpCredential"));
+
+        GatewayFeatureSet srvRawTcp = misc(SERVICE_L7RAWTCP_MESSAGE_INPUT, "Accept incoming messages over l7.raw.tcp", null);
+        GatewayFeatureSet rawTcpFront =
+        fsr("set:l7.raw.tcp:front", "Allow incoming l7.raw.tcp requests",
+            srvRawTcp);
+
+        GatewayFeatureSet rawTcpBack =
+        fsr("set:l7.raw.tcp:back", "Allow outgoing l7.raw.tcp requests",
+            mass("assertion:SimpleRawTransport"));
 
         GatewayFeatureSet srvJms = misc(SERVICE_JMS_MESSAGE_INPUT, "Accept incoming messages over JMS", null);
         GatewayFeatureSet jmsFront =
@@ -400,6 +410,8 @@ public class GatewayFeatureSets {
             fs(ftpFront),
             fs(jmsFront),
             fs(jmsBack),
+            fs(rawTcpFront),
+            fs(rawTcpBack),
             fs(uiEmailListenersDialog),
             ass(BridgeRoutingAssertion.class),
             mass("assertion:FtpRouting"));

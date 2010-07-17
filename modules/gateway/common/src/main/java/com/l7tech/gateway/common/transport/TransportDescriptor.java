@@ -8,7 +8,7 @@ import java.util.Set;
  * Holds information describing a protocol scheme offered by an available incoming message transport.
  */
 public class TransportDescriptor implements Serializable {
-    //private static final long serialVersionUID = -8284391304992363054L;
+    private static final long serialVersionUID = -8284391304992363054L;
 
     private String scheme = null;
     private String displayName = null;

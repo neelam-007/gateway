@@ -1,9 +1,10 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
@@ -237,6 +238,16 @@ public class FtpServerManager extends TransportModule {
      * @throws com.l7tech.server.transport.ListenerException if there is a problem creating the specified FTP server
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
+        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
+        String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        ContentTypeHeader overrideContentType = null;
+        try {
+            if (overrideContentTypeStr != null)
+                overrideContentType = ContentTypeHeader.parseValue(overrideContentTypeStr);
+        } catch (IOException e) {
+            throw new ListenerException("Unable to start FTP listener: Invalid overridden content type: " + overrideContentTypeStr);
+        }
+
         final CommandFactory ftpCommandFactory = new FtpCommandFactory();
         final FileSystemManager ftpFileSystem = new VirtualFileSystemManager();
         final UserManager ftpUserManager = new FtpUserManager(this);
@@ -247,7 +258,9 @@ public class FtpServerManager extends TransportModule {
                 auditContext,
                 soapFaultManager,
                 stashManagerFactory,
-                messageProcessingEventChannel);
+                messageProcessingEventChannel,
+                overrideContentType,
+                hardwiredServiceOid);
 
         Properties props = asFtpProperties(connector);
 
@@ -357,10 +370,14 @@ public class FtpServerManager extends TransportModule {
     private void registerProtocols() {
         final TransportDescriptor ftp = new TransportDescriptor("FTP", false);
         ftp.setFtpBased(true);
+        ftp.setSupportsHardwiredServiceResolution(true);
+        ftp.setSupportsSpecifiedContentType(true);
         ssgConnectorManager.registerTransportProtocol(ftp, this);
 
         final TransportDescriptor ftps = new TransportDescriptor("FTPS", true);
         ftps.setFtpBased(true);
+        ftps.setSupportsHardwiredServiceResolution(true);
+        ftps.setSupportsSpecifiedContentType(true);
         ssgConnectorManager.registerTransportProtocol(ftps, this);
     }
 

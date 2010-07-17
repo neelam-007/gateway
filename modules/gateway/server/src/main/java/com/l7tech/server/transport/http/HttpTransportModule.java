@@ -780,11 +780,15 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private void registerProtocols() {
         final TransportDescriptor http = new TransportDescriptor("HTTP", false);
         http.setHttpBased(true);
+        http.setSupportsHardwiredServiceResolution(true);
+        http.setSupportsSpecifiedContentType(true);
         http.setSupportedEndpoints(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT, SsgConnector.Endpoint.OTHER_SERVLETS, SsgConnector.Endpoint.NODE_COMMUNICATION, SsgConnector.Endpoint.PC_NODE_API));
         ssgConnectorManager.registerTransportProtocol(http, this);
 
         final TransportDescriptor https = new TransportDescriptor("HTTPS", true);
         https.setHttpBased(true);
+        https.setSupportsHardwiredServiceResolution(true);
+        https.setSupportsSpecifiedContentType(true);
         https.setSupportedEndpoints(EnumSet.allOf(SsgConnector.Endpoint.class));
         ssgConnectorManager.registerTransportProtocol(https, this);
     }

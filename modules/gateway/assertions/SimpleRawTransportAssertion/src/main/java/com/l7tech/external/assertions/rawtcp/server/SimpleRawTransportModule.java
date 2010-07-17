@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.message.HasServiceOid;
+import com.l7tech.message.HasServiceOidImpl;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
@@ -380,13 +381,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
             if (hardwiredServiceOid != -1) {
-                final long finalHardwiredServiceOid = hardwiredServiceOid;
-                request.attachKnob(HasServiceOid.class, new HasServiceOid() {
-                    @Override
-                    public long getServiceOid() {
-                        return finalHardwiredServiceOid;
-                    }
-                });
+                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
             AssertionStatus status = messageProcessor.processMessage(context);

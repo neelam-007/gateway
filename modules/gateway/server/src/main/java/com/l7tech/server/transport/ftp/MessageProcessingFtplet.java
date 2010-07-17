@@ -2,14 +2,16 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
+import com.l7tech.message.HasServiceOid;
+import com.l7tech.message.HasServiceOidImpl;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
@@ -48,13 +50,17 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final AuditContext auditContext,
                              final SoapFaultManager soapFaultManager,
                              final StashManagerFactory stashManagerFactory,
-                             final EventChannel messageProcessingEventChannel ) {
+                             final EventChannel messageProcessingEventChannel,
+                             final ContentTypeHeader overriddenContentType,
+                             final long hardwiredServiceOid) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.auditContext = auditContext;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
+        this.overriddenContentType = overriddenContentType;
+        this.hardwiredServiceOid = hardwiredServiceOid;
     }
 
     /**
@@ -119,6 +125,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
+    private final ContentTypeHeader overriddenContentType;
+    private final long hardwiredServiceOid;
 
     /*
      * Process a file upload 
@@ -242,7 +250,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
         // Create request message
         Message request;
-        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
+        ContentTypeHeader ctype = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
         Message requestMessage = new Message();
         requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
         requestMessage.attachFtpKnob(buildFtpKnob(
@@ -255,6 +263,10 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     unique,
                     user));
         request = requestMessage;
+
+        if (hardwiredServiceOid != -1) {
+            requestMessage.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+        }
 
         // process request message
         if (request != null) {

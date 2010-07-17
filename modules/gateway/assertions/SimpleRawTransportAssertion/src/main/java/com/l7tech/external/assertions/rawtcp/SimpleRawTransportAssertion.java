@@ -128,7 +128,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportAssertionPropertiesDialog");
 
-        //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         return meta;
     }

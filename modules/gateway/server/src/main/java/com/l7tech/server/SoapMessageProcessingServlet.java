@@ -131,9 +131,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
+        final SsgConnector connector;
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
-            HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);
+            connector = HttpTransportModule.getConnector(hrequest);
+            if (connector == null)
+                throw new ListenerException("No connector was found for the specified request.");
+            if (!connector.offersEndpoint(SsgConnector.Endpoint.MESSAGE_INPUT))
+                throw new ListenerException("This request cannot be accepted on this port.");
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Published service message input is not licensed '"+ExceptionUtils.getMessage(e)+"'.");
             hresponse.sendError(503);
@@ -200,6 +205,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
           ? ContentTypeHeader.parseValue(rawct)
           : ContentTypeHeader.XML_DEFAULT;
 
+        final String overrideContentType = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        if (overrideContentType != null) {
+            try {
+                ctype = ContentTypeHeader.parseValue(overrideContentType);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Invalid override content type for connector " + connector.getPort() + "; will use " + ctype);
+            }
+        }
+
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response,  true);
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
@@ -213,6 +227,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 request.initialize(stashManager, ctype, gis);
             } else {
                 request.initialize(stashManager, ctype, hrequest.getInputStream());
+            }
+
+            final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
+            if (hardwiredServiceOid != -1) {
+                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
             final MimeKnob mk = request.getMimeKnob();
