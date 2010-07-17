@@ -1,9 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -23,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.*;
@@ -107,7 +110,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JComboBox contentTypeComboBox;
     private JCheckBox overrideContentTypeCheckBox;
     private JCheckBox hardwiredServiceCheckBox;
-    private JComboBox serviceNameComboBox;
+    private ServiceComboBox serviceNameComboBox;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -125,7 +128,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             cbEnablePCAPI,
             tls10CheckBox,
             tls11CheckBox,
-            tls12CheckBox
+            tls12CheckBox,
+            overrideContentTypeCheckBox,
+            hardwiredServiceCheckBox,
     };
 
     private Map<String, TransportDescriptor> transportsByScheme = new TreeMap<String, TransportDescriptor>(String.CASE_INSENSITIVE_ORDER);
@@ -228,7 +233,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         usePrivateThreadPoolCheckBox.addActionListener( new ActionListener(){
             @Override
             public void actionPerformed(final ActionEvent e) {
-                threadPoolSizeSpinner.setEnabled( usePrivateThreadPoolCheckBox.isSelected() && isHttpProto(getSelectedProtocol()) );
+                TransportDescriptor proto = getSelectedProtocol();
+                threadPoolSizeSpinner.setEnabled( usePrivateThreadPoolCheckBox.isSelected() && (isHttpProto(proto) || isThreadPoolProto(proto)) );
                 threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
             }
         } );
@@ -306,6 +312,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        ActionListener enableOrDisableServiceDropdownsActionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableServiceResolutionDropdowns();
+            }
+        };
+        hardwiredServiceCheckBox.addActionListener(enableOrDisableServiceDropdownsActionListener);
+        overrideContentTypeCheckBox.addActionListener(enableOrDisableServiceDropdownsActionListener);
+
+        DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
+        ContentTypeHeader[] offeredTypes = new ContentTypeHeader[] {
+                ContentTypeHeader.XML_DEFAULT,
+                ContentTypeHeader.TEXT_DEFAULT,
+                ContentTypeHeader.SOAP_1_2_DEFAULT,
+                ContentTypeHeader.APPLICATION_JSON,
+                ContentTypeHeader.OCTET_STREAM_DEFAULT,
+        };
+        for (ContentTypeHeader offeredType : offeredTypes) {
+            contentTypeComboBoxModel.addElement(offeredType.getFullValue());
+        }
+        contentTypeComboBox.setModel(contentTypeComboBoxModel);
+
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(threadPoolSizeSpinner, "Thread Pool Size"));
 
@@ -381,7 +409,49 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return "An enabled listener must have at least one endpoint enabled.";
             }
         });
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(serviceNameComboBox) {
+            @Override
+            public String getValidationError() {
+                TransportDescriptor td = getSelectedProtocol();
+                if (td == null)
+                    return null;
 
+                if (!td.isRequiresHardwiredServiceResolutionAlways() && !td.isRequiresHardwiredServiceResolutionForNonXml())
+                    return null;
+
+                String msg = "A " + td + " port must be directly associated with a valid published service.";
+
+                if (!td.isRequiresHardwiredServiceResolutionAlways() && overrideContentTypeCheckBox.isSelected()) {
+                    ContentTypeHeader ctype = getSelectedOverrideContentType();
+                    if (ctype != null && ctype.isXml())
+                        return null;
+
+                    msg = "A " + td + " port must be directly associated with a valid published service unless the content type is XML."; 
+                }
+
+                if (hardwiredServiceCheckBox.isSelected() && serviceNameComboBox.getSelectedItem() != null)
+                    return null;
+
+                return msg;
+            }
+        });
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(serviceNameComboBox) {
+            @Override
+            public String getValidationError() {
+                TransportDescriptor td = getSelectedProtocol();
+                if (td == null || !td.isRequiresSpecifiedContentType() || getSelectedOverrideContentType() != null)
+                    return null;
+
+                Object ctypeObj = contentTypeComboBox.getSelectedItem();
+                if (ctypeObj != null)
+                    return "Specified content type is not formatted correctly.";
+
+                return "A " + td + " port must specify a content type to assume for incoming requests.";
+            }
+        });
+
+        Utilities.enableGrayOnDisabled(contentTypeComboBox);
+        Utilities.enableGrayOnDisabled(serviceNameComboBox);
         Utilities.setEscKeyStrokeDisposes(this);
 
         modelToView();
@@ -693,12 +763,22 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         return protocol != null && protocol.isHttpBased();
     }
 
+    private boolean isThreadPoolProto(TransportDescriptor proto) {
+        return proto != null && proto.isSupportsPrivateThreadPool();
+    }
+
     private void enableOrDisableComponents() {
         enableOrDisableTabs();
         enableOrDisableEndpoints();
         enableOrDisableTlsVersions();
         enableOrDisableCipherSuiteButtons();
         enableOrDisablePropertyButtons();
+        enableOrDisableServiceResolutionDropdowns();
+    }
+
+    private void enableOrDisableServiceResolutionDropdowns() {
+        serviceNameComboBox.setEnabled(hardwiredServiceCheckBox.isSelected());
+        contentTypeComboBox.setEnabled(overrideContentTypeCheckBox.isSelected());
     }
 
     private void enableOrDisablePropertyButtons() {
@@ -713,10 +793,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean isFtp = isFtpProto(proto);
         boolean isHttp = isHttpProto(proto);
 
+        boolean isPool = isThreadPoolProto(proto);
+
         tabbedPane.setEnabledAt(TAB_SSL, isSsl);
-        tabbedPane.setEnabledAt(TAB_HTTP, isHttp);
-        usePrivateThreadPoolCheckBox.setEnabled(isHttp);
-        threadPoolSizeSpinner.setEnabled(isHttp && usePrivateThreadPoolCheckBox.isSelected());
+        tabbedPane.setEnabledAt(TAB_HTTP, isHttp || isPool);
+        tabbedPane.setTitleAt(TAB_HTTP, isPool && !isHttp ? "Pool Settings" : "HTTP Settings");
+        
+        usePrivateThreadPoolCheckBox.setEnabled(isHttp || isPool);
+        threadPoolSizeSpinner.setEnabled(usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected());
         threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
 
         tabbedPane.setEnabledAt(TAB_FTP, isFtp);
@@ -732,6 +816,30 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         privateKeyComboBox.setEnabled(isSsl);
         managePrivateKeysButton.setEnabled(isSsl);
 
+        boolean oct = proto != null && proto.isSupportsSpecifiedContentType();
+        if (oct) {
+            if (proto.isRequiresSpecifiedContentType()) {
+                setEnableAndSelect(false, true, "Checked because the current protocol requires specifying a content type", overrideContentTypeCheckBox);
+            } else {
+                enableAndRestore(overrideContentTypeCheckBox);
+            }
+        } else {
+            setEnableAndSelect(false, false, "Disabled because the current protocol does not support content type overrides", overrideContentTypeCheckBox);
+        }
+        contentTypeComboBox.setEnabled(oct);
+
+        boolean hws = proto != null && proto.isSupportsHardwiredServiceResolution();
+        if (hws) {
+            if (proto.isRequiresHardwiredServiceResolutionAlways()) {
+                setEnableAndSelect(false, true, "Checked because the current protocol always requires hardwired service resolution", hardwiredServiceCheckBox);
+            } else {
+                enableAndRestore(hardwiredServiceCheckBox);
+            }
+        } else {
+            setEnableAndSelect(false, false, "Disabled because the current protocol does not support hardwired service resolution", hardwiredServiceCheckBox);
+        }
+        serviceNameComboBox.setEnabled(hws);
+
         // Show custom controls, if any
         if (proto != null && proto.getCustomPropertiesPanelClassname() != null) {
             ((CardLayout)otherSettingsPanel.getLayout()).show(otherSettingsPanel, proto.getScheme());
@@ -739,6 +847,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         } else {
             tabbedPane.setEnabledAt(TAB_CUSTOM, false);
         }
+
+        enableOrDisableServiceResolutionDropdowns();
     }
 
     private void disableOrRestoreEndpointCheckBox(Set<Endpoint> endpoints, SsgConnector.Endpoint endpoint, JCheckBox checkBox) {
@@ -753,7 +863,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         TransportDescriptor proto = getSelectedProtocol();
         boolean ssl = isSslProto(proto);
 
-        Set<Endpoint> endpoints = proto.getSupportedEndpoints();
+        Set<Endpoint> endpoints = proto == null ? Collections.<Endpoint>emptySet() : proto.getSupportedEndpoints();
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.MESSAGE_INPUT, cbEnableMessageInput);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.PC_NODE_API, cbEnablePCAPI);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
@@ -811,6 +921,26 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         int index = cipherSuiteList.getSelectedIndex();
         moveUpButton.setEnabled(index > 0);
         moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
+    }
+
+    private ContentTypeHeader getSelectedOverrideContentType() {
+        if (!overrideContentTypeCheckBox.isSelected())
+            return null;
+
+        Object ctypeObj = contentTypeComboBox.getSelectedItem();
+        if (ctypeObj == null)
+            return null;
+
+        String ctypeStr = String.valueOf(ctypeObj);
+        if (ctypeStr.trim().length() < 1)
+            return null;
+
+        try {
+            return ContentTypeHeader.parseValue(ctypeStr);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Invalid content type value: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return null;
+        }
     }
 
     private void selectPrivateKey(Long oid, String alias) {
@@ -890,8 +1020,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             cbEnableSsmRemote.setSelected(true);
     }
 
-
-
     /**
      * Configure the GUI control states with information gathered from the connector instance.
      */
@@ -905,7 +1033,24 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         setEndpointList(connector.getEndpoints());
 
-        // HTTP-specific properties
+        String hardwiredServiceIdStr = connector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
+        long hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Long.parseLong(hardwiredServiceIdStr) : -1;
+        boolean usingHardwired = serviceNameComboBox.populateAndSelect(hardwiredServiceId != -1, hardwiredServiceId);
+        hardwiredServiceCheckBox.setSelected(usingHardwired);
+
+        String ctype = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        if (ctype == null) {
+            overrideContentTypeCheckBox.setSelected(false);
+            contentTypeComboBox.setSelectedIndex(-1);
+        } else {
+            overrideContentTypeCheckBox.setSelected(true);
+            contentTypeComboBox.setSelectedItem(ctype);
+            if (!ctype.equalsIgnoreCase((String)contentTypeComboBox.getSelectedItem())) {
+                ((DefaultComboBoxModel)contentTypeComboBox.getModel()).addElement(ctype);
+                contentTypeComboBox.setSelectedItem(ctype);
+            }
+        }
+
         usePrivateThreadPoolCheckBox.setSelected( false );
         threadPoolSizeSpinner.setValue( DEFAULT_POOL_SIZE );
         String size = connector.getProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
@@ -914,8 +1059,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 Integer poolSize = Integer.parseInt( size );
                 usePrivateThreadPoolCheckBox.setSelected( true );
                 threadPoolSizeSpinner.setValue( poolSize );
-                threadPoolSizeSpinner.setEnabled( isHttpProto(getSelectedProtocol()) );
-                threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
             } catch ( NumberFormatException nfe ) {
                 logger.warning("Ignoring invalid pool size value '"+size+"'.");
             }
@@ -941,6 +1084,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
+        propNames.remove(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        propNames.remove(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
 
         // Also hide properties reserved for use by custom GUI panels
         // TODO should only really hide them when the corresponding transport protocol is selected
@@ -1007,11 +1152,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         connector.setEndpoints(getEndpointList());
 
         // HTTP-specific properties
-        boolean isHttp = isHttpProto(proto);
-        if ( isHttp && usePrivateThreadPoolCheckBox.isSelected()  ) {
+        if ( usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected()  ) {
             connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, threadPoolSizeSpinner.getValue().toString() );              
         } else {
-            connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, null);
+            connector.removeProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
         }
 
         // FTP-specific properties
@@ -1046,6 +1190,20 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             protoString = null;
         }
         connector.putProperty(SsgConnector.PROP_TLS_PROTOCOLS, protoString);
+
+        connector.removeProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
+        if (hardwiredServiceCheckBox.isSelected()) {
+            PublishedService ps = serviceNameComboBox.getSelectedPublishedService();
+            if (ps != null)
+                connector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, String.valueOf(ps.getOid()));
+        }        
+
+        connector.removeProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+        if (overrideContentTypeCheckBox.isSelected()) {
+            Object value = contentTypeComboBox.getSelectedItem();
+            if (value != null)
+                connector.putProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE, value.toString());
+        }
 
         // Delete those removed properties
         // Note: make sure the step (removeProperty) is prior to the next step (putProperty), since there

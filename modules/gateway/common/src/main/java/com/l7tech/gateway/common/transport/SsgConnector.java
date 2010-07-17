@@ -393,6 +393,46 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /**
+     * Convenience method to get a property as an int.
+     *
+     * @param key  the name of the property to get
+     * @param dflt the default value to return if the property is not set or if it is not a valid integer
+     * @return the requested property value, or null if it is not set
+     */
+    public int getIntProperty(String key, int dflt) {
+        String val = getProperty(key);
+        if (val == null)
+            return dflt;
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException nfe) {
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Invalid integer property value for listen port " + getPort() + " property " + key + ": " + val);
+            return dflt;
+        }
+    }
+
+    /**
+     * Convenience method to get a property as a long.
+     *
+     * @param key  the name of the property to get
+     * @param dflt the default value to return if the property is not set or if it is not a valid long
+     * @return the requested property value, or null if it is not set
+     */
+    public long getLongProperty(String key, long dflt) {
+        String val = getProperty(key);
+        if (val == null)
+            return dflt;
+        try {
+            return Long.parseLong(val);
+        } catch (NumberFormatException nfe) {
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Invalid long integer property value for listen port " + getPort() + " property " + key + ": " + val);
+            return dflt;
+        }
+    }
+
+    /**
      * Get a list of all extra properties set on this connector.
      *
      * @return a List of Strings.  May be empty, but never null.

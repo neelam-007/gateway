@@ -12,16 +12,13 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -32,7 +29,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,8 +44,6 @@ import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
  * @author rmak
  */
 public class JmsQueuePropertiesDialog extends JDialog {
-    private static final EntityHeader[] EMPTY_ENTITY_HEADER = new EntityHeader[0];
-
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
     private JRadioButton inboundRadioButton;
@@ -342,7 +339,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inboundReplyAutomaticRadioButton.addActionListener(inboundEnabler);
         inboundReplyNoneRadioButton.addActionListener(inboundEnabler);
 
-        serviceNameCombo.setRenderer( TextListCellRenderer.<ComboItem>basicComboBoxRenderer() );
+        serviceNameCombo.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
 
         Utilities.enableGrayOnDisabled(contentTypeValues);
  	 	Utilities.enableGrayOnDisabled(getContentTypeFromProperty);
@@ -482,20 +479,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         getContentTypeFromProperty.setEnabled(specifyEnabled && specifyContentTypeFromHeader.isSelected());
     }
 
-
-    private PublishedService getSelectedHardwiredService() {
-        PublishedService svc = null;
-        ComboItem item = (ComboItem)serviceNameCombo.getSelectedItem();
-        if (item == null) return null;
-
-        ServiceAdmin sa = getServiceAdmin();
-        try {
-            svc = sa.findServiceByID(Long.toString(item.serviceID));
-        } catch (FindException e) {
-            logger.severe("Can not find service with id " + item.serviceID);
-        }
-        return svc;
-    }
 
     private void initProviderReset() {
         EnumSet<JmsProviderType> providerTypes;
@@ -700,7 +683,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         if (associateQueueWithPublishedService.isSelected()) {
-            PublishedService svc = getSelectedHardwiredService();
+            PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
             properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
         } else {
@@ -866,54 +849,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
     }
 
-    private static class ComboItem implements Comparable {
-        ComboItem(String name, long id) {
-            serviceName = name;
-            serviceID = id;
-        }
-
-        @Override
-        public String toString() {
-            return serviceName;
-        }
-
-        String serviceName;
-        long serviceID;
-
-        @Override
-        @SuppressWarnings({ "RedundantIfStatement" })
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ComboItem comboItem = (ComboItem) o;
-
-            if (serviceID != comboItem.serviceID) return false;
-            if (serviceName != null ? !serviceName.equals(comboItem.serviceName) : comboItem.serviceName != null)
-                return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result;
-            result = (serviceName != null ? serviceName.hashCode() : 0);
-            result = 31 * result + (int) (serviceID ^ (serviceID >>> 32));
-            return result;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            if (o == null || ! (o instanceof ComboItem)) throw new IllegalArgumentException("The compared object must be a ComboItem.");
-            String originalServiceName = this.serviceName;
-            String comparedServiceName = ((ComboItem)o).serviceName;
-            if (originalServiceName == null || comparedServiceName == null) throw new NullPointerException("Service Name must not be null.");
-
-            return originalServiceName.toLowerCase().compareTo(comparedServiceName.toLowerCase());
-        }
-    }
-
     /**
      * Configure the gui to conform with the current endpoint and connection.
      */
@@ -1014,48 +949,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
             enableOrDisableQueueCredentials();
         }
 
-        // populate the service combo
-        EntityHeader[] allServices = EMPTY_ENTITY_HEADER;
-        try {
-            ServiceAdmin sa = getServiceAdmin();
-            allServices = sa.findAllPublishedServices();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "problem listing services", e);
-        }
-        if (allServices == null || allServices.length == 0) {
-            // Case 1: the queue associated with a published service and the user may be with a role of Manage JMS Queue.
-            if (isHardWired) {
-                String message = "Service " + hardWiredId + " is selected, but cannot be displayed.";
-                serviceNameCombo.addItem(new ComboItem(message, hardWiredId));
-                associateQueueWithPublishedService.setSelected(true);
-            }
-            // Case 2: There are no any published services at all.
-            else {
-                // We just want to show the message "No published services available." in the combo box.
-                // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
-                serviceNameCombo.addItem(new ComboItem("No published services available.", -1));
-                associateQueueWithPublishedService.setEnabled(false);
-            }
-        } else {
-            ArrayList<ComboItem> comboItems = new ArrayList<ComboItem>(allServices.length);
-            Object selectMe = null;
-            for (int i = 0; i < allServices.length; i++) {
-                EntityHeader aService = allServices[i];
-                ServiceHeader svcHeader = (ServiceHeader) aService;
-                comboItems.add(new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid()));
-                if (isHardWired && aService.getOid() == hardWiredId) {
-                    selectMe = comboItems.get(i);
-                }
-            }
-            Collections.sort(comboItems);
-            serviceNameCombo.setModel(new DefaultComboBoxModel(comboItems.toArray()));
-            if (selectMe != null) {
-                serviceNameCombo.setSelectedItem(selectMe);
-                associateQueueWithPublishedService.setSelected(true);
-            } else {
-                associateQueueWithPublishedService.setSelected(false);
-            }
-        }
+        boolean associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, isHardWired, hardWiredId);
+        associateQueueWithPublishedService.setSelected(associateQueue);
+
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
         if (endpoint != null) {

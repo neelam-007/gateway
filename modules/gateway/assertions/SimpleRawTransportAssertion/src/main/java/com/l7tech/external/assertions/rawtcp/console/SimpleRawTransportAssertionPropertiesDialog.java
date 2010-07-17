@@ -143,7 +143,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
     @Override
     public SimpleRawTransportAssertion getData(SimpleRawTransportAssertion assertion) throws ValidationException {
 
-        assertion.setResponseContentType(validNonEmptyString("Respons content type", responseContentTypeField.getText()));
+        assertion.setResponseContentType(validNonEmptyString("Response content type", responseContentTypeField.getText()));
         assertion.setTargetHost(validNonEmptyString("Target host", targetHostField.getText()));
         assertion.setTargetPort(validInt("Port must be a number between 1 and 65535", 65535, targetPortField.getText()));
 

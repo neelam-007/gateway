@@ -17,7 +17,11 @@ public class TransportDescriptor implements Serializable {
     private boolean usesTls = false;
     private boolean httpBased = false;
     private boolean ftpBased = false;
-    private boolean requiresHardwiredServiceResolution = true;
+    private boolean requiresHardwiredServiceResolutionForNonXml = false;
+    private boolean requiresHardwiredServiceResolutionAlways = false;
+    private boolean supportsHardwiredServiceResolution = false;
+    private boolean requiresSpecifiedContentType = false;
+    private boolean supportsSpecifiedContentType = false;
     private boolean supportsPrivateThreadPool = false;
 
     private String customPropertiesPanelClassname = null;
@@ -79,14 +83,60 @@ public class TransportDescriptor implements Serializable {
     }
 
     /**
-     * @return true if the Hardwired Service Resolution checkbox must always be set for listen ports that use this protocol.
+     * @return true if the Hardwired Service Resolution checkbox should be enabled for listen ports that use this protocol.
      */
-    public boolean isRequiresHardwiredServiceResolution() {
-        return requiresHardwiredServiceResolution;
+    public boolean isSupportsHardwiredServiceResolution() {
+        return supportsHardwiredServiceResolution;
     }
 
-    public void setRequiresHardwiredServiceResolution(boolean requiresHardwiredServiceResolution) {
-        this.requiresHardwiredServiceResolution = requiresHardwiredServiceResolution;
+    public void setSupportsHardwiredServiceResolution(boolean supportsHardwiredServiceResolution) {
+        this.supportsHardwiredServiceResolution = supportsHardwiredServiceResolution;
+    }
+
+    /**
+     * @return true if the Hardwired Service Resolution checkbox must always be set for listen ports that use this protocol
+     *              and that have not specified an XML-based overridden content type.
+     */
+    public boolean isRequiresHardwiredServiceResolutionForNonXml() {
+        return requiresHardwiredServiceResolutionForNonXml;
+    }
+
+    public void setRequiresHardwiredServiceResolutionForNonXml(boolean requiresHardwiredServiceResolutionForNonXml) {
+        this.requiresHardwiredServiceResolutionForNonXml = requiresHardwiredServiceResolutionForNonXml;
+    }
+
+    /**
+     * @return true if the Hardwired Service Resolution checkbox must always be set for listen ports that use this protocol,
+     *              even if they have specified an XML-based overridden content type.
+     */
+    public boolean isRequiresHardwiredServiceResolutionAlways() {
+        return requiresHardwiredServiceResolutionAlways;
+    }
+
+    public void setRequiresHardwiredServiceResolutionAlways(boolean requiresHardwiredServiceResolutionAlways) {
+        this.requiresHardwiredServiceResolutionAlways = requiresHardwiredServiceResolutionAlways;
+    }
+
+    /**
+     * @return true if the Override Content Type checkbox should be enabled for listen ports that use this protocol.
+     */
+    public boolean isSupportsSpecifiedContentType() {
+        return supportsSpecifiedContentType;
+    }
+
+    public void setSupportsSpecifiedContentType(boolean supportsSpecifiedContentType) {
+        this.supportsSpecifiedContentType = supportsSpecifiedContentType;
+    }
+
+    /**
+     * @return true if the Override Content Type value must always be provided for listen ports that use this protocol.
+     */
+    public boolean isRequiresSpecifiedContentType() {
+        return requiresSpecifiedContentType;
+    }
+
+    public void setRequiresSpecifiedContentType(boolean requiresSpecifiedContentType) {
+        this.requiresSpecifiedContentType = requiresSpecifiedContentType;
     }
 
     /**

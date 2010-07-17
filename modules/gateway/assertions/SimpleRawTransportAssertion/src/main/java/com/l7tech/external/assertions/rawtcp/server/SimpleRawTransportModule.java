@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gateway.common.LicenseManager;
@@ -249,7 +250,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
         TransportDescriptor tcpInfo = new TransportDescriptor();
         tcpInfo.setScheme(SCHEME_RAW_TCP);
-        tcpInfo.setRequiresHardwiredServiceResolution(true);
+        tcpInfo.setSupportsPrivateThreadPool(true);
+        tcpInfo.setSupportsSpecifiedContentType(true);
+        tcpInfo.setRequiresSpecifiedContentType(true);
+        tcpInfo.setSupportsHardwiredServiceResolution(true);
+        tcpInfo.setRequiresHardwiredServiceResolutionForNonXml(true);
+        tcpInfo.setRequiresHardwiredServiceResolutionAlways(false);
         tcpInfo.setCustomPropertiesPanelClassname("com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportPropertiesPanel");
         tcpInfo.setModularAssertionClassname(SimpleRawTransportAssertion.class.getName());
         ssgConnectorManager.registerTransportProtocol(tcpInfo, this);
@@ -310,20 +316,11 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
         }
 
-        int backlog = 5;
-        String backlogVal = connector.getProperty("backlog");
-        if (backlogVal != null && backlogVal.trim().length() > 0) {
-            try {
-                backlog = Integer.parseInt(backlogVal);
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, "Ignoring invalid value for connector property backlog for listen port " + connector.getPort() + ": " + backlogVal);
-            }
-        }
+        int backlog = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_BACKLOG, 5);
 
         ExecutorService executor = requestExecutor;
         boolean executorNeedsClose = false;
-        String poolSizeStr = connector.getProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
-        int poolSize = poolSizeStr != null ? Integer.parseInt(poolSizeStr) : 0;
+        int poolSize = connector.getIntProperty(SsgConnector.PROP_THREAD_POOL_SIZE, 0);
         if (poolSize > 0) {
             executor = new ThreadPoolExecutor(poolSize, poolSize, KEEPALIVE_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
             executorNeedsClose = true;
@@ -362,11 +359,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     private void handleRawTcpRequest(Socket sock, SsgConnector connector) {
-        long hardwiredServiceOid = -1;
-        String oidStr = connector.getProperty("hardwired.service.id");
-        if (oidStr != null && oidStr.trim().length() > 0) {
-            hardwiredServiceOid = Long.parseLong(oidStr);
-        }
+        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
 
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
@@ -377,9 +370,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
 
             String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+            final int readTimeout = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_READ_TIMEOUT, SimpleRawTransportAssertion.DEFAULT_READ_TIMEOUT);
+            final long requestSizeLimit = connector.getLongProperty(SimpleRawTransportAssertion.LISTEN_PROP_REQUEST_SIZE_LIMIT, SimpleRawTransportAssertion.DEFAULT_REQUEST_SIZE_LIMIT);
 
-           // TODO configure SO_TIMEOUT, configure max request read time limit, configure max request size
-            byte[] bytes = IOUtils.slurpStream(sock.getInputStream());
+            sock.setSoTimeout(readTimeout);
+            InputStream inputStream = new ByteLimitInputStream(sock.getInputStream(), 4096, requestSizeLimit);
+            byte[] bytes = IOUtils.slurpStream(inputStream);
 
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
@@ -395,18 +391,26 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
             AssertionStatus status = messageProcessor.processMessage(context);
 
-            if (response.getKnob(MimeKnob.class) != null) {
+            byte[] responseBytes = null;
+
+            if (status != AssertionStatus.NONE) {
+                // Send fault
+                logger.log(Level.WARNING, "Raw TCP policy failed with assertion status: {0}", status);
+                // TODO customize response to send upon error?
+            } else if (response.getKnob(MimeKnob.class) != null) {
                 // Send response
                 responseStream = response.getMimeKnob().getEntireMessageBodyAsInputStream();
-                byte[] responseBytes = IOUtils.slurpStream(responseStream);
+                responseBytes = IOUtils.slurpStream(responseStream);
+                // TODO response write timeout
+                final int writeTimeout = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_WRITE_TIMEOUT, SimpleRawTransportAssertion.DEFAULT_WRITE_TIMEOUT);
                 IOUtils.copyStream(new ByteArrayInputStream(responseBytes), sock.getOutputStream());
                 sock.getOutputStream().flush();
             }
 
-
         } catch (IOException e) {
             logger.log(Level.WARNING, "I/O error handling raw TCP request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (Exception e) {
+            // TODO send response of some kind?  customize response to send upon error?
             logger.log(Level.SEVERE, "Unexpected error handling raw TCP request: " + ExceptionUtils.getMessage(e), e);
         } finally {
             if (context != null)

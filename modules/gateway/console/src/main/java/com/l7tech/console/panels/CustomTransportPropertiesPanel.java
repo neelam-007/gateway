@@ -26,6 +26,11 @@ public abstract class CustomTransportPropertiesPanel extends JPanel {
     public abstract Map<String, String> getData();
 
     /**
+     * @return a validation error to display, given the current state of this panel, or null if everything looks good.
+     */
+    public abstract String getValidationError();
+
+    /**
      * @return an array of SsgConnector advanced property value names that should be hidden in the Advanced tab
      *         when this custom panel is in use.  The intent is that you would hide properties that are
      *         configured by a custom properties panel, to avoid confusing users.
