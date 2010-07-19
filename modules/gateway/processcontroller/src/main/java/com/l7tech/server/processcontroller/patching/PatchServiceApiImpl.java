@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.*;
+import java.util.regex.Pattern;
 
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -59,6 +60,7 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         if (! PatchStatus.State.UPLOADED.name().equals(status1.getField(PatchStatus.Field.STATE)) &&
             ! PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE)))
             throw new PatchException("Cannot install patch when status is " + status1.getField(PatchStatus.Field.STATE));
+        verifyNodes( nodes );
 
         PatchPackage patch = packageManager.getPackage(patchId);
         ProcResult result;
@@ -146,6 +148,8 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     // - PRIVATE
 
+    private static final String NODE_PATTERN = "[a-zA-Z0-9_-]{1,1024}";
+
     @Resource
     private PatchPackageManager packageManager;
 
@@ -186,5 +190,16 @@ public class PatchServiceApiImpl implements PatchServiceApi {
     private String getJavaBinary(PatchPackage patch) {
         String requestedJava = patch.getProperty(PatchPackage.Property.JAVA_BINARY);
         return requestedJava != null && ! "".equals(requestedJava) ? requestedJava : config.getJavaBinary().getAbsolutePath();
+    }
+
+    private void verifyNodes( final Collection<String> nodes ) throws PatchException {
+        if ( nodes != null ) {
+            final Pattern pattern = Pattern.compile(NODE_PATTERN);
+            for ( final String node : nodes ) {
+                if ( !pattern.matcher( node ).matches() ) {
+                    throw new PatchException("Invalid node '"+node+"'");
+                }
+            }
+        }
     }
 }

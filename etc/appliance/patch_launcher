@@ -74,7 +74,19 @@ fi
 
 "${APPLIANCE_JAVA}" -Dcom.l7tech.server.processcontroller.homeDirectory="${PC_HOME}" -jar "${PATCH_VERIFIER}" "$@"
 if [ $? -eq 0 ] ; then
-  $*
+  # Process command to remove any unexpected items before invoking.
+  COMMAND="$1"
+  shift
+  while (( "$#" )); do
+    if [ "$1" == "-jar" ] ; then
+      shift
+      COMMAND="$COMMAND -jar $1"
+    elif [ "${1%%=*}" == "-Dtarget.node.ids" -o "${1%%=*}" == "-Dnode.management.api.endpoint" ] ; then
+      COMMAND="$COMMAND $1"
+    fi
+    shift
+  done
+  $COMMAND
 else
   echo "Package verification failure when attempting to install patch."
   exit 1
