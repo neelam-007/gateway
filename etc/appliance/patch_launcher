@@ -3,6 +3,8 @@
 # Must be run as root, to launch a java process with a patch to install as argument to the -jar option
 # layer7 user has sudo rights for this launcher
 
+. /opt/SecureSpan/Appliance/libexec/envclean
+
 #set -x
 
 APPLIANCE_JAVA=/opt/SecureSpan/JDK/jre/bin/java
