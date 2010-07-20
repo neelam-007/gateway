@@ -1629,8 +1629,12 @@ public class SoapUtil extends SoapConstants {
         if (ot != null && ot != OperationType.REQUEST_RESPONSE && ot != OperationType.ONE_WAY)
             return null;
 
-        BindingInput input = bindingOperation.getBindingInput();
-        List<ExtensibilityElement> eels = input.getExtensibilityElements();
+        final BindingInput input = bindingOperation.getBindingInput();
+        if ( input == null ) {
+            return null;
+        }
+
+        final List<ExtensibilityElement> eels = input.getExtensibilityElements();
         String use = null;
         String namespace = null;
         for (ExtensibilityElement eel : eels) {
