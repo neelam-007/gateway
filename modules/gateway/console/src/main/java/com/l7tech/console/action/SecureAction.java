@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.Assertion;
 
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.security.AccessControlException;
 import java.util.Arrays;
@@ -71,6 +72,11 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     }
 
     protected SecureAction(AttemptedOperation attemptedOperation, final String name, final String desc, final String img) {
+        super(name, desc, img);
+        this.attemptedOperation = attemptedOperation;
+    }
+
+    protected SecureAction(AttemptedOperation attemptedOperation, final String name, final String desc, final Image img) {
         super(name, desc, img);
         this.attemptedOperation = attemptedOperation;
     }
@@ -159,6 +165,14 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     }
 
     protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses, final String name, final String desc, final String img) {
+        this(attemptedOperation, name, desc, img);
+        if (allowedAssertionLicenses != null)
+            for (Class clazz : allowedAssertionLicenses)
+                featureSetNames.add(Assertion.getFeatureSetName(clazz));
+        initLicenseListener();
+    }
+
+    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses, final String name, final String desc, final Image img) {
         this(attemptedOperation, name, desc, img);
         if (allowedAssertionLicenses != null)
             for (Class clazz : allowedAssertionLicenses)

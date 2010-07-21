@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -73,11 +74,19 @@ public abstract class NodeAction extends SecureAction {
         this(node, requiredAssertionLicense, null, name, desc, img);
     }
 
+    public NodeAction(AbstractTreeNode node, Class requiredAssertionLicense, final String name, final String desc, final Image img){
+        this(node, requiredAssertionLicense, null, name, desc, img);
+    }
+
     public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
         this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
     }
 
     public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final String img) {
+        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation, name, desc, img);
+    }
+
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final Image img) {
         this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation, name, desc, img);
     }
 
@@ -87,6 +96,11 @@ public abstract class NodeAction extends SecureAction {
     }
 
     public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final String img) {
+        super(attemptedOperation, allowedAssertionLicenses, name, desc, img);
+        this.node = node;
+    }
+
+    public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation, final String name, final String desc, final Image img) {
         super(attemptedOperation, allowedAssertionLicenses, name, desc, img);
         this.node = node;
     }

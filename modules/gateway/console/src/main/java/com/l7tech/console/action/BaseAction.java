@@ -80,7 +80,7 @@ public abstract class BaseAction extends AbstractAction {
      */
     public BaseAction(String name, String desc, Image img) {
         if (name != null) {
-            putValue(Action.NAME, getName());
+            putValue(Action.NAME, name);
         }
         if (desc != null) {
             putValue(Action.SHORT_DESCRIPTION, desc);
