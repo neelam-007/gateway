@@ -119,6 +119,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
+    private SecureAction hideShowCommentsAction;
 
     public interface PolicyEditorSubject {
         /**
@@ -1897,65 +1898,72 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getHideShowCommentAction(final JButton button){
 
-        return new SecureAction(null) {
-            @Override
-            protected void performAction() {
-                final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-                final String showState = preferences.getString(SHOW_COMMENTS);
-                final boolean shown = Boolean.parseBoolean(showState);
-                //shown = true means the button should say 'Hide'
+        if(hideShowCommentsAction == null){
+            hideShowCommentsAction = new SecureAction(null) {
+                        @Override
+                        protected void performAction() {
+                            final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+                            final String showState = preferences.getString(SHOW_COMMENTS);
+                            final boolean shown = Boolean.parseBoolean(showState);
+                            //shown = true means the button should say 'Hide'
 
-                if(shown) preferences.putProperty(SHOW_COMMENTS, "false");
-                else preferences.putProperty(SHOW_COMMENTS, "true");
+                            if (shown) preferences.putProperty(SHOW_COMMENTS, "false");
+                            else preferences.putProperty(SHOW_COMMENTS, "true");
 
-                button.setText(getName());
+                            button.setText(getName());
 
-                //update the tree so that the comment is displayed correctly
-                //this should not cause the 'Save and Activate' or 'Save' buttons to become activated as there is no
-                //actual change to the assertions, we are just updating the display of comments
-                JTree tree = TopComponents.getInstance().getPolicyTree();
-                if (tree != null) {
-                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                    updateNode((AssertionTreeNode) model.getRoot(), model);
-                    
-                } else {
-                    log.log(Level.WARNING, "Unable to reach the palette tree.");
-                }
+                            //update the tree so that the comment is displayed correctly
+                            //this should not cause the 'Save and Activate' or 'Save' buttons to become activated as there is no
+                            //actual change to the assertions, we are just updating the display of comments
+                            JTree tree = TopComponents.getInstance().getPolicyTree();
+                            if (tree != null) {
+                                PolicyTreeModel model = (PolicyTreeModel) tree.getModel();
+                                updateNode((AssertionTreeNode) model.getRoot(), model);
 
-            }
+                            } else {
+                                log.log(Level.WARNING, "Unable to reach the palette tree.");
+                            }
 
-            private void updateNode(AssertionTreeNode node, PolicyTreeModel model){
-                final Assertion assertion = node.asAssertion();
-                if(assertion.getAssertionComment() != null){
-                    model.nodeChanged(node);
-                }
+                        }
 
-                final int childCount = node.getChildCount();
-                if(childCount < 1) return;
-                for(int i = 0; i < childCount; i++){
-                    updateNode((AssertionTreeNode) node.getChildAt(i), model);
-                }
-            }
+                        private void updateNode(AssertionTreeNode node, PolicyTreeModel model) {
+                            final Assertion assertion = node.asAssertion();
+                            if (assertion.getAssertionComment() != null) {
+                                model.nodeChanged(node);
+                            }
 
-            @Override
-            public String getName() {
+                            final int childCount = node.getChildCount();
+                            if (childCount < 1) return;
+                            for (int i = 0; i < childCount; i++) {
+                                updateNode((AssertionTreeNode) node.getChildAt(i), model);
+                            }
+                        }
 
-                final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-                final String showState = preferences.getString(SHOW_COMMENTS);
-                final boolean shown = Boolean.parseBoolean(showState);
+                        @Override
+                        public String getName() {
 
-                if(shown){
-                    return "Hide Comments";
-                }else{
-                    return "Show Comments";    
-                }
-            }
+                            final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+                            final String showState = preferences.getString(SHOW_COMMENTS);
+                            final boolean shown = Boolean.parseBoolean(showState);
 
-            @Override
-            protected String iconResource() {
-                return "com/l7tech/console/resources/About16.gif";
-            }
-        };
+                            if (shown) {
+                                return "Hide Comments";
+                            } else {
+                                return "Show Comments";
+                            }
+                        }
+
+                        @Override
+                        protected String iconResource() {
+                            return "com/l7tech/console/resources/About16.gif";
+                        }
+                    };
+        }
+        // Set the mnemonic and accelerator key
+        hideShowCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
+        hideShowCommentsAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
+
+        return hideShowCommentsAction;
 
     }
 
