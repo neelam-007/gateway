@@ -8,13 +8,18 @@ import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.message.*;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
@@ -24,12 +29,14 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -77,6 +84,7 @@ public class PolicyProcessingTest {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
     private static final String POLICY_RES_PATH = "policy/resources/";
 
+    private static PolicyCache policyCache = null;
     private static MessageProcessor messageProcessor = null;
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
@@ -165,6 +173,7 @@ public class PolicyProcessingTest {
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
 
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+        policyCache = applicationContext.getBean("policyCache", PolicyCache.class);
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
@@ -1369,6 +1378,82 @@ public class PolicyProcessingTest {
         });
     }
 
+    /**
+     * Verify that global policies are run and do not affect the service policy results (context.getAssertionResults()) 
+     */
+    @Test
+    public void testGlobalPoliciesRun() throws Exception {
+        String polStart = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditDetailAssertion><L7p:Detail stringValue=\"";
+        String polEnd   = "\"/></L7p:AuditDetailAssertion></wsp:All></wsp:Policy>";
+        Collection<String> pids = new ArrayList<String>();
+        pids.add( policyCache.registerGlobalPolicy( "global-pre", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_MESSAGE_RECEIVED, polStart + "global-1" + polEnd ) );
+        pids.add( policyCache.registerGlobalPolicy( "global-pre-security", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_PRE_SECURITY, polStart + "global-2" + polEnd ) );
+        pids.add( policyCache.registerGlobalPolicy( "global-pre-service", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_PRE_SERVICE, polStart + "global-3" + polEnd ) );
+        pids.add( policyCache.registerGlobalPolicy( "global-post-service", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_POST_SERVICE, polStart + "global-4" + polEnd ) );
+        pids.add( policyCache.registerGlobalPolicy( "global-post-security", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_POST_SECURITY, polStart + "global-5" + polEnd ) );
+        pids.add( policyCache.registerGlobalPolicy( "global-post", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_MESSAGE_COMPLETED, polStart + "global-6" + polEnd ) );
+
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addtimestamp", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                assertEquals("Number of assertion results", 3, context.getAssertionResults().size());
+            }
+        });
+
+        // Check auditing from global policies
+        final AuditRecord ar = ((AuditContextStubInt)auditContext).getLastRecord();
+        final Collection<AuditDetail> details = ar.getDetails();
+        int globalIndex = 1;
+        for( final AuditDetail detail : details ) {
+            if ( detail.getMessageId()==-4 && ArrayUtils.contains( detail.getParams(), "global-"+globalIndex)) {
+                globalIndex++;
+            } else if ( detail.getMessageId()==-4 && ArrayUtils.contains( detail.getParams(), "global-1") ) {
+                fail("Global policy evaluated multiple times");
+            }
+        }
+        assertTrue("Found global policy audit details", globalIndex==7);
+
+        for ( final String pid : pids ) {
+            policyCache.unregisterGlobalPolicy( pid );
+        }
+    }
+
+    /**
+     * Verify that global policies can update audit/fault settings but not context variables.
+     */
+    @Test
+    public void testGlobalPoliciesContextModification() throws Exception {
+        final String pid = policyCache.registerGlobalPolicy( "global-pre-service", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_PRE_SERVICE, new String(loadResource("POLICY_global.xml")) );
+
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addtimestamp", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                assertEquals("Number of assertion results", 3, context.getAssertionResults().size());
+                assertEquals("Audit level", Level.WARNING, context.getAuditLevel());
+                assertEquals("Audit request", true, context.isAuditSaveRequest() );
+                assertEquals("Audit response", true, context.isAuditSaveResponse() );
+                assertNotNull("Fault level null", context.getFaultlevel());
+                assertEquals("Fault level value", 4, context.getFaultlevel().getLevel()); // 4 full trace
+                assertEquals("Fault level sign", true, context.getFaultlevel().isSignSoapFault());
+                try {
+                    context.getVariable( "test" );
+                    fail("Variable should not exist 'test'");
+                } catch ( NoSuchVariableException e ) {
+                    // OK
+                }
+            }
+        });
+
+        policyCache.unregisterGlobalPolicy( pid );
+    }
 
     /**
      *
@@ -1546,6 +1631,7 @@ public class PolicyProcessingTest {
                 }
             }
         } finally {
+            auditContext.setCurrentRecord( new MessageSummaryAuditRecord() );
             try {
                 auditContext.flush();
             }

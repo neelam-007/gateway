@@ -40,14 +40,12 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private JCheckBox soapCheckbox;
     private JComboBox typeCombo;
     private JComboBox tagCombo;
-    private JLabel typeLabel;
-    private JLabel tagLabel;
     private JLabel unsavedWarningLabel;
     // TODO include a policy panel
 
     private final Policy policy;
     private final boolean canUpdate;
-    private Map<String, String> policyTags;
+    private final Map<PolicyType,Map<String, String>> policyTagsByType = new HashMap<PolicyType,Map<String, String>>();
     
     private RunOnChangeListener syntaxListener = new RunOnChangeListener(new Runnable() {
         @Override
@@ -55,7 +53,6 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             checkSyntax();
         }
     });
-    private boolean hasInternalServiceTags;
 
     public static OkCancelDialog<Policy> makeDialog(Frame owner, Policy policy, boolean canUpdate) {
         return new OkCancelDialog<Policy>(owner, resources.getString("dialog.title"), true, new PolicyPropertiesPanel(policy, canUpdate));
@@ -118,25 +115,35 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             }
         }, false) );
 
-        policyTags = new LinkedHashMap<String, String>();
+        typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
 
-        ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
-        Set<ServiceTemplate> templates = svcManager.findAllTemplates();
-        for (ServiceTemplate template : templates) {
-            Map<String, String> templateTags = template.getPolicyTags();
-            if (templateTags != null) {
-                policyTags.putAll(templateTags);
+        final String policyInternalTag = policy.getInternalTag();
+        for ( final PolicyType type : PolicyType.values() ) {
+            final Map<String,String> policyTags = new LinkedHashMap<String, String>();
+            this.policyTagsByType.put( type, policyTags );
+
+            if ( type == PolicyType.INTERNAL ) {
+                ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
+                Set<ServiceTemplate> templates = svcManager.findAllTemplates();
+                for (ServiceTemplate template : templates) {
+                    Map<String, String> templateTags = template.getPolicyTags();
+                    if (templateTags != null) {
+                        policyTags.putAll(templateTags);
+                    }
+                }
+
+                if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null)
+                    policyTags.put(policyInternalTag, null);
+            }
+
+            for ( final String tag : type.getGuiTags() ) {
+                policyTags.put( tag, null );
             }
         }
 
-        typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
-
-        List<String> tagList = new ArrayList<String>();
-        String policyInternalTag = policy.getInternalTag();
-        if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null && !policyTags.containsKey(policyInternalTag))
-            tagList.add(policyInternalTag);
-        tagList.addAll(policyTags.keySet());
-        tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[policyTags.size()])));
+        final List<String> tagList = new ArrayList<String>();
+        tagList.addAll( policyTagsByType.get(selectedType).keySet());
+        tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[tagList.size()])));
 
         if (policyInternalTag != null)
             tagCombo.setSelectedItem(policyInternalTag);
@@ -171,8 +178,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
                 }
             }
         });
-        enableTagChooser();
-        showHideComponents();
+        enableDisable();
         add(mainPanel, BorderLayout.CENTER);
     }
 
@@ -180,18 +186,18 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         enableTagChooser();
     }
 
-    private void showHideComponents() {
-        hasInternalServiceTags = !policyTags.isEmpty();
-        typeCombo.setVisible(hasInternalServiceTags);
-        typeLabel.setVisible(hasInternalServiceTags);
-
-        tagCombo.setVisible(hasInternalServiceTags);
-        tagLabel.setVisible(hasInternalServiceTags);
-    }
-
     private void enableTagChooser() {
-        PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
-        tagCombo.setEnabled(policyType == PolicyType.INTERNAL && !policyTags.isEmpty() && canUpdate);
+        final PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
+        final boolean enableTags = !policyTagsByType.get( policyType ).isEmpty() && canUpdate;
+        if ( enableTags ) {
+            final List<String> tagList = new ArrayList<String>();
+            tagList.addAll( policyTagsByType.get(policyType).keySet());
+            tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[tagList.size()])));
+        }
+        if ( policy.getInternalTag() != null ) {
+            tagCombo.setSelectedItem( policy.getInternalTag() );                
+        }
+        tagCombo.setEnabled(enableTags);
     }
 
     @Override
@@ -214,9 +220,10 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         policy.setSoap(soapCheckbox.isSelected());
         policy.setType((PolicyType)typeCombo.getSelectedItem());
 
-        if (policy.getType() == PolicyType.INTERNAL) {
+        if (policy.getType() == PolicyType.INTERNAL || policy.getType().getGuiTags() != null) {
             String tag = (String) tagCombo.getSelectedItem();
             policy.setInternalTag(tag);
+            final Map<String,String> policyTags = this.policyTagsByType.get( policy.getType() );
             if (policyTags.get(tag) != null) {
                 if (StringUtils.isEmpty(policy.getXml())) //only update the policy the tag specific policy if there aren't any policy contents already
                     policy.setXml(policyTags.get(tag));

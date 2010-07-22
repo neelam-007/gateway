@@ -107,6 +107,20 @@ public final class ImageCache {
      *         cannot be found
      */
     public Image getIcon(String name, ClassLoader loader) {
+        return getIcon( name, loader, java.awt.Transparency.BITMASK );
+    }
+
+    /**
+     * Finds the Image as a resource with the given name using
+     * specified classloader.
+     *
+     * @param name   the image resource name
+     * @param loader  a specific classloader to use for the image.  Required.
+     * @param transparency the transparency to use with the image.
+     * @return the <code>Image</code> or <b>null</b> if the resource
+     *         cannot be found
+     */
+    public Image getIcon(String name, ClassLoader loader, int transparency) {
         if (name == null) return null;
 
         Reference<Image> imgref = imageMap.get(name);
@@ -130,7 +144,7 @@ public final class ImageCache {
 
         Image img = imageBytes == null ? null : Toolkit.getDefaultToolkit().createImage(imageBytes);
         if (img != null) {
-            Image img2 = toBufferedImage(img);
+            Image img2 = toBufferedImage(img,transparency);
 
             Reference<Image> r = new SoftReference<Image>(img2);
             imageMap.put(name, r);
@@ -144,10 +158,10 @@ public final class ImageCache {
      * The method creates a BufferedImage which represents
      * the same Image as the parameter but consumes less memory.
      */
-    static final Image toBufferedImage(Image img) {
+    static final Image toBufferedImage(Image img, int transparency) {
         // load the image
         new ImageIcon(img);
-        BufferedImage rep = createBufferedImage(img.getWidth(null), img.getHeight(null));
+        BufferedImage rep = createBufferedImage(img.getWidth(null), img.getHeight(null), transparency);
         Graphics g = rep.createGraphics();
         g.drawImage(img, 0, 0, null);
         g.dispose();
@@ -156,13 +170,13 @@ public final class ImageCache {
     }
 
     /** Creates BufferedImage with Transparency.BITMASK */
-    private static final BufferedImage createBufferedImage(int width, int height) {
+    private static final BufferedImage createBufferedImage(int width, int height, int transparency) {
         ColorModel model =
           GraphicsEnvironment.
           getLocalGraphicsEnvironment().
           getDefaultScreenDevice().
           getDefaultConfiguration().
-          getColorModel(java.awt.Transparency.BITMASK);
+          getColorModel(transparency);
 
         BufferedImage buffImage =
           new BufferedImage(model,

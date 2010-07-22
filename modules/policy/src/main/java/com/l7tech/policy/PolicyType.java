@@ -3,9 +3,14 @@
  */
 package com.l7tech.policy;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
+
 import static com.l7tech.policy.PolicyType.Supertype.SERVICE;
 import static com.l7tech.policy.PolicyType.Supertype.*;
-import com.l7tech.util.SyspropUtil;
 
 /**
  * Types of {@link Policy} objects
@@ -15,7 +20,7 @@ import com.l7tech.util.SyspropUtil;
  * @author alex
  */
 public enum PolicyType {
-    
+
     /**
      * A policy that belongs to a single PublishedService
      */
@@ -32,24 +37,9 @@ public enum PolicyType {
     INCLUDE_FRAGMENT(FRAGMENT, "Included Policy Fragment", true),
 
     /**
-     * A fragment that gets run prior to the invocation of a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
+     * A global fragment runs before or after a service policy
      */
-    PRE_SERVICE_FRAGMENT(FRAGMENT, "Pre-Service Policy Fragment", isEnableGlobalPolicies() ),
-
-    /**
-     * A fragment that gets run after the invocation of a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
-     */
-    POST_SERVICE_FRAGMENT(FRAGMENT, "Post-Service Policy Fragment", isEnableGlobalPolicies() ),
-
-    /**
-     * A fragment that gets run prior to WS-Security processing for a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
-     */
-    PRE_SECURITY_FRAGMENT(FRAGMENT, "Pre-Security Policy Fragment", isEnableGlobalPolicies() ),
-
-    /**
-     * A fragment that gets run after to WS-Security decoration for a {@link #SHARED_SERVICE} or {@link #PRIVATE_SERVICE} policy
-     */
-    POST_SECURITY_FRAGMENT(FRAGMENT, "Post-Security Policy Fragment", isEnableGlobalPolicies() ),
+    GLOBAL_FRAGMENT(FRAGMENT, "Global Policy Fragment", true, getGlobalTags() ),
 
     /**
      * A fragment that gets run before any routing assertion is attempted
@@ -92,6 +82,13 @@ public enum PolicyType {
     
     ;
 
+    public static final String TAG_GLOBAL_MESSAGE_RECEIVED = "message-received";
+    public static final String TAG_GLOBAL_PRE_SECURITY = "pre-security";
+    public static final String TAG_GLOBAL_PRE_SERVICE = "pre-service";
+    public static final String TAG_GLOBAL_POST_SECURITY = "post-security";
+    public static final String TAG_GLOBAL_POST_SERVICE = "post-service";
+    public static final String TAG_GLOBAL_MESSAGE_COMPLETED = "message-completed";
+
     @Override
     public String toString() {
         return name;
@@ -114,9 +111,14 @@ public enum PolicyType {
     }
 
     private PolicyType(Supertype supertype, String name, boolean includeInGui) {
+        this(supertype, name, includeInGui, null);
+    }
+
+    private PolicyType(Supertype supertype, String name, boolean includeInGui, Collection<String> guiTags) {
         this.supertype = supertype;
         this.name = name;
         this.shownInGui = includeInGui;
+        this.guiTags = guiTags==null ? Collections.<String>emptySet() : Collections.unmodifiableSet( new TreeSet<String>(guiTags) );
     }
 
     public String getName() {
@@ -134,11 +136,27 @@ public enum PolicyType {
         return shownInGui;
     }
 
-    private static boolean isEnableGlobalPolicies() {
-        return SyspropUtil.getBoolean( "com.l7tech.policy.globalEnabled", false );
+    /**
+     * Get the policy tags that should be shown in the GUI for this policy type.
+     *
+     * @return The set of tags (may be empty, never null)
+     */
+    public Set<String> getGuiTags() {
+        return guiTags;
+    }
+
+    private static Collection<String> getGlobalTags() {
+        return Arrays.asList(
+            TAG_GLOBAL_MESSAGE_RECEIVED,
+            TAG_GLOBAL_PRE_SECURITY,
+            TAG_GLOBAL_PRE_SERVICE,
+            TAG_GLOBAL_POST_SECURITY,
+            TAG_GLOBAL_POST_SERVICE,
+            TAG_GLOBAL_MESSAGE_COMPLETED );
     }
 
     private final String name;
     private final Supertype supertype;
     private final boolean shownInGui;
+    private final Set<String> guiTags;
 }

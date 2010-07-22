@@ -19,6 +19,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
@@ -239,6 +240,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
      * Suggested naming convention: moduleName-type[-subtype], e.g. esm-notification
      */
     @Size(min=1,max=64)
+    @Pattern(regexp="message-received|pre-security|pre-service|post-security|post-service|message-completed", groups={GlobalPolicyValidationGroup.class})
     public String getInternalTag() {
         return internalTag;
     }
@@ -325,4 +327,10 @@ public class Policy extends NamedEntityImp implements HasFolder {
 
         return assertion;
     }
+
+    /**
+     * Validation group with additional constraints for Global policies.
+     */
+    public interface GlobalPolicyValidationGroup {}
+
 }

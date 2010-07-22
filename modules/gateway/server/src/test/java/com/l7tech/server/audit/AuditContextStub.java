@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
 import java.util.*;
 
@@ -39,6 +39,7 @@ public class AuditContextStub implements AuditContextStubInt {
             details = new ArrayList<AuditDetail>();
             this.details.put( source, details );
         }
+        detail.setOrdinal( ordinal++ );
         details.add( detail );
     }
 
@@ -68,6 +69,13 @@ public class AuditContextStub implements AuditContextStubInt {
                 }
             }
 
+            Collections.sort( detailList, new ResolvingComparator<AuditDetail,Integer>(new Resolver<AuditDetail,Integer>(){
+                @Override
+                public Integer resolve( final AuditDetail key ) {
+                    return key.getOrdinal();
+                }
+            }, false) );
+
             record.setDetails( new LinkedHashSet<AuditDetail>(detailList) );
             lastRecord = record;
         }
@@ -78,6 +86,7 @@ public class AuditContextStub implements AuditContextStubInt {
     @Override
     public void clear() {
         record = null;
+        ordinal = 0;
         details = new HashMap<Object,List<AuditDetail>>();
     }
 
@@ -105,5 +114,6 @@ public class AuditContextStub implements AuditContextStubInt {
 
     private AuditRecord lastRecord;
     private AuditRecord record;
+    private int ordinal = 0;
     private Map<Object,List<AuditDetail>> details;
 }

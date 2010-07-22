@@ -53,6 +53,10 @@ public class MessageProcessingMessages extends Messages {
     public static final M ERROR_PRE_SECURITY          = m(3040, Level.WARNING, "Error processing pre-security policy: {0}");
     public static final M RUNNING_POST_SECURITY_POLICY= m(3041, Level.FINEST, "Processing post-security server policies");
     public static final M ERROR_POST_SECURITY         = m(3042, Level.WARNING, "Error processing post-security policy: {0}");
+    public static final M RUNNING_MESSAGE_RECEIVED_POLICY  = m(3043, Level.FINEST, "Processing message-received server policies");
+    public static final M ERROR_MESSAGE_RECEIVED           = m(3044, Level.WARNING, "Error processing message-received policy: {0}");
+    public static final M RUNNING_MESSAGE_COMPLETED_POLICY = m(3045, Level.FINEST, "Processing message-completed server policies");
+    public static final M ERROR_MESSAGE_COMPLETED          = m(3046, Level.WARNING, "Error processing message-completed policy: {0}");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

@@ -88,11 +88,15 @@ public class CreatePolicyAction extends SecureAction {
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                     policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
                 } catch ( DuplicateObjectException doe) {
-                    JOptionPane.showMessageDialog(mw,
-                          "Unable to save the policy '" + policy.getName() + "'.\n" +
-                          "The policy name is already used, please choose a different\n name and try again.",
-                          "Policy already exists",
-                          JOptionPane.ERROR_MESSAGE);
+                    String message = "Unable to save the policy '" + policy.getName() + "'.\n";
+                    if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                        message += "The policy name is already in use or there is an existing\n" +
+                                   "Global Policy Fragment with the '"+policy.getInternalTag()+"' tag.";
+                    } else {
+                        message += "The policy name is already used, please choose a different\n name and try again.";
+
+                    }
+                    DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
                 } catch (PolicyAssertionException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
                 } catch (SaveException e) {

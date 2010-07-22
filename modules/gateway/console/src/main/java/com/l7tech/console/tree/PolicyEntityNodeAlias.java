@@ -42,30 +42,4 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
     public String getName() {
         return getEntityHeader().getName()+" alias";
     }
-
-    @Override
-    protected String iconResource(boolean open) {
-        PolicyHeader header = getEntityHeader();
-        if(header == null) return "com/l7tech/console/resources/include16.png";
-
-        boolean isSoap = header.isSoap();
-        boolean isInternal = header.getPolicyType() == PolicyType.INTERNAL;
-
-        if (isInternal) {
-            if (isSoap){
-                return "com/l7tech/console/resources/include_internalsoap16Alias.png";
-            }
-            else{
-                return "com/l7tech/console/resources/include_internal16Alias.png";
-            }
-        } else {
-            if (isSoap){
-                return "com/l7tech/console/resources/include_soap16Alias.png";
-            }
-            else{
-                return "com/l7tech/console/resources/include16Alias.png";
-            }
-        }
-
-    }
 }

@@ -19,6 +19,7 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TextUtils;
 
 import org.hibernate.Criteria;
@@ -48,6 +49,11 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, PolicyAdmin.ROLE_NAME_TYPE_SUFFIX));
+
+    /**
+     * True if multiple global policy fragments of each tag are permitted, False for unique tags for global policy fragments.
+     */
+    private static final boolean multipleGlobalPolicies = SyspropUtil.getBoolean( "com.l7tech.server.policy.multipleGlobalPolicies", false );
 
     private PolicyCache policyCache;
     private final RoleManager roleManager;
@@ -329,6 +335,29 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     @Override
     protected void doFindHeaderCriteria( final Criteria criteria ) {
         criteria.add(Restrictions.eq("type", PolicyType.INCLUDE_FRAGMENT));
+    }
+
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints( final Policy entity ) {
+        List<Map<String,Object>> constraints = new ArrayList<Map<String,Object>>();
+        Map<String,Object> nameMap = new HashMap<String, Object>();
+        nameMap.put("name", entity.getName());
+        constraints.add( nameMap );
+
+        if ( entity.getType() == PolicyType.GLOBAL_FRAGMENT && !multipleGlobalPolicies ) {
+            Map<String,Object> globalTagMap = new HashMap<String, Object>();
+            globalTagMap.put("type", PolicyType.GLOBAL_FRAGMENT);
+            if (entity.getInternalTag()!=null)
+                globalTagMap.put("internalTag", entity.getInternalTag());
+            constraints.add( globalTagMap );                
+        }
+
+        return constraints;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
     }
 }
 

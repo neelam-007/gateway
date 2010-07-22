@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Global policy that sets audit level, fault level and a variable
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:AuditAssertion>
+            <L7p:SaveRequest booleanValue="true"/>
+            <L7p:SaveResponse booleanValue="true"/>
+        </L7p:AuditAssertion>
+        <L7p:FaultLevel>
+            <L7p:LevelInfo soapFaultLevel="included">
+                <L7p:Level intValue="4"/>
+                <L7p:SignSoapFault booleanValue="true"/>
+            </L7p:LevelInfo>
+        </L7p:FaultLevel>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="dmFsdWU="/>
+            <L7p:VariableToSet stringValue="test"/>
+        </L7p:SetVariable>
+    </wsp:All>
+</wsp:Policy>

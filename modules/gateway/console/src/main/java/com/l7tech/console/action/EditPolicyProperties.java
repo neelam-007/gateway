@@ -11,6 +11,7 @@ import com.l7tech.policy.PolicyHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
@@ -135,10 +136,15 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                     } catch ( DuplicateObjectException doe) {
-                        String msg =
-                              "Unable to save the policy '" + policy.getName() + "'.\n" +
-                              "The policy name is already used, please choose a different\n name and try again.";
-                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy name", msg, null);
+                        String message = "Unable to save the policy '" + policy.getName() + "'.\n";
+                        if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                            message += "The policy name is already in use or there is an existing\n" +
+                                       "Global Policy Fragment with the '"+policy.getInternalTag()+"' tag.";
+                        } else {
+                            message += "The policy name is already used, please choose a different\n name and try again.";
+                        }
+
+                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
                     } catch (SaveException e) {
                         String msg = "Error updating policy:" + e.getMessage();
                         logger.log(Level.INFO, msg, e);

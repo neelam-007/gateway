@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
 
 import javax.validation.groups.Default;
@@ -83,6 +84,11 @@ class EntityPropertiesHelper {
             PublishedService service = (PublishedService) bean;
             if ( service.isSoap() ) {
                 groups = new Class[]{ Default.class, PublishedService.SoapValidationGroup.class };
+            }
+        } else if ( bean instanceof Policy ) {
+            Policy policy = (Policy) bean;
+            if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                groups = new Class[]{ Default.class, Policy.GlobalPolicyValidationGroup.class };
             }
         }
 

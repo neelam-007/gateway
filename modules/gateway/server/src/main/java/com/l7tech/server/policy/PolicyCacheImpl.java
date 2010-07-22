@@ -22,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.*;
@@ -219,10 +220,13 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     }
 
     @Override
-    public Set<String> getGlobalPoliciesByType( final PolicyType type ) {
+    public Set<String> getGlobalPoliciesByTypeAndTag( final PolicyType type,
+                                                      final String tag ) {
         ensureCacheValid();
 
-        Set<String> guids = policyTypeToGuidsMap.get(type);
+        final Pair<PolicyType,String> key = new Pair<PolicyType,String>( type, tag );
+
+        Set<String> guids = policyTypeAndTagToGuidsMap.get(key);
         if (guids != null) {
             return guids;
         }
@@ -232,7 +236,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         read.lock();
         try {
             for ( PolicyCacheEntry pce : policyCache.values() ) {
-                if ( type == null || type == pce.policy.getType() ) {
+                if ( (type == null || type == pce.policy.getType()) &&
+                     (tag == null || tag.equals( pce.policy.getInternalTag() ))) {
                     guids.add( pce.policy.getGuid() );
                 }
             }
@@ -240,7 +245,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             read.unlock();
         }
 
-        policyTypeToGuidsMap.putIfAbsent(type, guids);
+        policyTypeAndTagToGuidsMap.putIfAbsent(key, guids);
 
         return guids;
     }
@@ -248,15 +253,16 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     @Override
     public String registerGlobalPolicy( final String name,
                                         final PolicyType type,
+                                        final String tag,
                                         final String xml ) {
         ensureCacheValid();
 
-        RegisteredPolicy policy = new RegisteredPolicy( name, type, xml );
+        RegisteredPolicy policy = new RegisteredPolicy( name, type, tag, xml );
 
         final Lock write = lock.writeLock();
         write.lock();
         try {
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
             guidToPolicyMap.put( policy.getGuid(), policy );
             updateInternal( policy );
         } finally {
@@ -437,7 +443,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
             policyCache.clear();
             guidToOidMap.clear();
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
@@ -658,7 +664,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private final Set<Long> policiesThatAreUnlicensed = new HashSet<Long>();
     private final Map<Long, PolicyCacheEntry> policyCache = new HashMap<Long, PolicyCacheEntry>(); // policy cache entries must be closed on removal
     private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
-    private final ConcurrentMap<PolicyType, Set<String>> policyTypeToGuidsMap = new ConcurrentHashMap<PolicyType, Set<String>>();
+    private final ConcurrentMap<Pair<PolicyType,String>, Set<String>> policyTypeAndTagToGuidsMap = new ConcurrentHashMap<Pair<PolicyType,String>, Set<String>>();
     private final Map<String, RegisteredPolicy> guidToPolicyMap = new HashMap<String,RegisteredPolicy>();
 
     private void notifyUpdate( final Policy policy ) {
@@ -792,7 +798,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
 
             final Map<Long, Policy> usingPolicies = new HashMap<Long,Policy>();
             findAllUsages( policy.getOid(), usingPolicies );
@@ -827,7 +833,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
 
             PolicyCacheEntry pce = cacheGet( oid );
             if ( pce == null ) {
@@ -1078,7 +1084,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
             cacheIsInvalid = true;
         } finally {
             write.unlock();
@@ -1258,7 +1264,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final Lock write = lock.writeLock();
         write.lock();
         try {
-            policyTypeToGuidsMap.clear();
+            policyTypeAndTagToGuidsMap.clear();
             markDirty( policyIds );
             for ( Long oid : policyIds ) {
                 PolicyCacheEntry pce = cacheGet(oid);
@@ -1477,6 +1483,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
         RegisteredPolicy( final String name,
                           final PolicyType type,
+                          final String tag,
                           final String xml ){
             if ( name==null || name.trim().isEmpty() ) throw new IllegalArgumentException("name is required.");
             if ( type==null ) throw new IllegalArgumentException("type is required.");
@@ -1486,6 +1493,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             setGuid( UUID.randomUUID().toString() );
             setName( name );
             setType( type );
+            setInternalTag( tag );
             setXml( xml );
             lock();
         }

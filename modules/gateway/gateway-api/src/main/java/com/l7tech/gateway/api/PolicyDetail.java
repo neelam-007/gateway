@@ -189,7 +189,12 @@ public class PolicyDetail {
         /**
          * Internal Use Policy
          */
-        @XmlEnumValue("Internal") INTERNAL
+        @XmlEnumValue("Internal") INTERNAL,
+
+        /**
+         * Global Policy Fragment
+         */
+        @XmlEnumValue("Global") GLOBAL
     }
 
     //- PROTECTED

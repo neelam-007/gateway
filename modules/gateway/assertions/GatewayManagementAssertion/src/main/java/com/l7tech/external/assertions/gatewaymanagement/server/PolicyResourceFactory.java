@@ -125,10 +125,6 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         switch ( policy.getType() ) {
             case PRIVATE_SERVICE:
             case SHARED_SERVICE:
-            case PRE_SERVICE_FRAGMENT:
-            case POST_SERVICE_FRAGMENT:
-            case PRE_SECURITY_FRAGMENT:
-            case POST_SECURITY_FRAGMENT:
             case PRE_ROUTING_FRAGMENT:
             case SUCCESSFUL_ROUTING_FRAGMENT:
             case FAILED_ROUTING_FRAGMENT:
@@ -136,12 +132,15 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             case AUTHENTICATION_FAILURE_FRAGMENT:
             case AUTHORIZATION_SUCCESS_FRAGMENT:
             case AUTHORIZATION_FAILURE_FRAGMENT:
-                throw new ResourceAccessException("Access of unsupported policy type.");
+                throw new ResourceAccessException( "Access of unsupported policy type." );
             case INCLUDE_FRAGMENT:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.INCLUDE );
                 break;
             case INTERNAL:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.INTERNAL );
+                break;
+            case GLOBAL_FRAGMENT:
+                policyDetail.setPolicyType( PolicyDetail.PolicyType.GLOBAL );
                 break;
         }
         policyDetail.setProperties( getProperties( policy, Policy.class ) );
@@ -175,10 +174,13 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
                 policyType = PolicyType.INCLUDE_FRAGMENT;
                 break;
             case INTERNAL:
-                policyType =  PolicyType.INTERNAL;
+                policyType = PolicyType.INTERNAL;
+                break;
+            case GLOBAL:
+                policyType = PolicyType.GLOBAL_FRAGMENT;
                 break;
             default:
-                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy type");
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy type" );
         }
         final String policyXml = policyHelper.validatePolicySyntax(policyResource.getContent()); 
         final Policy policy = new Policy( policyType, policyName, policyXml, false );
@@ -210,6 +212,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
             switch ( policyHeader.getPolicyType() ) {
                 case INCLUDE_FRAGMENT:
                 case INTERNAL:
+                case GLOBAL_FRAGMENT:
                     filteredHeaders.add( policyHeader );
                     break;
             }
@@ -225,6 +228,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         switch ( entity.getType() ) {
             case INCLUDE_FRAGMENT:
             case INTERNAL:
+            case GLOBAL_FRAGMENT:
                 policy = entity;
                 break;
         }

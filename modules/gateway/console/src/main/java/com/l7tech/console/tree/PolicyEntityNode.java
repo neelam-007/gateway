@@ -3,23 +3,30 @@
  */
 package com.l7tech.console.tree;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.servicesAndPolicies.PolicyNodeFilter;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** @author alex */
 @SuppressWarnings( { "serial" } )
 public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
     protected volatile Reference<Policy> policy;
+    private static Map<String, Reference<Image>> aliasDecoratedImages = new ConcurrentHashMap<String, Reference<Image>>();
 
     public PolicyEntityNode(PolicyHeader e) {
         this(e, null);
@@ -112,43 +119,34 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     }
 
     @Override
+    public Image getIcon() {
+        Image image = super.getIcon();
+        if ( getEntityHeader().isAlias() ) {
+            image = getAliasDecoratedImage( iconResource(false), image );
+        }
+        return image;
+    }
+
+    @Override
     protected String iconResource(boolean open) {
         PolicyHeader header = getEntityHeader();
         if(header == null) return "com/l7tech/console/resources/include16.png";
 
         boolean isSoap = header.isSoap();
         boolean isInternal = header.getPolicyType() == PolicyType.INTERNAL;
+        boolean isGlobal = header.getPolicyType() == PolicyType.GLOBAL_FRAGMENT;
 
+        String typeName = "";
         if (isInternal) {
-            if (isSoap){
-                if(header.isAlias()){
-                    return "com/l7tech/console/resources/include_internalsoap16Alias.png";                    
-                }else{
-                    return "com/l7tech/console/resources/include_internalsoap16.png";
-                }
-            }
-            else{
-                if(header.isAlias()){
-                    return "com/l7tech/console/resources/include_internal16Alias.png";                    
-                }else{
-                    return "com/l7tech/console/resources/include_internal16.png";
-                }
-            }
-        } else {
-            if (isSoap){
-                if(header.isAlias()){
-                    return "com/l7tech/console/resources/include_soap16Alias.png";                    
-                }else{
-                    return "com/l7tech/console/resources/include_soap16.png";
-                }
-            }
-            else{
-                if(header.isAlias()){
-                    return "com/l7tech/console/resources/include16Alias.png";                    
-                }else{
-                    return "com/l7tech/console/resources/include16.png";
-                }
-            }
+            typeName = "internal";
+        } else if (isGlobal) {
+            typeName = "global";
+        }
+
+        if (isSoap){
+            return "com/l7tech/console/resources/include_"+typeName+"soap16.png";
+        } else{
+            return "com/l7tech/console/resources/include"+(typeName.isEmpty()?"":"_"+typeName)+"16.png";
         }
     }
 
@@ -156,4 +154,27 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     public String toString() {
         return getName();
     }
+
+    private static Image getAliasDecoratedImage(final String bgPath, final Image bgImage) {
+        Reference<Image> ref = aliasDecoratedImages.get(bgPath);
+        if (ref != null) {
+            Image ret = ref.get();
+            if (ret != null)
+                return ret;
+        }
+
+        Image ret = addAliasOverlay(bgImage);
+        aliasDecoratedImages.put(bgPath, new SoftReference<Image>(ret));
+        return ret;
+    }
+
+    private static Image addAliasOverlay(final Image bgImage) {
+        final Image ret = new BufferedImage(18, 18, BufferedImage.TYPE_INT_ARGB);
+        final Image aliasImage = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/alias16.png", PolicyEntityNode.class.getClassLoader() ,java.awt.Transparency.TRANSLUCENT);
+        final Graphics g = ret.getGraphics();
+        g.drawImage( bgImage, 0, 0, null );
+        g.drawImage( aliasImage, 0, 0, null );
+        return ret;
+    }
+
 }

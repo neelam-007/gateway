@@ -87,19 +87,21 @@ public interface PolicyCache {
      * Get GUIDs for global policies by type.
      *
      * @param type The type of policy (null for any type)
+     * @param tag The desired tag (null for any tag)
      * @return The set of GUIDs for matching policies
      */
-    Set<String> getGlobalPoliciesByType( PolicyType type );
+    Set<String> getGlobalPoliciesByTypeAndTag( PolicyType type, String tag );
 
     /**
      * Register a global policy.
      *
      * @param name The name for the policy (required)
      * @param type The type of the policy (required)
+     * @param tag The tag for the policy (may be null)
      * @param xml The policy XML (required)
      * @return The GUID for the registered policy
      */
-    String registerGlobalPolicy( String name, PolicyType type, String xml );
+    String registerGlobalPolicy( String name, PolicyType type, String tag, String xml );
 
     /**
      * Unregister a global policy.

@@ -206,6 +206,18 @@
         <constructor-arg index="1"><null/></constructor-arg>
     </bean>
 
+    <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
+        <constructor-arg value="1234567890"/>
+        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
+        <property name="identityProviderFactory" ref="identityProviderFactory" />
+    </bean>
+
+    <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
+        <constructor-arg index="0" ref="messageSummaryAuditFactory"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" ref="messageProcessingEventChannel"/>
+    </bean>
+
     <bean id="securityTokenResolver" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
         <constructor-arg index="0" ref="sslKeystoreCertificate"/>
         <constructor-arg index="1" ref="sslKeystoreKey"/>

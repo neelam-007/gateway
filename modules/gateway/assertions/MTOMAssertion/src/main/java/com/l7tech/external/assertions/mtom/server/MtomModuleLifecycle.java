@@ -118,7 +118,7 @@ public class MtomModuleLifecycle implements ApplicationListener {
         if ( !isLicensed() ) {
             logger.warning("The MTOM module is not licensed. MTOM will not be available.");
         } else {
-            policyGuid = policyCache.registerGlobalPolicy( "MTOM Global Policy", PolicyType.PRE_SECURITY_FRAGMENT, mtomDecodePolicy );
+            policyGuid = policyCache.registerGlobalPolicy( "MTOM Global Policy", PolicyType.GLOBAL_FRAGMENT, PolicyType.TAG_GLOBAL_PRE_SECURITY, mtomDecodePolicy );
         }
     }
 

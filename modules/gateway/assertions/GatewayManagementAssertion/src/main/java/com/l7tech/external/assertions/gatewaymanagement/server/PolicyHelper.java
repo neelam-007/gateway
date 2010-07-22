@@ -597,8 +597,11 @@ public class PolicyHelper {
                 case INTERNAL:
                     requestPolicyType = PolicyType.INTERNAL;
                     break;
+                case GLOBAL:
+                    requestPolicyType = PolicyType.GLOBAL_FRAGMENT;
+                    break;
                 default:
-                    throw new ResourceFactory.ResourceAccessException("Unknown policy type '" + policyType + "'");
+                    throw new ResourceFactory.ResourceAccessException( "Unknown policy type '" + policyType + "'" );
             }
         } else {
             requestPolicyType = PolicyType.PRIVATE_SERVICE;

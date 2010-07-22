@@ -2,6 +2,7 @@ package com.l7tech.server.message;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -13,6 +14,8 @@ import com.l7tech.message.Message;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
+import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.Map;
@@ -27,7 +30,7 @@ import org.xml.sax.SAXException;
  *
  * <p>Messages, authentication and auditing/fault (configuration) are handled
  * by the parent PEC. The child PEC is responsible for variables, routing and
- * other instance specfic duties.</p>
+ * other instance specific duties.</p>
  */
 class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
 
@@ -134,6 +137,21 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     @Override
+    public RoutingStatus getRoutingStatus() {
+        return context.getRoutingStatus();
+    }
+
+    @Override
+    public void setRoutingStatus( final RoutingStatus routingStatus ) {
+        context.setRoutingStatus( routingStatus );
+    }
+
+    @Override
+    public boolean isPostRouting() {
+        return context.isPostRouting();
+    }
+
+    @Override
     public void routingStarted() {
         context.routingStarted();
     }
@@ -196,6 +214,26 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     @Override
     public void setPolicyExecutionAttempted( final boolean attempted ) {
         context.setPolicyExecutionAttempted( attempted );
+    }
+
+    @Override
+    public void pushAssertionOrdinal( final int ordinal ) {
+        context.pushAssertionOrdinal( ordinal );
+    }
+
+    @Override
+    public Collection<Integer> getAssertionOrdinalPath() {
+        return context.getAssertionOrdinalPath();
+    }
+
+    @Override
+    public int popAssertionOrdinal() throws NoSuchElementException {
+        return context.popAssertionOrdinal();
+    }
+
+    @Override
+    public void setTraceListener( final AssertionTraceListener traceListener ) {
+        context.setTraceListener( traceListener );
     }
 
     @Override
