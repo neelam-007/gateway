@@ -474,14 +474,6 @@ public class Wizard extends JDialog {
         updateWizardControls(next);
         validate();
         fireSelectionChanged(next);
-        //refreshDialog();
-    }
-
-    private void refreshDialog() {
-        setSize(
-            Math.max(getSize().width, getPreferredSize().width),
-            Math.max(getSize().height, getPreferredSize().height)
-        );
     }
 
     /**
