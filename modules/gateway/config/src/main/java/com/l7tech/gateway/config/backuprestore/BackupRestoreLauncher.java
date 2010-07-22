@@ -92,10 +92,11 @@ public class BackupRestoreLauncher {
                     System.exit(1);
                     break;
                 case PARTIAL_SUCCESS:
-                    System.out.println("\n" + utilityType.getName() + " of SecureSpan Gateway image partially succeeded");
+                    final String partialSuccessMsg = "\n" + utilityType.getName() + " of SecureSpan Gateway image partially succeeded";
+                    ImportExportUtilities.logAndPrintMajorMessage(logger, Level.SEVERE, partialSuccessMsg, true, System.out);
                     List<String> failedComponents = result.getFailedComponents();
                     for (String s : failedComponents) {
-                        System.out.println("Failed component: " + s);
+                        ImportExportUtilities.logAndPrintMajorMessage(logger, Level.SEVERE, "Failed component: " + s, true, System.out);
                     }
                     System.exit(2);
                     break;
