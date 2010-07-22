@@ -181,7 +181,7 @@ public class WorkSpacePanel extends JPanel {
                 if (c instanceof ContainerListener) {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            log.fine("Removig container listener of type " + c.getClass());
+                            log.fine("Removing container listener of type " + c.getClass());
                             tabbedPane.
                               removeContainerListener((ContainerListener)c);
                         }
