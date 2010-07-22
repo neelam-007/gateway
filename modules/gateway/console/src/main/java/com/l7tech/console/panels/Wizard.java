@@ -474,7 +474,7 @@ public class Wizard extends JDialog {
         updateWizardControls(next);
         validate();
         fireSelectionChanged(next);
-        refreshDialog();
+        //refreshDialog();
     }
 
     private void refreshDialog() {
