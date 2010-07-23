@@ -336,7 +336,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
      * @return The schema source or null
      */
     private TarariSchemaSource namespaceFilter( final TarariSchemaSource tarariSchemaSource, final String namespaceUri ) {
-        return namespaceUri == null || namespaceUri.equals( tarariSchemaSource.getTargetNamespace() ) ?
+        return tarariSchemaSource != null && (namespaceUri == null || namespaceUri.equals( tarariSchemaSource.getTargetNamespace() )) ?
                 tarariSchemaSource :
                 null ;
     }
