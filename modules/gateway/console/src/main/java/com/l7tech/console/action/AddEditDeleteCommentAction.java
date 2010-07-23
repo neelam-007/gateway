@@ -90,7 +90,7 @@ public class AddEditDeleteCommentAction extends SecureAction{
             @Override
             public void run() {
                 if(commentDlg.isConfirmed()) {
-                    if (comment.getComment().trim().isEmpty()) {
+                    if (!comment.hasComment()) {
                         assertion.setAssertionComment(null);
                     } else {
                         assertion.setAssertionComment(comment);

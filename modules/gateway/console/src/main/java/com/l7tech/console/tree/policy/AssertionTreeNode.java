@@ -263,13 +263,26 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             final Assertion.Comment comment = ass.getAssertionComment();
             if(comment != null){
                 if(sb.length() > 0) sb.append("<br>");
-                String text = " " + comment.getComment();
+                StringBuilder builder = new StringBuilder();
+                String leftComment = comment.getAssertionComment(Assertion.Comment.LEFT_COMMENT);
+                final boolean hasLeft = leftComment != null && !leftComment.trim().isEmpty();
+                if(hasLeft) {
+                    leftComment = leftComment.replaceAll("/", "&#47;"); //replace any '/' characters so they display correctly in a pop up
+                    leftComment = TextUtils.breakOnMultipleLines(leftComment, 100, "<br> ");
+                    builder.append(" " + leftComment);
+                }
 
-                text = text.replaceAll("(^|[^<])/", "&#47;"); //replace any '/' characters so they display correctly in a pop up, don't replace them if they are preceeded
-                //by '<' which allows any html tags to continue to work in the mouse overs
-                text = TextUtils.breakOnMultipleLines(text, 100, "<br> ");
-                
-                sb.append(text);
+                String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
+                if(rightComment != null && !rightComment.trim().isEmpty()) {
+                    if(hasLeft) builder.append("<br><br>");
+
+                    rightComment = rightComment.replaceAll("/", "&#47;"); //replace any '/' characters so they display correctly in a pop up
+                    rightComment = TextUtils.breakOnMultipleLines(rightComment, 100, "<br> ");
+                    builder.append(" " + rightComment);
+                }
+
+
+                sb.append(builder.toString());
             }
 
             if (sb.length() > 0) {

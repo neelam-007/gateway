@@ -182,6 +182,9 @@ public abstract class Assertion implements Cloneable, Serializable {
         final Assertion clone;
         try {
             clone = (Assertion) super.clone();
+            if (this.assertionComment != null){
+                clone.setAssertionComment(this.assertionComment.clone());
+            }
             clone.setParent(null);
         } catch (CloneNotSupportedException e) {
             // can't happen
@@ -872,40 +875,84 @@ public abstract class Assertion implements Cloneable, Serializable {
         enabled = fields.get("enabled", true);
     }
 
-    public static class Comment implements Serializable{
+    /**
+     * Comment simply stores all it's properties in a Map. This allows for the current left and right comment without
+     * specifying this in the interface and for future enhancements which may require other properties to be stored.
+     * This will help avoid losing any existing customer comments should this feature be extended i.e. their
+     * comments won't be lost due to serialization.
+     */
+    public static class Comment implements Serializable, Cloneable{
 
-        public final static String COMMENT_ALIGN = "COMMENT.ALIGN";
+        public final static String LEFT_COMMENT = "LEFT.COMMENT";
+        public final static String RIGHT_COMMENT = "RIGHT.COMMENT";
 
-        public final static String RIGHT_ALIGN = "Right";
-        public final static String LEFT_ALIGN = "Left";
-
-        private String comment;
-        private Map<String, String> properties;
+        private Map<String, String> properties = new HashMap<String, String>();
 
         public Comment() {
         }
 
-        public Comment(String comment) {
-            this.comment = comment;
+        public void setComment(String comment, String commentType) {
+            if(comment == null || comment.trim().isEmpty()){
+                if(commentType != null && properties.containsKey(commentType)){
+                    properties.remove(commentType);
+                }
+                return;
+            }
+            properties.put(commentType, comment);
         }
 
-        public void setComment(String comment) {
-            this.comment = comment;
-        }
-
-        public String getComment() {
-            return comment;
+        /**
+         * Get a specific comment.
+         * 
+         * @param commentType String which comment to get. See {@link #LEFT_COMMENT} and {@link #RIGHT_COMMENT}    
+         * @return String comment. May be null if the commentType does not have a value.
+         */
+        public String getAssertionComment(String commentType) {
+            return getProperties().get(commentType);
         }
 
         public Map<String, String> getProperties() {
-            if(properties == null) properties = new HashMap<String, String>();
-            
             return properties;
         }
 
         public void setProperties(Map<String, String> properties) {
             this.properties = properties;
         }
+
+        /**
+         * Does this Comment have any valid comments
+         * @return true if Comment has a non empty left or right comment.
+         */
+        public boolean hasComment(){
+            final String leftComment = properties.get(LEFT_COMMENT);
+            final boolean hasLeft = leftComment != null && !leftComment.trim().isEmpty();
+
+            final String rightComment = properties.get(RIGHT_COMMENT);
+            final boolean hasRight = rightComment != null && !rightComment.trim().isEmpty();
+
+
+            return hasLeft || hasRight;
+        }
+
+        @Override
+        public Comment clone() throws CloneNotSupportedException {
+
+            final Comment comment;
+            try {
+                comment = (Comment) super.clone();
+            } catch (CloneNotSupportedException e) {
+                // can't happen
+                throw new RuntimeException(e);
+            }
+
+            final Map<String, String> props = comment.getProperties();
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                props.put(entry.getKey(), entry.getValue());
+            }
+            
+            return comment;
+        }
+
     }
 }
 

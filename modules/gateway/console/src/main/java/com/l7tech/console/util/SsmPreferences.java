@@ -48,7 +48,17 @@ public interface SsmPreferences {
     * key for value for how many ssg url's the Manager remembers 
     * */
     String NUM_SSG_HOSTS_HISTORY = "num.ssg.hosts.history";
-    
+
+    /*
+    * key for value for default maximum left comment
+    * */
+    String NUM_SSG_MAX_LEFT_COMMENT = "num.ssg.max.left.comment";
+
+    /*
+    * key for value for default maximum right comment 
+    * */
+    String NUM_SSG_MAX_RIGHT_COMMENT = "num.ssg.max.right.comment";
+
     /**
      * toolbars property (icons, text, icons and text)
      */
@@ -78,6 +88,10 @@ public interface SsmPreferences {
     String AUDIT_WINDOW_AUDIT_TYPE = "auditWindow.search.auditType";
     String AUDIT_WINDOW_NODE = "auditWindow.search.node";
     String AUDIT_WINDOW_REQUEST_ID = "auditWindow.search.requestId";
+    int MAX_RIGHT_COMMENT_SIZE = 4000;
+    int MAX_LEFT_COMMENT_SIZE = 100;
+    int DEFAULT_MAX_LEFT_COMMENT = 30;
+    int DEFAULT_MAX_RIGHT_COMMENT = 100;
 
     /**
      * Update preferences from given properties, optionally

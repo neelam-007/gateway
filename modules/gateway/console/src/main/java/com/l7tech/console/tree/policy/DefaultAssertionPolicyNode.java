@@ -8,21 +8,16 @@ import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.console.action.SelectIdentityTargetAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,11 +26,6 @@ import java.util.logging.Logger;
  */
 public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssertionTreeNode<AT> {
     private static final Logger logger = Logger.getLogger(DefaultAssertionPolicyNode.class.getName());
-    private static final int MAX_CACHED_TIME = 1000 * 60 * 5; // 5 mins
-    private static CachedValue<Integer> rhsCachedValue = null;
-    private static CachedValue<Integer> lhsCachedValue = null;
-
-
     private final Action propertiesAction;
 
     public DefaultAssertionPolicyNode(AT assertion) {
@@ -95,17 +85,40 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
         if(comment == null) return displayText;
 
-        final Map<String,String> props = comment.getProperties();
-        final String style = props.get(Assertion.Comment.COMMENT_ALIGN);
-
         int maxRhsComment = getMaxRhsCommentLength();
         int maxLhsComment = getMaxLhsCommentLength();
 
-        if (style != null && style.equals(Assertion.Comment.LEFT_ALIGN)) {
-            return "<html><font color=\"gray\">" + TextUtils.truncateStringAtEnd(comment.getComment(), maxLhsComment) + "</font>&nbsp;" + displayText + "</html>";
-        } else {
-            return "<html>" + displayText + "&nbsp;<font color=\"gray\">" + TextUtils.truncateStringAtEnd(comment.getComment(), maxRhsComment) + "</font></html>";
+        final String leftComment = comment.getAssertionComment(Assertion.Comment.LEFT_COMMENT);
+        final boolean hasLeft = leftComment != null && !leftComment.trim().isEmpty() && maxLhsComment > 0;
+
+        final String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
+        final boolean hasRight = rightComment != null && !rightComment.trim().isEmpty() && maxRhsComment > 0;
+
+        StringBuilder builder = new StringBuilder("<html>");
+        if (hasLeft) {
+            final String stringToDisplay;
+            if(maxLhsComment < 4){
+                stringToDisplay = leftComment.substring(0, maxLhsComment);
+            } else{
+                stringToDisplay = TextUtils.truncateStringAtEnd(leftComment, maxLhsComment);
+            }
+            builder.append("<font color=\"gray\">" + stringToDisplay + "</font>&nbsp;");
         }
+
+        builder.append(displayText);
+
+        if (hasRight) {
+            final String stringToDisplay;
+            if(maxRhsComment < 4){
+                stringToDisplay = rightComment.substring(0, maxRhsComment);
+            } else{
+                stringToDisplay = TextUtils.truncateStringAtEnd(rightComment, maxRhsComment);
+            }
+            builder.append("&nbsp;<font color=\"gray\">" + stringToDisplay + "</font>");
+        }
+
+        builder.append("</html>");
+        return builder.toString();
     }
 
     /**
@@ -150,75 +163,36 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
     // - PRIVATE
 
-    private static class CachedValue<T> {
-        private long lastUpdateTime;
-        private T value;
-
-        private CachedValue(T value) {
-            this.value = value;
-            this.lastUpdateTime = System.currentTimeMillis();
-        }
-
-        public long getLastUpdateTime() {
-            return lastUpdateTime;
-        }
-
-        public T getCachedValue() {
-            return value;
-        }
-    }
-
     private static int getMaxRhsCommentLength() {
-        int returnValue = 100;
-        if (rhsCachedValue != null) {
-            if (rhsCachedValue.getLastUpdateTime() < System.currentTimeMillis() - MAX_CACHED_TIME) {
-                //need to updated cached value
-                rhsCachedValue = getClusterPropertyValue("policyEditor.maxRhsCommentSize", returnValue);
-            }else{
-                returnValue = rhsCachedValue.getCachedValue();
+        final SsmPreferences ssmPreferences = TopComponents.getInstance().getPreferences();
+        final String sMaxRightComment = ssmPreferences.getString(SsmPreferences.NUM_SSG_MAX_RIGHT_COMMENT, "100");
+        if(sMaxRightComment != null && !sMaxRightComment.equals("")){
+            try{
+                return Integer.parseInt(sMaxRightComment);
+            }catch(NumberFormatException nfe){
+                //Swallow - incorrectly set property
+                //don't need to set, it's has an internal default value
+                logger.log( Level.FINE, "Ignoring invalid maximum right comment value ''{0}''.", sMaxRightComment);
             }
-        }else {
-            rhsCachedValue = getClusterPropertyValue("policyEditor.maxRhsCommentSize", returnValue);
-            returnValue = rhsCachedValue.getCachedValue();
         }
 
-        return returnValue;
+        return SsmPreferences.DEFAULT_MAX_RIGHT_COMMENT;
     }
 
     private static int getMaxLhsCommentLength() {
-        int returnValue = 30;
-        if (lhsCachedValue != null) {
-            if (lhsCachedValue.getLastUpdateTime() < System.currentTimeMillis() - MAX_CACHED_TIME) {
-                //need to updated cached value
-                lhsCachedValue = getClusterPropertyValue("policyEditor.maxLhsCommentSize", returnValue);
-            }else{
-                returnValue = lhsCachedValue.getCachedValue();
+        final SsmPreferences ssmPreferences = TopComponents.getInstance().getPreferences();
+        final String sMaxLeftComment = ssmPreferences.getString(SsmPreferences.NUM_SSG_MAX_LEFT_COMMENT, "30");
+        if(sMaxLeftComment != null && !sMaxLeftComment.equals("")){
+            try{
+                return Integer.parseInt(sMaxLeftComment);
+            }catch(NumberFormatException nfe){
+                //Swallow - incorrectly set property
+                //don't need to set, it's has an internal default value
+                logger.log( Level.FINE, "Ignoring invalid maximum left comment value ''{0}''.", sMaxLeftComment);
             }
-        }else {
-            lhsCachedValue = getClusterPropertyValue("policyEditor.maxLhsCommentSize", returnValue);
-            returnValue = lhsCachedValue.getCachedValue();
         }
 
-        return returnValue;
+        return SsmPreferences.DEFAULT_MAX_LEFT_COMMENT;
+
     }
-
-    private static CachedValue<Integer> getClusterPropertyValue(String value, int defaultValue){
-        CachedValue<Integer> returnValue = new CachedValue<java.lang.Integer>(defaultValue);
-        try {
-            Registry reg = Registry.getDefault();
-            ClusterProperty clusterProperty = reg.getClusterStatusAdmin().findPropertyByName(value);
-
-            if(clusterProperty != null){
-                returnValue = new CachedValue<java.lang.Integer>(Integer.parseInt(clusterProperty.getValue()));
-            }
-        } catch (FindException e) {
-            logger.log(Level.INFO, "Could not find cluster property '" + value + "': " + ExceptionUtils.getMessage(e));
-        }
-        catch (Exception e) {
-            logger.log(Level.INFO, "Problem with cluster property's value for property '" + value + "': " + ExceptionUtils.getMessage(e));
-        }
-
-        return returnValue;
-    }
-    
 }

@@ -1,17 +1,18 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.util.Map;
 
 public class AssertionCommentDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextArea commentTextArea;
-    private JComboBox alignComboBox;
+    private JTextField leftCommentTextArea;
+    private JTextArea rightCommentTextArea;
     private boolean confirmed;
     private final Assertion.Comment assertionComment;
 
@@ -23,12 +24,14 @@ public class AssertionCommentDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
 
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -36,12 +39,14 @@ public class AssertionCommentDialog extends JDialog {
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onCancel();
             }
         });
 
         contentPane.registerKeyboardAction(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -51,34 +56,43 @@ public class AssertionCommentDialog extends JDialog {
     }
 
     private void modelToView(){
-        final Map<String, String> map = assertionComment.getProperties();
-        final String style = map.get(Assertion.Comment.COMMENT_ALIGN);
-        if (style != null && style.equals(Assertion.Comment.LEFT_ALIGN)) {
-            alignComboBox.setSelectedItem(Assertion.Comment.LEFT_ALIGN);
-        } else {
-            alignComboBox.setSelectedItem(Assertion.Comment.RIGHT_ALIGN);
-        }
+        leftCommentTextArea.setText(assertionComment.getAssertionComment(Assertion.Comment.LEFT_COMMENT));
+        leftCommentTextArea.setCaretPosition(0);
 
-        commentTextArea.setText(assertionComment.getComment());
-        commentTextArea.setCaretPosition(0);
+        rightCommentTextArea.setText(assertionComment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT));
+        rightCommentTextArea.setCaretPosition(0);
     }
     public boolean isConfirmed() {
         return confirmed;
     }
 
-    public void viewToModel(){
-        final String text = commentTextArea.getText();
+    public boolean viewToModel(){
+        final String leftComment = leftCommentTextArea.getText();
+        if(leftComment.length() > SsmPreferences.MAX_LEFT_COMMENT_SIZE) {
+            DialogDisplayer.showMessageDialog(this, "Left comment too large",
+                    "The maximum size of a left comment must be between 0 and " +
+                            SsmPreferences.MAX_LEFT_COMMENT_SIZE + " characters.\n Current size is " + leftComment.length()+" characters.", null);
+            return false;
+        }
+        assertionComment.setComment(leftComment, Assertion.Comment.LEFT_COMMENT);
 
-        assertionComment.setComment(text);
-        final Map<String,String> props = assertionComment.getProperties();
-        final String alignment = alignComboBox.getSelectedItem().equals(Assertion.Comment.RIGHT_ALIGN)? Assertion.Comment.RIGHT_ALIGN : Assertion.Comment.LEFT_ALIGN;
-        props.put(Assertion.Comment.COMMENT_ALIGN, alignment);
+        final String rightComment = rightCommentTextArea.getText();
+        if(rightComment.length() > SsmPreferences.MAX_RIGHT_COMMENT_SIZE) {
+            DialogDisplayer.showMessageDialog(this, "Right comment too large",
+                    "The maximum size of a right comment must be between 0 and " +
+                            SsmPreferences.MAX_RIGHT_COMMENT_SIZE + " characters.\n Current size is " + rightComment.length()+" characters.", null);
+            return false;
+        }
+        assertionComment.setComment(rightComment, Assertion.Comment.RIGHT_COMMENT);
+
+        return true;
     }
 
     private void onOK() {
         confirmed = true;
-        viewToModel();
-        dispose();
+        if(viewToModel()){
+            dispose();
+        }
     }
 
     private void onCancel() {
@@ -90,10 +104,5 @@ public class AssertionCommentDialog extends JDialog {
         dialog.pack();
         dialog.setVisible(true);
         System.exit(0);
-    }
-
-    //Called automatically before body of constructor runs, but not before the constructor
-    private void createUIComponents() {
-        alignComboBox = new JComboBox(new Object[]{Assertion.Comment.RIGHT_ALIGN, Assertion.Comment.LEFT_ALIGN}); 
     }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
@@ -27,7 +28,7 @@ public class PreferencesDialog extends JDialog {
     static Logger log = Logger.getLogger(PreferencesDialog.class.getName());
 
     private static final int DEFAULT_INACTIVITY_TIMEOUT = 30; //this value MUST be the same as AbstractSsmPreferences.java
-    private static final int DEFAULT_NUM_HOSTS_HISTORY = 5;    
+    private static final int DEFAULT_NUM_HOSTS_HISTORY = 5;
 
     /**
      * Resource bundle with default locale
@@ -40,6 +41,8 @@ public class PreferencesDialog extends JDialog {
     private JCheckBox rememberLastIdCheckBox = null;
     private JCheckBox enableValidationCheckBox = null;
     private JTextField numHostsHistoryTextField = null;
+    private JTextField maxLeftCommentTextField = null;
+    private JTextField maxRightCommentTextField = null;
 
     /**
      * Command string for a cancel action (e.g., a button or menu item).
@@ -58,6 +61,9 @@ public class PreferencesDialog extends JDialog {
 
     /** preferences instance */
     private Properties props = null;
+    private int previousMaxLeft;
+    private int previousMaxRight;
+    private boolean commentSizeChanged;
 
 
     /**
@@ -288,6 +294,49 @@ public class PreferencesDialog extends JDialog {
         constraints.insets = new Insets(11, 7, 0, 11);
         contents.add(numHostsHistoryTextField, constraints);
 
+
+        JLabel leftCommentSize = new JLabel(resources.getString(("leftComment.label")));
+        leftCommentSize.setToolTipText(resources.getString(("leftComment.tooltip")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 20;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(11, 12, 0, 0);
+        contents.add(leftCommentSize, constraints);
+
+        maxLeftCommentTextField = new JTextField(4);
+        maxLeftCommentTextField.setDocument(new MaxLengthDocument(3));
+        maxLeftCommentTextField.setToolTipText(resources.getString(("leftComment.tooltip")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 20;
+        constraints.gridwidth = 1;
+        constraints.weightx = 0.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(11, 7, 0, 11);
+        contents.add(maxLeftCommentTextField, constraints);
+
+        JLabel rightCommentSize = new JLabel(resources.getString(("rightComment.label")));
+        rightCommentSize.setToolTipText(resources.getString(("rightComment.tooltip")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 22;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(11, 12, 0, 0);
+        contents.add(rightCommentSize, constraints);
+
+        maxRightCommentTextField = new JTextField(4);
+        maxRightCommentTextField.setDocument(new MaxLengthDocument(4));
+        maxRightCommentTextField.setToolTipText(resources.getString(("rightComment.tooltip")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 22;
+        constraints.gridwidth = 1;
+        constraints.weightx = 0.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(11, 7, 0, 11);
+        contents.add(maxRightCommentTextField, constraints);
+
         // Button panel at the bottom of the window
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, 0));
@@ -353,7 +402,7 @@ public class PreferencesDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 20;
+        constraints.gridy = 24;
         constraints.gridwidth = 7;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(17, 12, 11, 11);
@@ -488,10 +537,50 @@ public class PreferencesDialog extends JDialog {
                     serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
                     preferences.store();
                 }catch(NumberFormatException nfe){
-                    ;//Swallow - incorrectly set property
+                    //Swallow - incorrectly set property
                     //don't need to set, it's has an internal default value
                 }
             }
+
+            final int maxLeftComment;
+            final int maxLhsSize = SsmPreferences.MAX_LEFT_COMMENT_SIZE;
+            try {
+                maxLeftComment = Integer.parseInt(maxLeftCommentTextField.getText());
+                if(maxLeftComment < 0 || maxLeftComment > maxLhsSize) throw new NumberFormatException("Invalid value");
+                if (maxLeftComment != previousMaxLeft){
+                    commentSizeChanged = true;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null,
+                  "The value for Maximum Left Comment must be a number\n" +
+                  "between 0 and " + maxLhsSize,
+                  "Bad Left Comment Maximum",
+                  JOptionPane.ERROR_MESSAGE);
+
+                return false;
+            }
+
+            getPreferences().setProperty(SsmPreferences.NUM_SSG_MAX_LEFT_COMMENT, Integer.toString(maxLeftComment));
+
+            final int maxRightComment;
+            final int maxRhsSize = SsmPreferences.MAX_RIGHT_COMMENT_SIZE;
+            try {
+                maxRightComment = Integer.parseInt(maxRightCommentTextField.getText());
+                if(maxRightComment < 0 || maxRightComment > maxRhsSize) throw new NumberFormatException("Invalid value");
+                if(maxRightComment != previousMaxRight){
+                    commentSizeChanged = true;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null,
+                  "The value for Maximum Right Comment must be a number\n" +
+                  "between 0 and " + maxRhsSize,
+                  "Bad Left Comment Maximum",
+                  JOptionPane.ERROR_MESSAGE);
+
+                return false;
+            }
+
+            getPreferences().setProperty(SsmPreferences.NUM_SSG_MAX_RIGHT_COMMENT, Integer.toString(maxRightComment));
 
             return true;
         } catch (IOException e) {
@@ -509,6 +598,22 @@ public class PreferencesDialog extends JDialog {
             prefs.updateFromProperties(getPreferences(), true);
             prefs.store();
             prefs.updateSystemProperties();
+
+            if(commentSizeChanged){
+                //update any policies being displayed
+                final JTree tree = TopComponents.getInstance().getPolicyTree();
+                if (tree != null && TopComponents.getInstance().isPolicyOpenForEditing()) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            final PolicyEditorPanel panel = TopComponents.getInstance().getPolicyEditorPanel();
+                            panel.updateNodesWithComments();
+                        }
+                    });
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
+            }
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error saving Preferences", e);
         }
@@ -522,7 +627,7 @@ public class PreferencesDialog extends JDialog {
             try {
                 timeout = Integer.parseInt(sTimeout);
             } catch (NumberFormatException e) {
-                ; // swallow; bad property value
+                // swallow; bad property value
             }
             inactivityTextField.setText(Integer.toString(timeout));
 
@@ -531,10 +636,30 @@ public class PreferencesDialog extends JDialog {
             try {
                 numHosts = Integer.parseInt(sNumHostsHistory);
             } catch (NumberFormatException e) {
-                ; // swallow; bad property value
+                // swallow; bad property value
             }
             numHostsHistoryTextField.setText(Integer.toString(numHosts));
-            
+
+            String sMaxLeftComment = getPreferences().getProperty(SsmPreferences.NUM_SSG_MAX_LEFT_COMMENT);
+            int maxLeftComment = SsmPreferences.DEFAULT_MAX_LEFT_COMMENT;
+            try {
+                maxLeftComment = Integer.parseInt(sMaxLeftComment);
+            } catch (NumberFormatException e) {
+                // swallow; bad property value
+            }
+            maxLeftCommentTextField.setText(Integer.toString(maxLeftComment));
+            previousMaxLeft = maxLeftComment;
+
+            String sMaxRightComment = getPreferences().getProperty(SsmPreferences.NUM_SSG_MAX_RIGHT_COMMENT);
+            int maxRightComment = SsmPreferences.DEFAULT_MAX_RIGHT_COMMENT;
+            try {
+                maxRightComment = Integer.parseInt(sMaxRightComment);
+            } catch (NumberFormatException e) {
+                // swallow; bad property value
+            }
+            maxRightCommentTextField.setText(Integer.toString(maxRightComment));
+            previousMaxRight = maxRightComment;
+
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);
         }

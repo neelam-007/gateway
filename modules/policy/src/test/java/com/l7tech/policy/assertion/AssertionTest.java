@@ -188,13 +188,13 @@ public class AssertionTest {
     public void testSimplifyRemovesComments() throws Exception{
         AllAssertion root = new AllAssertion();
         final HttpBasic httpBasic = new HttpBasic();
-        httpBasic.setAssertionComment(new Assertion.Comment("comment"));
+        httpBasic.setAssertionComment(new Assertion.Comment());
         root.addChild(httpBasic);
         AllAssertion all = new AllAssertion();
-        all.setAssertionComment(new Assertion.Comment("comment"));
+        all.setAssertionComment(new Assertion.Comment());
 
         final AuditAssertion audit = new AuditAssertion();
-        audit.setAssertionComment(new Assertion.Comment("comment"));
+        audit.setAssertionComment(new Assertion.Comment());
         all.addChild(audit);
 
         root.addChild(all);

@@ -1896,13 +1896,45 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return simpleExportPolicyAction;
     }
 
+    /**
+     * Get the tree to redraw itself without telling causing the 'Save and Activate' and 'Save' buttons from
+     * becoming activated. This is needed for comments which can cause the displayed value for a node to change,
+     * which normally only happens when it's internal values have changed due to the user editing the properties dialog.
+     */
+    public void updateNodesWithComments(){
+        //update the tree so that the comment is displayed correctly
+        //this should not cause the 'Save and Activate' or 'Save' buttons to become activated as there is no
+        //actual change to the assertions, we are just updating the display of comments
+        JTree tree = TopComponents.getInstance().getPolicyTree();
+        if (tree != null) {
+            PolicyTreeModel model = (PolicyTreeModel) tree.getModel();
+            updateNode((AssertionTreeNode) model.getRoot(), model);
+
+        } else {
+            log.log(Level.WARNING, "Unable to reach the palette tree.");
+        }
+
+    }
+
+    private void updateNode(AssertionTreeNode node, PolicyTreeModel model) {
+        final Assertion assertion = node.asAssertion();
+        if (assertion.getAssertionComment() != null) {
+            model.nodeChanged(node);
+        }
+
+        final int childCount = node.getChildCount();
+        if (childCount < 1) return;
+        for (int i = 0; i < childCount; i++) {
+            updateNode((AssertionTreeNode) node.getChildAt(i), model);
+        }
+    }
+
     public Action getHideShowCommentAction(final JButton button){
 
         if(hideShowCommentsAction == null){
             hideShowCommentsAction = new SecureAction(null) {
                         @Override
                         protected void performAction() {
-                            final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
                             final String showState = preferences.getString(SHOW_COMMENTS);
                             final boolean shown = Boolean.parseBoolean(showState);
                             //shown = true means the button should say 'Hide'
@@ -1911,32 +1943,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             else preferences.putProperty(SHOW_COMMENTS, "true");
 
                             button.setText(getName());
-
-                            //update the tree so that the comment is displayed correctly
-                            //this should not cause the 'Save and Activate' or 'Save' buttons to become activated as there is no
-                            //actual change to the assertions, we are just updating the display of comments
-                            JTree tree = TopComponents.getInstance().getPolicyTree();
-                            if (tree != null) {
-                                PolicyTreeModel model = (PolicyTreeModel) tree.getModel();
-                                updateNode((AssertionTreeNode) model.getRoot(), model);
-
-                            } else {
-                                log.log(Level.WARNING, "Unable to reach the palette tree.");
-                            }
-
-                        }
-
-                        private void updateNode(AssertionTreeNode node, PolicyTreeModel model) {
-                            final Assertion assertion = node.asAssertion();
-                            if (assertion.getAssertionComment() != null) {
-                                model.nodeChanged(node);
-                            }
-
-                            final int childCount = node.getChildCount();
-                            if (childCount < 1) return;
-                            for (int i = 0; i < childCount; i++) {
-                                updateNode((AssertionTreeNode) node.getChildAt(i), model);
-                            }
+                            updateNodesWithComments();
                         }
 
                         @Override
