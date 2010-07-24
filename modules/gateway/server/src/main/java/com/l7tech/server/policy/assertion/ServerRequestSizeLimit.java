@@ -9,8 +9,10 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSizeLimit;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -24,19 +26,28 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
     private final Auditor auditor;
 
     private final boolean entireMessage;
-    private final long limit;
+    private final String limitString;
 
     public ServerRequestSizeLimit(RequestSizeLimit ass, ApplicationContext springContext) {
         super(ass);
         auditor = new Auditor(this, springContext, logger);
         this.entireMessage = ass.isEntireMessage();
-        this.limit = ass.getLimit();
+        this.limitString = ass.getLimit();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException
     {
         Message request = context.getRequest();
+
+        long limit;
+        try {
+            limit = getLimit(context);
+        } catch (NumberFormatException e) {
+            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, limitString, "Long");
+            return AssertionStatus.FAILED;
+        }
 
         final long messlen;
         if (entireMessage) {
@@ -44,7 +55,7 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
                 request.getMimeKnob().setContentLengthLimit(limit);
                 messlen = request.getMimeKnob().getContentLength();
             } catch(IOException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE, null);
+                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE);
                 return AssertionStatus.FALSIFIED;
             }
             if (messlen > limit) {
@@ -67,5 +78,21 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
                 return AssertionStatus.FALSIFIED;
             }
         }
+    }
+
+    /**
+     * Gets the request size limit in bytes.
+     */
+    private long getLimit(PolicyEnforcementContext context) throws NumberFormatException {
+        final String[] referencedVars = Syntax.getReferencedNames(limitString);
+        long longValue;
+        if(referencedVars.length > 0){
+            final String stringValue = ExpandVariables.process(limitString, context.getVariableMap(referencedVars, auditor), auditor);
+            longValue = Long.parseLong(stringValue) * 1024;
+        }else{
+            longValue = Long.parseLong(limitString) * 1024;
+        }
+
+        return longValue;
     }
 }

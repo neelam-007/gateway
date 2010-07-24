@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.NumberField;
-import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.RequestSizeLimit;
 
@@ -14,7 +13,6 @@ import java.awt.event.ActionListener;
  * @author megery
  */
 public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
-    private final InputValidator validator;
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -27,7 +25,6 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
 
     public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, assertion, modal);
-        validator = new InputValidator(this, getTitle());
         doInit(assertion, readOnly);
     }
 
@@ -35,14 +32,13 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
         this.sizeAssertion = assertion;
         sizeLimit.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
 
-        validator.constrainTextFieldToNumberRange("size limit", sizeLimit, 1, Long.MAX_VALUE / 1024);
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
         okButton.setEnabled( !readOnly );
-        validator.attachToButton(okButton, new ActionListener() {
+        okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doSave();
+                ok();
             }
         });
 
@@ -59,11 +55,7 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void updateView() {
-        long size = sizeAssertion.getLimit() / 1024;
-        if (size < 1) {
-            size = 1;
-        }
-        sizeLimit.setText(String.valueOf(size));
+        sizeLimit.setText(sizeAssertion.getLimit());
         exemptAttachmentCheck.setSelected(!sizeAssertion.isEntireMessage());
     }
 
@@ -75,12 +67,17 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
         return confirmed;
     }
 
-    private void doSave() {
-        long limit = Long.parseLong(sizeLimit.getText());
-        if (limit < 1) {
-            limit = 1;
+    private void ok() {
+        String limit = sizeLimit.getText();
+
+        String error = RequestSizeLimit.validateSizeLimit(limit);
+        if (error != null) {
+            JOptionPane.showMessageDialog(okButton,
+                                          error,
+                                          "Invalid value", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        sizeAssertion.setLimit(limit*1024);
+        sizeAssertion.setLimit(limit);
         sizeAssertion.setEntireMessage(!exemptAttachmentCheck.isSelected());
         modified = true;
         confirmed = true;
