@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion.sla;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -64,15 +65,21 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         } else {
             context.setVariable(userVariable, "");            
         }
-        context.setVariable(maxVariable, String.valueOf(assertion.getQuota()));
-        switch (assertion.getCounterStrategy()) {
-            case ThroughputQuota.ALWAYS_INCREMENT:
-                return doIncrementAlways(context);
-            case ThroughputQuota.INCREMENT_ON_SUCCESS:
-                return doIncrementOnSuccess(context);
-            case ThroughputQuota.DECREMENT:
-                return doDecrement(context);
+        context.setVariable(maxVariable, String.valueOf(getQuota(context)));
+        try {
+            switch (assertion.getCounterStrategy()) {
+                case ThroughputQuota.ALWAYS_INCREMENT:
+                    return doIncrementAlways(context);
+                case ThroughputQuota.INCREMENT_ON_SUCCESS:
+                    return doIncrementOnSuccess(context);
+                case ThroughputQuota.DECREMENT:
+                    return doDecrement(context);
+            }
+        } catch (NumberFormatException e) {
+            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getQuota(), "Long");
+            return AssertionStatus.FAILED;
         }
+
         // not supposed to happen
         throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
                                            "Unsupported counterStrategy: " + assertion.getCounterStrategy());
@@ -89,10 +96,10 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 val = counter.incrementOnlyWithinLimitAndReturnValue(counterid,
                                                                      now,
                                                                      assertion.getTimeUnit(),
-                                                                     assertion.getQuota());
+                                                                     getQuota(context));
                 this.setValue(context, val);
                 // no need to check the limit because the preceeding call would throw if limit was exceeded
-                logger.finest("Value " + val + " still within quota " + assertion.getQuota());
+                logger.finest("Value " + val + " still within quota " + getQuota(context));
                 return AssertionStatus.NONE;
             } catch (CounterManager.LimitAlreadyReachedException e) {
                 String msg = "throughput quota limit is already reached.";
@@ -107,11 +114,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         } else {
             val = counter.getCounterValue(counterid, assertion.getTimeUnit());
             this.setValue(context, val);
-            if (val <= assertion.getQuota()) {
-                logger.fine("the quota was not exceeded. " + val + " smaller than " + assertion.getQuota());
+            if (val <= getQuota(context)) {
+                logger.fine("the quota was not exceeded. " + val + " smaller than " + getQuota(context));
                 return AssertionStatus.NONE;
             } else {
-                String limit = "max " + assertion.getQuota() + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
+                String limit = "max " + getQuota(context) + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
                 String msg = "the quota " + assertion.getCounterName() + " [" + limit +
                              "] was exceeded " + "(current value is " + val + ")";
                 auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
@@ -151,11 +158,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             val = counter.getCounterValue(counterid, assertion.getTimeUnit());
         }
         this.setValue(context, val);
-        if (val <= assertion.getQuota()) {
-            logger.fine("the quota was not exceeded. " + val + " smaller than " + assertion.getQuota());
+        if (val <= getQuota(context)) {
+            logger.fine("the quota was not exceeded. " + val + " smaller than " + getQuota(context));
             return AssertionStatus.NONE;
         } else {
-            String limit = "max " + assertion.getQuota() + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
+            String limit = "max " + getQuota(context) + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
             auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
             return AssertionStatus.FALSIFIED;
         }
@@ -170,7 +177,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             logger.finest("checking counter against user " + user);
         }
 
-        long counterid = 0;
+        long counterid;
         CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
         String resolvedCounterName = assertion.getCounterName();
         if (varsUsed.length > 0) {
@@ -187,10 +194,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     }
 
     private boolean alreadyIncrementedInThisContext(PolicyEnforcementContext context) {
-        if (context.getIncrementedCounters().contains(assertion.getCounterName())) {
-            return true;
-        }
-        return false;
+        return context.getIncrementedCounters().contains(assertion.getCounterName());
     }
 
     private void forgetIncrementInThisContext(PolicyEnforcementContext context) {
@@ -204,5 +208,19 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
     private void setValue(PolicyEnforcementContext context, long value) {
         context.setVariable(valueVariable, String.valueOf(value));
+    }
+
+    private long getQuota(PolicyEnforcementContext context) throws NumberFormatException {
+        String quota = assertion.getQuota();
+        final String[] referencedVars = Syntax.getReferencedNames(quota);
+        long longValue;
+        if(referencedVars.length > 0){
+            final String stringValue = ExpandVariables.process(quota, context.getVariableMap(referencedVars, auditor), auditor);
+            longValue = Long.parseLong(stringValue);
+        }else{
+            longValue = Long.parseLong(quota);
+        }
+
+        return longValue;
     }
 }

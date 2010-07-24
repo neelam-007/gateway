@@ -144,6 +144,27 @@ public abstract class Syntax {
     }
 
     /**
+     * Checks if a string references at most one context variable.
+     *
+     * @param toValidate                 The string to validate.
+     * @param toValidateFriendlyString   Friendly name for the string to validate, used in error messages.
+     *
+     * @return the validation error message, or null if validation succeeded
+     */
+    public static String validateAtMostOneVariableReference(String toValidate, String toValidateFriendlyString) {
+        final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(toValidate);
+        if (referencedVars.length > 0) {
+            if (referencedVars.length != 1) {
+                return "Only a single context variable can be supplied for " + toValidateFriendlyString;
+            }
+            if (!toValidate.trim().equals("${" + referencedVars[0] + "}")) {
+                return "If a context variable is supplied for " + toValidateFriendlyString + " it must be a reference to exactly one context variable.";
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get should-be-processed variables referenced from the string s.  Any variable being able to be processed depends on
      * the flag "omitted", which indicates whether indexed variables will be omitted or not.
      * @param s: A string to find out what variables are referenced from it

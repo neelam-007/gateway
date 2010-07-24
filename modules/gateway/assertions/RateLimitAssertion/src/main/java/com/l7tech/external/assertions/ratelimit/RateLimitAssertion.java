@@ -8,6 +8,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.util.ValidationUtils;
+
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.HashMap;
@@ -24,6 +26,9 @@ import java.util.regex.Pattern;
  */
 public class RateLimitAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(RateLimitAssertion.class.getName());
+
+    private static final int MAX_REQUESTS_LOWER_LIMIT = 1;
+    private static final int MAX_CONCURRENCY_LOWER_LIMIT = 0;
 
     private String counterName = "RateLimit-${request.clientid}";
     private String maxRequestsPerSecond = "100";
@@ -134,47 +139,19 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     }
 
     public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {
-        final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxRequestsPerSecond);
-        if (referencedVars.length > 0) {
-            if (referencedVars.length != 1) {
-                return "Only a single context variable can be supplied for max requests per second.";
-            }
-            if (!maxRequestsPerSecond.trim().equals("${" + referencedVars[0] + "}")) {
-                return "If a context variable is supplied for maximum requests per second it must be a reference to exactly one context variable.";
-            }
-        } else {
-            final int maxRequests;
-            try {
-                maxRequests = Integer.parseInt(maxRequestsPerSecond);
-            } catch (NumberFormatException e) {
-                return "Invalid value for maximum requests per second.";
-            }
-            if (maxRequests < 1) return "Max requests per second cannot be less than 1.";
+        String error = Syntax.validateAtMostOneVariableReference(maxRequestsPerSecond, "max requests per second");
+        if (error == null && ! ValidationUtils.isValidInteger(maxRequestsPerSecond, false, MAX_REQUESTS_LOWER_LIMIT, Integer.MAX_VALUE)) {
+            error = "Max requests per second must be an integer no less than " + MAX_REQUESTS_LOWER_LIMIT;
         }
-
-        return null;
+        return error;
     }
 
     public static String validateMaxConcurrency(String maxConcurrency) {
-        final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxConcurrency);
-        if (referencedVars.length > 0) {
-            if (referencedVars.length != 1) {
-                return "Only a single context variable can be supplied for max concurrency.";
-            }
-            if (!maxConcurrency.trim().equals("${" + referencedVars[0] + "}")) {
-                return "If a context variable is supplied for maximum concurrency it must be a reference to exactly one context variable.";
-            }
-        } else {
-            final int maxConnurencyInt;
-            try {
-                maxConnurencyInt = Integer.parseInt(maxConcurrency);
-            } catch (NumberFormatException e) {
-                return "Invalid value for maximum concurrency";
-            }
-            if (maxConnurencyInt < 0) return "Max concurrency cannot be less than 0";
+        String error = Syntax.validateAtMostOneVariableReference(maxConcurrency, "maximum concurrency");
+        if (error == null && ! ValidationUtils.isValidInteger(maxConcurrency, false, MAX_CONCURRENCY_LOWER_LIMIT, Integer.MAX_VALUE)) {
+            error = "Maximum concurrency must be an integer no less than " + MAX_CONCURRENCY_LOWER_LIMIT; 
         }
-
-        return null;
+        return error;
     }
     
     //

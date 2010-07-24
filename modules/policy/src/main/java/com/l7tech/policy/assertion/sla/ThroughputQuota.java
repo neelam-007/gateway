@@ -14,6 +14,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.util.ValidationUtils;
+
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
@@ -44,7 +46,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     private String userVariable;
     private String maxVariable;
     private String variablePrefix = "";
-    private long quota = 200;
+    private String quota = "200";
     private boolean global = false;
     private int timeUnit = PER_MONTH;
     private String counterName = "";
@@ -115,7 +117,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      * The quota property represents the maximum number of requests that are allowed at run time per timeUnit.
      * @return the quota
      */
-    public long getQuota() {
+    public String getQuota() {
         return quota;
     }
 
@@ -123,8 +125,20 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      * The quota property represents the maximum number of requests that are allowed at run time per timeUnit.
      * @param quota the quota
      */
-    public void setQuota(long quota) {
+    public void setQuota(String quota) {
+        String errorMsg = validateQuota(quota);
+        if (errorMsg != null) throw new IllegalArgumentException(errorMsg);
+
         this.quota = quota;
+    }
+
+    /**
+     * Provided for backwards compatability for policies before bug5043 was fixed
+     * @param maxRequestsPerSecond int
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setQuota(long quota) {
+        setQuota(String.valueOf(quota));
     }
 
     /**
@@ -194,8 +208,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if (counterName == null) return new String[0];
-        return Syntax.getReferencedNames(counterName);
+        return Syntax.getReferencedNames(counterName + " " + getQuota());
     }
 
     @Override
@@ -230,10 +243,9 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
             final StringBuffer buffer = new StringBuffer(baseName);
             if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
-                buffer.append(": Decrement counter " + assertion.getCounterName());
+                buffer.append(": Decrement counter ").append(assertion.getCounterName());
             } else {
-                buffer.append(": " + assertion.getCounterName() + ": " +
-                           assertion.getQuota() + " per " + timeUnitStr(assertion.getTimeUnit()));
+                buffer.append(": ").append(assertion.getCounterName()).append(": ").append(assertion.getQuota()).append(" per ").append(timeUnitStr(assertion.getTimeUnit()));
             }
             return buffer.toString();
         }
@@ -256,5 +268,13 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         meta.put(PROPERTIES_ACTION_NAME, "Throughput Quota Properties");
         
         return meta;
+    }
+
+    public static String validateQuota(String quota) {
+        String error = Syntax.validateAtMostOneVariableReference(quota, "throughput quota");
+        if (error == null && ! ValidationUtils.isValidLong(quota, false, 1, Long.MAX_VALUE) ) {
+            error = "Throughput quota must be a long value no less than " + 1;
+        }
+        return error;
     }
 }
