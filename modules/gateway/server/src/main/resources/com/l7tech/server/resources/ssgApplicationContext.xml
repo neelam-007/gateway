@@ -286,13 +286,20 @@
                                 <value>service.validateWssTimestamps</value>
                             </list>
                         </entry>
-
+                        <entry key="simplePropertyChangeHandler">
+                            <list>
+                                <value>otherTextualContentTypes</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
         </property>
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
+
+    <bean id="simplePropertyChangeHandler" class="com.l7tech.server.SimplePropertyChangeHandler" />
+
     <bean id="managedServerConfig" class="com.l7tech.server.ServerConfig$ManagedServerConfig">
         <constructor-arg ref="serverConfig"/>
     </bean>

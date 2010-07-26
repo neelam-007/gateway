@@ -5,6 +5,8 @@
 
 package com.l7tech.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -522,5 +524,26 @@ public class TextUtils {
         }
 
         return value;
+    }
+
+    /**
+     * Break up a string containing tokens into a list of such tokens.
+     *
+     * @param valueToTokenize String Value to tokenize. Can be null.
+     * @param delimeter String StringTokenizer delimiters, uses default if null. Can be null.
+     * @return list of String values for the cluster property. Never null but can be empty.
+     */
+    public static List<String> getTokensFromString(final String valueToTokenize, String delimeter){
+        List<String> returnList = new ArrayList<String>();
+
+        if(valueToTokenize == null || valueToTokenize.trim().isEmpty()) return returnList;
+
+        StringTokenizer st = (delimeter == null)? new StringTokenizer(valueToTokenize): new StringTokenizer(valueToTokenize, delimeter);
+
+        while(st.hasMoreTokens()) {
+            returnList.add(st.nextToken());
+        }
+
+        return returnList;
     }
 }

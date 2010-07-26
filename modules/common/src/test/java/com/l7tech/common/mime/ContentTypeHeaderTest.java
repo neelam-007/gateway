@@ -1,6 +1,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.test.BugNumber;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -36,5 +37,31 @@ public class ContentTypeHeaderTest {
         } catch (IOException e) {
             // Ok
         }
+    }
+
+    /**
+     * Test that JSON is a textual type and support for configurable textual content types
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(8884)
+    public void testJsonIsTextualOtherContentTypes() throws Exception{
+        String jsonType = "application/json; charset=utf-8";
+        final ContentTypeHeader jsonHeader = ContentTypeHeader.parseValue(jsonType);
+        Assert.assertTrue("Wrong type found", jsonHeader.isJson());
+
+        String xmlType = "text/xml; charset=utf-8";
+        final ContentTypeHeader xmlHeader = ContentTypeHeader.parseValue(xmlType);
+
+        String madeUpType = "application/ijustmadeitup; charset=utf-8";
+        final ContentTypeHeader madeUpHeader = ContentTypeHeader.parseValue(madeUpType);
+
+        Assert.assertFalse("Type should not be textual as it is unknown", madeUpHeader.isTextualContentType());
+        ContentTypeHeader.setConfigurableTextualContentTypes(madeUpHeader);
+        
+        Assert.assertTrue("Type should be found in list of other textual types", madeUpHeader.isTextualContentType());
+
+        ContentTypeHeader.setConfigurableTextualContentTypes(jsonHeader, xmlHeader);
+        Assert.assertFalse("Type should not be found in list of other textual types", madeUpHeader.isTextualContentType());
     }
 }

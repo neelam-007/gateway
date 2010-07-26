@@ -21,7 +21,6 @@ import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.TcpKnob;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
@@ -269,7 +268,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             lengthHolder[0] = req.length;
             ContentTypeHeader cth = part.getContentType();
             Charset encoding = null;
-            if (cth != null && (cth.isText() || cth.isXml())) {
+            if (cth != null && cth.isTextualContentType()) {
                 encoding = cth.getEncoding();
             } else {
                 logger.log(Level.INFO, MessageFormat.format("Content-Type of {0} (\"{1}\") is unknown or not text; using {2} to save {0} text",

@@ -17,6 +17,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +40,14 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
     public static final Charset DEFAULT_HTTP_ENCODING = Charset.forName("ISO8859-1"); // See RFC2616 s3.7.1
+
+    /**
+     * AtomicReference to the list of configured textual content types. Usages do not need to synchronize.
+     * Once the list is obtained via get(), it is safe to use as it will be copied if written to.
+     * Never give this atomic reference a null reference.
+     */
+    private static AtomicReference<CopyOnWriteArrayList<ContentTypeHeader>> refToContentTypes =
+            new AtomicReference<CopyOnWriteArrayList<ContentTypeHeader>>(new CopyOnWriteArrayList<ContentTypeHeader>());
 
     static {
         try {
@@ -275,13 +285,39 @@ public class ContentTypeHeader extends MimeHeader {
     /**
      * See if this content type can be represented as text. This only checks the type and possibly the subtype of
      * this content type. It is still possible that the first part of the mime knob is not text.
+     * <p/>
+     * The build in textual types are text, XML, JSON and Application Form URL encoded data.
+     * Other types are configurable via static method {@link com.l7tech.common.mime.ContentTypeHeader#setConfigurableTextualContentTypes(ContentTypeHeader...)}
      *
-     * @return
+     * @return true if content-type is textual, false otherwise. Decision is only based on the content type.
      */
-    public boolean isTextualContentType(){
-        return isText() || isXml() || isJson();
+    public boolean isTextualContentType() {
+
+        if (isText() || isXml() || isJson() || isApplicationFormUrlEncoded()) return true;
+
+        final CopyOnWriteArrayList<ContentTypeHeader> textualContentTypes = refToContentTypes.get();
+        for (ContentTypeHeader otherType : textualContentTypes) {
+            if (otherType.getType().equalsIgnoreCase(this.getType()) &&
+                    otherType.getSubtype().equalsIgnoreCase(this.getSubtype()))
+                return true;
+        }
+
+        return false;
     }
-    
+
+    /**
+     * Set the list of configured textual content types.
+     *  
+     * @param typeHeaders Array of ContentTypeHeader's which represent textual data. Pass in null to clear the list.
+     */
+    public static void setConfigurableTextualContentTypes(ContentTypeHeader ... typeHeaders) {
+        if (typeHeaders == null || typeHeaders.length == 0) {
+            refToContentTypes.set(new CopyOnWriteArrayList<ContentTypeHeader>());
+        } else {
+            refToContentTypes.set(new CopyOnWriteArrayList<ContentTypeHeader>(typeHeaders));
+        }
+    }
+
     /** @return true if the type is "text" */
     public boolean isText() {
         return "text".equalsIgnoreCase(getType());
@@ -289,6 +325,10 @@ public class ContentTypeHeader extends MimeHeader {
 
     public boolean isApplication() {
         return "application".equalsIgnoreCase(getType());
+    }
+
+    public boolean isApplicationFormUrlEncoded(){
+        return isApplication() && "x-www-form-urlencoded".equalsIgnoreCase(getSubtype());    
     }
 
     public boolean isJson() {

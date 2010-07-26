@@ -78,7 +78,7 @@ class PartInfoSelector implements ExpandVariables.Selector<PartInfo> {
         InputStream in = null;
         try {
             final ContentTypeHeader contentTypeHeader = partInfo.getContentType();
-            if ( contentTypeHeader.isText() || contentTypeHeader.isXml() ) {
+            if ( contentTypeHeader.isTextualContentType() ) {
                 byte[] bytes = IOUtils.slurpStream( in = partInfo.getInputStream(false), PART_MAX_SIZE );
                 return new Selection(new String(bytes, contentTypeHeader.getEncoding()));
             } else {

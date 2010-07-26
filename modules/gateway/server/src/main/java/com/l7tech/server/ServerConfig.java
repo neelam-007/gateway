@@ -7,10 +7,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
-import com.l7tech.util.Config;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -329,6 +326,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_DOCUMENT_DOWNLOAD_MAXSIZE = "documentDownload.maxSize";
     public static final String PARAM_WSDL_MAX_DOWNLOAD_SIZE = "wsdlDocMaxDownloadSize";
     public static final String PARAM_XSL_MAX_DOWNLOAD_SIZE = "xslDocMaxDownloadSize";
+
+    public static final String PARAM_OTHER_TEXTUAL_CONTENT_TYPES = "otherTextualContentTypes";
     
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
