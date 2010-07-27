@@ -5,15 +5,13 @@
 
 package com.l7tech.internal.license.gui;
 
-import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.util.*;
-import com.l7tech.util.IOUtils;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.internal.license.LicenseGeneratorFeatureSets;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.server.GatewayFeatureSet;
-import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.util.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -104,8 +102,7 @@ public class LicenseSpecPanel extends JPanel {
     private final List<GatewayFeatureSet> profilesForward;
     private final List<GatewayFeatureSet> profilesReverse;
     {
-        List<GatewayFeatureSet> fwd = new ArrayList<GatewayFeatureSet>(GatewayFeatureSets.getProductProfiles().values());
-        fwd.remove(GatewayFeatureSets.PROFILE_LICENSE_NAMES_NO_FEATURES); // don't show this as an option in GUI
+        List<GatewayFeatureSet> fwd = new ArrayList<GatewayFeatureSet>(LicenseGeneratorFeatureSets.getProductProfiles().values());
 
         List<GatewayFeatureSet> rev = new ArrayList<GatewayFeatureSet>(fwd);
         Collections.reverse(rev);
@@ -410,7 +407,7 @@ public class LicenseSpecPanel extends JPanel {
         featureNamesChecked.clear();
         featureNamesWithCheckedKids.clear();
         Set<String> rootFeatures = spec.getRootFeatures();
-        Map<String, GatewayFeatureSet> byname = GatewayFeatureSets.getAllFeatureSets();
+        Map<String, GatewayFeatureSet> byname = LicenseGeneratorFeatureSets.getAllFeatureSets();
         for (String name : rootFeatures) {
             GatewayFeatureSet fs = byname.get(name);
             if (fs == null) continue; // ignore unrecognized feature name
@@ -866,7 +863,7 @@ public class LicenseSpecPanel extends JPanel {
     private void optimizeCheckedFeatures(boolean suppressUpdate) {
         if (!featureCheckChangedSinceLastOptimize)
             return;
-        Map<String,GatewayFeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
+        Map<String,GatewayFeatureSet> profiles = LicenseGeneratorFeatureSets.getProductProfiles();
         for (GatewayFeatureSet set : profiles.values()) {
             optimizeCheckedFeatures(set);
         }

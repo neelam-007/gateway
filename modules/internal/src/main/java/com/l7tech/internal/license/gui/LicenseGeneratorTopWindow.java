@@ -6,20 +6,20 @@
 package com.l7tech.internal.license.gui;
 
 import com.japisoft.xmlpad.XMLContainer;
-import com.l7tech.gateway.common.License;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
 import com.l7tech.console.panels.EulaDialog;
 import com.l7tech.console.panels.LicensePanel;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gateway.common.License;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.internal.license.LicenseGenerator;
+import com.l7tech.internal.license.LicenseGeneratorFeatureSets;
+import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.internal.license.LicenseGenerator;
-import com.l7tech.internal.license.LicenseSpec;
-import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -29,8 +29,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -476,7 +476,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
     private void doUpdateAllFromXml(String xml) {
         License license;
         try {
-            license = new License(xml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
+            license = new License(xml, getTrustedIssuers(), LicenseGeneratorFeatureSets.getFeatureSetExpander());
             licensePanel.setLicense(license);
             getSignLicenseAction().setEnabled(license != null && !license.isValidSignature());
             LicenseSpec spec = new LicenseSpec();
