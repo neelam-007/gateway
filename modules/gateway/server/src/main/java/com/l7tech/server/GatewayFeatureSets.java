@@ -344,7 +344,8 @@ public class GatewayFeatureSets {
             ass(ResponseXpathAssertion.class),
             ass(SchemaValidation.class),
             ass(XslTransformation.class),
-            ass(RemoveElement.class));
+            ass(RemoveElement.class),
+            mass("assertion:EncodeDecode"));
 
         GatewayFeatureSet validationDs =
         fsr("set:Validation:Datascreen", "SecureSpan Datascreen message validation and transformation",

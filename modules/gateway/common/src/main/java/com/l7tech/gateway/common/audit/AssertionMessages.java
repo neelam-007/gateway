@@ -715,5 +715,12 @@ public class AssertionMessages extends Messages {
     public static final M JSON_SCHEMA_VALIDATION_VALIDATING = m(9132, Level.FINEST, "Validating {0} against JSON Schema.");
     public static final M JSON_VALIDATION_SUCCEEDED         = m(9133, Level.FINEST, "JSON Schema validation success.");
     public static final M JSON_SCHEMA_VALIDATION_IO_ERROR   = m(9134, Level.WARNING, "Cannot validate JSON schema because JSON schema information cannot be retrieved: {0}");
+
+    public static final M ENCODE_DECODE_ERROR      = m(9160, Level.WARNING, "Error encoding or decoding: {0}.");
+    public static final M ENCODE_DECODE_STRICT     = m(9161, Level.WARNING, "Strict processing failed.");
+    public static final M ENCODE_DECODE_OUT_TYPE   = m(9162, Level.WARNING, "Variable of type ''{0}'' could not be created from decoded data: {1}.");
+    public static final M ENCODE_DECODE_IN_TYPE    = m(9163, Level.WARNING, "Variable of type ''{0}'' cannot be accessed as ''{1}'' for encoding or decoding.");
+    public static final M ENCODE_DECODE_IN_ACCESS  = m(9164, Level.WARNING, "Error accessing variable of type ''{0}'': {1}.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

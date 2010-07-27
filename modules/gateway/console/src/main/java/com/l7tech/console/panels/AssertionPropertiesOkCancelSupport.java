@@ -140,7 +140,7 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
     protected void showValidationErrorMessage(ValidationException ve) {
         final String msg = ve == null ? "invalid data" : ExceptionUtils.getMessage(ve);
         final String title = (ve == null || ve.getErrorMessageTitle() == null) ? "Error" : ve.getErrorMessageTitle();
-        DialogDisplayer.showMessageDialog(this, title, "Unable to save: " + msg, ExceptionUtils.getDebugException(ve));
+        DialogDisplayer.showMessageDialog(this, title, "Unable to save: " + msg, ExceptionUtils.getDebugException(ve==null?null:ve.getCause()));
     }
 
     /**

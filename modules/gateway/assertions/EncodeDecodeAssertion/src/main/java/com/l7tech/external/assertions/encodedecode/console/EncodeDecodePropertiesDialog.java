@@ -1,0 +1,284 @@
+package com.l7tech.external.assertions.encodedecode.console;
+
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.external.assertions.encodedecode.EncodeDecodeAssertion;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
+
+import javax.swing.*;
+import javax.swing.text.JTextComponent;
+import java.awt.*;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+/**
+ * Properties dialog for Encode / Decode assertion.
+ */
+public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSupport<EncodeDecodeAssertion> {
+
+    //- PUBLIC
+
+    public EncodeDecodePropertiesDialog( final Window parent,
+                                         final EncodeDecodeAssertion assertion ) {
+        super( EncodeDecodeAssertion.class, parent, assertion, true );
+        checkEnableExperimental(assertion);
+        initComponents();
+        setData(assertion);
+    }
+
+    @Override
+    public EncodeDecodeAssertion getData( final EncodeDecodeAssertion assertion ) throws ValidationException {
+        validateData();
+        assertion.setTransformType( (EncodeDecodeAssertion.TransformType) encodeDecodeComboBox.getSelectedItem() );
+        assertion.setSourceVariableName( VariablePrefixUtil.fixVariableName( sourceVariableTextField.getText() ) );
+        assertion.setTargetVariableName( VariablePrefixUtil.fixVariableName( targetVariableTextField.getText() ) );
+        assertion.setTargetDataType( (DataType) dataTypeComboBox.getSelectedItem() );
+        assertion.setTargetContentType( nullIfEmpty(contentTypeTextField) );
+        assertion.setCharacterEncoding( nullIfEmpty(encodingTextField) );
+        assertion.setStrict( strictCheckBox.isSelected() );
+        assertion.setLineBreakInterval( multipleLinesCheckBox.isSelected()&&lineBreakEveryTextField.isEnabled() ? Integer.parseInt(lineBreakEveryTextField.getText()): 0 );
+
+        return assertion;
+    }
+
+    @Override
+    public void setData( final EncodeDecodeAssertion assertion ) {
+        if ( assertion.getTransformType() != null ) encodeDecodeComboBox.setSelectedItem( assertion.getTransformType() );
+        setText( sourceVariableTextField, assertion.getSourceVariableName() );
+        setText( targetVariableTextField, assertion.getTargetVariableName() );
+        if ( assertion.getTargetDataType() != null ) {
+            dataTypeComboBox.setSelectedItem( assertion.getTargetDataType() );
+        } else {
+            dataTypeComboBox.setSelectedItem( DataType.STRING );
+        }
+        setText( contentTypeTextField, assertion.getTargetContentType() );
+        setText( encodingTextField, assertion.getCharacterEncoding() );
+        strictCheckBox.setSelected( assertion.isStrict() );
+        multipleLinesCheckBox.setSelected( assertion.getLineBreakInterval() > 0 );
+        setText( lineBreakEveryTextField, assertion.getLineBreakInterval()<=0 ? "76" : Integer.toString(assertion.getLineBreakInterval()) );
+        enableDisableComponents();
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected JPanel createPropertyPanel() {
+        return mainPanel;
+    }
+
+        @Override
+    protected void initComponents() {
+        super.initComponents();
+
+        encodeDecodeComboBox.setModel( new DefaultComboBoxModel( enableExperimental ? EncodeDecodeAssertion.TransformType.values() : getCoreTransformTypes(EncodeDecodeAssertion.TransformType.values()) ) );
+        encodeDecodeComboBox.setRenderer( new TextListCellRenderer<EncodeDecodeAssertion.TransformType>( new Functions.Unary<String,EncodeDecodeAssertion.TransformType>(){
+            @Override
+            public String call( final EncodeDecodeAssertion.TransformType transformType ) {
+                try {
+                    return bundle.getString( "transform." + transformType + ".label" );
+                } catch ( MissingResourceException mre ) {
+                    return transformType.toString();    
+                }
+            }
+        } ) );
+
+        dataTypeComboBox.setModel( new DefaultComboBoxModel( new DataType[]{ DataType.STRING, DataType.MESSAGE, DataType.CERTIFICATE } ) );
+        dataTypeComboBox.setRenderer( new TextListCellRenderer<DataType>( new Functions.Unary<String,DataType>(){
+            @Override
+            public String call( final DataType dataType ) {
+                return dataType.getName();
+            }
+        } ) );
+
+        contentTypeTextField.setText( ContentTypeHeader.XML_DEFAULT.getFullValue() );
+        encodingTextField.setText( ContentTypeHeader.XML_DEFAULT.getEncoding().name() );   
+        lineBreakEveryTextField.setDocument( new NumberField() );
+
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
+            @Override
+            public void run() {
+                enableDisableComponents();
+            }
+        };
+
+        dataTypeComboBox.addActionListener( enableDisableListener );
+        encodeDecodeComboBox.addActionListener( enableDisableListener );
+        multipleLinesCheckBox.addActionListener( enableDisableListener );
+        sourceVariableTextField.addActionListener( enableDisableListener );
+        targetVariableTextField.addActionListener( enableDisableListener );
+        lineBreakEveryTextField.getDocument().addDocumentListener( enableDisableListener );
+        contentTypeTextField.getDocument().addDocumentListener( enableDisableListener );
+        encodingTextField.getDocument().addDocumentListener( enableDisableListener );
+    }
+
+    //- PRIVATE
+
+    private static final ResourceBundle bundle = ResourceBundle.getBundle( EncodeDecodePropertiesDialog.class.getName());
+
+    private static final Collection<EncodeDecodeAssertion.TransformType> experimentalTransforms = Collections.unmodifiableCollection( Arrays.asList(
+        EncodeDecodeAssertion.TransformType.HEX_ENCODE,
+        EncodeDecodeAssertion.TransformType.HEX_DECODE
+    ) );
+
+    private JPanel mainPanel;
+    private JComboBox encodeDecodeComboBox;
+    private JTextField sourceVariableTextField;
+    private JTextField targetVariableTextField;
+    private JComboBox dataTypeComboBox;
+    private JTextField contentTypeTextField;
+    private JTextField encodingTextField;
+    private JCheckBox strictCheckBox;
+    private JTextField lineBreakEveryTextField;
+    private JCheckBox multipleLinesCheckBox;
+    private JLabel lineBreakLabel1;
+    private JLabel lineBreakLabel2;
+
+    private boolean enableExperimental = false;
+
+    private void checkEnableExperimental( final EncodeDecodeAssertion assertion ) {
+        boolean enableExperimental = false;
+
+        if ( assertion != null && assertion.getTransformType() != null ) {
+            enableExperimental = experimentalTransforms.contains( assertion.getTransformType() );
+        }
+
+        if ( !enableExperimental ) {
+            final Registry registry = Registry.getDefault();
+            if ( registry != null ) {
+                final LicenseManager licenseManager = registry.getLicenseManager();
+                if ( licenseManager != null ) {
+                    enableExperimental = licenseManager.isFeatureEnabled( "set:experimental" );
+                }
+            }
+        }
+
+        this.enableExperimental = enableExperimental;
+    }
+
+    /**
+     * Get non experimental transforms
+     */
+    private EncodeDecodeAssertion.TransformType[] getCoreTransformTypes( final EncodeDecodeAssertion.TransformType[] source ) {
+        final Collection<EncodeDecodeAssertion.TransformType> transforms = new ArrayList<EncodeDecodeAssertion.TransformType>();
+
+        for ( final EncodeDecodeAssertion.TransformType transform : source ) {
+            if ( !experimentalTransforms.contains( transform )) {
+                transforms.add( transform );
+            }
+        }
+
+        return transforms.toArray( new EncodeDecodeAssertion.TransformType[transforms.size()] );
+    }
+
+    private void setText( final JTextComponent textComponent, final String text ) {
+        if ( text != null ) {
+            textComponent.setText( text );
+            textComponent.setCaretPosition( 0 );
+        }
+    }
+
+    private String nullIfEmpty( final JTextComponent textComponent ) {
+        String value = null;
+        final String text = textComponent.getText();
+        if ( textComponent.isEnabled() && text != null && !text.trim().isEmpty() ) {
+            value = text.trim();            
+        }
+        return value;
+    }
+
+    private void validateData() {
+        // validation
+        String message = VariableMetadata.validateName( VariablePrefixUtil.fixVariableName( sourceVariableTextField.getText() ) );
+        if ( message == null ) {
+            message = VariableMetadata.validateName( VariablePrefixUtil.fixVariableName( targetVariableTextField.getText() ) );
+        }
+
+        if ( message == null && lineBreakEveryTextField.isEnabled() && !ValidationUtils.isValidInteger( lineBreakEveryTextField.getText(), false, 0, Integer.MAX_VALUE ) ) {
+            message = "Invalid line break value, must be a non-negative integer.";
+        }
+
+        if ( message == null && contentTypeTextField.isEnabled() ) {
+            try {
+                final ContentTypeHeader contentType = ContentTypeHeader.parseValue( contentTypeTextField.getText() );
+                final String charset = contentType.getParam("charset");
+                if ( charset != null ) {
+                    try {
+                        Charset.forName( charset );
+                    } catch ( IllegalArgumentException iae ) {
+                        message = "Invalid content type charset '"+encodingTextField.getText()+"'";
+                    }
+                }
+            } catch ( IOException e ) {
+                message = "Invalid content type '"+ ExceptionUtils.getMessage( e )+"'";
+            }
+        }
+
+        if ( message == null && encodingTextField.isEnabled() ) {
+            try {
+                Charset.forName( encodingTextField.getText() );
+            } catch ( IllegalArgumentException iae ) {
+                message = "Invalid encoding '"+encodingTextField.getText()+"'";
+            }
+        }
+
+        if ( message != null ) {
+            throw new ValidationException( message, "Invalid Property", null );
+        }
+    }
+
+    private void enableDisableComponents() {
+        boolean enableAny = !isReadOnly();
+
+        final EncodeDecodeAssertion.TransformType transformType = (EncodeDecodeAssertion.TransformType) encodeDecodeComboBox.getSelectedItem();
+        DataType targetDataType = (DataType) dataTypeComboBox.getSelectedItem();
+        if ( transformType.isBinaryOutput() ) {
+            dataTypeComboBox.setModel( new DefaultComboBoxModel( new DataType[]{ DataType.STRING, DataType.MESSAGE, DataType.CERTIFICATE } ) );
+        } else {
+            dataTypeComboBox.setModel( new DefaultComboBoxModel( new DataType[]{ DataType.STRING, DataType.MESSAGE } ) );
+        }
+        dataTypeComboBox.setSelectedItem( targetDataType );
+        if ( dataTypeComboBox.getSelectedItem() != targetDataType ) {
+            dataTypeComboBox.setSelectedItem( DataType.MESSAGE );
+        }
+
+        boolean enableEncoding = false;
+        boolean enableContentType = false;
+        if ( targetDataType == DataType.STRING ) {
+            enableEncoding = enableAny && transformType.isBinaryOutput();
+        } else if ( targetDataType == DataType.MESSAGE ) {
+            enableContentType = enableAny;
+        }
+        if ( transformType.encodingRequired() || transformType.isBinaryInput() ) {
+            enableEncoding = enableAny;    
+        }
+        contentTypeTextField.setEnabled(  enableContentType );
+        encodingTextField.setEnabled( enableEncoding );
+
+        strictCheckBox.setEnabled( transformType.isStrictSupported() && enableAny );
+
+        boolean enableOutputFormat = enableAny && !transformType.isBinaryOutput();
+        multipleLinesCheckBox.setEnabled( enableOutputFormat );
+        boolean enableLineBreak = multipleLinesCheckBox.isEnabled() && multipleLinesCheckBox.isSelected();
+        lineBreakLabel1.setEnabled( enableLineBreak );
+        lineBreakEveryTextField.setEnabled( enableLineBreak );
+        lineBreakLabel2.setEnabled( enableLineBreak );
+
+        getOkButton().setEnabled( enableAny );
+    }
+}
