@@ -79,6 +79,7 @@ public class HexUtils {
     //private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final char[] hexadecimal_upper = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     /**
      * Encode the binary data as base64. The encoded base64 String returned WILL be formatted with a CRLF every 76 bytes
@@ -186,14 +187,19 @@ public class HexUtils {
     }
 
     public static String hexDump(byte[] binaryData, int off, int len) {
+        return hexDump( binaryData, off, len, false );
+    }
+
+    public static String hexDump(byte[] binaryData, int off, int len, boolean upperCase) {
+        final char[] hex = upperCase ? hexadecimal_upper : hexadecimal;
         if (binaryData == null) throw new NullPointerException();
         if (off < 0 || len < 0 || off + len > binaryData.length) throw new IllegalArgumentException();
         char[] buffer = new char[len * 2];
         for (int i = 0; i < len; i++) {
             int low = (binaryData[off + i] & 0x0f);
             int high = ((binaryData[off + i] & 0xf0) >> 4);
-            buffer[i*2] = hexadecimal[high];
-            buffer[i*2 + 1] = hexadecimal[low];
+            buffer[i*2] = hex[high];
+            buffer[i*2 + 1] = hex[low];
         }
         return new String(buffer);
     }
