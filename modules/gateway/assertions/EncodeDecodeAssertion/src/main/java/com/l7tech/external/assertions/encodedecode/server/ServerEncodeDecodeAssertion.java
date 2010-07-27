@@ -60,7 +60,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
         }
         ContentTypeHeader contentTypeHeader;
         try {
-            contentTypeHeader = ContentTypeHeader.parseValue( assertion.getTargetContentType() );
+            contentTypeHeader = assertion.getTargetContentType()==null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.parseValue( assertion.getTargetContentType() );
         } catch ( IOException e ) {
             contentTypeHeader = ContentTypeHeader.XML_DEFAULT;
             logger.warning( "Unable to target Content-Type '"+assertion.getTargetContentType()+"', falling back to text/xml" );
