@@ -601,6 +601,7 @@ public class GatewayFeatureSets {
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
+        GatewayFeatureSet profileFirewall =
         fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
@@ -622,6 +623,14 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(esmAssertions));
+
+        fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
+            "Same features as XML Firewall for now.",
+            fs(profileFirewall));
+
+        fsp("set:Profile:CloudProtect", "CloudSpan CloudProtect",
+            "Same features as XML Firewall for now.",
+            fs(profileFirewall));
 
         GatewayFeatureSet profileGateway =
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
@@ -650,6 +659,10 @@ public class GatewayFeatureSets {
             fs(uiFw),
             fs(esmAssertions),
             fs(wssp));
+
+        fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
+            "Same features as Gateway for now.",
+            fs(profileGateway));
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
             "Same as SecureSpan Gateway.",
