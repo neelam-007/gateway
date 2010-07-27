@@ -103,7 +103,7 @@ public class DialogDisplayer {
 
         final JDialog dlg = optionPane.createDialog(parent, title);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         displayNatively(dlg, null);
         if (continuation != null) continuation.run();
     }
