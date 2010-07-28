@@ -251,13 +251,28 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (connector == null) return false;
 
         ConnectorTableModel model = (ConnectorTableModel)connectorTable.getModel();
-        boolean conflict = model.conflictChecking(connector, true);
-        if (! conflict)  return false;
 
-        String title = "Port Conflict";
-        String warningMessage = "The port " + connector.getPort() + " is already in use on that interface or on an (All) interface. Please try another port.";
-        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), title, warningMessage, null);
-        return true;
+        Pair<PortRange, Pair<SsgConnector, PortRange>> conflict = model.conflictChecking(connector, true);
+        if ( null != conflict ) {
+            String conflictMsgLeft = conflict.left.isSinglePort() ?
+                "Port " + conflict.left.getPortStart() :
+                "Port range [" + conflict.left.getPortStart() + ":" + conflict.left.getPortEnd() + "]";
+
+            String conflictMsgRight = conflict.left.isSinglePort() && conflict.right.right.isSinglePort() ? "connector: " + conflict.right.left.getName() :
+                ( conflict.right.right.isSinglePort() ?
+                "port " + conflict.right.right.getPortStart() :
+                "port range [" + conflict.right.right.getPortStart() + ":" + conflict.right.right.getPortEnd() + "]") +
+                " of connector: " + conflict.right.left.getName();
+
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Port Conflict",
+                conflictMsgLeft + " conflicts with " + conflictMsgRight,
+                null);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -641,9 +656,9 @@ public class SsgConnectorManagerWindow extends JDialog {
          *
          * @param connector: the given connector to check
          * @param onlyEnabled: true to only check enabled connectors
-         * @return true if there exist a conflict port, false otherwise.
+         * @return the range (or port) in the provided connector and the conflicting connector and port range, or null if there are no conflicts
          */
-        public boolean conflictChecking(SsgConnector connector, boolean onlyEnabled) {
+        private Pair<PortRange, Pair<SsgConnector,PortRange>> conflictChecking(SsgConnector connector, boolean onlyEnabled) {
             if ( !onlyEnabled || connector.isEnabled() ) {
                 for (ConnectorTableRow row: rows) {
                     if ( onlyEnabled && !row.getConnector().isEnabled() )
@@ -652,14 +667,19 @@ public class SsgConnectorManagerWindow extends JDialog {
                     if (connector.getOid() == row.getConnector().getOid())
                         continue;
 
-                    final List<PortRange> usedPorts = row.getConnector().getUsedPorts();
-                    for (PortRange range : usedPorts) {
-                        if (connector.isOverlapping(range))
-                            return true;
+                    SsgConnector maybeConflictingConnector = row.getConnector();
+                    final List<PortRange> usedPorts = maybeConflictingConnector.getUsedPorts();
+                    for (PortRange maybeConflictingRange : usedPorts) {
+                        for(PortRange range : connector.getUsedPorts()) {
+                            if (range.isOverlapping(maybeConflictingRange))
+                                return new Pair<PortRange, Pair<SsgConnector, PortRange>>(
+                                    range,
+                                    new Pair<SsgConnector, PortRange>(maybeConflictingConnector, maybeConflictingRange));
+                        }
                     }
                 }
             }
-            return false;
+            return null;
         }
     }
 }

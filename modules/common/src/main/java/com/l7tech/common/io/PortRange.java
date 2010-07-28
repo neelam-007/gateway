@@ -89,6 +89,10 @@ public class PortRange implements Serializable, PortOwner {
         return Arrays.asList(this);
     }
 
+    public boolean isSinglePort() {
+        return portStart == portEnd;
+    }
+
     /**
      * Check if the specified port is in use by any of the specified port owners.
      *
