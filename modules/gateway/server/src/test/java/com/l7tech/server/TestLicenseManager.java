@@ -76,4 +76,9 @@ public class TestLicenseManager implements AssertionLicense, UpdatableLicenseMan
     public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
      
     }
+
+    @Override
+    public void validateLicense(String licenseXml) throws InvalidLicenseException {
+
+    }
 }

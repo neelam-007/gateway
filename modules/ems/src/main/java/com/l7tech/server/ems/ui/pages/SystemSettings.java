@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ems.EsmLicenseManager;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.ui.CertLicExpiryStatus;
@@ -662,6 +663,12 @@ public class SystemSettings extends EsmStandardWebPage {
                     }
 
                     final String license = XmlUtil.nodeToString(XmlUtil.parse(upload.getInputStream(), false));
+                    try {
+                        licenseManager.validateLicense(license);
+                    } catch (InvalidLicenseException e) {
+                        formFeedback.error( ExceptionUtils.getMessage(e) );
+                        return;
+                    }
                     EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model<License>(new License(license, null, null)) );
 
                     YuiDialog dialog = new YuiDialog("dynamic.holder.content", "License Agreement", YuiDialog.Style.OK_CANCEL, eula, new YuiDialog.OkCancelCallback(){

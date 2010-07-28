@@ -37,4 +37,13 @@ public interface UpdatableLicenseManager extends LicenseManager {
      * @throws com.l7tech.objectmodel.UpdateException   if the database change could not be recorded (old license restored)
      */
     void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException;
+
+    /**
+     * Validate the license.
+     *
+     * @param licenseXml    The license to validate
+     * @throws com.l7tech.gateway.common.InvalidLicenseException  License that is invalid with reason.
+     */
+    public void validateLicense( final String licenseXml ) throws InvalidLicenseException;
+
 }

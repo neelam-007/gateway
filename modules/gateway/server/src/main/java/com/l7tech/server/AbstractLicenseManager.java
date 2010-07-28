@@ -76,11 +76,9 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     }
 
     /**
-     * Validate the license.
-     *
-     * @param licenseXml    The license to validate
-     * @throws com.l7tech.gateway.common.InvalidLicenseException  License that is invalid with reason.
+     * {@inheritDoc}
      */
+    @Override
     public void validateLicense( final String licenseXml ) throws InvalidLicenseException {
         try {
             final License license = new License(licenseXml, getTrustedIssuers(), getFeatureSetExpander());
