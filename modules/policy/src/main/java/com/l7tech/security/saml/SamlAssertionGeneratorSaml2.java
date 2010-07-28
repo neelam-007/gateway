@@ -3,7 +3,6 @@ package com.l7tech.security.saml;
 import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.NamespaceFactory;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -166,7 +165,7 @@ public class SamlAssertionGeneratorSaml2 {
                 return;
             }
 
-            subjectConfirmation.setSubjectConfirmationData(KeyInfoConfirmationDataType.Factory.newInstance());
+            subjectConfirmation.setSubjectConfirmationData(KeyInfoConfirmationDataType.Factory.newInstance(getXmlOptions()));
             KeyInfoConfirmationDataType kicdt = (KeyInfoConfirmationDataType) subjectConfirmation.getSubjectConfirmationData();
 
             X509Certificate cert = (X509Certificate)keyInfo;
@@ -214,7 +213,7 @@ public class SamlAssertionGeneratorSaml2 {
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
 
-        AssertionType assertion = AssertionType.Factory.newInstance();
+        AssertionType assertion = AssertionType.Factory.newInstance(getXmlOptions());
 
         assertion.setVersion("2.0");
         if (assertionId == null)
@@ -223,11 +222,11 @@ public class SamlAssertionGeneratorSaml2 {
             assertion.setID(assertionId);
         assertion.setIssueInstant(now);
 
-        NameIDType issuer = NameIDType.Factory.newInstance();
+        NameIDType issuer = NameIDType.Factory.newInstance(getXmlOptions());
         issuer.setStringValue(caCn);
         assertion.setIssuer(issuer);
 
-        ConditionsType ct = ConditionsType.Factory.newInstance();
+        ConditionsType ct = ConditionsType.Factory.newInstance(getXmlOptions());
         if (audienceRestriction != null) ct.addNewAudienceRestriction().addAudience(audienceRestriction);
         Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
@@ -241,19 +240,26 @@ public class SamlAssertionGeneratorSaml2 {
     }
 
     private Document assertionToDocument(AssertionType assertion) {
-        AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
+        AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance(getXmlOptions());
         assertionDocument.setAssertion(assertion);
 
-        XmlOptions xo = new XmlOptions();
-        Map<String, String> namespaces = new LinkedHashMap<String, String>();
+        return fixPrefixes((Document) assertionDocument.newDomNode(getXmlOptions()), getNamespaceMap());
+    }
+
+    private Map<String,String> getNamespaceMap() {
+        final Map<String, String> namespaces = new LinkedHashMap<String, String>();
         namespaces.put(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX);
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
-        namespaces.put( SoapConstants.DIGSIG_URI, "dsig");
-        xo.setSaveSuggestedPrefixes(namespaces);
+        namespaces.put(SoapConstants.DIGSIG_URI, "ds");
+        return namespaces;
+    }
 
-        return fixPrefixes((Document) assertionDocument.newDomNode(xo), namespaces);
+    private XmlOptions getXmlOptions() {
+        XmlOptions xo = new XmlOptions();
+        xo.setSaveSuggestedPrefixes(getNamespaceMap());
+        return xo;
     }
 
     /**
@@ -261,18 +267,19 @@ public class SamlAssertionGeneratorSaml2 {
      */
     private Document fixPrefixes(Document document, Map<String, String> namespaces) {
         for (Map.Entry<String, String> nsAndPrefix : namespaces.entrySet()) {
-            fixPrefixes(document.getDocumentElement(), nsAndPrefix.getValue(), nsAndPrefix.getKey());
+            fixPrefixes(document.getDocumentElement(), nsAndPrefix.getValue(), null, nsAndPrefix.getKey());
         }
         return document;
     }
 
-    private void fixPrefixes(Element element, String prefix, String namespace) {
+    private void fixPrefixes(Element element, String prefix, String replacedPrefix, String namespace) {
         // fix any ns decls on this element
-        NamedNodeMap attributes = element.getAttributes();
+        final NamedNodeMap attributes = element.getAttributes();
         for (int n=0; n<attributes.getLength(); n++) {
             Attr attr = (Attr) attributes.item(n);
             if (namespace.equals(attr.getValue()) &&
                     XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(attr.getNamespaceURI())) {
+                replacedPrefix = attr.getPrefix();
                 element.removeAttributeNode(attr);
                 element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + prefix, namespace);
                 break;
@@ -284,15 +291,17 @@ public class SamlAssertionGeneratorSaml2 {
             element.setPrefix(prefix);
         }
 
-        String saml2Prefix = DomUtils.findActivePrefixForNamespace(element, SamlConstants.NS_SAML2);
-        if (saml2Prefix == null) throw new IllegalStateException("Unable to find saml2 prefix");
-
-        // fix xsi:type
-        if ( "SubjectConfirmationData".equals( element.getLocalName() ) && SamlConstants.NS_SAML2.equals( element.getNamespaceURI() )) {
-            element.setAttributeNS(
-                    XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI,
-                    "xsi:type",
-                    saml2Prefix + ":KeyInfoConfirmationDataType");
+        // fix any xsi:type attribute
+        final Attr attr = element.getAttributeNodeNS(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type");
+        if ( attr != null ) {
+            final String value = attr.getValue();
+            if ( value != null && !value.isEmpty() ) {
+                if ( value.indexOf( ":" ) < 0 && replacedPrefix==null ) {
+                    attr.setValue( prefix + ":" + value );
+                } else if ( value.indexOf( ":" ) > 0 && replacedPrefix != null ) {
+                    attr.setValue( prefix + value.substring(value.indexOf( ":" )));
+                }
+            }
         }
 
         // fix children
@@ -300,7 +309,7 @@ public class SamlAssertionGeneratorSaml2 {
         for (int n=0; n<children.getLength(); n++) {
             Node node = children.item(n);
             if (node.getNodeType()==Node.ELEMENT_NODE) {
-                fixPrefixes((Element)node, prefix, namespace);
+                fixPrefixes((Element)node, prefix, replacedPrefix, namespace);
             }
         }
     }
