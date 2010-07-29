@@ -203,9 +203,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         protocolComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                enableOrDisableTabs();
-                enableOrDisableEndpoints();
-                enableOrDisableTlsVersions();
+                enableOrDisableComponents();
             }
         });
 
@@ -223,7 +221,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 JCheckBox source = (JCheckBox)e.getSource();
                 saveCheckBoxState(source);
-                enableOrDisableEndpoints();
+                enableOrDisableComponents();
             }
         };
         for (JCheckBox cb : savedStateCheckBoxes) {
@@ -773,6 +771,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         enableOrDisableTlsVersions();
         enableOrDisableCipherSuiteButtons();
         enableOrDisablePropertyButtons();
+        enableOrDisableServiceResolutionCheckboxes();
         enableOrDisableServiceResolutionDropdowns();
     }
 
@@ -816,6 +815,23 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         privateKeyComboBox.setEnabled(isSsl);
         managePrivateKeysButton.setEnabled(isSsl);
 
+        // Show custom controls, if any
+        if (proto != null && proto.getCustomPropertiesPanelClassname() != null) {
+            ((CardLayout)otherSettingsPanel.getLayout()).show(otherSettingsPanel, proto.getScheme());
+            tabbedPane.setEnabledAt(TAB_CUSTOM, true);
+        } else {
+            tabbedPane.setEnabledAt(TAB_CUSTOM, false);
+        }
+    }
+
+    private void enableOrDisableServiceResolutionCheckboxes() {
+        TransportDescriptor proto = getSelectedProtocol();
+
+        if (!cbEnableMessageInput.isSelected()) {
+            setEnableAndSelect(false, false, "Disabled because published service message input is not enabled", overrideContentTypeCheckBox, hardwiredServiceCheckBox);
+            return;
+        }
+
         boolean oct = proto != null && proto.isSupportsSpecifiedContentType();
         if (oct) {
             if (proto.isRequiresSpecifiedContentType()) {
@@ -839,16 +855,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             setEnableAndSelect(false, false, "Disabled because the current protocol does not support hardwired service resolution", hardwiredServiceCheckBox);
         }
         serviceNameComboBox.setEnabled(hws);
-
-        // Show custom controls, if any
-        if (proto != null && proto.getCustomPropertiesPanelClassname() != null) {
-            ((CardLayout)otherSettingsPanel.getLayout()).show(otherSettingsPanel, proto.getScheme());
-            tabbedPane.setEnabledAt(TAB_CUSTOM, true);
-        } else {
-            tabbedPane.setEnabledAt(TAB_CUSTOM, false);
-        }
-
-        enableOrDisableServiceResolutionDropdowns();
     }
 
     private void disableOrRestoreEndpointCheckBox(Set<Endpoint> endpoints, SsgConnector.Endpoint endpoint, JCheckBox checkBox) {
