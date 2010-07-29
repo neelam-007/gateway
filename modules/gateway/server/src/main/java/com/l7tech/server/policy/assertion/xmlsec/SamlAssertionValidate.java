@@ -74,7 +74,8 @@ public class SamlAssertionValidate {
                           final ProcessorResult wssResults,
                           final Collection<Error> validationResults,
                           final Collection<Pair<String, String[]>> collectAttrValues,
-                          final Collection<String> clientAddresses) {
+                          final Collection<String> clientAddresses,
+                          final String recipient ) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -124,7 +125,7 @@ public class SamlAssertionValidate {
                         x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
                             (x0Assertion.oasisNamesTcSAML2.AssertionType)xmlObject;
                         validateConditions(assertionType.getConditions(), now, validationResults);
-                        validateSubjectConfirmation(assertionType.getSubject(), now, clientAddresses, validationResults);
+                        validateSubjectConfirmation(assertionType.getSubject(), now, clientAddresses, recipient ,validationResults);
 
                         Collection<XmlObject> statementList = new ArrayList<XmlObject>();
                         statementList.addAll(Arrays.asList(assertionType.getAuthnStatementArray()));
@@ -569,8 +570,9 @@ public class SamlAssertionValidate {
     private void validateSubjectConfirmation( final x0Assertion.oasisNamesTcSAML2.SubjectType subjectType,
                                               final Calendar timeNow,
                                               final Collection<String> clientAddresses,
+                                              final String recipient,
                                               final Collection<Error> validationResults) {
-        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, clientAddresses, validationResults);
+        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, clientAddresses, recipient, validationResults);
     }
 
     /**

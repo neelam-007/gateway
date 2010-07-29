@@ -5,11 +5,14 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.Functions;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.EnumSet;
@@ -89,6 +92,9 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         this.setTarget(requestWssSaml.getTarget());
         this.setOtherTargetMessageVariable(requestWssSaml.getOtherTargetMessageVariable());
         this.setEnabled(requestWssSaml.isEnabled());
+        this.setSubjectConfirmationDataCheckAddress(requestWssSaml.isSubjectConfirmationDataCheckAddress());
+        this.setSubjectConfirmationDataCheckValidity(requestWssSaml.isSubjectConfirmationDataCheckValidity());
+        this.setSubjectConfirmationDataRecipient(requestWssSaml.getSubjectConfirmationDataRecipient());
     }
 
     /**
@@ -218,7 +224,12 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return messageTargetableSupport.getVariablesUsed();
+        final Set<String> variables = new HashSet<String>();
+        variables.addAll( Arrays.asList(messageTargetableSupport.getVariablesUsed()) );
+        if ( subjectConfirmationDataRecipient!=null ) {
+            variables.addAll( Arrays.asList(Syntax.getReferencedNames(subjectConfirmationDataRecipient)) );
+        }
+        return variables.toArray( new String[variables.size()] );
     }
 
     @Override

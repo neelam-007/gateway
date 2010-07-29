@@ -53,7 +53,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -93,7 +93,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -135,7 +135,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -175,7 +175,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         // check for error message
         String expectedError = "SAML Constraint Error: Audience Restriction Check Failed";
@@ -292,7 +292,7 @@ public class Saml2ValidationTest {
                                          final String address ) {
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, Collections.singleton( address ));
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, Collections.singleton( address ), templateSaml.getSubjectConfirmationDataRecipient());
 
         // check for error message
         boolean foundError = false;
@@ -331,7 +331,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         boolean foundUnsignedError = false;
         for ( final Object result : results ) {
@@ -366,7 +366,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         boolean foundError = false;
         String expectedError = "SAML Constraint Error: Multiple OneTimeUse conditions are not permitted.";
@@ -406,7 +406,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -425,7 +425,7 @@ public class Saml2ValidationTest {
         // validate 2
         SamlAssertionValidate sav2 = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results2 = new ArrayList<SamlAssertionValidate.Error>();
-        sav2.validate(assertionDocument, null, fakeProcessorResults(assertion), results2, null, null);
+        sav2.validate(assertionDocument, null, fakeProcessorResults(assertion), results2, null, null, null);
 
         boolean foundError2 = false;
         boolean methodError = false;
@@ -470,7 +470,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -510,7 +510,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -523,7 +523,6 @@ public class Saml2ValidationTest {
         // check only unsigned assertion error
         assertTrue("Should be no errors.", results.size()==1 && foundError);
     }
-
 
     private ProcessorResult fakeProcessorResults(final SamlAssertion assertion) {
         return new MockProcessorResult() {

@@ -24,6 +24,7 @@ class Saml2SubjectAndConditionValidate {
                                  final SubjectType subject,
                                  final Calendar now,
                                  final Collection<String> clientAddresses,
+                                 final String recipient,
                                  final Collection<SamlAssertionValidate.Error> validationResults ) {
         if (subject == null) {
             validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
@@ -125,10 +126,10 @@ class Saml2SubjectAndConditionValidate {
                         }
                     }
 
-                    if ( requestWssSaml.getSubjectConfirmationDataRecipient() != null &&
+                    if ( recipient != null &&
                          confirmationData.getRecipient() !=null &&
-                         !requestWssSaml.getSubjectConfirmationDataRecipient().equals(confirmationData.getRecipient()) ) {
-                        logger.finer("Statement condition is invalid, 'Recipient' " + confirmationData.getRecipient() + " does not match required value '"+requestWssSaml.getSubjectConfirmationDataRecipient()+"'." );
+                         !recipient.equals(confirmationData.getRecipient()) ) {
+                        logger.finer("Statement condition is invalid, 'Recipient' " + confirmationData.getRecipient() + " does not match required value '"+recipient+"'." );
                         statementValid = false;
                     }
                 }

@@ -18,6 +18,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -140,13 +141,14 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
-            Collection<SamlAssertionValidate.Error> validateResults = new ArrayList<SamlAssertionValidate.Error>();
-            Collection<Pair<String, String[]>> collectAttrValues = new ArrayList<Pair<String, String[]>>();
-            LoginCredentials credentials = authContext.getLastCredentials();
-            Collection<String> clientAddresses = message.getKnob(TcpKnob.class) != null && message.getTcpKnob().getRemoteAddress() != null? 
+            final Collection<SamlAssertionValidate.Error> validateResults = new ArrayList<SamlAssertionValidate.Error>();
+            final Collection<Pair<String, String[]>> collectAttrValues = new ArrayList<Pair<String, String[]>>();
+            final LoginCredentials credentials = authContext.getLastCredentials();
+            final Collection<String> clientAddresses = message.getKnob(TcpKnob.class) != null && message.getTcpKnob().getRemoteAddress() != null?
                     Collections.singleton( message.getTcpKnob().getRemoteAddress() ) :
                     null;
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues, clientAddresses);
+            final String recipient = expandVars( assertion.getSubjectConfirmationDataRecipient(), context );
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues, clientAddresses, recipient);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
                 boolean firstPass = true;
@@ -200,6 +202,17 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
         // Publish as context variables
         publishAttrVariables(context, attrvals);
+    }
+
+    private String expandVars( final String text, final PolicyEnforcementContext context ) {
+        String expanded = null;
+
+        if ( text != null ) {
+            final Map<String, Object> variables = context.getVariableMap( assertion.getVariablesUsed(), auditor );
+            expanded = ExpandVariables.process( text, variables, auditor );
+        }
+
+        return expanded;
     }
 
     private static Map<String, List<String>> collateAttrValues(Collection<Pair<String, String[]>> collectAttrValues) {
