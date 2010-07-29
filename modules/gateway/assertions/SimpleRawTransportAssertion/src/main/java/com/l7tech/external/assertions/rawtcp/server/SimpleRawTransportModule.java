@@ -338,6 +338,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         try {
             ServerSocket serverSocket = new ServerSocket(connector.getPort(), backlog, InetAddress.getByName(bindAddress));
             final ServerSock serverSock = new ServerSock(connector, serverSocket, executor, executorNeedsClose);
+            logger.info("Starting " + connector.getScheme() + " connector on port " + connector.getPort());
             serverSock.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, ServerSock>(connector, serverSock));
 
