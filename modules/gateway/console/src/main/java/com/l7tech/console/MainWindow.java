@@ -1895,10 +1895,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         boolean added = false;
         Set<Assertion> assertions = TopComponents.getInstance().getAssertionRegistry().getAssertions();
         for (Assertion assertion : assertions) {
-            Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
-            if (actions != null) for (Action action : actions) {
-                menu.add(action);
-                added = true;
+            if (Registry.getDefault().getLicenseManager().isAssertionEnabled(assertion)) {
+                Action[] actions = assertion.meta().get(AssertionMetadata.GLOBAL_ACTIONS);
+                if (actions != null) for (Action action : actions) {
+                    menu.add(action);
+                    added = true;
+                }
             }
         }
 

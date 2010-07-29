@@ -583,6 +583,9 @@ public interface AssertionMetadata {
      * If null, or if this class doesn't exist or can't be loaded, this property is ignored and no listener
      * method is invoked.
      * <p/>
+     * Note that this listener is invoked even if assertion ownind this metadata is unlicensed.  The custom listener
+     * code is responsible for any needed license enforcement for associated new features.
+     * <p/>
      * This key was introduced in SecureSpan Gateway version 4.2.
      */
     String MODULE_LOAD_LISTENER_CLASSNAME = "moduleLoadListenerClassname";

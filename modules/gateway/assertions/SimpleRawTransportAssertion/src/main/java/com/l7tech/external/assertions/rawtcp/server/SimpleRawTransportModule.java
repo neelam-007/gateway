@@ -167,7 +167,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                                     MessageProcessor messageProcessor,
                                     StashManagerFactory stashManagerFactory)
     {
-        super("Simple raw transport module", logger, null, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("Simple raw transport module", logger, GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -237,6 +237,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     @Override
     protected void doStart() throws LifecycleException {
         super.doStart();
+        registerCustomProtocols();
         if (gatewayState.isReadyForMessages()) {
             try {
                 startInitialConnectors();
@@ -246,9 +247,11 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         }
     }
 
-    void registerApplicationEventListenerAndCustomProtocols() {
+    void registerApplicationEventListener() {
         applicationEventProxy.addApplicationListener(this);
+    }
 
+    private void registerCustomProtocols() {
         TransportDescriptor tcpInfo = new TransportDescriptor();
         tcpInfo.setScheme(SCHEME_RAW_TCP);
         tcpInfo.setSupportsPrivateThreadPool(true);
@@ -312,6 +315,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     private void addTcpConnector(SsgConnector connector) throws ListenerException {
+        if (!isLicensed())
+            return;
+
         String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
         if (bindAddress != null && !bindAddress.equals("*") && !bindAddress.equals("0.0.0.0")) {
             bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
