@@ -1024,11 +1024,10 @@ public class LogPanel extends JPanel {
         try {
             boolean omitXmlDeclaration = !xml.startsWith("<?xml");
             Document node = XmlUtil.stringToDocument(xml);
-            xml = nodeToFormattedString(node, node.getXmlEncoding(), omitXmlDeclaration);
+            return nodeToFormattedString(node, node.getXmlEncoding(), omitXmlDeclaration);
         } catch (Exception e) {
-            xml = "Can't reformat XML: " + e.toString();
+            return xml;
         }
-        return xml;
     }
 
     /**
@@ -1331,8 +1330,8 @@ public class LogPanel extends JPanel {
             msgDetailsPane = new JTabbedPane();
             msgDetailsPane.addTab("Details", getDetailsScrollPane());
             msgDetailsPane.addTab("Associated Logs", getAssociatedLogsScrollPane());
-            msgDetailsPane.addTab("Request XML", getRequestXmlPanel());
-            msgDetailsPane.addTab("Response XML", getResponseXmlPanel());
+            msgDetailsPane.addTab("Request", getRequestXmlPanel());
+            msgDetailsPane.addTab("Response", getResponseXmlPanel());
         }
 
         return msgDetailsPane;
