@@ -321,6 +321,8 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
         if (bindAddress != null && !bindAddress.equals("*") && !bindAddress.equals("0.0.0.0")) {
             bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
+        } else {
+            bindAddress = "0.0.0.0";
         }
 
         int backlog = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_BACKLOG, 5);
