@@ -17,6 +17,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.Map;
  * <p>
  * All Messages and MessageFacets should be assumed <em>not</em> to be threadsafe.
  */
-public final class Message {
+public final class Message implements Closeable {
     public static final String PROPERTY_ENABLE_ORIGINAL_DOCUMENT = "com.l7tech.message.enableOriginalDocument";
 
     private static boolean defaultEnableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);

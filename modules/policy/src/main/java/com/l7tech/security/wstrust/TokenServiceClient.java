@@ -484,8 +484,7 @@ public class TokenServiceClient {
         try {
             WssProcessor wssProcessor = new WssProcessorImpl();
             result = wssProcessor.undecorateMessage(new Message(response),
-                                                    null,
-                                                    null,
+                    null,
                                                     new SimpleSecurityTokenResolver(clientCertificate, clientPrivateKey));
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);

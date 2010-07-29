@@ -108,7 +108,6 @@ public class WssInteropTestMessage extends TestCase {
         Element ekkid = DomUtils.findFirstChildElementByName(ekstr, (String)null, "KeyIdentifier");
         ekkid.setTextContent(recipCertPrint);
         ekkid.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_THUMB_SHA1);
-        KeyInfoElement.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
 
         // Replace the EncryptedKey payload with our own symmetric key
         String aesKeyB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert, recipCert.getPublicKey()), true);
@@ -261,7 +260,7 @@ public class WssInteropTestMessage extends TestCase {
                 return aesKey.getEncoded();
             }
         };
-        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, resolver);
+        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, resolver);
 
         log.info("The following elements had at least all their content encrypted:");
         EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();

@@ -125,7 +125,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         decoReq.setSenderSamlToken(samlAssertion, false);
         deco.decorateMessage(new Message(requestDoc), decoReq);
         requestXml.setDocument(requestDoc);
-        requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, securityTokenResolver));
+        requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, securityTokenResolver));
     }
 
     /**

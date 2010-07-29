@@ -1106,7 +1106,6 @@ public class MessageProcessor {
 
         final ProcessorResult processorResultRaw =
                 wssProcessor.undecorateMessage(response,
-                                               ssg.getServerCertificate(),
                                                scf,
                                                tokenResolver
                 );

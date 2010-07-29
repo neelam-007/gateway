@@ -72,7 +72,6 @@ public class WssProcessorImpl implements WssProcessor {
     public final List<String> validatedSignatureValues = new ArrayList<String>();
 
     // WARNING : Settings must be copied in undecorateMessage
-    private X509Certificate senderCertificate = null;
     private SecurityTokenResolver securityTokenResolver = null;
     private SecurityContextFinder securityContextFinder = null;
     private long signedAttachmentSizeLimit = 0;
@@ -104,7 +103,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     /**
      * Create a WssProcessorImpl context not bound to any message.
-     * An unbound WssProcessorImpl cannot perform any operations except {@link #undecorateMessage}.
+     * An unbound WssProcessorImpl cannot perform any operations except {@link WssProcessor#undecorateMessage}.
      */
     public WssProcessorImpl() {
         // TODO remove this constructor and the entire WssProcessor interface, then rename this class to WssProcessor
@@ -122,13 +121,11 @@ public class WssProcessorImpl implements WssProcessor {
 
     @Override
     public ProcessorResult undecorateMessage(Message message,
-                                             X509Certificate senderCertificate,
                                              SecurityContextFinder securityContextFinder,
                                              SecurityTokenResolver securityTokenResolver)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         final WssProcessorImpl context = new WssProcessorImpl(message);
-        context.setSenderCertificate(senderCertificate);
         context.setSecurityContextFinder(securityContextFinder);
         context.setSecurityTokenResolver(securityTokenResolver);
         context.setSignedAttachmentSizeLimit(signedAttachmentSizeLimit);
@@ -147,13 +144,6 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void setSignedAttachmentSizeLimit(final long size) {
         signedAttachmentSizeLimit = size;
-    }
-
-    /**
-     * @param senderCertificate    the sender's cert, if known, so that Signatures containing SKI KeyInfos can be matched up, or null to disable this feature.
-     */
-    public void setSenderCertificate(X509Certificate senderCertificate) {
-        this.senderCertificate = senderCertificate;
     }
 
     /**
@@ -869,25 +859,6 @@ public class WssProcessorImpl implements WssProcessor {
             }
         }
         return null;
-    }
-
-    // @return the identified cert from its SKI, or null if we struck out
-    private X509Certificate resolveCertBySkiRef(Element ki) throws InvalidDocumentFormatException {
-        // We might have here a KeyInfo/SecurityTokenReference/KeyId[@valueType="...SKI"]/BASE64EDCRAP
-        if (senderCertificate == null)
-            return null; // nothing to compare it with
-        try {
-            KeyInfoElement.assertKeyInfoMatchesCertificate(ki, senderCertificate);
-            return senderCertificate;
-        } catch (UnexpectedKeyInfoException e) {
-            // Ski was mentioned, but did not match senderCert.
-            return null;
-        } catch (KeyInfoElement.UnsupportedKeyInfoFormatException e) {
-            // We didn't recognize this KeyInfo
-            return null;
-        } catch (CertificateException e) {
-            throw new InvalidDocumentFormatException("KeyInfo contained an embedded cert, but it could not be decoded", e);
-        }
     }
 
     private ProcessorResult produceResult() throws ProcessorException {
@@ -1978,13 +1949,6 @@ public class WssProcessorImpl implements WssProcessor {
             if (signingCert != null) {
                 signingCertToken = createDummyBst(sigElement.getOwnerDocument(), signingCert);
                 securityTokens.add(signingCertToken);
-            }
-        }
-        if (signingCert == null) { // last chance: see if we happen to recognize a SKI, perhaps because it is ours or theirs
-            signingCert = resolveCertBySkiRef(keyInfoElement);
-            if (signingCert != null) {
-                signingCertToken = createDummyBst(sigElement.getOwnerDocument(), signingCert);
-                securityTokens.add(signingCertToken); // nasty, blah
             }
         }
 

@@ -204,7 +204,7 @@ public class PolicyServiceClient {
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(new Message(response), null, null, new SimpleSecurityTokenResolver(clientCert, clientKey));
+            result = wssProcessor.undecorateMessage(new Message(response), null, new SimpleSecurityTokenResolver(clientCert, clientKey));
         } catch (BadSecurityContextException e) {
             throw new ProcessorException(e); // can't happen
         } catch (IOException e) {

@@ -172,7 +172,6 @@ public class JceProviderTest {
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(
                     new Message(null/*td.c.message*/),
                     null,
-                    null,
                     null//new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
             //                     TestDocuments.getDotNetServerPrivateKey())
             );

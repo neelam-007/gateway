@@ -271,22 +271,6 @@ public class KeyInfoElement implements ParsedElement {
     };
 
     /**
-     * Make sure that the specified KeyInfo in fact is referring to the specified certificate.
-     *
-     * @param keyInfo    the KeyInfo element to check.  Must not be null.
-     * @param cert       the X.509 certificate we expect it to be referring to.  Must not be null.
-     * @throws InvalidDocumentFormatException   If we can't figure out the KeyInfo format.
-     * @throws UnexpectedKeyInfoException       If we understood the KeyInfo, but it is not referring to our certificate.
-     * @throws CertificateException             If we need the encoded form of the certificate but it is invalid.
-     */
-    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert)
-            throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
-    {
-        if (null == getTargetPrivateKeyForKeyInfo(keyInfo, new SimpleSecurityTokenResolver(cert, FAKE_KEY), null))
-            throw new UnexpectedKeyInfoException("KeyInfo was not recognized referring to the expected certificate");
-    }
-
-    /**
      * Attempt to decode an embedded certificate from a KeyInfo.
      *
      * @param keyInfo the KeyInfo element to examine.  Required.

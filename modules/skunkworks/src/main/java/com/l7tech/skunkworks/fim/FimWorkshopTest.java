@@ -97,7 +97,7 @@ public class FimWorkshopTest extends TestCase {
 
         WssProcessor processor = new WssProcessorImpl();
 
-        ProcessorResult result = processor.undecorateMessage(reqMess, null, null, null);
+        ProcessorResult result = processor.undecorateMessage(reqMess, null, null);
 
         XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         assertNotNull(tokens);

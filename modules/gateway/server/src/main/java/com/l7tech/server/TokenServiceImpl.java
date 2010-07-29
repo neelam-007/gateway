@@ -192,8 +192,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 WssProcessor trogdor = new WssProcessorImpl();
                 final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
-                                                                      null,
-                                                                      secureConversationContextManager,
+                        secureConversationContextManager,
                                                                       securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {

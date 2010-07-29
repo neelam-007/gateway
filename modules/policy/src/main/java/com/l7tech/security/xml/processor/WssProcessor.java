@@ -14,7 +14,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 
 /**
  * Consumes and removes the default Security header in a message, removes any associated decorations, and returns a
@@ -29,7 +28,6 @@ public interface WssProcessor {
      * That is, the contents of the Header/Security are processed as per the WSS rules.
      *
      * @param message the xml document containing the soap message. this document may be modified on exit.
-     * @param senderCertificate    the sender's cert, if known, so that Signatures containing SKI KeyInfos can be matched up, or null to disable this feature.
      * @param securityContextFinder a security context finder for looking up ws-sc sessions, or null to disable WS-SC support.
      * @param securityTokenResolver   a resolver for looking up certificates in various ways, or null disable certificate reference support.
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
@@ -46,7 +44,6 @@ public interface WssProcessor {
      *                                    this must be caught before ProcessorException.
      */
     ProcessorResult undecorateMessage(Message message,
-                                      X509Certificate senderCertificate,
                                       SecurityContextFinder securityContextFinder,
                                       SecurityTokenResolver securityTokenResolver)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;

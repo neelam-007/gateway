@@ -227,7 +227,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
                 Message reqMessage = context.getRequest();
                 SecurityKnob secKnob = requestSec!=null ? requestSec : reqMessage.getSecurityKnob();
-                secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, null, securityTokenResolver));
+                secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, securityTokenResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

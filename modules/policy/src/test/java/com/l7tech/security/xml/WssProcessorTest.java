@@ -70,8 +70,7 @@ public class WssProcessorTest {
         log.info("Testing document: " + testDocument.name);
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
         ProcessorResult result = wssProcessor.undecorateMessage(new Message(request),
-                                                                testDocument.senderCeritifcate,
-                                                                testDocument.securityContextFinder,
+                testDocument.securityContextFinder,
                                                                 new WrapSSTR(recipientCertificate,
                                                                              recipientPrivateKey,
                                                                              securityTokenResolver));
@@ -572,7 +571,7 @@ public class WssProcessorTest {
         log.info("Input decorated message (reformatted): \n" + XmlUtil.nodeToFormattedString(d));
         WssProcessor p = new WssProcessorImpl();
 
-        ProcessorResult got = p.undecorateMessage(new Message(d), null, null,
+        ProcessorResult got = p.undecorateMessage(new Message(d), null,
                                                   new WrapSSTR(aliceCert,
                                                                TestDocuments.getWssInteropAliceKey(),
                                                                new SimpleSecurityTokenResolver(bobCert)));
@@ -614,7 +613,7 @@ public class WssProcessorTest {
             }
         };
         Document doc = msg.getXmlKnob().getDocumentWritable();
-        ProcessorResult pr = new WssProcessorImpl().undecorateMessage(msg, null, scf, null);
+        ProcessorResult pr = new WssProcessorImpl().undecorateMessage(msg, scf, null);
         assertTrue(pr.getElementsThatWereSigned().length > 0);
         assertTrue(pr.getSigningTokens(pr.getTimestamp().asElement())[0] instanceof SecurityContextToken);
 
@@ -818,7 +817,7 @@ public class WssProcessorTest {
 
         try {
             Message signed2 = makeMessage(HACKED);
-            ProcessorResult pr2 = proc.undecorateMessage(signed2, null, null, null);
+            ProcessorResult pr2 = proc.undecorateMessage(signed2, null, null);
             assertTrue(pr2.getElementsThatWereSigned().length < 1);
         } catch (InvalidDocumentSignatureException e) {
             // Ok
@@ -826,7 +825,7 @@ public class WssProcessorTest {
 
         try {
             Message signed1 = makeMessage(SIGNED);
-            ProcessorResult pr1 = proc.undecorateMessage(signed1, null, null, null);
+            ProcessorResult pr1 = proc.undecorateMessage(signed1, null, null);
             assertTrue(pr1.getElementsThatWereSigned().length > 0);
         } catch (InvalidDocumentSignatureException e) {
             fail("Signature should have validated");
@@ -834,7 +833,7 @@ public class WssProcessorTest {
 
         try {
             Message signed3 = makeMessage(HACKED);
-            ProcessorResult pr3 = proc.undecorateMessage(signed3, null, null, null);
+            ProcessorResult pr3 = proc.undecorateMessage(signed3, null, null);
             assertTrue("Signature should NOT have validated", pr3.getElementsThatWereSigned().length < 1);
         } catch (InvalidDocumentSignatureException e) {
             // Ok

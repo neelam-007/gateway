@@ -277,8 +277,7 @@ public class MultipleRecipientXmlSecurityTest {
 
     private ProcessorResult process(Document doc) throws Exception {
         return processor.undecorateMessage(new Message(doc),
-                                           null,
-                                           null,
+                null,
                                            new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey()));
     }

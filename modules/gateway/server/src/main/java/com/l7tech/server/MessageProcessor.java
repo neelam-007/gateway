@@ -722,7 +722,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
                     wssOutput = trogdor.undecorateMessage(request,
-                                                          null,
                                                           securityContextFinder,
                                                           securityTokenResolver);
                     reqSec.setProcessorResult(wssOutput);

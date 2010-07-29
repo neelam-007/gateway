@@ -111,8 +111,7 @@ public class WssRoundTripTest {
         WrapSSTR strr = new WrapSSTR(ntd2.td.req.getRecipientCertificate(), ntd2.td.recipientKey, ntd2.td.securityTokenResolver);
         strr.addCerts(new X509Certificate[]{ntd2.td.req.getSenderMessageSigningCertificate()});
         ProcessorResult r = new WssProcessorImpl().undecorateMessage(req,
-                                                                     ntd2.td.req.getSenderMessageSigningCertificate(),
-                                                                     null,
+                null,
                                                                      strr);
 
         UsernameToken usernameToken = findUsernameToken(r);
@@ -534,8 +533,7 @@ public class WssRoundTripTest {
         WrapSSTR strr = new WrapSSTR(td.req.getRecipientCertificate(), td.recipientKey, td.securityTokenResolver);
         strr.addCerts(new X509Certificate[]{td.req.getSenderMessageSigningCertificate()});
         ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
-                                                      td.req.getSenderMessageSigningCertificate(),
-                                                      makeSecurityContextFinder(td.req.getSecureConversationSession()),
+                makeSecurityContextFinder(td.req.getSecureConversationSession()),
                                                       strr);
 
         final Element processedSecurityHeader = SoapUtil.getSecurityElement(incomingSoapDocument, r.getProcessedActorUri());

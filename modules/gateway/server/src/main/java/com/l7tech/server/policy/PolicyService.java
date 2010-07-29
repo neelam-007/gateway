@@ -259,8 +259,7 @@ public class PolicyService extends ApplicationObjectSupport {
         try {
             WssProcessor trogdor = new WssProcessorImpl();
             wssOutput = trogdor.undecorateMessage(context.getRequest(),
-                                                  null,
-                                                  securityContextFinder,
+                    securityContextFinder,
                                                   securityTokenResolver);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
