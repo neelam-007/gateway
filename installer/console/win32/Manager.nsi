@@ -12,7 +12,7 @@
   !define J2RE_PATH "${J2RE_DIR}${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !endif
 !define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "SecureSpan Manager" ;Define your own software name here
+!define MUI_PRODUCT "Layer 7 Policy Manager" ;Define your own software name here
 
 !ifndef MUI_VERSION
   ; Do not edit this version number
