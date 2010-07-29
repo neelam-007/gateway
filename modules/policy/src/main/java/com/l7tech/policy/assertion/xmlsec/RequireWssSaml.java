@@ -26,6 +26,9 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     public static final String PREFIX_SAML_ATTR = "saml.attr";
 
     private String[] subjectConfirmations = new String[]{};
+    private String subjectConfirmationDataRecipient;
+    private boolean subjectConfirmationDataCheckAddress = false;
+    private boolean subjectConfirmationDataCheckValidity = true;
     private String[] nameFormats = new String[]{};
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireSenderVouchesWithMessageSignature = false;
@@ -50,6 +53,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         ass.setVersion(0);
         ass.setRequireHolderOfKeyWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
+        ass.setSubjectConfirmationDataCheckAddress(true);
         return ass;
     }
 
@@ -63,6 +67,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         ass.setVersion(0);
         ass.setRequireSenderVouchesWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SENDER_VOUCHES});
+        ass.setSubjectConfirmationDataCheckAddress(true);
         return ass;
     }
 
@@ -164,6 +169,30 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         } else {
             this.nameFormats = nameFormats;
         }
+    }
+
+    public String getSubjectConfirmationDataRecipient() {
+        return subjectConfirmationDataRecipient;
+    }
+
+    public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
+        this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
+    }
+
+    public boolean isSubjectConfirmationDataCheckAddress() {
+        return subjectConfirmationDataCheckAddress;
+    }
+
+    public void setSubjectConfirmationDataCheckAddress( final boolean subjectConfirmationDataCheckAddress ) {
+        this.subjectConfirmationDataCheckAddress = subjectConfirmationDataCheckAddress;
+    }
+
+    public boolean isSubjectConfirmationDataCheckValidity() {
+        return subjectConfirmationDataCheckValidity;
+    }
+
+    public void setSubjectConfirmationDataCheckValidity( final boolean subjectConfirmationDataCheckValidity ) {
+        this.subjectConfirmationDataCheckValidity = subjectConfirmationDataCheckValidity;
     }
 
     @Override

@@ -1,18 +1,21 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels.saml;
 
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
+import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -24,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The SAML Subject Confirmatioin selections <code>WizardStepPanel</code>
+ * The SAML Subject Confirmation selections <code>WizardStepPanel</code>
  *
  * @author emil
  * @version Jan 20, 2005
@@ -32,22 +35,36 @@ import java.util.Map;
 public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JLabel titleLabel;
-    private JToggleButton confirmationSenderVouchesButton;
-    private JToggleButton confirmationHolderOfKeyButton;
-    private JToggleButton confirmationBearerButton;
-    private JToggleButton confirmationNoneButton;
+    private JCheckBox confirmationSenderVouchesButton;
+    private JCheckBox confirmationHolderOfKeyButton;
+    private JCheckBox confirmationBearerButton;
+    private JCheckBox confirmationNoneButton;
     private JCheckBox checkBoxSVMessageSignature;
     private JCheckBox checkBoxHoKMessageSignature;
-    private JPanel confirmationMethodsPanel;
+    private JComboBox subjectConfirmationMethodComboBox;
     private JLabel extraTextLabel;
-    private JPanel subjectCertPanel;
-    private JRadioButton subjectCertThumbprintRadioButton;
-    private JRadioButton subjectCertLiteralRadioButton;
+    private JPanel issueMethodsPanel;
+    private JPanel validateMethodsPanel;
     private JCheckBox subjectCertIncludeCheckbox;
-    private JRadioButton subjectCertSkiRadioButton;
+    private JComboBox certificateInclusionComboBox;
+    private JCheckBox addValidityPeriodCheckBox;
+    private JSpinner notBeforeSpinner;
+    private JSpinner notOnOrAfterSpinner;
+    private JLabel notBeforeLabel;
+    private JLabel notAfterLabel;
+    private JTextField recipientTextField;
+    private JTextField addressTextField;
+    private JLabel addressLabel;
+    private JTextField inResponseToTextField;
+    private JCheckBox checkValidityPeriodCheckBox;
+    private JLabel inResponseToLabel;
+    private JPanel addValidityPeriodPanel;
+    private JCheckBox checkAddressCheckBox;
+    private JPanel subjectConfirmationDataPanel;
 
     private Map<String, JToggleButton> confirmationsMap;
     private boolean showTitleLabel;
+    private boolean enableSubjectConfirmationData;
 
     private final boolean issueMode;
     private final ActionListener enableDisableListener = new ActionListener() {
@@ -100,18 +117,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      */
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        if (issueMode) {
+        if ( issueMode ) {
             SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
             final SubjectStatement.Confirmation confirmation = SubjectStatement.Confirmation.forUri(issuerConfiguration.getSubjectConfirmationMethodUri());
-            if (confirmation == SubjectStatement.HOLDER_OF_KEY) {
-                confirmationHolderOfKeyButton.setSelected(true);
-            } else if (confirmation == SubjectStatement.SENDER_VOUCHES) {
-                confirmationSenderVouchesButton.setSelected(true);
-            } else if (confirmation == SubjectStatement.BEARER) {
-                confirmationBearerButton.setSelected(true);
-            } else {
-                confirmationNoneButton.setSelected(true);
-            }
+
+            subjectConfirmationMethodComboBox.setSelectedItem( confirmation );
 
             KeyInfoInclusionType ckitype = issuerConfiguration.getSubjectConfirmationKeyInfoType();
             if (ckitype == null) ckitype = KeyInfoInclusionType.CERT;
@@ -120,19 +130,22 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                     subjectCertIncludeCheckbox.setSelected(false);
                     break;
                 case CERT:
-                    subjectCertIncludeCheckbox.setSelected(true);
-                    subjectCertLiteralRadioButton.setSelected(true);
-                    break;
                 case STR_SKI:
-                    subjectCertIncludeCheckbox.setSelected(true);
-                    subjectCertSkiRadioButton.setSelected(true);
-                    break;
                 case STR_THUMBPRINT:
                     subjectCertIncludeCheckbox.setSelected(true);
-                    subjectCertThumbprintRadioButton.setSelected(true);
+                    certificateInclusionComboBox.setSelectedItem( ckitype );
                     break;
                 default:
                     throw new RuntimeException("Unsupported Subject KeyInfoInclusionType: " + ckitype); // Can't happen
+            }
+
+            setText( addressTextField, issuerConfiguration.getSubjectConfirmationDataAddress() );
+            setText( recipientTextField, issuerConfiguration.getSubjectConfirmationDataRecipient() );
+            setText( inResponseToTextField, issuerConfiguration.getSubjectConfirmationDataInResponseTo() );
+            if ( issuerConfiguration.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
+                addValidityPeriodCheckBox.setSelected( true );
+                notBeforeSpinner.setValue( issuerConfiguration.getSubjectConfirmationDataNotBeforeSecondsInPast() );
+                notOnOrAfterSpinner.setValue( issuerConfiguration.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
             }
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
@@ -153,35 +166,39 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             checkBoxHoKMessageSignature.setSelected(requestWssSaml.isRequireHolderOfKeyWithMessageSignature());
             checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
             confirmationNoneButton.setSelected(requestWssSaml.isNoSubjectConfirmation());
+
+            setText( recipientTextField, requestWssSaml.getSubjectConfirmationDataRecipient() );
+            checkAddressCheckBox.setSelected( requestWssSaml.isSubjectConfirmationDataCheckAddress() );
+            checkValidityPeriodCheckBox.setSelected( requestWssSaml.isSubjectConfirmationDataCheckValidity() );
         }
+
+        final Integer version = ((SamlPolicyAssertion)settings).getVersion();
+        enableSubjectConfirmationData = version == null || version != 1;
+
         enableDisable();
     }
 
     private void enableDisable() {
-        boolean subjectCertEnabled = issueMode && subjectCertIncludeCheckbox.isSelected() && confirmationHolderOfKeyButton.isSelected();
-        boolean subjectCertVisible = issueMode;
+        if (issueMode) {
+            boolean isHok = SubjectStatement.HOLDER_OF_KEY.equals(subjectConfirmationMethodComboBox.getSelectedItem());
+            boolean isNone = null == subjectConfirmationMethodComboBox.getSelectedItem();
 
-        subjectCertIncludeCheckbox.setEnabled(confirmationHolderOfKeyButton.isSelected());
+            subjectCertIncludeCheckbox.setEnabled( isHok );
+            boolean subjectCertEnabled =
+                    subjectCertIncludeCheckbox.isEnabled() &&
+                    subjectCertIncludeCheckbox.isSelected();
 
-        subjectCertLiteralRadioButton.setEnabled(subjectCertEnabled);
-        subjectCertSkiRadioButton.setEnabled(subjectCertEnabled);
-        subjectCertThumbprintRadioButton.setEnabled(subjectCertEnabled);
+            certificateInclusionComboBox.setEnabled(subjectCertEnabled);
 
-        if (subjectCertEnabled &&
-                !(subjectCertLiteralRadioButton.isSelected() ||
-                  subjectCertSkiRadioButton.isSelected() ||
-                  subjectCertThumbprintRadioButton.isSelected())
-                )
-        {
-            // Bug 4304 -- ensure at least one radio buttion is selected
-            subjectCertLiteralRadioButton.setSelected(true);
+            Utilities.setEnabled( subjectConfirmationDataPanel, enableSubjectConfirmationData && !isNone );
+            if ( subjectConfirmationDataPanel.isEnabled() ) {
+                boolean enableValiditySelection = addValidityPeriodCheckBox.isEnabled() && addValidityPeriodCheckBox.isSelected();
+                notBeforeSpinner.setEnabled( enableValiditySelection );
+                notOnOrAfterSpinner.setEnabled( enableValiditySelection );
+                notBeforeLabel.setEnabled( enableValiditySelection );
+                notAfterLabel.setEnabled( enableValiditySelection );
+            }
         }
-
-        subjectCertPanel.setVisible(subjectCertVisible);
-        subjectCertIncludeCheckbox.setVisible(subjectCertVisible);
-        subjectCertLiteralRadioButton.setVisible(subjectCertVisible);
-        subjectCertSkiRadioButton.setVisible(subjectCertVisible);
-        subjectCertThumbprintRadioButton.setVisible(subjectCertVisible);
     }
 
     /**
@@ -201,29 +218,32 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (issueMode) {
             SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) settings;
-            if (confirmationHolderOfKeyButton.isSelected()) {
-                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.HOLDER_OF_KEY.getUri());
-            } else if (confirmationSenderVouchesButton.isSelected()) {
-                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.SENDER_VOUCHES.getUri());
-            } else if (confirmationBearerButton.isSelected()) {
-                issuerConfiguration.setSubjectConfirmationMethodUri(SubjectStatement.BEARER.getUri());
-            } else if (confirmationNoneButton.isSelected()) {
+            SubjectStatement.Confirmation confirmation = (SubjectStatement.Confirmation)subjectConfirmationMethodComboBox.getSelectedItem();
+            if ( confirmation != null ) {
+                issuerConfiguration.setSubjectConfirmationMethodUri(confirmation.getUri());
+            } else {
                 issuerConfiguration.setSubjectConfirmationMethodUri(null);
             }
 
             if (subjectCertIncludeCheckbox.isSelected()) {
-                if (subjectCertLiteralRadioButton.isSelected()) {
-                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.CERT);
-                } else if (subjectCertSkiRadioButton.isSelected()) {
-                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_SKI);
-                } else if (subjectCertThumbprintRadioButton.isSelected()) {
-                    issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.STR_THUMBPRINT);
+                KeyInfoInclusionType inclusion = (KeyInfoInclusionType) certificateInclusionComboBox.getSelectedItem();
+                if ( inclusion != null ) {
+                    issuerConfiguration.setSubjectConfirmationKeyInfoType( inclusion );
                 } else {
-                    throw new RuntimeException("No Subject Cert radio button selected"); //Can't happen
+                    throw new RuntimeException("No Subject Cert inclusion type selected"); //Can't happen
                 }
             } else {
                 issuerConfiguration.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.NONE);
             }
+
+            issuerConfiguration.setSubjectConfirmationDataAddress( getText(addressTextField) );
+            issuerConfiguration.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
+            issuerConfiguration.setSubjectConfirmationDataInResponseTo( getText(inResponseToTextField) );
+            final boolean useValidityPeriod = addValidityPeriodCheckBox.isSelected() && addValidityPeriodCheckBox.isEnabled();
+            issuerConfiguration.setSubjectConfirmationDataNotBeforeSecondsInPast(
+                    useValidityPeriod  ? (Integer) notBeforeSpinner.getValue() : -1 );
+            issuerConfiguration.setSubjectConfirmationDataNotOnOrAfterExpirySeconds(
+                    useValidityPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> confirmations = new ArrayList<String>();
@@ -237,6 +257,27 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             requestWssSaml.setRequireHolderOfKeyWithMessageSignature(checkBoxHoKMessageSignature.isSelected());
             requestWssSaml.setRequireSenderVouchesWithMessageSignature(checkBoxSVMessageSignature.isSelected());
             requestWssSaml.setNoSubjectConfirmation(confirmationNoneButton.isSelected());
+
+            requestWssSaml.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
+            requestWssSaml.setSubjectConfirmationDataCheckAddress( checkAddressCheckBox.isSelected() );
+            requestWssSaml.setSubjectConfirmationDataCheckValidity( checkValidityPeriodCheckBox.isSelected() );
+        }
+    }
+
+    private String getText( final JTextComponent textComponent ) {
+        String text = textComponent.getText();
+
+        if ( !textComponent.isEnabled() || (text != null && text.isEmpty()) ) {
+            text = null;            
+        }
+
+        return text;
+    }
+
+    private void setText( final JTextComponent textComponent, final String text ) {
+        if ( text != null ) {
+            textComponent.setText( text );
+            textComponent.setCaretPosition( 0 );
         }
     }
 
@@ -244,43 +285,71 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         setLayout(new BorderLayout());
 
         if (issueMode) {
-            confirmationHolderOfKeyButton = new JRadioButton("Holder of Key");
-            confirmationSenderVouchesButton = new JRadioButton("Sender Vouches");
-            confirmationBearerButton = new JRadioButton("Bearer");
-            confirmationNoneButton = new JRadioButton("None");
-
-            ButtonGroup radios = new ButtonGroup();
-            radios.add(confirmationHolderOfKeyButton);
-            radios.add(confirmationSenderVouchesButton);
-            radios.add(confirmationBearerButton);
-            radios.add(confirmationNoneButton);
-
-            checkBoxHoKMessageSignature = new JCheckBox("not shown");
-            checkBoxSVMessageSignature = new JCheckBox("not shown");
+            validateMethodsPanel.setVisible( false );
+            checkAddressCheckBox.setVisible( false );
+            checkValidityPeriodCheckBox.setVisible( false );
             extraTextLabel.setText("Issue an assertion with the following Subject Confirmation Method");
 
+            subjectConfirmationMethodComboBox.setModel( new DefaultComboBoxModel( new SubjectStatement.Confirmation[]{
+                    SubjectStatement.HOLDER_OF_KEY,
+                    SubjectStatement.SENDER_VOUCHES,
+                    SubjectStatement.BEARER,
+                    null,
+            } ) );
+            subjectConfirmationMethodComboBox.setRenderer( new TextListCellRenderer<SubjectStatement.Confirmation>( new Functions.Unary<String,SubjectStatement.Confirmation>(){
+                @Override
+                public String call( final SubjectStatement.Confirmation confirmation ) {
+                    String text = "";
+                    if (confirmation == SubjectStatement.HOLDER_OF_KEY) {
+                        text = "Holder of Key";
+                    } else if (confirmation == SubjectStatement.SENDER_VOUCHES) {
+                        text = "Sender Vouches";
+                    } else if (confirmation == SubjectStatement.BEARER) {
+                        text = "Bearer";
+                    } else if (confirmation == null){
+                        text = "None";
+                    }
+                    return text;
+                }
+            }, null, true ));
+            subjectConfirmationMethodComboBox.addActionListener(enableDisableListener);                    
+
+            certificateInclusionComboBox.setModel( new DefaultComboBoxModel( new KeyInfoInclusionType[]{
+                    KeyInfoInclusionType.CERT,
+                    KeyInfoInclusionType.STR_SKI,
+                    KeyInfoInclusionType.STR_THUMBPRINT
+            } ) );
+            certificateInclusionComboBox.setRenderer( new TextListCellRenderer<KeyInfoInclusionType>( new Functions.Unary<String,KeyInfoInclusionType>(){
+                @Override
+                public String call( final KeyInfoInclusionType keyInfoInclusionType ) {
+                    String text = "";
+                    if (keyInfoInclusionType == KeyInfoInclusionType.CERT) {
+                        text = "Literal Certificate (X509Data)";
+                    } else if (keyInfoInclusionType == KeyInfoInclusionType.STR_SKI) {
+                        text = "Security Token Reference using SKI";
+                    } else if (keyInfoInclusionType == KeyInfoInclusionType.STR_THUMBPRINT) {
+                        text = "Security Token Reference using SHA1 Thumbprint";
+                    }
+                    return text;
+                }
+            }, null, true ));
+
             subjectCertIncludeCheckbox.addActionListener(enableDisableListener);
-            confirmationHolderOfKeyButton.addActionListener(enableDisableListener);
-            confirmationSenderVouchesButton.addActionListener(enableDisableListener);
-            confirmationBearerButton.addActionListener(enableDisableListener);
-            confirmationNoneButton.addActionListener(enableDisableListener);
+            addValidityPeriodCheckBox.addActionListener(enableDisableListener);
+
+            notBeforeSpinner.setModel( new SpinnerNumberModel(120, 0, 3600, 1) );
+            notOnOrAfterSpinner.setModel( new SpinnerNumberModel(300, 30, 3600, 1) );
+
+            validationRules.add(new InputValidator.NumberSpinnerValidationRule( notBeforeSpinner, "Not Before seconds in past"));
+            validationRules.add(new InputValidator.NumberSpinnerValidationRule( notOnOrAfterSpinner, "Not On Or After seconds in future"));
         } else {
-            confirmationHolderOfKeyButton = new JCheckBox("Holder of Key");
-            confirmationSenderVouchesButton = new JCheckBox("Sender Vouches");
-            confirmationBearerButton = new JCheckBox("Bearer");
-            confirmationNoneButton = new JCheckBox("None");
-
-            checkBoxHoKMessageSignature = new JCheckBox("Require Message Signature");
-            checkBoxSVMessageSignature = new JCheckBox("Require Message Signature");
-        }
-
-        confirmationMethodsPanel.add(confirmationHolderOfKeyButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
-        confirmationMethodsPanel.add(confirmationSenderVouchesButton, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
-        confirmationMethodsPanel.add(confirmationBearerButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
-        confirmationMethodsPanel.add(confirmationNoneButton, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
-        if (!issueMode) {
-            confirmationMethodsPanel.add(checkBoxHoKMessageSignature, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
-            confirmationMethodsPanel.add(checkBoxSVMessageSignature, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0));
+            issueMethodsPanel.setVisible( false );
+            addressTextField.setVisible( false );
+            addressLabel.setVisible( false );
+            inResponseToLabel.setVisible( false );
+            inResponseToTextField.setVisible( false );
+            addValidityPeriodPanel.setVisible( false );
+            addValidityPeriodCheckBox.addActionListener( enableDisableListener );
         }
 
         /** Set content pane */
@@ -367,7 +436,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      */
     @Override
     public boolean canAdvance() {
-        if (confirmationNoneButton.isSelected()) {
+        if (confirmationNoneButton.isSelected() || issueMode) {
             return true;
         }
 

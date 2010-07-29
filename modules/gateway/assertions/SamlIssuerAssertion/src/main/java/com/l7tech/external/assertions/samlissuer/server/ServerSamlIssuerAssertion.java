@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
@@ -211,6 +208,12 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             options.setIssuerKeyInfoType(KeyInfoInclusionType.NONE);
         }
 
+        options.setSubjectConfirmationDataAddress( nullSafeExpand( assertion.getSubjectConfirmationDataAddress(), vars) );
+        options.setSubjectConfirmationDataInResponseTo( nullSafeExpand( assertion.getSubjectConfirmationDataInResponseTo(), vars) );
+        options.setSubjectConfirmationDataRecipient( nullSafeExpand( assertion.getSubjectConfirmationDataRecipient(), vars) );
+        options.setSubjectConfirmationDataNotBeforeSecondsInPast( assertion.getSubjectConfirmationDataNotBeforeSecondsInPast() );
+        options.setSubjectConfirmationDataNotOnOrAfterExpirySeconds( assertion.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
+
         try {
             final Element assertionEl = samlAssertionGenerator.createAssertion(statements.toArray(new SubjectStatement[statements.size()]), options).getDocumentElement();
             context.setVariable("issuedSamlAssertion", XmlUtil.nodeToString(assertionEl));
@@ -292,6 +295,17 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             return AssertionStatus.FAILED;
         }
     }
+
+    private String nullSafeExpand( final String text, final Map<String,Object> variables ) {
+        String value = null;
+
+        if ( text != null ) {
+            value = ExpandVariables.process( text, variables, auditor );
+        }
+
+        return value;
+    }
+
 
     private void auditDone() throws PolicyAssertionException {
         if (assertion.getAttributeStatement() != null) {

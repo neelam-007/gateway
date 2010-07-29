@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.samlissuer;
 
 import com.l7tech.policy.assertion.*;
@@ -36,6 +33,11 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     private boolean signAssertion = true;
     private EnumSet<DecorationType> decorationTypes;
     private String subjectConfirmationMethodUri;
+    private String subjectConfirmationDataRecipient;
+    private String subjectConfirmationDataAddress;
+    private String subjectConfirmationDataInResponseTo;
+    private int subjectConfirmationDataNotBeforeSecondsInPast = -1;
+    private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
     private NameIdentifierInclusionType nameIdentifierType = NameIdentifierInclusionType.FROM_CREDS;
     private String nameIdentifierFormat;
     private String nameIdentifierValue;
@@ -135,6 +137,56 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     }
 
     @Override
+    public String getSubjectConfirmationDataRecipient() {
+        return subjectConfirmationDataRecipient;
+    }
+
+    @Override
+    public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
+        this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
+    }
+
+    @Override
+    public String getSubjectConfirmationDataAddress() {
+        return subjectConfirmationDataAddress;
+    }
+
+    @Override
+    public void setSubjectConfirmationDataAddress( final String subjectConfirmationDataAddress ) {
+        this.subjectConfirmationDataAddress = subjectConfirmationDataAddress;
+    }
+
+    @Override
+    public String getSubjectConfirmationDataInResponseTo() {
+        return subjectConfirmationDataInResponseTo;
+    }
+
+    @Override
+    public void setSubjectConfirmationDataInResponseTo( final String subjectConfirmationDataInResponseTo ) {
+        this.subjectConfirmationDataInResponseTo = subjectConfirmationDataInResponseTo;
+    }
+
+    @Override
+    public int getSubjectConfirmationDataNotBeforeSecondsInPast() {
+        return subjectConfirmationDataNotBeforeSecondsInPast;
+    }
+
+    @Override
+    public void setSubjectConfirmationDataNotBeforeSecondsInPast( final int subjectConfirmationDataNotBeforeSecondsInPast ) {
+        this.subjectConfirmationDataNotBeforeSecondsInPast = subjectConfirmationDataNotBeforeSecondsInPast;
+    }
+
+    @Override
+    public int getSubjectConfirmationDataNotOnOrAfterExpirySeconds() {
+        return subjectConfirmationDataNotOnOrAfterExpirySeconds;
+    }
+
+    @Override
+    public void setSubjectConfirmationDataNotOnOrAfterExpirySeconds( final int subjectConfirmationDataNotOnOrAfterExpirySeconds ) {
+        this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
@@ -143,6 +195,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         collectVars(varNames, subjectConfirmationMethodUri);
         collectVars(varNames, audienceRestriction);
         collectVars(varNames, nameQualifier);
+        collectVars(varNames, subjectConfirmationDataRecipient);
+        collectVars(varNames, subjectConfirmationDataAddress);
+        collectVars(varNames, subjectConfirmationDataInResponseTo);
         if (attributeStatement != null) {
             for (SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes()) {
                 collectVars(varNames, attr.getNamespace());

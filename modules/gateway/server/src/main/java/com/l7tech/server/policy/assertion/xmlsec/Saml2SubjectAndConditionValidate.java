@@ -1,9 +1,9 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.server.ServerConfig;
 import x0Assertion.oasisNamesTcSAML2.*;
 
 import java.util.*;
@@ -12,9 +12,6 @@ import java.util.logging.Logger;
 
 /**
  * Validation for SAML 2.x Subject and Conditions.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 class Saml2SubjectAndConditionValidate {
 
@@ -23,7 +20,11 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Subject validation for 2.x
      */
-    static void validateSubject(RequireWssSaml requestWssSaml, SubjectType subject, Calendar now, Collection validationResults) {
+    static void validateSubject( final RequireWssSaml requestWssSaml,
+                                 final SubjectType subject,
+                                 final Calendar now,
+                                 final Collection<String> clientAddresses,
+                                 final Collection<SamlAssertionValidate.Error> validationResults ) {
         if (subject == null) {
             validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
             return; // no point trying to continue validating a null subject
@@ -85,34 +86,57 @@ class Saml2SubjectAndConditionValidate {
         }
 
         final SubjectConfirmationType[] subjectConfirmations = subject.getSubjectConfirmationArray();
-        List presentedConfirmations = new ArrayList();
+        List<String> presentedConfirmations = new ArrayList<String>();
+        boolean anyInvalid = false;
         if (subjectConfirmations != null) {
             for (SubjectConfirmationType subjectConfirmation : subjectConfirmations) {
                 SubjectConfirmationDataType confirmationData = subjectConfirmation.getSubjectConfirmationData();
                 boolean statementValid = true;
                 if (confirmationData != null) {
-                    Calendar notBefore = confirmationData.getNotBefore();
-                    if (notBefore != null && now.before(notBefore)) {
-                        if (logger.isLoggable(Level.FINE))
-                            logger.fine("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
-                        statementValid = false;
+                    if ( requestWssSaml.isSubjectConfirmationDataCheckValidity() ) {
+                        Calendar notBefore = confirmationData.getNotBefore();
+                        if (notBefore != null && now.before(adjustNotBefore(notBefore))) {
+                            if (logger.isLoggable(Level.FINE))
+                                logger.fine("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
+                            statementValid = false;
+                        }
+
+                        Calendar notOnOrAfter = confirmationData.getNotOnOrAfter();
+                        if (notOnOrAfter != null) {
+                            Calendar adjustedNotOnOrAfter = adjustNotAfter(notOnOrAfter);
+                            if ( (now.equals(adjustedNotOnOrAfter) || now.after(adjustedNotOnOrAfter)) ) {
+                                if (logger.isLoggable(Level.FINE))
+                                    logger.fine(String.format("Condition 'Not On Or After' check failed, now: %s Not Before: %s", now.toString(), notOnOrAfter.toString()));
+                                statementValid = false;
+                            }
+                        }
+
+                        if (notBefore != null && notOnOrAfter != null && !notBefore.before(notOnOrAfter)) {
+                            logger.finer("Statement condition is invalid, 'Not On Or After' " + notOnOrAfter.toString() + " MUST be later than 'Not Before' " + notBefore.toString());
+                            validationResults.add(new SamlAssertionValidate.Error("Statement condition is invalid, 'Not On Or After' MUST be later than 'Not Before': {0}/{1}", null, notOnOrAfter.getTime().toString(), notBefore.getTime().toString()));
+                            statementValid = false;
+                        }
                     }
 
-                    Calendar notOnOrAfter = confirmationData.getNotOnOrAfter();
-                    if (notOnOrAfter != null && (now.equals(notOnOrAfter) || now.after(notOnOrAfter))) {
-                        if (logger.isLoggable(Level.FINE))
-                            logger.fine(String.format("Condition 'Not On Or After' check failed, now: %s Not Before: %s", now.toString(), notOnOrAfter.toString()));
-                        statementValid = false;
+                    if ( requestWssSaml.isSubjectConfirmationDataCheckAddress() && confirmationData.getAddress() != null ) {
+                        if ( clientAddresses==null || !clientAddresses.contains( confirmationData.getAddress() ) ) {
+                            logger.finer("Statement condition is invalid, 'Address' " + confirmationData.getAddress() + " does not match client address." );
+                            statementValid = false;
+                        }
                     }
 
-                    if (notBefore != null && notOnOrAfter != null && !notBefore.before(notOnOrAfter)) {
-                        logger.finer("Statement condition is invalid, 'Not On Or After' " + notOnOrAfter.toString() + " MUST be later than 'Not Before' " + notBefore.toString());
-                        validationResults.add(new SamlAssertionValidate.Error("Statement condition is invalid, 'Not On Or After' MUST be later than 'Not Before': {0}/{1}", null, notOnOrAfter.getTime().toString(), notBefore.getTime().toString()));
+                    if ( requestWssSaml.getSubjectConfirmationDataRecipient() != null &&
+                         confirmationData.getRecipient() !=null &&
+                         !requestWssSaml.getSubjectConfirmationDataRecipient().equals(confirmationData.getRecipient()) ) {
+                        logger.finer("Statement condition is invalid, 'Recipient' " + confirmationData.getRecipient() + " does not match required value '"+requestWssSaml.getSubjectConfirmationDataRecipient()+"'." );
+                        statementValid = false;
                     }
                 }
 
                 if (statementValid)
                     presentedConfirmations.add(subjectConfirmation.getMethod());
+                else
+                    anyInvalid = true;
             }
         }
 
@@ -133,11 +157,11 @@ class Saml2SubjectAndConditionValidate {
         }
 
         if (!confirmationMatch) {
-            List acceptedConfirmations = new ArrayList(Arrays.asList(confirmations));
+            List<String> acceptedConfirmations = new ArrayList<String>(Arrays.asList(confirmations));
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
-            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Subject Confirmations mismatch presented/accepted {0}/{1}", null, presentedConfirmations, acceptedConfirmations);
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Subject Confirmations mismatch "+(anyInvalid?"(some confirmations were rejected) " : "")+"presented/accepted {0}/{1}", null, presentedConfirmations, acceptedConfirmations);
             validationResults.add(error);
             logger.finer(error.toString());
         }
@@ -146,7 +170,10 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Validate the SAML v2 assertion conditions
      */
-    static void validateConditions(RequireWssSaml requestWssSaml, ConditionsType conditionsType, Calendar now, Collection validationResults) {
+    static void validateConditions( final RequireWssSaml requestWssSaml,
+                                    final ConditionsType conditionsType,
+                                    final Calendar now,
+                                    final Collection<SamlAssertionValidate.Error> validationResults) {
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
@@ -194,7 +221,9 @@ class Saml2SubjectAndConditionValidate {
         }
     }
 
-    private static void validateAudienceRestriction(RequireWssSaml requestWssSaml, ConditionsType conditionsType, Collection validationResults) {
+    private static void validateAudienceRestriction( final RequireWssSaml requestWssSaml,
+                                                     final ConditionsType conditionsType,
+                                                     final Collection<SamlAssertionValidate.Error> validationResults) {
         final String audienceRestriction = requestWssSaml.getAudienceRestriction();
         if (audienceRestriction == null || "".equals(audienceRestriction)) {
             logger.finer("No audience restriction requested");
@@ -223,6 +252,24 @@ class Saml2SubjectAndConditionValidate {
                 validationResults.add(error);
             }
         }
+    }
+
+    static Calendar adjustNotAfter(Calendar notOnOrAfter) {
+        int afterOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, 0, 30000L);
+        if (afterOffsetMinutes != 0) {
+            notOnOrAfter = (Calendar)notOnOrAfter.clone();
+            notOnOrAfter.add(Calendar.MINUTE, afterOffsetMinutes);
+        }
+        return notOnOrAfter;
+    }
+
+    static Calendar adjustNotBefore(Calendar notBefore) {
+        int beforeOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, 0, 30000L);
+        if (beforeOffsetMinutes != 0) {
+            notBefore = (Calendar)notBefore.clone();
+            notBefore.add(Calendar.MINUTE, -beforeOffsetMinutes);
+        }
+        return notBefore;
     }
 
 }

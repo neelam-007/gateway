@@ -39,6 +39,21 @@ public interface SamlIssuerConfiguration {
     int getConditionsNotOnOrAfterExpirySeconds();
     void setConditionsNotOnOrAfterExpirySeconds(int seconds);
 
+    String getSubjectConfirmationDataRecipient();
+    void setSubjectConfirmationDataRecipient(String recipient);
+
+    String getSubjectConfirmationDataAddress();
+    void setSubjectConfirmationDataAddress(String address);
+
+    String getSubjectConfirmationDataInResponseTo();
+    void setSubjectConfirmationDataInResponseTo(String identifier);
+
+    int getSubjectConfirmationDataNotBeforeSecondsInPast();
+    void setSubjectConfirmationDataNotBeforeSecondsInPast(int seconds);
+
+    int getSubjectConfirmationDataNotOnOrAfterExpirySeconds();
+    void setSubjectConfirmationDataNotOnOrAfterExpirySeconds(int seconds);
+
     public static enum DecorationType {
         /** Apply decorations to request */
         REQUEST,

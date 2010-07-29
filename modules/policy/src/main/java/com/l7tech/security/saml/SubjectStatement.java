@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.saml;
 
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -35,6 +32,16 @@ public abstract class SubjectStatement {
      * bearer confirmation type
      */
     public static final Confirmation BEARER = new Confirmation(SamlConstants.CONFIRMATION_BEARER);
+
+    private static final Map<String, Confirmation> confirmationMap = new HashMap<String, Confirmation>();
+    static {
+        confirmationMap.put(SamlConstants.CONFIRMATION_HOLDER_OF_KEY, HOLDER_OF_KEY);
+        confirmationMap.put(SamlConstants.CONFIRMATION_SENDER_VOUCHES, SENDER_VOUCHES);
+        confirmationMap.put(SamlConstants.CONFIRMATION_BEARER, BEARER);
+        confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY, HOLDER_OF_KEY);
+        confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES, SENDER_VOUCHES);
+        confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_BEARER, BEARER);
+    }
 
     private String confirmationMethod = null;
     private String nameQualifier = null;
@@ -307,7 +314,6 @@ public abstract class SubjectStatement {
             return uri.hashCode();
         }
 
-
         /**
          * Indicates whether some other object is "equal to" this one.
          *
@@ -320,16 +326,6 @@ public abstract class SubjectStatement {
             if (that == this) return true;
             if (!(that instanceof Confirmation)) return false;
             return this.uri.equals(((Confirmation)that).uri);
-        }
-
-        static final Map<String, Confirmation> confirmationMap = new HashMap<String, Confirmation>();
-        static {
-            confirmationMap.put(SamlConstants.CONFIRMATION_HOLDER_OF_KEY, HOLDER_OF_KEY);
-            confirmationMap.put(SamlConstants.CONFIRMATION_SENDER_VOUCHES, SENDER_VOUCHES);
-            confirmationMap.put(SamlConstants.CONFIRMATION_BEARER, BEARER);
-            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY, HOLDER_OF_KEY);
-            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES, SENDER_VOUCHES);
-            confirmationMap.put(SamlConstants.CONFIRMATION_SAML2_BEARER, BEARER);
         }
 
         public static Confirmation forUri(String uri) {

@@ -113,7 +113,7 @@ public class SamlAssertionGeneratorSaml2 {
             throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
         }
 
-        populateSubjectStatement(subjectStatementAbstractType, subjectStatement, caDn);
+        populateSubjectStatement(subjectStatementAbstractType, subjectStatement, caDn, options);
         return assertionType;
     }
 
@@ -125,7 +125,8 @@ public class SamlAssertionGeneratorSaml2 {
      */
     private void populateSubjectStatement(SubjectType subjectType,
                                           SubjectStatement subjectStatement,
-                                          String alternateNameId) throws CertificateException {
+                                          String alternateNameId,
+                                          SamlAssertionGenerator.Options options) throws CertificateException {
 
         if (subjectStatement.getNameIdentifierType() != NameIdentifierInclusionType.NONE) {
             NameIDType nameIdentifierType = subjectType.addNewNameID();
@@ -161,51 +162,87 @@ public class SamlAssertionGeneratorSaml2 {
             }
 
             final Object keyInfo = subjectStatement.getKeyInfo();
-            if (keyInfo == null || !(keyInfo instanceof X509Certificate)) {
+            final boolean hasKeyInfo = keyInfo instanceof X509Certificate;
+            final boolean hasSubjectConfirmationDataOption =
+                    options.getSubjectConfirmationDataAddress() != null ||
+                    options.getSubjectConfirmationDataInResponseTo() != null ||
+                    options.getSubjectConfirmationDataRecipient() != null ||
+                    options.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ||
+                    options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0;
+
+            if ( !hasKeyInfo && !hasSubjectConfirmationDataOption ) {
                 return;
             }
 
-            subjectConfirmation.setSubjectConfirmationData(KeyInfoConfirmationDataType.Factory.newInstance(getXmlOptions()));
-            KeyInfoConfirmationDataType kicdt = (KeyInfoConfirmationDataType) subjectConfirmation.getSubjectConfirmationData();
+            final SubjectConfirmationDataType subjectConfirmationData = hasKeyInfo ?
+                    KeyInfoConfirmationDataType.Factory.newInstance(getXmlOptions()) :
+                    SubjectConfirmationDataType.Factory.newInstance(getXmlOptions());
 
-            X509Certificate cert = (X509Certificate)keyInfo;
-            switch(subjectStatement.getSubjectConfirmationKeyInfoType()) {
-                case CERT: {
-                    KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
-                    X509DataType x509Data = keyInfoType.addNewX509Data();
-                    x509Data.addX509Certificate(cert.getEncoded());
-                    break;
-                }
-                case ISSUER_SERIAL: {
-                    KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
-                    X509DataType x509Data = keyInfoType.addNewX509Data();
-                    X509IssuerSerialType xist = x509Data.addNewX509IssuerSerial();
-                    xist.setX509IssuerName(cert.getIssuerDN().getName());
-                    xist.setX509SerialNumber(cert.getSerialNumber());
-                    break;
-                }
-                case STR_THUMBPRINT: {
-                    Node node = kicdt.getDomNode();
-                    NamespaceFactory nsf = new NamespaceFactory();
-                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert),
-                                             true,
-                                             SoapConstants.VALUETYPE_X509_THUMB_SHA1);
-                    kid.createAndAppendKeyInfoElement(nsf, node);
-                    break;
-                }
-                case STR_SKI: {
-                    Node node = kicdt.getDomNode();
-                    NamespaceFactory nsf = new NamespaceFactory();
-                    final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
-                    if (ski == null)
-                        throw new CertificateException("Unable to create SKI reference: no SKI available for cert");
-                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(ski,
-                                             SoapConstants.VALUETYPE_SKI);
-                    kid.createAndAppendKeyInfoElement(nsf, node);
-                    break;
-                }
-                case NONE:
+            // Set optional subject confirmation data
+            if ( options.getSubjectConfirmationDataAddress() != null ) {
+                subjectConfirmationData.setAddress( options.getSubjectConfirmationDataAddress() );
             }
+            if ( options.getSubjectConfirmationDataInResponseTo() != null ) {
+                subjectConfirmationData.setInResponseTo( options.getSubjectConfirmationDataInResponseTo() );
+            }
+            if ( options.getSubjectConfirmationDataRecipient() != null ) {
+                subjectConfirmationData.setRecipient( options.getSubjectConfirmationDataRecipient() );
+            }
+            if ( options.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
+                Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+                calendar.add(Calendar.SECOND, (-1 * options.getSubjectConfirmationDataNotBeforeSecondsInPast()));
+                calendar.set(Calendar.MILLISECOND, 0);
+                subjectConfirmationData.setNotBefore(calendar);
+            }
+            if ( options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0) {
+                Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+                calendar.add(Calendar.SECOND, options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds());
+                subjectConfirmationData.setNotOnOrAfter(calendar);
+            }
+
+            if ( hasKeyInfo ) {
+                KeyInfoConfirmationDataType kicdt = (KeyInfoConfirmationDataType) subjectConfirmationData;
+                X509Certificate cert = (X509Certificate)keyInfo;
+                switch(subjectStatement.getSubjectConfirmationKeyInfoType()) {
+                    case CERT: {
+                        KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
+                        X509DataType x509Data = keyInfoType.addNewX509Data();
+                        x509Data.addX509Certificate(cert.getEncoded());
+                        break;
+                    }
+                    case ISSUER_SERIAL: {
+                        KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
+                        X509DataType x509Data = keyInfoType.addNewX509Data();
+                        X509IssuerSerialType xist = x509Data.addNewX509IssuerSerial();
+                        xist.setX509IssuerName(cert.getIssuerDN().getName());
+                        xist.setX509SerialNumber(cert.getSerialNumber());
+                        break;
+                    }
+                    case STR_THUMBPRINT: {
+                        Node node = kicdt.getDomNode();
+                        NamespaceFactory nsf = new NamespaceFactory();
+                        KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert),
+                                                 true,
+                                                 SoapConstants.VALUETYPE_X509_THUMB_SHA1);
+                        kid.createAndAppendKeyInfoElement(nsf, node);
+                        break;
+                    }
+                    case STR_SKI: {
+                        Node node = kicdt.getDomNode();
+                        NamespaceFactory nsf = new NamespaceFactory();
+                        final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
+                        if (ski == null)
+                            throw new CertificateException("Unable to create SKI reference: no SKI available for cert");
+                        KeyInfoDetails kid = KeyInfoDetails.makeKeyId(ski,
+                                                 SoapConstants.VALUETYPE_SKI);
+                        kid.createAndAppendKeyInfoElement(nsf, node);
+                        break;
+                    }
+                    case NONE:
+                }
+            }
+
+            subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
         }
     }
 
@@ -327,7 +364,7 @@ public class SamlAssertionGeneratorSaml2 {
         );
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
-        populateSubjectStatement(subjectStatementAbstractType, statements[0], caDn);
+        populateSubjectStatement(subjectStatementAbstractType, statements[0], caDn, options);
 
         for (SubjectStatement subjectStatement : statements) {
             if (subjectStatement instanceof AuthenticationStatement) {

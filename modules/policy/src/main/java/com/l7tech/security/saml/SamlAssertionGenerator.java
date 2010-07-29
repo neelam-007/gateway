@@ -432,6 +432,46 @@ public class SamlAssertionGenerator {
             this.audienceRestriction = audienceRestriction;
         }
 
+        public String getSubjectConfirmationDataRecipient() {
+            return subjectConfirmationDataRecipient;
+        }
+
+        public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
+            this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
+        }
+
+        public String getSubjectConfirmationDataAddress() {
+            return subjectConfirmationDataAddress;
+        }
+
+        public void setSubjectConfirmationDataAddress( final String subjectConfirmationDataAddress ) {
+            this.subjectConfirmationDataAddress = subjectConfirmationDataAddress;
+        }
+
+        public String getSubjectConfirmationDataInResponseTo() {
+            return subjectConfirmationDataInResponseTo;
+        }
+
+        public void setSubjectConfirmationDataInResponseTo( final String subjectConfirmationDataInResponseTo ) {
+            this.subjectConfirmationDataInResponseTo = subjectConfirmationDataInResponseTo;
+        }
+
+        public int getSubjectConfirmationDataNotBeforeSecondsInPast() {
+            return subjectConfirmationDataNotBeforeSecondsInPast;
+        }
+
+        public void setSubjectConfirmationDataNotBeforeSecondsInPast( final int subjectConfirmationDataNotBeforeSecondsInPast ) {
+            this.subjectConfirmationDataNotBeforeSecondsInPast = subjectConfirmationDataNotBeforeSecondsInPast;
+        }
+
+        public int getSubjectConfirmationDataNotOnOrAfterExpirySeconds() {
+            return subjectConfirmationDataNotOnOrAfterExpirySeconds;
+        }
+
+        public void setSubjectConfirmationDataNotOnOrAfterExpirySeconds( final int subjectConfirmationDataNotOnOrAfterExpirySeconds ) {
+            this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
+        }
+
         private KeyInfoInclusionType issuerKeyInfoType = KeyInfoInclusionType.CERT;
         private boolean proofOfPosessionRequired = true;
         private int notBeforeSeconds = DEFAULT_NOT_BEFORE_SECONDS;
@@ -444,6 +484,11 @@ public class SamlAssertionGenerator {
         private int samlVersion = VERSION_1;
         private String securityHeaderActor = null;
         private String audienceRestriction = null;
+        private String subjectConfirmationDataRecipient;
+        private String subjectConfirmationDataAddress;
+        private String subjectConfirmationDataInResponseTo;
+        private int subjectConfirmationDataNotBeforeSecondsInPast = -1;
+        private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
     }
 
     static final int DEFAULT_NOT_BEFORE_SECONDS = 120;

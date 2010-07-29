@@ -78,6 +78,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
         }
     }
     
+    @Override
     public SAMLP_MSG create(final SamlpRequestBuilderAssertion assertion) {
 
         if (assertion.getSamlVersion() != 2)
@@ -210,60 +211,67 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
         subjConf.setMethod(confirmationMethod);
         
         if (SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY.equals(confirmationMethod)) {
-            subjConf.setSubjectConfirmationData(buildSubjectConfirmationData());
+            subjConf.setSubjectConfirmationData(buildSubjectConfirmationData(true));
+        } else if ( confirmationMethod != null ) {
+            subjConf.setSubjectConfirmationData(buildSubjectConfirmationData(false));
         }
 
         return samlFactory.createSubjectConfirmation(subjConf);
     }
 
 
-    protected SubjectConfirmationDataType buildSubjectConfirmationData() {
-
-        if (clientCertResolver == null || clientCertResolver.getValue() == null) {
-            return null;
-        }
-
-        X509Certificate cert = clientCertResolver.getValue();
+    protected SubjectConfirmationDataType buildSubjectConfirmationData( final boolean includeKeyInfo ) {
+        SubjectConfirmationDataType data = null;
         JAXBElement<?> dataContents = null;
+        if (includeKeyInfo && clientCertResolver != null && clientCertResolver.getValue() != null) {
+            X509Certificate cert = clientCertResolver.getValue();
 
-        try {
-            byte[] certSki = null;
-            KeyInfoInclusionType confType = assertion.getSubjectConfirmationKeyInfoType();
-            if (confType == KeyInfoInclusionType.STR_SKI) {
-                 certSki = CertUtils.getSKIBytesFromCert(cert);
-                if (certSki == null) {
-                    logger.log(Level.FINE, "No SKI available for cert -- switching to embedded cert");
-                    confType = KeyInfoInclusionType.CERT;
+            try {
+                byte[] certSki = null;
+                KeyInfoInclusionType confType = assertion.getSubjectConfirmationKeyInfoType();
+                if (confType == KeyInfoInclusionType.STR_SKI) {
+                     certSki = CertUtils.getSKIBytesFromCert(cert);
+                    if (certSki == null) {
+                        logger.log(Level.FINE, "No SKI available for cert -- switching to embedded cert");
+                        confType = KeyInfoInclusionType.CERT;
+                    }
                 }
+                switch(confType) {
+                    case CERT: {
+                        dataContents = digsigFactory.createX509DataTypeX509Certificate(cert.getEncoded());
+                        break;
+                    }
+                    case ISSUER_SERIAL: {
+                        X509IssuerSerialType issuer = digsigFactory.createX509IssuerSerialType();
+                        issuer.setX509IssuerName(cert.getIssuerDN().getName());
+                        issuer.setX509SerialNumber(cert.getSerialNumber());
+                        dataContents = digsigFactory.createX509DataTypeX509IssuerSerial(issuer);
+                        break;
+                    }
+                    case STR_SKI: {
+                        dataContents = digsigFactory.createX509DataTypeX509SKI(certSki);
+                        break;
+                    }
+                    case STR_THUMBPRINT: {
+                        dataContents = digsigFactory.createX509DataTypeX509SKI(CertUtils.getThumbprintSHA1(cert).getBytes());
+                        break;
+                    }
+                    case NONE:
+                }
+            } catch (CertificateEncodingException cex) {
+                logger.log(Level.INFO, "Unable to parse client cert to build SubjectConfirmation: {0}", ExceptionUtils.getMessage(cex));
+                dataContents = null;
             }
-            switch(confType) {
-                case CERT: {
-                    dataContents = digsigFactory.createX509DataTypeX509Certificate(cert.getEncoded());
-                    break;
-                }
-                case ISSUER_SERIAL: {
-                    X509IssuerSerialType issuer = digsigFactory.createX509IssuerSerialType();
-                    issuer.setX509IssuerName(cert.getIssuerDN().getName());
-                    issuer.setX509SerialNumber(cert.getSerialNumber());
-                    dataContents = digsigFactory.createX509DataTypeX509IssuerSerial(issuer);
-                    break;
-                }
-                case STR_SKI: {
-                    dataContents = digsigFactory.createX509DataTypeX509SKI(certSki);
-                    break;
-                }
-                case STR_THUMBPRINT: {
-                    dataContents = digsigFactory.createX509DataTypeX509SKI(CertUtils.getThumbprintSHA1(cert).getBytes());
-                    break;
-                }
-                case NONE:
-            }
-        } catch (CertificateEncodingException cex) {
-            logger.log(Level.INFO, "Unable to parse client cert to build SubjectConfirmation: {0}", ExceptionUtils.getMessage(cex));
-            dataContents = null;
         }
 
-        if (dataContents != null) {
+        final boolean hasSubjectConfirmationDataOption =
+                assertion.getSubjectConfirmationDataAddress() != null ||
+                assertion.getSubjectConfirmationDataInResponseTo() != null ||
+                assertion.getSubjectConfirmationDataRecipient() != null ||
+                assertion.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ||
+                assertion.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0;
+
+        if ( dataContents != null ) {
             X509DataType x509Data = digsigFactory.createX509DataType();
             x509Data.getX509IssuerSerialOrX509SKIOrX509SubjectName().add(dataContents);
 
@@ -271,13 +279,37 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
             KeyInfoType keyInfo = digsigFactory.createKeyInfoType();
             keyInfo.getContent().add(digsigFactory.createX509Data(x509Data));
 
-//            SubjectConfirmationDataType data = samlFactory.createSubjectConfirmationDataType();
-            KeyInfoConfirmationDataType data = samlFactory.createKeyInfoConfirmationDataType();
+            data = samlFactory.createKeyInfoConfirmationDataType();
             data.getContent().add(digsigFactory.createKeyInfo(keyInfo));
-
-            return data;
+        } else if ( hasSubjectConfirmationDataOption ) {
+            data = samlFactory.createSubjectConfirmationDataType();
         }
-        return null;
+
+        if ( data != null ) {
+            // Set optional subject confirmation data
+            if ( assertion.getSubjectConfirmationDataAddress() != null ) {
+                data.setAddress( getVariableValue(assertion.getSubjectConfirmationDataAddress()) );
+            }
+            if ( assertion.getSubjectConfirmationDataInResponseTo() != null ) {
+                data.setInResponseTo( getVariableValue(assertion.getSubjectConfirmationDataInResponseTo()) );
+            }
+            if ( assertion.getSubjectConfirmationDataRecipient() != null ) {
+                data.setRecipient( getVariableValue(assertion.getSubjectConfirmationDataRecipient()) );
+            }
+            if ( assertion.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
+                GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
+                calendar.add(GregorianCalendar.SECOND, (-1 * assertion.getSubjectConfirmationDataNotBeforeSecondsInPast()));
+                calendar.set(GregorianCalendar.MILLISECOND, 0);
+                data.setNotBefore( xmltypeFactory.newXMLGregorianCalendar(calendar) );
+            }
+            if ( assertion.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0) {
+                GregorianCalendar calendar = (GregorianCalendar)GregorianCalendar.getInstance();
+                calendar.add(GregorianCalendar.SECOND, assertion.getSubjectConfirmationDataNotOnOrAfterExpirySeconds());
+                data.setNotOnOrAfter( xmltypeFactory.newXMLGregorianCalendar(calendar) );
+            }
+        }
+
+        return data;
     }
 
 

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.samlpassertion;
 
 
@@ -43,6 +40,11 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     private boolean signRequest = true;
     private EnumSet<DecorationType> decorationTypes;
     private String subjectConfirmationMethodUri;
+    private String subjectConfirmationDataRecipient;
+    private String subjectConfirmationDataAddress;
+    private String subjectConfirmationDataInResponseTo;
+    private int subjectConfirmationDataNotBeforeSecondsInPast = -1;
+    private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
     private NameIdentifierInclusionType nameIdentifierType = NameIdentifierInclusionType.FROM_CREDS;
     private String nameIdentifierFormat;
     private String nameIdentifierValue;
@@ -195,6 +197,46 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.decorationTypes = decorationTypes;
     }
 
+    public String getSubjectConfirmationDataRecipient() {
+        return subjectConfirmationDataRecipient;
+    }
+
+    public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
+        this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
+    }
+
+    public String getSubjectConfirmationDataAddress() {
+        return subjectConfirmationDataAddress;
+    }
+
+    public void setSubjectConfirmationDataAddress( final String subjectConfirmationDataAddress ) {
+        this.subjectConfirmationDataAddress = subjectConfirmationDataAddress;
+    }
+
+    public String getSubjectConfirmationDataInResponseTo() {
+        return subjectConfirmationDataInResponseTo;
+    }
+
+    public void setSubjectConfirmationDataInResponseTo( final String subjectConfirmationDataInResponseTo ) {
+        this.subjectConfirmationDataInResponseTo = subjectConfirmationDataInResponseTo;
+    }
+
+    public int getSubjectConfirmationDataNotBeforeSecondsInPast() {
+        return subjectConfirmationDataNotBeforeSecondsInPast;
+    }
+
+    public void setSubjectConfirmationDataNotBeforeSecondsInPast( final int subjectConfirmationDataNotBeforeSecondsInPast ) {
+        this.subjectConfirmationDataNotBeforeSecondsInPast = subjectConfirmationDataNotBeforeSecondsInPast;
+    }
+
+    public int getSubjectConfirmationDataNotOnOrAfterExpirySeconds() {
+        return subjectConfirmationDataNotOnOrAfterExpirySeconds;
+    }
+
+    public void setSubjectConfirmationDataNotOnOrAfterExpirySeconds( final int subjectConfirmationDataNotOnOrAfterExpirySeconds ) {
+        this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
+    }
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
@@ -202,6 +244,9 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         collectVars(varNames, nameIdentifierFormat);
         collectVars(varNames, nameIdentifierValue);
         collectVars(varNames, subjectConfirmationMethodUri);
+        collectVars(varNames, subjectConfirmationDataAddress);
+        collectVars(varNames, subjectConfirmationDataRecipient);
+        collectVars(varNames, subjectConfirmationDataInResponseTo);
         collectVars(varNames, audienceRestriction);
         collectVars(varNames, nameQualifier);
         // new stuff

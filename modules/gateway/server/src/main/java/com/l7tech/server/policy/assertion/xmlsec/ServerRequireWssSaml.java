@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
+import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -139,10 +140,13 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
-            Collection validateResults = new ArrayList();
+            Collection<SamlAssertionValidate.Error> validateResults = new ArrayList<SamlAssertionValidate.Error>();
             Collection<Pair<String, String[]>> collectAttrValues = new ArrayList<Pair<String, String[]>>();
             LoginCredentials credentials = authContext.getLastCredentials();
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues);
+            Collection<String> clientAddresses = message.getKnob(TcpKnob.class) != null && message.getTcpKnob().getRemoteAddress() != null? 
+                    Collections.singleton( message.getTcpKnob().getRemoteAddress() ) :
+                    null;
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues, clientAddresses);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
                 boolean firstPass = true;

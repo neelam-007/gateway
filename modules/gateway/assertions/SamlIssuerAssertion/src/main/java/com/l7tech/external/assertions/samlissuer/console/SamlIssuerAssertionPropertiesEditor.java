@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.samlissuer.console;
 
 import com.l7tech.console.event.WizardAdapter;
@@ -55,6 +52,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
             public void wizardFinished(WizardEvent e) { confirmed = true; }
         });
         wiz.addValidationRulesDefinedInWizardStepPanel(ConditionsWizardStepPanel.class, p);
+        wiz.addValidationRulesDefinedInWizardStepPanel(SubjectConfirmationWizardStepPanel.class, p);
         wizard = wiz;
     }
 

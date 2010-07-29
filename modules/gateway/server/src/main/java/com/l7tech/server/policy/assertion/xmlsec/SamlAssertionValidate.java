@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- */
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -73,7 +69,12 @@ public class SamlAssertionValidate {
      * @param validationResults
      * @param collectAttrValues
      */
-    public void validate(Document soapMessageDoc, LoginCredentials credentials, ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
+    public void validate( final Document soapMessageDoc,
+                          final LoginCredentials credentials,
+                          final ProcessorResult wssResults,
+                          final Collection<Error> validationResults,
+                          final Collection<Pair<String, String[]>> collectAttrValues,
+                          final Collection<String> clientAddresses) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -82,8 +83,8 @@ public class SamlAssertionValidate {
             return;
         }
 
-        boolean acceptV1 = requestWssSaml.getVersion()==null || requestWssSaml.getVersion().intValue()!=2;
-        boolean acceptV2 = requestWssSaml.getVersion()!=null && requestWssSaml.getVersion().intValue()!=1;
+        boolean acceptV1 = requestWssSaml.getVersion()==null || requestWssSaml.getVersion()!=2;
+        boolean acceptV2 = requestWssSaml.getVersion()!=null && requestWssSaml.getVersion()!=1;
         Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
         now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
 
@@ -99,12 +100,12 @@ public class SamlAssertionValidate {
 
                     if (xmlObject instanceof AssertionType) {
                         AssertionType assertionType = (AssertionType)xmlObject;
-                        Collection statementList = new ArrayList();
+                        Collection<StatementAbstractType> statementList = new ArrayList<StatementAbstractType>();
                         statementList.addAll(Arrays.asList(assertionType.getAuthenticationStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAuthorizationDecisionStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
-                        StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{ });
+                        StatementAbstractType[] statementArray = statementList.toArray(new StatementAbstractType[statementList.size()]);
 
                         for (StatementAbstractType statementAbstractType : statementArray) {
                             Set keys = validators.keySet();
@@ -123,14 +124,14 @@ public class SamlAssertionValidate {
                         x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
                             (x0Assertion.oasisNamesTcSAML2.AssertionType)xmlObject;
                         validateConditions(assertionType.getConditions(), now, validationResults);
-                        validateSubjectConfirmation(assertionType.getSubject(), now, validationResults);
+                        validateSubjectConfirmation(assertionType.getSubject(), now, clientAddresses, validationResults);
 
-                        Collection statementList = new ArrayList();
+                        Collection<XmlObject> statementList = new ArrayList<XmlObject>();
                         statementList.addAll(Arrays.asList(assertionType.getAuthnStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAuthzDecisionStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
-                        XmlObject[] statementArray = (XmlObject[])statementList.toArray(new XmlObject[]{ });
+                        XmlObject[] statementArray = statementList.toArray(new XmlObject[statementList.size()]);
 
                         for (XmlObject statementAbstractType : statementArray) {
                             Set keys = validators.keySet();
@@ -360,7 +361,7 @@ public class SamlAssertionValidate {
      * @param assertionType
      * @param validationResults
      */
-    private void validateConditions(AssertionType assertionType, Collection validationResults) throws IOException {
+    private void validateConditions(AssertionType assertionType, Collection<Error> validationResults) throws IOException {
         ConditionsType conditionsType = assertionType.getConditions();
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
@@ -458,7 +459,7 @@ public class SamlAssertionValidate {
     /**
      * Subject validation for 1.x
      */
-    private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection validationResults) {
+    private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection<Error> validationResults) {
         final SubjectType subject = subjectStatementAbstractType.getSubject();
         if (subject == null) {
             validationResults.add(new Error("Subject Statement Required", null));
@@ -542,7 +543,7 @@ public class SamlAssertionValidate {
         }
 
         if (!confirmationMatch) {
-            List acceptedConfirmations = new ArrayList(Arrays.asList(confirmations));
+            List<String> acceptedConfirmations = new ArrayList<String>(Arrays.asList(confirmations));
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
@@ -558,15 +559,18 @@ public class SamlAssertionValidate {
     /**
      * Validate the SAML assertion conditions for v2.x
      */
-    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Calendar timeNow, Collection validationResults) {
+    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Calendar timeNow, Collection<Error> validationResults) {
         Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, timeNow, validationResults);
     }
 
     /**
      * Subject validation for 2.x
      */
-    private void validateSubjectConfirmation(x0Assertion.oasisNamesTcSAML2.SubjectType subjectType, Calendar timeNow, Collection validationResults) {
-        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, validationResults);
+    private void validateSubjectConfirmation( final x0Assertion.oasisNamesTcSAML2.SubjectType subjectType,
+                                              final Calendar timeNow,
+                                              final Collection<String> clientAddresses,
+                                              final Collection<Error> validationResults) {
+        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, clientAddresses, validationResults);
     }
 
     /**
@@ -584,12 +588,12 @@ public class SamlAssertionValidate {
      * @return              The filtered values
      */
     static String[] filter(String[] values, String[] allowedValues) {
-        Set valueSet = new LinkedHashSet(Arrays.asList(values));
+        Set<String> valueSet = new LinkedHashSet<String>(Arrays.asList(values));
         valueSet.retainAll(Arrays.asList(allowedValues));
-        return (String[]) valueSet.toArray(new String[valueSet.size()]);
+        return valueSet.toArray(new String[valueSet.size()]);
     }
 
-    static class Error {
+    public static class Error {
         private final Object[] arguments;
         private final Exception exception;
         private final String formattedReason;
