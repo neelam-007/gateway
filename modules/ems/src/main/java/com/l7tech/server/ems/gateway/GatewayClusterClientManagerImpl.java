@@ -65,7 +65,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
     @Override
     public GatewayClusterClient getGatewayClusterClient(final SsgCluster cluster, final User user) throws GatewayException {
-        if ( cluster == null ) throw new GatewayException("Invalid SSG Cluster");
+        if ( cluster == null ) throw new GatewayException("Invalid Gateway Cluster");
         Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
             @Override
             public SsgCluster call() {
@@ -95,7 +95,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             final SsgCluster ssgCluster = findCluster(cluster);
 
             if ( ssgCluster == null )
-                throw new GatewayException("No SSG Cluster found with ID '" + clusterId + "'.");
+                throw new GatewayException("No Gateway Cluster found with ID '" + clusterId + "'.");
             if ( !ssgCluster.getTrustStatus() )
                 throw new GatewayNoTrustException("Bad trust status for cluster with ID '" + clusterId + "'.");
 

@@ -29,7 +29,7 @@ public class HomeAction extends SecureAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Go to the SecureSpan Manager home page";
+        return "Go to the Policy Manager home page";
     }
 
     /**

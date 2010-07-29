@@ -55,11 +55,11 @@
                 ACCESS_ACCOUNT_CANNOT_SET : 'No gateway user account is mapped. Trust must be established before mapping gateway user account.',
                 ACCESS_GRANTED : 'Role with access permission assigned',
                 ACCESS_NOT_GRANTED : 'Role with access permission not assigned',
-                DASHBOARD_CHECKBOX_TOOLTIP : 'Show/Hide dashboard for this SSG Cluster',
+                DASHBOARD_CHECKBOX_TOOLTIP : 'Show/Hide dashboard for this Gateway Cluster',
                 MONITORED_PROPERTY_BUTTON_TOOLTIP : 'Click to configure this monitoring property',
                 ENTERPRISE_FOLDER : 'folder',
-                SSG_CLUSTER : 'SSG Cluster',
-                SSG_NODE : 'SSG Node',
+                SSG_CLUSTER : 'Gateway Cluster',
+                SSG_NODE : 'Gateway Node',
                 SERVICE_FOLDER : 'folder',
                 PUBLISHED_SERVICE : 'published service',
                 POLICY_FRAGMENT : 'policy fragment',
@@ -80,7 +80,7 @@
                 DELETE : 'Delete',
                 START : 'Start',
                 STOP : 'Stop',
-                LAUNCH_SSM : 'Launch SecureSpan Manager',
+                LAUNCH_SSM : 'Launch Policy Manager',
                 NO_ACCESS : 'No Access',
                 OK : 'OK',
                 CANCEL : 'Cancel',
@@ -90,27 +90,27 @@
                 CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of enterprise entities from the server.',
                 CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities retrieved from the server.',
                 ENTITY_DATA_ERROR : 'Data error.',
-                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
+                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by Gateway Cluster from the server.',
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
                 HOST_NAME_HINT : 'invalid host name',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
-                STARTING_SSG_NODE : 'Starting SSG Node "{0}"...',
-                STOPPING_SSG_NODE : 'Stopping SSG Node "{0}"...',
+                STARTING_SSG_NODE : 'Starting Gateway Node "{0}"...',
+                STOPPING_SSG_NODE : 'Stopping Gateway Node "{0}"...',
                 CANNOT_ADD_FOLDER : 'Unable to add folder.',
                 CANNOT_EDIT_FOLDER : 'Unable to edit folder.',
                 CANNOT_DELETE_FOLDER : 'Unable to delete folder.',
-                CANNOT_ADD_SSG_CLUSTER : 'Unable to add SSG Cluster.',
-                CANNOT_EDIT_SSG_CLUSTER : 'Unable to edit SSG Cluster.',
+                CANNOT_ADD_SSG_CLUSTER : 'Unable to add Gateway Cluster.',
+                CANNOT_EDIT_SSG_CLUSTER : 'Unable to edit Gateway Cluster.',
                 WARN_MOVE_NAME_COLLISION : 'A {0} of the same name already exists in the selected folder.',
                 WARN_MOVE_NO_CHANGE : 'Same as current parent folder.',
                 WARN_MOVE_FOLDER_INTO_SELF : 'Cannot move a folder to inside itself.',
                 WARN_MOVE_FOLDER_INTO_DESCENDENT : 'Cannot move a folder into its own descendent folder.',
                 CANNOT_MOVE: 'Unable to move {0} "{1}".',
-                CANNOT_DELETE_SSG_CLUSTER : 'Unable to delete SSG Cluster.',
-                CANNOT_START_SSG_NODE : 'Unable to start SSG Node.',
-                CANNOT_STOP_SSG_NODE : 'Unable to stop SSG Node.'
+                CANNOT_DELETE_SSG_CLUSTER : 'Unable to delete Gateway Cluster.',
+                CANNOT_START_SSG_NODE : 'Unable to start Gateway Node.',
+                CANNOT_STOP_SSG_NODE : 'Unable to stop Gateway Node.'
             };
         </script>
         <script type="text/javascript">
@@ -1759,7 +1759,7 @@
 </div>
 
 <div id="addSSGClusterDialog">
-    <div class="hd">Add SSG Cluster</div>
+    <div class="hd">Add Gateway Cluster</div>
     <div class="bd">
         <form name="addSSGClusterForm" wicket:id="addSSGClusterForm" method="POST">
             <input id="addSSGClusterDialog_parentId" wicket:id="addSSGClusterDialog_parentId" type="hidden" name="parentId" />
@@ -1782,13 +1782,13 @@
 </div>
 
 <div id="ssgClusterTrustDialog">
-    <div class="hd">Establish Trust by SSG Cluster</div>
+    <div class="hd">Establish Trust by Gateway Cluster</div>
     <div class="bd" style="width: 40em;">
         <form id="ssgClusterTrustForm" method="POST">
             <input id="ssgClusterTrustForm_esmToken" type="hidden" name="token" />
             <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
         </form>
-        To establish trust of this Enterprise Service Manager by the SSG Cluster
+        To establish trust of this Enterprise Service Manager by the Gateway Cluster
         &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
         you will now be redirected to the cluster server where
         you can authenticate using a gateway administrator account.
@@ -1809,7 +1809,7 @@
             <input id="mapAccessAccountForm_esmToken" type="hidden" name="token" />
             <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
         </form>
-        To enable access to the SSG Cluster
+        To enable access to the Gateway Cluster
         &ldquo;<span id="mapAccessAccountDialog_ssgClusterName"></span>&rdquo;,
         you will now be redirected to the cluster server where
         you can map a gateway user account to your Enterprise Service Manager account.
@@ -1825,7 +1825,7 @@
             <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
         </form>
         Your Enterprise Service Manager account is currently mapped to a user account
-        on the SSG Cluster
+        on the Gateway Cluster
         &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
         To change that,  you will now be redirected to the cluster server where
         you can map a different gateway user account.
@@ -1834,7 +1834,7 @@
 </div>
 
 <div id="editSSGClusterDialog">
-    <div class="hd">Edit SSG Cluster</div>
+    <div class="hd">Edit Gateway Cluster</div>
     <div class="bd">
         <form name="editSSGClusterForm" wicket:id="editSSGClusterForm" method="POST">
             <input id="editSSGClusterDialog_id" wicket:id="editSSGClusterDialog_id" type="hidden" name="id" />
@@ -1857,7 +1857,7 @@
 </div>
 
 <div id="moveSSGClusterDialog">
-    <div class="hd">Move SSG Cluster</div>
+    <div class="hd">Move Gateway Cluster</div>
     <div class="bd">
         <form name="moveSSGClusterForm" wicket:id="moveSSGClusterForm" method="POST">
             <input id="moveSSGClusterDialog_entityId" wicket:id="moveSSGClusterDialog_entityId" type="hidden" name="entityId"/>
@@ -1875,22 +1875,22 @@
 </div>
 
 <div id="deleteSSGClusterDialog">
-    <div class="hd">Delete SSG Cluster</div>
+    <div class="hd">Delete Gateway Cluster</div>
     <div class="bd">
         <form name="deleteSSGClusterForm" wicket:id="deleteSSGClusterForm" method="POST">
             <input id="deleteSSGClusterDialog_id" wicket:id="deleteSSGClusterDialog_id" type="hidden" name="id" />
-            Delete SSG Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
-            <br/>This will not destroy the SSG Cluster itself.
+            Delete Gateway Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
+            <br/>This will not destroy the Gateway Cluster itself.
         </form>
     </div>
 </div>
 
 <div id="reconfirmSSGClusterDeletionDialog">
-    <div class="hd">Reconfirm SSG Cluster Deletion</div>
+    <div class="hd">Reconfirm Gateway Cluster Deletion</div>
     <div class="bd">
         <form name="reconfirmSSGClusterDeletionForm" wicket:id="reconfirmSSGClusterDeletionForm" method="POST">
             <input id="reconfirmSSGClusterDeletionDialog_id" wicket:id="reconfirmSSGClusterDeletionDialog_id" type="hidden" name="id" />
-            The SSG Cluster &ldquo;<span id="reconfirmSSGClusterDeletionDialog_name"></span>&rdquo; has related data such as generated reports
+            The Gateway Cluster &ldquo;<span id="reconfirmSSGClusterDeletionDialog_name"></span>&rdquo; has related data such as generated reports
             <br/>and migration history. Deleting the cluster will also delete them.
             <p style="margin-top: 1em;">Proceed?</p>
         </form>

@@ -79,7 +79,7 @@ public class AuditAlertChecker {
             }
         } catch (RemoteAccessException e) {
             // bzilla #3741, we may no longer be connected
-            logger.log(Level.WARNING, "Could not access SSG to update this. Perhaps the connection to the SSG timed out.", e);
+            logger.log(Level.WARNING, "Could not access Gateway to update this. Perhaps the connection to the Gateway timed out.", e);
         } catch (FindException e) {
             logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
         }

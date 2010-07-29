@@ -418,7 +418,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX),
-          "Name of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "Name of the Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX),
           "% of load calculated with data collected in the past 60 seconds. " +
           "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
@@ -426,11 +426,11 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
           "% of routed requests calculated with data collected in the past 60 seconds. " +
           "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX),
-          "IP address of the SecureSpan Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "IP address of the Gateway. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX),
           "1 minute load average. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX),
-          "Duration of the SecureSpan Gateway uptime. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+          "Duration of the Gateway uptime. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         clusterStatusTable.getTableHeader().addMouseMotionListener(htt);
 
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {

@@ -267,7 +267,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
         X509Certificate cert = seled.getCert();
         if (cert == null) {
-            DialogDisplayer.showMessageDialog(this, "The SecureSpan Manager is unable to read or display this certificate.", "Unable to Parse Certificate", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, "The Policy Manager is unable to read or display this certificate.", "Unable to Parse Certificate", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -292,7 +292,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             DialogDisplayer.showMessageDialog(
                     makeDefaultSSLButton,
                     "This key's certificate chain has a key usage disallowing use as an SSL server cert.\n" +
-                    "Many SSL clients -- including the SecureSpan Manager, and web browsers -- will refuse\n" +
+                    "Many SSL clients -- including the Policy Manager, and web browsers -- will refuse\n" +
                     "to connect to an SSL server that uses this key for its SSL server cert.",
                     "Unsuitable SSL Certificate",
                     JOptionPane.WARNING_MESSAGE,

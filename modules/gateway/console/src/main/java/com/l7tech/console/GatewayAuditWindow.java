@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-    private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Audit Events";
+    private static final String WINDOW_TITLE = "Policy Manager - Gateway Audit Events";
     private JPanel mainPane = null;
     private JMenuBar clusterWindowMenuBar = null;
     private JMenu fileMenu = null;
@@ -587,7 +587,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             }
             @Override
             public String getDescription() {
-                return "(*.ssga) SecureSpan Gateway Audit data file.";
+                return "(*.ssga) Gateway Audit data file.";
             }
         };
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");

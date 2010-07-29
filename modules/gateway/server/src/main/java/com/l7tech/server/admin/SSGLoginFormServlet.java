@@ -17,7 +17,7 @@ import java.text.MessageFormat;
  * Date: Oct 15, 2007
  */
 public class SSGLoginFormServlet extends HttpServlet {
-    private static final String NORMAL_MESSAGE = "Connecting to the SecureSpan Gateway";
+    private static final String NORMAL_MESSAGE = "Connecting to the Gateway";
     private static final String INCORRECT_USR_PWD_MESSAGE = "The user name or password is incorrect.  Try again.";
     private static final String LOCK_OUT_MESSAGE = "Maximum login attempts exceeded, please try again later.";
     private static final String CREDS_EXPIRED_MESSAGE = "Password expired, please change your password.";

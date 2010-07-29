@@ -184,7 +184,7 @@
                     <properties>
                       <enabled value="true"/>
                       <selected value="true"/>
-                      <text value="SecureSpan &amp;Manager access"/>
+                      <text value="Policy &amp;Manager access"/>
                     </properties>
                   </component>
                   <component id="a54bf" class="javax.swing.JCheckBox" binding="cbEnableSsmApplet" default-binding="true">

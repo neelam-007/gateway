@@ -52,7 +52,7 @@ public class AppletSsmPreferences extends AbstractSsmPreferences {
             ByteArrayInputStream preferencesIn = null;
             try {
                 preferencesOut = new ByteArrayOutputStream(2048);
-                props.store(preferencesOut, "SSG properties");
+                props.store(preferencesOut, "Gateway properties");
 
                 preferencesIn = new ByteArrayInputStream(preferencesOut.toByteArray());
                 strategy.setPreferencesInputStream( preferencesIn );

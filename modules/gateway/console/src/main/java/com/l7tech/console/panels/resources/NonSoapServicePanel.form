@@ -56,7 +56,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="Enter the HTTP URL that the SecureSpan Gateway should forward requests to"/>
+          <toolTipText value="Enter the HTTP URL that the Gateway should forward requests to"/>
         </properties>
       </component>
       <component id="f6b23" class="javax.swing.JTextField" binding="ssgURLSuffix">
@@ -68,7 +68,7 @@
         </constraints>
         <properties>
           <text value=""/>
-          <toolTipText value="Complete the SecureSpan Gateway URL that will receive service requests"/>
+          <toolTipText value="Complete the Gateway URL that will receive service requests"/>
         </properties>
       </component>
       <component id="15cae" class="javax.swing.JLabel" binding="prefixURL">
@@ -96,7 +96,7 @@
           <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Enter the HTTP URL that the SecureSpan Gateway should forward requests to:"/>
+          <text value="Enter the HTTP URL that the Gateway should forward requests to:"/>
         </properties>
       </component>
       <component id="f27c4" class="javax.swing.JLabel">
@@ -105,7 +105,7 @@
           <grid row="4" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Complete the SecureSpan Gateway URL that will receive service requests:"/>
+          <text value="Complete the Gateway URL that will receive service requests:"/>
         </properties>
       </component>
     </children>

@@ -173,7 +173,7 @@ public class SsgCacheManager {
         for(SsgCache cache : caches) {
             cache.clear();
         }
-        logger.log(Level.FINE, "SSG response caches cleared.");
+        logger.log(Level.FINE, "Gateway response caches cleared.");
     }
 
     /**

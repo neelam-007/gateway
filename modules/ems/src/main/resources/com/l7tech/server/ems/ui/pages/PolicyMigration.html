@@ -86,7 +86,7 @@
                 ERROR : 'Error',
                 SESSION_TIMEOUT : 'Your session has expired.',
                 CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
-                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
+                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by Gateway Cluster from the server.',
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
                 IDENTIFING_DEPENDENCIES : 'Identifying dependencies for selected source items ...',
                 CANNOT_DOWNLOAD_DEPENDENCIES : 'Unable to retrieve list of dependencies for selected source items from the server.',
@@ -837,7 +837,7 @@
                 <td class="srcDestTop">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">Select a source SSG Cluster:</td>
+                            <td class="nowrap">Select a source Gateway Cluster:</td>
                             <td class="right" width="100%">
                                 <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
@@ -852,7 +852,7 @@
                 <td class="srcDestTop">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">Select a destination SSG Cluster:</td>
+                            <td class="nowrap">Select a destination Gateway Cluster:</td>
                             <td class="right" width="100%">
                                 <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshDestSsgClusterSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
@@ -1178,13 +1178,13 @@
             </div>
 
             <div id="ssgClusterTrustDialog">
-                <div class="hd">Establish Trust by SSG Cluster</div>
+                <div class="hd">Establish Trust by Gateway Cluster</div>
                 <div class="bd" style="width: 40em;">
                     <form id="ssgClusterTrustForm" method="POST">
                         <input id="ssgClusterTrustForm_esmToken" type="hidden" name="token" />
                         <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
                     </form>
-                    To establish trust of this Enterprise Service Manager by the SSG Cluster
+                    To establish trust of this Enterprise Service Manager by the Gateway Cluster
                     &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
                     you will now be redirected to the cluster server where
                     you can authenticate using a gateway administrator account.
@@ -1205,7 +1205,7 @@
                         <input id="mapAccessAccountForm_esmToken" type="hidden" name="token" />
                         <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
                     </form>
-                    To enable access to the SSG Cluster
+                    To enable access to the Gateway Cluster
                     &ldquo;<span id="mapAccessAccountDialog_ssgClusterName"></span>&rdquo;,
                     you will now be redirected to the cluster server where
                     you can map a gateway user account to your Enterprise Service Manager account.
@@ -1221,7 +1221,7 @@
                         <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
                     </form>
                     Your Enterprise Service Manager account is currently mapped to a user account
-                    on the SSG Cluster
+                    on the Gateway Cluster
                     &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
                     To change that,  you will now be redirected to the cluster server where
                     you can map a different gateway user account.

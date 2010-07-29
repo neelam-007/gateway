@@ -194,7 +194,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
 
     private void ssgRestart() {
         if (MessageProcessor.SuspendStatus.INSTANCE.isSuspended()) {
-            logger.warning("Restarting SSG message processing");
+            logger.warning("Restarting Gateway message processing");
             MessageProcessor.SuspendStatus.INSTANCE.resume();
             auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_RESTARTED);
             getApplicationContext().publishEvent(new AuditArchiverEvent(this));
@@ -203,7 +203,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
 
     private void ssgSuspend(String reason) {
         if ( !MessageProcessor.SuspendStatus.INSTANCE.isSuspended() ) {
-            logger.severe("Suspending SSG message processing: " + reason);
+            logger.severe("Suspending Gateway message processing: " + reason);
             MessageProcessor.SuspendStatus.INSTANCE.suspend(reason);
             auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, reason);
             getApplicationContext().publishEvent(new AuditArchiverEvent(this));

@@ -445,7 +445,7 @@ final class BackupImpl implements Backup {
                 out = new ZipOutputStream(new FileOutputStream(zipFileName));
             }
             
-            final String msg = "Compressing SecureSpan Gateway image into " + zipFileName;
+            final String msg = "Compressing Gateway image into " + zipFileName;
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
             final StringBuilder sb = new StringBuilder();
             addDir(tmpOutputDirectory, out, sb);

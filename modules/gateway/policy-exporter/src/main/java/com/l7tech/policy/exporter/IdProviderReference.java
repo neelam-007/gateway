@@ -351,7 +351,7 @@ public class IdProviderReference extends ExternalReference {
                     userRef = su.getUserUid();
                 }
                 String msg = "The user \"" + userRef + "\" does not exist on\n" +
-                        "the target SecureSpan Gateway. You should remove\n" +
+                        "the target Gateway. You should remove\n" +
                         "or replace the identity assertion from the policy.";
                 logger.warning(msg);
                 warning( "Unresolved identity", msg );
@@ -381,7 +381,7 @@ public class IdProviderReference extends ExternalReference {
                     groupRef = mog.getGroupId();
                 }
                 String msg = "The group \"" + groupRef + "\" does not exist on\n" +
-                        "the target SecureSpan Gateway. You should remove\n" +
+                        "the target Gateway. You should remove\n" +
                         "or replace the identity assertion from the policy.";
                 logger.warning(msg);
                 warning( "Unresolved identity", msg );

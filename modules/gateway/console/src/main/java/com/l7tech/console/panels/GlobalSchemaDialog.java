@@ -394,7 +394,7 @@ public class GlobalSchemaDialog extends JDialog {
                 String msg;
                 if (isUrl) {
                     msg = "This schema has an unresolved dependency (" + unresolvedDependency + "). Click 'yes' " +
-                          "to import this missing schema now, 'no' if you want the SecureSpan Gateway to try to " +
+                          "to import this missing schema now, 'no' if you want the Gateway to try to " +
                           "try import it from the URL.";
                 } else {
                     msg = "This schema has an unresolved dependency (" + unresolvedDependency + "). Click 'yes' " +

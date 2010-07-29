@@ -195,17 +195,17 @@ public class ClusterStatusPanel extends JPanel {
 
         ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX),
-                "Name of the SecureSpan Gateway");
+                "Name of the Gateway");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX),
                 "% of load calculated with data collected in the past 60 seconds, updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX),
                 "% of routed requests calculated with data collected in the past 60 seconds, updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX),
-                "IP address of the SecureSpan Gateway");
+                "IP address of the Gateway");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX),
                 "1 minute load average, updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX),
-                "Duration of the SecureSpan Gateway uptime");
+                "Duration of the Gateway uptime");
         clusterStatusTable.getTableHeader().addMouseMotionListener(htt);
 
         clusterStatusTable.addMouseListener(new PopUpMouseListener() {

@@ -10,12 +10,12 @@ public class GatewayRuntimeException extends RuntimeAdminException {
     /**
      * Standard error message
      */
-    public static final String MESSAGE_DEFAULT = "A SecureSpan Gateway error occurred, please contact your administrator.";
+    public static final String MESSAGE_DEFAULT = "A Gateway error occurred, please contact your administrator.";
 
     /**
      * Error message for transient issues
      */
-    public static final String MESSAGE_TRANSIENT = "A SecureSpan Gateway error occurred, please try again.";
+    public static final String MESSAGE_TRANSIENT = "A Gateway error occurred, please try again.";
 
     /**
      * Create a runtime exception with the default error message.

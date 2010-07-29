@@ -197,7 +197,7 @@
                     </constraints>
                     <properties>
                       <labelFor value="a7b5"/>
-                      <text value="The SecureSpan Gateway URL that receives requests for this service:"/>
+                      <text value="The Gateway URL that receives requests for this service:"/>
                     </properties>
                   </component>
                   <scrollpane id="a7b5">

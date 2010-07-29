@@ -209,7 +209,7 @@ final class OSConfigManager {
         final File targetFile = new File(targetRoot, fileToCopy.getAbsolutePath());
         FileUtils.ensurePath(targetFile.getParentFile());
         FileUtils.copyFile(fileToCopy, targetFile);
-        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the SSG " +
+        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the Gateway " +
                 "host is restarted, if this has been configured on host startup";
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
     }
@@ -260,7 +260,7 @@ final class OSConfigManager {
         }
         
         if (systemFileOverWritten && !isReboot) {
-            final String msg = "Certain system files are set to be overwritten the next time the SSG host is restarted" +
+            final String msg = "Certain system files are set to be overwritten the next time the Gateway host is restarted" +
                     ", if this has been configured on host startup";
             ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
         }

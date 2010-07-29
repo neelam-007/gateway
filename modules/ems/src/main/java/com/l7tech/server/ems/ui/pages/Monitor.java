@@ -117,7 +117,7 @@ public class Monitor extends EsmStandardWebPage {
                         for (SystemMonitoringNotificationRule rule: setup.getSystemNotificationRules()) {
                             if (guid.equals(rule.getGuid())) {
                                 String clusterName = ssgClusterManager.findByGuid(ssgClusterGuid).getName();
-                                return new JSONException("Notification rule '" + rule.getName() + "' is still in use by SSG cluster '" + clusterName + "'.");
+                                return new JSONException("Notification rule '" + rule.getName() + "' is still in use by Gateway cluster '" + clusterName + "'.");
                             }
                         }
                     }
@@ -498,7 +498,7 @@ public class Monitor extends EsmStandardWebPage {
                     }
                 }
             } catch (FindException e) {
-                logger.log(Level.WARNING, "Cannot find SSG clusters due to data access failure.", ExceptionUtils.getDebugException(e));
+                logger.log(Level.WARNING, "Cannot find Gateway clusters due to data access failure.", ExceptionUtils.getDebugException(e));
                 return new JSONException("Failed to get entity property values due to data access failure.");
             }
 
@@ -1218,7 +1218,7 @@ public class Monitor extends EsmStandardWebPage {
             Level.INFO,
             isSsgNode? entityGuid : "",
             Component.ENTERPRISE_MANAGER,
-            "Change in the monitoring property settings of an individual " + (isSsgNode? "SSG node" : "SSG cluster"),
+            "Change in the monitoring property settings of an individual " + (isSsgNode? "Gateway node" : "Gateway cluster"),
             true,
             0,
             null,
@@ -1341,12 +1341,12 @@ public class Monitor extends EsmStandardWebPage {
                 }
 
                 if (auditDetail != null) {
-                    auditMessage.append(property).append("' of SSG ").append(isSsgCluster? "cluster" : "node").append(" '").append(entity.getName()).append("' (").append(host).append(")");
+                    auditMessage.append(property).append("' of Gateway ").append(isSsgCluster? "cluster" : "node").append(" '").append(entity.getName()).append("' (").append(host).append(")");
                     if (isSsgCluster) {
                         auditMessage.append(".");
                     } else {
                         SsgCluster cluster = ((SsgNode)entity).getSsgCluster();
-                        auditMessage.append(" in SSG cluster '").append(cluster.getName()).append("' (").append(cluster.getSslHostName()).append(").");
+                        auditMessage.append(" in Gateway cluster '").append(cluster.getName()).append("' (").append(cluster.getSslHostName()).append(").");
                     }
                     AuditRecord auditRecord = new SystemAuditRecord(
                         checkNormalToAlert? Level.WARNING : Level.INFO,

@@ -177,7 +177,7 @@ public class PrivateKeyReference extends ExternalReference {
             SsgKeyEntry foundKey = getFinder().findKeyEntry(keyAlias, keystoreOid);
             if (foundKey == null) {
                 logger.warning("The private key with alias '" + keyAlias + "' and keystore OID '" + keystoreOid +
-                    "' does not exist in this SecureSpan Gateway.");
+                    "' does not exist in this Gateway.");
                 localizeType = LocalizeAction.REPLACE;
                 return false;
             } else {

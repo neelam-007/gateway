@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
     private static final Logger logger = Logger.getLogger(SsgClusterManagerImpl.class.getName());
 
-    private static final String ROLE_NAME_TYPE_SUFFIX = "SSG Cluster Nodes";
+    private static final String ROLE_NAME_TYPE_SUFFIX = "Gateway Cluster Nodes";
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
     private String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
@@ -126,11 +126,11 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     public void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException {
         final SsgCluster cluster = findByGuid(guid);
         if (cluster == null) {
-            throw new FindException("The SSG Cluster to move does not exists. (GUID = " + guid + ")");
+            throw new FindException("The Gateway Cluster to move does not exists. (GUID = " + guid + ")");
         }
 
         if (cluster.getParentFolder().getGuid().equals(newParentGuid)) {
-            logger.info("Attempt to move SSG Cluster \"" + cluster.getName() + "\" to same parent folder, i.e., no-op.");
+            logger.info("Attempt to move Gateway Cluster \"" + cluster.getName() + "\" to same parent folder, i.e., no-op.");
             return;
         }
 
@@ -142,7 +142,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         final List<SsgCluster> newSiblings = findChildSsgClusters(newParent);
         for (SsgCluster sibling : newSiblings) {
             if (sibling.getName().equals(cluster.getName())) {
-                throw new UpdateException("An SSG Cluster with the name \"" + sibling.getName() + "\" already exists in the destination folder \"" + newParent.getName() + "\".");
+                throw new UpdateException("A Gateway Cluster with the name \"" + sibling.getName() + "\" already exists in the destination folder \"" + newParent.getName() + "\".");
             }
         }
 
@@ -166,7 +166,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
                 }
             });
         } catch (DataAccessException e) {
-            throw new FindException("Cannot find SSG Cluster by GUID: " + guid, e);
+            throw new FindException("Cannot find Gateway Cluster by GUID: " + guid, e);
         }
     }
 
@@ -189,7 +189,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
                 }
             });
         } catch (DataAccessException e) {
-            throw new FindException("Cannot find child SSG Clusters of " + parentFolder, e);
+            throw new FindException("Cannot find child Gateway Clusters of " + parentFolder, e);
         }
     }
 
@@ -283,13 +283,13 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         // Check if there exists any SSG cluster having the same host name or ip address of the checked cluster's.
         for (SsgCluster cluster: findAll()) {
             if (isSameHost(cluster.getSslHostName(), hostname)) {
-                throw new DuplicateHostnameException("Find an existing SSG Cluster with the same hostname (" + hostname + ").");
+                throw new DuplicateHostnameException("Find an existing Gateway Cluster with the same hostname (" + hostname + ").");
             }
 
             // Check if there exists any SSG node having the same host name or ip address of the checked cluster's.
             for (SsgNode node: cluster.getNodes()) {
                 if (isSameHost(node.getIpAddress(), hostname)) {
-                    throw new DuplicateHostnameException("Find an existing SSG Node with the same hostname (" + hostname + ").");
+                    throw new DuplicateHostnameException("Find an existing Gateway Node with the same hostname (" + hostname + ").");
                 }
             }
         }
@@ -373,7 +373,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
 
         newRole.setEntityType(ESM_SSG_CLUSTER);
         newRole.setEntityOid(id);
-        newRole.setDescription("Users assigned to the {0} role have the ability to manage SSG Nodes in the {1} cluster.");
+        newRole.setDescription("Users assigned to the {0} role have the ability to manage Gateway Nodes in the {1} cluster.");
 
         roleManager.save(newRole);
     }

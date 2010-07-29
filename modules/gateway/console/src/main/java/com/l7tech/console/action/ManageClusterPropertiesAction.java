@@ -28,7 +28,7 @@ public class ManageClusterPropertiesAction extends SecureAction {
     }
 
     public String getDescription() {
-        return "View/Edit SecureSpan Gateways Cluster Properties.";
+        return "View/Edit Gateways Cluster Properties.";
     }
 
     protected String iconResource() {

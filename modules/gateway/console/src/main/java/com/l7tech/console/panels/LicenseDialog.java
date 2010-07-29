@@ -202,7 +202,7 @@ public class LicenseDialog extends JDialog {
                 String confirmationDialogTitle = "Confirm License Removal";
                 String confirmationDialogMessage =
                     "<html>This will irrevocably destroy the existing gateway license and cannot<p>" +
-                        "be undone.  Also this will cause the SecureSpan Manager to disconnect.<p>" +
+                        "be undone.  Also this will cause the Policy Manager to disconnect.<p>" +
                         "<center>Really remove the existing gateway license?</center></html>";
 
                 DialogDisplayer.showSafeConfirmDialog(
@@ -336,7 +336,7 @@ public class LicenseDialog extends JDialog {
         try {
             // display warning to user
             int resp = JOptionPane.showConfirmDialog(this,
-                    "Changing the gateway license will disconnect the SecureSpan Manager.\nDo you wish to continue? ",
+                    "Changing the gateway license will disconnect the Policy Manager.\nDo you wish to continue? ",
                     "Change Gateway License", JOptionPane.YES_NO_OPTION);
 
             if (JOptionPane.YES_OPTION == resp) {

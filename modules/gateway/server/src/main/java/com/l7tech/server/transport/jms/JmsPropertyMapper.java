@@ -81,7 +81,7 @@ public class JmsPropertyMapper {
                             ssgKeystoreId = Long.parseLong((values[1]));
                             ssgKeyAlias = values[2];
                         } else {
-                            logger.log(Level.WARNING, "Unexpected format of substitutable property value. Expected format is \"" + values[0] + "<tab><SSG kesytore ID><tab><SSG key alias>\". Encountered: \"" + property.getValue() + "\"");
+                            logger.log(Level.WARNING, "Unexpected format of substitutable property value. Expected format is \"" + values[0] + "<tab><Gateway kesytore ID><tab><Gateway key alias>\". Encountered: \"" + property.getValue() + "\"");
                         }
                         final KeyStoreInfo keyStoreInfo = buildKeystoreInfo(ssgKeystoreId, ssgKeyAlias, properties);
                         if (JmsConnection.VALUE_KEYSTORE.equals(values[0])) {
@@ -93,7 +93,7 @@ public class JmsPropertyMapper {
                         }
                         modified = true;
                     } catch (NumberFormatException e) {
-                        logger.log(Level.WARNING, "Unable to parse SSG keystore ID.", e);
+                        logger.log(Level.WARNING, "Unable to parse Gateway keystore ID.", e);
                     }
                 } else if (JmsConnection.VALUE_TRUSTED_LIST.equals(values[0])) {
                     property.setValue(buildTrustedList());

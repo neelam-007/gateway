@@ -104,7 +104,7 @@ final class RestoreImpl implements Restore{
         //Make sure ssg configuration folder exists
         final File testSsgConfigDir = new File(testSsgHome, ImportExportUtilities.NODE_CONF_DIR);
         if(!testSsgConfigDir.exists() || !testSsgConfigDir.isDirectory())
-            throw new IllegalStateException("SSG configuration directory '"+testSsgConfigDir.getAbsolutePath()+"'is missing");
+            throw new IllegalStateException("Gateway configuration directory '"+testSsgConfigDir.getAbsolutePath()+"'is missing");
 
 
         final File testCADir = new File(testSsgHome, ImportExportUtilities.CA_JAR_DIR);
@@ -678,8 +678,8 @@ final class RestoreImpl implements Restore{
         try {
             runningSsg = ImportExportUtilities.getRunningSSG(dbRestorer.getDbConfig(), 10000, verbose, printStream);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Cannot verify if SSG is running: " + e.getMessage());
-            throw new RestoreException("Cannot verify if SSG is running: " + e.getMessage());
+            logger.log(Level.WARNING, "Cannot verify if Gateway is running: " + e.getMessage());
+            throw new RestoreException("Cannot verify if Gateway is running: " + e.getMessage());
         }
 
         if (!runningSsg.isEmpty()) {
@@ -689,7 +689,7 @@ final class RestoreImpl implements Restore{
             }
             runningGateways.append(runningSsg.get(runningSsg.size()-1));
 
-            throw new RestoreException("Possible SecureSpan Gateway(s) may be running and connected to the database." +
+            throw new RestoreException("Possible Gateway(s) may be running and connected to the database." +
                     "  Please shutdown the following gateway(s): " + runningGateways.toString());
         }
     }

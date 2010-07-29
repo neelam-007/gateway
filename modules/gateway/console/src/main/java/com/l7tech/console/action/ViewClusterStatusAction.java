@@ -63,7 +63,7 @@ public class ViewClusterStatusAction extends SecureAction {
     private ClusterStatusWindow getClusterStatusWindow() {
         if (clusterStatusWindow != null) return clusterStatusWindow;
 
-        clusterStatusWindow = new ClusterStatusWindow("SecureSpan Manager - Gateway Cluster Status");
+        clusterStatusWindow = new ClusterStatusWindow("Policy Manager - Gateway Cluster Status");
         clusterStatusWindow.addWindowListener(new WindowAdapter() {
             public void windowClosed(final WindowEvent e) {
                 clusterStatusWindow = null;

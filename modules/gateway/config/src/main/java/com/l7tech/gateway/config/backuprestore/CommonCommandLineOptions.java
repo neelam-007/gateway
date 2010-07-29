@@ -25,11 +25,11 @@ final class CommonCommandLineOptions {
 
     public static final CommandLineOption OS_OPTION =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.OS.getComponentName(),
-                    "os configuration files on a SecureSpan Appliance only", false);
+                    "os configuration files on an Appliance only", false);
 
     public static final CommandLineOption CONFIG_OPTION =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
-            "SecureSpan Gateway configuration files", false);
+            "Gateway configuration files", false);
 
     public static final CommandLineOption MAINDB_OPTION =
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.MAINDB.getComponentName(),

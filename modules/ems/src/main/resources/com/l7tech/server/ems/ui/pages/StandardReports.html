@@ -57,19 +57,19 @@
             ERROR : 'Error',
             SESSION_TIMEOUT : 'Your session has expired.',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
-            CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
+            CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by Gateway Cluster from the server.',
             CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
             CANNOT_SAVE_SETTINGS : 'Unable to save settings.',
             CANNOT_DELETE_SETTINGS : 'Unable to delete settings "{0}".',
             CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Unable to retrieve list of saved settings from the server.',
             CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Unable to retrieve saved settings "{0}" from the server.',
             DOWNLOAD_SAVED_SETTINGS_WARNING : 'Saved settings has been loaded but with problem:',
-            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Unable to retrieve list of message context keys for the selected SSG Clusters from the server.',
-            SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
-            TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
+            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Unable to retrieve list of message context keys for the selected Gateway Clusters from the server.',
+            SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this Gateway Cluster. Please delete or reselect.',
+            TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per Gateway cluster',
             INVALID_GROUPINGS_REMOVED : 'Some groupings in this settings have been removed because they no longer applies.',
-            SSG_CLUSTER_NOT_EXIST : 'SSG Cluster "{0}" does not exist.',
-            MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key "{0}" does not exist in SSG Cluster "{1}".',
+            SSG_CLUSTER_NOT_EXIST : 'Gateway Cluster "{0}" does not exist.',
+            MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key "{0}" does not exist in Gateway Cluster "{1}".',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be integer and greater than zero',
@@ -1941,8 +1941,8 @@
                                                         <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></th>
                                                     </tr>
                                                     <tr>
-                                                        <th>SSG Clusters <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of SSG Clusters" alt="Refresh" onclick="refreshSsgClusterSelector();"/></th>
-                                                        <th><span title="Content of selected SSG Cluster">Content</span> <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of content" alt="Refresh" onclick="refreshSsgClusterContentSelector();"/></th>
+                                                        <th>Gateway Clusters <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of Gateway Clusters" alt="Refresh" onclick="refreshSsgClusterSelector();"/></th>
+                                                        <th><span title="Content of selected Gateway Cluster">Content</span> <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of content" alt="Refresh" onclick="refreshSsgClusterContentSelector();"/></th>
                                                     </tr>
                                                     <tr>
                                                         <td class="srcDest"><iframe id="ssgClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="200" width="100%" onload="initSsgClusterSelector(this);"></iframe></td>
@@ -1962,7 +1962,7 @@
                                                     <thead>
                                                         <tr>
                                                             <th class="center"><img class="clickable" src="../images/delete.png" title="Remove All" onclick="deleteAllEntities();"/></th>
-                                                            <th>SSG Cluster</th>
+                                                            <th>Gateway Cluster</th>
                                                             <th>Published Service</th>
                                                             <th width="100%">Operation</th>
                                                         </tr>
@@ -2079,7 +2079,7 @@
                                                     <thead>
                                                         <tr>
                                                             <th class="center"><img class="clickable" src="../images/delete.png" title="Remove All" onclick="deleteAllGroupings();"/></th>
-                                                            <th>SSG Cluster</th>
+                                                            <th>Gateway Cluster</th>
                                                             <th>Message Context Key</th>
                                                             <th width="100%">Key Value Filter <span class="note">(optional, wildcard * allowed)</span></th>
                                                         </tr>
@@ -2171,13 +2171,13 @@
                 </div>
 
                 <div id="ssgClusterTrustDialog">
-                    <div class="hd">Establish Trust by SSG Cluster</div>
+                    <div class="hd">Establish Trust by Gateway Cluster</div>
                     <div class="bd" style="width: 40em;">
                         <form id="ssgClusterTrustForm" method="POST">
                             <input id="ssgClusterTrustForm_esmToken" type="hidden" name="token" />
                             <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
                         </form>
-                        To establish trust of this Enterprise Service Manager by the SSG Cluster
+                        To establish trust of this Enterprise Service Manager by the Gateway Cluster
                         &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
                         you will now be redirected to the cluster server where
                         you can authenticate using a gateway administrator account.
@@ -2198,7 +2198,7 @@
                             <input id="mapAccessAccountForm_esmToken" type="hidden" name="token" />
                             <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
                         </form>
-                        To enable access to the SSG Cluster
+                        To enable access to the Gateway Cluster
                         &ldquo;<span id="mapAccessAccountDialog_ssgClusterName"></span>&rdquo;,
                         you will now be redirected to the cluster server where
                         you can map a gateway user account to your Enterprise Service Manager account.
@@ -2214,7 +2214,7 @@
                             <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
                         </form>
                         Your Enterprise Service Manager account is currently mapped to a user account
-                        on the SSG Cluster
+                        on the Gateway Cluster
                         &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
                         To change that,  you will now be redirected to the cluster server where
                         you can map a different gateway user account.

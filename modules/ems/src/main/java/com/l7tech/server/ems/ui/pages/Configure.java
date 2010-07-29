@@ -260,7 +260,7 @@ public class Configure extends EsmStandardWebPage {
                 String hostname = addSSGClusterInputHostName.getConvertedInput();
                 int port = Integer.parseInt(addSSGClusterInputPort.getConvertedInput());
                 try {
-                    logger.fine("Adding SSG Cluster \""+ newClusterName +
+                    logger.fine("Adding Gateway Cluster \""+ newClusterName +
                         "\" (parent folder GUID = "+ parentFolderGuid + ").");
                     return ssgClusterManager.create(newClusterName, hostname, port, parentFolderGuid);
                 } catch (Exception e) {
@@ -274,7 +274,7 @@ public class Configure extends EsmStandardWebPage {
                             return new JSONException("A cluster with the same name '" + newClusterName + "' already exists. Please specify a different name.");
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        return new JSONException("A SSG cluster/node with the host name '" + hostname
+                        return new JSONException("A Gateway cluster/node with the host name '" + hostname
                                 + "' already exists in the enterprise tree. Please specify a different host name.");
                     } else {
                         return new JSONException(e);
@@ -300,7 +300,7 @@ public class Configure extends EsmStandardWebPage {
                 String newAdminPort = editSSGClusterInputAdminPort.getConvertedInput();
 
                 try {
-                    logger.fine("Editing SSG Cluster (GUID = "+ editedSSGClusterGuid + ") by changing the name, the ssl hostname, or the admin port.");
+                    logger.fine("Editing Gateway Cluster (GUID = "+ editedSSGClusterGuid + ") by changing the name, the ssl hostname, or the admin port.");
 
                     ssgClusterManager.editByGuid(editedSSGClusterGuid, newClusterName, newSslHostname, newAdminPort);
                     return null;    // No response object expected if successful.
@@ -337,7 +337,7 @@ public class Configure extends EsmStandardWebPage {
                 String entityId = moveSSGClusterDialogEntityId.getConvertedInput();
                 String destSSGClusterId = moveSSGClusterDialogDestFolderId.getConvertedInput();
                 try {
-                    logger.fine("Moving SSG Cluster (GUID = "+ entityId + ") into folder with GUID = " + destSSGClusterId + ".");
+                    logger.fine("Moving Gateway Cluster (GUID = "+ entityId + ") into folder with GUID = " + destSSGClusterId + ".");
                     ssgClusterManager.moveByGuid(entityId, destSSGClusterId);
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
@@ -355,7 +355,7 @@ public class Configure extends EsmStandardWebPage {
             protected Object getJsonResponseData() {
                 try {
                     String guid = deleteSSGClusterDialogInputId.getConvertedInput();
-                    logger.fine("Deleting SSG Cluster (GUID = "+ guid + ").");
+                    logger.fine("Deleting Gateway Cluster (GUID = "+ guid + ").");
 
                     // Delete all monitoring property setups of the SSG cluster and all its SSG nodes.
                     entityMonitoringPropertySetupManager.deleteBySsgClusterGuid(guid);
@@ -392,7 +392,7 @@ public class Configure extends EsmStandardWebPage {
                     String guid = reconfirmSSGClusterDeletionDialogInputId.getConvertedInput();
                     SsgCluster ssgCluster = ssgClusterManager.findByGuid(guid);
 
-                    logger.fine("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
+                    logger.fine("Deleting Gateway Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
                     // Delete other related info such as standard reports and migration records.
                     standardReportManager.deleteBySsgCluster(ssgCluster);
                     migrationRecordManager.deleteBySsgCluster(ssgCluster);
@@ -433,7 +433,7 @@ public class Configure extends EsmStandardWebPage {
             protected Object getJsonResponseData() {
                 String ssgNodeGuid = startSsgNodeInputId.getConvertedInput();
                 try {
-                    logger.fine("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
+                    logger.fine("Starting Gateway Node (GUID = " + ssgNodeGuid + ").");
                     
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
@@ -468,7 +468,7 @@ public class Configure extends EsmStandardWebPage {
             protected Object getJsonResponseData() {
                 String ssgNodeGuid = stopSsgNodeInputId.getConvertedInput();
                 try {
-                    logger.fine("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
+                    logger.fine("Stoping Gateway Node (GUID = " + ssgNodeGuid + ").");
 
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();

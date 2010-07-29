@@ -61,7 +61,7 @@ public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHe
                 }
             });
         } catch (DataAccessException e) {
-            throw new FindException("Cannot find SSG Node by GUID: " + guid, e);
+            throw new FindException("Cannot find Gateway Node by GUID: " + guid, e);
         }
     }
 

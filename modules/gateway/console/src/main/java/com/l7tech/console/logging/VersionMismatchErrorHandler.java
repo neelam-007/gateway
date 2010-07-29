@@ -15,7 +15,7 @@ import java.util.logging.Level;
  */
 public class VersionMismatchErrorHandler implements ErrorHandler {
     private static final String ERROR_MESSAGE = "The record has been changed in the meantime by another user.  " +
-            "The SecureSpan Gateway was unable to complete the operation.";
+            "The Gateway was unable to complete the operation.";
 
     /**
      * handle the error event

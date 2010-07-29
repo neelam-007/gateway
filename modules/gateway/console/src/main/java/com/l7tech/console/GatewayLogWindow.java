@@ -173,7 +173,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static final ResourceBundle resapplication =
             ResourceBundle.getBundle("com.l7tech.console.resources.console");
-    private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Log Events";
+    private static final String WINDOW_TITLE = "Policy Manager - Gateway Log Events";
 
     private boolean startConnected;
     private String nodeName = null;
@@ -212,7 +212,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
             }
             @Override
             public String getDescription() {
-                return "(*.ssgl) SecureSpan Gateway Log data file.";
+                return "(*.ssgl) Gateway Log data file.";
             }
         };
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");

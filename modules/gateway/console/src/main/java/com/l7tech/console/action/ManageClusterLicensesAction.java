@@ -25,7 +25,7 @@ public class ManageClusterLicensesAction extends SecureAction {
     }
 
     public String getDescription() {
-        return "View/Install SecureSpan Gateways Cluster License.";
+        return "View/Install Gateways Cluster License.";
     }
 
     protected String iconResource() {

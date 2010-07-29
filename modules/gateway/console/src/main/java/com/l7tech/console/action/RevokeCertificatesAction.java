@@ -64,7 +64,7 @@ public class RevokeCertificatesAction extends SecureAction {
         String confirmationDialogTitle = "Confirm Certificate Revocation";
         String confirmationDialogMessage =
             "<html><center>This will irrevocably destroy all user certificates and cannot be undone.</center>" +
-                "<center>Really revoke all certificates issued by the SecureSpan Gateway certificate authority?</center></html>";
+                "<center>Really revoke all certificates issued by the Gateway certificate authority?</center></html>";
 
         DialogDisplayer.showSafeConfirmDialog(
             TopComponents.getInstance().getTopParent(),

@@ -38,7 +38,7 @@ public interface KerberosConfigConstants {
             "// Generated file, DO NOT EDIT //\n" +
             "/////////////////////////////////\n" +
             "\n" +
-            "// Login module for SecureSpan Gateway\n" +
+            "// Login module for Gateway\n" +
             "com.l7tech.common.security.kerberos.accept '{'\n" +
             "    com.sun.security.auth.module.Krb5LoginModule required\n" +
             "    useKeyTab=true\n" +
@@ -48,7 +48,7 @@ public interface KerberosConfigConstants {
             "    storeKey=true;\n" +
             "};\n" +
             "\n" +
-            "// Login module for SecureSpan Gateway (initiator)\n" +
+            "// Login module for Gateway (initiator)\n" +
             "com.l7tech.common.security.kerberos.acceptinit '{'\n" +
             "    com.sun.security.auth.module.Krb5LoginModule required\n" +
             "    useKeyTab=true\n" +

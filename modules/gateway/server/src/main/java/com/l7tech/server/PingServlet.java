@@ -304,7 +304,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         try {
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>SecureSpan Gateway</title>");
+            out.println("<title>Gateway</title>");
             out.println("<style type=\"text/css\">");
             out.println("h1 { margin-top: 18px; margin-bottom: 12px; }");
             out.println("h2 { margin-top: 14px; margin-bottom: 8px; }");
@@ -395,12 +395,12 @@ public class PingServlet extends AuthenticatableHttpServlet {
                         // Script failed. Prints tail part of output to log; for diagnostics.
                         // Servlet response gets only a generic error message for security reason.
                         _logger.warning("System info script exited with " + result.getExitStatus() + ". Last 10 lines of output:\n" + TextUtils.tail(new String(result.getOutput()), 10));
-                        scriptOutput = "Script exited with " + result.getExitStatus() + ". See SSG log for details.";
+                        scriptOutput = "Script exited with " + result.getExitStatus() + ". See Gateway log for details.";
                     }
                 } catch (IOException e) {
                     _logger.warning("Failed to run system info script: " + e.toString());
                     // Servlet response gets only a generic error message for security reason.
-                    scriptOutput = "Failed to run script. See SSG log for details.";
+                    scriptOutput = "Failed to run script. See Gateway log for details.";
                 }
 
                 if (scriptOutput != null) {
@@ -536,7 +536,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 return;
             }
 
-            out.println("<html><head><title>SecureSpan Gateway</title></head><body><h1>OK</h1></body></html>");
+            out.println("<html><head><title>Gateway</title></head><body><h1>OK</h1></body></html>");
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Responded to Ping with minimal info (" + details + ").");
             }
@@ -566,7 +566,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             }
 
             out.println("<html>");
-            out.println("<head><title>SecureSpan Gateway</title></head>");
+            out.println("<head><title>Gateway</title></head>");
             out.println("<body>");
             out.println("<h1>OK</h1>");
             out.println("<form action=\"" + SYSTEM_INFO_REQUEST_URI + "\" method=\"GET\">");
@@ -611,7 +611,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
         try {
-            out.println("<html><head><title>SecureSpan Gateway</title></head><body><h1>FAILURE</h1></body></html>");
+            out.println("<html><head><title>Gateway</title></head><body><h1>FAILURE</h1></body></html>");
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Responded to Ping with Failure and minimal info (" + details + ").");
             }
@@ -626,7 +626,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
         try {
-            out.println("<html><head><title>SecureSpan Gateway</title></head><body><h1>FAILURE</h1><p>Cannot connect to database from " + InetAddress.getLocalHost().getCanonicalHostName() + ".</p></body></html>");
+            out.println("<html><head><title>Gateway</title></head><body><h1>FAILURE</h1><p>Cannot connect to database from " + InetAddress.getLocalHost().getCanonicalHostName() + ".</p></body></html>");
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Responded to Ping with Failure and full info (" + details + ").");
             }

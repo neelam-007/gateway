@@ -46,8 +46,8 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_UNKNOWN_HOST            = m(4028, Level.WARNING, "Routing failed, unable to resolve IP for host = {0}");
     public static final M HTTPROUTE_SOCKET_EXCEPTION        = m(4029, Level.WARNING, "Routing failed, connection error: {0}");
     public static final M HTTPROUTE_PASSTHROUGH_REQUEST     = m(4030, Level.INFO, "Passthrough selected; adding request credentials to routed request");
-    public static final M HTTPROUTE_PASSTHROUGH_REQUEST_NC  = m(4031, Level.FINE, "Passthrough selected but no credentials in SSG request to pass along");
-    public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to SSG response");
+    public static final M HTTPROUTE_PASSTHROUGH_REQUEST_NC  = m(4031, Level.FINE, "Passthrough selected but no credentials in Gateway request to pass along");
+    public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to Gateway response");
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE_NC = m(4033, Level.FINE, "Passthrough selected but no challenge in routed response");
     public static final M HTTPROUTE_RESPONSE_NOCONTENTTYPE  = m(4034, Level.WARNING, "Downstream service returned status ({0}) but is missing a content type header.");
     public static final M HTTPROUTE_RESPONSE_NOXML          = m(4035, Level.WARNING, "Downstream service returned status ({0}) with non-XML payload.");
@@ -706,7 +706,7 @@ public class AssertionMessages extends Messages {
     public static final M JDBC_CANNOT_START_POOLING              = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to: {0}");
     public static final M JDBC_CANNOT_CONFIG_CONNECTION_POOL     = m(9101, Level.WARNING, "Cannot configure a pool associated with a JDBC connection {0} due to: {1}");
     public static final M JDBC_CANNOT_DELETE_CONNECTION_POOL     = m(9102, Level.WARNING, "Cannot delete a pool associated with a JDBC connection {0} due to: {1}");
-    public static final M JDBC_CONNECTION_DISABLED               = m(9103, Level.WARNING, "The SSG would not configure a disabled JDBC connection {0}");
+    public static final M JDBC_CONNECTION_DISABLED               = m(9103, Level.WARNING, "The Gateway would not configure a disabled JDBC connection {0}");
     public static final M JDBC_QUERYING_FAILURE_ASSERTION_FAILED = m(9104, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to: {0}");
     public static final M JDBC_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9105, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
 

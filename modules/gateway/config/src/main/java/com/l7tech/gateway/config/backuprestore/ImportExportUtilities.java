@@ -206,7 +206,7 @@ public class ImportExportUtilities {
      */
     public static int [] throwIfLessThanFiveO(final File gatewayJarFile){
         try {
-            if(!gatewayJarFile.exists()) throw new IllegalStateException("Cannot find SSG installation");
+            if(!gatewayJarFile.exists()) throw new IllegalStateException("Cannot find Gateway installation");
 
             final GatewayJarClassLoader gatewayJarClassLoader = new GatewayJarClassLoader(gatewayJarFile);
             final Class clazz = gatewayJarClassLoader.loadClass("com.l7tech.util.BuildInfo");
@@ -223,25 +223,25 @@ public class ImportExportUtilities {
             test = method.invoke(clazz);
             final int subMinorVersion = Integer.parseInt(test.toString());
 
-            if(majorVersion < 5) throw new UnsupportedOperationException("Pre 5.0 SSG installations are not supported");
+            if(majorVersion < 5) throw new UnsupportedOperationException("Pre 5.0 Gateway installations are not supported");
 
             return new int[]{majorVersion, minorVersion, subMinorVersion};
 
         } catch (MalformedURLException e) {
-            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
-            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+            logger.log(Level.SEVERE, "Cannot determine Gateway version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine Gateway version: " + e.getMessage());
         } catch (InvocationTargetException e) {
-            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
-            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+            logger.log(Level.SEVERE, "Cannot determine Gateway version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine Gateway version: " + e.getMessage());
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
-            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+            logger.log(Level.SEVERE, "Cannot determine Gateway version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine Gateway version: " + e.getMessage());
         } catch (NoSuchMethodException e) {
-            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
-            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+            logger.log(Level.SEVERE, "Cannot determine Gateway version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine Gateway version: " + e.getMessage());
         } catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
-            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+            logger.log(Level.SEVERE, "Cannot determine Gateway version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine Gateway version: " + e.getMessage());
         }
     }
 
@@ -251,12 +251,12 @@ public class ImportExportUtilities {
      */
     protected enum ComponentType{
         OS("os", "Operating System files"),
-        CONFIG("config", "SSG Config"),
+        CONFIG("config", "Gateway Config"),
         MAINDB("maindb", "Database backup and data excluding audit data"),
         AUDITS("audits", "Database audit data"),
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
-        VERSION("version", "SSG Version Information"),
+        VERSION("version", "Gateway Version Information"),
         ESM("esm", "Enterprise Service Manager"),
         //Only required for migrate when only config is being restored
         NODE_IDENTITY("node identity", "node.properties & omp.dat");

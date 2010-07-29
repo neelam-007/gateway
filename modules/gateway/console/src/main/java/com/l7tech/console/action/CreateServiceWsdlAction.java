@@ -245,7 +245,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                             logger.info("Service publication aborted.");
                         }
                     } else if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                        log.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost.", e);
+                        log.log(Level.WARNING, "the connection to the Gateway is lost.", e);
                         ErrorManager.getDefault().notify(Level.WARNING, e, "");
                     }
                     else {

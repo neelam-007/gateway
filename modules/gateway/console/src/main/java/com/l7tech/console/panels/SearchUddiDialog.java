@@ -661,14 +661,14 @@ public class SearchUddiDialog extends JDialog {
         final boolean [] canFireEventAndDispose = new boolean[]{true};
         //Check if the selected WSDL may be from this Gateway
         if(wsdlPortInfo.isGatewayWsdl()){
-            DialogDisplayer.showMessageDialog(parent,  "This WSDL is from the SecureSpan Gateway. Cannot route to self",
+            DialogDisplayer.showMessageDialog(parent,  "This WSDL is from the Gateway. Cannot route to self",
                     "Cannot select WSDL", JOptionPane.WARNING_MESSAGE, null);
             return false;
         }
 
         if(wsdlPortInfo.isLikelyGatewayWsdl()){
             DialogDisplayer.showConfirmDialog(parent,
-                    "It is likely this WSDL is from the SecureSpan Gateway. Please confirm selection",
+                    "It is likely this WSDL is from the Gateway. Please confirm selection",
                     "Confirm WSDL selection", JOptionPane.YES_NO_OPTION,
                     new DialogDisplayer.OptionListener() {
                 @Override

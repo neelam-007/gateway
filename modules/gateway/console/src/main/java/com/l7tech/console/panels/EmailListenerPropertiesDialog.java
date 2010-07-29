@@ -358,7 +358,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private void onBrowse() {
         EmailListenerAdmin emailListenerAdmin = Registry.getDefault().getEmailListenerAdmin();
         if(emailListenerAdmin == null) {
-            DialogDisplayer.showMessageDialog(this, "Failed to connect to the SSG!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, "Failed to connect to the Gateway!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -406,7 +406,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private void onTest() {
         EmailListenerAdmin emailListenerAdmin = Registry.getDefault().getEmailListenerAdmin();
         if(emailListenerAdmin == null) {
-            DialogDisplayer.showMessageDialog(this, "Failed to connect to the SSG!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, "Failed to connect to the Gateway!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
         }
 
         EmailServerType emailServerType = (EmailServerType)serverType.getSelectedItem();

@@ -302,7 +302,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             
             //make sure that we are not monitoring an endpoint of this SSG
             if(uddiHelper.isGatewayUrl(serviceEndPoint)){
-                final String msg = "WSDL endpoint routes back to the SecureSpan Gateway";
+                final String msg = "WSDL endpoint routes back to the Gateway";
                 logger.log(Level.WARNING, msg);
                 throw new SaveException(msg);
             }

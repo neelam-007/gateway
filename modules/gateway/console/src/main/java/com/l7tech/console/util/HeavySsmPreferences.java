@@ -125,7 +125,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         FileOutputStream fout = null;
         try {
             fout = new FileOutputStream(SSM_USER_HOME + File.separator + STORE);
-            props.store(fout, "SSG properties");
+            props.store(fout, "Gateway properties");
         } finally {
             if (fout != null) {
                 fout.close();

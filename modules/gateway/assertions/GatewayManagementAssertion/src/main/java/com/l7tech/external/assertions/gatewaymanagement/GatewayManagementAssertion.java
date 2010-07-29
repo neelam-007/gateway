@@ -71,7 +71,7 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
             return meta;
 
         meta.put(SHORT_NAME, "Manage Gateway");
-        meta.put(DESCRIPTION, "Manage the SecureSpan Gateway." );
+        meta.put(DESCRIPTION, "Manage the Gateway." );
         meta.put(PROPERTIES_ACTION_NAME, "Gateway Management Properties");
         meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");

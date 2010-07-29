@@ -755,7 +755,7 @@ public final class Importer{
                 //valildity check on node.properties
                 final String nodeId = returnConfig.getString("node.id");
                 if(nodeId == null || nodeId.trim().isEmpty()){
-                    throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
+                    throw new IllegalStateException("node.id does not exist in Gateway node.properties. Gateway is not" +
                             " correctly configured");
                 }
             } catch (ConfigurationException e) {
@@ -764,7 +764,7 @@ public final class Importer{
 
             final String nodeId = returnConfig.getString("node.id");
             if(nodeId == null || nodeId.trim().isEmpty()){
-                throw new IllegalStateException("node.id does not exist in SSG node.properties. SSG is not" +
+                throw new IllegalStateException("node.id does not exist in Gateway node.properties. Gateway is not" +
                         " correctly configured");
             }
         }else{

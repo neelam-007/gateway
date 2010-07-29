@@ -26,8 +26,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 public class EmailAlertAssertion extends Assertion implements UsesVariables {
     public static final String DEFAULT_HOST = "mail";
     public static final int DEFAULT_PORT = 25;
-    public static final String DEFAULT_SUBJECT = "Layer 7 SecureSpan Gateway Email Alert";
-    public static final String DEFAULT_MESSAGE = "This is an alert message from a Layer 7 SecureSpan Gateway.";
+    public static final String DEFAULT_SUBJECT = "Layer 7 Gateway Email Alert";
+    public static final String DEFAULT_MESSAGE = "This is an alert message from a Layer 7 Gateway.";
     public static final String DEFAULT_FROM = "L7SSG@NOMAILBOX";
 
     private String targetEmailAddress = "";

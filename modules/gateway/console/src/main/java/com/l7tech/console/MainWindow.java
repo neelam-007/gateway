@@ -200,7 +200,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private EditableSearchComboBox<EntityHeaderNode> searchComboBox;
     private final JLabel searchLabel = new JLabel("Search");
 
-    public static final String TITLE = "SSG Management Console";
+    public static final String TITLE = "Gateway Management Console";
     private EventListenerList listenerList = new WeakEventListenerList();
     @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;
@@ -3031,7 +3031,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         MainWindow.this.disconnectFromGateway();
                         // add a top level dlg that indicates the connection was closed
                         DialogDisplayer.showMessageDialog(MainWindow.this,
-                                                      "The SecureSpan Manager connection has been closed due\n" +
+                                                      "The Policy Manager connection has been closed due\n" +
                                                       "to timeout. Any unsaved work will be lost.",
                                                       "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
                     } catch (ActionVetoException e1) {
@@ -3654,9 +3654,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             try {
                 serverSslCert = Registry.getDefault().getTrustedCertManager().getSSGSslCert();
             } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to look up SSG SSL cert: " + ExceptionUtils.getMessage(e), e);
+                log.log(Level.WARNING, "Unable to look up Gateway SSL cert: " + ExceptionUtils.getMessage(e), e);
             } catch (CertificateException e) {
-                log.log(Level.WARNING, "Unable to look up SSG SSL cert: " + ExceptionUtils.getMessage(e), e);
+                log.log(Level.WARNING, "Unable to look up Gateway SSL cert: " + ExceptionUtils.getMessage(e), e);
             }
         }
         return new X509Certificate[] { serverSslCert };

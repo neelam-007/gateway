@@ -140,7 +140,7 @@
                 </constraints>
                 <properties>
                   <text value="Attach SAML Sender-&amp;Vouches"/>
-                  <toolTipText value="Include a signed SAML Sender-Vouches assertion describing the authentication performed by the SSG"/>
+                  <toolTipText value="Include a signed SAML Sender-Vouches assertion describing the authentication performed by the Gateway"/>
                 </properties>
               </component>
               <hspacer id="99aa6">

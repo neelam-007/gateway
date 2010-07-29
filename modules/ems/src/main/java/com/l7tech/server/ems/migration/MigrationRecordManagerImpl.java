@@ -78,10 +78,10 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
         }
 
         if ( ! clusters.containsKey(record.getSourceClusterGuid()))
-            throw new SaveException( "Invalid archive, source SSG Cluster not recognised: " + record.getSourceClusterGuid() + " : " + record.getSourceClusterName() );
+            throw new SaveException( "Invalid archive, source Gateway Cluster not recognised: " + record.getSourceClusterGuid() + " : " + record.getSourceClusterName() );
 
         if ( ! clusters.containsKey(record.getTargetClusterGuid()))
-            throw new SaveException( "Invalid archive, target SSG Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
+            throw new SaveException( "Invalid archive, target Gateway Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
 
         record.setOid( MigrationRecord.DEFAULT_OID );
         record.setVersion( 0 );

@@ -190,7 +190,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         try {
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>SecureSpan Gateway Backup Service</title>");
+            out.println("<title>Gateway Backup Service</title>");
             out.println("<style type=\"text/css\">");
             out.println("a.button {");
             out.println("    background-color: #E8E8E8;");
@@ -205,7 +205,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             out.println("</style>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>SecureSpan Gateway Backup Service</h1>");
+            out.println("<h1>Gateway Backup Service</h1>");
             out.println("<p>Please select a Gateway node to back up:</p>");
             for (ClusterNodeInfo nodeInfo : nodeInfos) {
                 // Using <a> instead of <input type="submit"> because I want the

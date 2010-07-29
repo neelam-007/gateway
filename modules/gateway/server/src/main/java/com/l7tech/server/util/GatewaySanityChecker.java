@@ -133,7 +133,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                             errMsg = "Could not find a correct version (" + myVersion + ") in the database. Please check or upgrade the database before starting the gateway.";
                         }
                     } catch (SQLException e) {
-                        errMsg = "The database is not an SSG Database or is not the right version (" + myVersion + "). Please check or upgrade the database before starting the gateway.";
+                        errMsg = "The database is not an Gateway Database or is not the right version (" + myVersion + "). Please check or upgrade the database before starting the gateway.";
                     }
                     if (errMsg != null) throw new RuntimeLifecycleException(errMsg);
                 } finally {

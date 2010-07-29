@@ -61,7 +61,7 @@ public class SsgClusterContent extends JSONSupport {
         } else if (com.l7tech.objectmodel.EntityType.POLICY_ALIAS.equals(type)) {
             return JSONConstants.EntityType.POLICY_FRAGMENT_ALIAS;
         } else {
-            throw new IllegalArgumentException("Unsupported entity type ('" + entityType + "') in SSG Cluster Content.");
+            throw new IllegalArgumentException("Unsupported entity type ('" + entityType + "') in Gateway Cluster Content.");
         }
     }
 }

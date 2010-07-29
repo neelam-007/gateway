@@ -84,7 +84,7 @@ public class JmsSslCustomizerSupport {
      *
      */
     private static SSLContext doGetSSLContext( final String keystoreIdStr, final String alias ) throws JmsConfigException {
-        if (ssgKeyStoreManager == null) throw new IllegalStateException("SSG Keystore Manager must be set first");
+        if (ssgKeyStoreManager == null) throw new IllegalStateException("Gateway Keystore Manager must be set first");
         if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
 
         final Pair<Long,String> keyId;

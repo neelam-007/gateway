@@ -41,7 +41,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
 
     public synchronized void run() {
         if (running) {
-            throw new IllegalStateException("SSM already running");
+            throw new IllegalStateException("Policy Manager already running");
         }
 
         installAdditionalSecurityProviders();

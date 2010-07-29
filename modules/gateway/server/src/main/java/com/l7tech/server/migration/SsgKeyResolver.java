@@ -58,7 +58,7 @@ public class SsgKeyResolver extends AbstractPropertyResolver {
                 dependency.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
                 result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, getType(), mappingType, exported)));
             } catch (Exception e) {
-                throw new PropertyResolverException("Error retrieving SSG key: " + (key == null ? null : key.getId()) );
+                throw new PropertyResolverException("Error retrieving Gateway key: " + (key == null ? null : key.getId()) );
             }
         }
 

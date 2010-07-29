@@ -886,7 +886,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         if (!cbEnableSsmRemote.isSelected()) {
-            setEnableAndSelect(false, false, "Disabled because it requires enabling SecureSpan Manager access", cbEnableSsmApplet);
+            setEnableAndSelect(false, false, "Disabled because it requires enabling Policy Manager access", cbEnableSsmApplet);
         }
     }
 

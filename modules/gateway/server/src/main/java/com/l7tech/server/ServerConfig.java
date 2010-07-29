@@ -772,7 +772,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         String path = getPropertyCached(propName);
 
         if (path == null || path.length() < 1) {
-            String errorMsg = "The property " + propName + " is not defined.  Please ensure that the SecureSpan " +
+            String errorMsg = "The property " + propName + " is not defined.  Please ensure that the " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
             logger.severe(errorMsg);
             return new File(def);
@@ -785,7 +785,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         if (!dir.exists()) {
             String errorMsg = "The property " + propName + ", defined as the directory " + path +
                     ", is required but could not be found or created.  Please ensure the " +
-                    "SecureSpan Gateway is properly installed.";
+                    "Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
@@ -793,7 +793,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         if (!dir.isDirectory()) {
             String errorMsg = "The property " + propName + " defined directory " + path +
                     " which is present but is not a directory.  Please ensure the " +
-                    "SecureSpan Gateway is properly installed.";
+                    "Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
@@ -801,7 +801,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         if (!dir.canRead()) {
             String errorMsg = "The property " + propName + " defined directory " + path +
                     " which is present but is not readable.  Please ensure the " +
-                    "SecureSpan Gateway is properly installed.";
+                    "Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
@@ -809,7 +809,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         if (mustBeWritable && !dir.canWrite()) {
             String errorMsg = "The property " + propName + " defined directory " + path +
                     " which is present but is not writable.  Please ensure the " +
-                    "SecureSpan Gateway is properly installed.";
+                    "Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }

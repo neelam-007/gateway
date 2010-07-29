@@ -25,5 +25,5 @@ public class ManagerTrustProvider extends Provider {
 
     private static final String PROV_NAME = "Layer7Provider";
     private static final double PROV_VERS = 1.0;
-    private static final String PROV_INFO = "Provider for Layer 7 Technologies SecureSpan Manager.";
+    private static final String PROV_INFO = "Provider for Layer 7 Technologies Policy Manager.";
 }

@@ -222,13 +222,13 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                                         if ( hreq.getParameter(ATTR_EM_TRUST) == null ) {
                                             // then it is an account mapping request only, so check the cert is already mapped.
                                             if ( isTrustedEsm(esmid, cert, hresp ) ) {
-                                                message = "Enter SecureSpan Gateway credentials to map your Enterprise Service Manager account to your Gateway account.";
+                                                message = "Enter Gateway credentials to map your Enterprise Service Manager account to your Gateway account.";
                                                 param.put("esminfo", "-");
                                             } else {
                                                 return;
                                             }
                                         } else {
-                                            message = "Enter SecureSpan Gateway credentials if you wish to allow the Enterprise Service Manager shown below to manage this Gateway.";
+                                            message = "Enter Gateway credentials if you wish to allow the Enterprise Service Manager shown below to manage this Gateway.";
                                             param.put("esminfo", formatCertInfo(cert));
                                         }
 

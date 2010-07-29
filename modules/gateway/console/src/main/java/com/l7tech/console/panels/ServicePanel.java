@@ -73,7 +73,7 @@ public class ServicePanel extends WizardStepPanel {
     @Override
     public boolean onNextButton() {
         if (TopComponents.getInstance().isConnectionLost()) {
-            DialogDisplayer.showMessageDialog(this, "The connection to the SecureSpan Gateway was lost", "Connection Lost", JOptionPane.ERROR_MESSAGE, null, null);
+            DialogDisplayer.showMessageDialog(this, "The connection to the Gateway was lost", "Connection Lost", JOptionPane.ERROR_MESSAGE, null, null);
             return false;
         }
         boolean res = processWsdlLocation();

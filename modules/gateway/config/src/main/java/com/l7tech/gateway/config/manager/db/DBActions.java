@@ -347,7 +347,7 @@ public class DBActions {
             logger.info("Now Checking database version.");
             String dbVersion = checkDbVersion(databaseConfig);
             if ( dbVersion == null || DB_VERSION_UNKNOWN.equals(dbVersion)) {
-                errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
+                errorMsg = "The " + dbName + " database does not appear to be a valid Gateway database.";
                 logger.warning(errorMsg);
                 if (ui != null) ui.showErrorMessage(errorMsg);
                 isOk = false;
@@ -594,7 +594,7 @@ public class DBActions {
             logger.info("Now Checking database version.");
             String dbVersion = checkDbVersion(databaseConfig);
             if ( dbVersion == null || DB_VERSION_UNKNOWN.equals(dbVersion) ) {
-                String errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
+                String errorMsg = "The " + dbName + " database does not appear to be a valid Gateway database.";
                 logger.warning(errorMsg);
                 if (ui != null) ui.showErrorMessage(errorMsg);
             } else {

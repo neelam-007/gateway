@@ -51,7 +51,7 @@ public class MonitoringServiceImpl implements MonitoringService {
         try {
             ssgClusterPropertySetup = entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(ssgClusterGuid, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
         } catch (FindException e) {
-            logger.warning("Cannot find the monitoring property setup of the SSG cluster (GUID = '" + ssgClusterGuid + "').");
+            logger.warning("Cannot find the monitoring property setup of the Gateway cluster (GUID = '" + ssgClusterGuid + "').");
             return null;
         }
         if (ssgClusterPropertySetup == null) {

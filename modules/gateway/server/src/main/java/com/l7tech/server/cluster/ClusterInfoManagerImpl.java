@@ -302,7 +302,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         // choose first available name
         String newnodename = null;
         for (int i = 1; i < 25; i++) {
-            String maybenodename = "SSG" + i;
+            String maybenodename = "Gateway" + i;
 
             List hibResults = null;
             Session s = null;

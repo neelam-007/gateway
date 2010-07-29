@@ -214,7 +214,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             getAppletContext().showDocument(url, "_self");
         } catch (MalformedURLException e) {
             DialogDisplayer.showMessageDialog(findAppletContainerFrame(), null,
-                    "The SecureSpan Manager internal error: invalid servlet URL.  Please contact your administrator.", e);
+                    "The Policy Manager internal error: invalid servlet URL.  Please contact your administrator.", e);
         }
     }
 
@@ -374,9 +374,9 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     @Override
     public String getAppletInfo() {
-        return "Title: SecureSpan Manager Applet \n"
+        return "Title: Policy Manager Applet \n"
             + "Author: Layer 7 Technologies \n"
-            + "Applet version of SecureSpan Manager.";
+            + "Applet version of Policy Manager.";
     }
 
     public void showHelpTopicsRoot() {
@@ -426,7 +426,7 @@ public class AppletMain extends JApplet implements SheetHolder {
                 }
 
                 getContentPane().removeAll();
-                JLabel errorLabel = new JLabel("Layer 7 Technologies - SecureSpan Manager (Error; Reload to restart)");
+                JLabel errorLabel = new JLabel("Layer 7 Technologies - Policy Manager (Error; Reload to restart)");
                 errorLabel.setVerticalAlignment(JLabel.CENTER);
                 getContentPane().add(errorLabel, BorderLayout.CENTER);
                 validate();

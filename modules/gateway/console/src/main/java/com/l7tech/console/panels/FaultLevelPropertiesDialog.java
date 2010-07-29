@@ -41,21 +41,21 @@ import org.xml.sax.SAXException;
  * @see com.l7tech.policy.assertion.FaultLevel
  */
 public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
-    private static final String DROP_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
+    private static final String DROP_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the Gateway will " +
                               "drop the connection with the requestor without returning anything.</p></html>";
-    private static final String GEN_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
+    private static final String GEN_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the Gateway will " +
                               "return a generic SOAP fault without the details of the reason for " +
                               "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
                               "below:</p></html>";
-    private static final String MEDIUM_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
+    private static final String MEDIUM_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the Gateway will " +
                               "return a SOAP fault which contains information regarding the reasons for " +
                               "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
                               "below:</p></html>";
-    private static final String FULL_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
+    private static final String FULL_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the Gateway will " +
                               "return a SOAP fault which contains a full trace for each assertion " +
                               "evaluation in the policy whether the assertion was a success or " +
                               "failure.</p><p>A sample of such a SOAP fault is displayed below:</p></html>";
-    private static final String TEMPLATE_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
+    private static final String TEMPLATE_LEVEL_DESCRIPTION = "<html><p>In the case of a policy violation, the Gateway will " +
                               "return a SOAP fault based on a template provided by you. You can use " +
                               "context variables as part of the template.</p><p><b>You must edit the template " +
                               "below:</b></p></html>";

@@ -89,7 +89,7 @@
                     <properties>
                       <margin top="2" left="3" bottom="0" right="3"/>
                       <selected value="true"/>
-                      <text value="&amp;Outbound - SecureSpan Gateway can route messages to Queue"/>
+                      <text value="&amp;Outbound - Gateway can route messages to Queue"/>
                       <toolTipText value="Select Outbound to configure an outbound queue."/>
                     </properties>
                   </component>
@@ -99,7 +99,7 @@
                     </constraints>
                     <properties>
                       <margin top="0" left="3" bottom="2" right="3"/>
-                      <text value="&amp;Inbound - SecureSpan Gateway will drain messages from Queue"/>
+                      <text value="&amp;Inbound - Gateway will drain messages from Queue"/>
                       <toolTipText value="Select Inbound to configure an inbound queue."/>
                     </properties>
                   </component>
@@ -574,7 +574,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="Cop&amp;y CorrelationID from Request to Response"/>
-                      <toolTipText value="&lt;html&gt;Choose this option to have the SecureSpan Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
+                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                 </children>
@@ -799,7 +799,7 @@
                         <properties>
                           <selected value="true"/>
                           <text value="&amp;Generate New CorrelationID for Request "/>
-                          <toolTipText value="&lt;html&gt;Choose this to have the SecureSpan Gateway generate a unique ID, set it as the&lt;p&gt;&quot;JMSCorrelationID&quot; attribute on the outbound request, and then select only&lt;p&gt; messages with the matching JmSCorrelationID value from the response queue.&lt;/html&gt;"/>
+                          <toolTipText value="&lt;html&gt;Choose this to have the Gateway generate a unique ID, set it as the&lt;p&gt;&quot;JMSCorrelationID&quot; attribute on the outbound request, and then select only&lt;p&gt; messages with the matching JmSCorrelationID value from the response queue.&lt;/html&gt;"/>
                         </properties>
                       </component>
                       <component id="fcba0" class="javax.swing.JRadioButton" binding="outboundMessageIdRadioButton" default-binding="true">

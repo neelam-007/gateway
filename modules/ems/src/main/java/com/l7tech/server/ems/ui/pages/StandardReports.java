@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 public class StandardReports extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-    private static final MessageFormat warningMsgFormat = new MessageFormat("{0} in the SSG Cluster with GUID {1} cannot be added because of {2}.");
+    private static final MessageFormat warningMsgFormat = new MessageFormat("{0} in the Gateway Cluster with GUID {1} cannot be added because of {2}.");
 
     @SpringBean
     private ReportService reportService;
@@ -638,14 +638,14 @@ public class StandardReports extends EsmStandardWebPage {
             ssgCluster = ssgClusterManager.findByGuid(ssgClusterGuid);
 
             if (ssgCluster == null) {
-                warningMessage = "the SSG cluster no longer existing in the enterprise tree";
+                warningMessage = "the Gateway cluster no longer existing in the enterprise tree";
             } else {
                 try {
                     // Creating cluster client and getting entity info are only for the validation purpose.
                     GatewayClusterClient clusterClient = gatewayClusterClientManager.getGatewayClusterClient(ssgClusterGuid, getUser());
                     clusterClient.getEntityInfo(Arrays.asList(EntityType.FOLDER));
                 } catch (FailoverException e) {
-                    warningMessage = "SSG Cluster Not Available";
+                    warningMessage = "Gateway Cluster Not Available";
                 } catch (GatewayNotMappedException e) {
                     warningMessage = "No Access Account";
                 } catch (GatewayNoTrustException e) {

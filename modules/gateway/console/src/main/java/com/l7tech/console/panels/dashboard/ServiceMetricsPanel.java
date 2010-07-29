@@ -597,7 +597,7 @@ public class ServiceMetricsPanel extends JPanel {
             statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
 
             if (!_connected) {  // Previously disconnected.
-                _logger.log(Level.INFO, "Reconnected to SSG.");
+                _logger.log(Level.INFO, "Reconnected to Gateway.");
             }
             _connected = true;
         } catch (RuntimeException e) {
@@ -605,7 +605,7 @@ public class ServiceMetricsPanel extends JPanel {
             _refreshTimer.stop();
             dispose();
         } catch (FindException e) {
-            _logger.log(Level.WARNING, "SSG can't get data", e);
+            _logger.log(Level.WARNING, "Gateway can't get data", e);
             statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
             _refreshTimer.stop();
             dispose();

@@ -59,7 +59,7 @@ public class SsgClusterNotificationSetupManagerImpl extends HibernateEntityManag
                 }
             });
         } catch (DataAccessException e) {
-            throw new FindException("Cannot find Ssg Cluster Notification Setup by SSG Cluster GUID: " + ssgClusterGuid, e);
+            throw new FindException("Cannot find Gateway Cluster Notification Setup by Gateway Cluster GUID: " + ssgClusterGuid, e);
         }
     }
 

@@ -676,7 +676,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 templates = new LdapIdentityProviderConfig[0];
             } catch (Exception e) {
                 if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                    log.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost during getting identity provider types.", e);
+                    log.log(Level.WARNING, "the connection to the Gateway is lost during getting identity provider types.", e);
                     throw new RuntimeException(e);
                 }
                 log.log(Level.WARNING, "cannot retrieve templates", e);

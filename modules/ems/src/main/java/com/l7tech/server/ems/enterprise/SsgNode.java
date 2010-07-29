@@ -191,7 +191,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     @Override
     public String toString() {
         return
-            "SSG Node Name : " + getName() + "\n" +
+            "Gateway Node Name : " + getName() + "\n" +
             "Self Host Name: " + obtainHostName() + "\n" +
             "IP Address    : " + getIpAddress();
     }

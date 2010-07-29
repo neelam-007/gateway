@@ -14,7 +14,7 @@ import java.text.MessageFormat;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class ErrorManager {
-    public static final String DEFAULT_ERROR_MESSAGE ="The SecureSpan Manager encountered an internal error or " +
+    public static final String DEFAULT_ERROR_MESSAGE ="The Policy Manager encountered an internal error or " +
             "misconfiguration and was unable to complete the operation.";
 
     //- PUBLIC

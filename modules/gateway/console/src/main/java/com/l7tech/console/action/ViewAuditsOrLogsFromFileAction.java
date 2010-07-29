@@ -109,7 +109,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
                         f.getName().toLowerCase().endsWith(".ssgl");
             }
             public String getDescription() {
-                return "(*.ssga/*.ssgl) SecureSpan Gateway event data files.";
+                return "(*.ssga/*.ssgl) Gateway event data files.";
             }
         };
         fc.addChoosableFileFilter(fileFilter);

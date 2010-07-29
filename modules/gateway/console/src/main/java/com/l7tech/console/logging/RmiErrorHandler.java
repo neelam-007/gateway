@@ -21,7 +21,7 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class RmiErrorHandler implements ErrorHandler {
-     private static final String ERROR_MESSAGE = "A SecureSpan Gateway error or a communication error occurred.";
+     private static final String ERROR_MESSAGE = "A Gateway error or a communication error occurred.";
 
     /**
      * handle the error event
@@ -53,10 +53,10 @@ public class RmiErrorHandler implements ErrorHandler {
 
         if (topParent != null && throwable instanceof SSLException) {
             Throwable t = e.getThrowable();
-            String message = "A SecureSpan Gateway keystore or SSL/TLS communication error occurred.";
+            String message = "A Gateway keystore or SSL/TLS communication error occurred.";
             e.getLogger().log(Level.SEVERE, message, t);
             if (throwable instanceof SSLHandshakeException) {
-                message = "The SSL/TLS handshake with the SecureSpan Gateway has failed: " + ExceptionUtils.getMessage(throwable);
+                message = "The SSL/TLS handshake with the Gateway has failed: " + ExceptionUtils.getMessage(throwable);
                 t = null;
             }
             topParent.repaint();
@@ -74,14 +74,14 @@ public class RmiErrorHandler implements ErrorHandler {
             e.getLogger().log(Level.SEVERE, message, t);
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
-                message = "The SecureSpan Gateway restarted, please login again.";
+                message = "The Gateway restarted, please login again.";
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
                      (raex != null && (throwable instanceof SocketException || throwable instanceof SocketTimeoutException)) ||
                     (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()) ||
                     (throwable instanceof TimeoutRuntimeException)) {
-                message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
+                message = "Gateway unavailable (Network issue or server stopped).";
                 t = null;
             }
             topParent.repaint();

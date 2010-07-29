@@ -472,7 +472,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         String name = ks != null ? ks.getName() : ("id:" + foundKeystoreId);
                         r.addWarning(new PolicyValidatorResult.Warning((Assertion)a, ap,
                                                                        "This assertion refers to a Private Key with alias '" + keyAlias + "' in a keystore with ID '" + keystoreId + "'.  " +
-                                                                       "No keystore with that ID is present on this SecureSpan Gateway, but the system has found " +
+                                                                       "No keystore with that ID is present on this Gateway, but the system has found " +
                                                                        "a Private Key with a matching alias in the keystore '" + name + "' and will use that.",
                                                                        null));
                     }
@@ -487,7 +487,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             if (!found) {
                 r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
                                                            "This assertion refers to a Private Key which cannot " +
-                                                           "be found on this SecureSpan Gateway",
+                                                           "be found on this Gateway",
                                                            null));
             }
         }

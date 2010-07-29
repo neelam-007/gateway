@@ -23,7 +23,7 @@ public class AboutAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "View SecureSpan Manager information";
+        return "View Policy Manager information";
     }
 
     /**
