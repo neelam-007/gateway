@@ -56,7 +56,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             final String jsonSchemaText = jsonTextArea.getText();
 
             if(jsonSchemaText.trim().isEmpty()){
-                final String message = "A JSON Scheam must be supplied when assertion is configured in advance.";
+                final String message = "A JSON Schema must be supplied when assertion is configured in advance.";
                 logger.log(Level.FINE, message);
                 throw new ValidationException(message);
             }
