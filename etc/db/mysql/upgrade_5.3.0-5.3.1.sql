@@ -35,6 +35,9 @@ ALTER TABLE uddi_proxied_service_info DROP published_hostname;
 -- serialized NcipherKeyStoreData for an nCipher keystore
 insert into keystore_file values (4, 0, "nCipher HSM", "hsm.NcipherKeyStoreData", null, null);
 
+--- Add permission to read published services to the default "Manage Listen Port" role.
+UPDATE rbac_role SET DESCRIPTION='Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services.' WHERE objectid=-750;
+INSERT INTO rbac_permission VALUES (-755,0,-750,'READ',NULL,'SERVICE');
 
 --
 -- Reenable FK at very end of script
