@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.console.util.TopComponents;
@@ -96,6 +97,7 @@ public class EditGatewayNameDialog extends JDialog {
         });
 
         newGatewayNameField = new JTextField(); // needed below
+        newGatewayNameField.setDocument(new MaxLengthDocument(128));
         newGatewayNameField.setText(oldGatewayName);
         // password label
         JLabel passwordLabel = new JLabel();
@@ -113,7 +115,6 @@ public class EditGatewayNameDialog extends JDialog {
 
         // password field
         newGatewayNameField.setToolTipText(resources.getString("newGatewayNameField.tooltip"));
-
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
