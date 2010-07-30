@@ -44,7 +44,7 @@ public class ServerEsmMetricsAssertion extends AbstractServerAssertion<EsmMetric
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        logger.info("Forwarding message to ESM QOS Metrics Service");
+        logger.info("Forwarding message to WSDM QOS Metrics Service");
 
         try {
             final Document response = esmService.handleESMRequest(context.getService().getOid(), context.getRequest());

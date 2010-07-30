@@ -40,7 +40,7 @@ public class ServerEsmSubscriptionAssertion extends AbstractServerAssertion<EsmS
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        logger.info("Forwarding message to ESM Subscription Service");
+        logger.info("Forwarding message to WSDM Subscription Service");
 
         try {
             final Document response = esmService.handleSubscriptionRequest(context.getService().getOid(), context.getRequest(), assertion.getNotificationPolicyGuid());

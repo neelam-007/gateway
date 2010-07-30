@@ -68,15 +68,15 @@ import java.util.logging.Logger;
 public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationContextAware, Lifecycle {
     private static final Logger logger = Logger.getLogger(SubscriptionNotifier.class.getName());
 
-    public static final String ESM_SUBSCRIPTION_SERVICE_NAME = "ESM Subscription Service";
+    public static final String ESM_SUBSCRIPTION_SERVICE_NAME = "WSDM Subscription Service";
     public static final String ESM_SUBSCRIPTION_SERVICE_ROOT_WSDL = "esmsm-0.5.wsdl";
     public static final String ESM_SUBSCRIPTION_SERVICE_URI_PREFIX = "/wsdm/esmsubscriptions";
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
 
-    public static final String CLUSTER_PROP_NOTIFY_INTERVAL = "esm.notification.interval";
-    public static final String CLUSTER_PROP_ESM_ENABLED = "esm.notification.enabled";
+    public static final String CLUSTER_PROP_NOTIFY_INTERVAL = "wsdm.notification.interval";
+    public static final String CLUSTER_PROP_ESM_ENABLED = "wsdm.notification.enabled";
 
     public static final String SERVERCONFIG_PROP_NOTIFY_INTERVAL = ClusterProperty.asServerConfigPropertyName(CLUSTER_PROP_NOTIFY_INTERVAL);
     public static final String SERVERCONFIG_PROP_ESM_ENABLED = ClusterProperty.asServerConfigPropertyName(CLUSTER_PROP_ESM_ENABLED);
