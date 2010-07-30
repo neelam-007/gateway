@@ -1956,7 +1956,7 @@
 
         <!-- Run makensis -->
         <exec executable="${build.install.compiler}"
-              dir="${src.installer}/server/win32/"
+              dir="etc/other_os_support/windows/server/win32/"
               failonerror="true">
             <arg value="/NOCD"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
