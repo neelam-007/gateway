@@ -583,7 +583,7 @@ public interface AssertionMetadata {
      * If null, or if this class doesn't exist or can't be loaded, this property is ignored and no listener
      * method is invoked.
      * <p/>
-     * Note that this listener is invoked even if assertion ownind this metadata is unlicensed.  The custom listener
+     * Note that this listener is invoked even if assertion owning this metadata is unlicensed.  The custom listener
      * code is responsible for any needed license enforcement for associated new features.
      * <p/>
      * This key was introduced in SecureSpan Gateway version 4.2.
@@ -627,6 +627,9 @@ public interface AssertionMetadata {
      * is available.
      * <p/>
      * The default value is an empty array.
+     * <p/>
+     * It is recommended that implementors subclass SecureAction if the action should only be enabled for admin
+     * users with certain permissions.
      * <p/>
      * This key was introduced in SecureSpan Manager version 5.4.
      */
