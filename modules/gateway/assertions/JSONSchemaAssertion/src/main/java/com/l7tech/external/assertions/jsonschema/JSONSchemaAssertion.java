@@ -80,12 +80,12 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         });
 
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES, new String[] {
-                "Maximum number of cached JSON schema documents loaded from URLs, 0 for no caching (Integer).",
+                "Maximum number of cached JSON schema documents loaded from URLs, 0 for no caching (Integer). Requires gateway restart.",
                 "100"
         });
 
         props.put(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE, new String[] {
-                "Maximum size in bytes of a JSON Schema document download, or 0 for unlimited (Integer)",
+                "Maximum size in bytes of a JSON Schema document download, or 0 for unlimited (Integer).",
                 "${documentDownload.maxSize}"
         });
 
