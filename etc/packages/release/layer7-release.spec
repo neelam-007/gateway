@@ -19,7 +19,7 @@ ExclusiveArch: noarch
 %undefine       __check_files
 
 %description
-Sets /etc/redhat-release and the issue files to reflect Layer7 SecureSpan
+Sets /etc/redhat-release and the issue files to reflect Layer7 Suite
 and provides a system logo for the grub screen.
 
 %clean

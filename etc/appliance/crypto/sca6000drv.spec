@@ -1,4 +1,4 @@
-Summary: SCA 6000 Support for SecureSpan Gateway
+Summary: SCA 6000 Support for Layer 7 Gateway
 Name: SCA6000drv
 Version: 1.1.6
 Release: 1.el5

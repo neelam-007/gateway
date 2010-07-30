@@ -1,4 +1,4 @@
-Summary: Opencryptoki Support for SecureSpan Gateway
+Summary: Opencryptoki Support for Layer 7 Gateway
 Name: opencryptoki
 Version: l7
 Release: 2

@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2010
+Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2010
 Name: ssg
 Version: 0.0
 Release: 0
@@ -19,7 +19,7 @@ Prefix: /opt/SecureSpan/Gateway
 %define _binary_payload w9.bzdio
 
 %description
-SecureSpan Gateway Software Package
+Layer 7 Gateway Software Package
 
 %clean
 rm -fr %{buildroot}

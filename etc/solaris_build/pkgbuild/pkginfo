@@ -1,6 +1,6 @@
 PKG="L7TECHssg"
-NAME="SecureSpan(TM) XML Networking Gateway"
-DESC="SecureSpan Gateway Software Package"
+NAME="Layer 7 XML Networking Gateway"
+DESC="Layer 7 Gateway Software Package"
 ARCH=all
 CLASSES="none"
 CATEGORY="JAVAAPPS,application,ssg"

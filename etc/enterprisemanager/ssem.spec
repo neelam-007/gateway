@@ -1,4 +1,4 @@
-Summary: SecureSpan Enterprise Service Manager, Copyright Layer 7 Technologies 2009-2010
+Summary: Layer 7 Enterprise Service Manager, Copyright Layer 7 Technologies 2009-2010
 Name: ssem
 Version: 0.0
 Release: 0
@@ -17,7 +17,7 @@ Prefix: /opt/SecureSpan/EnterpriseManager
 %define _binary_payload w9.bzdio
 
 %description
-SecureSpan Enterprise Service Manager Software Package
+Layer 7 Enterprise Service Manager Software Package
 
 %clean
 rm -fr %{buildroot}

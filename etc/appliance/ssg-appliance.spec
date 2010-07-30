@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2010
+Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2010
 Name: ssg-appliance
 Version: 0.0
 Release: 0
@@ -21,7 +21,7 @@ Prefix: /opt/SecureSpan/Appliance
 %define _binary_payload w9.bzdio
 
 %description
-SecureSpan Gateway Appliance Add-On Package
+Layer 7 Gateway Appliance Add-On Package
 
 %clean
 rm -fr %{buildroot}
@@ -254,7 +254,7 @@ if [ "$1" = "1" ] ; then
 fi
 
 # Change issue. This may move to a layer7-release file
-echo "Layer 7 SecureSpan(tm) Gateway v%{version}" >/etc/issue
+echo "Layer 7 Gateway v%{version}" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 /sbin/chkconfig --add ssg

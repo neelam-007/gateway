@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
+Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg-security
 Version: 0.0
 Release: 1
@@ -16,7 +16,7 @@ Prefix: /ssg
 #%undefine       __check_files
 
 %description
-SecureSpan Gateway Security Package
+Layer 7 Gateway Security Package
 
 %clean
 rm -fr %{buildroot}
