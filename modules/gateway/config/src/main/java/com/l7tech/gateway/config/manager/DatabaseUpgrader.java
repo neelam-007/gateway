@@ -89,7 +89,7 @@ public class DatabaseUpgrader {
         String configurationDirPath = CONFIG_PATH;
         File confDir = new File(configurationDirPath);
 
-        System.out.println("SecureSpan Gateway Database Upgrader.");
+        System.out.println("Gateway Database Upgrader.");
         System.out.println("Enter 'quit' to exit at any time.");
         System.out.println();
 

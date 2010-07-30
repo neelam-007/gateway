@@ -216,7 +216,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
             }
         };
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        final String suggestedName = "SecureSpanGateway_Log_" +sdf.format(new Date()) + ".ssgl";
+        final String suggestedName = "Gateway_Log_" +sdf.format(new Date()) + ".ssgl";
         fc.setSelectedFile(new File(suggestedName));
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);

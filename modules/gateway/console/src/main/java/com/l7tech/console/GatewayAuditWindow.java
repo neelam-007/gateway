@@ -591,7 +591,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             }
         };
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        final String suggestedName = "SecureSpanGateway_Audit_" + sdf.format(new Date()) + ".ssga";
+        final String suggestedName = "Gateway_Audit_" + sdf.format(new Date()) + ".ssga";
         fc.setSelectedFile(new File(suggestedName));
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);

@@ -23,7 +23,7 @@ import java.util.Properties;
  * @version 1.2
  */
 public class AboutBox extends JDialog implements ActionListener {
-    private static final String LOGO_IMAGE = "splash-screen2.gif";
+    private static final String LOGO_IMAGE = "splash-screen.png";
     /* this class classloader */
     private final ClassLoader cl = AboutBox.class.getClassLoader();
 

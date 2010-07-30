@@ -109,7 +109,7 @@ public class AccountReset {
         String configurationDirPath = CONFIG_PATH;
         File confDir = new File(configurationDirPath);
 
-        System.out.println("SecureSpan Gateway Administration Account Utility.");
+        System.out.println("Gateway Administration Account Utility.");
         System.out.println("Enter 'quit' to exit at any time.");
         System.out.println();
 

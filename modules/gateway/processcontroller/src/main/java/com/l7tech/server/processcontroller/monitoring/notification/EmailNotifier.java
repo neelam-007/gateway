@@ -114,7 +114,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
 
         Map<String,String> props = new HashMap<String,String>();
         String from = rule.getFrom();
-        props.put("mail.from", from == null ? "Layer 7 SecureSpan Process Controller <l7pc@NOMAILBOX>" : from);
+        props.put("mail.from", from == null ? "Layer 7 Process Controller <l7pc@NOMAILBOX>" : from);
 
         // Transport config
         props.put("mail.transport.protocol", protoVal);
