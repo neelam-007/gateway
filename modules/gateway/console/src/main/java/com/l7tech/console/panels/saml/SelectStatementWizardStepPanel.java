@@ -21,13 +21,17 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     private JPanel greetingPanel;
     private JLabel titleLabel;
     private JToggleButton authenticationStatementRadioButton;
+    private JCheckBox authenticationStatementIncludeAuthnContextDecl;
     private JToggleButton authorizationDecisionStatementRadioButton;
     private JToggleButton attributeStatementRadioButton;
     private JPanel buttonsPanel;
     private final boolean issueMode;
+    private boolean enableIncludeAuthnContextDecl;
 
     private final ActionListener changeListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
+            enableDisableComponents();
             notifyListeners();
         }
     };
@@ -54,7 +58,8 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         if (issueMode) {
             authenticationStatementRadioButton = new JCheckBox("Authentication Statement");
             authorizationDecisionStatementRadioButton = new JCheckBox("Authorization Decision Statement");
-            attributeStatementRadioButton = new JCheckBox("Attribute Statement");
+            attributeStatementRadioButton = new JCheckBox("Attribute Statement");            
+            authenticationStatementIncludeAuthnContextDecl = new JCheckBox("Include Authentication Context Declaration");
         } else {
             authenticationStatementRadioButton = new JRadioButton("Authentication Statement");
             authorizationDecisionStatementRadioButton = new JRadioButton("Authorization Decision Statement");
@@ -70,6 +75,10 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         buttonsPanel.add(authorizationDecisionStatementRadioButton, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
         buttonsPanel.add(attributeStatementRadioButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
 
+        if (issueMode) {
+            buttonsPanel.add(authenticationStatementIncludeAuthnContextDecl, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+        }
+
         authenticationStatementRadioButton.addActionListener(changeListener);
         authorizationDecisionStatementRadioButton.addActionListener(changeListener);
         attributeStatementRadioButton.addActionListener(changeListener);
@@ -80,6 +89,7 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         return authenticationStatementRadioButton.isSelected() || authorizationDecisionStatementRadioButton.isSelected() || attributeStatementRadioButton.isSelected();
     }
 
+    @Override
     public void readSettings(Object settings)
       throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion) settings;
@@ -91,8 +101,15 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         if (auths != null) authenticationStatementRadioButton.setSelected(true);
         if (athz  != null) authorizationDecisionStatementRadioButton.setSelected(true);
         if (atts  != null) attributeStatementRadioButton.setSelected(true);
+        if (auths != null) authenticationStatementIncludeAuthnContextDecl.setSelected(auths.isIncludeAuthenticationContextDeclaration());
+
+        final Integer version = assertion.getVersion();
+        enableIncludeAuthnContextDecl = version == null || version != 1;
+
+        enableDisableComponents();
     }
 
+    @Override
     public void storeSettings(Object settings)
       throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
@@ -101,6 +118,9 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
             if (atts == null) {
                 assertion.setAuthenticationStatement(new SamlAuthenticationStatement());
             }
+            assertion.getAuthenticationStatement().setIncludeAuthenticationContextDeclaration(
+                    authenticationStatementIncludeAuthnContextDecl.isEnabled() &&
+                    authenticationStatementIncludeAuthnContextDecl.isSelected() );
         } else {
             assertion.setAuthenticationStatement(null);
         }
@@ -122,13 +142,19 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         }
     }
 
+    private void enableDisableComponents() {
+        authenticationStatementIncludeAuthnContextDecl.setEnabled( enableIncludeAuthnContextDecl && authenticationStatementRadioButton.isSelected() );
+    }
+
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "SAML Statement Type";
     }
 
+    @Override
     public String getDescription() {
         return "Select the SAML Statement Type you wish to configure.";
     }

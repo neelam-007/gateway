@@ -194,7 +194,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         if (assertion.getAttributeStatement() != null)
             statements.add(makeAttributeStatement(creds, version, vars, nameValue, nameFormat, nameQualifier));
         if (assertion.getAuthenticationStatement() != null)
-            statements.add(makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier, authMethodUri));
+            statements.add(makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier, authMethodUri,
+                    assertion.getAuthenticationStatement().isIncludeAuthenticationContextDeclaration()));
         if (assertion.getAuthorizationStatement() != null)
             statements.add(makeAuthorizationStatement(creds, vars, nameValue, nameFormat, nameQualifier));
 
@@ -331,7 +332,12 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
-    private SubjectStatement makeAuthenticationStatement(LoginCredentials creds, String overrideNameValue, String overrideNameFormat, String nameQualifier, String overrideAuthnMethodUri) {
+    private SubjectStatement makeAuthenticationStatement(LoginCredentials creds,
+                                                         String overrideNameValue,
+                                                         String overrideNameFormat,
+                                                         String nameQualifier,
+                                                         String overrideAuthnMethodUri,
+                                                         boolean includeAuthenticationContextDeclaration) {
         return SubjectStatement.createAuthenticationStatement(
                     creds,
                     confirmationMethod,
@@ -340,7 +346,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     overrideNameValue,
                     overrideNameFormat,
                     nameQualifier,
-                    overrideAuthnMethodUri);
+                    overrideAuthnMethodUri,
+                    includeAuthenticationContextDeclaration);
     }
 
     private SubjectStatement makeAttributeStatement(LoginCredentials creds, Integer version, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) throws PolicyAssertionException {

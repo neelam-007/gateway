@@ -19,11 +19,12 @@ import java.util.Date;
 public class AuthenticationStatement extends SubjectStatement {
     private String authenticationMethod;
     private Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+    private boolean includeAuthnContextDecl;
 
     public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation,
                                    KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType,
                                    String overrideNameValue, String overrideNameFormat, String nameQualifier,
-                                   String overrideAuthnMethodUri) {
+                                   String overrideAuthnMethodUri, boolean includeAuthnContextDecl) {
         super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
 
         this.authenticationMethod = overrideAuthnMethodUri != null
@@ -31,6 +32,7 @@ public class AuthenticationStatement extends SubjectStatement {
             : mapAuthMethod(credentials.getCredentialSourceAssertion());
         long when = System.currentTimeMillis();
         this.authenticationInstant.setTime(new Date(when));
+        this.includeAuthnContextDecl = includeAuthnContextDecl;
     }
 
     private static String mapAuthMethod(Class credentialSourceClass) {
@@ -64,5 +66,13 @@ public class AuthenticationStatement extends SubjectStatement {
 
     public void setAuthenticationMethod(String authenticationMethod) {
         this.authenticationMethod = authenticationMethod;
+    }
+
+    public boolean isIncludeAuthnContextDecl() {
+        return includeAuthnContextDecl;
+    }
+
+    public void setIncludeAuthnContextDecl( final boolean includeAuthnContextDecl ) {
+        this.includeAuthnContextDecl = includeAuthnContextDecl;
     }
 }

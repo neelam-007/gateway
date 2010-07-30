@@ -61,24 +61,7 @@ public class SamlAssertionGeneratorSaml2 {
             AuthnStatementType as = assertionType.addNewAuthnStatement();
             as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
 
-            String authenticationMethod = authenticationStatement.getAuthenticationMethod();
-            if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
-                SamlConstants.AUTHENTICATION_SAML2_PASSWORD.equals(authenticationMethod)) {
-                authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_PASSWORD;
-            } else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
-                SamlConstants.AUTHENTICATION_SAML2_XMLDSIG.equals(authenticationMethod)) {
-                authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_XMLDSIG;
-            }else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
-                SamlConstants.AUTHENTICATION_SAML2_TLS_CERT.equals(authenticationMethod)) {
-                authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
-            } else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
-                authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED;
-            }
-
-            if (authenticationMethod != null) {
-                AuthnContextType act = as.addNewAuthnContext();
-                act.setAuthnContextClassRef(authenticationMethod);
-            }
+            addAuthenticationMethod( authenticationStatement, as );
 
             InetAddress clientAddress = options.getClientAddress();
             if (clientAddress != null) {
@@ -372,72 +355,7 @@ public class SamlAssertionGeneratorSaml2 {
                 AuthnStatementType as = assertionType.addNewAuthnStatement();
                 as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
 
-                String authenticationMethod = authenticationStatement.getAuthenticationMethod();
-                XmlObject authnContextDecl = null;
-                if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
-                    SamlConstants.AUTHENTICATION_SAML2_PASSWORD.equals(authenticationMethod)) {
-                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_PASSWORD;
-
-                    x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType passwdContextDecl =
-                            x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                    x0AcClassesPassword.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                            passwdContextDecl.addNewAuthnMethod();
-
-                    x0AcClassesPassword.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                    x0AcClassesPassword.oasisNamesTcSAML2.PasswordType pt = abt.addNewRestrictedPassword();
-                    x0AcClassesPassword.oasisNamesTcSAML2.LengthType lt = pt.addNewLength();
-                    lt.setMin(BigInteger.valueOf(3));
-
-                    authnContextDecl = passwdContextDecl;
-                }
-                else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
-                    SamlConstants.AUTHENTICATION_SAML2_XMLDSIG.equals(authenticationMethod)) {
-                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_XMLDSIG;
-
-                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType digSigContextDecl =
-                            x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                            digSigContextDecl.addNewAuthnMethod();
-
-                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                    XmlString kv = XmlString.Factory.newInstance();
-                    kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
-                    abt.addNewDigSig().setKeyValidation(kv);
-
-                    authnContextDecl = digSigContextDecl;
-                }
-                else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
-                    SamlConstants.AUTHENTICATION_SAML2_TLS_CERT.equals(authenticationMethod)) {
-                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
-
-                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType tlsContextDecl =
-                            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                            tlsContextDecl.addNewAuthnMethod();
-
-                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                    XmlString kv = XmlString.Factory.newInstance();
-                    kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
-                    abt.addNewDigSig().setKeyValidation(kv);
-
-                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorTransportProtocolType atpt =
-                            authnMethod.addNewAuthenticatorTransportProtocol();
-                    atpt.addNewSSL();
-
-                    authnContextDecl = tlsContextDecl;
-                }
-                else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
-                    authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED;
-                }
-
-                if (authenticationMethod != null) {
-                    AuthnContextType act = as.addNewAuthnContext();
-                    act.setAuthnContextClassRef(authenticationMethod);
-                    if (authnContextDecl != null) act.setAuthnContextDecl(authnContextDecl);
-                }
+                addAuthenticationMethod( authenticationStatement, as );
 
                 InetAddress clientAddress = options.getClientAddress();
                 if (clientAddress != null) {
@@ -475,5 +393,77 @@ public class SamlAssertionGeneratorSaml2 {
         }
 
         return assertionType;
+    }
+
+    private void addAuthenticationMethod( final AuthenticationStatement authenticationStatement, 
+                                          final AuthnStatementType as ) {
+        String authenticationMethod = authenticationStatement.getAuthenticationMethod();
+        XmlObject authnContextDecl = null;
+        if ( SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
+            SamlConstants.AUTHENTICATION_SAML2_PASSWORD.equals(authenticationMethod)) {
+            authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_PASSWORD;
+
+            x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType passwdContextDecl =
+                    x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+            x0AcClassesPassword.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                    passwdContextDecl.addNewAuthnMethod();
+
+            x0AcClassesPassword.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+            x0AcClassesPassword.oasisNamesTcSAML2.PasswordType pt = abt.addNewRestrictedPassword();
+            x0AcClassesPassword.oasisNamesTcSAML2.LengthType lt = pt.addNewLength();
+            lt.setMin( BigInteger.valueOf(3));
+
+            authnContextDecl = passwdContextDecl;
+        }
+        else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
+            SamlConstants.AUTHENTICATION_SAML2_XMLDSIG.equals(authenticationMethod)) {
+            authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_XMLDSIG;
+
+            x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType digSigContextDecl =
+                    x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+            x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                    digSigContextDecl.addNewAuthnMethod();
+
+            x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+            XmlString kv = XmlString.Factory.newInstance();
+            kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
+            abt.addNewDigSig().setKeyValidation(kv);
+
+            authnContextDecl = digSigContextDecl;
+        }
+        else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
+            SamlConstants.AUTHENTICATION_SAML2_TLS_CERT.equals(authenticationMethod)) {
+            authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
+
+            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType tlsContextDecl =
+                    x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
+
+            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
+                    tlsContextDecl.addNewAuthnMethod();
+
+            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
+            XmlString kv = XmlString.Factory.newInstance();
+            kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
+            abt.addNewDigSig().setKeyValidation(kv);
+
+            x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorTransportProtocolType atpt =
+                    authnMethod.addNewAuthenticatorTransportProtocol();
+            atpt.addNewSSL();
+
+            authnContextDecl = tlsContextDecl;
+        }
+        else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
+            authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED;
+        }
+
+        if (authenticationMethod != null) {
+            AuthnContextType act = as.addNewAuthnContext();
+            act.setAuthnContextClassRef(authenticationMethod);
+            if (authnContextDecl != null && authenticationStatement.isIncludeAuthnContextDecl()) {
+                act.setAuthnContextDecl(authnContextDecl);
+            }
+        }
     }
 }

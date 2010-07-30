@@ -74,7 +74,34 @@ public abstract class SubjectStatement {
                                                                  String nameQualifier,
                                                                  String overrideAuthnMethodUri)
     {
-        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier, overrideAuthnMethodUri);
+        return createAuthenticationStatement( credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier, overrideAuthnMethodUri, false );
+    }
+
+    /**
+     * Creates the authentication statement
+     *
+     * @param credentials  the credentials source for subject statement
+     * @param confirmation the confirmation method type
+     * @param keyInfoType
+     * @param nameIdType
+     * @param overrideNameValue a value to override the NameIdentifier value from the credentials
+     * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
+     * @param nameQualifier
+     * @param overrideAuthnMethodUri
+     * @param includeAuthnContextDecl True to include an AuthnContextDecl element (when possible)
+     * @return the authentication statement for the subject statement, confirmation and method
+     */
+    public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,
+                                                                 Confirmation confirmation,
+                                                                 KeyInfoInclusionType keyInfoType,
+                                                                 NameIdentifierInclusionType nameIdType,
+                                                                 String overrideNameValue,
+                                                                 String overrideNameFormat,
+                                                                 String nameQualifier,
+                                                                 String overrideAuthnMethodUri,
+                                                                 boolean includeAuthnContextDecl )
+    {
+        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier, overrideAuthnMethodUri, includeAuthnContextDecl);
     }
 
     /**
