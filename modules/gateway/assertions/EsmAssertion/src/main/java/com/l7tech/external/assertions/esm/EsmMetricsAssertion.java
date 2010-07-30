@@ -51,8 +51,8 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         meta.put(CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(SHORT_NAME, "Collect ESM Metrics");
-        meta.put(DESCRIPTION, "Collect metrics for a specified resource based on the Joint Enterprise Service Management (ESM) Specification.");
+        meta.put(SHORT_NAME, "Collect WSDM Metrics");
+        meta.put(DESCRIPTION, "Collect metrics for a specified resource based on the Joint Web Services Distributed Management (WSDM) Specification.");
 
         meta.put(PALETTE_FOLDERS, new String[] {"internalAssertions"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
@@ -97,7 +97,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
                                    path,
-                                   "Assertion added to a policy not intended for an ESM QosMetrics service",
+                                   "Assertion added to a policy not intended for a WSDM QosMetrics service",
                                    null));
             }
         }

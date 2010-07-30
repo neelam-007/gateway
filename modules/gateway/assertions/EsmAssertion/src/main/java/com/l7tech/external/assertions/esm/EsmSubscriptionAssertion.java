@@ -83,8 +83,8 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
         meta.put(CLUSTER_PROPERTIES, new HashMap<String, String[]>());
 
         // Set description for GUI
-        meta.put(SHORT_NAME, "Subscribe to ESM Resource");
-        meta.put(DESCRIPTION, "Send subscription requests to a specified resource based on the ESM specification.");
+        meta.put(SHORT_NAME, "Subscribe to WSDM Resource");
+        meta.put(DESCRIPTION, "Send subscription requests to a specified resource based on the WSDM specification.");
 
         meta.put(PALETTE_FOLDERS, new String[] {"internalAssertions"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
@@ -96,7 +96,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
 
         meta.put(POLICY_VALIDATOR_CLASSNAME, EsmSubscriptionAssertion.Validator.class.getName());
 
-        meta.put(PROPERTIES_ACTION_NAME, "ESM Subscription Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "WSDM Subscription Properties");
         //set the routing assertion flag
         meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);
 
@@ -148,7 +148,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
                                    path,
-                                   "Assertion added to a policy not intended for an ESM Subscription service",
+                                   "Assertion added to a policy not intended for a WSDM Subscription service",
                                    null));
             }
         }
