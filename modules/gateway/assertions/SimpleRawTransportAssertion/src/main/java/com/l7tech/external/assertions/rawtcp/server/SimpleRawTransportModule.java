@@ -36,6 +36,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -336,7 +337,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         }
 
         try {
-            ServerSocket serverSocket = new ServerSocket(connector.getPort(), backlog, InetAddress.getByName(bindAddress));
+            ServerSocket serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(InetAddress.getByName(bindAddress), connector.getPort()), backlog);
             final ServerSock serverSock = new ServerSock(connector, serverSocket, executor, executorNeedsClose);
             logger.info("Starting " + connector.getScheme() + " connector on port " + connector.getPort());
             serverSock.start();
