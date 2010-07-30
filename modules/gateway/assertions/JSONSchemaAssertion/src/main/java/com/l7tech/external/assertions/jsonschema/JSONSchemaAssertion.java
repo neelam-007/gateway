@@ -76,7 +76,7 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_AGE, new String[] {
                 "Maximum age of cached JSON Schema documents loaded from URLs (Milliseconds). Requires gateway restart.",
-                "30000"
+                "300000"
         });
 
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES, new String[] {
