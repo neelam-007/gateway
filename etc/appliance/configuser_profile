@@ -115,13 +115,13 @@ doNodeLifecycle() {
     while [ "$isMenuValid" != "y" ]
     do
         clear
-        echo "SecureSpan Gateway status options:"
+        echo "Layer 7 Gateway status options:"
         echo ""
         if [ ${1} -eq 22 ] ; then
-            echo " 1) Start the SecureSpan Gateway"
+            echo " 1) Start the Layer 7 Gateway"
         else
-            echo " 1) Stop the SecureSpan Gateway"
-            echo " 2) Restart the SecureSpan Gateway"
+            echo " 1) Stop the Layer 7 Gateway"
+            echo " 2) Restart the Layer 7 Gateway"
         fi
         echo " X) Exit menu"
 
@@ -163,16 +163,16 @@ doConfiguration() {
     while [ "$isMenuValid" != "y" ]
     do
         clear
-            echo "This menu allows you to configure the SecureSpan Gateway application"
+            echo "This menu allows you to configure the Layer 7 Gateway application"
             echo "What would you like to do?"
             echo ""
-            echo " 1) Upgrade the SecureSpan Gateway database"
-            echo " 2) Create a new SecureSpan Gateway database"
-            echo " 3) Configure the SecureSpan Gateway"
-            echo " 4) Change the SecureSpan Gateway cluster passphrase"
-            echo " 5) Delete the SecureSpan Gateway"
-            echo " 6) Display the current SecureSpan Gateway configuration"
-            echo " 7) Manage SecureSpan Gateway status"
+            echo " 1) Upgrade the Layer 7 Gateway database"
+            echo " 2) Create a new Layer 7 Gateway database"
+            echo " 3) Configure the Layer 7 Gateway"
+            echo " 4) Change the Layer 7 Gateway cluster passphrase"
+            echo " 5) Delete the Layer 7 Gateway"
+            echo " 6) Display the current Layer 7 Gateway configuration"
+            echo " 7) Manage Layer 7 Gateway status"
             echo " X) Exit menu"
 
             echo ""
@@ -480,7 +480,7 @@ doHsmConfiguration() {
     do
         clear
         echo "This menu allows you to configure the Hardware Security Module"
-        echo "on the SecureSpan Gateway Appliance"
+        echo "on the Layer 7 Gateway Appliance"
         echo ""
         echo "What would you like to do?"
         echo ""
@@ -522,8 +522,8 @@ doPatchManagementMenu() {
     while [ "$isPatchMenuValid" != "y" ]
     do
         clear
-        echo "This menu allows you to manage SecureSpan patches on the"
-        echo "SecureSpan Gateway Appliance"
+        echo "This menu allows you to manage Layer 7 patches on the"
+        echo "Layer 7 Gateway Appliance"
         echo ""
         echo "What would you like to do?"
         echo ""
@@ -884,13 +884,13 @@ isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
-        echo "Welcome to the SecureSpan Gateway"
+        echo "Welcome to the Layer 7 Gateway"
         echo
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
         echo ""
         echo " 1) Configure networking"
-        echo " 2) Display SecureSpan Gateway configuration menu"
+        echo " 2) Display Layer 7 Gateway configuration menu"
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
         echo " 5) Display Remote Management configuration menu"
@@ -931,7 +931,7 @@ do
                     confirmedMessage ""
                     clear;;
                 x|X)  doLogout;;
-                r|R)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
+                r|R)  echo -n "Are you sure you want to reboot the Layer 7 Gateway? [y/n]: "
                     read okToReboot
                     if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
                         sudo /sbin/reboot
