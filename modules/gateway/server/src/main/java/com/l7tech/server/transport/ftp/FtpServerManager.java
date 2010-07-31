@@ -95,7 +95,10 @@ public class FtpServerManager extends TransportModule {
 
     @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
+        connector = connector.getReadOnlyCopy();
         removeConnector(connector.getOid());
+        if (!connectorIsOwnedByThisModule(connector))
+            return;
         FtpServer ftpServer = createFtpServer(connector);
         auditStart(connector);
         try {

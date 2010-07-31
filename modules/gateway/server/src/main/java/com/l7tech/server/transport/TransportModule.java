@@ -13,6 +13,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.identity.cert.TrustedCertServices;
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 
@@ -53,6 +54,22 @@ public abstract class TransportModule extends LifecycleBean {
         this.serverConfig = serverConfig;
         if (serverConfig == null || defaultKey == null || trustedCertServices == null || ssgConnectorManager == null || logger == null)
             throw new NullPointerException("A required bean was not provided to the TransportModule");
+    }
+
+    /**
+     * Check whether the specified SsgConnector oid and version is unchanged from the last version seen by this connector.
+     * If so, a possibly expensive removal and re-addition of the connector will be bypassed.
+     * <p/>
+     * This method always returns false.  Subclasses that cache active connector entities can override this
+     * method with a cleverer implementation.
+     *
+     * @param oid      the SsgConnector object ID.
+     * @param version  the SsgConnector entity version.
+     * @return true if this connector version is already current, and any associated entity update event should be ignored.
+     *         false if this connector version may not be current and the connector should be removed and re-added.
+     */
+    protected boolean isCurrent( long oid, int version ) {
+        return false;
     }
 
     /**
@@ -176,10 +193,27 @@ public abstract class TransportModule extends LifecycleBean {
             // Already removed
             return;
         }
-        if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c))
-            addConnector(c);
-        else
-            removeConnector(connectorId);
+
+        // If this module keeps track of active entities, and can tell this update has already been processed,
+        // skip the expensive removal and re-add.
+        if (isCurrent(c.getOid(), c.getVersion()))
+            return;
+
+        removeConnector(connectorId);
+        if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c)) {
+            final SsgConnector roc = c.getReadOnlyCopy();
+            // TODO replace this background timer hack with something that won't fail if a foreign transport module takes longer than 200ms to relinquish the socket
+            Background.scheduleOneShot(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        addConnector(roc);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Unable to start " + roc.getScheme() + " connector on port " + roc.getPort() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                }
+            }, 200L);
+        }
     }
 
     /**

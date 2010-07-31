@@ -22,10 +22,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -41,6 +38,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -155,7 +153,6 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
     private final StashManagerFactory stashManagerFactory;
-    private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, ServerSock>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, ServerSock>>();
 
     public SimpleRawTransportModule(ApplicationEventProxy applicationEventProxy,
@@ -179,7 +176,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         T got = beanFactory.getBean(beanName, beanClass);
         if (got != null && beanClass.isAssignableFrom(got.getClass()))
             return got;
-        throw new IllegalStateException("uanble to get get: " + beanName);
+        throw new IllegalStateException("Unable to get bean from application context: " + beanName);
 
     }
 
@@ -279,13 +276,11 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         applicationEventProxy.removeApplicationListener(this);
     }
 
-    private boolean isCurrent( long oid, int version ) {
+    protected boolean isCurrent( long oid, int version ) {
         boolean current;
 
-        synchronized (connectorCrudLuck) {
-            Pair<SsgConnector, ServerSock> entry = activeConnectors.get(oid);
-            current = entry != null && entry.left.getVersion()==version;
-        }
+        Pair<SsgConnector, ServerSock> entry = activeConnectors.get(oid);
+        current = entry != null && entry.left.getVersion()==version;
 
         return current;
     }
@@ -298,20 +293,17 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         if (isCurrent(connector.getOid(), connector.getVersion()))
             return;
 
-        synchronized (connectorCrudLuck) {
-            removeConnector(connector.getOid());
-            if (!connectorIsOwnedByThisModule(connector))
-                return;
+        removeConnector(connector.getOid());
+        if (!connectorIsOwnedByThisModule(connector))
+            return;
 
-            connector = connector.getReadOnlyCopy();
-
-            final String scheme = connector.getScheme();
-            if (SCHEME_RAW_TCP.equalsIgnoreCase(scheme)) {
-                addTcpConnector(connector);
-            } else {
-                // Can't happen
-                logger.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
-            }
+        connector = connector.getReadOnlyCopy();
+        final String scheme = connector.getScheme();
+        if (SCHEME_RAW_TCP.equalsIgnoreCase(scheme)) {
+            addTcpConnector(connector);
+        } else {
+            // Can't happen
+            logger.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
         }
     }
 
@@ -353,16 +345,14 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     @Override
     protected void removeConnector(long oid) {
         final Pair<SsgConnector, ServerSock> entry;
-        synchronized (connectorCrudLuck) {
-            entry = activeConnectors.remove(oid);
-            if (entry == null) return;
-            ServerSock serverSock = entry.right;
-            logger.info("Removing " + entry.left.getScheme() + " connector on port " + entry.left.getPort());
-            try {
-                if (serverSock.tcpSocket != null) serverSock.close();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to close TCP socket: " + ExceptionUtils.getMessage(e), e);
-            }
+        entry = activeConnectors.remove(oid);
+        if (entry == null) return;
+        ServerSock serverSock = entry.right;
+        logger.info("Removing " + entry.left.getScheme() + " connector on port " + entry.left.getPort());
+        try {
+            if (serverSock != null) serverSock.close();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to close TCP socket: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

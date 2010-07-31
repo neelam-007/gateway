@@ -88,7 +88,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
-    private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
     private final Set<SsgConnectorActivationListener> endpointListeners;
 
@@ -518,36 +517,32 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (isCurrent(connector.getOid(), connector.getVersion()))
             return;
 
-        synchronized (connectorCrudLuck) {
-            removeConnector(connector.getOid());
-            if (!connectorIsOwnedByThisModule(connector))
-                return;
+        removeConnector(connector.getOid());
+        if (!connectorIsOwnedByThisModule(connector))
+            return;
 
-            connector = connector.getReadOnlyCopy();
-
-            Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
-            connectorAttrs.remove("scheme");
-            final String scheme = connector.getScheme();
-            if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
-                addHttpConnector(connector, connector.getPort(), connectorAttrs);
-            } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
-                addHttpsConnector(connector, connector.getPort(), connectorAttrs);
-            } else {
-                // It's not an HTTP connector; ignore it.  This shouldn't be possible
-                logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
-            }
+        connector = connector.getReadOnlyCopy();
+        Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
+        connectorAttrs.remove("scheme");
+        final String scheme = connector.getScheme();
+        if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
+            addHttpConnector(connector, connector.getPort(), connectorAttrs);
+        } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
+            addHttpsConnector(connector, connector.getPort(), connectorAttrs);
+        } else {
+            // It's not an HTTP connector; ignore it.  This shouldn't be possible
+            logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
         }
 
         notifyEndpointActivation( connector );
     }
 
-    private boolean isCurrent( long oid, int version ) {
+    @Override
+    protected boolean isCurrent( long oid, int version ) {
         boolean current;
 
-        synchronized (connectorCrudLuck) {
-            Pair<SsgConnector, Connector> entry = activeConnectors.get(oid);
-            current = entry != null && entry.left.getVersion()==version;
-        }
+        Pair<SsgConnector, Connector> entry = activeConnectors.get(oid);
+        current = entry != null && entry.left.getVersion()==version;
 
         return current;
     }
@@ -609,26 +604,24 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     @Override
     protected void removeConnector(long oid) {
         final Pair<SsgConnector, Connector> entry;
-        synchronized (connectorCrudLuck) {
-            entry = activeConnectors.remove(oid);
-            if (entry == null) return;
-            Connector connector = entry.right;
-            logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
-            embedded.removeConnector(connector);
-            try {
-                connector.destroy();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
-            }
+        entry = activeConnectors.remove(oid);
+        if (entry == null) return;
+        Connector connector = entry.right;
+        logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
+        embedded.removeConnector(connector);
+        try {
+            connector.destroy();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+        }
 
-            org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
-            if ( connectorExecutor != null ) {
-                embedded.removeExecutor( connectorExecutor );
-                try {
-                    connectorExecutor.stop();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
-                }
+        org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
+        if ( connectorExecutor != null ) {
+            embedded.removeExecutor( connectorExecutor );
+            try {
+                connectorExecutor.stop();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
             }
         }
 
