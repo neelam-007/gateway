@@ -69,7 +69,7 @@ public class CompiledStylesheet {
     }
 
     private void transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output, ErrorListener errorListener )
-            throws IOException, SAXException
+            throws IOException, SAXException, TransformerException
     {
         assert tmc != null;
         assert tarariStylesheet != null;

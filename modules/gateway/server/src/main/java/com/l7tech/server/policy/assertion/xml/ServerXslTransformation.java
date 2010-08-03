@@ -395,10 +395,17 @@ public class ServerXslTransformation
             auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
         } catch (TransformerException e) {
-            String msg = "error transforming document";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
-            // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
-            return AssertionStatus.SERVER_ERROR;
+            AssertionStatus status = AssertionStatus.SERVER_ERROR;
+            final Throwable cause = e.getCause();
+            if ( (cause != null && "terminate".equals(cause.getMessage())) ||
+                 (cause == null && "Stylesheet directed termination".equals(e.getMessage())) ) {
+                status = AssertionStatus.FALSIFIED; // Stylesheet directed termination, already audited
+            } else {
+                String msg = "error transforming document";
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
+                // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
+            }
+            return status;
         }
     }
 

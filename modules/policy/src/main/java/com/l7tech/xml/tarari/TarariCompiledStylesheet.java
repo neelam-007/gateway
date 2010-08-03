@@ -9,6 +9,7 @@ import com.l7tech.util.Functions;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.ErrorListener;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,7 +35,7 @@ public interface TarariCompiledStylesheet {
                     OutputStream output,
                     String[] varsUsed,
                     Functions.Unary<Object, String> variableGetter,
-                    ErrorListener errorListener ) throws IOException, SAXException;
+                    ErrorListener errorListener ) throws IOException, SAXException, TransformerException;
 
     /**
      * Perform a Tarari XSLT transformation upon the specified XML message stream.
@@ -52,5 +53,5 @@ public interface TarariCompiledStylesheet {
                     OutputStream output,
                     String[] varsUsed,
                     Functions.Unary<Object, String> variableGetter,
-                    ErrorListener errorListener ) throws SAXException, IOException;
+                    ErrorListener errorListener ) throws SAXException, IOException, TransformerException;
 }

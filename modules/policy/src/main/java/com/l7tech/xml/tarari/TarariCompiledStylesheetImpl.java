@@ -10,6 +10,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.tarari.xml.XmlException;
 import com.tarari.xml.XmlParseException;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.XmlSource;
@@ -89,7 +90,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
                            final OutputStream output,
                            final String[] varsUsed,
                            final Functions.Unary<Object, String> variableGetter,
-                           final ErrorListener errorListener ) throws IOException, SAXException {
+                           final ErrorListener errorListener ) throws IOException, SAXException, TransformerException {
         XmlSource source = (XmlSource)xmlSource.get();
         RaxDocument raxDocument = ((TarariMessageContextImpl)input).getRaxDocument();
         source.setData(raxDocument);
@@ -100,7 +101,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
                            final OutputStream output,
                            final String[] varsUsed,
                            final Functions.Unary<Object, String> variableGetter,
-                           final ErrorListener errorListener ) throws SAXException, IOException {
+                           final ErrorListener errorListener ) throws SAXException, IOException, TransformerException {
         transform(new XmlSource(input), output, varsUsed, variableGetter, errorListener);
     }
 
@@ -108,7 +109,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
                             final OutputStream output,
                             final String[] varsUsed,
                             final Functions.Unary<Object, String> variableGetter,
-                            final ErrorListener errorListener ) throws IOException, SAXException {
+                            final ErrorListener errorListener ) throws IOException, SAXException, TransformerException {
         Stylesheet transformer = new Stylesheet(master);
         transformer.setValidate(false);
         if (varsUsed != null && variableGetter != null) {
@@ -134,6 +135,8 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
             transformer.transform(source, result);
         } catch (XmlParseException e) {
             throw new SAXException(e);
+        } catch ( XmlException xe ) {
+            throw new TransformerException(xe);
         }
     }
 }
