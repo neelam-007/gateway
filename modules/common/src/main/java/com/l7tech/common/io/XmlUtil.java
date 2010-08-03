@@ -43,6 +43,7 @@ public class XmlUtil extends DomUtils {
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
     public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
     public static final String XERCES_DEFER_NODE_EXPANSION = "http://apache.org/xml/features/dom/defer-node-expansion";
+    public static final String XERCES_ATTR_SYMBOL_TABLE = "http://apache.org/xml/properties/internal/symbol-table";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         @Override
@@ -219,6 +220,17 @@ public class XmlUtil extends DomUtils {
                         ExceptionUtils.getDebugException(pce));
             }
         }
+
+        if ( SyspropUtil.getBoolean( "com.l7tech.common.xmlSoftSymbolTable", false ) ) {
+            try {
+                dbf.setAttribute( XERCES_ATTR_SYMBOL_TABLE, new org.apache.xerces.util.SoftReferenceSymbolTable() );
+            } catch ( IllegalArgumentException e ) {
+                logger.log( Level.CONFIG,
+                        "Error configuring XML parser symbol table.",
+                        ExceptionUtils.getDebugException(e));
+            }
+        }
+
 
         return dbf;
     }
