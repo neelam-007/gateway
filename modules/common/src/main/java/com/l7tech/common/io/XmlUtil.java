@@ -744,6 +744,46 @@ public class XmlUtil extends DomUtils {
         }
     }
 
+    /**
+     * Get the global (top-level) element names from the given schema.
+     *
+     * <p>WARNING: This does not process imported, included or redefined
+     * schemas, only elements defined in the given schema document will be
+     * found.</p>
+     *
+     * @param schemaSrc The schema to process (required)
+     * @return The element names (may be empty, never null)
+     * @throws BadSchemaException If the schemaSrc is not valid
+     */
+    public static String[] getSchemaGlobalElements( final String schemaSrc ) throws BadSchemaException {
+        if ( schemaSrc == null ) {
+            throw new BadSchemaException("schema is required");
+        }
+
+        List<String> elementNames = new ArrayList<String>();
+        try {
+            final Document schemaDocument = parse(new StringReader(schemaSrc), true);
+            final Element schemaElement = schemaDocument.getDocumentElement();
+            final Collection<Element> elementElements =
+                    XmlUtil.findChildElementsByName( schemaElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "element" );
+            for ( Element elementElement : elementElements ) {
+                final String name = elementElement.getAttribute( "name" );
+                if ( name.isEmpty() ) {
+                    throw new BadSchemaException("Global element declaration missing (or empty) required name attribute");
+                }
+                elementNames.add( name );
+            }
+        }
+        catch(SAXException se) {
+            throw new BadSchemaException(se);
+        }
+        catch(IOException ioe) {
+            throw new BadSchemaException(ioe);
+        }
+
+        return elementNames.toArray( new String[ elementNames.size() ] );
+    }
+
     @SuppressWarnings({"ForLoopReplaceableByForEach"})
     public static void softXSLTransform(Document source, Result result, Transformer transformer, Map params) throws TransformerException {
         if (params != null && !params.isEmpty()) {

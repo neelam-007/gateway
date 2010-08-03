@@ -8,9 +8,12 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.TarariKnob;
 import com.l7tech.server.util.AbstractReferenceCounted;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
@@ -33,6 +36,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
@@ -40,7 +44,10 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
+    private static final boolean checkSoapBodyPayloadElements = SyspropUtil.getBoolean( "com.l7tech.server.schema.checkSoapBodyPayloadElements", true );
+
     private final String targetNamespace; // could be null
+    private final String[] payloadElementNames;
     private final String systemId;
     private final String schemaDocument;
     private final byte[] namespaceNormalizedSchemaDocument;
@@ -93,6 +100,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.dependencies.putAll( includes );
         this.tnsGen = "{" + nextSystemIdGeneration(systemId) + "} " + systemId;
         this.softwareFallback = fallback;
+        this.payloadElementNames = getPayloadElementNames( schemaDocument, includes.values() );
     }
 
     private synchronized static long nextSystemIdGeneration(String systemId) {
@@ -267,7 +275,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
         // Hardware schema val succeeded.
         if (soap) {
-            checkPayloadNamespaceUris(tk);
+            checkPayloadElements(tk);
         } else {
             checkRootNamespace(tmc);
         }
@@ -335,25 +343,56 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     /**
      * Ensure that all payload namespaces of this SOAP message match the tarariNamespaceUri.
      */
-    private void checkPayloadNamespaceUris(TarariKnob tk) throws SAXException {
-        QName payloadNames[] = tk.getSoapInfo().getPayloadNames();
+    private void checkPayloadElements( final TarariKnob tk ) throws SAXException {
+        final QName[] payloadNames = tk.getSoapInfo().getPayloadNames();
 
         if (payloadNames == null || payloadNames.length < 1)
             throw new SAXException("Validation failed: message did not include a recognized payload namespace URI");
 
         // They must all match up
-        if (targetNamespace != null) {
-            for (QName payloadName : payloadNames) {
+        if ( targetNamespace != null ) {
+            for ( final QName payloadName : payloadNames ) {
                 if (!targetNamespace.equals(payloadName.getNamespaceURI()))
                     throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
             }
+            perhapsCheckPayloadLocalNames( payloadNames );
         } else {
-            for (QName payloadName : payloadNames) {
-                String ns = payloadName.getNamespaceURI();
+            for ( final QName payloadName : payloadNames ) {
+                final String ns = payloadName.getNamespaceURI();
                 if (ns != null && ns.length() > 0)
                     throw new SAXException("Validation failed: message contained an unexpected payload namespace URI: " + payloadName);
             }
+            perhapsCheckPayloadLocalNames( payloadNames );
         }
+    }
+
+    private void perhapsCheckPayloadLocalNames( final QName[] payloadNames ) throws SAXException {
+        if ( checkSoapBodyPayloadElements ) {
+            for ( final QName payloadName : payloadNames ) {
+                final String elementName = payloadName.getLocalPart();
+                if ( !ArrayUtils.contains( payloadElementNames, elementName )) {
+                    throw new SAXException("Validation failed: message contained an unexpected payload element: " + elementName);
+                }
+            }
+        }
+    }
+
+    private String[] getPayloadElementNames( final String schema, final Collection<SchemaHandle> includes  ) {
+        final Set<String> elementNames = new TreeSet<String>();
+        try {
+            final String[] directGlobalElements = XmlUtil.getSchemaGlobalElements( schema );
+            elementNames.addAll( Arrays.asList( directGlobalElements ) );                   
+        } catch ( XmlUtil.BadSchemaException e ) {
+            logger.log( Level.WARNING, 
+                    "Error processing global elements for schema '"+systemId+"', '"+ ExceptionUtils.getMessage( e )+"'",
+                    ExceptionUtils.getDebugException(e));
+        }
+
+        for ( final SchemaHandle include : includes ) {
+            elementNames.addAll( Arrays.asList( include.getCompiledSchema().payloadElementNames ) );
+        }
+
+        return elementNames.toArray( new String[ elementNames.size() ] );
     }
 
     /**
