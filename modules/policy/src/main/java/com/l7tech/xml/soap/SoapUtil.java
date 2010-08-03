@@ -121,11 +121,6 @@ public class SoapUtil extends SoapConstants {
 
     public static MessageFactory getMessageFactory(String soapProtocol) {
         try {
-            // bugzilla #2171, avoid 3rd party imposing their own implementations here
-            if (SyspropUtil.getPropertyCached("javax.xml.soap.MessageFactory") == null) {
-                SyspropUtil.setProperty("javax.xml.soap.MessageFactory",
-                        "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
-            }
             return MessageFactory.newInstance(soapProtocol);
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen

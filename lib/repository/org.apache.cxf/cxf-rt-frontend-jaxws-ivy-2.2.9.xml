@@ -51,7 +51,7 @@
 			<exclude org="logkit" module="logkit" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="avalon-framework" module="avalon-framework" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
-		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)">
+		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)">
 			<exclude org="javax.activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>

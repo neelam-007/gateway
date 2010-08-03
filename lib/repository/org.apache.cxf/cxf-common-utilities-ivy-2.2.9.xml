@@ -80,7 +80,7 @@
 			<exclude org="javax.activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
-		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.4" force="true" conf="test->runtime(*),master(*)">
+		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.3" force="true" conf="test->runtime(*),master(*)">
 			<exclude org="javax.activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
