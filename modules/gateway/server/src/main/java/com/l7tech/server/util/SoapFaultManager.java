@@ -25,6 +25,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -54,6 +55,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
@@ -205,7 +207,11 @@ public class SoapFaultManager implements ApplicationContextAware {
          * @return The response body (never null)
          */
         public byte[] getContentBytes() {
-            return content.getBytes( contentType.getEncoding() );
+            Charset charset = contentType.getEncoding();
+            if ( !charset.canEncode() ) {
+                charset = Charsets.UTF8; // fallback to UTF-8 rather than fail
+            }
+            return content.getBytes( charset );
         }
     }
 

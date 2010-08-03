@@ -216,12 +216,15 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
         if ( message == null && contentTypeTextField.isEnabled() ) {
             try {
                 final ContentTypeHeader contentType = ContentTypeHeader.parseValue( contentTypeTextField.getText() );
-                final String charset = contentType.getParam("charset");
-                if ( charset != null ) {
+                final String charsetName = contentType.getParam("charset");
+                if ( charsetName != null ) {
                     try {
-                        Charset.forName( charset );
+                        final Charset charset = Charset.forName( charsetName );
+                        if ( !charset.canEncode() ) {
+                            message = "Invalid content type charset '"+charsetName+"'";
+                        }
                     } catch ( IllegalArgumentException iae ) {
-                        message = "Invalid content type charset '"+encodingTextField.getText()+"'";
+                        message = "Invalid content type charset '"+charsetName+"'";
                     }
                 }
             } catch ( IOException e ) {
@@ -231,7 +234,10 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
 
         if ( message == null && encodingTextField.isEnabled() ) {
             try {
-                Charset.forName( encodingTextField.getText() );
+                final Charset charset = Charset.forName( encodingTextField.getText() );
+                if ( !charset.canEncode() ) {
+                    message = "Invalid encoding '"+encodingTextField.getText()+"'";
+                }
             } catch ( IllegalArgumentException iae ) {
                 message = "Invalid encoding '"+encodingTextField.getText()+"'";
             }

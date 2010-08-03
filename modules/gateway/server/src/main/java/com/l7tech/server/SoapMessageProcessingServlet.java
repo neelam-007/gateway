@@ -526,6 +526,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
             }
+
+            if ( !faultEncoding.canEncode() ) {
+                faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing    
+            }
+
             responseStream.write(faultXml.getBytes(faultEncoding));
         } finally {
             if (responseStream != null) responseStream.close();

@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * Properties dialog for customize error response assertion.
@@ -137,7 +138,16 @@ public class CustomizeErrorResponsePropertiesDialog extends AssertionPropertiesO
             }
             if ( canOk && !contentTypeTextField.getText().contains( Syntax.SYNTAX_PREFIX )) {
                 try {
-                    ContentTypeHeader.parseValue( contentTypeTextField.getText() );
+                    final ContentTypeHeader cth = ContentTypeHeader.parseValue( contentTypeTextField.getText() );
+                    final String charsetName = cth.getParam("charset");
+                    if ( charsetName != null ) {
+                        try {
+                            final Charset charset = Charset.forName(charsetName);
+                            canOk = charset.canEncode();
+                        } catch ( IllegalArgumentException iae ) {
+                            canOk = false;
+                        }
+                    }
                 } catch ( IOException e ) {
                     canOk = false;
                 }
