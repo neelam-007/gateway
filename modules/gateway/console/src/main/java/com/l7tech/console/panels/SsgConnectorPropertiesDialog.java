@@ -886,11 +886,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
         }
 
-        // Disable SSM remote and applet access if client auth is set to "required"
-        if ((cbEnableSsmApplet.isSelected() || cbEnableSsmRemote.isEnabled()) && ssl && (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem()))) {
-            setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
-        }
-
         if (!cbEnableSsmRemote.isSelected()) {
             setEnableAndSelect(false, false, "Disabled because it requires enabling Policy Manager access", cbEnableSsmApplet);
         }
