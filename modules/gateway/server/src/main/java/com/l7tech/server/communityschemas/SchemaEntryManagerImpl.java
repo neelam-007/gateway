@@ -61,6 +61,7 @@ public class SchemaEntryManagerImpl
 
     @Override
     protected void initDao() throws Exception {
+        logger.info( "Initializing schema cache." );
         super.initDao();
         final Collection<SchemaEntry> schemaEntries = findAll();
         for ( final SchemaEntry entry : schemaEntries ) {

@@ -658,6 +658,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         String dependencySchemaContent = null;
 
         // Find from global schemas
+        boolean canUpdate = true;
         if ( !dependencyLocation.isEmpty() ) {
             attemptedFindByLocation = true;
             systemId = dependencyLocation;
@@ -666,10 +667,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 for ( final SchemaEntry entry : entries ) {
                     if ( "import".equals( dependencyEl.getLocalName() ) ) { // namespace from import must match schema target namespace
                         if ( (dependencyNamespace == null && !entry.hasTns()) || (dependencyNamespace != null && dependencyNamespace.equals( entry.getTns() )) ) {
+                            canUpdate = !entry.isSystem();
                             dependencySchemaContent = entry.getSchema();
                         }
                     } else { // namespace from parent schema must match schema target namespace
                         if ( !entry.hasTns() || entry.getTns().equals(schemaNamespace) ) {
+                            canUpdate = !entry.isSystem();
                             dependencySchemaContent = entry.getSchema();
                         }
                     }
@@ -679,15 +682,17 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
             attemptedFindByNamespace = true;
-            systemId = generateURN(dependencyNamespace==null ? "" : dependencyNamespace);
+            if (systemId==null) systemId = generateURN(dependencyNamespace==null ? "" : dependencyNamespace);
             Collection<SchemaEntry> entries = schemaAdmin.findByTNS(dependencyNamespace);
             if ( entries != null && !entries.isEmpty()) {
-                dependencySchemaContent = entries.iterator().next().getSchema();
+                final SchemaEntry entry = entries.iterator().next();
+                canUpdate = !entry.isSystem() || !entry.getName().equals( systemId );
+                dependencySchemaContent = entry.getSchema();
             }
         }
 
         // Find or refresh from URL or other schemas in WSDL
-        if ( !dependencyLocation.isEmpty() ) {
+        if ( canUpdate && !dependencyLocation.isEmpty() ) {
             final String newSchemaContent = fetchSchemaFromUrl(dependencyLocation, dependencySchemaContent==null);
             if ( newSchemaContent != null ) {
                 updatedContent = true;
@@ -695,7 +700,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         }
 
-        if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
+        if ( canUpdate && !updatedContent && "import".equals( dependencyEl.getLocalName() ) ) {
             final String newSchemaContent = fetchSchemaByTargetNamespace(dependencyNamespace, true);
             if ( newSchemaContent != null ) {
                 updatedContent = true;

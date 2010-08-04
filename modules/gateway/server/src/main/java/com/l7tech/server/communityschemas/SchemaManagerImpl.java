@@ -228,7 +228,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             hardwareReloadTask = new SafeTimerTask() {
                 @Override
                 public void doRun() {
-                    maybeRebuildHardwareCache();
+                    maybeRebuildHardwareCache(0);
                 }
             };
             maintenanceTimer.schedule(hardwareReloadTask, 1000, cacheConfigurationReference.get().hardwareRecompileLatency);
@@ -642,34 +642,58 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * @param newSchema the schema for which to maybe enable hardware.
      */
     private void maybeEnableHardwareForNewSchema(final CompiledSchema newSchema) {
+        maybeEnableHardwareForNewSchema( newSchema, new HashSet<CompiledSchema>() );
+    }
+
+    /**
+     * Add this schema to the TNS cache, and enable hardware if this is the only schema using it and
+     * only if all child schemas are already hardware-enabled.
+     * <p/>
+     * Caller must hold the write lock.
+     *
+     * @param newSchema the schema for which to maybe enable hardware.
+     * @param processed schemas already processed
+     */
+    private void maybeEnableHardwareForNewSchema( final CompiledSchema newSchema,
+                                                  final Set<CompiledSchema> processed ) {
         if (newSchema == null) return;
         // Try to enable all children bottom-up
         for (final SchemaHandle child : newSchema.getDependencies().values())
-            maybeEnableHardwareForNewSchema(child.getTarget());
+            maybeEnableHardwareForNewSchema(child.getTarget(), processed);
 
-        final String tns = getTargetNamespace(newSchema);
+        if ( !processed.contains( newSchema ) ) {
+            final String tns = getTargetNamespace(newSchema);
 
-        // The new CompiledSchema has a TNS, and may be hardware-accelerated if no other schema current has the same TNS.
-        Map<CompiledSchema, Object> compiledSchemasWithThisTns = tnsCache.get(tns);
-        if (compiledSchemasWithThisTns == null) {
-            compiledSchemasWithThisTns = new WeakHashMap<CompiledSchema, Object>();
-            tnsCache.put(tns, compiledSchemasWithThisTns);
-        }
-
-        compiledSchemasWithThisTns.put(newSchema, null);
-        if ( conflictingTns(compiledSchemasWithThisTns.keySet()) ) {
-            // We're the first duplicate; disable hardware for all known CompiledSchemas with this tns
-            logger.log(Level.INFO, "Multiple schema found for targetNamespace {0}; none are now eligible for hardware acceleration", tns);
-            for (CompiledSchema schema : compiledSchemasWithThisTns.keySet()) {
-                schema.setConflictingTns(true);
-                hardwareDisable(schema);
+            // The new CompiledSchema has a TNS, and may be hardware-accelerated if no other schema current has the same TNS.
+            Map<CompiledSchema, Object> compiledSchemasWithThisTns = tnsCache.get(tns);
+            if (compiledSchemasWithThisTns == null) {
+                compiledSchemasWithThisTns = new WeakHashMap<CompiledSchema, Object>();
+                tnsCache.put(tns, compiledSchemasWithThisTns);
             }
-        } else if ( !compiledSchemasWithThisTns.isEmpty() ) {
-            newSchema.setConflictingTns(false);
-            maybeHardwareEnable(newSchema, false, false, new HashSet<CompiledSchema>());
-        } else {
-            logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
-            tnsCache.remove(tns);
+
+            boolean wasConflicting = conflictingTns(compiledSchemasWithThisTns.keySet());
+            compiledSchemasWithThisTns.put(newSchema, null);
+            if ( conflictingTns(compiledSchemasWithThisTns.keySet()) ) {
+                // We're the first duplicate; disable hardware for all known CompiledSchemas with this tns
+                if ( !wasConflicting ) {
+                    logger.log(Level.INFO, "Multiple schema found for targetNamespace {0}; none are now eligible for hardware acceleration", tns);
+                }
+
+                for (CompiledSchema schema : compiledSchemasWithThisTns.keySet()) {
+                    if ( !schema.isConflictingTns() ) {
+                        schema.setConflictingTns(true);
+                        hardwareDisable(schema);
+                    }
+                }
+            } else if ( !compiledSchemasWithThisTns.isEmpty() ) {
+                newSchema.setConflictingTns(false);
+                maybeHardwareEnable(newSchema, false, false, new HashSet<CompiledSchema>());
+            } else {
+                logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
+                tnsCache.remove(tns);
+            }
+
+            processed.add( newSchema );
         }
     }
 
@@ -896,7 +920,9 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         invalidateParentsOfRecentlySupersededSchemas();
 
-        return compileAndCacheRecursive(systemId, schemaDoc, new HashSet<String>());
+        SchemaHandle schemaHandle = compileAndCacheRecursive(systemId, schemaDoc, new HashSet<String>());
+        maybeEnableHardwareForNewSchema(schemaHandle.getTarget());
+        return schemaHandle;
     }
 
     /** Caller must hold the write lock. */
@@ -1003,7 +1029,6 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             final SchemaHandle cacheRef = newSchema.ref(); // make a handle for the cache
             final SchemaHandle old = schemasBySystemId.put(newSchema.getSystemId(), cacheRef);
             if (old != null) deferredCloseHandle(old);
-            maybeEnableHardwareForNewSchema(newSchema);
             success = true;
             return newSchema.ref(); // make a handle for the caller
 
@@ -1055,7 +1080,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             dependencyMap.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
             return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
         }
-        return null;
+        return lsi;
     }
 
     /**
@@ -1267,9 +1292,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
         if (maintenanceTimer != null) {
             SafeTimerTask task = new SafeTimerTask() {
+                private final long scheduleTime = System.currentTimeMillis();
                 @Override
                 public void doRun() {
-                    maybeRebuildHardwareCache();
+                    maybeRebuildHardwareCache(scheduleTime);
                 }
             };
             maintenanceTimer.schedule(task, delay);
@@ -1287,8 +1313,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *         false if the hardware cache does not need to be rebuilt at this time.  If there are schemas
      *         waiting to be rebuilt, a new schema check is scheduled occur in the near future.
      */
-    boolean shouldRebuildNow() {
-        if (schemasWaitingToLoad.size() < 1)
+    boolean shouldRebuildNow( long scheduledTime ) {
+        if (schemasWaitingToLoad.size() < 1 || (scheduledTime > 0 && scheduledTime < lastHardwareRecompileTime) )
             return false;
 
         int hardwareRecompileLatency = cacheConfigurationReference.get().hardwareRecompileLatency;
@@ -1331,11 +1357,11 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     /**
      * Called periodically to see if it is time to rebuild the hardware schema cache.
      */
-    void maybeRebuildHardwareCache() {
+    void maybeRebuildHardwareCache( long scheduledTime ) {
         // Do an initial fast check to see if there is anything to do, before getting the concurrency-killing write lock
         cacheLock.readLock().lock();
         try {
-            if (!shouldRebuildNow()) return;
+            if (!shouldRebuildNow(scheduledTime)) return;
         } finally {
             cacheLock.readLock().unlock();
         }
@@ -1343,7 +1369,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         // Grab the write lock and do one final check, then do the rebuild
         cacheLock.writeLock().lock();
         try {
-            if (!shouldRebuildNow()) return;
+            if (!shouldRebuildNow(scheduledTime)) return;
 
             // Do the actual
             doRebuild();
@@ -1421,7 +1447,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     private void hardwareDisable( final CompiledSchema schema, final boolean closing ) {
         if (tarariSchemaHandler == null) return;
 
-        if (!closing && logger.isLoggable(Level.INFO))
+        if (!closing && schema.isHardwareEligible() && logger.isLoggable(Level.INFO))
             logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema {0}",
                        String.valueOf(schema.getSystemId()));
 

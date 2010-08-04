@@ -223,12 +223,12 @@ public class SchemaManagerImplTest {
             @Override
             public SchemaHandle getSchemaByUrl( final String url ) throws IOException, SAXException {
                 final SchemaHandle handle = super.getSchemaByUrl( url );
-                maybeRebuildHardwareCache();
+                maybeRebuildHardwareCache(0);
                 return handle;
             }
 
             @Override
-            boolean shouldRebuildNow() {
+            boolean shouldRebuildNow(long scheduledTime) {
                 return true;
             }
         };
