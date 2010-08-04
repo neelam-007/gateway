@@ -511,9 +511,13 @@ public class GatewayFeatureSets {
             mass("assertion:EsmSubscription"));
 
         GatewayFeatureSet samlpAssertions =
- 	 	fsr("set:SAMLP:Assertions", "The necessary assertions to enable SAMLP functionality",
- 	 	    mass("assertion:SamlpRequestBuilder"),
- 	 	    mass("assertion:SamlpResponseEvaluation"));
+        fsr("set:SAMLP:Assertions", "The necessary assertions to enable SAMLP functionality",
+            mass("assertion:SamlpRequestBuilder"),
+            mass("assertion:SamlpResponseEvaluation"));
+
+        GatewayFeatureSet samlpSsoAssertions =
+        fsr("set:SAMLPSSO:Assertions", "The necessary assertions to enable SAMLP SSO functionality",
+            mass("assertion:SetSamlStatus"));
 
         GatewayFeatureSet xacmlAssertions =
         fsr("set:XACML:Assertions", "The necessary assertions to enable XACML functionality",
@@ -581,6 +585,7 @@ public class GatewayFeatureSets {
             fs(customDs),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
+            fs(samlpSsoAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
@@ -623,7 +628,8 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(customFw),
-            fs(esmAssertions));
+            fs(esmAssertions),
+            fs(samlpSsoAssertions));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -651,6 +657,7 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(samlpAssertions),
+            fs(samlpSsoAssertions),
             fs(xacmlAssertions),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
@@ -691,6 +698,7 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(ssb),
             fs(modularAssertions),
+            fs(samlpSsoAssertions),
             fs(wssp),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),

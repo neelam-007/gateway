@@ -66,7 +66,7 @@ public class SetSamlStatusAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping( SamlStatus.class, "samlStatus")
         )));
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions"); //TODO [steve] licensing
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         return meta;
     }
