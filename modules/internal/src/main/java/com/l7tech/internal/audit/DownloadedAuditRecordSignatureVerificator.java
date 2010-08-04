@@ -75,7 +75,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         if (out.signature == null || out.signature.length() < 1) {
             // we're dealing with a record which does not contain a signature
             out.isSigned = false;
-        } else if (out.signature.length() != 172) {
+        } else if (out.signature.length() != 172 && out.signature.length() != 344) {
             throw new InvalidAuditRecordException("Unexpected signature length " + out.signature.length() +
                                                   ". " + out.signature);
         } else {
@@ -151,11 +151,10 @@ public class DownloadedAuditRecordSignatureVerificator {
             Signature sig = Signature.getInstance(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
             sig.initVerify(pub);
             sig.update(digestvalue);
-            sig.verify(decodedSig);
+            return sig.verify(decodedSig);
         } catch (Exception e) {
             throw new IOException(e);
         }
-        return false;
     }
 
     public boolean isSigned() {
