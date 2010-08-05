@@ -101,7 +101,9 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         if (auths != null) authenticationStatementRadioButton.setSelected(true);
         if (athz  != null) authorizationDecisionStatementRadioButton.setSelected(true);
         if (atts  != null) attributeStatementRadioButton.setSelected(true);
-        if (auths != null) authenticationStatementIncludeAuthnContextDecl.setSelected(auths.isIncludeAuthenticationContextDeclaration());
+        if (issueMode) {
+            if (auths != null ) authenticationStatementIncludeAuthnContextDecl.setSelected(auths.isIncludeAuthenticationContextDeclaration());
+        }
 
         final Integer version = assertion.getVersion();
         enableIncludeAuthnContextDecl = version == null || version != 1;
@@ -118,9 +120,11 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
             if (atts == null) {
                 assertion.setAuthenticationStatement(new SamlAuthenticationStatement());
             }
-            assertion.getAuthenticationStatement().setIncludeAuthenticationContextDeclaration(
+            if (issueMode) {
+                assertion.getAuthenticationStatement().setIncludeAuthenticationContextDeclaration(
                     authenticationStatementIncludeAuthnContextDecl.isEnabled() &&
                     authenticationStatementIncludeAuthnContextDecl.isSelected() );
+            }
         } else {
             assertion.setAuthenticationStatement(null);
         }
@@ -143,7 +147,9 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     }
 
     private void enableDisableComponents() {
-        authenticationStatementIncludeAuthnContextDecl.setEnabled( enableIncludeAuthnContextDecl && authenticationStatementRadioButton.isSelected() );
+        if (issueMode) {
+            authenticationStatementIncludeAuthnContextDecl.setEnabled( enableIncludeAuthnContextDecl && authenticationStatementRadioButton.isSelected() );
+        }
     }
 
     /**
