@@ -3,7 +3,9 @@
  */
 package com.l7tech.gui.widgets;
 
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -68,8 +70,15 @@ public class OkCancelDialog<V> extends JDialog {
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                wasoked = true;
-                validatedPanel.updateModel();
+                try {
+                    wasoked = true;
+                    validatedPanel.updateModel();
+                } catch (Throwable t) {
+                    wasoked = false;
+                    DialogDisplayer.showMessageDialog(null, ExceptionUtils.getMessage(t), "Validation Warning", JOptionPane.WARNING_MESSAGE, null);
+                    return;
+                }
+
                 dispose();
             }
         });
