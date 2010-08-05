@@ -35,7 +35,7 @@ public class SignatureOutputStream extends FilterOutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        super.write(b);
+        out.write(b);
         try {
             signature.update((byte)b);
         } catch (SignatureException e) {
@@ -45,7 +45,7 @@ public class SignatureOutputStream extends FilterOutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        super.write(b, off, len);
+        out.write(b, off, len);
         try {
             signature.update(b, off, len);
         } catch (SignatureException e) {
