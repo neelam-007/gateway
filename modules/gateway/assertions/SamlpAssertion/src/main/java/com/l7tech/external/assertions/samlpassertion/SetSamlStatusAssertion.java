@@ -78,7 +78,7 @@ public class SetSamlStatusAssertion extends Assertion implements SetsVariables {
 
     //- PRIVATE
 
-    private static final String baseName = "Set SAML Web SSO Response Status ";
+    private static final String baseName = "Set SAML Web SSO Response Status";
 
     private String variableName = "responseStatus";
     private SamlStatus samlStatus;
