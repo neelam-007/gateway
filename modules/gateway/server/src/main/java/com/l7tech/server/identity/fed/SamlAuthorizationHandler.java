@@ -122,7 +122,7 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         final String niValue = assertion.getNameIdentifierValue();
 
         try {
-            FederatedUser u = null;
+            FederatedUser u;
             if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) || niFormat == null) {
                 u = getUserManager().findBySubjectDN(niValue);
                 if (u == null) u = getUserManager().findByEmail(niValue);
@@ -131,23 +131,23 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 u = getUserManager().findByEmail(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
                 u = getUserManager().findBySubjectDN(niValue);
-            } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)) {
+            } else {
                 u = getUserManager().findByLogin(niValue);
             }
-            if (u == null) {
-                if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
-                if (certSubjectDn == null) { ///no subject cert, but there was a DN
-                    // Virtual groups only match email or DN
-                    if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
-                        u = createFakeUserForVirtualGroup(null, niFormat, niValue);
-                    }
-                    else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
-                        u = createFakeUserForVirtualGroup(niValue, niFormat, niValue);
+
+            // Virtual users are not supported unless there are trusted certs
+            if ( u == null && !certOidSet.isEmpty() ) {
+                if ( certSubjectDn == null ) { ///no subject cert, but there was a DN
+                    if ( SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat) ) {
+                        u = createVirtualUser(niValue, niFormat, niValue);
+                    } else {
+                        u = createVirtualUser(null, niFormat, niValue);
                     }
                 } else {
-                    u = createFakeUserForVirtualGroup(certSubjectDn, niFormat, niValue);
+                    u = createVirtualUser(certSubjectDn, niFormat, niValue);
                 }
             }
+            
             return u;
         } catch (FindException e) {
             throw new AuthenticationException("Couldn't find user");
@@ -201,8 +201,8 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         try {
             FederatedUser u = getUserManager().findBySubjectDN(certSubjectDn);
             if (u == null) {
-                if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
-                u = createFakeUserForVirtualGroup(certSubjectDn, niFormat, niValue);
+                if (certOidSet.isEmpty()) return null; // Virtual users not supported with no trusted certs
+                u = createVirtualUser(certSubjectDn, niFormat, niValue);
             } else {
                 // Check if this user is OK
                 checkCertificateMatch(u, subjectCertificate);
@@ -215,21 +215,26 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         }
     }
 
-    private FederatedUser createFakeUserForVirtualGroup(String certSubjectDn, final String niFormat, final String niValue)
-      throws BadCredentialsException {
-        if (niValue == null) {
+    /**
+     * Create a virtual user for use with virtual groups or authentication against this provider.
+     *
+     * <p>For virtual groups, the user must have an email address or subject DN,
+     * the name identifier format is not relevant for authentication against the
+     * provider.</p>
+     */
+    private FederatedUser createVirtualUser( final String certSubjectDn,
+                                             final String niFormat,
+                                             final String niValue ) throws BadCredentialsException {
+        if ( niValue == null ) {
             throw new BadCredentialsException("Subject Name Identifier is required");
         }
-        FederatedUser u;
-        // Make a fake user for virtual groups
-        u = new FederatedUser(provider.getConfig().getOid(), null);
+
+        final FederatedUser u = new FederatedUser(provider.getConfig().getOid(), null);
         u.setSubjectDn(certSubjectDn);
-        if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
+
+        if ( SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat) ) {
             u.setEmail(niValue);
-        } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)
-          || SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
-            u.setLogin(niValue);
-        } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
+        } else if ( SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat) ) {
             if (certSubjectDn == null) {
                 throw new BadCredentialsException("Name Identifier Format is " + SamlConstants.NAMEIDENTIFIER_X509_SUBJECT + " but the value is null");
             }
@@ -238,7 +243,10 @@ class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                   "' was an X.509 SubjectName but did not match certificate's DN '" +
                   certSubjectDn + "'");
             }
+        } else {
+            u.setLogin(niValue);
         }
+
         return u;
     }
 
