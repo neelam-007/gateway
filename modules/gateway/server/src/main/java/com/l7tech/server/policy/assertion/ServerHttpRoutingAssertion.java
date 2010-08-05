@@ -88,24 +88,31 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         serverConfig = ctx.getBean( "serverConfig", ServerConfig.class );
 
+        customURLList = assertion.getCustomURLs() != null && assertion.getCustomURLs().length > 0;
+
         // remember if we need to resolve the url at runtime
-        String tmp = assertion.getProtectedServiceUrl();
-        if (tmp != null) {
-            urlUsesVariables = tmp.indexOf("${") > -1;
-        } else {
-            logger.info("this http routing assertion has null url");
-            urlUsesVariables = false;
-        }
-        if (urlUsesVariables || assertion.getProtectedServiceUrl()==null) {
-            protectedServiceUrl = null;
-        } else {
-            URL url = null;
-            try {
-                url = new URL(assertion.getProtectedServiceUrl());
-            } catch (MalformedURLException murle) {
-                logger.log(Level.WARNING, "Invalid protected service URL.", murle);
+        if (! customURLList) {
+            String tmp = assertion.getProtectedServiceUrl();
+            if (tmp != null) {
+                urlUsesVariables = tmp.indexOf("${") > -1;
+            } else {
+                logger.info("this http routing assertion has null url");
+                urlUsesVariables = false;
             }
-            protectedServiceUrl = url;
+            if (urlUsesVariables || assertion.getProtectedServiceUrl()==null) {
+                protectedServiceUrl = null;
+            } else {
+                URL url = null;
+                try {
+                    url = new URL(assertion.getProtectedServiceUrl());
+                } catch (MalformedURLException murle) {
+                    logger.log(Level.WARNING, "Invalid protected service URL.", murle);
+                }
+                protectedServiceUrl = url;
+            }
+        } else {
+            urlUsesVariables = false;
+            protectedServiceUrl = null;
         }
 
         try {
@@ -147,7 +154,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         stashManagerFactory = smFactory;
 
         final String[] addrs = assertion.getCustomIpAddresses();
-        customURLList = false;
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy<String> strat;
@@ -159,8 +165,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = addrs.length;
-        } else if (assertion.getCustomURLs() != null && assertion.getCustomURLs().length > 0) {
-            customURLList = true;
+        } else if (customURLList) {
             final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy<String> strat;
             try {
@@ -225,24 +230,27 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        URL u;
+        URL u = null;
         try {
-            PublishedService service = context.getService();
-            context.routingStarted();
-            try {
-                u = getProtectedServiceUrl(service, context);
-            } catch (WSDLException we) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
-                return AssertionStatus.FAILED;
-            } catch (MalformedURLException mue) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
-                return AssertionStatus.FAILED;
-            }
-
             Message requestMessage = getRequestMessage(context);
-            firePreRouting(context, requestMessage, u);
-            if (failoverStrategy == null)
-                return tryUrl(context, requestMessage, u);
+
+            if (! customURLList) {
+                PublishedService service = context.getService();
+                context.routingStarted();
+                try {
+                    u = getProtectedServiceUrl(service, context);
+                } catch (WSDLException we) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
+                    return AssertionStatus.FAILED;
+                } catch (MalformedURLException mue) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
+                    return AssertionStatus.FAILED;
+                }
+
+                firePreRouting(context, requestMessage, u);
+                if (failoverStrategy == null)
+                    return tryUrl(context, requestMessage, u);
+            }
 
             String failedService = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {

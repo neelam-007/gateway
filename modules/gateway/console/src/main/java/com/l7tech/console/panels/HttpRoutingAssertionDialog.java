@@ -8,10 +8,7 @@ import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
@@ -616,6 +613,15 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
             }
         }
+        // If the "Use multiple URLs" option is chosen, but the URL list is empty.  We need to give a warning. 
+        else if (ipListPanel.getAddresses().length == 0) {
+            DialogDisplayer.showMessageDialog(this,
+                resources.getString("warningEmptyMultipleURLsList"),
+                resources.getString("validationWarning.title"),
+                JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+        
         if (bad) {
             JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidUrlMessage"), url));
             return;
