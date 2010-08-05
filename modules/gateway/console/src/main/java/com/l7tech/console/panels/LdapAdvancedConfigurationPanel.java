@@ -240,9 +240,10 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
 
     private void validateComponents() {
         boolean valid = true;
+        int multiplier = ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier();
 
         if ( !ValidationUtils.isValidInteger( groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE ) ||
-             !ValidationUtils.isValidInteger( groupCacheHierarchyMaxAgeTextField.getText(), false, 0, Integer.MAX_VALUE ) ||
+             !ValidationUtils.isValidInteger( groupCacheHierarchyMaxAgeTextField.getText(), false, 1, Integer.MAX_VALUE / multiplier ) ||
              !ValidationUtils.isValidInteger( groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE ) ) {
             valid = false;
         }
