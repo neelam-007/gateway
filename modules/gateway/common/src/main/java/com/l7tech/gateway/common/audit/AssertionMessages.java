@@ -722,5 +722,7 @@ public class AssertionMessages extends Messages {
     public static final M ENCODE_DECODE_IN_TYPE    = m(9163, Level.WARNING, "Variable of type ''{0}'' cannot be accessed as ''{1}'' for encoding or decoding.");
     public static final M ENCODE_DECODE_IN_ACCESS  = m(9164, Level.WARNING, "Error accessing variable of type ''{0}'': {1}.");
 
+    public static final M SAMLP_RESPONSE_BUILDER_GENERIC = m(9190, Level.WARNING, "Cannot {0} SAML Protocol Response: ''{1}''.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

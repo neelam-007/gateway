@@ -165,6 +165,27 @@ public abstract class Syntax {
     }
 
     /**
+     * Validate that a string value contains only context variable references.
+     *
+     * @param toValidate String which should only reference variables. Cannot be null
+     * @return true if only variables are referenced.
+     */
+    public static boolean validateStringOnlyReferencesVariables(final String toValidate) {
+        final String[] refNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(toValidate);
+        final StringTokenizer st = new StringTokenizer(toValidate);
+
+        final int numNames = refNames.length;
+        int index = 0;
+        for (; st.hasMoreTokens(); index++) {
+            if (index >= numNames) return false;
+
+            final String token = Syntax.getReferencedNamesIndexedVarsNotOmitted(st.nextToken())[0];
+            if (!token.equals(refNames[index])) return false;
+        }
+        return true;
+    }
+
+    /**
      * Get should-be-processed variables referenced from the string s.  Any variable being able to be processed depends on
      * the flag "omitted", which indicates whether indexed variables will be omitted or not.
      * @param s: A string to find out what variables are referenced from it

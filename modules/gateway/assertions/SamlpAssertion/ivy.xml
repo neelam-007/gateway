@@ -21,6 +21,7 @@
 	<dependencies>
         <dependency org="com.l7tech.lib" name="samlp_v1_jaxb" rev="1.0" force="true" conf="core"/>
         <dependency org="com.l7tech.lib" name="samlp_v2_jaxb" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="samlp_v2_authn_jaxb" rev="1.0" force="true" conf="core"/>
                 
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>

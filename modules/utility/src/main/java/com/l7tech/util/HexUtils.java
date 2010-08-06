@@ -76,11 +76,28 @@ public class HexUtils {
         }
     }
 
+    /**
+     * Generate a unique identifier of a given length.
+     *
+     * @param howMany How long the returned String should be. FYI: 16 is the length used in SAML id's.
+     * @return String unique identifier. Never null and always the twice the length of howMany
+     */
+    public static String generateRandomHexId(final int howMany){
+        byte[] bytes = new byte[howMany];
+        rand.nextBytes(bytes);
+        return HexUtils.hexDump(bytes);
+    }
+
     //private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static final char[] hexadecimal_upper = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+    /**
+     * SecureRandom is internally thread safe.
+     */
+    private static final Random rand = new SecureRandom();
+    
     /**
      * Encode the binary data as base64. The encoded base64 String returned WILL be formatted with a CRLF every 76 bytes
      * <p/>

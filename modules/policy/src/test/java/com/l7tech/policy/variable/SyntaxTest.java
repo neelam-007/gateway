@@ -101,4 +101,13 @@ public class SyntaxTest {
     public void testArraySyntaxSubscriptNegative() {
         Syntax.parse( "blah[-34]", "," );
     }
+
+    @Test
+    public void testOnlyVariablesReferenced(){
+        String var = "${var1} ${var[2]} ${request.mainpart}";
+        Assert.assertTrue("Only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "${var1} ${var[2]} request.mainpart";
+        Assert.assertFalse("Not only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
+    }
 }

@@ -63,10 +63,35 @@ public class DsigUtil {
     }
 
     /**
+     * Delegates to  {@link #createEnvelopedSignature(org.w3c.dom.Element, String, java.security.cert.X509Certificate, java.security.PrivateKey, org.w3c.dom.Element, String, String)}
+     * with the xsdIdAttribute set to the result of {@link #getIdAttribute(org.w3c.dom.Element)} 
+     *
+     */
+    public static Element createEnvelopedSignature(final Element elementToSign,
+                                                   final X509Certificate senderSigningCert,
+                                                   final PrivateKey senderSigningKey,
+                                                   final Element keyInfoChildElement,
+                                                   final String keyName,
+                                                   final String messageDigestAlgorithm)
+            throws SignatureException, SignatureStructureException, XSignatureException
+    {
+        final String idAttr = getIdAttribute(elementToSign);
+        String rootId = elementToSign.getAttribute(idAttr);
+        if (rootId == null || rootId.length() < 1) {
+            rootId = SoapUtil.generateUniqueId( "root", 0 );
+            elementToSign.setAttribute(idAttr, rootId);
+        }
+
+        return createEnvelopedSignature(elementToSign, idAttr, senderSigningCert, senderSigningKey,
+                keyInfoChildElement, keyName, messageDigestAlgorithm);
+    }
+
+    /**
      * Digitally sign the specified element, using the specified key and including the specified cert inline
      * in the KeyInfo.
      *
      * @param elementToSign         the element to sign
+     * @param xsdIdAttribute        the xsd:ID attribute on the element being signed, to reference from the Signature.
      * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
      * @param senderSigningKey      private key to sign it with.
      * @param keyInfoChildElement   Custom key info child element to use
@@ -74,11 +99,12 @@ public class DsigUtil {
      * @param messageDigestAlgorithm the message digest algorithm to use for the signature, or null to use the default behavior, which is:
      *                               SHA-1 for everything except an EC private key, in which case SHA-256
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
-     * @throws SignatureException   if there is a problem creating the signature
+     * @throws SignatureException   if there is a problem creating the signature or if the xsdIdAttribute is not found on the Element to sign
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
      */
     public static Element createEnvelopedSignature(final Element elementToSign,
+                                                   final String xsdIdAttribute,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
                                                    Element keyInfoChildElement,
@@ -96,12 +122,11 @@ public class DsigUtil {
         template.setIndentation(false);
         template.setPrefix("ds");
 
-        final String idAttr = getIdAttribute(elementToSign);
-        String rootId = elementToSign.getAttribute(idAttr);
-        if (rootId == null || rootId.length() < 1) {
-            rootId = SoapUtil.generateUniqueId( "root", 0 );
-            elementToSign.setAttribute(idAttr, rootId);
+        String rootId = elementToSign.getAttribute(xsdIdAttribute);
+        if (rootId == null || rootId.trim().isEmpty()) {
+            throw new SignatureException("Cannot find xsd:ID attribute '" + xsdIdAttribute + "'on element '" + elementToSign.getNodeName() + "'");
         }
+        
         Reference rootRef = template.createReference("#" + rootId);
         rootRef.addTransform(Transform.ENVELOPED);
         rootRef.addTransform(Transform.C14N_EXCLUSIVE);

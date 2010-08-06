@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
- * Caching mechanism for JAXContext instances (to improve performance).
+ * Caching mechanism for JAXBContext instances (to improve performance).
  *
  * @author : vchan
  */
@@ -24,7 +25,7 @@ public class JaxbUtil {
     private static final int UNUSED_CACHE_LIMIT = 10;
     private static final int MAX_TOTAL_CACHE_LIMIT = 100;
     private static final String SAML_V1_CTX_PACKAGES = "saml.v1.protocol:saml.v1.assertion:saml.support.ds";
-    private static final String SAML_V2_CTX_PACKAGES = "saml.v2.protocol:saml.v2.assertion:saml.support.ds";
+    private static final String SAML_V2_CTX_PACKAGES = "saml.v2.protocol:saml.v2.assertion:saml.v2.authn.context:saml.support.ds";
 
     private static final List<JAXBContextWrapper> jxbContextCacheV1;
     private static final List<JAXBContextWrapper> jxbContextCacheV2;
@@ -36,7 +37,7 @@ public class JaxbUtil {
         // initialize the map
         jxbContextCacheV1 = new ArrayList<JAXBContextWrapper>();
         jxbContextCacheV2 = new ArrayList<JAXBContextWrapper>();
-        contextInUse = new HashMap<String, JAXBContextWrapper>();
+        contextInUse = new ConcurrentHashMap<String, JAXBContextWrapper>();
 
         NS_PREFIXES = new HashMap<String, String>();
         NS_PREFIXES.put(SamlConstants.NS_SAML,  SamlConstants.NS_SAML_PREFIX);
@@ -45,6 +46,10 @@ public class JaxbUtil {
         NS_PREFIXES.put(SamlConstants.NS_SAMLP2,  SamlConstants.NS_SAMLP2_PREFIX);
         NS_PREFIXES.put("http://www.w3.org/2000/09/xmldsig#", "ds");
         NS_PREFIXES.put("http://www.w3.org/2001/04/xmlenc#", "xenc");
+        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
+        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
+        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
+        NS_PREFIXES.put("urn:oasis:names:tc:SAML:2.0:ac", "ac");
     }
 
     public static Marshaller getMarshallerV1(final String lockId) throws JAXBException {

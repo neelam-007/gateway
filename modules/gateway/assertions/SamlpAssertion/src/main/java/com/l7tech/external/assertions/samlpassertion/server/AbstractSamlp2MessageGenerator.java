@@ -20,12 +20,10 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.GregorianCalendar;
 import java.util.Map;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +55,6 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     protected EvidenceBlockResolver evidenceBlockResolver;
 
     private DatatypeFactory xmltypeFactory;
-    private static final Random rand = new SecureRandom();
 
     public AbstractSamlp2MessageGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
         throws SamlpAssertionException
@@ -360,9 +357,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     }
 
     protected String generateHexBytesForId() {
-        byte[] disambig = new byte[16];
-        rand.nextBytes(disambig);
-        return HexUtils.hexDump(disambig);
+        return HexUtils.generateRandomHexId(16);
     }
 
     protected NameIDType getNameIdentifier() {
