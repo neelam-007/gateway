@@ -163,8 +163,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
             }
         } );
 
-        //todo why are other assertions in this module using "(fromClass)" ?
-        meta.put(FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Arrays.<TypeMapping>asList(
                 new Java5EnumTypeMapping( SamlVersion.class, "samlVersion" ),
