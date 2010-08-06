@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -14,6 +15,8 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -92,6 +95,32 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     //- PRIVATE
 
+    private static class RequestSourceComboBoxItem {
+        private boolean undefined = false;
+
+        private final MessageTargetableSupport target;
+        public RequestSourceComboBoxItem(MessageTargetableSupport target) {
+            this.target = target;
+        }
+
+        public MessageTargetableSupport getTarget() {
+            return target;
+        }
+
+        public void setUndefined(boolean undefined) {
+            this.undefined = undefined;
+        }
+
+        public boolean isUndefined() {
+            return undefined;
+        }
+
+        @Override
+        public String toString() {
+            return (undefined ? "Undefined: " : "") + target.getTargetName();
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(JmsRoutingAssertionDialog.class.getName());
 
     // model, etc
@@ -126,6 +155,10 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField dynamicDestQueueName;
     private JTextField dynamicReplyToName;
     private JTextField jmsResponseTimeout;
+    private JComboBox requestTargetComboBox;
+    private JRadioButton defaultResponseRadioButton;
+    private JRadioButton saveAsContextVariableRadioButton;
+    private JTextField responseTargetVariable;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -169,7 +202,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      */
     private void initComponents(boolean readOnly) {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
+                                                                                                       
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel, BorderLayout.CENTER);
@@ -184,11 +217,22 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
+        ActionListener enableListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableComponents();
+            }
+        };
+
+        defaultResponseRadioButton.addActionListener(enableListener);
+        saveAsContextVariableRadioButton.addActionListener(enableListener);
+
         Utilities.enableGrayOnDisabled(dynamicICF);
         Utilities.enableGrayOnDisabled(dynamicJndiUrl);
         Utilities.enableGrayOnDisabled(dynamicQCF);
         Utilities.enableGrayOnDisabled(dynamicDestQueueName);
         Utilities.enableGrayOnDisabled(dynamicReplyToName); 
+        Utilities.enableGrayOnDisabled(responseTargetVariable);
 
         ButtonGroup secButtonGroup = new ButtonGroup();
         secButtonGroup.add(authNoneRadio);
@@ -216,6 +260,16 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     }
                 } catch (NumberFormatException e) {
                     return errMsg;
+                }
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (((RequestSourceComboBoxItem) requestTargetComboBox.getSelectedItem()).isUndefined()) {
+                    return "Undefined context variable for message source: " + ((RequestSourceComboBoxItem) requestTargetComboBox.getSelectedItem()).getTarget().getTargetName();
                 }
                 return null;
             }
@@ -304,7 +358,15 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
 
                 assertion.setRequestJmsMessagePropertyRuleSet(requestMsgPropsPanel.getData());
+                assertion.setRequestTarget(((RequestSourceComboBoxItem)requestTargetComboBox.getSelectedItem()).getTarget());
+
                 assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
+                if (saveAsContextVariableRadioButton.isSelected()) {
+                    assertion.setResponseTarget(new MessageTargetableSupport(responseTargetVariable.getText(), true));
+                } else {
+                    assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+                }
+
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
                     assertion.setResponseTimeout(Integer.valueOf(responseTimeoutOverride));
@@ -326,6 +388,55 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 JmsRoutingAssertionDialog.this.dispose();
             }
         });
+
+        populateReqMsgSrcComboBox();
+        initResponseTarget();
+
+        enableOrDisableComponents();
+    }
+
+    private void enableOrDisableComponents() {
+        responseTargetVariable.setEditable(saveAsContextVariableRadioButton.isSelected());
+    }
+
+    private void populateReqMsgSrcComboBox() {
+        requestTargetComboBox.removeAllItems();
+
+        requestTargetComboBox.addItem(new RequestSourceComboBoxItem(new MessageTargetableSupport(TargetMessageType.REQUEST, false)));
+        requestTargetComboBox.addItem(new RequestSourceComboBoxItem(new MessageTargetableSupport(TargetMessageType.RESPONSE, false)));
+        MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
+
+        final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName : predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final RequestSourceComboBoxItem item = new RequestSourceComboBoxItem(new MessageTargetableSupport(variableName));
+                requestTargetComboBox.addItem(item);
+                if ( currentMessageSource != null && variableName.equals(currentMessageSource.getOtherTargetMessageVariable())) {
+                    requestTargetComboBox.setSelectedItem(item);
+                }
+            }
+        }
+        if (currentMessageSource != null && currentMessageSource.getTarget() == TargetMessageType.OTHER &&
+            currentMessageSource.getOtherTargetMessageVariable() != null && ! predecessorVariableNames.contains(currentMessageSource.getOtherTargetMessageVariable())) {
+            RequestSourceComboBoxItem current = new RequestSourceComboBoxItem(new MessageTargetableSupport(currentMessageSource.getOtherTargetMessageVariable()));
+            current.setUndefined(true);
+            requestTargetComboBox.addItem(current);
+            requestTargetComboBox.setSelectedItem(current);
+        }
+    }
+
+    private void initResponseTarget() {
+        MessageTargetableSupport responseTarget = assertion.getResponseTarget();
+        if (responseTarget != null && responseTarget.getOtherTargetMessageVariable() != null) {
+            defaultResponseRadioButton.setSelected(false);
+            saveAsContextVariableRadioButton.setSelected(true);
+            responseTargetVariable.setText(responseTarget.getOtherTargetMessageVariable());
+        } else {
+            saveAsContextVariableRadioButton.setSelected(false);
+            defaultResponseRadioButton.setSelected(true);
+            responseTargetVariable.setText("");
+        }
     }
 
     private boolean isReplyToQueue( final JmsEndpoint jmsEndpoint ) {

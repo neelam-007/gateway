@@ -12,6 +12,11 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -19,7 +24,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Holds information needed to route a message to an outbound JMS destination.
  */
-public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables {
+public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables, SetsVariables {
 
     /**
      * @return the OID of the JMS endpoint, or null if there isn't one.
@@ -108,6 +113,22 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         responseJmsMessagePropertyRuleSet = ruleSet;
     }
 
+    public MessageTargetableSupport getRequestTarget() {
+        return requestTarget;
+    }
+
+    public void setRequestTarget(MessageTargetableSupport requestTarget) {
+        this.requestTarget = requestTarget;
+    }
+
+    public MessageTargetableSupport getResponseTarget() {
+        return responseTarget;
+    }
+
+    public void setResponseTarget(MessageTargetableSupport responseTarget) {
+        this.responseTarget = responseTarget;
+    }
+
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
@@ -148,13 +169,29 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        if (dynamicJmsRoutingProperties != null) {
-            String vars = dynamicJmsRoutingProperties.getFieldsAsVariables();
+        Set<String> vars = new HashSet<String>();
 
-            if (vars != null && !vars.equals(""))
-                return Syntax.getReferencedNames(vars);
+        if (dynamicJmsRoutingProperties != null) {
+            String dynamicVars = dynamicJmsRoutingProperties.getFieldsAsVariables();
+
+            if (dynamicVars != null && !dynamicVars.equals(""))
+                vars.addAll(Arrays.asList(Syntax.getReferencedNames(dynamicVars)));
         }
-        return new String[0];
+        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
+        return vars.toArray(new String[vars.size()]);
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return responseTarget.getVariablesSet();
+    }
+
+    @Override
+    public Object clone() {
+        JmsRoutingAssertion copy = (JmsRoutingAssertion) super.clone();
+        copy.requestTarget = new MessageTargetableSupport(requestTarget);
+        copy.responseTarget = new MessageTargetableSupport(responseTarget);
+        return copy;
     }
 
     public JmsDynamicProperties getDynamicJmsRoutingProperties() {
@@ -171,4 +208,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
     private JmsDynamicProperties dynamicJmsRoutingProperties;
+
+    private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
+    private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
 }

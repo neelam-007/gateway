@@ -10,6 +10,7 @@ import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.panels.RoutingDialogUtils;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
@@ -21,7 +22,12 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -35,6 +41,9 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 /**
@@ -70,15 +79,41 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private JRadioButton wssCleanupRadio;
     private JRadioButton wssRemoveRadio;
     private JLabel portStatusLabel;
+    private JComboBox messageSource;
 
     public static final int DEFAULT_PORT_FTP = 21;
-    public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
 
     private FtpRoutingAssertion _assertion;
     private boolean _wasOkButtonPressed = false;
     private EventListenerList _listenerList = new EventListenerList();
 
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
+
+    private static class MsgSrcComboBoxItem {
+        private boolean undefined = false;
+
+        private final MessageTargetableSupport target;
+        public MsgSrcComboBoxItem(MessageTargetableSupport target) {
+            this.target = target;
+        }
+
+        public MessageTargetableSupport getTarget() {
+            return target;
+        }
+
+        public void setUndefined(boolean undefined) {
+            this.undefined = undefined;
+        }
+
+        public boolean isUndefined() {
+            return undefined;
+        }
+
+        @Override
+        public String toString() {
+            return (undefined ? "Undefined: " : "") + target.getTargetName();
+        }
+    }
 
     /**
      * Creates new form ServicePanel
@@ -90,31 +125,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _assertion = a;
         initComponents();
         initFormData();
-    }
-
-    /**
-     * @return true unless the dialog was exited via the OK button.
-     */
-    public boolean isCanceled() {
-        return !_wasOkButtonPressed;
-    }
-
-    /**
-     * add the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void addPolicyListener(PolicyListener listener) {
-        _listenerList.add(PolicyListener.class, listener);
-    }
-
-    /**
-     * remove the the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void removePolicyListener(PolicyListener listener) {
-        _listenerList.remove(PolicyListener.class, listener);
     }
 
     /**
@@ -249,6 +259,10 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (((MsgSrcComboBoxItem) messageSource.getSelectedItem()).isUndefined()) {
+                    JOptionPane.showMessageDialog(_okButton, "Undefined context variable for message source: " + ((MsgSrcComboBoxItem) messageSource.getSelectedItem()).getTarget().getTargetName());
+                    return;
+                }
                 getData(_assertion);
                 fireEventAssertionChanged(_assertion);
                 _wasOkButtonPressed = true;
@@ -262,6 +276,35 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
                 FtpRoutingPropertiesDialog.this.dispose();
             }
         });
+
+        populateReqMsgSrcComboBox();
+    }
+
+    private void populateReqMsgSrcComboBox() {
+        messageSource.removeAllItems();
+
+        messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.REQUEST, false)));
+        messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.RESPONSE, false)));
+        MessageTargetableSupport currentMessageSource = _assertion.getRequestTarget();
+
+        final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(_assertion);
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName : predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(new MessageTargetableSupport(variableName));
+                messageSource.addItem(item);
+                if ( currentMessageSource != null && variableName.equals(currentMessageSource.getOtherTargetMessageVariable())) {
+                    messageSource.setSelectedItem(item);
+                }
+            }
+        }
+        if (currentMessageSource != null && currentMessageSource.getTarget() == TargetMessageType.OTHER &&
+            currentMessageSource.getOtherTargetMessageVariable() != null && ! predecessorVariableNames.contains(currentMessageSource.getOtherTargetMessageVariable())) {
+            MsgSrcComboBoxItem current = new MsgSrcComboBoxItem(new MessageTargetableSupport(currentMessageSource.getOtherTargetMessageVariable()));
+            current.setUndefined(true);
+            messageSource.addItem(current);
+            messageSource.setSelectedItem(current);
+        }
     }
 
     private void initFormData() {
@@ -276,7 +319,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
         _verifyServerCertCheckBox.setSelected(_assertion.isVerifyServerCert());
         _hostNameTextField.setText(_assertion.getHostName());
-        _portNumberTextField.setText(Integer.toString(_assertion.getPort()));
+        _portNumberTextField.setText(_assertion.getPort());
         _directoryTextField.setText(_assertion.getDirectory());
 
         if (_assertion.getFileNameSource() == null || _assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
@@ -307,7 +350,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private void setDefaultPortNumber() {
         int port = DEFAULT_PORT_FTP;
         if (_ftpsImplicitRadioButton.isSelected()) {
-            port = DEFAULT_PORT_FTPS_IMPLICIT;
+            port = FtpRoutingAssertion.DEFAULT_FTPS_IMPLICIT_PORT;
         }
         _portNumberTextField.setText(Integer.toString(port));
     }
@@ -379,6 +422,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             assertion.setSecurity(FtpSecurity.FTPS_IMPLICIT);
         }
 
+        assertion.setRequestTarget(((MsgSrcComboBoxItem) messageSource.getSelectedItem()).getTarget());
+
         assertion.setVerifyServerCert(_verifyServerCertCheckBox.isSelected());
 
         assertion.setHostName(_hostNameTextField.getText());
@@ -386,7 +431,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         if (_portNumberTextField.getText().length() == 0) {
             setDefaultPortNumber();
         }
-        assertion.setPort(Integer.parseInt(_portNumberTextField.getText()));
+        assertion.setPort(_portNumberTextField.getText());
 
         assertion.setDirectory(_directoryTextField.getText());
 
@@ -436,6 +481,17 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
      */
     private void testConnection() {
         try {
+            final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
+
+            if (ftpConfigurationUsesVariables(a)) {
+                JOptionPane.showMessageDialog(
+                        FtpRoutingPropertiesDialog.this,
+                        "FTP configuration uses context variables, connection cannot be tested at policy design time.",
+                        "FTP(S) Connection Failure",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             final JProgressBar progressBar = new JProgressBar();
             progressBar.setIndeterminate(true);
             final CancelableOperationDialog cancelDialog =
@@ -447,7 +503,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             Callable<Boolean> callable = new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
                     final boolean isFtps = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT || a.getSecurity() == FtpSecurity.FTPS_IMPLICIT;
                     final boolean isExplicit = a.getSecurity() == FtpSecurity.FTPS_EXPLICIT;
                     Registry.getDefault().getFtpManager().testConnection(
@@ -455,7 +510,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
                             isExplicit,
                             a.isVerifyServerCert(),
                             a.getHostName(),
-                            a.getPort(),
+                            Integer.parseInt(a.getPort()),
                             a.getUserName(),
                             a.getPassword(),
                             a.isUseClientCert(),
@@ -508,5 +563,15 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
                 }
             }
         }
+    }
+
+    private boolean ftpConfigurationUsesVariables(FtpRoutingAssertion a) {
+        StringBuilder tmp = new StringBuilder();
+        tmp.append(a.getHostName()).append(" ")
+           .append(a.getPort()).append(" ")
+           .append(a.getUserName()).append(" ")
+           .append(a.getPassword()).append(" ")
+           .append(a.getDirectory()).append(" ");
+        return Syntax.getReferencedNames(tmp.toString()).length > 0;
     }
 }

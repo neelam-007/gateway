@@ -4,7 +4,6 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
-import com.l7tech.util.Functions;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
@@ -43,13 +42,13 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private boolean _verifyServerCert;
 
-    /** FTP server host name. */
+    /** FTP server host name. Can contain context variables. */
     private String _hostName;
 
-    /** Port number. */
-    private int _port = DEFAULT_FTP_PORT;
+    /** Port number. Can contain context variables. */
+    private String _port = Integer.toString(DEFAULT_FTP_PORT);
 
-    /** Destination directory pattern.  Can contain context variables. */
+    /** Destination directory pattern. Can contain context variables. */
     private String _directory;
 
     /** Where the file name on server will come from. */
@@ -61,10 +60,10 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Where the login credentials wil come from. */
     private FtpCredentialsSource _credentialsSource;
 
-    /** User name to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. */
+    /** User name to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. Can contain context variables. */
     private String _userName;
 
-    /** Password to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. */
+    /** Password to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. Can contain context variables. */
     private String _password;
 
     /** Whether to use client cert and private key for authentication. */
@@ -78,6 +77,12 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     /** Timeout for opening connection to FTP server (in milliseconds). */
     private int _timeout = DEFAULT_TIMEOUT;
+
+    private MessageTargetableSupport requestTarget = defaultRequestTarget();
+
+    private MessageTargetableSupport defaultRequestTarget() {
+        return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
+    }
 
     public FtpRoutingAssertion() {
         // This is because this was the effective default when the Server
@@ -165,12 +170,18 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _password = password;
     }
 
-    public int getPort() {
+    public String getPort() {
         return _port;
     }
 
-    public void setPort(int port) {
+    public void setPort(String port) {
         _port = port;
+    }
+
+    /** @deprecated Used for deserialization of pre-bug5987 assertions */
+    @Deprecated
+    public void setPort(int port) {
+        _port = Integer.toString(port);
     }
 
     public FtpSecurity getSecurity() {
@@ -197,7 +208,15 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _userName = userName;
     }
 
-    private final static String baseName = "Route via FTP(S)"; 
+    public MessageTargetableSupport getRequestTarget() {
+        return requestTarget != null ? requestTarget : defaultRequestTarget();
+    }
+
+    public void setRequestTarget(MessageTargetableSupport requestTarget) {
+        this.requestTarget = requestTarget;
+    }
+
+    private final static String baseName = "Route via FTP(S)";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<FtpRoutingAssertion>(){
         @Override
@@ -217,7 +236,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = defaultMeta();
+        final DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Route requests from the Gateway to a backend FTP(S) server, using passive mode FTP.");
@@ -225,8 +244,16 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
-        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        //meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<FtpRoutingAssertion>() {
+            @Override
+            public String getAssertionName(final FtpRoutingAssertion assertion, final boolean decorate) {
+                final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
+                if (!decorate) return displayName;
+                return assertion.getRequestTarget().getTargetName() + ": " + displayName;
+            }
+        });
 
         meta.put(PROPERTIES_ACTION_NAME, "FTP(S) Routing Properties");
         meta.put(WSP_EXTERNAL_NAME, "FtpRoutingAssertion");
@@ -248,11 +275,17 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return meta;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> vars = new HashSet<String>();
-        vars.addAll(Arrays.asList(Syntax.getReferencedNames(getFileNamePattern())));
-        vars.addAll(Arrays.asList(Syntax.getReferencedNames(getDirectory())));
+        if (_hostName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_hostName)));
+        if (_port != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_port)));
+        if (_directory != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_directory)));
+        if (_userName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_userName)));
+        if (_password != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_password)));
+        if (_fileNamePattern != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_fileNamePattern)));
+        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
         return vars.toArray(new String[vars.size()]);
     }
 }

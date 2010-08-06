@@ -17,6 +17,7 @@ import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
@@ -103,7 +104,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return AssertionStatus.BAD_REQUEST;
         }
 
-        final com.l7tech.message.Message requestMessage = context.getRequest();
+        final com.l7tech.message.Message requestMessage;
+        try {
+            requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+
+        }
         JmsEndpointConfig cfg = null;
 
         try {
@@ -264,7 +271,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             this.cfg = cfg;
             this.jmsOutboundDestinationHolder = jmsOutboundDestinationHolder;
             this.jmsInboundDestinationHolder = jmsInboundDestinationHolder;
-            this.requestMessage = context.getRequest();
+            try {
+                this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+            } catch (NoSuchVariableException e) {
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+            }
         }
 
         private boolean isMessageSent() {
@@ -397,7 +408,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
 
-                    final com.l7tech.message.Message responseMessage = context.getResponse();
+                    final com.l7tech.message.Message responseMessage;
+                    try {
+                        responseMessage = context.getTargetMessage(assertion.getResponseTarget());
+                    } catch (NoSuchVariableException e) {
+                        throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+
+                    }
                     if ( jmsResponse instanceof TextMessage ) {
                         responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                     } else if ( jmsResponse instanceof BytesMessage ) {
@@ -508,7 +525,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         boolean valid = true;
 
         long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880, 30000L );
-        final MimeKnob mk = context.getRequest().getMimeKnob();
+        final MimeKnob mk;
+        try {
+            mk = context.getTargetMessage(assertion.getRequestTarget()).getMimeKnob();
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
         if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_TOO_LARGE);
             valid = false;
@@ -535,7 +557,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         javax.jms.Message outboundRequestMsg;
         BufferPoolByteArrayOutputStream outputStream = new BufferPoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;
-        final MimeKnob mk = context.getRequest().getMimeKnob();
+        com.l7tech.message.Message requestMessage = null;
+        try {
+            requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
+        final MimeKnob mk = requestMessage.getMimeKnob();
         try {
             IOUtils.copyStream(mk.getEntireMessageBodyAsInputStream(), outputStream);
             outboundRequestBytes = outputStream.toByteArray();
@@ -547,9 +575,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         final JmsOutboundMessageType outboundType = outboundRequestEndpoint.getOutboundMessageType();
         boolean useTextMode = outboundType.isDefaultsToText();
-        if (outboundType.isCopyRequestType() && context.getRequest().getKnob(JmsKnob.class) != null) {
+        if (outboundType.isCopyRequestType() && requestMessage.getKnob(JmsKnob.class) != null) {
             // Outgoing request should be the same type (i.e. TextMessage or BytesMessage) as the original request
-            useTextMode = !context.getRequest().getJmsKnob().isBytesMessage();
+            useTextMode = !requestMessage.getJmsKnob().isBytesMessage();
         }
 
         if (useTextMode) {

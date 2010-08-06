@@ -54,7 +54,7 @@ public class FtpRoutingAssertionTest extends TestCase {
         assertEquals("ftp_aa", assertion.getFileNamePattern());
         assertEquals(FtpFileNameSource.PATTERN, assertion.getFileNameSource());
         assertEquals("somehost", assertion.getHostName());
-        assertEquals(990, assertion.getPort());
+        assertEquals("990", assertion.getPort());
         assertEquals("someuser", assertion.getUserName());
         assertEquals("pass123", assertion.getPassword());
         assertEquals(FtpSecurity.FTPS_IMPLICIT, assertion.getSecurity());

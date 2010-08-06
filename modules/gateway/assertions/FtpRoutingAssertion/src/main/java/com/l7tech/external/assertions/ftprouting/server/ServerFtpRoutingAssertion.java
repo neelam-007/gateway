@@ -9,6 +9,8 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -55,7 +57,13 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final Message request = context.getRequest();
+
+        Message request;
+        try {
+            request = context.getTargetMessage(assertion.getRequestTarget());
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
 
         final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
         if (mimeKnob == null) {
@@ -84,8 +92,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 return AssertionStatus.FAILED;
             }
         } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
-            userName = assertion.getUserName();
-            password = assertion.getPassword();
+            userName = getUserName(context, assertion);
+            password = getPassword(context, assertion);
         }
 
         String fileName = null;
@@ -116,13 +124,33 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Unable to get request body.", e);
         } catch (FtpException e) {
-            _auditor.logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, assertion.getHostName(), e.getMessage());
+            _auditor.logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, getHostName(context, assertion), e.getMessage());
             return AssertionStatus.FAILED;
+        }
+    }
+
+    private String getHostName(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
+        return expandVariables(context, assertion.getHostName());
+    }
+
+    private int getPort(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
+        try {
+            return Integer.parseInt(expandVariables(context, assertion.getPort()));
+        } catch (NumberFormatException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
     }
 
     private String getDirectory(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
         return expandVariables(context, assertion.getDirectory());
+    }
+
+    private String getUserName(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
+        return expandVariables(context, assertion.getUserName());
+    }
+
+    private String getPassword(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
+        return expandVariables(context, assertion.getPassword());
     }
 
     private void doFtp(PolicyEnforcementContext context,
@@ -132,7 +160,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                        long count,
                        String fileName) throws FtpException {
 
-        String hostName = assertion.getHostName();
+        String hostName = getHostName(context, assertion);
         String directory = getDirectory(context, assertion);
 
         assert(hostName != null);
@@ -141,7 +169,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         assert(directory != null);
 
         FtpClientConfig config = FtpClientUtils.newConfig(hostName);
-        config.setPort(assertion.getPort()).setUser(userName).setPass(password).
+        config.setPort(getPort(context, assertion)).setUser(userName).setPass(password).
                 setDirectory(directory).setTimeout(assertion.getTimeout());
 
         FtpClientUtils.upload(config, is, count, fileName);
@@ -156,7 +184,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                         String fileName) throws FtpException {
 
         boolean verifyServerCert = assertion.isVerifyServerCert();
-        String hostName = assertion.getHostName();
+        String hostName = getHostName(context, assertion);
         boolean useClientCert = assertion.isUseClientCert();
         long clientCertKeystoreId = assertion.getClientCertKeystoreId();
         String clientCertKeyAlias = assertion.getClientCertKeyAlias();
@@ -170,7 +198,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         assert(directory != null);
 
         FtpClientConfig config = FtpClientUtils.newConfig(hostName);
-        config.setPort(assertion.getPort()).setUser(userName).setPass(password).setDirectory(directory).
+        config.setPort(getPort(context, assertion)).setUser(userName).setPass(password).setDirectory(directory).
                 setTimeout(assertion.getTimeout()).setSecurity(isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
 
         X509TrustManager trustManager = null;

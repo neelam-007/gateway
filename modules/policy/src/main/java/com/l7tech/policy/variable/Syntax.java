@@ -99,7 +99,7 @@ public abstract class Syntax {
      * <p/>
      * There is no special behaviour for variables referenced which use selectors
      *
-     * @param s String to find out what variables are referenced using our syntax of ${}
+     * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
      */
     public static String[] getReferencedNames(final String s) {
