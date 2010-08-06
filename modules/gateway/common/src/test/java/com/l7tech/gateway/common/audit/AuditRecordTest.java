@@ -87,10 +87,9 @@ public class AuditRecordTest {
 
     private void testSignatureDigest(AuditRecord rec, PropertyDescriptor propertyToPermute) throws Exception {
         String propName = propertyToPermute.getName();
-        rec.setSignature("dummy");
 
         byte[] oldDigest = rec.computeSignatureDigest();
-        assertNotNull("computeSignatureDigest must return a non-null hash (after a dummy signature value is set)", oldDigest);
+        assertNotNull("computeSignatureDigest must return a non-null hash", oldDigest);
 
         AuditRecord backup = rec.getClass().newInstance();
         BeanUtils.copyProperties(rec, backup);
@@ -106,7 +105,7 @@ public class AuditRecordTest {
         assertTrue("Hash must be restored after restoring property: " + propName, Arrays.equals(oldDigest, restoredDigest));
     }
 
-    private void permuteProperty(AuditRecord rec, PropertyDescriptor pd) throws InvocationTargetException, IllegalAccessException {
+    public void permuteProperty(AuditRecord rec, PropertyDescriptor pd) throws InvocationTargetException, IllegalAccessException {
         String propName = pd.getName();
 
         Object prop = pd.getReadMethod().invoke(rec);
@@ -144,7 +143,7 @@ public class AuditRecordTest {
         }
     }
 
-    private Object permuteValue(Object prop, Class propClass) {
+    public static Object permuteValue(Object prop, Class propClass) {
         if (String.class == propClass) {
             return prop + " yop";
         } else if (Integer.class == propClass || int.class == propClass) {
@@ -187,13 +186,13 @@ public class AuditRecordTest {
         assertEquals(ordered[2].getMessageId(), MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO.getId());
     }
 
-    private AuditDetail newDetail(AuditDetailMessage msg) {
+    public AuditDetail newDetail(AuditDetailMessage msg) {
         AuditDetail detail = new AuditDetail(msg);
         detail.setOrdinal(ordinal++);
         return detail;
     }
 
-    private AuditRecord makeAdminAuditRecord() {
+    public static AuditRecord makeAdminAuditRecord() {
         AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", 1234, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", -1, "admin", "1111", "2.3.4.5");
         auditRecord.setReqId(new RequestId(3, 555));
         auditRecord.setThrown(new RuntimeException("main record throwable"));
@@ -202,7 +201,7 @@ public class AuditRecordTest {
         return auditRecord;
     }
 
-    private AuditRecord makeMessageAuditRecord() {
+    public static AuditRecord makeMessageAuditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, 8859, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         auditRecord.setThrown(new RuntimeException("main record throwable"));
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
@@ -210,7 +209,7 @@ public class AuditRecordTest {
         return auditRecord;
     }
 
-    private AuditRecord makeSystemAuditRecord() {
+    public static AuditRecord makeSystemAuditRecord() {
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, -1, null, null, "Checking", "192.168.1.42");
         auditRecord.setThrown(new RuntimeException("main record throwable"));
         return auditRecord;

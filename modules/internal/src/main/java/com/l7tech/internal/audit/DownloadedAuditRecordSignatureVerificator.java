@@ -1,19 +1,14 @@
 package com.l7tech.internal.audit;
 
-import com.l7tech.security.cert.KeyUsageActivity;
-import com.l7tech.security.cert.KeyUsageChecker;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.audit.AuditRecordVerifier;
+import com.l7tech.util.SyspropUtil;
 
-import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.security.interfaces.ECKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -28,6 +23,8 @@ import java.util.regex.Pattern;
  */
 public class DownloadedAuditRecordSignatureVerificator {
     private Logger logger = Logger.getLogger(DownloadedAuditRecordSignatureVerificator.class.getName());
+
+    private static final boolean ENABLE_COMPAT_52 = SyspropUtil.getBoolean("audit.signature.verifier.compat52.enable", true);
 
     private boolean isSigned;
     private String signature;
@@ -75,7 +72,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         if (out.signature == null || out.signature.length() < 1) {
             // we're dealing with a record which does not contain a signature
             out.isSigned = false;
-        } else if (out.signature.length() != 172 && out.signature.length() != 344) {
+        } else if (out.signature.length() < 64) {
             throw new InvalidAuditRecordException("Unexpected signature length " + out.signature.length() +
                                                   ". " + out.signature);
         } else {
@@ -145,13 +142,14 @@ public class DownloadedAuditRecordSignatureVerificator {
         byte[] digestvalue = digest.digest(parsedRecordInSignableFormat.getBytes());
 
         try {
-            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, cert);
-            byte[] decodedSig = HexUtils.decodeBase64(signature);
-            boolean isEcc = pub instanceof ECKey || "EC".equals(pub.getAlgorithm());
-            Signature sig = Signature.getInstance(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
-            sig.initVerify(pub);
-            sig.update(digestvalue);
-            return sig.verify(decodedSig);
+            boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signature, digestvalue);
+
+            if (!result && ENABLE_COMPAT_52) {
+                // Try again in compatibility mode with records signed using the format used for 5.2 and 5.3
+                result = new AuditRecordCompatilibityVerifier52(cert).verifyAuditRecordSignature(signature, parsedRecordInSignableFormat);
+            }
+
+            return result;
         } catch (Exception e) {
             throw new IOException(e);
         }

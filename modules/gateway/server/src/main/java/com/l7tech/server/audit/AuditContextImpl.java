@@ -5,21 +5,16 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.InetAddressUtil;
-import com.l7tech.common.io.SignatureOutputStream;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.HexUtils;
 
-import java.security.PrivateKey;
-import java.security.Signature;
-import java.security.interfaces.ECKey;
+import java.security.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -341,20 +336,10 @@ public class AuditContextImpl implements AuditContext {
         this.logFormatContextVariables = variables;
     }
 
-    private void signRecord(AuditRecord signatureSubject) {
+    void signRecord(AuditRecord signatureSubject) {
         try {
             PrivateKey pk = keystore.getSslInfo().getPrivate();
-            boolean isEcc = pk instanceof ECKey || "EC".equals(pk.getAlgorithm());
-            Signature sig = JceProvider.getInstance().getSignature(isEcc ? "SHA512withECDSA" : "SHA512withRSA");
-            sig.initSign(pk);
-            SignatureOutputStream os = new SignatureOutputStream(sig);
-            try {
-                signatureSubject.serializeSignableProperties(os);
-            } finally {
-                os.close();
-            }
-            String signature = HexUtils.encodeBase64(os.sign(), true);
-            signatureSubject.setSignature(signature);
+            new AuditRecordSigner(pk).signAuditRecord(signatureSubject);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE", e);
         }

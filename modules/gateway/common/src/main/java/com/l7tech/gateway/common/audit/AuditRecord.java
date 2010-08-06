@@ -333,12 +333,8 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
-    public byte[] computeSignatureDigest() {
-        String signatureToVerify = getSignature();
-            if (signatureToVerify == null || signatureToVerify.length() < 1) {
-                return null;
-            }
 
+    public byte[] computeSignatureDigest() {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MessageDigest digest;
             try {
@@ -362,5 +358,4 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
 
         return digestvalue;
     }
-
 }

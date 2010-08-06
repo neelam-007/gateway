@@ -10,21 +10,16 @@ import com.l7tech.console.util.LogMessage;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.audit.AuditRecordVerifier;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gui.util.ImageCache;
-import com.l7tech.security.cert.KeyUsageActivity;
-import com.l7tech.security.cert.KeyUsageChecker;
-import com.l7tech.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.IOException;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.interfaces.ECKey;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -631,18 +626,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         // get the cert of the ssg we're connected to
         X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
         if (cert == null) return DigitalSignatureUIState.INVALID;
-        PublicKey pub = cert.getPublicKey();
-        if (pub == null) return DigitalSignatureUIState.INVALID;
         try {
-            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, cert);
-            byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
-            boolean isEcc = pub instanceof ECKey || "EC".equals(pub.getAlgorithm());
-            Signature sig = Signature.getInstance(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
-            sig.initVerify(pub);
-            sig.update(digestValue);
-            sig.verify(decodedSig);
-            return DigitalSignatureUIState.VALID;
-
+            boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue);
+            return result ? DigitalSignatureUIState.VALID : DigitalSignatureUIState.INVALID;
         } catch (Exception e) {
             logger.log(Level.WARNING, "cannot verify signature", e);
         }

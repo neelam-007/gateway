@@ -130,7 +130,8 @@ public class AuditRecordManagerImpl
     @Override
     protected AuditRecordHeader newHeader(final AuditRecord auditRecord) {
         AuditRecordHeader arh = new AuditRecordHeader(auditRecord);
-        arh.setSignatureDigest(auditRecord.computeSignatureDigest());
+        String sig = auditRecord.getSignature();
+        arh.setSignatureDigest(sig != null && sig.length() > 0 ? auditRecord.computeSignatureDigest() : null);
         return arh;
     }
 
