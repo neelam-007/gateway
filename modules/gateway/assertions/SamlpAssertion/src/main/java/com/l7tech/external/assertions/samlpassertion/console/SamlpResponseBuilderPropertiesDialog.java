@@ -44,7 +44,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         samlVersionComboBox.addActionListener(versionListener);
 
-        samlVersionComboBox.setRenderer( new TextListCellRenderer<SamlStatus>( new Functions.Unary<String,SamlStatus>(){
+        statusCodeComboBox.setRenderer( new TextListCellRenderer<SamlStatus>( new Functions.Unary<String,SamlStatus>(){
             @Override
             public String call( final SamlStatus dataType ) {
                 return dataType.getValue();
