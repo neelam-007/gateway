@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
@@ -26,6 +27,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import saml.v2.assertion.NameIDType;
 import saml.v2.protocol.ExtensionsType;
 import saml.v2.protocol.StatusDetailType;
 
@@ -59,7 +61,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         super(assertion);
 
         this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
-        this.applicationContext = applicationContext;
         this.variablesUsed = assertion.getVariablesUsed();
 
         //validate the assertion bean
@@ -89,6 +90,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 break;
             default:
                 throw new PolicyAssertionException(assertion, "Unknown SAML Version found");
+        }
+        v2SamlpAssnFactory = new saml.v2.assertion.ObjectFactory();
+
+        try {
+            signer = ServerAssertionUtils.getSignerInfo(applicationContext, assertion);
+        } catch (KeyStoreException e) {
+            throw new PolicyAssertionException(assertion,
+                    "Cannot create SignerInfo: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -170,7 +179,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private void signResponse(final Document responseDoc)
             throws InvalidRuntimeValueException, KeyStoreException, SignatureException,
             SignatureStructureException, XSignatureException {
-        SignerInfo signer = ServerAssertionUtils.getSignerInfo(applicationContext, assertion);
         final Element responseElement = responseDoc.getDocumentElement();
 
         final String xsdIdAttribute;
@@ -415,8 +423,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         switch (assertion.getSamlVersion()) {
             case SAML2:
                 try {
+                    final String caDn = signer.getCertificateChain()[0].getSubjectDN().getName();
+                    final Map caMap = CertUtils.dnToAttributeMap(caDn);
+                    final String caCn = (String)((List)caMap.get("CN")).get(0);
+                    
                     final Unmarshaller um = JaxbUtil.getUnmarshallerV2(extraLockId);
-                    return createV2Response(responseContext, um);
+                    return createV2Response(responseContext, um, caCn);
                 } finally {
                     JaxbUtil.releaseJaxbResources(extraLockId);
                 }
@@ -501,11 +513,19 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     }
 
     private JAXBElement<saml.v2.protocol.ResponseType> createV2Response(final ResponseContext responseContext,
-                                                                        final Unmarshaller um)
+                                                                        final Unmarshaller um,
+                                                                        final String issuer)
             throws JAXBException, InvalidRuntimeValueException {
 
         final saml.v2.protocol.ResponseType response = v2SamlpFactory.createResponseType();
         response.setVersion("2.0");
+
+        //Issuer
+        final NameIDType idType = v2SamlpAssnFactory.createNameIDType();
+        final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
+        final NameIDType value = nameIdElement.getValue();
+        value.setValue(issuer);
+        response.setIssuer(value);
 
         final saml.v2.protocol.StatusCodeType statusCodeType = v2SamlpFactory.createStatusCodeType();
         statusCodeType.setValue(responseContext.statusCode);
@@ -607,7 +627,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private final String[] variablesUsed;
     private final saml.v2.protocol.ObjectFactory v2SamlpFactory;
     private final saml.v1.protocol.ObjectFactory v1SamlpFactory;
-    private final ApplicationContext applicationContext;
-    
+    private final saml.v2.assertion.ObjectFactory v2SamlpAssnFactory;
+    private final SignerInfo signer;
+
     private static final Logger logger = Logger.getLogger(ServerSamlpResponseBuilderAssertion.class.getName());
 }
