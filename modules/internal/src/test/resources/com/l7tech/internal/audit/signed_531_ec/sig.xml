@@ -1,0 +1,20 @@
+<audit:AuditMetadata Id="root-0-72fd03d1a30cadb738fe321ad9b42668" xmlns:audit="http://l7tech.com/ns/2004/Oct/08/audit">
+    <audit:exportProcessStarting>2010-08-07T06:56:57.029Z</audit:exportProcessStarting>
+    <audit:exportProcessStartingMillis>1281164217029</audit:exportProcessStartingMillis>
+
+    <audit:exportProcessFinishing>2010-08-07T06:56:57.056Z</audit:exportProcessFinishing>
+    <audit:exportProcessFinishingMillis>1281164217058</audit:exportProcessFinishingMillis>
+
+    <audit:ExportedAuditData filename="audit.dat">
+        <audit:lowestAuditRecordId>9043968</audit:lowestAuditRecordId>
+        <audit:earliestAuditRecordDate>2010-08-07T06:46:21.121Z</audit:earliestAuditRecordDate>
+        <audit:earliestAuditRecordDateMillis>1281163581121</audit:earliestAuditRecordDateMillis>
+
+        <audit:highestAuditRecordId>9044011</audit:highestAuditRecordId>
+        <audit:latestAuditRecordDate>2010-08-07T06:56:24.013Z</audit:latestAuditRecordDate>
+        <audit:latestAuditRecordDateMillis>1281164184013</audit:latestAuditRecordDateMillis>
+
+        <audit:sha1Digest>5767dae855f1ac811014633160505580d6808f07</audit:sha1Digest>
+        <audit:md5Digest>26186d883ccf1f2df43dfa5e7034b234</audit:md5Digest>
+    </audit:ExportedAuditData>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"/><ds:Reference URI="#root-0-72fd03d1a30cadb738fe321ad9b42668"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>Jx8HM8IWmbdhfbIDEyfaYWZTMSM=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>wLtOZ4G32Ts4jCcmj0kWomcL4TfJC5gpxZ111DGpzCCoewSgos68/v8I0DI0PfKw0VN841F13nKsFPaVuBlmcNoiANwyxjk8IBSwTEPGg5pt+mOzTs5RZK7Uc+rTZA3X</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIBrjCCATSgAwIBAgIJAP04xMm8AG9BMAoGCCqGSM49BAMDMBwxGjAYBgNVBAMTEWRhdGEubDd0ZWNoLmxvY2FsMB4XDTEwMDgwNzA1NDUzNFoXDTE1MDgwNjA1NDUzNFowHDEaMBgGA1UEAxMRZGF0YS5sN3RlY2gubG9jYWwwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAATh9oZuR92XlF+B5zQcoDsApT9J99sgOJnBQIpSlKhZFLVqFEWfBvW2Vwboqb/cSvkrWrKDe+CqsHxc41zdZn67K7REiE3ffLagqqaSSZ0Bzq2KmnIEbGtxBgBa+7gUR2ujQjBAMB0GA1UdDgQWBBR/c3DCc1/kDr3aia20h6NufHaQ8TAfBgNVHSMEGDAWgBR/c3DCc1/kDr3aia20h6NufHaQ8TAKBggqhkjOPQQDAwNoADBlAjEA4B5b2CtPei8Pjse8aKR/KBtypjZt3iKD3JtbShdJ377iIWtV48Jc904IgqzoU81lAjAlp6tm7vkeOYLMcOlP9DAKQ0Dp5+gulBnsVG9l/GiOEzoWOgJBcfTQufCYwWP6AIA=</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></audit:AuditMetadata>

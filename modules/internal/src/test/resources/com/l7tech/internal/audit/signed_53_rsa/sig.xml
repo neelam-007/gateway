@@ -1,0 +1,20 @@
+<audit:AuditMetadata Id="root-0-edabfaa23652f6a85f4282eaed7cdb42" xmlns:audit="http://l7tech.com/ns/2004/Oct/08/audit">
+    <audit:exportProcessStarting>2010-08-06T21:20:48.442Z</audit:exportProcessStarting>
+    <audit:exportProcessStartingMillis>1281129648442</audit:exportProcessStartingMillis>
+
+    <audit:exportProcessFinishing>2010-08-06T21:20:48.473Z</audit:exportProcessFinishing>
+    <audit:exportProcessFinishingMillis>1281129648477</audit:exportProcessFinishingMillis>
+
+    <audit:ExportedAuditData filename="audit.dat">
+        <audit:lowestAuditRecordId>65536</audit:lowestAuditRecordId>
+        <audit:earliestAuditRecordDate>2010-08-06T20:47:22.905Z</audit:earliestAuditRecordDate>
+        <audit:earliestAuditRecordDateMillis>1281127642905</audit:earliestAuditRecordDateMillis>
+
+        <audit:highestAuditRecordId>360456</audit:highestAuditRecordId>
+        <audit:latestAuditRecordDate>2010-08-06T21:20:08.991Z</audit:latestAuditRecordDate>
+        <audit:latestAuditRecordDateMillis>1281129608991</audit:latestAuditRecordDateMillis>
+
+        <audit:sha1Digest>3187899fd20b2147bbe4103e7201cc79c97c2c19</audit:sha1Digest>
+        <audit:md5Digest>0e26624ea3619da8c78e4184802c1955</audit:md5Digest>
+    </audit:ExportedAuditData>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><ds:Reference URI="#root-0-edabfaa23652f6a85f4282eaed7cdb42"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><ds:DigestValue>K+ojXnjU3m94KPWPDyreE/KNmEc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>koDWBL2USPWg/y+n/yFOrhZB8wPDN6ual02v2VmSOgowQ0RoJgRYv7KmVl/+ur/mTirhl9535e5xq84Un93KCCuY76uKmxMRVgO72MWT7jFag1C6m23aiynZ6UEJoTTAWCyWsOEHJ3KnRBnKQBHbJGn6l51mpalX+70bNBv8jxSdhJ5BXH36HBFpGf26ve/pHxed0rjBhlJHLUch8WfEQIYXYWvH7YbMcAfLYyh4SfZrmLXZrR/LM31gHT5K3r59C4fr7It6k7EY/oYXQS0qXqcMU2ToCZdORQV4NW6CzvJtbJGtm/dXf9pOiP8AAgSNZUc9uOCcnIrNFEn6VgI+fA==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIC/DCCAeSgAwIBAgIIdc0btifRoWkwDQYJKoZIhvcNAQEMBQAwHDEaMBgGA1UEAxMRZGF0YS5sN3RlY2gubG9jYWwwHhcNMTAwODA2MTk0NzIwWhcNMjAwODAzMTk0NzIwWjAcMRowGAYDVQQDExFkYXRhLmw3dGVjaC5sb2NhbDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJn8F0fXK5TOR4Il3z9kTAcrhwtmLqJKEutwBAb1vdRCDjiMeKCHVJfrRuXZ6WzxG8U8hn8DC9yaGM/ZXaIb3U2OKVqHpHz/tNJYDlbzS4ht5Y788LvFvsUQQ9ukMDqlL1YqbQNuqnD5WddN1B5PrYSqalUFEgJnokbsHyWesqclELDhqT57o3UPBaM8EkkMkEnE1L9Z5njWhNJt1t+Dd30lWealxxA9vgxaKJPmm/FF+pvodAKWFhC5MXoJpwvQJcEoy3ZyGWCAmyVTmSGpSQoCsR4IjHuTXTUP5eAQ7Cft5NEb0u1EQYuKrMC4+QtPodVbpkltOWoUL7TG5MSgbfkCAwEAAaNCMEAwHQYDVR0OBBYEFKdVwjMgUWeyl6a1+u47a5/1O274MB8GA1UdIwQYMBaAFKdVwjMgUWeyl6a1+u47a5/1O274MA0GCSqGSIb3DQEBDAUAA4IBAQBP8ShWqR27pvDkiK9E322gvFQ70wJ+e4FVPVvkBsTAmfLja3BJi7GMJe7nvSdQ2f+HxsCV1nukX31sp9cUV20IUvrHvZdU0NRMJPVqz/wSGFA6yKYTUS5l/gc1JZN9cs3RBVF07d/4WKXeGtA0hi6R1RfmrrhHZ+IWfGXEyojMwJqTXfTtYm4DxOiXDxGYyUnoDjvbrdERxK8MtupLNfkIfy2UjMrkbutainCk1fNNlveVFeq3vG0qGaeGWHMh8v9+8Yo1MFArmCfn7dwGLpQ8fEgVJNOJlRVzXsHx2u8MONgiOuNNlRkmHYYPp2iCfIFHaILr3opZWHlIczQ6l/03</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></audit:AuditMetadata>

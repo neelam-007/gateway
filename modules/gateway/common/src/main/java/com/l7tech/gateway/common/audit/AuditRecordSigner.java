@@ -38,7 +38,7 @@ public class AuditRecordSigner {
     public void signAuditRecord(AuditRecord auditRecord) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         byte[] digest = auditRecord.computeSignatureDigest();
         boolean isEcc = privateKey instanceof ECKey || "EC".equals(privateKey.getAlgorithm());
-        Signature sig = JceProvider.getInstance().getSignature(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
+        Signature sig = JceProvider.getInstance().getSignature(isEcc ? "SHA512withECDSA" : "NONEwithRSA");
         sig.initSign(privateKey);
         sig.update(digest);
         String signature = HexUtils.encodeBase64(sig.sign(), true);

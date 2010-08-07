@@ -9,11 +9,13 @@ import java.security.*;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECKey;
+import java.util.logging.Logger;
 
 /**
  * Utility class for verifying audit record signatures.
  */
 public class AuditRecordVerifier {
+    private static Logger logger = Logger.getLogger(AuditRecordVerifier.class.getName());
 
     private final X509Certificate signerCertificate;
 
@@ -52,7 +54,7 @@ public class AuditRecordVerifier {
         KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signerCertificate);
         byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
         boolean isEcc = pub instanceof ECKey || "EC".equals(pub.getAlgorithm());
-        Signature sig = Signature.getInstance(isEcc ? "NONEwithECDSA" : "NONEwithRSA");
+        Signature sig = Signature.getInstance(isEcc ? "SHA512withECDSA" : "NONEwithRSA");
         sig.initVerify(pub);
         sig.update(currentDigestValue);
         return sig.verify(decodedSig);

@@ -49,6 +49,8 @@
             <entry name="?*.jrtx"/>
             <entry name="?*.config"/>
             <entry name="?*.ldif"/>
+            <entry name="?*.dat"/>
+            <entry name="?*.pem"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">

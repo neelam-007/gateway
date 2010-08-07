@@ -193,7 +193,7 @@ public class AuditSignatureChecker extends JFrame {
     }
 
     // reconstitutes records on multi lines
-    private static String readRecord(BufferedReader in) throws IOException {
+    static String readRecord(BufferedReader in) throws IOException {
         final StringBuilder result = new StringBuilder();
         boolean escaping = false;
         int numRead = 0;

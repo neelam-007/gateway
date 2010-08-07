@@ -6,7 +6,6 @@ import com.l7tech.util.SyspropUtil;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -132,7 +131,6 @@ public class DownloadedAuditRecordSignatureVerificator {
             logger.info("Verify signature fails because the record is not signed.");
             return false;
         }
-        PublicKey pub = cert.getPublicKey();
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-512");
@@ -145,8 +143,9 @@ public class DownloadedAuditRecordSignatureVerificator {
             boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signature, digestvalue);
 
             if (!result && ENABLE_COMPAT_52) {
-                // Try again in compatibility mode with records signed using the format used for 5.2 and 5.3
-                result = new AuditRecordCompatilibityVerifier52(cert).verifyAuditRecordSignature(signature, parsedRecordInSignableFormat);
+                // Try again in compatibility mode with records signed using the format used for 5.2 and 5.3.
+                // Note that this needs to go all the way back to the raw record.
+                result = new AuditRecordCompatibilityVerifier52(cert).verifyAuditRecordSignature(signature, recordInExportedFormat);
             }
 
             return result;
