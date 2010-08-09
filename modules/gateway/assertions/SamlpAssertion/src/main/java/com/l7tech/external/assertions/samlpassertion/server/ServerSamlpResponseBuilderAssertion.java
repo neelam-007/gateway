@@ -336,7 +336,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             value =  ExpandVariables.process(maybeAVariable, vars, auditor);
         } catch (Exception e) {
             //we want to catch any exception which the above call can generate. Any exception means the assertion fails.
-            throw new InvalidRuntimeValueException("Error get value: " + ExceptionUtils.getMessage(e),
+            throw new InvalidRuntimeValueException("Error getting value: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));
         }
 
@@ -531,11 +531,13 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         response.setVersion("2.0");
 
         //Issuer
-        final NameIDType idType = v2SamlpAssnFactory.createNameIDType();
-        final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
-        final NameIDType value = nameIdElement.getValue();
-        value.setValue(issuer);
-        response.setIssuer(value);
+        if(assertion.isAddIssuer()){
+            final NameIDType idType = v2SamlpAssnFactory.createNameIDType();
+            final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
+            final NameIDType value = nameIdElement.getValue();
+            value.setValue(issuer);
+            response.setIssuer(value);
+        }
 
         final saml.v2.protocol.StatusCodeType statusCodeType = v2SamlpFactory.createStatusCodeType();
         statusCodeType.setValue(responseContext.statusCode);

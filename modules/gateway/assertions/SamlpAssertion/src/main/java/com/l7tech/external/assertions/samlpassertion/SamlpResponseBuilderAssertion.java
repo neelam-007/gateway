@@ -138,6 +138,14 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
         this.responseExtensions = responseExtensions;
     }
 
+    public boolean isAddIssuer() {
+        return addIssuer;
+    }
+
+    public void setAddIssuer(boolean addIssuer) {
+        this.addIssuer = addIssuer;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -252,6 +260,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
     // - PRIVATE
     private SamlVersion samlVersion = SamlVersion.SAML2;
     private boolean signResponse;
+    private boolean addIssuer;
     private SamlStatus samlStatus = SamlStatus.SAML2_SUCCESS;
     private String statusMessage;
     private String statusDetail;

@@ -101,6 +101,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         signResponseCheckBox.setSelected(assertion.isSignResponse());
+        addIssuerCheckBox.setSelected(assertion.isAddIssuer());
         statusMessageTextField.setText(assertion.getStatusMessage());
         statusDetailTextField.setText(assertion.getStatusDetail());
 
@@ -148,6 +149,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final SamlpResponseBuilderAssertion.SamlVersion samlVersion = (SamlpResponseBuilderAssertion.SamlVersion) samlVersionComboBox.getSelectedItem();
         assertion.setSamlVersion(samlVersion);
         assertion.setSignResponse(signResponseCheckBox.isSelected());
+        assertion.setAddIssuer(addIssuerCheckBox.isSelected());
         assertion.setSamlStatus((SamlStatus) statusCodeComboBox.getSelectedItem());
         assertion.setStatusMessage(statusMessageTextField.getText());
         assertion.setStatusDetail(statusDetailTextField.getText());
@@ -239,10 +241,12 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             saml2_0Panel.setVisible(true);
             saml1_1Panel.setVisible(false);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml2xStatuses().toArray()));
+            addIssuerCheckBox.setVisible(true);
         } else {
             saml2_0Panel.setVisible(false);
             saml1_1Panel.setVisible(true);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml1xStatuses().toArray()));
+            addIssuerCheckBox.setVisible(false);
         }
     }
 
@@ -280,6 +284,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JPanel saml2_0Panel;
     private JPanel saml1_1Panel;
     private JPanel tabHolder;
+    private JCheckBox addIssuerCheckBox;
 
     private static final String autoString = "<<auto>>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );
