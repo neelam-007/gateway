@@ -252,7 +252,19 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 }
                 formatted = builder.toString();
             }
-            return formatted;
+
+            Object output;
+            final DataType outputDataType = encodeDecodeContext.getOutputDataType();
+            if ( outputDataType == DataType.MESSAGE ) {
+                output = new MessagePair( encodeDecodeContext.getOutputContentType(), formatted.getBytes( encodeDecodeContext.getOutputEncoding() ) );
+            } else if ( outputDataType == DataType.STRING ) {
+                output = formatted;
+            } else {
+                encodeDecodeContext.audit( AssertionMessages.ENCODE_DECODE_ERROR, "Cannot output text as X.509 Certificate" );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            }
+
+            return output;
         }
 
         protected byte[] getBinaryInput( final Object source ) {

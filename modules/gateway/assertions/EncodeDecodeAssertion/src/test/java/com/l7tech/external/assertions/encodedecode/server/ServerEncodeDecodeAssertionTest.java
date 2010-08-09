@@ -127,6 +127,29 @@ public class ServerEncodeDecodeAssertionTest {
         }
     }
 
+    @Test
+    public void testMessageOutput() throws Exception {
+        final String sourceText = "test source text with special characters and some non-latin ones test source text with special characters and some non-latin ones test source text with special characters and some non-latin ones test source text with special characters and some non-latin ones \u03d0~`!@#$%^&*()_-+=}]{[|\"':;?/>.<,";
+        final Message outputEnc = (Message) oneWayTest(AssertionStatus.NONE, sourceText, new Functions.UnaryVoid<EncodeDecodeAssertion>(){
+            @Override
+            public void call( final EncodeDecodeAssertion assertion ) {
+                assertion.setTransformType( EncodeDecodeAssertion.TransformType.BASE64_ENCODE );
+                assertion.setTargetDataType( DataType.MESSAGE );
+            }
+        } );
+        assertNotNull( "Message output encode", outputEnc );
+        
+        final String sourceB64 = new String( IOUtils.slurpStream( outputEnc.getMimeKnob().getEntireMessageBodyAsInputStream() ));
+        final Message outputDec = (Message) oneWayTest(AssertionStatus.NONE, sourceB64, new Functions.UnaryVoid<EncodeDecodeAssertion>(){
+            @Override
+            public void call( final EncodeDecodeAssertion assertion ) {
+                assertion.setTransformType( EncodeDecodeAssertion.TransformType.BASE64_DECODE );
+                assertion.setTargetDataType( DataType.MESSAGE );
+            }
+        } );
+        assertNotNull( "Message output decode", outputDec );
+    }
+
     private void roundTripTest( final EncodeDecodeAssertion.TransformType encode,
                                 final EncodeDecodeAssertion.TransformType decode,
                                 final boolean strict ) throws Exception {
