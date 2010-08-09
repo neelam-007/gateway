@@ -23,6 +23,10 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     //- PUBLIC
 
     public static final String SUFFIX_SUBJECT = "subject";
+    public static final String SUFFIX_SUBJECT_NAME_QUALIFIER = "subject.nameQualifier";
+    public static final String SUFFIX_SUBJECT_SP_NAME_QUALIFIER = "subject.spNameQualifier";
+    public static final String SUFFIX_SUBJECT_FORMAT = "subject.format";
+    public static final String SUFFIX_SUBJECT_SP_PROVIDED_ID = "subject.spProvidedId";
     public static final String SUFFIX_X509CERT_BASE64 = "x509CertBase64";
     public static final String SUFFIX_X509CERT = "x509Cert";
     public static final String SUFFIX_ACS_URL = "acsUrl";
@@ -36,9 +40,13 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     public static final String SUFFIX_ISSUER_SP_NAME_QUALIFIER = "issuer.spNameQualifier";
     public static final String SUFFIX_ISSUER_FORMAT = "issuer.format";
     public static final String SUFFIX_ISSUER_SP_PROVIDED_ID = "issuer.spProvidedId";
-    public static final String SUFFIX_EXTENSIONS = "extensions";
+    public static final String SUFFIX_REQUEST = "request";
     public static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection( Arrays.asList(
         SUFFIX_SUBJECT,
+        SUFFIX_SUBJECT_NAME_QUALIFIER,
+        SUFFIX_SUBJECT_SP_NAME_QUALIFIER,
+        SUFFIX_SUBJECT_FORMAT,
+        SUFFIX_SUBJECT_SP_PROVIDED_ID,
         SUFFIX_X509CERT_BASE64,
         SUFFIX_X509CERT,
         SUFFIX_ACS_URL,
@@ -52,7 +60,7 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         SUFFIX_ISSUER_SP_NAME_QUALIFIER,
         SUFFIX_ISSUER_FORMAT,
         SUFFIX_ISSUER_SP_PROVIDED_ID,
-        SUFFIX_EXTENSIONS
+        SUFFIX_REQUEST
     ) );
 
     public String getAudienceRestriction() {
@@ -105,7 +113,7 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         meta.put(AssertionMetadata.DESCRIPTION, "Process and optionally validate a SAML authentication request.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Process Authentication Request Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Authentication Request Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.ProcessSamlAuthnRequestPropertiesDialog");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<ProcessSamlAuthnRequestAssertion>(){
             @Override
@@ -149,6 +157,10 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         } else {
             metadata = new VariableMetadata[] {
                 new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT, false, false, null, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_FORMAT, false, false, null, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT_BASE64, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT, false, false, null, false, DataType.CERTIFICATE),
                 new VariableMetadata(variablePrefix+"."+SUFFIX_ACS_URL, false, false, null, false, DataType.STRING),
@@ -162,7 +174,7 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
                 new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_FORMAT, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_EXTENSIONS, false, false, null, false, DataType.MESSAGE),
+                new VariableMetadata(variablePrefix+"."+SUFFIX_REQUEST, false, false, null, false, DataType.MESSAGE),
             };
         }
 
@@ -170,8 +182,18 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     }
 
     public enum SamlProtocolBinding {
-        HttpPost,
-        HttpRedirect
+        HttpPost("HTTP Post"),
+        HttpRedirect("HTTP Redirect");
+
+        private final String description;
+
+        private SamlProtocolBinding( final String description ) {
+            this.description = description;
+        }
+
+        public String toString() {
+            return description;
+        }
     }
 
     //- PRIVATE
