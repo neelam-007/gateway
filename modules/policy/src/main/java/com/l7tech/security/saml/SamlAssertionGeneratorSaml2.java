@@ -171,13 +171,13 @@ public class SamlAssertionGeneratorSaml2 {
             if ( options.getSubjectConfirmationDataRecipient() != null ) {
                 subjectConfirmationData.setRecipient( options.getSubjectConfirmationDataRecipient() );
             }
-            if ( options.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
+            if ( options.getSubjectConfirmationDataNotBeforeSecondsInPast() > -1 ) {
                 Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
                 calendar.add(Calendar.SECOND, (-1 * options.getSubjectConfirmationDataNotBeforeSecondsInPast()));
                 calendar.set(Calendar.MILLISECOND, 0);
                 subjectConfirmationData.setNotBefore(calendar);
             }
-            if ( options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0) {
+            if ( options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() > -1) {
                 Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
                 calendar.add(Calendar.SECOND, options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds());
                 subjectConfirmationData.setNotOnOrAfter(calendar);

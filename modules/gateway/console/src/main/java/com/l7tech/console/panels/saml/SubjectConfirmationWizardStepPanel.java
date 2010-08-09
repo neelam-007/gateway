@@ -47,11 +47,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JPanel validateMethodsPanel;
     private JCheckBox subjectCertIncludeCheckbox;
     private JComboBox certificateInclusionComboBox;
-    private JCheckBox addValidityPeriodCheckBox;
     private JSpinner notBeforeSpinner;
     private JSpinner notOnOrAfterSpinner;
-    private JLabel notBeforeLabel;
-    private JLabel notAfterLabel;
     private JTextField recipientTextField;
     private JTextField addressTextField;
     private JLabel addressLabel;
@@ -61,6 +58,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JPanel addValidityPeriodPanel;
     private JCheckBox checkAddressCheckBox;
     private JPanel subjectConfirmationDataPanel;
+    private JCheckBox notBeforeSecondsInCheckBox;
+    private JCheckBox notOnOrAfterCheckBox;
 
     private Map<String, JToggleButton> confirmationsMap;
     private boolean showTitleLabel;
@@ -143,8 +142,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             setText( recipientTextField, issuerConfiguration.getSubjectConfirmationDataRecipient() );
             setText( inResponseToTextField, issuerConfiguration.getSubjectConfirmationDataInResponseTo() );
             if ( issuerConfiguration.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
-                addValidityPeriodCheckBox.setSelected( true );
+                notBeforeSecondsInCheckBox.setSelected( true );
                 notBeforeSpinner.setValue( issuerConfiguration.getSubjectConfirmationDataNotBeforeSecondsInPast() );
+            }
+            if ( issuerConfiguration.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0 ) {
+                notOnOrAfterCheckBox.setSelected( true );
                 notOnOrAfterSpinner.setValue( issuerConfiguration.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
             }
         } else {
@@ -192,11 +194,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
 
             Utilities.setEnabled( subjectConfirmationDataPanel, enableSubjectConfirmationData && !isNone );
             if ( subjectConfirmationDataPanel.isEnabled() ) {
-                boolean enableValiditySelection = addValidityPeriodCheckBox.isEnabled() && addValidityPeriodCheckBox.isSelected();
-                notBeforeSpinner.setEnabled( enableValiditySelection );
-                notOnOrAfterSpinner.setEnabled( enableValiditySelection );
-                notBeforeLabel.setEnabled( enableValiditySelection );
-                notAfterLabel.setEnabled( enableValiditySelection );
+                final boolean enableNotBefore = notBeforeSecondsInCheckBox.isEnabled() && notBeforeSecondsInCheckBox.isSelected();
+                notBeforeSpinner.setEnabled( enableNotBefore );
+
+                final boolean notOnOrAfter = notOnOrAfterCheckBox.isEnabled() && notOnOrAfterCheckBox.isSelected();
+                notOnOrAfterSpinner.setEnabled( notOnOrAfter );
             }
         }
     }
@@ -239,11 +241,12 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             issuerConfiguration.setSubjectConfirmationDataAddress( getText(addressTextField) );
             issuerConfiguration.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
             issuerConfiguration.setSubjectConfirmationDataInResponseTo( getText(inResponseToTextField) );
-            final boolean useValidityPeriod = addValidityPeriodCheckBox.isSelected() && addValidityPeriodCheckBox.isEnabled();
+            final boolean useNotBeforePeriod = notBeforeSecondsInCheckBox.isSelected() && notBeforeSecondsInCheckBox.isEnabled();
             issuerConfiguration.setSubjectConfirmationDataNotBeforeSecondsInPast(
-                    useValidityPeriod  ? (Integer) notBeforeSpinner.getValue() : -1 );
+                    useNotBeforePeriod  ? (Integer) notBeforeSpinner.getValue() : -1 );
+            final boolean useNotOnOrAfterPeriod = notOnOrAfterCheckBox.isSelected() && notOnOrAfterCheckBox.isEnabled();
             issuerConfiguration.setSubjectConfirmationDataNotOnOrAfterExpirySeconds(
-                    useValidityPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
+                    useNotOnOrAfterPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> confirmations = new ArrayList<String>();
@@ -335,7 +338,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             }, null, true ));
 
             subjectCertIncludeCheckbox.addActionListener(enableDisableListener);
-            addValidityPeriodCheckBox.addActionListener(enableDisableListener);
+            notBeforeSecondsInCheckBox.addActionListener(enableDisableListener);
+            notOnOrAfterCheckBox.addActionListener(enableDisableListener);
 
             notBeforeSpinner.setModel( new SpinnerNumberModel(120, 0, 3600, 1) );
             notOnOrAfterSpinner.setModel( new SpinnerNumberModel(300, 30, 3600, 1) );
@@ -349,7 +353,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             inResponseToLabel.setVisible( false );
             inResponseToTextField.setVisible( false );
             addValidityPeriodPanel.setVisible( false );
-            addValidityPeriodCheckBox.addActionListener( enableDisableListener );
+            notBeforeSecondsInCheckBox.addActionListener(enableDisableListener);
+            notOnOrAfterCheckBox.addActionListener(enableDisableListener);
         }
 
         /** Set content pane */
