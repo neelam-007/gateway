@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.audit.Auditor;
@@ -234,11 +235,15 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         final String responseId = assertion.getResponseId();
         if (responseId == null || responseId.trim().isEmpty()) {
             //generate a new one. The only restriction is that no ':' are allowed (It's an xsd:NCName)
-            responseContext.responseId = HexUtils.generateRandomHexId(16);
+            responseContext.responseId = "ResponseId_" + HexUtils.generateRandomHexId(16);
         } else {
             final String testResponseId = getStringVariable(vars, responseId, true);
             if (testResponseId.contains(":")) {
                 throw new InvalidRuntimeValueException("Invalid runtime value for ResponseId. Cannot contain colon characters");
+            }
+            
+            if (Character.isDigit(testResponseId.charAt(0))) {
+                throw new InvalidRuntimeValueException("Invalid runtime value for ResponseId. Cannot contain begin with a digit.");
             }
             responseContext.responseId = testResponseId;
         }
@@ -454,7 +459,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         response.setMinorVersion(version);
 
         final saml.v1.protocol.StatusCodeType statusCodeType = v1SamlpFactory.createStatusCodeType();
-        statusCodeType.setValue(new QName(responseContext.statusCode));
+        statusCodeType.setValue(new QName(SamlConstants.NS_SAMLP, responseContext.statusCode));
 
         final saml.v1.protocol.StatusType statusType = v1SamlpFactory.createStatusType();
         statusType.setStatusCode(statusCodeType);

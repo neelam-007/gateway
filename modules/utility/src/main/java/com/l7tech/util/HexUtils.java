@@ -78,6 +78,7 @@ public class HexUtils {
 
     /**
      * Generate a unique identifier of a given length.
+     * Note: The resulting String may start with a digit. This is not valid for a NCName.
      *
      * @param howMany How long the returned String should be. FYI: 16 is the length used in SAML id's.
      * @return String unique identifier. Never null and always the twice the length of howMany
