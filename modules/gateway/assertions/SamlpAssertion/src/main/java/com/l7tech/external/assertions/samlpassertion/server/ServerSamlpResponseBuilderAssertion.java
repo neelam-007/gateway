@@ -264,7 +264,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String inResponseTo = assertion.getInResponseTo();
         if(inResponseTo != null && !inResponseTo.trim().isEmpty()){
-            final String testResponseTo = getStringVariable(vars, inResponseTo, true);
+            final String testResponseTo = getStringVariable(vars, inResponseTo, false);
             if (testResponseTo.contains(":")) {
                 throw new InvalidRuntimeValueException("Invalid runtime value for InResponseTo. Cannot contain colon characters");
             }
@@ -338,8 +338,11 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     ExceptionUtils.getDebugException(e));
         }
 
-        if(value.trim().isEmpty() && strict) {
+        final boolean isEmpty = value.trim().isEmpty();
+        if(isEmpty && strict) {
             throw new InvalidRuntimeValueException("Value for field '" + maybeAVariable + "'resolved to nothing.");
+        } else {
+            logger.log(Level.INFO, "Value for field '" + maybeAVariable+"' resolved to nothing.");
         }
         return value;
     }
