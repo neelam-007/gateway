@@ -308,10 +308,14 @@ public class SamlGenerator {
                 }
                 Element conditions = DomUtils.findFirstChildElementByName(assertion.getDocumentElement(), SAML_NAMESPACES, "Conditions");
                 if (conditions != null) {
-                    if (notBeforeTextField.getText().length() > 0) {
+                    if (notBeforeTextField.getText().trim().equals("-")) {
+                        conditions.removeAttribute("NotBefore");
+                    } else if (notBeforeTextField.getText().length() > 0) {
                         conditions.setAttribute("NotBefore", notBeforeTextField.getText());
                     }
-                    if (notOnOrAfterTextField.getText().length() > 0) {
+                    if (notOnOrAfterTextField.getText().trim().equals("-")) {
+                        conditions.removeAttribute("NotOnOrAfter");
+                    } else if (notOnOrAfterTextField.getText().length() > 0) {
                         conditions.setAttribute("NotOnOrAfter", notOnOrAfterTextField.getText());
                     }
                     if (audienceRestrictionTextField.getText().length() > 0) {
