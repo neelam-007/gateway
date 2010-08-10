@@ -110,8 +110,18 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         final String clientAddress = tcpKnob == null ? null : tcpKnob.getRemoteAddress();
         LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials(); // TODO support some choice of credentials
 
+        final Map<String, Object> vars;
+        if (varsUsed.length == 0) {
+            vars = Collections.emptyMap();
+        } else {
+            vars = context.getVariableMap(varsUsed, auditor);
+        }
+        
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
-        options.setAudienceRestriction(assertion.getAudienceRestriction());
+        final String testAudienceRestriction = assertion.getAudienceRestriction();
+        if(testAudienceRestriction != null) {
+            options.setAudienceRestriction(ExpandVariables.process(testAudienceRestriction, vars, auditor));
+        }
         if (clientAddress != null) try {
             options.setClientAddress(InetAddress.getByName(clientAddress));
         } catch (UnknownHostException e) {
@@ -126,13 +136,6 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         options.setNotBeforeSeconds(assertionNotBeforeSeconds != -1 ? assertionNotBeforeSeconds : defaultBeforeOffsetMinutes * 60);
         int assertionNotAfterSeconds = assertion.getConditionsNotOnOrAfterExpirySeconds();
         options.setNotAfterSeconds(assertionNotAfterSeconds != -1 ? assertionNotAfterSeconds : defaultAfterOffsetMinutes * 60);
-
-        final Map<String, Object> vars;
-        if (varsUsed.length == 0) {
-            vars = Collections.emptyMap();
-        } else {
-            vars = context.getVariableMap(varsUsed, auditor);
-        }
 
         String nameQualifier = assertion.getNameQualifier();
         if (nameQualifier != null) nameQualifier = ExpandVariables.process(nameQualifier, vars, auditor);
