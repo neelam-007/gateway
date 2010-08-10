@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -22,6 +22,9 @@ public class AssertionCommentDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
+
+        leftCommentTextArea.setDocument(new MaxLengthDocument(SsmPreferences.MAX_LEFT_COMMENT_SIZE));
+        rightCommentTextArea.setDocument(new MaxLengthDocument(SsmPreferences.MAX_RIGHT_COMMENT_SIZE));
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
@@ -66,33 +69,15 @@ public class AssertionCommentDialog extends JDialog {
         return confirmed;
     }
 
-    public boolean viewToModel(){
-        final String leftComment = leftCommentTextArea.getText();
-        if(leftComment.length() > SsmPreferences.MAX_LEFT_COMMENT_SIZE) {
-            DialogDisplayer.showMessageDialog(this, "Left comment too large",
-                    "The maximum size of a left comment must be between 0 and " +
-                            SsmPreferences.MAX_LEFT_COMMENT_SIZE + " characters.\n Current size is " + leftComment.length()+" characters.", null);
-            return false;
-        }
-        assertionComment.setComment(leftComment, Assertion.Comment.LEFT_COMMENT);
-
-        final String rightComment = rightCommentTextArea.getText();
-        if(rightComment.length() > SsmPreferences.MAX_RIGHT_COMMENT_SIZE) {
-            DialogDisplayer.showMessageDialog(this, "Right comment too large",
-                    "The maximum size of a right comment must be between 0 and " +
-                            SsmPreferences.MAX_RIGHT_COMMENT_SIZE + " characters.\n Current size is " + rightComment.length()+" characters.", null);
-            return false;
-        }
-        assertionComment.setComment(rightComment, Assertion.Comment.RIGHT_COMMENT);
-
-        return true;
+    public void viewToModel(){
+        assertionComment.setComment(leftCommentTextArea.getText(), Assertion.Comment.LEFT_COMMENT);
+        assertionComment.setComment(rightCommentTextArea.getText(), Assertion.Comment.RIGHT_COMMENT);
     }
 
     private void onOK() {
         confirmed = true;
-        if(viewToModel()){
-            dispose();
-        }
+        viewToModel();
+        dispose();
     }
 
     private void onCancel() {
