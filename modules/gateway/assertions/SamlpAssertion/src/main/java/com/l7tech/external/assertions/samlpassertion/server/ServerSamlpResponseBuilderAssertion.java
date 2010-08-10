@@ -28,6 +28,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import saml.v2.assertion.AssertionType;
 import saml.v2.assertion.NameIDType;
 import saml.v2.protocol.ExtensionsType;
 import saml.v2.protocol.StatusDetailType;
@@ -508,16 +509,22 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final Collection tokens = responseContext.samlTokens;
         for (Object token : tokens) {
+            final JAXBElement<saml.v1.assertion.AssertionType> typeJAXBElement;
             if(token instanceof Element){
-                final JAXBElement<saml.v1.assertion.AssertionType> typeJAXBElement = um.unmarshal((Element) token, saml.v1.assertion.AssertionType.class);
-                response.getAssertion().add(typeJAXBElement.getValue());
+                typeJAXBElement = um.unmarshal((Element) token, saml.v1.assertion.AssertionType.class);
             } else if(token instanceof Message){
                 Message message = (Message) token;
-                final JAXBElement<saml.v1.assertion.AssertionType> typeJAXBElement = um.unmarshal(getDocumentElement(message), saml.v1.assertion.AssertionType.class);
-                response.getAssertion().add(typeJAXBElement.getValue());
+                typeJAXBElement = um.unmarshal(getDocumentElement(message), saml.v1.assertion.AssertionType.class);
             } else {
                 logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response assertions");
+                continue;
             }
+
+            final saml.v1.assertion.AssertionType value = typeJAXBElement.getValue();
+            if(value.getMajorVersion() == null){
+                throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 1.x");
+            }
+            response.getAssertion().add(value);
         }
         return v1SamlpFactory.createResponse(response);
     }
@@ -590,17 +597,22 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final Collection tokens = responseContext.samlTokens;
         for (Object token : tokens) {
+            final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement;
             if(token instanceof Element){
-                final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement = um.unmarshal((Element) token, saml.v2.assertion.AssertionType.class);
-                response.getAssertionOrEncryptedAssertion().add(typeJAXBElement.getValue());
+                typeJAXBElement = um.unmarshal((Element) token, saml.v2.assertion.AssertionType.class);
             } else if(token instanceof Message){
                 Message message = (Message) token;
-                final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement =
-                        um.unmarshal(getDocumentElement(message), saml.v2.assertion.AssertionType.class);
-                response.getAssertionOrEncryptedAssertion().add(typeJAXBElement.getValue());
+                typeJAXBElement = um.unmarshal(getDocumentElement(message), saml.v2.assertion.AssertionType.class);
             } else {
                 logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response assertions");
+                continue;
             }
+
+            final AssertionType value = typeJAXBElement.getValue();
+            if(value.getVersion() == null){
+                throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 2.0");
+            }
+            response.getAssertionOrEncryptedAssertion().add(value);
         }
 
         final Collection extensions = responseContext.extensions;

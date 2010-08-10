@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAsserti
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -88,6 +89,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
+//        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
         context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>")));
         serverAssertion.checkRequest(context);
 
@@ -163,7 +165,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
-        serverAssertion.checkRequest(context);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
         final Message output = (Message) context.getVariable("outputVar");
 //        System.out.println("output:" + XmlUtil.nodeToFormattedString(output.getXmlKnob().getDocumentReadOnly()));
@@ -222,6 +225,64 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertNotNull(assertionType);
 
         System.out.println("output:" + XmlUtil.nodeToFormattedString(output.getXmlKnob().getDocumentReadOnly()));        
+    }
+
+    /**
+     * If incorrect version of a SAML token is supplied, assertion should fail.
+     * @throws Exception
+     */
+    @Test
+    public void testSAML2_InvalidSamlAssertion() throws Exception{
+
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("outputVar");
+
+        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML2);
+        assertion.setStatusMessage("Status Message is ok");
+
+        final PolicyEnforcementContext context = getContext();
+
+        assertion.setResponseAssertions("${samlToken}");
+        assertion.setResponseExtensions("${extension}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>")));
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
+    }
+
+    /**
+     * If incorrect version of a SAML token is supplied, assertion should fail.
+     * @throws Exception
+     */
+    @Test
+    public void testSAML1_0_InvalidSamlAssertion() throws Exception{
+
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("outputVar");
+
+        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML1_1);
+        assertion.setStatusMessage("Status Message is ok");
+
+        final PolicyEnforcementContext context = getContext();
+
+        assertion.setResponseAssertions("${samlToken}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
     }
 
     private PolicyEnforcementContext getContext() throws IOException {
