@@ -5,6 +5,7 @@ package com.l7tech.internal.audit;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.BuildInfo;
 
 import javax.net.ssl.*;
@@ -42,7 +43,6 @@ import java.util.zip.ZipFile;
  * @author rmak
  */
 public class AuditSignatureChecker extends JFrame {
-
     static {
         Logger.getLogger("").setLevel(Level.WARNING);
     }
@@ -165,6 +165,9 @@ public class AuditSignatureChecker extends JFrame {
                                    final PrintWriter out,
                                    final boolean verbose) {
         try {
+            System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
+            JceProvider.init();
+
             final Certificate[] cert = loadCert(certPath);
 
             if (isZipFile(auditPath)) {
