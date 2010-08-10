@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.xmlsec.VariableCredentialSourceAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -32,7 +33,7 @@ public class VariableCredentialSourceAssertionPropertiesDialog extends Assertion
         String variableName = variableNameField.getText();
         if (variableName == null || variableName.trim().length() < 1)
             throw new ValidationException("A variable name must be specified.");
-        assertion.setVariableName(variableName.trim());
+        assertion.setVariableName(VariablePrefixUtil.fixVariableName(variableName));
         return assertion;
     }
 }
