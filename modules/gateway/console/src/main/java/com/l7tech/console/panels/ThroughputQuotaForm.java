@@ -17,8 +17,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -69,7 +67,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         initialize(readOnly);
     }
 
-    private void initialize(boolean readOnly) {
+    private void initialize(final boolean readOnly) {
         getContentPane().add(mainPanel);
 
         // initial values
@@ -90,7 +88,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 @Override
                 public void textEntryPaused(JTextComponent component, long msecs) {
                     if(validateVariablePrefix()) {
-                        okButton.setEnabled(true);
+                        okButton.setEnabled(!readOnly);
                     } else {
                         okButton.setEnabled(false);
                     }

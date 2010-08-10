@@ -60,7 +60,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         return resources;
     }
 
-    public XslTransformationPropertiesDialog(Frame owner, boolean modal, boolean readOnly, XslTransformation assertion) {
+    public XslTransformationPropertiesDialog(Frame owner, boolean modal, final boolean readOnly, XslTransformation assertion) {
         super(owner, resources.getString("window.title"), modal);
 
         if (assertion == null) throw new IllegalArgumentException("Xslt Transformation == null");
@@ -128,7 +128,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 boolean isValidPrefix = validateVariablePrefix();
-                okButton.setEnabled(isValidPrefix);
+                okButton.setEnabled(isValidPrefix && !readOnly);
 
                 // If the prefix is not valid, then the validation message will need to resize the dialog.
                 if (! isValidPrefix) {

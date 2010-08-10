@@ -762,7 +762,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                     @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         if(validateVariablePrefix()) {
-                            okButton.setEnabled(true);
+                            okButton.setEnabled(!readOnly);
                         } else {
                             okButton.setEnabled(false);
                         }
