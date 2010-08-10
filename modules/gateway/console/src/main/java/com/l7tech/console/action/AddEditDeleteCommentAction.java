@@ -13,7 +13,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.logging.Level;
 
 /**
@@ -82,7 +81,6 @@ public class AddEditDeleteCommentAction extends SecureAction{
         final Assertion.Comment comment = (assertion.getAssertionComment() != null) ? assertion.getAssertionComment() : new Assertion.Comment();
 
         final AssertionCommentDialog commentDlg = new AssertionCommentDialog(comment);
-        commentDlg.setPreferredSize(new Dimension(400, 200));
         commentDlg.pack();
         Utilities.centerOnScreen(commentDlg);
 

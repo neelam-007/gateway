@@ -25,6 +25,7 @@ public class AssertionCommentDialog extends JDialog {
 
         leftCommentTextArea.setDocument(new MaxLengthDocument(SsmPreferences.MAX_LEFT_COMMENT_SIZE));
         rightCommentTextArea.setDocument(new MaxLengthDocument(SsmPreferences.MAX_RIGHT_COMMENT_SIZE));
+        rightCommentTextArea.setFont(leftCommentTextArea.getFont());
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
