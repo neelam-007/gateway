@@ -352,8 +352,14 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
         }
 
-        if ( faultLevelInfo.isSignSoapFault() ) {
+        if ( output == null ) {
+            output = "Server Error";
+        } else if ( faultLevelInfo.isSignSoapFault() ) {
             output = signFault( output, pec.getAuthenticationContext( pec.getRequest() ), pec.getRequest().getSecurityKnob(), faultLevelInfo );
+        }
+
+        if ( contentTypeHeader == null ) {
+            contentTypeHeader = ContentTypeHeader.TEXT_DEFAULT;
         }
 
         return new FaultResponse(httpStatus, contentTypeHeader, output);
@@ -648,7 +654,15 @@ public class SoapFaultManager implements ApplicationContextAware {
             }
             output = XmlUtil.nodeToFormattedString(faultDocument);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "could not construct generic fault", e);
+            logger.log(Level.WARNING, "could not construct detailed fault: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
+            try {
+                Pair<ContentTypeHeader,Document> faultInfo = buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, false );
+                return new Pair<ContentTypeHeader,String>( faultInfo.left, XmlUtil.nodeToFormattedString(faultInfo.right) );
+            } catch ( SAXException e1 ) {
+                logger.log(Level.WARNING, "could not construct generic fault", e1);
+            } catch ( IOException e1 ) {
+                logger.log(Level.WARNING, "could not construct generic fault", e1);
+            }
         }
 
         return new Pair<ContentTypeHeader,String>( useSoap12 ? ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT, output);
