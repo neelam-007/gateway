@@ -211,6 +211,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
+    private JMenuItem showAstnCommentsMenuItem;
     private JMenuItem showAstnLnsMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
@@ -566,6 +567,20 @@ public class MainWindow extends JFrame implements SheetHolder {
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return validateMenuItem;
+    }
+    
+    private JMenuItem getShowAssertionCommentsMenuItem() {
+        if (showAstnCommentsMenuItem == null) {
+            showAstnCommentsMenuItem = new JMenuItem();
+            showAstnCommentsMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/About16.gif"));
+            showAstnCommentsMenuItem.setIcon(icon);
+            showAstnCommentsMenuItem.setText("Show Comments");
+            showAstnCommentsMenuItem.setMnemonic(KeyEvent.VK_C);
+            showAstnCommentsMenuItem.setDisplayedMnemonicIndex(5);
+            showAstnCommentsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
+        }
+        return showAstnCommentsMenuItem;
     }
 
     private JMenuItem getShowAssertionLineNumbersMenuItem() {
@@ -1004,6 +1019,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(jcm);
         }
 
+        menu.add(getShowAssertionCommentsMenuItem());
         menu.add(getShowAssertionLineNumbersMenuItem());
 
         menu.addSeparator();
@@ -3486,6 +3502,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSaveOnlyMenuItem().setAction(policyPanel.getSaveOnlyAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
+        getShowAssertionCommentsMenuItem().setAction(policyPanel.getHideShowCommentAction(getShowAssertionCommentsMenuItem()));
         getShowAssertionLineNumbersMenuItem().setAction(policyPanel.getShowAssertionLineNumbersAction(getShowAssertionLineNumbersMenuItem()));
     }
 

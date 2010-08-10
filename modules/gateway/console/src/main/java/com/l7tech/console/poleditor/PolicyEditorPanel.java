@@ -105,6 +105,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private SecureAction saveAndActivateAction;
     private SecureAction saveOnlyAction;
     private SecureAction showAssertionLineNumbersAction;
+    private List<AbstractButton> showCmtsButtons = new ArrayList<AbstractButton>();
     private List<AbstractButton> showLnNumsButtons = new ArrayList<AbstractButton>();
     private ValidatePolicyAction validateAction;
     private ValidatePolicyAction serverValidateAction;
@@ -1929,49 +1930,53 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    public Action getHideShowCommentAction(final JButton button){
-
-        if(hideShowCommentsAction == null){
-            hideShowCommentsAction = new SecureAction(null) {
-                        @Override
-                        protected void performAction() {
-                            final String showState = preferences.getString(SHOW_COMMENTS);
-                            final boolean shown = Boolean.parseBoolean(showState);
-                            //shown = true means the button should say 'Hide'
-
-                            if (shown) preferences.putProperty(SHOW_COMMENTS, "false");
-                            else preferences.putProperty(SHOW_COMMENTS, "true");
-
-                            button.setText(getName());
-                            updateNodesWithComments();
-                        }
-
-                        @Override
-                        public String getName() {
-
-                            final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-                            final String showState = preferences.getString(SHOW_COMMENTS);
-                            final boolean shown = Boolean.parseBoolean(showState);
-
-                            if (shown) {
-                                return "Hide Comments";
-                            } else {
-                                return "Show Comments";
-                            }
-                        }
-
-                        @Override
-                        protected String iconResource() {
-                            return "com/l7tech/console/resources/About16.gif";
-                        }
-                    };
+    public Action getHideShowCommentAction(final AbstractButton button){
+        if (button != null && !showCmtsButtons.contains(button)) {
+            showCmtsButtons.add(button);
         }
-        // Set the mnemonic and accelerator key
-        hideShowCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
-        hideShowCommentsAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
+
+        if (hideShowCommentsAction == null) {
+            hideShowCommentsAction = new SecureAction(null) {
+                @Override
+                protected void performAction() {
+                    final String showState = preferences.getString(SHOW_COMMENTS);
+                    final boolean shown = Boolean.parseBoolean(showState);
+                    //shown = true means the button should say 'Hide'
+
+                    if (shown) preferences.putProperty(SHOW_COMMENTS, "false");
+                    else preferences.putProperty(SHOW_COMMENTS, "true");
+
+                    for (AbstractButton butn: showCmtsButtons) {
+                        butn.setText(getName());
+                        updateNodesWithComments();
+                    }
+                }
+
+                @Override
+                public String getName() {
+                    final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+                    final String showState = preferences.getString(SHOW_COMMENTS);
+                    final boolean shown = Boolean.parseBoolean(showState);
+
+                    if (shown) {
+                        return "Hide Comments";
+                    } else {
+                        return "Show Comments";
+                    }
+                }
+
+                @Override
+                protected String iconResource() {
+                    return "com/l7tech/console/resources/About16.gif";
+                }
+            };
+
+            // Set the mnemonic and accelerator key
+            hideShowCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
+            hideShowCommentsAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
+        }
 
         return hideShowCommentsAction;
-
     }
 
     public Action getUDDIImportAction() {
@@ -2056,7 +2061,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         if (showAssertionLineNumbersAction == null) {
-            showAssertionLineNumbersAction = new SecureAction(null) { //todo: access control for assertions
+            showAssertionLineNumbersAction = new SecureAction(null) {
                 @Override
                 protected void performAction() {
                     // Update the status of assertion line numbers shown/hidden in the policy editor panel.
