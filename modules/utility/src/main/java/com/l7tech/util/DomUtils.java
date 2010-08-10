@@ -20,10 +20,27 @@ public class DomUtils {
     public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
 
     /** This is the namespace that the special namespace prefix "xml" logically belongs to. */
-    //public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
+    public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
 
+    /** Regex character class ranges matching XML NameStartChar, but omitting colon. */
+    public static final String PAT_RANGES_NCNameStartChar = "A-Za-z_\\xC0-\\xD6\\xD8-\\xF6\\xF8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D" +
+            "\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";  // TODO need to allow \\u10000-\\uEFFFF also, but \\u notation doesn't support code points outside the BMP
 
-    /**
+    /** Regex character class ranges matching XML NameChar, but omitting colon. */
+    public static final String PAT_RANGES_NCNameChar = PAT_RANGES_NCNameStartChar + "\\-\\.0-9\\xB7\\u0300-\\u036F\\u203F-\\u2040";
+
+    private static final String PAT_STR_NCName = "[" + PAT_RANGES_NCNameStartChar + "][" + PAT_RANGES_NCNameChar + "]*";
+
+    /** Precompiled regex Pattern that will only match a string containing nothing but a valid XML Name (including those with one or more colons, including those with leading or trailing colons). */
+    private static final Pattern PATTERN_NAME = Pattern.compile("^" + "[\\:" + PAT_RANGES_NCNameStartChar + "][\\:" + PAT_RANGES_NCNameChar + "]*" + "$");
+
+    /** Precompiled regex Pattern that will only match a string containing nothing but a valid XML NCName (a Name that does not include any colon characters). */
+    private static final Pattern PATTERN_NCNAME = Pattern.compile("^" + PAT_STR_NCName + "$");
+
+    /** Precompiled regex Pattern that will only match a string containing nothing but a valid XML QName (optional NCName-plus-colon, followed by an NCName). */
+    private static final Pattern PATTERN_QNAME = Pattern.compile("^(?:" + PAT_STR_NCName + "\\:)?" + PAT_STR_NCName + "$");
+
+   /**
      * Finds the first child {@link Element} of a parent {@link Element}.
      * @param parent the {@link Element} in which to search for children. Must be non-null.
      * @return First child {@link Element} or null if the specified parent contains no elements
@@ -1033,6 +1050,53 @@ public class DomUtils {
         return element;
     }
 
+    /**
+     * Check if the specified identifier string is a valid "Name" per the XML 1.0 specification.
+     * <p/>
+     * A Name consists of a more-or-less alphabetic start character followed by zero or more more-or-less alphanumeric characters
+     * (but with certain punctuation allowed, notably including colon). The specfication defines this in terms of ranges of Unicode code points.
+     * <p/>
+     * Note: this method currently will not accept names containing characters in the range 10000-EFFFF (which is
+     * outside the basic multilingual plane), even though these are technically supposed to be allowed per the XML 1.0 spec.
+     *
+     * @param identifier the identifier to check.  Required.
+     * @return true iff. the specified identifier is a valid XML Name.
+     */
+    public static boolean isValidXmlName(CharSequence identifier) {
+        return PATTERN_NAME.matcher(identifier).matches();
+    }
+
+    /**
+     * Check if the specified identifier string is a valid "NCName" (No-Colon Name) per the "Namespaces in XML 1.0" specification.
+     * <p/>
+     * An "NCName" permits all the same characters as a "Name" with the exception of the colon character, which is disallowed.
+     * <p/>
+     * Note: this method currently will not accept names containing characters in the range 10000-EFFFF (which is
+     * outside the basic multilingual plane), even though these are technically supposed to be allowed per the XML 1.0 spec.
+     *
+     * @param identifier the identifier to check.  Required.
+     * @return true iff. the specified identifier is a valid XML NCName.
+     */
+    public static boolean isValidXmlNcName(CharSequence identifier) {
+        return PATTERN_NCNAME.matcher(identifier).matches();
+    }
+
+    /**
+     * Check if the specified identifier string is a valid "QName" (Qualified Name) per the "Namespaces in XML 1.0" specification.
+     * <p/>
+     * A "QName" is either a bare "NCName", or else an NCName preceded by an NCName prefix and a colon (that is, either "NCName" or "NCName:NCName").
+     * <p/>
+     * Note: this method currently will not accept names containing characters in the range 10000-EFFFF (which is
+     * outside the basic multilingual plane), even though these are technically supposed to be allowed per the XML 1.0 spec.
+     *
+     * @param identifier the identifier to check.  Required.
+     * @return true iff. the specified identifier is a valid XML QName.
+     */
+    public static boolean isValidXmlQname(CharSequence identifier) {
+        return PATTERN_QNAME.matcher(identifier).matches();
+    }
+
+    // Very loose match of anything that looks like a prefixed qname, regardless of whether it also includes punctuation
     private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
 
     /**
