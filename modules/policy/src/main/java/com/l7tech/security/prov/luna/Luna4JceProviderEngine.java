@@ -20,11 +20,10 @@ public class Luna4JceProviderEngine extends JceProvider {
     private final Provider PBE_PROVIDER;
 
     public Luna4JceProviderEngine() {
+        logIntoPartition();
         Security.insertProviderAt(JCA_PROVIDER, 1);
         Security.insertProviderAt(JCE_PROVIDER, 1);
         PBE_PROVIDER = Security.getProvider("SunJCE"); // Can't use Luna providers for this; they advertise an impl but it is not compatible
-
-        logIntoPartition();
     }
 
     private static void logIntoPartition()  {
