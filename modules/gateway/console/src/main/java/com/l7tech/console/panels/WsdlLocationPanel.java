@@ -451,7 +451,7 @@ public class WsdlLocationPanel extends JPanel {
         if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
             locator = gatewayHttpWSDLLocator(wsdlUrl);
         }
-        else { // it is a file url (such as "file:///"), a relative file path, an absolute file fath, or invalid.
+        else { // it is a file url (such as "file:///"), a relative file path, an absolute file path, or invalid.
            locator = fileWSDLLocator(wsdlUrl);
         }
 
@@ -749,7 +749,7 @@ public class WsdlLocationPanel extends JPanel {
 
     /**
      * Get a WSDLLocator suitable for retrieval of a single document (will not work for includes)
-     * @param wsdlUrl it could be a file url (such as "file:///"), a relative file path, an absolute file fath, or invalid.
+     * @param wsdlUrl it could be a file url (such as "file:///"), a relative file path, an absolute file path, or invalid.
      */
     private WSDLLocator fileWSDLLocator(final String wsdlUrl) {
         FileInputStream fin = null;

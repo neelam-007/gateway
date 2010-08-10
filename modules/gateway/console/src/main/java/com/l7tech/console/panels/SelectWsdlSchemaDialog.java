@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.TopComponents;
 
@@ -10,7 +9,6 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.action.ActionModel;
 import org.dom4j.DocumentException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXParseException;
@@ -20,6 +18,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A dialog that allows to select a schema from a wsdl and specify which portion of it to import.
@@ -32,11 +31,12 @@ import java.io.IOException;
  */
 public class SelectWsdlSchemaDialog extends JDialog {
     private XMLContainer xmlContainer;
-    public SelectWsdlSchemaDialog(JDialog parent, Document wsdl)
+    public SelectWsdlSchemaDialog(JDialog parent, List<Element> fullSchemas, List<Element> inputSchemas, List<Element> outputSchemas)
       throws DocumentException, IOException, SAXParseException {
         super(parent, true);
-        anal = new WsdlSchemaAnalizer(wsdl);
-        anal.splitInputOutputs();
+        this.fullSchemas = fullSchemas;
+        this.inputSchemas = inputSchemas;
+        this.outputSchemas = outputSchemas;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
@@ -109,9 +109,8 @@ public class SelectWsdlSchemaDialog extends JDialog {
     }
 
     private void setInitialData() {
-        Element[] schemas = anal.getFullSchemas();
         DefaultComboBoxModel model = (DefaultComboBoxModel)schemaselector.getModel();
-        if (schemas == null || schemas.length < 1) {
+        if ( fullSchemas == null || fullSchemas.size() < 1 ) {
             model.addElement("No schema present in the wsdl.");
             okbutton.setEnabled(false);
             allradio.setEnabled(false);
@@ -120,11 +119,10 @@ public class SelectWsdlSchemaDialog extends JDialog {
             schemaselector.setEnabled(false);
         } else {
             String first = null;
-            for (int i = 0; i < schemas.length; i++) {
-                Element schema = schemas[i];
+            for(Element schema : fullSchemas) {
                 String tns = schema.getAttribute("targetNamespace");
                 if (tns == null || tns.length() < 1) {
-                    tns = "Undefined targetNamespace " + i;
+                    tns = "Undefined targetNamespace";
                 }
                 model.addElement(tns);
                 if (first == null) first = tns;
@@ -141,11 +139,11 @@ public class SelectWsdlSchemaDialog extends JDialog {
         int schemaIndex = schemaselector.getSelectedIndex();
         Node node = null;
         if (allradio.isSelected()) {
-            node = anal.getFullSchemas()[schemaIndex];
+            node = fullSchemas.get(schemaIndex);
         } else if (requestradio.isSelected()) {
-            node = anal.getInputSchemas()[schemaIndex];
+            node = inputSchemas.get(schemaIndex);
         } else if (responseradio.isSelected()) {
-            node = anal.getOutputSchemas()[schemaIndex];
+            node = outputSchemas.get(schemaIndex);
         }
         return node;
     }
@@ -229,7 +227,9 @@ public class SelectWsdlSchemaDialog extends JDialog {
     private JRadioButton responseradio;
     private JComboBox schemaselector;
     private JPanel xmlpanel;
-    private WsdlSchemaAnalizer anal;
+    private List<Element> fullSchemas;
+    private List<Element> inputSchemas;
+    private List<Element> outputSchemas;
     private String okedSchema = null;
 
 }

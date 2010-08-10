@@ -18,6 +18,7 @@ import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -120,10 +121,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private SchemaValidation schemaValidationAssertion;
     private PublishedService service;
 
-    private final Logger log = Logger.getLogger(getClass().getName());
+    // schemas extracted from the WSDL
+    List<Element> fullSchemas;
+    List<Element> inputSchemas;
+    List<Element> outputSchemas;
 
-    // cached values
-    private boolean wsdlBindingSoapUseIsLiteral;
+    private final Logger log = Logger.getLogger(getClass().getName());
 
     private static int CONTROL_SPACING = 5;
 
@@ -253,6 +256,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 Actions.invokeHelp(SchemaValidationPropertiesDialog.this);
             }
         });
+
+        extractSchemas();
+
         readFromWsdlButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -266,7 +272,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         });
 
-        readFromWsdlButton.setEnabled(wsdlExtractSupported());
+        readFromWsdlButton.setEnabled(fullSchemas != null && ! fullSchemas.isEmpty());
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
         readUrlButton.addActionListener(new ActionListener() {
             @Override
@@ -484,63 +490,83 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     /**
-     * Determine whether wsdl extracting is supported. This is supported for 'document'
-     * style services only.
-     * Traverse all the soap bindings, and if all the bindings are of style 'document'
-     * returns true.
+     * Determines whether wsdl extracting is supported, and extracts schemas if so.
+     * This is supported for 'document' style services only.
+     * Traverse all the soap bindings, and if all the bindings are of style 'document' extracts the schemas.
      *
-     * @return true if 'document' style supported, false otherwise
+     * Initializes fullSchemas, inputSchemas, and outputSchemas fields, or leaves them uninitialized if schema extraction is not supported.
      */
-    private boolean wsdlExtractSupported() {
-        if (service == null || !service.isSoap()) return false;
+    private void extractSchemas() {
+        if (service == null || !service.isSoap()) return;
         String wsdlXml = service.getWsdlXml();
-        if (wsdlXml == null) return false;
-        analyzeWsdl(wsdlXml);
-        // bugzilla #2081, if we know we can't extract a wsdl, then let's disable feature
+        if (wsdlXml == null) return;
 
+        Map<String,String> documentsToAnalyze = new HashMap<String,String>();
+        documentsToAnalyze.put(service.getWsdlUrl(), wsdlXml);
         try {
-            NodeList wsdlSchemas = WsdlSchemaAnalizer.extractSchemaElementFromWsdl(XmlUtil.stringToDocument(wsdlXml));
-            if (wsdlSchemas == null || wsdlSchemas.getLength() < 1) {
-                return false;
+            for(ServiceDocument document : Registry.getDefault().getServiceManager().findServiceDocumentsByServiceID(service.getId())) {
+                if ("WSDL-IMPORT".equals(document.getType())) {
+                    documentsToAnalyze.put(document.getUri(), document.getContents());
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error retrieving service documents for service id: " + service.getId(), e);
+            return;
+        }
+
+        // bugzilla #2081, if we know we can't extract a wsdl, then let's disable feature
+        if (!isDocumentLiteral(documentsToAnalyze)) {
+            return;
+        }
+
+        List<Element> fullSchemas = new ArrayList<Element>();
+        List<Element> inputSchemas = new ArrayList<Element>();
+        List<Element> outputSchemas = new ArrayList<Element>();
+        WsdlSchemaAnalizer analyzer;
+        try {
+            for (String docXml : documentsToAnalyze.values()) {
+                analyzer = new WsdlSchemaAnalizer(XmlUtil.stringToDocument(docXml));
+                analyzer.splitInputOutputs();
+                Element[] extractedFullSchemas = analyzer.getFullSchemas();
+                if (extractedFullSchemas != null)
+                    fullSchemas.addAll(Arrays.asList(extractedFullSchemas));
+                Element[] extractedInputSchemas = analyzer.getInputSchemas();
+                if (extractedInputSchemas != null)
+                    inputSchemas.addAll(Arrays.asList(extractedInputSchemas));
+                Element[] extractedOutputSchemas = analyzer.getOutputSchemas();
+                if (extractedOutputSchemas != null)
+                    outputSchemas.addAll(Arrays.asList(extractedOutputSchemas));
             }
         } catch (SAXException e) {
             logger.log(Level.WARNING, "wsdl is not well formed?", e);
-            // here we simply return false because if wsdl is not well formed then
+            // here we simply return null because if wsdl is not well formed then
             // we know for sure there is no way we can possibly extract a schema from it
-            return false;
+            return;
         }
-        return wsdlBindingSoapUseIsLiteral;
+
+        this.fullSchemas = fullSchemas;
+        this.inputSchemas = inputSchemas;
+        this.outputSchemas = outputSchemas;
     }
 
     /**
-     * Determine what kind of service is defined in the wsdl (doc/literal, rpc/encoded, rpc/literal)
+     * @return true if the supplied WSDLs are valid and their SOAP bindings are all document style and literal use; false otherwise.
      */
-    private void analyzeWsdl(String wsdlXml) {
+    private boolean isDocumentLiteral(Map<String, String> wsdls) {
         try {
-            Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
+            Wsdl wsdl = Wsdl.newInstance(Wsdl.getWSDLLocator(service.getWsdlUrl(), wsdls, logger));
             wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            Collection<Binding> bindings = wsdl.getBindings();
-            if (bindings.isEmpty()) return;
 
-            try {
-                for (Binding binding : bindings) {
-                    if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
-                        break;
-                    }
+            Collection<Binding> bindings = wsdl.getBindings();
+            for (Binding binding : bindings) {
+                if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding)) || !Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
+                    return false;
                 }
-                wsdlBindingSoapUseIsLiteral = true;
-                for (Binding binding : bindings) {
-                    if (!Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
-                        wsdlBindingSoapUseIsLiteral = false;
-                        break;
-                    }
-                }
-            } catch (WSDLException e) {
-                log.log(Level.WARNING, "Could not determine soap use", e);
             }
         } catch (WSDLException e) {
-            log.log(Level.WARNING, "Wsdl parsing error", e);
+            return false;
         }
+        return true;
     }
 
     /**
@@ -972,7 +998,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         final SelectWsdlSchemaDialog schemaFromWsdlChooser;
         try {
-            schemaFromWsdlChooser = new SelectWsdlSchemaDialog(this, wsdlDoc);
+            schemaFromWsdlChooser = new SelectWsdlSchemaDialog(this, fullSchemas, inputSchemas, outputSchemas);
         } catch (DocumentException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
