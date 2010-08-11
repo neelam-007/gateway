@@ -36,6 +36,15 @@ public class DomUtilsTest {
             "---",
             "JDI#",
             "",
+            " test",
+            "foo::sdl4-asdf- ",
+            "h\ti",
+            "xm lns",
+            "\na-b",
+            "_fo\ro",
+            "::\r",
+            " : ",
+            "\t:foo ",
     };
 
     private static final String[] VALID_NCNAMES = new String[]{
@@ -106,6 +115,11 @@ public class DomUtilsTest {
     @Test
     public void testInvalidNCNames() throws Exception {
         for (String s : INVALID_NCNAMES) {
+            assertFalse("Should have failed as NCName: " + s, DomUtils.isValidXmlNcName(s));
+        }
+
+        // All invalid Names are automatically invalid as NCNames as well
+        for (String s : INVALID_NAMES) {
             assertFalse("Should have failed as NCName: " + s, DomUtils.isValidXmlNcName(s));
         }
     }
