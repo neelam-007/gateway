@@ -184,7 +184,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
         });
 
-        _portNumberTextField.setDocument(new NumberField(5));
         _portNumberTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -387,13 +386,15 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
      * @return true if the port numbere is valid, false otherwise.
      */
     private boolean setPortStatusLabelVisibility() {
-        boolean portStatusLabelVisible;
+        boolean portStatusLabelVisible = false;
         String portStr = _portNumberTextField.getText();
-        if ("".equals(portStr)) { // Since _portNumberTextField allows a blank.
-            portStatusLabelVisible = false;
-        } else {
+        try {
             int port = Integer.parseInt(portStr);
             portStatusLabelVisible = (port <= 0) || (port > 65535);
+        } catch (NumberFormatException e) {
+            // must be using context variable
+            if (Syntax.getReferencedNames(portStr).length < 1)
+                portStatusLabelVisible = true;
         }
         portStatusLabel.setVisible(portStatusLabelVisible);
         return portStatusLabelVisible;
