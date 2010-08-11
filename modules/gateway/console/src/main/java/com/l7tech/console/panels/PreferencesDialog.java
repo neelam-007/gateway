@@ -292,7 +292,7 @@ public class PreferencesDialog extends JDialog {
                 JOptionPane.showMessageDialog(null,
                   "The value for Maximum Right Comment must be a number\n" +
                   "between 0 and " + maxRhsSize,
-                  "Bad Left Comment Maximum",
+                  "Bad Right Comment Maximum",
                   JOptionPane.ERROR_MESSAGE);
 
                 return false;
