@@ -9,15 +9,20 @@ import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.FullQName;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -30,10 +35,13 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
     private final BeanFactory beanFactory;
 
     private static final Random random = new SecureRandom();
+    private final FullQName attrname;
 
-    public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
+    public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException, ParseException {
         super(assertion, logger, beanFactory, eventPub);
         this.beanFactory = beanFactory;
+        String attrNameStr = assertion.getCustomIdAttributeQname();
+        this.attrname = attrNameStr == null || attrNameStr.length() < 1 ? null : FullQName.valueOf(attrNameStr);
     }
 
     @Override
@@ -49,23 +57,60 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
     }
 
     private int signElement(int count, Element elementToSign, SignerInfo signer) throws SignatureException, SignatureStructureException, XSignatureException {
-        count = generateId(count, elementToSign);
-        Element signature = DsigUtil.createEnvelopedSignature(elementToSign, signer.getCertificate(), signer.getPrivate(), null, null, null);
-        elementToSign.appendChild(signature);
+        Pair<Integer, String> p = generateId(count, elementToSign);
+        count = p.left;
+        String idValue = p.right;
+
+        Element signature = DsigUtil.createEnvelopedSignature(elementToSign, idValue, signer.getCertificate(), signer.getPrivate(), null, null, null);
+
+        Node firstChild = elementToSign.getFirstChild();
+        if (NonSoapSignElementAssertion.SignatureLocation.FIRST_CHILD.equals(assertion.getSignatureLocation()) && firstChild != null) {
+            elementToSign.insertBefore(signature, firstChild);
+        } else {
+            elementToSign.appendChild(signature);
+        }
+
         return count;
     }
 
-    private int generateId(int count, Element element) {
-        final String idAttr = DsigUtil.getIdAttribute(element);
+    private Pair<Integer, String> generateId(int count, Element element) {
+        String ns;
+        String name;
+        if (attrname == null || attrname.getLocal() == null || attrname.getLocal().length() < 1) {
+            ns = null;
+            name = DsigUtil.getIdAttribute(element);
+        } else {
+            // Custom (may modify DOM to locate/create appropriate namespace declarations if a global attribute is specified)
+            ns = attrname.getNsUri();
+            if (ns == null) {
+                // Treat as local attr, possibly with forced use of undeclared ns prefix if so configured
+                name = attrname.getFullName();
+            } else {
+                // Treat as global attribue; find a prefix to use, adding new xmlns decl if necessary
+                String desiredPrefix = attrname.getPrefix();
+                if (desiredPrefix == null || desiredPrefix.length() < 1)
+                    desiredPrefix = "ns";
+                String prefix = DomUtils.getOrCreatePrefixForNamespace(element, ns, desiredPrefix);
+                name = prefix == null
+                        ? attrname.getLocal()
+                        : prefix + ":" + attrname.getLocal();
+            }
+        }
 
-        String id = element.getAttribute( idAttr );
+        String id = ns == null ? element.getAttribute( name ) : element.getAttributeNS( ns, name );
         if (id != null && id.trim().length() > 0)
-            return count;
+            return new Pair<Integer, String>(count, id);
 
         byte[] randbytes = new byte[16];
         random.nextBytes(randbytes);
         id = element.getLocalName() + "-" + count++ + "-" + HexUtils.hexDump(randbytes);
-        element.setAttribute( idAttr, id);
-        return count;
+
+        if (ns == null) {
+            element.setAttribute( name, id);
+        } else {
+            element.setAttributeNS( ns, name, id);
+        }
+        
+        return new Pair<Integer, String>(count, id);
     }    
 }

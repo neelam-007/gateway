@@ -5,20 +5,72 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
+import com.l7tech.policy.wsp.*;
+
+import java.util.Arrays;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 /**
  * Immediately sign one or more Elements in a non-SOAP XML message.
  */
 public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase implements PrivateKeyable {
     private static final String META_INITIALIZED = NonSoapSignElementAssertion.class.getName() + ".metadataInitialized";
+    private static final String baseName = "(Non-SOAP) Sign XML Element";
+    private static final SignatureLocation DEFAULT_SIGNATURE_LOCATION = SignatureLocation.LAST_CHILD;
+
+    public static enum SignatureLocation {
+        FIRST_CHILD("First child of signed element"),
+        LAST_CHILD("Last child of signed element")
+        ;
+
+        private final String title;
+
+        private SignatureLocation(String title) {
+            this.title = title;
+        }
+
+
+        @Override
+        public String toString() {
+            return title;
+        }
+    }
 
     private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();
+    private SignatureLocation signatureLocation = DEFAULT_SIGNATURE_LOCATION;
+    private String customIdAttributeQname = null;
 
     public NonSoapSignElementAssertion() {
         super(TargetMessageType.RESPONSE, true);
     }
 
-    private final static String baseName = "(Non-SOAP) Sign XML Element";
+    /**
+     * @return signature location (first child or last child).
+     */
+    public SignatureLocation getSignatureLocation() {
+        return signatureLocation;
+    }
+
+    /**
+     * @param signatureLocation location of signature, or null to use default.
+     */
+    public void setSignatureLocation(SignatureLocation signatureLocation) {
+        if (signatureLocation == null)
+            signatureLocation = DEFAULT_SIGNATURE_LOCATION;
+        this.signatureLocation = signatureLocation;
+    }
+
+    public String getCustomIdAttributeQname() {
+        return customIdAttributeQname;
+    }
+
+    /**
+     * @param customIdAttributeQname qname of custom ID attribute, or null to use default behavior.  May have an empty namespace URI and prefix if it is to be a local attribute.
+     */
+    public void setCustomIdAttributeQname(String customIdAttributeQname) {
+        this.customIdAttributeQname = customIdAttributeQname;
+    }
 
     @Override
     public String getDefaultXpathExpressionString() {
@@ -51,7 +103,11 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, ElementSelectingXpathBasedAssertionValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        
+
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+            new Java5EnumTypeMapping(SignatureLocation.class, "signatureLocation")
+        )));
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

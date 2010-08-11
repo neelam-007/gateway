@@ -13,10 +13,7 @@ import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -76,13 +73,13 @@ public class DsigUtil {
             throws SignatureException, SignatureStructureException, XSignatureException
     {
         final String idAttr = getIdAttribute(elementToSign);
-        String rootId = elementToSign.getAttribute(idAttr);
-        if (rootId == null || rootId.length() < 1) {
-            rootId = SoapUtil.generateUniqueId( "root", 0 );
-            elementToSign.setAttribute(idAttr, rootId);
+        String idValue = elementToSign.getAttribute(idAttr);
+        if (idValue == null || idValue.length() < 1) {
+            idValue = SoapUtil.generateUniqueId( "root", 0 );
+            elementToSign.setAttribute(idAttr, idValue);
         }
 
-        return createEnvelopedSignature(elementToSign, idAttr, senderSigningCert, senderSigningKey,
+        return createEnvelopedSignature(elementToSign, idValue, senderSigningCert, senderSigningKey,
                 keyInfoChildElement, keyName, messageDigestAlgorithm);
     }
 
@@ -91,7 +88,7 @@ public class DsigUtil {
      * in the KeyInfo.
      *
      * @param elementToSign         the element to sign
-     * @param xsdIdAttribute        the xsd:ID attribute on the element being signed, to reference from the Signature.
+     * @param targetElementIdValue  the value of the xsd:ID attribute on the element being signed, to reference from the Signature using a shorthand XPointer.  Required.
      * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
      * @param senderSigningKey      private key to sign it with.
      * @param keyInfoChildElement   Custom key info child element to use
@@ -104,7 +101,7 @@ public class DsigUtil {
      * @throws XSignatureException  if there is a problem creating the signature
      */
     public static Element createEnvelopedSignature(final Element elementToSign,
-                                                   final String xsdIdAttribute,
+                                                   final String targetElementIdValue,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
                                                    Element keyInfoChildElement,
@@ -112,6 +109,9 @@ public class DsigUtil {
                                                    String messageDigestAlgorithm)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
+        if (targetElementIdValue == null)
+            throw new IllegalArgumentException("targetElementIdValue is required");
+
         SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
@@ -122,12 +122,7 @@ public class DsigUtil {
         template.setIndentation(false);
         template.setPrefix("ds");
 
-        String rootId = elementToSign.getAttribute(xsdIdAttribute);
-        if (rootId == null || rootId.trim().isEmpty()) {
-            throw new SignatureException("Cannot find xsd:ID attribute '" + xsdIdAttribute + "'on element '" + elementToSign.getNodeName() + "'");
-        }
-        
-        Reference rootRef = template.createReference("#" + rootId);
+        Reference rootRef = template.createReference("#" + targetElementIdValue);
         rootRef.addTransform(Transform.ENVELOPED);
         rootRef.addTransform(Transform.C14N_EXCLUSIVE);
         template.addReference(rootRef);
@@ -152,11 +147,10 @@ public class DsigUtil {
         keyInfo.insertTo(sigElement, "ds", template);
 
         SignatureContext sigContext = new SignatureContext();
-        final String finalRootId = rootId;
         sigContext.setIDResolver(new IDResolver() {
             @Override
             public Element resolveID(Document document, String s) {
-                return s.equals(finalRootId) ? elementToSign : null;
+                return s.equals(targetElementIdValue) ? elementToSign : null;
             }
         });
         sigContext.setEntityResolver( XmlUtil.getXss4jEntityResolver());

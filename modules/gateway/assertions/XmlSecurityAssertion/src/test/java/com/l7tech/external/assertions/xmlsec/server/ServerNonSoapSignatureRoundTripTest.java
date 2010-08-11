@@ -16,8 +16,8 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -25,8 +25,11 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -150,7 +153,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         return context;
     }
 
-    Document createAndSign(String keyAlias) throws InvalidXpathException, IOException, PolicyAssertionException, SAXException {
+    Document createAndSign(String keyAlias) throws InvalidXpathException, IOException, PolicyAssertionException, SAXException, ParseException {
         NonSoapSignElementAssertion ass = new NonSoapSignElementAssertion();
         ass.setKeyAlias(keyAlias);
         ass.setUsesDefaultKeyStore(false);

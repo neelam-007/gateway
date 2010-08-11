@@ -12,8 +12,9 @@ import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultNodeSet;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -33,6 +34,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
 
 /**
  * @author alex
@@ -71,6 +74,13 @@ public class XmlUtilTest {
         assertTrue(element != null);
         assertTrue(nsuri.equals(element.getNamespaceURI()));
         assertTrue(name.equals(element.getLocalName()));
+    }
+
+    @Test
+    public void testDomAttrChildren() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<foo attr1=\"blah\" attr2=\"blah2\"/>");
+        assertTrue(d.getDocumentElement().getChildNodes().getLength() == 0);
+        assertFalse(d.getDocumentElement().hasChildNodes());
     }
 
     @Test
