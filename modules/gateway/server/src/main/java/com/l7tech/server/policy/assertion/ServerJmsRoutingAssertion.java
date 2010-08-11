@@ -410,7 +410,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     final com.l7tech.message.Message responseMessage;
                     try {
-                        responseMessage = context.getTargetMessage(assertion.getResponseTarget());
+                        responseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
                     } catch (NoSuchVariableException e) {
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
