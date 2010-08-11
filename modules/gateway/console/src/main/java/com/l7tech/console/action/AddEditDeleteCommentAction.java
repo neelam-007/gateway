@@ -73,7 +73,7 @@ public class AddEditDeleteCommentAction extends SecureAction{
                 }
             }
             DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                    (hasBoth) ? "Delete Both Comments?" : "Delete Comment?",
+                    (hasBoth) ? "Delete both comments?" : "Delete comment?",
                     "Confirm Delete",
                     JOptionPane.OK_CANCEL_OPTION,
                     new DialogDisplayer.OptionListener() {
