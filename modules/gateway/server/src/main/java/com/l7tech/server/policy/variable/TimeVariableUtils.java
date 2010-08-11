@@ -15,7 +15,7 @@ class TimeVariableUtils {
     static final String LOCALDOT = BuiltinVariables.TIMESUFFIX_ZONE_LOCAL + ".";
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    static Object getTimeValue( final String prefix, final String name, final LazyLong lazyTime) {
+    static Object getTimeValue( final String prefix, final String name, final LazyLong lazyTime) throws TimeFormatException {
         String suffix = name.substring(prefix.length());
         if (suffix.startsWith(".")) suffix = suffix.substring(1);
         String format, zone;
@@ -47,11 +47,21 @@ class TimeVariableUtils {
                 return ISO8601Date.format(date, -1, tz);
             }
         } else {
-            SimpleDateFormat sdf = new SimpleDateFormat(format);
-            if ( BuiltinVariables.TIMESUFFIX_ZONE_UTC.equalsIgnoreCase(zone) ) {
-                sdf.setTimeZone( UTC );                
+            try {
+                final SimpleDateFormat sdf = new SimpleDateFormat(format);
+                if ( BuiltinVariables.TIMESUFFIX_ZONE_UTC.equalsIgnoreCase(zone) ) {
+                    sdf.setTimeZone( UTC );
+                }
+                return sdf.format(date);
+            } catch ( IllegalArgumentException iae ) {              
+                throw new TimeFormatException( iae );
             }
-            return sdf.format(date);
+        }
+    }
+
+    public static class TimeFormatException extends Exception {
+        public TimeFormatException( final Throwable cause ) {
+            super( cause );
         }
     }
 

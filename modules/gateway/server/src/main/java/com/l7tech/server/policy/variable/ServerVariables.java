@@ -353,23 +353,33 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
-                    @Override
-                    public long get() {
-                        return System.currentTimeMillis();
-                    }
-                });
+                try {
+                    return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
+                        @Override
+                        public long get() {
+                            return System.currentTimeMillis();
+                        }
+                    });
+                } catch ( TimeVariableUtils.TimeFormatException e ) {
+                    logger.warning("Variable name '" + name + "' has invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                    return null;
+                }
             }
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new Getter() {
             @Override
             public Object get(String name, final PolicyEnforcementContext context) {
-                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
-                    @Override
-                    public long get() {
-                        return context.getStartTime();
-                    }
-                });
+                try {
+                    return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
+                        @Override
+                        public long get() {
+                            return context.getStartTime();
+                        }
+                    });
+                } catch ( TimeVariableUtils.TimeFormatException e ) {
+                    logger.warning("Variable name '" + name + "' has invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                    return null;
+                }
             }
         }),
         new Variable("response.http.status", new Getter() {
