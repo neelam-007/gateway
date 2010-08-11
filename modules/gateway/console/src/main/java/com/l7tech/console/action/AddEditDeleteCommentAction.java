@@ -13,6 +13,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -62,9 +63,18 @@ public class AddEditDeleteCommentAction extends SecureAction{
         final Assertion assertion = node.asAssertion();
 
         if (isDelete) {
-            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(), 
-                    "Delete Comment?",
-                    "Confirm delete comment",
+            final Assertion.Comment comment = assertion.getAssertionComment();
+            boolean hasBoth = false;
+            if(comment != null){
+                //should never be null
+                final Map<String,String> props = comment.getProperties();
+                if(props.containsKey(Assertion.Comment.LEFT_COMMENT) && props.containsKey(Assertion.Comment.RIGHT_COMMENT)){
+                    hasBoth = true;
+                }
+            }
+            DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                    (hasBoth) ? "Delete Both Comments?" : "Delete Comment?",
+                    "Confirm Delete",
                     JOptionPane.OK_CANCEL_OPTION,
                     new DialogDisplayer.OptionListener() {
                 @Override

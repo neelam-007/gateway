@@ -920,7 +920,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         /**
-         * Does this Comment have any valid comments
+         * Does this Comment have any valid comments?
          * @return true if Comment has a non empty left or right comment.
          */
         public boolean hasComment(){
