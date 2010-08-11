@@ -281,10 +281,19 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
     private void populateReqMsgSrcComboBox() {
         messageSource.removeAllItems();
+        messageSource.setSelectedIndex(-1);
+
+        MessageTargetableSupport currentMessageSource = _assertion.getRequestTarget();
+        TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
+        String contextVariableSourceTarget = sourceTarget == TargetMessageType.OTHER ? currentMessageSource.getOtherTargetMessageVariable() : null;
 
         messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.REQUEST, false)));
         messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.RESPONSE, false)));
-        MessageTargetableSupport currentMessageSource = _assertion.getRequestTarget();
+
+        if (sourceTarget == TargetMessageType.REQUEST)
+            messageSource.setSelectedIndex(0);
+        else if (sourceTarget == TargetMessageType.RESPONSE)
+            messageSource.setSelectedIndex(1);
 
         final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(_assertion);
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
@@ -292,14 +301,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
                 final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(new MessageTargetableSupport(variableName));
                 messageSource.addItem(item);
-                if ( currentMessageSource != null && variableName.equals(currentMessageSource.getOtherTargetMessageVariable())) {
+                if ( variableName.equals(contextVariableSourceTarget) ) {
                     messageSource.setSelectedItem(item);
                 }
             }
         }
-        if (currentMessageSource != null && currentMessageSource.getTarget() == TargetMessageType.OTHER &&
-            currentMessageSource.getOtherTargetMessageVariable() != null && ! predecessorVariableNames.contains(currentMessageSource.getOtherTargetMessageVariable())) {
-            MsgSrcComboBoxItem current = new MsgSrcComboBoxItem(new MessageTargetableSupport(currentMessageSource.getOtherTargetMessageVariable()));
+
+        if (contextVariableSourceTarget != null && ! predecessorVariableNames.contains(contextVariableSourceTarget)) {
+            MsgSrcComboBoxItem current = new MsgSrcComboBoxItem(new MessageTargetableSupport(contextVariableSourceTarget));
             current.setUndefined(true);
             messageSource.addItem(current);
             messageSource.setSelectedItem(current);

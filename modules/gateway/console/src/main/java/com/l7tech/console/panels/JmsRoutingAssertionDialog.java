@@ -401,10 +401,19 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private void populateReqMsgSrcComboBox() {
         requestTargetComboBox.removeAllItems();
+        requestTargetComboBox.setSelectedIndex(-1);
+
+        MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
+        TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
+        String contextVariableSourceTarget = sourceTarget == TargetMessageType.OTHER ? currentMessageSource.getOtherTargetMessageVariable() : null;
 
         requestTargetComboBox.addItem(new RequestSourceComboBoxItem(new MessageTargetableSupport(TargetMessageType.REQUEST, false)));
         requestTargetComboBox.addItem(new RequestSourceComboBoxItem(new MessageTargetableSupport(TargetMessageType.RESPONSE, false)));
-        MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
+
+        if (sourceTarget == TargetMessageType.REQUEST)
+            requestTargetComboBox.setSelectedIndex(0);
+        else if (sourceTarget == TargetMessageType.RESPONSE)
+            requestTargetComboBox.setSelectedIndex(1);
 
         final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
@@ -412,14 +421,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
                 final RequestSourceComboBoxItem item = new RequestSourceComboBoxItem(new MessageTargetableSupport(variableName));
                 requestTargetComboBox.addItem(item);
-                if ( currentMessageSource != null && variableName.equals(currentMessageSource.getOtherTargetMessageVariable())) {
+                if ( variableName.equals(contextVariableSourceTarget)) {
                     requestTargetComboBox.setSelectedItem(item);
                 }
             }
         }
-        if (currentMessageSource != null && currentMessageSource.getTarget() == TargetMessageType.OTHER &&
-            currentMessageSource.getOtherTargetMessageVariable() != null && ! predecessorVariableNames.contains(currentMessageSource.getOtherTargetMessageVariable())) {
-            RequestSourceComboBoxItem current = new RequestSourceComboBoxItem(new MessageTargetableSupport(currentMessageSource.getOtherTargetMessageVariable()));
+
+        if (contextVariableSourceTarget != null && ! predecessorVariableNames.contains(contextVariableSourceTarget)) {
+            RequestSourceComboBoxItem current = new RequestSourceComboBoxItem(new MessageTargetableSupport(contextVariableSourceTarget));
             current.setUndefined(true);
             requestTargetComboBox.addItem(current);
             requestTargetComboBox.setSelectedItem(current);
