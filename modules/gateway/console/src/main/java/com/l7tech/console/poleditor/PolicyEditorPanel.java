@@ -1939,26 +1939,27 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             hideShowCommentsAction = new SecureAction(null) {
                 @Override
                 protected void performAction() {
-                    final String showState = preferences.getString(SHOW_COMMENTS);
-                    final boolean shown = Boolean.parseBoolean(showState);
                     //shown = true means the button should say 'Hide'
 
-                    if (shown) preferences.putProperty(SHOW_COMMENTS, "false");
+                    if (isShowing()) preferences.putProperty(SHOW_COMMENTS, "false");
                     else preferences.putProperty(SHOW_COMMENTS, "true");
 
+                    try {
+                        preferences.store();
+                    } catch ( IOException e ) {
+                        log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
+                    }
+                    
                     for (AbstractButton butn: showCmtsButtons) {
                         butn.setText(getName());
+                        butn.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconResource())));
                         updateNodesWithComments();
                     }
                 }
 
                 @Override
                 public String getName() {
-                    final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-                    final String showState = preferences.getString(SHOW_COMMENTS);
-                    final boolean shown = Boolean.parseBoolean(showState);
-
-                    if (shown) {
+                    if (isShowing()) {
                         return "Hide Comments";
                     } else {
                         return "Show Comments";
@@ -1967,7 +1968,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 @Override
                 protected String iconResource() {
-                    return "com/l7tech/console/resources/About16.gif";
+                    return (isShowing()) ? "com/l7tech/console/resources/About16Crossed.gif" : "com/l7tech/console/resources/About16.gif";
+                }
+
+                private boolean isShowing(){
+                    final String showState = preferences.getString(SHOW_COMMENTS);
+                    return Boolean.parseBoolean(showState);
                 }
             };
 
