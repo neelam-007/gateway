@@ -48,9 +48,14 @@ public class SearchForm {
         final Functions.Unary<String, AssertionTreeNode> accessorFunction = new Functions.Unary<String, AssertionTreeNode>() {
             @Override
             public String call(AssertionTreeNode assertionTreeNode) {
-                return  AssertionTreeNode.getVirtualOrdinalString(assertionTreeNode)
-                                + " " + assertionTreeNode.getName();
+                String assertionOrdinal = AssertionTreeNode.getVirtualOrdinalString(assertionTreeNode);
+                String assertionName = assertionTreeNode.getName();
 
+                if (assertionName != null && assertionName.startsWith("<html>")) {
+                    return assertionName.replace("<html>", "<html>" + assertionOrdinal + " "); // "<html>" should be put in the beginning of the returned string. 
+                } else {
+                    return assertionOrdinal + " " + assertionName;
+                }
             }
         };
 
