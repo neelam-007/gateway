@@ -46,6 +46,7 @@ public class CertManagerWindow extends JDialog {
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
+    private static int maxNameLength = EntityUtil.getMaxFieldLength(TrustedCert.class, "name", 128);
 
     private JPanel mainPanel;
     private JButton addButton;
@@ -402,7 +403,7 @@ public class CertManagerWindow extends JDialog {
             } else {
                 name = name.trim();
             }
-            cert.setName( name );
+            cert.setName( truncName( name ) );
             cert.setCertificate( certificate );
             cert.setTrustAnchor( isTrustAnchor );
 
@@ -420,6 +421,10 @@ public class CertManagerWindow extends JDialog {
                 logger.log( Level.WARNING, "Certificate import failed", e);
             }
         }
+    }
+
+    private String truncName(String s) {
+        return s == null || s.length() < maxNameLength ? s : s.substring(0, maxNameLength);
     }
 
     /**
