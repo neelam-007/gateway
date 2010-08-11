@@ -10,6 +10,8 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.FontUtil;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -51,6 +53,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JTextField certFileName;
     private JTextArea copyAndPasteTextArea;
     private JTextField urlConnTextField;
+    private JRadioButton base64PEMRadioButton;
+    private JRadioButton base64RadioButton;
     private X509Certificate[] certChain = null;
     private boolean defaultToSslOption;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
@@ -77,9 +81,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         FontUtil.resizeFont(headerLabel, 1.2);
 
         browseButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 //Create a file chooser
                 SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+                    @Override
                     public void useFileChooser(JFileChooser fc) {
                         int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 
@@ -108,27 +114,35 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             fileRadioButton.setSelected(true);
         }
 
+        enableDisableBase64RadioButtons(false);
         updateEnableDisable();
 
         copyAndPasteRadioButton.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 updateEnableDisable();
             }
         });
 
         fileRadioButton.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 updateEnableDisable();
             }
         });
 
         urlConnRadioButton.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 updateEnableDisable();
             }
         });
     }
 
+    private void enableDisableBase64RadioButtons(boolean enable){
+        base64PEMRadioButton.setEnabled(enable);
+        base64RadioButton.setEnabled(enable);
+    }
     /**
      * Enable/disable the fields according the current selection.
      */
@@ -138,25 +152,26 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             copyAndPasteTextArea.setEnabled(true);
             urlConnTextField.setEnabled(false);
             certFileName.setEnabled(false);
-
+            enableDisableBase64RadioButtons(true);
         } else if (fileRadioButton.isSelected()) {
             browseButton.setEnabled(true);
             copyAndPasteTextArea.setEnabled(false);
             urlConnTextField.setEnabled(false);
             certFileName.setEnabled(true);
-        }
-
-        if (urlConnRadioButton.isSelected()) {
+            enableDisableBase64RadioButtons(false);
+        } else if (urlConnRadioButton.isSelected()) {
             browseButton.setEnabled(false);
             copyAndPasteTextArea.setEnabled(false);
             urlConnTextField.setEnabled(true);
             certFileName.setEnabled(false);
+            enableDisableBase64RadioButtons(false);
         }
     }
 
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Enter Certificate Info";
     }
@@ -166,6 +181,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      *
      * @return  String  The descritpion of the step.
      */
+    @Override
     public String getDescription() {
         return "Enter the HTTPS URL of the certificate, import the certificate file, or " +
                 "cut and paste the certificate in PEM format into the window.";
@@ -176,6 +192,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      *
      * @return true if it is ok to proceed to the next panel. otherwise, false.
      */
+    @Override
     public boolean onNextButton() {
 
         InputStream is = null;
@@ -183,6 +200,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         if (fileRadioButton.isSelected()) {
             try {
                 is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+                    @Override
                     public InputStream run() {
                         try {
                             return new FileInputStream(new File(certFileName.getText().trim()));
@@ -205,11 +223,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
 
             } catch (CertificateException ce) {
-                final String msg = resources.getString("view.error.cert.generate");
+                final String msg = resources.getString("view.error.cert.generate") + " " + ExceptionUtils.getMessage(ce);
                 logger.log(Level.INFO, msg, ce);
                 JOptionPane.showMessageDialog(this, msg,
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                        resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         } else if (urlConnRadioButton.isSelected()) {
@@ -313,21 +331,29 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         } else if (copyAndPasteRadioButton.isSelected()) {
 
             String certPem = copyAndPasteTextArea.getText();
-            if (certPem == null || certPem.trim().length() == 0) {
+            if (certPem == null || certPem.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.content"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                        resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
                 return false;
+            }
+            certPem = certPem.trim();
+
+            final byte [] bytes;
+            if(base64PEMRadioButton.isSelected()){
+                bytes = certPem.getBytes(Charsets.UTF8);
+            } else {
+                bytes = HexUtils.decodeBase64(certPem);
             }
 
             try {
-                is = new ByteArrayInputStream(certPem.getBytes(Charsets.UTF8));
+                is = new ByteArrayInputStream(bytes);
                 Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
                 certChain = certs.toArray(new X509Certificate[0]);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate") + " "
+                        + ExceptionUtils.getMessage(e), resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -355,6 +381,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(Object settings) {
         if (settings == null || certChain == null || certChain.length < 1 || certChain[0] == null)
             return;
@@ -373,6 +400,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canFinish() {
         return false;
     }
