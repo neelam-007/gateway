@@ -361,7 +361,7 @@ public class ServerVariables {
                         }
                     });
                 } catch ( TimeVariableUtils.TimeFormatException e ) {
-                    logger.warning("Variable name '" + name + "' has invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                    logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
                     return null;
                 }
             }
@@ -377,7 +377,7 @@ public class ServerVariables {
                         }
                     });
                 } catch ( TimeVariableUtils.TimeFormatException e ) {
-                    logger.warning("Variable name '" + name + "' has invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                    logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
                     return null;
                 }
             }
