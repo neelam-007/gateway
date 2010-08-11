@@ -158,7 +158,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(PROPERTIES_ACTION_NAME, "Build SAML Protocol Response Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "SAML Protocol Response Properties");
 
         meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<SamlpResponseBuilderAssertion>(){
             @Override
