@@ -151,8 +151,6 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_FAILED, error);    
                 }
 
-                logger.log(Level.INFO, "JSON Schema validation failed");
-                auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_FAILED);
                 context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, errorList.toArray());
                 
                 switch (target) {
