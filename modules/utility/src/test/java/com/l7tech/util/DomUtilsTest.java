@@ -75,6 +75,20 @@ public class DomUtilsTest {
             "",
     };
 
+    private static final String[] VALID_CONTENT = new String[]{
+            "asdf",
+            "\u0009\u0044\uD7FF",
+            new String(new char[]{0x0D}),
+            "\uE000\uE932\uFFFD",
+    };
+
+    private static final String[] INVALID_CONTENT = new String[]{
+            "\uD800",
+            "\u0008",
+            new String(new char[]{0x00}),
+            "\uFFFE",
+    };
+
     @Test(expected = NullPointerException.class)
     public void testNullName() {
         DomUtils.isValidXmlName(null);
@@ -147,4 +161,19 @@ public class DomUtilsTest {
             assertFalse("Should have failed as QName: " + s, DomUtils.isValidXmlQname(s));
         }
     }
+
+    @Test
+    public void testValidXmlContent() {
+        for (String s : VALID_CONTENT) {
+            assertTrue("Should have passed as content: " + s, DomUtils.isValidXmlContent(s));
+        }
+    }
+
+    @Test
+    public void testInvalidXmlContent() {
+        for (String s : INVALID_CONTENT) {
+            assertFalse("Should have failed as content: " + s, DomUtils.isValidXmlContent(s));
+        }
+    }
+
 }

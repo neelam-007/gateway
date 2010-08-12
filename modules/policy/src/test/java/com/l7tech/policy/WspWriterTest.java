@@ -473,6 +473,32 @@ public class WspWriterTest extends TestCase {
         assertFalse( "5.0 format wss security token", value.contains(":RequireWssSecurityToken") );
     }
 
+    @BugNumber(8933)
+    public void testWritePolicyWithInvalidXMLCharacters() throws Exception {
+        final CommentAssertion commentAssertion = new CommentAssertion();
+        commentAssertion.setComment( "Blah" );
+        final Assertion.Comment comment = new Assertion.Comment();
+        comment.setComment( "This is not valid for XML -> \u0006", Assertion.Comment.RIGHT_COMMENT );
+        commentAssertion.setAssertionComment( comment );
+        final AllAssertion all = new AllAssertion(Arrays.<Assertion>asList(
+            commentAssertion
+        ));
+
+        final WspWriter writer = new WspWriter();
+        writer.setPolicy(all);
+        final String value = writer.getPolicyXmlAsString();
+        System.out.println("Got policy xml\n" + value);
+
+        assertTrue( "Base64 encoded string value: ", value.contains( "stringValueBase64" ));
+
+        comment.setComment( "This is valid for XML", Assertion.Comment.RIGHT_COMMENT );
+        writer.setPolicy(all);
+        final String value2 = writer.getPolicyXmlAsString();
+        System.out.println("Got policy xml\n" + value2);
+
+        assertFalse( "Base64 encoded string value: ", value2.contains( "stringValueBase64" ));
+    }
+
     private void tryIt(XslTransformation xsl, AssertionResourceInfo rinfo) {
         xsl.setResourceInfo(rinfo);
         String got = WspWriter.getPolicyXml(xsl);

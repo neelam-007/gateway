@@ -1096,6 +1096,41 @@ public class DomUtils {
         return PATTERN_QNAME.matcher(identifier).matches();
     }
 
+    /**
+     * Check if the specified text is valid for use in an XML 1.0 document.
+     *
+     * <p>Such text can be used for attribute values or, CharacterData nodes.</p>
+     *
+     * <p>NOTE: The specification does not say any characters are invalid, it
+     * instead defines which characters MUST be accepted as valid. It is
+     * therefore possible that this method incorrectly detects valid text as
+     * invalid.</p>
+     *
+     * <p>WARNING: This method will not currently detect invalid characters in
+     * the range #x10000-#x10FFFF</p>
+     *
+     * @param text The text to check. Required.
+     * @return true if the text is valid.
+     */
+    public static boolean isValidXmlContent(final CharSequence text) {
+        boolean valid = true;
+
+        for ( int i=0; i<text.length(); i++ ) {
+            char character = text.charAt( i );
+
+            if ( character != 0x9 &&
+                 character != 0xA &&
+                 character != 0xD &&
+                 !(character >= 0x20 && character <= 0xD7FF) &&
+                 !(character >= 0xE000 && character <= 0xFFFD) ) {
+                valid = false;
+                break;
+            }
+        }
+
+        return valid;
+    }
+
     // Very loose match of anything that looks like a prefixed qname, regardless of whether it also includes punctuation
     private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
 

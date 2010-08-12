@@ -16,6 +16,7 @@ import static com.l7tech.policy.wsp.WspReader.OMIT_DISABLED;
 import static com.l7tech.policy.wsp.WspReader.INCLUDE_DISABLED;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
@@ -876,6 +877,15 @@ public class WspReaderTest {
         assertNotNull(sri.getDocument());
     }
 
+    @BugNumber(8933)
+    @Test
+    public void testReadPolicyWithInvalidXMLCharacters() throws Exception {
+        final AllAssertion all = (AllAssertion)WspReader.getDefault().parsePermissively(INVALID_XML_ESCAPED, INCLUDE_DISABLED);
+        final CommentAssertion commentAssertion = (CommentAssertion)all.getChildren().iterator().next();
+        assertNotNull( "Comment", commentAssertion.getAssertionComment() );
+        assertEquals( "Comment text", "This is not valid for XML -> \u0006", commentAssertion.getAssertionComment().getAssertionComment( Assertion.Comment.RIGHT_COMMENT ) );
+    }
+
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
     "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
     "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -1001,5 +1011,22 @@ public class WspReaderTest {
             "            </wsp:OneOrMore>\n" +
             "        </wsp:All>\n" +
             "    </wsp:ExactlyOne>\n" +
+            "</wsp:Policy>";
+
+    public static final String INVALID_XML_ESCAPED =
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:AssertionComment assertionComment=\"included\">\n" +
+            "                <L7p:Properties mapValue=\"included\">\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+            "                        <L7p:value stringValueBase64=\"VGhpcyBpcyBub3QgdmFsaWQgZm9yIFhNTCAtPiAG\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                </L7p:Properties>\n" +
+            "            </L7p:AssertionComment>\n" +
+            "            <L7p:Comment stringValue=\"Blah\"/>\n" +
+            "        </L7p:CommentAssertion>\n" +
+            "    </wsp:All>\n" +
             "</wsp:Policy>";
 }

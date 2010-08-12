@@ -5,9 +5,11 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.DomUtils;
 
+import com.l7tech.util.HexUtils;
 import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
@@ -90,7 +92,9 @@ public class BasicTypeMapping implements TypeMapping {
         } else {
             String stringValue = objectToString(object.target);
 
-            if ( serializeAsAttribute( stringValue ) ) {
+            if ( serializeAsBase64( stringValue ) ) {
+                elm.setAttribute(externalName + "Base64", HexUtils.encodeBase64(stringValue.getBytes(Charsets.UTF8), true) );
+            } else if ( serializeAsAttribute( stringValue ) ) {
                 elm.setAttribute(externalName, stringValue);
             } else {
                 elm.setAttribute(externalName + "Reference", "inline");
@@ -100,6 +104,19 @@ public class BasicTypeMapping implements TypeMapping {
             populateElement(wspWriter, elm, object); // hook for more complex types
         }
         return elm;
+    }
+
+    /**
+     * Should the value be serialized as a Base64 encoded attribute.
+     *
+     * <p>This implementation checks if the value contains characters that
+     * are not permitted in an XML 1.0 document.</p>
+     *
+     * @param value The value to be saved.
+     * @return true if the value should be Base64 encoded.
+     */
+    protected boolean serializeAsBase64( final String value ) {
+        return !DomUtils.isValidXmlContent( value );
     }
 
     /**
@@ -204,6 +221,9 @@ public class BasicTypeMapping implements TypeMapping {
         } else if ( typeName.endsWith("Reference") && typeName.length() > 9 ) {
             typeName = typeName.substring(0, typeName.length() - 9);
             value = DomUtils.getTextValue(source);
+        } else if ( typeName.endsWith("Base64") && typeName.length() > 6 ) {
+            typeName = typeName.substring(0, typeName.length() - 6);
+            value = new String(HexUtils.decodeBase64(value), Charsets.UTF8);
         }
 
         return doThawNamedNotNull(source, visitor, recursing, typeName, value);
