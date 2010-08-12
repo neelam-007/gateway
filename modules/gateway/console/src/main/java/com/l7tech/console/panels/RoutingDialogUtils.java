@@ -1,8 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
+import java.util.Set;
 
 /**
  *
@@ -85,5 +90,66 @@ public class RoutingDialogUtils {
         }
         if (defaultAction != -1)
             ass.setCurrentSecurityHeaderHandling(defaultAction);
+    }
+
+    /**
+     * Validates a text field that should contain a context variable reference, without the enclosing ${} syntax.
+     *
+     * @param textField the text field to be validated
+     * @param enabled true if the configuration represented by the text field is active and validation should be performed;
+     *                false if inactive and validation should not be performed; only the status label is cleared in this case
+     * @param statusLabel the status label to be set with an appropriate message and icon
+     * @return true if the validation is successful or skipped (if the validation flag is false); false otherwise
+     */
+    public static boolean validateMessageDestinationTextField(
+        JTextField textField, boolean enabled, JLabel statusLabel, Set<String> predecessorVariables) {
+
+        final ImageIcon blankIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
+        final ImageIcon infoIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Info16.png"));
+        final ImageIcon warningIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
+
+        statusLabel.setIcon(blankIcon);
+        statusLabel.setText(null);
+        textField.setEnabled(enabled);
+        boolean valid = true;
+
+        if (enabled) {
+            String validateNameResult;
+            String variableName = textField.getText();
+            if (variableName.length() == 0) {
+                valid = false;
+            } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
+                valid = false;
+                statusLabel.setIcon(warningIcon);
+                statusLabel.setText(validateNameResult);
+            } else {
+                final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
+                if (meta == null) {
+                    statusLabel.setIcon(infoIcon);
+                    statusLabel.setText("New variable will be created");
+                } else {
+                    if (meta.isSettable()) {
+                        if (meta.getType() == DataType.MESSAGE) {
+                            statusLabel.setIcon(infoIcon);
+                            statusLabel.setText("Built-in, settable");
+                        } else {
+                            valid = false;
+                            statusLabel.setIcon(warningIcon);
+                            statusLabel.setText("Built-in, settable but not message type");
+                        }
+                    } else {
+                        valid = false;
+                        statusLabel.setIcon(warningIcon);
+                        statusLabel.setText("Built-in, not settable");
+                    }
+                }
+
+                if (predecessorVariables.contains(variableName)) {
+                    statusLabel.setIcon(infoIcon);
+                    statusLabel.setText("User defined, will overwrite");
+                }
+            }
+        }
+        return valid;
     }
 }

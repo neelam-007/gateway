@@ -57,10 +57,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         public String toString() { return _displayName; }
     }
 
-    final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
-    final ImageIcon INFO_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Info16.png"));
-    final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
-
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
     private HttpRuleTableHandler responseHttpRulesTableHandler;
     private HttpRuleTableHandler requestHttpRulesTableHandler;
@@ -892,66 +888,22 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
     }
 
-    private void clearResMsgDestVariableStatus() {
-        resMsgDestVariableStatusLabel.setIcon(BLANK_ICON);
-        resMsgDestVariableStatusLabel.setText(null);
-    }
-
     /**
      * Validates the response message destination; with the side effect of setting the status icon and text.
      *
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
     private boolean validateResMsgDest() {
-        boolean ok = true;
-        clearResMsgDestVariableStatus();
-
-        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());
-
-        if (resMsgDestVariableRadioButton.isSelected()) {
-            final String variableName = resMsgDestVariableTextField.getText();
-            String validateNameResult;
-            if (variableName.length() == 0) {
-                ok = false;
-            } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
-                ok = false;
-                resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
-                resMsgDestVariableStatusLabel.setText(validateNameResult);
-            } else {
-                final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
-                if (meta == null) {
-                    resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
-                    resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.new"));
-                } else {
-                    if (meta.isSettable()) {
-                        if (meta.getType() == DataType.MESSAGE) {
-                            resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
-                            resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinSettable"));
-                        } else {
-                            ok = false;
-                            resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
-                            resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinNotMessageType"));
-                        }
-                    } else {
-                        ok = false;
-                        resMsgDestVariableStatusLabel.setIcon(WARNING_ICON);
-                        resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.builtinNotSettable"));
-                    }
-                }
-
-                final Set<String> predecessorVariables = getVariablesSetByPredecessors().keySet();
-                if (predecessorVariables.contains(variableName)) {
-                    resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
-                    resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.overwrite"));
-                }
-            }
-        }
-
+        boolean ok = RoutingDialogUtils.validateMessageDestinationTextField(
+            resMsgDestVariableTextField,
+            resMsgDestVariableRadioButton.isSelected(),
+            resMsgDestVariableStatusLabel,
+            getVariablesSetByPredecessors().keySet()
+        );
         refreshDialog();
-
         return ok;
     }
-   
+
     /**
      * Resize the dialog due to some components getting extended.
      */

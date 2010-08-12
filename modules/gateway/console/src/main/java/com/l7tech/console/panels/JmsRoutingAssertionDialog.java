@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
@@ -26,6 +27,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -159,6 +161,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JRadioButton defaultResponseRadioButton;
     private JRadioButton saveAsContextVariableRadioButton;
     private JTextField responseTargetVariable;
+    private JLabel messageDestinationStatusLabel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -274,6 +277,30 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 return null;
             }
         });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (!validateResMsgDest()) {
+                    return "Message destination error: " + messageDestinationStatusLabel.getText();
+                }
+                return null;
+            }
+        });
+
+        saveAsContextVariableRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                validateResMsgDest();
+            }
+        });
+        responseTargetVariable.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                validateResMsgDest();
+            }
+        }));
+        validateResMsgDest();
 
         authSamlRadio.addChangeListener(new ChangeListener(){
             @Override
@@ -584,6 +611,31 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
         int responseTimeoutOverride = assertion.getResponseTimeout();
         jmsResponseTimeout.setText(responseTimeoutOverride >=0 ? String.valueOf(responseTimeoutOverride) : "");
+    }
+
+    /**
+     * Validates the response message destination; with the side effect of setting the status icon and text.
+     *
+     * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
+     */
+    private boolean validateResMsgDest() {
+        boolean ok = RoutingDialogUtils.validateMessageDestinationTextField(
+            responseTargetVariable,
+            saveAsContextVariableRadioButton.isSelected(),
+            messageDestinationStatusLabel,
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet()
+        );
+        refreshDialog();
+        return ok;
+    }
+
+    /**
+     * Resize the dialog due to some components getting extended.
+     */
+    private void refreshDialog() {
+        if (getSize().width < mainPanel.getMinimumSize().width) {
+            setSize(mainPanel.getMinimumSize().width, getSize().height);
+        }
     }
 
     /**
