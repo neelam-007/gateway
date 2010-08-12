@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
+import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SetSamlStatusAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -38,7 +39,7 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
     @Override
     public void setData( final SetSamlStatusAssertion assertion ) {
         if ( assertion.getSamlStatus() != null ) {
-            versionComboBox.setSelectedItem( assertion.getSamlStatus().getSamlVersion() );
+            versionComboBox.setSelectedItem( SamlVersion.valueOf(assertion.getSamlStatus().getSamlVersion()) );
             statusComboBox.setSelectedItem( assertion.getSamlStatus() );
         }
         setText( variableNameTextField, assertion.getVariableName() );
@@ -51,17 +52,11 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
         return mainPanel;
     }
 
-        @Override
+    @Override
     protected void initComponents() {
         super.initComponents();
 
-        versionComboBox.setModel( new DefaultComboBoxModel( new Integer[]{1,2} ) );
-        versionComboBox.setRenderer( new TextListCellRenderer<Integer>( new Functions.Unary<String,Integer>(){
-            @Override
-            public String call( final Integer version ) {
-                return version == 1 ? "1.1" : "2.0";
-            }
-        } ) );
+        versionComboBox.setModel( new DefaultComboBoxModel( new SamlVersion[] { SamlVersion.SAML1_1, SamlVersion.SAML2 } ) );
 
         statusComboBox.setModel( new DefaultComboBoxModel( SamlStatus.getSaml1xStatuses().toArray() ) );
         statusComboBox.setRenderer( new TextListCellRenderer<SamlStatus>( new Functions.Unary<String,SamlStatus>(){
@@ -107,8 +102,8 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
         boolean enableAny = !isReadOnly();
 
 
-        if ( (Integer)versionComboBox.getSelectedItem() != ((SamlStatus)statusComboBox.getSelectedItem()).getSamlVersion() ) {
-            if ( 1 == (Integer)versionComboBox.getSelectedItem() ) {
+        if ( ((SamlVersion)versionComboBox.getSelectedItem()).getVersionInt() != ((SamlStatus)statusComboBox.getSelectedItem()).getSamlVersion() ) {
+            if ( SamlVersion.SAML1_1.equals(versionComboBox.getSelectedItem()) ) {
                 statusComboBox.setModel( new DefaultComboBoxModel( SamlStatus.getSaml1xStatuses().toArray() ) );
             } else {
                 statusComboBox.setModel( new DefaultComboBoxModel( SamlStatus.getSaml2xStatuses().toArray() ) );

@@ -19,21 +19,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion implements PrivateKeyable{
 
-    public enum SamlVersion {
-        SAML2("2.0"), SAML1_1("1.1");
-
-        SamlVersion(String versionString) {
-            this.versionString = versionString;
-        }
-
-        private String versionString;
-
-        @Override
-        public String toString() {
-            return versionString;
-        }
-    }
-
     public SamlVersion getSamlVersion() {
         return samlVersion;
     }

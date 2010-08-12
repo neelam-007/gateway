@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -78,7 +79,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML2);
+        assertion.setSamlVersion(SamlVersion.SAML2);
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -119,7 +120,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML2);
+        assertion.setSamlVersion(SamlVersion.SAML2);
 
         assertion.setResponseAssertions("${samlToken}");
 
@@ -155,7 +156,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML1_1);
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -197,7 +198,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML1_1);
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -241,7 +242,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML2);
+        assertion.setSamlVersion(SamlVersion.SAML2);
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();
@@ -271,7 +272,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
-        assertion.setSamlVersion(SamlpResponseBuilderAssertion.SamlVersion.SAML1_1);
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
         assertion.setStatusMessage("Status Message is ok");
 
         final PolicyEnforcementContext context = getContext();

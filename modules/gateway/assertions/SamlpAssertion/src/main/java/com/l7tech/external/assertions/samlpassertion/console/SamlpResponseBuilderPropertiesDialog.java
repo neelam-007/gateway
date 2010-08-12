@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
+import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -14,7 +15,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.ResourceBundle;
 
-import static com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion.SamlVersion.*;
+import static com.l7tech.external.assertions.samlpassertion.SamlVersion.*;
 
 public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkCancelSupport<SamlpResponseBuilderAssertion> {
 
@@ -33,7 +34,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     @Override
     protected void initComponents() {
         super.initComponents();
-        samlVersionComboBox.setModel(new DefaultComboBoxModel(new SamlpResponseBuilderAssertion.SamlVersion[]{SAML2, SAML1_1}));
+        samlVersionComboBox.setModel(new DefaultComboBoxModel(new SamlVersion[]{SAML2, SAML1_1}));
 
         final RunOnChangeListener versionListener = new RunOnChangeListener(new Runnable() {
             @Override
@@ -146,7 +147,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     @Override
     public SamlpResponseBuilderAssertion getData(SamlpResponseBuilderAssertion assertion) throws ValidationException {
         validateData();
-        final SamlpResponseBuilderAssertion.SamlVersion samlVersion = (SamlpResponseBuilderAssertion.SamlVersion) samlVersionComboBox.getSelectedItem();
+        final SamlVersion samlVersion = (SamlVersion) samlVersionComboBox.getSelectedItem();
         assertion.setSamlVersion(samlVersion);
         assertion.setSignResponse(signResponseCheckBox.isSelected());
         assertion.setAddIssuer(addIssuerCheckBox.isSelected());
@@ -218,8 +219,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                     " may only reference context variables");
         }
 
-        final SamlpResponseBuilderAssertion.SamlVersion samlVersion = 
-                (SamlpResponseBuilderAssertion.SamlVersion) samlVersionComboBox.getSelectedItem();
+        final SamlVersion samlVersion =
+                (SamlVersion) samlVersionComboBox.getSelectedItem();
             switch(samlVersion){
                 case SAML2:
                     final String extensions = extensionsTextField.getText().trim();
