@@ -105,6 +105,23 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         this.responseContentType = responseContentType;
     }
 
+    private static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SimpleRawTransportAssertion>(){
+        @Override
+        public String getAssertionName( final SimpleRawTransportAssertion assertion, final boolean decorate) {
+            if (!decorate)
+                return "Route via Raw TCP";
+            StringBuilder sb = new StringBuilder("Route via Raw TCP");
+
+            String targetHost = assertion.getTargetHost();
+            if (targetHost != null && targetHost.trim().length() > 0) {
+                sb.append(" to ").append(targetHost);
+                sb.append(" port ").append(assertion.getTargetPort());
+            }
+
+            return AssertionUtils.decorateName(assertion, sb.toString());
+        }
+    };
+
     //
     // Metadata
     //
@@ -115,7 +132,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.rawtcp.server.ModuleLoadListener");
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Raw TCP Routing");
+        meta.put(AssertionMetadata.SHORT_NAME, "Route via Raw TCP");
         meta.put(AssertionMetadata.DESCRIPTION, "Send a request over raw TCP");
 
         // Add to palette folder(s) 
@@ -124,6 +141,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportAssertionPropertiesDialog");
