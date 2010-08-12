@@ -433,7 +433,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return msg;
             }
         });
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(serviceNameComboBox) {
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(contentTypeComboBox) {
             @Override
             public String getValidationError() {
                 TransportDescriptor td = getSelectedProtocol();
@@ -441,7 +441,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     return null;
 
                 Object ctypeObj = contentTypeComboBox.getSelectedItem();
-                if (ctypeObj != null)
+                if (ctypeObj != null && ctypeObj.toString().trim().length() > 0)
                     return "Specified content type is not formatted correctly.";
 
                 return "A " + td + " port must specify a content type to assume for incoming requests.";
