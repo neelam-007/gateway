@@ -237,11 +237,6 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     @Override
-    public void runOnClose( final Runnable runMe ) {
-        context.runOnClose( runMe );
-    }
-
-    @Override
     public void close() {
         // Do not close super, the parent context is not owned by the child
         context.close();
