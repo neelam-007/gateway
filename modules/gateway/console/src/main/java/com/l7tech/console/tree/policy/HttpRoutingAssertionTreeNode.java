@@ -62,8 +62,24 @@ public class HttpRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<Htt
         HttpRoutingAssertion assertion = ((HttpRoutingAssertion)getUserObject());
         if (assertion == null)
             return false;
+
+        // If "Use Multiple URLs" option is selected, then we need to check the URLs in the multiple URLs list.
+        String[] urlsList = assertion.getCustomURLs();
+        if (urlsList != null) {
+            if (urlsList.length > 0) {
+                for (String url: urlsList) {
+                    if (url.toLowerCase().startsWith("https:")) { // If one of them starts with "https:", then return true.
+                        return true;
+                    }
+                }
+                return false;
+            } else { // The list cannot leave by empty after we fixed bug 8882: "Route to HTTP assertion can be saved without a routing URL"
+                throw new IllegalStateException("The URLs list must not be empty if \"Use Multiple URLs\" option is chosen.");
+            }
+        }
+
+        // Otherwise, check the main URL
         String url = assertion.getProtectedServiceUrl();
         return url != null && !url.toLowerCase().startsWith("http:");
     }
-
 }
