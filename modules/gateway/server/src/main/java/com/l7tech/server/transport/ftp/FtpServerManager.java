@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
@@ -47,8 +46,7 @@ public class FtpServerManager extends TransportModule {
 
     //- PUBLIC
 
-    public FtpServerManager(final AuditContext auditContext,
-                            final ServerConfig serverConfig,
+    public FtpServerManager(final ServerConfig serverConfig,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
@@ -60,7 +58,6 @@ public class FtpServerManager extends TransportModule {
                             final Timer timer) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, serverConfig);
 
-        this.auditContext = auditContext;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
@@ -165,7 +162,6 @@ public class FtpServerManager extends TransportModule {
     private static final String PROP_FTP_LISTENER = "config.listeners.";
 
     private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
-    private final AuditContext auditContext;
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
@@ -258,7 +254,6 @@ public class FtpServerManager extends TransportModule {
         final Ftplet messageProcessingFtplet = new MessageProcessingFtplet(
                 this,
                 messageProcessor,
-                auditContext,
                 soapFaultManager,
                 stashManagerFactory,
                 messageProcessingEventChannel,

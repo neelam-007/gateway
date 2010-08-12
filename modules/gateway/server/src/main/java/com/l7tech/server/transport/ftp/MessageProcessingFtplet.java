@@ -8,7 +8,6 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -47,7 +46,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
      */
     MessageProcessingFtplet( final FtpServerManager ftpServerManager,
                              final MessageProcessor messageProcessor,
-                             final AuditContext auditContext,
                              final SoapFaultManager soapFaultManager,
                              final StashManagerFactory stashManagerFactory,
                              final EventChannel messageProcessingEventChannel,
@@ -55,7 +53,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final long hardwiredServiceOid) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
-        this.auditContext = auditContext;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
@@ -121,7 +118,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
     private final FtpServerManager ftpServerManager;
     private final MessageProcessor messageProcessor;
-    private final AuditContext auditContext;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
@@ -307,18 +303,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     storeResult = STORE_RESULT_DROP;
                 }
             } finally {
-                try {
-                    auditContext.flush();
-                }
-                finally {
-                    if (context != null) {
-                        try {
-                            context.close();
-                        } catch (Throwable t) {
-                            logger.log(Level.SEVERE, "Error closing context.", t);
-                        }
-                    }
-                }
+                ResourceUtils.closeQuietly(context);
             }
         }
 

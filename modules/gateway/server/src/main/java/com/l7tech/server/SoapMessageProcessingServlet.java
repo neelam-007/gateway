@@ -19,7 +19,6 @@ import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -90,7 +89,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private ServerConfig serverConfig;
     private MessageProcessor messageProcessor;
-    private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
@@ -106,7 +104,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
         serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         licenseManager = applicationContext.getBean("licenseManager", LicenseManager.class);
         stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
@@ -381,23 +378,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 throw new ServletException(e1);
             }
         } finally {
-            try {
-                /*
-                 * 5.0 Audit Request Id
-                 * need to extract the required context variables from PEC used in the audit logging
-                 */
-                String[] ctxVariables = auditContext.getContextVariablesUsed();
-                if (ctxVariables != null && ctxVariables.length > 0) {
-                    auditContext.setContextVariables(context.getVariableMap(ctxVariables, auditor));
-                }
-                auditContext.flush();
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
-            }
-            finally {
-                context.close();
-            }
+            context.close();
         }
     }
 

@@ -7,13 +7,18 @@ package com.l7tech.message;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.Closeable;
-import java.util.*;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Holds request and response messages during processing, and provides a place to keep state throughout
  * message processing for both policy enforcement (SSG) and policy application (SSB).
+ * <p/>
+ * This class should be assumed not to be threadsafe unless a specific feature promises otherwise.
  */
 public abstract class ProcessingContext<CT extends CredentialContext> implements Closeable {
     private static final Logger logger = Logger.getLogger(ProcessingContext.class.getName());
@@ -23,7 +28,7 @@ public abstract class ProcessingContext<CT extends CredentialContext> implements
     private final CT credentialContext = buildContext();
     private final Map<Message,CT> authenticationContexts = new HashMap<Message,CT>();
 
-    private final List<Runnable> runOnClose = new ArrayList<Runnable>();
+    private final Deque<Runnable> runOnClose = new LinkedList<Runnable>();
 
     /**
      * Create a processing context holding the specified request and response.
@@ -50,8 +55,26 @@ public abstract class ProcessingContext<CT extends CredentialContext> implements
         return response;
     }
 
-    public synchronized void runOnClose( Runnable runMe ) {
-        runOnClose.add( runMe );
+    /**
+     * Add a task to the queue of tasks to perform in order when this context is closed.
+     *
+     * @param runMe the task to run.  Required.
+     */
+    public void runOnClose( Runnable runMe ) {
+        runOnClose.addLast( runMe );
+    }
+
+    /**
+     * Prepend a task to the queue of tasks to perform in order when this context is closed, so that
+     * the new task runs before all the other tasks.
+     * <p/>
+     * Callers should generally avoid this method unless they have extremely specific requirements.
+     * If there is any doubt, use {@link #runOnClose} instead.
+     *
+     * @param runMe the task to run.  Required.
+     */
+    public void runOnCloseFirst( Runnable runMe ) {
+        runOnClose.addFirst( runMe );
     }
 
     public CT getDefaultAuthenticationContext() {
@@ -88,16 +111,14 @@ public abstract class ProcessingContext<CT extends CredentialContext> implements
     @Override
     public void close() {
         Runnable runMe;
-        Iterator i = runOnClose.iterator();
         try {
-            while ( i.hasNext() ) {
-                runMe = (Runnable)i.next();
+            while ( !runOnClose.isEmpty() ) {
+                runMe = runOnClose.removeFirst();
                 try {
                     runMe.run();
                 } catch (Throwable t) {
                     logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
                 }
-                i.remove();
             }
         } finally {
             ResourceUtils.dispose( credentialContext );

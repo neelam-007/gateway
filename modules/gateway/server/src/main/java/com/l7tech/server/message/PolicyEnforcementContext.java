@@ -394,7 +394,23 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     void setPolicyExecutionAttempted(boolean attempted);
 
+    /**
+     * Add a task to the queue of tasks to perform in order when this context is closed.
+     *
+     * @param runMe the task to run.  Required.
+     */
     void runOnClose( Runnable runMe );
+
+    /**
+     * Prepend a task to the queue of tasks to perform in order when this context is closed, so that
+     * the new task runs before all the other tasks.
+     * <p/>
+     * Callers should generally avoid this method unless they have extremely specific requirements.
+     * If there is any doubt, use {@link #runOnClose} instead.
+     *
+     * @param runMe the task to run.  Required.
+     */
+    public void runOnCloseFirst( Runnable runMe );
 
     /**
      * Call this when you are done using a PEC. This is important for PolicyEnforcementContext#close() to

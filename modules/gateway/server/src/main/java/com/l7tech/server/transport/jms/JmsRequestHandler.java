@@ -18,10 +18,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
@@ -289,18 +286,7 @@ class JmsRequestHandler {
                 } catch (JMSException e) {
                     throw new JmsRuntimeException("Couldn't acknowledge message!", e);
                 } finally {
-                    try {
-                        auditContext.flush();
-                    }
-                    finally {
-                        if (context != null) {
-                            try {
-                                context.close();
-                            } catch (Throwable t) {
-                                _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
-                            }
-                        }
-                    }
+                    ResourceUtils.closeQuietly(context);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e); // can't happen

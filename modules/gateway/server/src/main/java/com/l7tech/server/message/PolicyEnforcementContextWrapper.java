@@ -475,6 +475,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public void runOnCloseFirst(Runnable runMe) {
+        delegate.runOnCloseFirst( runMe );
+    }
+
+    @Override
     public void close() {
         delegate.close();
     }

@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -23,10 +22,7 @@ import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -56,7 +52,6 @@ import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     private MessageProcessor messageProcessor;
-    private AuditContext auditContext;
     private StashManagerFactory stashManagerFactory;
     private MessageProducer responseProducer;
     private final ApplicationEventPublisher messageProcessingEventChannel;
@@ -70,7 +65,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             throw new IllegalArgumentException("Spring Context is required");
         }
         messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
-        auditContext = ctx.getBean("auditContext", AuditContext.class);
         serverConfig = ctx.getBean("serverConfig", ServerConfig.class);
         stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
@@ -311,18 +305,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 } catch (JMSException e) {
                     throw new JmsRuntimeException("Couldn't acknowledge message!", e);
                 } finally {
-                    try {
-                        auditContext.flush();
-                    }
-                    finally {
-                        if (context != null) {
-                            try {
-                                context.close();
-                            } catch (Throwable t) {
-                                _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
-                            }
-                        }
-                    }
+                    ResourceUtils.closeQuietly(context);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e); // can't happen
@@ -486,10 +469,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     public void setMessageProcessor(MessageProcessor messageProcessor) {
         this.messageProcessor = messageProcessor;
-    }
-
-    public void setAuditContext(AuditContext auditContext) {
-        this.auditContext = auditContext;
     }
 
     public void setStashManagerFactory(StashManagerFactory stashManagerFactory) {

@@ -1314,7 +1314,6 @@
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
-        <constructor-arg ref="auditContext"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="messageProcessor"/>
         <constructor-arg ref="soapFaultManager"/>
