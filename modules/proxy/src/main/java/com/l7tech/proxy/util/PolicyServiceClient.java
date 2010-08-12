@@ -111,7 +111,9 @@ public class PolicyServiceClient {
         return msg;
     }
 
-    public static Document createDecoratedGetPolicyRequest(String serviceId, KerberosServiceTicket kerberosTicket)
+    public static Document createDecoratedGetPolicyRequest( final String serviceId,
+                                                            final KerberosServiceTicket kerberosTicket,
+                                                            final Date timestampCreatedDate)
             throws GeneralSecurityException
     {
         Document msg = createGetPolicyRequest(serviceId);
@@ -120,6 +122,21 @@ public class PolicyServiceClient {
         try {
             req.setIncludeKerberosTicket(true);
             req.setKerberosTicket(kerberosTicket);
+            req.setSignTimestamp();
+
+            Element header = SoapUtil.getHeaderElement(msg);
+            Element body = SoapUtil.getBodyElement(msg);
+            Element sid = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
+                                                                SoapUtil.L7_SERVICEID_ELEMENT);
+            Element cver = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
+                                                                SoapUtil.L7_CLIENTVERSION_ELEMENT);
+            Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
+            req.getElementsToSign().add(sid);
+            req.getElementsToSign().add(cver);
+            req.getElementsToSign().add(body);
+            req.getElementsToSign().add(mid);
+
+            req.setTimestampCreatedDate(timestampCreatedDate);
             decorator.decorateMessage(new Message(msg), req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -459,7 +476,8 @@ public class PolicyServiceClient {
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException, ClientCertificateException
     {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());
-        Document requestDoc = createDecoratedGetPolicyRequest(serviceId, kerberosTicket);
+        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
+        Document requestDoc = createDecoratedGetPolicyRequest(serviceId, kerberosTicket, timestampCreatedDate);
         return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, null, null);
     }
 

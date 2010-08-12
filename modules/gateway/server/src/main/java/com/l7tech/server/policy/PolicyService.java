@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -78,6 +79,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private static final Logger logger = Logger.getLogger(PolicyService.class.getName());
     private static final boolean disableSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceSkipSecurityChecks", false);
     private static final boolean fullSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceFullSecurityChecks", false);
+    private static final boolean enableLegacyKerberos = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceEnableLegacyKerberos", false);
     private static final String SERVICE_VALIDATE_WSS_TIMESTAMPS = "service.validateWssTimestamps";
 
     private final List<Assertion> allMessageCredentialAssertions;
@@ -557,21 +559,35 @@ public class PolicyService extends ApplicationObjectSupport {
             if ( fullSecurityChecks ) {
                 messageAll.addChild( new RequireWssSignedElement( new XpathExpression("/*[local-name()='Envelope']/*[local-name()='Header']/*[namespace-uri()='"+SoapUtil.L7_MESSAGEID_NAMESPACE+"']") ) );
             } else {
-                // Prior to 5.4 some addressing elements were not signed, to allow
+                // Prior to 5.3.1 some addressing elements were not signed, to allow
                 // for this we only validate the service id by default
                 messageAll.addChild( new RequireWssSignedElement( new XpathExpression("/*[local-name()='Envelope']/*[local-name()='Header']/*[namespace-uri()='"+SoapUtil.L7_MESSAGEID_NAMESPACE+"' and local-name()='"+SoapUtil.L7_SERVICEID_ELEMENT+"']") ) );
             }
         }
-        
+
         final AllAssertion transportAll = new AllAssertion();
         if (!disableSecurityChecks) {
             transportAll.addChild( new SslAssertion() );
         }
         transportAll.addChild( new OneOrMoreAssertion(allTransportCredentialAssertions) );
 
+        final AllAssertion legacyKerberosAll;
+        if ( enableLegacyKerberos ) {
+            // This allows pre 5.3.1 XVCs to download using Kerberos Token Profile.
+            // Remove when 5.3.0 and earlier are no longer supported.
+            legacyKerberosAll = new AllAssertion();
+            legacyKerberosAll.addChild( new SslAssertion() );
+            legacyKerberosAll.addChild( new OneOrMoreAssertion( Arrays.asList( new RequestWssKerberos() ) ) );
+        } else {
+            legacyKerberosAll = null;
+        }
+
         final OneOrMoreAssertion messageOrTransport = new OneOrMoreAssertion();
         messageOrTransport.addChild( messageAll );
         messageOrTransport.addChild( transportAll );
+        if ( legacyKerberosAll != null ) {
+            messageOrTransport.addChild( legacyKerberosAll );
+        }
 
         final AllAssertion base = new AllAssertion();
         base.addChild(messageOrTransport);
