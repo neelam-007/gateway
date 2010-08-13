@@ -195,11 +195,15 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
         }
 
         AssertionStatusException fail( final String message ) {
-            return fail( message, null );
+            return fail( AssertionMessages.ENCODE_DECODE_ERROR, new String[]{message}, null );
         }
 
         AssertionStatusException fail( final String message, final Exception e ) {
-            auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, new String[]{message}, e );
+            return fail( AssertionMessages.ENCODE_DECODE_ERROR, new String[]{message}, e );
+        }
+
+        AssertionStatusException fail( final AuditDetailMessage detailMessage, final String[] params, final Exception e ) {
+            auditor.logAndAudit( detailMessage, params, e );
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
     }
@@ -296,7 +300,10 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 try {
                     output = CertUtils.decodeCert( value );
                 } catch ( CertificateException e ) {
-                    throw encodeDecodeContext.fail( "certificate error - " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                    throw encodeDecodeContext.fail(
+                            AssertionMessages.ENCODE_DECODE_OUT_TYPE,
+                            new String[]{DataType.CERTIFICATE.getName(), ExceptionUtils.getMessage( e )},
+                            ExceptionUtils.getDebugException( e ) );
                 }
             } else if (  outputDataType == DataType.STRING ) {
                 output = new String( value, encodeDecodeContext.getOutputEncoding() );
