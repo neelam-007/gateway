@@ -35,10 +35,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
 import java.util.Map;
@@ -80,6 +77,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private JRadioButton wssRemoveRadio;
     private JLabel portStatusLabel;
     private JComboBox messageSource;
+    private JCheckBox contextVariableInPassword;
+    private char echoChar;
 
     public static final int DEFAULT_PORT_FTP = 21;
 
@@ -230,6 +229,19 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             @Override
             public void changedUpdate(DocumentEvent e) { enableOrDisableComponents(); }
         });
+
+        echoChar = _passwordField.getEchoChar();
+        contextVariableInPassword.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (contextVariableInPassword.isSelected()) {
+                    _passwordField.setText("");
+                }
+                _passwordField.enableInputMethods(contextVariableInPassword.isSelected());
+                _passwordField.setEchoChar(contextVariableInPassword.isSelected() ? (char)0 : echoChar);
+            }
+        });
+
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
 
@@ -342,7 +354,11 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         } else if (_assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             _credentialsSpecifyRadioButton.doClick(0);
             _userNameTextField.setText(_assertion.getUserName());
-            _passwordField.setText(_assertion.getPassword());
+            String password = _assertion.getPassword();
+            _passwordField.setText(password);
+            boolean passwordReferencesVars = password != null && Syntax.getReferencedNames(password).length > 0;
+            _passwordField.enableInputMethods(passwordReferencesVars);
+            contextVariableInPassword.setSelected(passwordReferencesVars);
         }
 
         _useClientCertCheckBox.setSelected(_assertion.isUseClientCert());
@@ -371,6 +387,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _verifyServerCertCheckBox.setEnabled(isFtps);
         _userNameTextField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
         _passwordField.setEnabled(_credentialsSpecifyRadioButton.isSelected());
+        contextVariableInPassword.setEnabled(_credentialsSpecifyRadioButton.isSelected());
         _useClientCertCheckBox.setEnabled(isFtps);
         _clientCertsComboBox.setEnabled(_useClientCertCheckBox.isEnabled() && _useClientCertCheckBox.isSelected());
 
