@@ -81,6 +81,11 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
         return Registry.getDefault().getIdentityAdmin();
     }
 
+    @Override
+    public Action getPreferredAction() {
+        return new AddIdentityAssertionAction(this);
+    }
+
     private static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
     protected AT assertion;
     protected String provName = null;
