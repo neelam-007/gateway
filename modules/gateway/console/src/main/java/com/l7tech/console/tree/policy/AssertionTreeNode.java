@@ -29,6 +29,9 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.util.*;
@@ -261,24 +264,24 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             }
 
             final Assertion.Comment comment = ass.getAssertionComment();
-            if(comment != null){
-                if(sb.length() > 0) sb.append("<br>");
+            if (comment != null){
+                if(sb.length() > 0) sb.append("<br><br>");
+
                 StringBuilder builder = new StringBuilder();
                 String leftComment = comment.getAssertionComment(Assertion.Comment.LEFT_COMMENT);
                 final boolean hasLeft = leftComment != null && !leftComment.trim().isEmpty();
-                if(hasLeft) {
+
+                if (hasLeft) {
                     leftComment = leftComment.replaceAll("<", "&lt;");
-                    leftComment = TextUtils.breakOnMultipleLines(leftComment, 100, "<br> ");
-                    builder.append(" " + leftComment);
+                    builder.append(generateWellFormattedComment(leftComment));
                 }
 
                 String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
-                if(rightComment != null && !rightComment.trim().isEmpty()) {
-                    if(hasLeft) builder.append("<br><br>");
+                if (rightComment != null && !rightComment.trim().isEmpty()) {
+                    if (hasLeft) builder.append("<br>");
 
                     rightComment = rightComment.replaceAll("<", "&lt;");
-                    rightComment = TextUtils.breakOnMultipleLines(rightComment, 100, "<br> ");
-                    builder.append(" " + rightComment);
+                    builder.append(generateWellFormattedComment(rightComment));
                 }
 
                 sb.append(builder.toString());
@@ -323,6 +326,37 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             sb.insert(0, MessageFormat.format(toBeFormatted, msg));
             return sb.toString();
         }
+    }
+
+    /**
+     *  Generate a well-formatted comment for properly displaying.  Set a limit as 100 characters for the amount of text displayed in each line of the tooltip.
+     *  So a very long comment without space characters will be displayed by multiple lines.  Also recognize each new line character '\n' that cause to insert
+     *  a break line <br> into the processed comment, so that the tooltip can be displayed by multiple lines
+     * .
+     * @param comment: the comment to be well-formatted.
+     * @return a string with a well-formatted comment.
+     */
+    private String generateWellFormattedComment(String comment) {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new StringReader(comment));
+
+        try {
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                if (line.length() > 100) {
+                    while (line.length() > 100) {
+                        sb.append(" ").append(line.substring(0, 100)).append("<br>");
+                        line = line.substring(100);
+                    }
+                    sb.append(" ").append(line).append("<br>");
+                } else {
+                    sb.append(" ").append(TextUtils.breakOnMultipleLines(line, 100, "<br> ")).append("<br>");
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot read a line from a comment", e);
+        }
+
+        return sb.toString();
     }
 
     /**
