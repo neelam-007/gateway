@@ -63,22 +63,6 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         SUFFIX_REQUEST
     ) );
 
-    public String getAudienceRestriction() {
-        return audienceRestriction;
-    }
-
-    public void setAudienceRestriction( final String audienceRestriction ) {
-        this.audienceRestriction = audienceRestriction;
-    }
-
-    public boolean isCheckValidityPeriod() {
-        return checkValidityPeriod;
-    }
-
-    public void setCheckValidityPeriod( final boolean checkValidityPeriod ) {
-        this.checkValidityPeriod = checkValidityPeriod;
-    }
-
     public SamlProtocolBinding getSamlProtocolBinding() {
         return samlProtocolBinding;
     }
@@ -201,8 +185,6 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     private static final String baseName = "Process SAML Authentication Request";
 
     private String variablePrefix = "authnRequest";
-    private boolean checkValidityPeriod = true;
-    private String audienceRestriction;
     private boolean verifySignature = true;
     private SamlProtocolBinding samlProtocolBinding = null;
 }

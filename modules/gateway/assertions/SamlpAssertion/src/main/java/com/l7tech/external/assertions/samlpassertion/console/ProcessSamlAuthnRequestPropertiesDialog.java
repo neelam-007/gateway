@@ -37,8 +37,6 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         } else {
             assertion.setSamlProtocolBinding( null );
         }
-        assertion.setCheckValidityPeriod( checkValidityPeriodCheckBox.isSelected() );
-        assertion.setAudienceRestriction( getText(audienceRestrictionTextField) );
         assertion.setVerifySignature( verifySignatureCheckBox.isEnabled() && verifySignatureCheckBox.isSelected() );
         assertion.setVariablePrefix( variablePrefixTextField.getText() );
 
@@ -56,8 +54,6 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
             extractSAMLRequestFromCheckBox.setSelected( false );
             bindingComboBox.setSelectedIndex( 0 );
         }
-        checkValidityPeriodCheckBox.setSelected( assertion.isCheckValidityPeriod() );
-        setText( audienceRestrictionTextField, assertion.getAudienceRestriction() );
         verifySignatureCheckBox.setSelected( assertion.isVerifySignature() );
         setText( variablePrefixTextField, assertion.getVariablePrefix() );
 
@@ -134,20 +130,8 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
     private JTextField variablePrefixTextField;
     private JCheckBox verifySignatureCheckBox;
     private JLabel varPrefixStatusLabel;
-    private JCheckBox checkValidityPeriodCheckBox;
-    private JTextField audienceRestrictionTextField;
 
     private ProcessSamlAuthnRequestAssertion assertion;
-
-    private String getText( final JTextComponent textComponent ) {
-        String text = null;
-
-        if ( textComponent.isEnabled() && textComponent.getText() != null && !textComponent.getText().trim().isEmpty() ) {
-            text = textComponent.getText().trim();
-        }
-
-        return text;
-    }
 
     private void setText( final JTextComponent textComponent, final String text ) {
         if ( text != null ) {

@@ -8,7 +8,6 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -28,7 +27,6 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockServletContext;
 
-import java.text.MessageFormat;
 import java.util.HashMap;
 
 /**
@@ -133,104 +131,6 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         }
     }
 
-    @Test
-    public void testConditions() throws Exception {
-        final ProcessSamlAuthnRequestAssertion processSamlAuthnRequestAssertion =
-                new ProcessSamlAuthnRequestAssertion();
-        processSamlAuthnRequestAssertion.setVerifySignature( false );
-
-        final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion =
-                buildServerAssertion( processSamlAuthnRequestAssertion );
-
-        // Fail not yet valid
-        {
-            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( MessageFormat.format( REQUEST_INVALID_SIG, "<saml:Conditions NotBefore=\"2080-05-27T08:19:29.000Z\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>" )) ),
-                    null );
-
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
-            assertEquals( "falsified", AssertionStatus.FALSIFIED, status );
-        }
-
-        // Fail expired
-        {
-            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( MessageFormat.format( REQUEST_INVALID_SIG, "<saml:Conditions NotOnOrAfter=\"2008-05-27T08:19:29.000Z\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>" )) ),
-                    null );
-
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
-            assertEquals( "falsified", AssertionStatus.FALSIFIED, status );
-        }
-
-        // Valid times
-        {
-            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( MessageFormat.format( REQUEST_INVALID_SIG, "<saml:Conditions NotBefore=\"2000-01-01T00:00:00.000Z\" NotOnOrAfter=\"3000-01-01T00:00:00.000Z\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>" )) ),
-                    null );
-
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
-            assertEquals( "success", AssertionStatus.NONE, status );
-        }
-
-        // Test audience restriction failure
-        {
-            processSamlAuthnRequestAssertion.setAudienceRestriction( "http://audience" );
-            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( MessageFormat.format( REQUEST_INVALID_SIG, "<saml:Conditions xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AudienceRestriction><saml:Audience></saml:Audience>http://audience1<saml:Audience>http://audience2</saml:Audience></saml:AudienceRestriction></saml:Conditions>" )) ),
-                    null );
-
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
-            assertEquals( "falsified", AssertionStatus.FALSIFIED, status );
-        }
-
-        // Test audience restriction success
-        {
-            processSamlAuthnRequestAssertion.setAudienceRestriction( "http://audience1" );
-            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( MessageFormat.format( REQUEST_INVALID_SIG, "<saml:Conditions xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AudienceRestriction><saml:Audience>http://audience1</saml:Audience><saml:Audience>http://audience2</saml:Audience></saml:AudienceRestriction></saml:Conditions>" )) ),
-                    null );
-
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
-            assertEquals( "success", AssertionStatus.NONE, status );
-        }
-    }
-
-    @Test
     public void testHTTPRedirectBinding() throws Exception {
         final String queryString = "SAMLRequest=fVLJTsMwEL0j8Q%2BW79mQgGI1QQWEqMQStYEDN%2BOMUzdegsdp4e9JUxBwgOvzm7eMZ3r%2BZjTZgEflbE6zOKUErHC1sk1OH6vraELPi8ODKXKjOzbrw8ou4LUHDGSYtMjGh5z23jLHUSGz3ACyINhydnfLjuKUdd4FJ5ymZH6VU8M77bp1re26bVtoZKeVkWZtGilbqBvZdiupXhpKnr5iHe1izRF7mFsM3IYBSrM0SidRelZlJ%2Bx4wtLjZ0rKT6cLZfcN%2Fov1sichu6mqMiofltUosFE1%2BPuBndPGuUZDLJzZ2ZccUW0GWHKNQMkMEXwYAl46i70BvwS%2FUQIeF7c5XYXQIUuS7XYbf8skPNH8HfxpALHaAwJpMW6XjQX9j7X%2BH59%2F2dPi22Ca%2FJAqPn9tV2Z%2BVTqtxDuZae22lx54GJoE3w9Frp03PPztlsXZiKg6kiOV9RY7EEoqqClJir3r7%2FMYjuYD&RelayState=https%3A%2F%2Fwww.google.com%2Fa%2Flayer7tech.com%2FServiceLogin%3Fservice%3Dwritely%26passive%3Dtrue%26continue%3Dhttp%253A%252F%252Fdocs.google.com%252Fa%252Flayer7tech.com%252F%26followup%3Dhttp%253A%252F%252Fdocs.google.com%252Fa%252Flayer7tech.com%252F%26ltmpl%3Dhomepage";
         final String url = "/googleapps?" + queryString;
@@ -357,7 +257,6 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
 
     private ServerProcessSamlAuthnRequestAssertion buildServerAssertion( final ProcessSamlAuthnRequestAssertion assertion ) throws ServerPolicyException {
         final SimpleSingletonBeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("serverConfig", ServerConfig.getInstance());
             put("auditContext", new AuditContextStub());
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
         }});

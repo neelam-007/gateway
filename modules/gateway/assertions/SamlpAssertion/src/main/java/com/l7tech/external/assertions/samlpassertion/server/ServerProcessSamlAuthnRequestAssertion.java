@@ -26,14 +26,12 @@ import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.util.Config;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -51,9 +49,6 @@ import org.xml.sax.SAXException;
 import saml.support.ds.KeyInfoType;
 import saml.support.ds.SignatureType;
 import saml.support.ds.X509DataType;
-import saml.v2.assertion.AudienceRestrictionType;
-import saml.v2.assertion.ConditionAbstractType;
-import saml.v2.assertion.ConditionsType;
 import saml.v2.assertion.NameIDType;
 import saml.v2.assertion.SubjectConfirmationType;
 import saml.v2.assertion.SubjectType;
@@ -73,7 +68,6 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -91,7 +85,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                                                    final ApplicationContext applicationContext ) throws ServerPolicyException {
         super( assertion, assertion );
         this.auditor = new Auditor(this, applicationContext, logger);
-        this.config = applicationContext.getBean( "serverConfig", Config.class );
         this.securityTokenResolver = applicationContext.getBean( "securityTokenResolver", SecurityTokenResolver.class );
     }
 
@@ -172,7 +165,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     private static final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
 
     private final Auditor auditor;
-    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 
     /**
@@ -316,12 +308,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             certificate = validateSignature( authnRequest.getID(), authnRequestElement );
         }
 
-        // Validate conditions if present
-        final ConditionsType conditions = authnRequest.getConditions();
-        if ( conditions != null ) {
-            validateConditions( conditions );
-        }
-
         // Additional validation rules
         if ( validateSSOProfileDetails ) {
             validateSSOProfileDetails( authnRequest );
@@ -409,73 +395,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         }
 
         throw new AssertionStatusException(AssertionStatus.FALSIFIED);
-    }
-
-    private void validateConditions( final ConditionsType conditions ) {
-        if ( assertion.isCheckValidityPeriod() ) {
-            final Calendar now = Calendar.getInstance();
-            final Calendar notBefore = asCalendar( conditions.getNotBefore() );
-            final Calendar notOnOrAfter = asCalendar( conditions.getNotOnOrAfter() );
-
-            if ( notBefore != null && notOnOrAfter != null && !notBefore.before(notOnOrAfter) ) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "NotBefore must be earlier than NotOnOrAfter" );
-                throw new AssertionStatusException( AssertionStatus.FALSIFIED);
-            }
-
-            if ( notBefore != null && now.before( adjustNotBefore(notBefore) ) ) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Request not yet valid" );
-                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
-            }
-
-            if ( notOnOrAfter != null ) {
-                Calendar adjustedNotOnOrAfter = adjustNotAfter(notOnOrAfter);
-                if ( now.equals(adjustedNotOnOrAfter) || now.after(adjustedNotOnOrAfter) ) {
-                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Request expired" );
-                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
-                }
-            }
-        }
-
-        if ( assertion.getAudienceRestriction() != null ) {
-            final List<ConditionAbstractType> abstractConditions = conditions.getConditionOrAudienceRestrictionOrOneTimeUse();
-            if ( abstractConditions != null ) {
-                for ( final ConditionAbstractType abstractCondition : abstractConditions ) {
-                    if ( abstractCondition instanceof AudienceRestrictionType ) {
-                        final List<String> audiences = ((AudienceRestrictionType)abstractCondition).getAudience();
-                        if ( audiences == null || !audiences.contains( assertion.getAudienceRestriction() )) {
-                            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Invalid audience" );
-                            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private Calendar asCalendar( final XMLGregorianCalendar xmlGregorianCalendar ) {
-        Calendar calendar = null;
-        if ( xmlGregorianCalendar != null ) {
-            calendar = xmlGregorianCalendar.toGregorianCalendar();
-        }
-        return calendar;
-    }
-
-    private Calendar adjustNotAfter( Calendar notOnOrAfter ) {
-        int afterOffsetMinutes = config.getIntProperty(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, 0);
-        if (afterOffsetMinutes != 0) {
-            notOnOrAfter = (Calendar)notOnOrAfter.clone();
-            notOnOrAfter.add(Calendar.MINUTE, afterOffsetMinutes);
-        }
-        return notOnOrAfter;
-    }
-
-    private Calendar adjustNotBefore( Calendar notBefore ) {
-        int beforeOffsetMinutes = config.getIntProperty(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, 0);
-        if (beforeOffsetMinutes != 0) {
-            notBefore = (Calendar)notBefore.clone();
-            notBefore.add(Calendar.MINUTE, -beforeOffsetMinutes);
-        }
-        return notBefore;
     }
 
     /**
