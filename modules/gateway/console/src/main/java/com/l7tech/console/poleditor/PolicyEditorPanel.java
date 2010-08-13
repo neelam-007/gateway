@@ -1952,6 +1952,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     
                     for (AbstractButton butn: showCmtsButtons) {
                         butn.setText(getName());
+                        butn.setToolTipText(getName());
                         butn.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconResource())));
                         updateNodesWithComments();
                     }
@@ -2083,6 +2084,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
                         button.setText(getName());
+                        button.setToolTipText(getName());
                         button.setDisplayedMnemonicIndex(15);
                         button.setIcon(new ImageIcon(ImageCache.getInstance().getIcon(iconResource())));
                     }
