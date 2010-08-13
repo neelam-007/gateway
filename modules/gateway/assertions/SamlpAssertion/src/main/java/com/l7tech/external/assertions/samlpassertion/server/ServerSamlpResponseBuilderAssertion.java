@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SignerInfo;
@@ -21,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
@@ -108,10 +110,18 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         final ResponseContext responseContext;
         try {
             responseContext = validateAssertionInContext(context);
-        } catch (InvalidRuntimeValueException e) {
-            auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
-                    new String[]{"create", ExceptionUtils.getMessage(e)},
-                    ExceptionUtils.getDebugException(e));
+        } catch (Exception e) {
+            if (e instanceof VariableNameSyntaxException){
+                //catch any exception: VariableNameSyntaxException and InvalidRuntimeValueException
+                auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+                        new String[]{"create", "Unknown variable: '" + ExceptionUtils.getMessage(e) + "'"},
+                        ExceptionUtils.getDebugException(e));
+            } else {
+                //catch any exception: VariableNameSyntaxException and InvalidRuntimeValueException
+                auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+                        new String[]{"create", ExceptionUtils.getMessage(e)},
+                        ExceptionUtils.getDebugException(e));
+            }
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -239,13 +249,10 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             responseContext.responseId = "ResponseId_" + HexUtils.generateRandomHexId(16);
         } else {
             final String testResponseId = getStringVariable(vars, responseId, true);
-            if (testResponseId.contains(":")) {
-                throw new InvalidRuntimeValueException("Invalid runtime value for ResponseId. Cannot contain colon characters");
+            if(!DomUtils.isValidXmlNcName(testResponseId)){
+                throw new InvalidRuntimeValueException("Invalid runtime value for ResponseId. It is not a valid xsd:NCName. (No colon and may not start with a digit.)");
             }
-            
-            if (Character.isDigit(testResponseId.charAt(0))) {
-                throw new InvalidRuntimeValueException("Invalid runtime value for ResponseId. Cannot contain begin with a digit.");
-            }
+
             responseContext.responseId = testResponseId;
         }
 
@@ -371,10 +378,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             if (o instanceof Message || o instanceof Element){
                 returnCol.add(o);
             }else {
-
                 if( o instanceof String){
-                    //try convert to a Message, then we support it
                     final String token = o.toString();
+                    //it may just be the empty String
+                    if(token.trim().isEmpty()) continue;
+
+                    //try convert to a Message, then we support it
                     try {
                         Message message = new Message(XmlUtil.parse(token));
                         returnCol.add(message);
