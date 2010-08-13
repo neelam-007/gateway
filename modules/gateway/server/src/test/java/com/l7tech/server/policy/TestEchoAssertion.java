@@ -35,6 +35,16 @@ public class TestEchoAssertion extends RoutingAssertion {
         return meta;
     }
 
+    @Override
+    public boolean initializesResponse() {
+        return true;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
     public static class ServerTestEcho extends ServerRoutingAssertion<TestEchoAssertion> {
         public ServerTestEcho(TestEchoAssertion data, ApplicationContext applicationContext) {
             super(data, applicationContext, logger);

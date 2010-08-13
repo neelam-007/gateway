@@ -20,6 +20,16 @@ public class HelloWorldAssertion extends RoutingAssertion {
         this.nameToGreet = nameToGreet;
     }
 
+    @Override
+    public boolean initializesResponse() {
+        return true;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

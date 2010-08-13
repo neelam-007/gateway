@@ -62,6 +62,16 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         this.responseTarget = responseTarget;
     }
 
+    @Override
+    public boolean initializesResponse() {
+        return responseTarget != null && TargetMessageType.RESPONSE == responseTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+    }
+
     public MessageTargetableSupport getRequestTarget() {
         return requestTarget;
     }

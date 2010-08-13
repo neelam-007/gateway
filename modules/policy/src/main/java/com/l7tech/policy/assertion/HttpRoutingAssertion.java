@@ -261,6 +261,16 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         responseMsgDest = variableName;
     }
 
+    @Override
+    public boolean initializesResponse() {
+        return null == responseMsgDest;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
     public HttpPassthroughRuleSet getResponseHeaderRules() {
         return responseHeaderRules;
     }

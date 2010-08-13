@@ -216,6 +216,16 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         this.requestTarget = requestTarget;
     }
 
+    @Override
+    public boolean initializesResponse() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+    }
+
     private final static String baseName = "Route via FTP(S)";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<FtpRoutingAssertion>(){

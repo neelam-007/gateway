@@ -19,7 +19,7 @@ import org.junit.Ignore;
  */
 @Ignore
 public class DefaultAssertionPropertiesEditorTest {
-    public static class HowdyAssertion extends RoutingAssertion {
+    public static class HowdyAssertion extends Assertion {
         private String name;
         private String description;
         private int age;

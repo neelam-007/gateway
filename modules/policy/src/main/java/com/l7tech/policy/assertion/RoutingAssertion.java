@@ -31,6 +31,21 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
     /**
+     * Indicates if the assertion initializes the response message.
+     *
+     * @return true if the assertion always initializes the response message, false otherwise.
+     */
+    public abstract boolean initializesResponse();
+
+    /**
+     * Indicates if the assertion needs the response message to be initialized by a previous assertion.
+     *
+     * @return true if the assertion needs the response message to be already initialized (and will very likely fail if it's not);
+     *         false otherwise
+     */
+    public abstract boolean needsInitializedResponse();
+
+    /**
      * This is the value of the soap security header actor attribute that should be promoted to
      * the default value (no actor value). If there is a soap security header present that has
      * this actor attribute value, then that soap security header should be promoted to the

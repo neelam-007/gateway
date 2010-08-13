@@ -65,6 +65,16 @@ public class ResourceResponseAssertion extends RoutingAssertion implements Routi
     }
 
     @Override
+    public boolean initializesResponse() {
+        return true;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))

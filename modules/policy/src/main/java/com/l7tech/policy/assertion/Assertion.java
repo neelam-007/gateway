@@ -672,7 +672,14 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public static boolean isResponse(Assertion assertion) {
-        return TargetMessageType.RESPONSE == getTargetMessageType(assertion);
+        if (TargetMessageType.RESPONSE == getTargetMessageType(assertion))
+            return true;
+
+        if (assertion instanceof RoutingAssertion) {
+            return ((RoutingAssertion)assertion).needsInitializedResponse();
+        }
+
+        return false;
     }
 
     public static boolean isHardwareAccelerated(Assertion assertion) {

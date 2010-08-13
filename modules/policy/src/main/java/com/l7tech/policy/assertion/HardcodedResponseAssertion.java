@@ -70,6 +70,16 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     }
 
     @Override
+    public boolean initializesResponse() {
+        return true;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

@@ -24,6 +24,16 @@ public class EchoRoutingAssertion extends RoutingAssertion implements RoutingAss
     }
 
     @Override
+    public boolean initializesResponse() {
+        return true;
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

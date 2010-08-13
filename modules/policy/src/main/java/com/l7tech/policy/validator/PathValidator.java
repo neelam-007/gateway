@@ -503,7 +503,7 @@ public class PathValidator {
         if (a instanceof ResponseXpathAssertion) {
             if (((ResponseXpathAssertion)a).getXmlMsgSrc()==null && !seenResponse && Assertion.isResponse(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("assertion.response.beforeresponse"), null));
+                  bundle.getString("assertion.response.usebeforeavailable"), null));
             }
         } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials(targetName)
@@ -556,7 +556,6 @@ public class PathValidator {
     }
 
     private void processRouting(RoutingAssertion a) {
-        seenResponse = true;
         if (a instanceof HttpRoutingAssertion) {
             processHttpRouting((HttpRoutingAssertion)a);
             if (a instanceof BridgeRoutingAssertion) {
@@ -571,6 +570,7 @@ public class PathValidator {
             if (!(a instanceof RoutingAssertionDoesNotRoute)) {
                 seenRouting = true;
             }
+            seenResponse = a.initializesResponse();
         }
 
         if (PolicyType.INTERNAL.equals(pvc.getPolicyType()) && ("debug-trace".equals(pvc.getPolicyInternalTag()) || "audit-sink".equals(pvc.getPolicyInternalTag()))) {

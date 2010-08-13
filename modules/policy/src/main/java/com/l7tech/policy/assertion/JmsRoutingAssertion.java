@@ -130,6 +130,16 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     @Override
+    public boolean initializesResponse() {
+        return responseTarget != null && TargetMessageType.RESPONSE == responseTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if(endpointOid != null) {
