@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
@@ -145,6 +147,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.rawtcp.console.SimpleRawTransportAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Raw TCP Routing Properties");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
