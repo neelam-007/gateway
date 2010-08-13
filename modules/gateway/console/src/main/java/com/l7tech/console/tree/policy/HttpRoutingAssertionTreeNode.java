@@ -68,7 +68,7 @@ public class HttpRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<Htt
         if (urlsList != null) {
             if (urlsList.length > 0) {
                 for (String url: urlsList) {
-                    if (url.toLowerCase().startsWith("https:")) { // If one of them starts with "https:", then return true.
+                    if (! url.toLowerCase().startsWith("http:")) { // If one of them starts with "https:" or it is specified by a context variable, then return true.
                         return true;
                     }
                 }
