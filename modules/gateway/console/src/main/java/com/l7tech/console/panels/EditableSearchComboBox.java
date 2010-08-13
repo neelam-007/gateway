@@ -546,14 +546,26 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                 if(getBackground().equals(yellowBgColor)){
                     setBackground(normalBgColor);
                     EditableSearchComboBox.this.doNotFireEvents = true;
-                    requestFocusInWindow();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            EditableSearchComboBox.this.updateUI();
+                            requestFocusInWindow();
+                        }
+                    });
                 }
             } else {
                 final Color oldColor = getBackground();
                 if(!oldColor.equals(yellowBgColor)){
                     setBackground(yellowBgColor);
                     EditableSearchComboBox.this.doNotFireEvents = true;
-                    requestFocusInWindow();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            EditableSearchComboBox.this.updateUI();
+                            requestFocusInWindow();
+                        }
+                    });
                 }
             }
 
