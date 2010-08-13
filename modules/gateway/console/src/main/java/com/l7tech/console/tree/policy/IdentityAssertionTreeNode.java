@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.AddIdentityAssertionAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.console.action.SelectIdentityTagAction;
@@ -69,6 +70,7 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
             insertPosition = 0;
         }
 
+        actions.add (insertPosition++, new AddIdentityAssertionAction(this));
         actions.add( insertPosition++, new SelectMessageTargetAction(this));
         actions.add( insertPosition, new SelectIdentityTagAction(this));
 

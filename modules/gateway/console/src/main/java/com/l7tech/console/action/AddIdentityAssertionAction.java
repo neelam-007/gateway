@@ -1,5 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.identity.finder.SearchType;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
@@ -13,8 +15,10 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -35,6 +39,7 @@ import java.awt.*;
  */
 public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
     private int inserPosition = 0;
+    private final Assertion subject;
 
     public AddIdentityAssertionAction(AssertionTreeNode n) {
         this(n, 0);
@@ -42,10 +47,13 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
 
     public AddIdentityAssertionAction(AssertionTreeNode node, int inserPosition) {
         super(node, LIC_AUTH_ASSERTIONS, new SpecificUser()/*this or group not important*/);
-        if (!(node.getUserObject() instanceof CompositeAssertion)) {
-            throw new IllegalArgumentException();
-        }
         this.inserPosition = inserPosition;
+        if( node.asAssertion() instanceof CompositeAssertion){
+            //If the node is a folder node, then it will always add a new assertion and can never update an existing.
+            subject = null;
+        } else {
+            subject = node.asAssertion();
+        }
     }
 
     /**
@@ -64,13 +72,62 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
                 Options options = new Options();
                 options.setDisposeOnSelect(true);
                 options.setDisableOpenProperties(true);
+                if(subject != null){
+                    //only allow a single entity to be selected.
+                    options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                    if(subject instanceof SpecificUser){
+                        options.setSearchType(SearchType.USER);
+                    } else if (subject instanceof MemberOfGroup){
+                        options.setSearchType(SearchType.GROUP);
+                    }
+                }
                 FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
                 fd.pack();
                 Utilities.centerOnScreen(fd);
                 FindIdentitiesDialog.FindResult result = fd.showDialog();
+                if(subject == null){
+                    addNewAssertions(result);
+                } else {
+                    updateExistingAssertion(result);
+                }
+            }
+
+            private void updateExistingAssertion(final FindIdentitiesDialog.FindResult result){
                 long providerId = result.providerConfigOid;
                 EntityHeader[] headers = result.entityHeaders;
-                java.util.List identityAssertions = new ArrayList();
+                IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+
+                if(headers.length == 0) return;
+
+                final EntityHeader entityHeader = headers[0];
+                try {
+                    if (entityHeader.getType() == EntityType.USER) {
+                        User u = admin.findUserByID(providerId, entityHeader.getStrId());
+                        final SpecificUser specificUser =
+                                new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName());
+                        node.setUserObject(specificUser);
+                    } else if (entityHeader.getType() == EntityType.GROUP) {
+                        Group g = admin.findGroupByID(providerId, entityHeader.getStrId());
+                        MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
+                        node.setUserObject(ma);
+                    }
+                } catch (FindException e) {
+                    throw new RuntimeException("Couldn't retrieve user or group", e);
+                }
+
+                JTree tree = TopComponents.getInstance().getPolicyTree();
+                if (tree != null) {
+                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                    model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the policy tree.");
+                }
+            }
+            
+            private void addNewAssertions(final FindIdentitiesDialog.FindResult result){
+                long providerId = result.providerConfigOid;
+                EntityHeader[] headers = result.entityHeaders;
+                java.util.List<IdentityAssertion> identityAssertions = new ArrayList<IdentityAssertion>();
                 IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
 
                 try {

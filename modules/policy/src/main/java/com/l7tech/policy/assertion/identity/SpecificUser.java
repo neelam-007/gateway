@@ -129,4 +129,5 @@ public class SpecificUser extends IdentityAssertion {
     protected String userLogin;
     protected String userUid;
     private String userName;
+    private static final String META_INITIALIZED = SpecificUser.class.getName() + ".metadataInitialized";
 }
