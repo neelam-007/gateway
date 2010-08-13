@@ -100,9 +100,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
 
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
-        if ( !isValidRequest(context) ) {
-            return AssertionStatus.BAD_REQUEST;
-        }
 
         final com.l7tech.message.Message requestMessage;
         try {
@@ -111,6 +108,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
+        if ( !isValidRequest(requestMessage) ) {
+            return AssertionStatus.BAD_REQUEST;
+        }
+
         JmsEndpointConfig cfg = null;
 
         try {
@@ -521,16 +522,18 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         return closed;
     }
 
-    private boolean isValidRequest( final PolicyEnforcementContext context ) throws IOException {
+    private boolean isValidRequest( final com.l7tech.message.Message message ) throws IOException {
         boolean valid = true;
 
         long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880, 30000L );
-        final MimeKnob mk;
-        try {
-            mk = context.getTargetMessage(assertion.getRequestTarget()).getMimeKnob();
-        } catch (NoSuchVariableException e) {
-            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        final MimeKnob mk = message.getKnob(MimeKnob.class);
+
+        if (mk == null) {
+            // Uninitialized request
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+            return false;
         }
+
         if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_TOO_LARGE);
             valid = false;
