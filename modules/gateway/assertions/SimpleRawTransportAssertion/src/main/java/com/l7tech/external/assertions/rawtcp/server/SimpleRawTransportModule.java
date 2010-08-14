@@ -6,10 +6,7 @@ import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
@@ -22,7 +19,10 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -32,13 +32,9 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -361,7 +357,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         return SUPPORTED_SCHEMES;
     }
 
-    private void handleRawTcpRequest(Socket sock, SsgConnector connector) {
+    private void handleRawTcpRequest(final Socket sock, SsgConnector connector) {
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
 
         PolicyEnforcementContext context = null;
@@ -382,6 +378,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
+            request.attachKnob(TcpKnob.class, new SocketTcpKnob(sock));
             if (hardwiredServiceOid != -1) {
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
@@ -417,4 +414,5 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                 ResourceUtils.closeQuietly(responseStream);
         }
     }
+
 }
