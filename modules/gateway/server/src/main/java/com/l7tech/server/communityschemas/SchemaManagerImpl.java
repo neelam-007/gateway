@@ -1016,9 +1016,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             final Schema softwareSchema = sf.newSchema(new StreamSource(new StringReader(schemaDoc), systemId));
             final String tns = XmlUtil.getSchemaTNS(schemaDoc);
             final Element mangledElement = DomUtils.normalizeNamespaces(schema.getDocumentElement());
-            final String mangledDoc = XmlUtil.nodeToString(mangledElement);
             final CompiledSchema newSchema =
-                    new CompiledSchema(tns, systemId, schemaDoc, mangledDoc, softwareSchema, this,
+                    new CompiledSchema(tns, systemId, schemaDoc, mangledElement, softwareSchema, this,
                             directImports, directIncludes, true, cacheConfigurationReference.get().softwareFallback);
             for ( final SchemaHandle directDependency : CollectionUtils.iterable(directImports.values(), directIncludes.values()) ) {
                 final CompiledSchema impSchema = directDependency.getCompiledSchema();
@@ -1232,7 +1231,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         boolean notYetVisited = visited.add(schema);
         assert notYetVisited;
         if (schema.isConflictingTns()) return false;
-        if (schema.isRejectedByTarari()) return false;
+        if (!schema.isTarariValid()) return false;
         if (schema.isHardwareEligible()) return false;
 
         // Check that all children are loaded

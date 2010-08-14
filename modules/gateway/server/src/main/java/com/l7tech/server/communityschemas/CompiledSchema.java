@@ -27,6 +27,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
@@ -45,6 +46,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
     private static final boolean checkSoapBodyPayloadElements = SyspropUtil.getBoolean( "com.l7tech.server.schema.checkSoapBodyPayloadElements", true );
+    private static final boolean checkTarariIncompatibleImport = SyspropUtil.getBoolean( "com.l7tech.server.schema.checkTarariIncompatibleImport", true );
 
     private final String targetNamespace; // could be null
     private final String[] payloadElementNames;
@@ -60,6 +62,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final Map<String, Reference<CompiledSchema>> exports = new WeakHashMap<String, Reference<CompiledSchema>>();
     private final Schema softwareSchema;
     private final boolean softwareFallback;
+    private final boolean tarariCompatible;
 
     // These properties are synchronized by the schema manager
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
@@ -73,13 +76,13 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     CompiledSchema( final String targetNamespace,
                     final String systemId,
                     final String schemaDocument,
-                    final String namespaceNormalizedSchemaDocument,
+                    final Element namespaceNormalizedSchemaDocument,
                     final Schema softwareSchema,
                     final SchemaManagerImpl manager,
                     final Map<String, SchemaHandle> imports,
                     final Map<String, SchemaHandle> includes,
                     final boolean transientSchema,
-                    final boolean fallback )
+                    final boolean fallback ) throws IOException
     {
         if (softwareSchema == null ||
                 schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
@@ -91,7 +94,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
-        this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument.getBytes(Charsets.UTF8);
+        this.namespaceNormalizedSchemaDocument = XmlUtil.nodeToString( namespaceNormalizedSchemaDocument ).getBytes(Charsets.UTF8);
         this.manager = manager;
         this.imports = imports;
         this.includes = includes;
@@ -100,7 +103,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.dependencies.putAll( includes );
         this.tnsGen = "{" + nextSystemIdGeneration(systemId) + "} " + systemId;
         this.softwareFallback = fallback;
-        this.payloadElementNames = getPayloadElementNames( schemaDocument, includes.values() );
+        this.payloadElementNames = getPayloadElementNames( namespaceNormalizedSchemaDocument, includes.values() );
+        this.tarariCompatible = isTarariCompatible( namespaceNormalizedSchemaDocument );
     }
 
     private synchronized static long nextSystemIdGeneration(String systemId) {
@@ -153,6 +157,10 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     @Override
     public byte[] getNamespaceNormalizedSchemaDocument() {
         return namespaceNormalizedSchemaDocument;
+    }
+
+    public boolean isTarariValid() {
+        return !isRejectedByTarari() && tarariCompatible;
     }
 
     @Override
@@ -377,7 +385,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
     }
 
-    private String[] getPayloadElementNames( final String schema, final Collection<SchemaHandle> includes  ) {
+    private String[] getPayloadElementNames( final Element schema, final Collection<SchemaHandle> includes  ) {
         final Set<String> elementNames = new TreeSet<String>();
         try {
             final String[] directGlobalElements = XmlUtil.getSchemaGlobalElements( schema );
@@ -393,6 +401,22 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
 
         return elementNames.toArray( new String[ elementNames.size() ] );
+    }
+
+    private boolean isTarariCompatible( final Element schemaElement ) {
+        boolean tarariCompatible = true;
+
+        if ( checkTarariIncompatibleImport ) {
+            final Collection<Element> elements = XmlUtil.findChildElementsByName( schemaElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "import" );
+            for ( final Element importElement : elements ) {
+                if ( !importElement.hasAttribute( "schemaLocation" ) ) {
+                    tarariCompatible = false;
+                    break;
+                }
+            }
+        }
+
+        return tarariCompatible;
     }
 
     /**

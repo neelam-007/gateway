@@ -95,6 +95,19 @@ public class XmlUtil extends DomUtils {
             throw exception;
         }
     };
+    private static final ErrorHandler STRICT_ERROR_HANDLER =  new ErrorHandler() {
+        @Override
+        public void warning( final SAXParseException exception ) throws SAXException {}
+        @Override
+        public void error( final SAXParseException exception ) throws SAXException {
+            throw exception;
+        }
+        @Override
+        public void fatalError( final SAXParseException exception ) throws SAXException {
+            throw exception;
+        }
+    };
+
     private static final ThreadLocal documentBuilder = new ThreadLocal() {
         private final DocumentBuilderFactory dbf =
                 configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), true );
@@ -102,10 +115,7 @@ public class XmlUtil extends DomUtils {
         @Override
         protected synchronized Object initialValue() {
             try {
-                DocumentBuilder builder = dbf.newDocumentBuilder();
-                builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
-                builder.setErrorHandler(QUIET_ERROR_HANDLER);
-                return builder;
+                return configureDocumentBuilder( dbf.newDocumentBuilder() );
             } catch ( ParserConfigurationException e) {
                 throw new RuntimeException(e); // can't happen
             }
@@ -118,10 +128,7 @@ public class XmlUtil extends DomUtils {
         @Override
         protected synchronized Object initialValue() {
             try {
-                DocumentBuilder builder = dbfAllowingDoctype.newDocumentBuilder();
-                builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
-                builder.setErrorHandler(QUIET_ERROR_HANDLER);
-                return builder;
+                return configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
             } catch (ParserConfigurationException e) {
                 throw new RuntimeException(e); // can't happen
             }
@@ -233,6 +240,12 @@ public class XmlUtil extends DomUtils {
 
 
         return dbf;
+    }
+
+    private static DocumentBuilder configureDocumentBuilder( final DocumentBuilder builder ) {
+        builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
+        builder.setErrorHandler(QUIET_ERROR_HANDLER);
+        return builder;
     }
 
     /** @return a new, empty DOM document with absolutely nothing in it. */
@@ -661,11 +674,12 @@ public class XmlUtil extends DomUtils {
         return sdoc.getSchema().getTargetNamespace();
         */
         try {
-            Document schemaDocument = parse(new StringReader(schemaSrc), true);
-            Schema schemaSchema = getSchemaSchema();
-            Validator validator = schemaSchema.newValidator();
-            // use a string reader since the DOMSource seems to have problems with type prefixes
-            validator.validate(new StreamSource(new StringReader(schemaSrc)));
+            final DocumentBuilderFactory dbfAllowingDoctype =
+                configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false );
+            dbfAllowingDoctype.setSchema( getSchemaSchema() );
+            final DocumentBuilder builder = configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
+            builder.setErrorHandler( STRICT_ERROR_HANDLER );
+            final Document schemaDocument = builder.parse(new InputSource(new StringReader(schemaSrc)));
 
             String tns = schemaDocument.getDocumentElement().getAttribute("targetNamespace");
 
@@ -742,6 +756,9 @@ public class XmlUtil extends DomUtils {
         catch(IOException ioe) {
             throw new BadSchemaException(ioe);
         }
+        catch (ParserConfigurationException e) {
+            throw new BadSchemaException(e);
+        }
     }
 
     /**
@@ -751,34 +768,21 @@ public class XmlUtil extends DomUtils {
      * schemas, only elements defined in the given schema document will be
      * found.</p>
      *
-     * @param schemaSrc The schema to process (required)
+     * @param schemaElement The schema to process (required)
      * @return The element names (may be empty, never null)
      * @throws BadSchemaException If the schemaSrc is not valid
      */
-    public static String[] getSchemaGlobalElements( final String schemaSrc ) throws BadSchemaException {
-        if ( schemaSrc == null ) {
-            throw new BadSchemaException("schema is required");
-        }
-
+    public static String[] getSchemaGlobalElements( final Element schemaElement ) throws BadSchemaException {
         List<String> elementNames = new ArrayList<String>();
-        try {
-            final Document schemaDocument = parse(new StringReader(schemaSrc), true);
-            final Element schemaElement = schemaDocument.getDocumentElement();
-            final Collection<Element> elementElements =
-                    XmlUtil.findChildElementsByName( schemaElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "element" );
-            for ( Element elementElement : elementElements ) {
-                final String name = elementElement.getAttribute( "name" );
-                if ( name.isEmpty() ) {
-                    throw new BadSchemaException("Global element declaration missing (or empty) required name attribute");
-                }
-                elementNames.add( name );
+
+        final Collection<Element> elementElements =
+                XmlUtil.findChildElementsByName( schemaElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "element" );
+        for ( Element elementElement : elementElements ) {
+            final String name = elementElement.getAttribute( "name" );
+            if ( name.isEmpty() ) {
+                throw new BadSchemaException("Global element declaration missing (or empty) required name attribute");
             }
-        }
-        catch(SAXException se) {
-            throw new BadSchemaException(se);
-        }
-        catch(IOException ioe) {
-            throw new BadSchemaException(ioe);
+            elementNames.add( name );
         }
 
         return elementNames.toArray( new String[ elementNames.size() ] );
