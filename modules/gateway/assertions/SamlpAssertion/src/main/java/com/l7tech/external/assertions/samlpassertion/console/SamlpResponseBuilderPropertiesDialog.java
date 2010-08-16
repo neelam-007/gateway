@@ -77,6 +77,22 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                     }
                 });
             }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                final Object source = e.getSource();
+                if (!(source instanceof JTextField)) return;
+                final JTextField sourceField = (JTextField) source;
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(sourceField.getText().equals(autoString)){
+                            sourceField.setText("");
+                        }
+                    }
+                });
+            }
         };
         
         idTextField.addFocusListener(focusAdapter);
