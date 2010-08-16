@@ -208,6 +208,10 @@ public class SearchForm {
 
                 AssertionTreeNode node = (AssertionTreeNode) obj;
 
+                final boolean origDecorateCommentStatus = AssertionTreeNode.isDecorateComment();
+                // Set the decorateComment as false, so the comment searching will ignore searching any characters contained in the HTML tags.
+                AssertionTreeNode.setDecorateComment(false);
+
                 final boolean isCaseSensitive = caseSensitiveCheckBox.isSelected();
                 final boolean includeProperties = includePropertiesCheckBox.isSelected();
 
@@ -223,6 +227,9 @@ public class SearchForm {
                 } else {
                     searchString = node.getName();
                 }
+
+                // Set the flag "decorateComment" back to the original status
+                AssertionTreeNode.setDecorateComment(origDecorateCommentStatus);
 
                 if (!isCaseSensitive) {
                     final String nodeNameLowerCase = searchString.toLowerCase();

@@ -49,6 +49,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     protected AT assertion;
     private SoftReference<String> assertionPropsAsString;
 
+    protected static boolean decorateComment = true; // A flag to show whether it needs to decorate the comment such as using html tags.  Default value is true.
     /**
      * package private constructor accepting the assertion
      * this node represents.
@@ -566,6 +567,14 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         EntityWithPolicyNode pn = getPolicyNodeCookie();
         if (pn == null) return null;
         return pn.getPolicy();
+    }
+
+    public static boolean isDecorateComment() {
+        return decorateComment;
+    }
+
+    public static void setDecorateComment(boolean decorateComment) {
+        AssertionTreeNode.decorateComment = decorateComment;
     }
 
     /**

@@ -94,7 +94,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         final String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
         final boolean hasRight = rightComment != null && !rightComment.trim().isEmpty() && maxRhsComment > 0;
 
-        StringBuilder builder = new StringBuilder("<html>");
+        StringBuilder builder = decorateComment? new StringBuilder("<html>") : new StringBuilder();
         if (hasLeft) {
             final String stringToDisplay;
             if(maxLhsComment < 4){
@@ -103,9 +103,12 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
                 stringToDisplay = TextUtils.truncateStringAtEnd(leftComment, maxLhsComment);
             }
             String text = stringToDisplay;
-            text = text.replaceAll("<", "&lt;");
-
-            builder.append("<font color=\"gray\">" + text + "</font>&nbsp;");
+            if (decorateComment) {
+                text = text.replaceAll("<", "&lt;");
+                builder.append("<font color=\"gray\">" + text + "</font>&nbsp;");
+            } else {
+                builder.append(text).append(" ");
+            }
         }
 
         builder.append(displayText);
@@ -118,12 +121,16 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
                 stringToDisplay = TextUtils.truncateStringAtEnd(rightComment, maxRhsComment);
             }
             String text = stringToDisplay;
-            text = text.replaceAll("<", "&lt;");
-
-            builder.append("&nbsp;<font color=\"gray\">" + text + "</font>");
+            if (decorateComment) {
+                text = text.replaceAll("<", "&lt;");
+                builder.append("&nbsp;<font color=\"gray\">" + text + "</font>");
+            } else {
+                builder.append(text);
+            }
         }
 
-        builder.append("</html>");
+        if (decorateComment) builder.append("</html>");
+        
         return builder.toString();
     }
 
