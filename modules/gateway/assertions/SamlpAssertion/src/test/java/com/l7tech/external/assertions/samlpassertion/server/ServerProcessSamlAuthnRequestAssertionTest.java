@@ -7,6 +7,7 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -27,6 +28,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockServletContext;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 /**
@@ -91,6 +93,79 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
                     "    </saml:Subject>\n" +
                     "    <samlp:NameIDPolicy AllowCreate=\"true\" Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\"/>\n" +
                     "</samlp:AuthnRequest>";
+
+    @Test
+    public void testRequiredDetails() throws Exception {
+        final ProcessSamlAuthnRequestAssertion processSamlAuthnRequestAssertion =
+                new ProcessSamlAuthnRequestAssertion();
+        processSamlAuthnRequestAssertion.setVerifySignature( false );
+
+        final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion =
+                buildServerAssertion( processSamlAuthnRequestAssertion );
+
+        // Success
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "none", AssertionStatus.NONE, status );
+        }
+
+        // Failure, missing ACS URL
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "failure acs url missing", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Failure, missing ID
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "failure ID missing", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Failure, missing Version
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "Version=\"2.0\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "failure Version missing", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Failure, missing IssueInstant
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "IssueInstant=\"2008-05-27T08:19:29Z\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "failure IssueInstant missing", AssertionStatus.FALSIFIED, status );
+        }
+    }
+
+    private AssertionStatus evaluateAndClose( final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion,
+                                              final PolicyEnforcementContext pec ) throws IOException, PolicyAssertionException {
+        AssertionStatus status;
+        try {
+            status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
+        } catch ( AssertionStatusException ase) {
+            status = ase.getAssertionStatus();
+        } finally {
+            pec.close();
+        }
+        return status;
+    }
 
     @Test
     public void testVariables() throws Exception {
@@ -165,14 +240,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
                     httpRequestMessage,
                     null );
 
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
 
             assertEquals( "none", AssertionStatus.NONE, status );
         }
@@ -214,14 +282,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
                     httpRequestMessage,
                     null );
 
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
 
             assertEquals( "none", AssertionStatus.NONE, status );
             assertEquals( "acsUrl", "https://cs2.salesforce.com", pec.getVariable( "authnRequest.acsUrl" ) );            
@@ -243,14 +304,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
                     new Message( XmlUtil.parse( REQUEST_SIGNED) ),
                     null );
 
-            AssertionStatus status;
-            try {
-                status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
-            } catch ( AssertionStatusException ase) {
-                status = ase.getAssertionStatus();
-            } finally {
-                pec.close();
-            }
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
             assertEquals( "none", AssertionStatus.NONE, status );
         }
     }

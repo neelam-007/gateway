@@ -136,7 +136,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                 context.setVariable( prefix(SUFFIX_VERSION), authnRequest.getVersion() );
                 context.setVariable( prefix(SUFFIX_ISSUE_INSTANT), getIsoTime(authnRequest.getIssueInstant()) );
                 context.setVariable( prefix(SUFFIX_DESTINATION), authnRequest.getDestination() );
-                context.setVariable( prefix(SUFFIX_CONSENT), authnRequest.getConsent() );
+                context.setVariable( prefix(SUFFIX_CONSENT), getConsent(authnRequest) );
                 context.setVariable( prefix(SUFFIX_ISSUER), getName(authnRequest.getIssuer()) );
                 context.setVariable( prefix(SUFFIX_ISSUER_NAME_QUALIFIER), getNameQualifier(authnRequest.getIssuer()) );
                 context.setVariable( prefix(SUFFIX_ISSUER_SP_NAME_QUALIFIER), getSPNameQualifier(authnRequest.getIssuer()) );
@@ -157,6 +157,8 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
 
     private static final String URL_ENCODING_DEFLATE = "urn:oasis:names:tc:SAML:2.0:bindings:URL-Encoding:DEFLATE";
 
+    private static final String CONSENT_UNSPECIFIED = "urn:oasis:names:tc:SAML:2.0:consent:unspecified";
+    
     private static final String ELEMENT_AUTHN_REQUEST = "AuthnRequest";
 
     private static final AtomicReference<JAXBContext> jaxbContext = new AtomicReference<JAXBContext>();
@@ -303,14 +305,17 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         final String certBase64 = getCertBase64( authnRequest.getSignature() );
         X509Certificate certificate = null;
 
-        // Validate signature
-        if ( assertion.isVerifySignature() ) {
-            certificate = validateSignature( authnRequest.getID(), authnRequestElement );
-        }
+        // Basic validation rules
+        validateDetails( authnRequest );
 
         // Additional validation rules
         if ( validateSSOProfileDetails ) {
             validateSSOProfileDetails( authnRequest );
+        }
+
+        // Validate signature
+        if ( assertion.isVerifySignature() ) {
+            certificate = validateSignature( authnRequest.getID(), authnRequestElement );
         }
 
         return new Pair<String, X509Certificate>( certBase64, certificate );
@@ -398,6 +403,38 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     }
 
     /**
+     * Validate that required details are present.
+     *
+     * - Assertion Consumer Service URL
+     * - ID
+     * - Version
+     * - IssueInstant
+     */
+    private void validateDetails( final AuthnRequestType authnRequest ) {
+        checkMissingOrEmpty( authnRequest.getAssertionConsumerServiceURL(), "AssertionConsumerServiceURL" );
+        checkMissingOrEmpty( authnRequest.getID(), "ID" );
+        checkMissingOrEmpty( authnRequest.getVersion(), "Version" );
+        checkMissing( authnRequest.getIssueInstant(), "IssueInstant" );
+    }
+
+    private void checkMissingOrEmpty( final String value, final String description ) {
+        if ( value == null || value.trim().isEmpty() ) {
+            failDetails( description );
+        }
+    }
+
+    private void checkMissing( final Object value, final String description ) {
+        if ( value == null ) {
+            failDetails( description );
+        }
+    }
+
+    private void failDetails( final String missing ) {
+        auditor.logAndAudit(AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, missing + " is required" );
+        throw new AssertionStatusException( AssertionStatus.FALSIFIED);
+    }
+
+    /**
      * Validate additional profile constraints from     4.1.4.1 <AuthnRequest> Usage.
      *
      * - check issuer format
@@ -407,7 +444,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         final NameIDType issuer = authnRequest.getIssuer();
         if ( issuer == null ) {
             auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer is required" );
-            throw new AssertionStatusException( AssertionStatus.FALSIFIED);
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         } else if ( issuer.getFormat() != null && !SamlConstants.NAMEIDENTIFIER_ENTITY.equals( issuer.getFormat() ) ) {
             auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
@@ -522,6 +559,16 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             time = ISO8601Date.format(xmlCalendar.toGregorianCalendar().getTime());
         }
         return time;
+    }
+
+    private String getConsent( final AuthnRequestType authnRequest ) {
+        String consent = authnRequest.getConsent();
+
+        if ( consent == null ) {
+            consent = CONSENT_UNSPECIFIED;
+        }
+
+        return consent;
     }
 
     private String getCertBase64( final SignatureType signature ) {
