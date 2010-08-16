@@ -55,7 +55,7 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
                 log.log(Level.SEVERE, "could not find provider associated with this assertion", e);
             } catch (Exception e) {
                 provName = NA;
-                log.log(Level.SEVERE, "could not loookup the IdentityAdmin", e);
+                log.log(Level.SEVERE, "could not lookup the IdentityAdmin", e);
             }
         }
         return provName;
