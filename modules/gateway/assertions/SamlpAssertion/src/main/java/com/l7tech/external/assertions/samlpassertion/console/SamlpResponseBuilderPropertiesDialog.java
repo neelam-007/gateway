@@ -219,6 +219,14 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                     " may only reference context variables");
         }
 
+        final String statusDetails = statusDetailTextField.getText();
+        if(statusDetails != null && !statusDetails.trim().isEmpty()){
+            if(!Syntax.validateStringOnlyReferencesVariables(statusDetails))
+                throw new ValidationException(resources.getString("responseStatus.detail") +
+                    " may only reference context variables");
+
+        }
+
         final SamlVersion samlVersion =
                 (SamlVersion) samlVersionComboBox.getSelectedItem();
             switch(samlVersion){
