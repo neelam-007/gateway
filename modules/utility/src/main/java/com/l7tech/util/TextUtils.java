@@ -5,6 +5,9 @@
 
 package com.l7tech.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -138,6 +141,63 @@ public class TextUtils {
         }
         output.append(input.substring(pos));
         return output.toString();
+    }
+
+    /**
+     * Enforce to break a string into multiple lines.  Any long strings without spaces will be nicely formatted into multiple
+     * lines.  Note: in this method, new line characters will be considered first (See the for loop.)
+     *
+     * @param input String to break up into multiple lines
+     * @param maxLineLength int max line length.
+     * @param breakCharacters String to insert when ever a line should be broken
+     * @return a well-formatted string with multiple lines.
+     */
+    public static String enforceToBreakOnMultipleLines(String input, int maxLineLength, String breakCharacters) {
+        StringBuilder strBuilder = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new StringReader(input));
+
+        try {
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                if (line.length() <= maxLineLength) {
+                    strBuilder.append(line).append(breakCharacters);
+                } else {
+                    StringTokenizer tokens = new StringTokenizer(line, " ");
+                    StringBuilder buff = new StringBuilder(0);
+                    String token;
+
+                    while (tokens.hasMoreTokens()) {
+                        token = tokens.nextToken();
+
+                        if (buff.length() + token.length() <= maxLineLength) {
+                            buff.append(token).append(" ");
+                        } else if (token.length() <= maxLineLength) {
+                            strBuilder.append(buff.toString()).append(breakCharacters);
+                            buff.setLength(0);
+                            buff.append(token).append(" ");
+                        } else {
+                            strBuilder.append(buff.toString()).append(token.subSequence(0, maxLineLength - buff.length())).append(breakCharacters);
+                            token = token.substring(maxLineLength - buff.length());
+
+                            while (token.length() > maxLineLength) {
+                                strBuilder.append(token.substring(0, maxLineLength)).append(breakCharacters);
+                                token = token.substring(maxLineLength);
+                            }
+
+                            buff.setLength(0);
+                            buff.append(token).append(" ");
+                        }
+                    }
+
+                    if (buff.length() > 0) {
+                        strBuilder.append(buff.toString()).append(breakCharacters);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot read a line from a string input, '" + input + "'", e);
+        }
+
+        return strBuilder.toString();
     }
 
     /**
