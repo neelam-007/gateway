@@ -94,7 +94,7 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Process and optionally validate a SAML authentication request.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Process a SAML 2.0 authentication request with optional signing, context variables are set for extracted values. This assertion is compatible with the HTTP POST and HTTP Redirect bindings and the Web Browser SSO Profile.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Authentication Request Properties");
