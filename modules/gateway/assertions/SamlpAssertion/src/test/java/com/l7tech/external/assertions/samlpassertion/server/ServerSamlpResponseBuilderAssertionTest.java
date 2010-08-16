@@ -11,9 +11,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.DomElementCursor;
@@ -29,7 +31,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import saml.support.ds.SignatureType;
 import saml.v2.assertion.AssertionType;
@@ -453,6 +457,229 @@ public class ServerSamlpResponseBuilderAssertionTest {
         XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
         final Element extensionOut = xpathResultSetIterator.nextElementAsCursor().asDomElement();
         failIfXmlNotEqual(extensionXml, extensionOut, "Invalid extensions element found");
+    }
+
+    /**
+     * Tests that the Issuer is the first element, Signature second and Extensions third.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9035)
+    public void testSaml2_0_IssuerIsFirst() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setAddIssuer(true);
+        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+
+        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+
+        Node childNode = responseElement.getFirstChild();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAML2, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Issuer", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", DsigUtil.DIGSIG_URI, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Signature", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAMLP2, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Status", childNode.getLocalName());
+    }
+
+    /**
+     * Tests that the Signature is the first element.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9035)
+    public void testSaml2_0_SignatureIsFirstWhenNoIssuer() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setAddIssuer(false);
+
+        final String token = "samlToken";
+        assertion.setResponseAssertions("${" + token + "}");
+
+        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        final String extensions = "extensions";
+        assertion.setResponseExtensions("${" + extensions + "}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        final String extensionXml = "<extension>im an extension element</extension>";
+        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml)));
+        context.setVariable(token, new Message(XmlUtil.parse(samlToken_2_0)));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+        
+        Node childNode = responseElement.getFirstChild();
+        Assert.assertEquals("Incorrect element found", DsigUtil.DIGSIG_URI, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Signature", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAMLP2, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Extensions", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAMLP2, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Status", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAML2, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Assertion", childNode.getLocalName());
+    }
+
+    /**
+     * Tests structure of created samlp:Response
+     * @throws Exception
+     */
+    @Test
+    public void testSaml1_1_VerifyStructureSignatureNoSuccess() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
+
+        assertion.setAddIssuer(true);
+        assertion.setSamlStatus(SamlStatus.SAML_REQUEST_DENIED);
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+
+        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+
+        Node childNode = responseElement.getFirstChild();
+        Assert.assertEquals("Incorrect element found", DsigUtil.DIGSIG_URI, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Signature", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAMLP, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Status", childNode.getLocalName());
+    }
+    
+    /**
+     * Tests structure of created samlp:Response
+     * @throws Exception
+     */
+    @Test
+    public void testSaml1_1_VerifyStructureSuccessNoSignature() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
+
+        assertion.setAddIssuer(false);
+
+        final String token = "samlToken";
+        assertion.setResponseAssertions("${" + token + "}");
+
+        assertion.setSamlStatus(SamlStatus.SAML_SUCCESS);
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(token, new Message(XmlUtil.parse(samlToken_1_1)));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+
+        Node childNode = responseElement.getFirstChild();
+        Assert.assertEquals("Incorrect element found", DsigUtil.DIGSIG_URI, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Signature", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAMLP, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Status", childNode.getLocalName());
+
+        childNode = childNode.getNextSibling();
+        Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAML, childNode.getNamespaceURI());
+        Assert.assertEquals("Incorrect element found", "Assertion", childNode.getLocalName());
     }
 
     /**

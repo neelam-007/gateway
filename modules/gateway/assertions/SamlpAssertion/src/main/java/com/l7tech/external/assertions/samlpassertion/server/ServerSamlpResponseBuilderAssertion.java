@@ -188,15 +188,28 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
     // - PRIVATE
 
+    /**
+     * Sign the response. If the version is 2.0, then the Signature must come after the Issuer element if present,
+     * and before any other element.
+     * 
+     * @param responseDoc Document (samlp:Response) to sign and add a ds:Signature element to.
+     * @throws InvalidRuntimeValueException if the xsd:Id attribute (ID or ResponseID) is not found in responseDoc
+     * @throws KeyStoreException if any problem with key
+     * @throws SignatureException if any problem signing
+     * @throws SignatureStructureException if any problem signing
+     * @throws XSignatureException if any problem signing
+     */
     private void signResponse(final Document responseDoc)
             throws InvalidRuntimeValueException, KeyStoreException, SignatureException,
             SignatureStructureException, XSignatureException {
         final Element responseElement = responseDoc.getDocumentElement();
 
         final String xsdIdAttribute;
+        boolean lookForIssuer = false;
         switch (assertion.getSamlVersion()) {
             case SAML2:
                 xsdIdAttribute = "ID";
+                lookForIssuer = assertion.isAddIssuer();
                 break;
             case SAML1_1:
                 xsdIdAttribute = "ResponseID";
@@ -213,8 +226,21 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final Element signature = DsigUtil.createEnvelopedSignature(
                 responseElement, xsdIdAttribute, signer.getCertificate(), signer.getPrivate(), null, null, null);
-        final Node firstChild = responseElement.getFirstChild();
-        responseElement.insertBefore(signature, firstChild);
+
+        //Signature must be added AFTER the Issuer element, if it's present, for SAML 2.0
+        final Node insertBeforeNode;
+        final Node maybeIssuer = responseElement.getFirstChild();
+        if (lookForIssuer &&
+                maybeIssuer.getNamespaceURI().equals(SamlConstants.NS_SAML2) &&
+                maybeIssuer.getLocalName().equals("Issuer")) {
+            insertBeforeNode = maybeIssuer.getNextSibling();
+            if (insertBeforeNode == null)
+                throw new IllegalStateException("Element after issuer not found."); //Cannot happen as we always add the Status element.
+        } else {
+            insertBeforeNode = maybeIssuer;
+        }
+
+        responseElement.insertBefore(signature, insertBeforeNode);
     }
 
     /**
@@ -543,6 +569,9 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                                                                         final String issuer)
             throws JAXBException, InvalidRuntimeValueException {
 
+        //The order in which methods are set on ResponseType matter for the XML it will produce!! Add elements in
+        //the order the schema requires.
+
         final saml.v2.protocol.ResponseType response = v2SamlpFactory.createResponseType();
         response.setVersion("2.0");
 
@@ -554,7 +583,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             value.setValue(issuer);
             response.setIssuer(value);
         }
-
+        
         final saml.v2.protocol.StatusCodeType statusCodeType = v2SamlpFactory.createStatusCodeType();
         statusCodeType.setValue(responseContext.statusCode);
 
@@ -586,7 +615,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         response.setStatus(statusType);
-        
+
         response.setID(responseContext.responseId);
         response.setIssueInstant(responseContext.issueInstant);
         final String inResponseTo = responseContext.inResponseTo;
@@ -604,6 +633,24 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             response.setConsent(consent);
         }
 
+        //Extensions must be added first to JAXB Object to satisfy schema requirements
+        final Collection extensions = responseContext.extensions;
+        if (!extensions.isEmpty()) {
+            final ExtensionsType extensionType = v2SamlpFactory.createExtensionsType();
+            response.setExtensions(extensionType);
+        }
+
+        for (Object extension : extensions) {
+            if(extension instanceof Element){
+                response.getExtensions().getAny().add(extension);
+            } else if (extension instanceof Message){
+                Message message = (Message) extension;
+                response.getExtensions().getAny().add(getDocumentElement(message));
+            } else {
+                logger.log(Level.WARNING, "Unexpected value  type '" + extension.getClass().getName() +"' found for response extensions");
+            }
+        }
+        
         final Collection tokens = responseContext.samlTokens;
         for (Object token : tokens) {
             final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement;
@@ -622,23 +669,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 2.0");
             }
             response.getAssertionOrEncryptedAssertion().add(value);
-        }
-
-        final Collection extensions = responseContext.extensions;
-        if (!extensions.isEmpty()) {
-            final ExtensionsType extensionType = v2SamlpFactory.createExtensionsType();
-            response.setExtensions(extensionType);
-        }
-        
-        for (Object extension : extensions) {
-            if(extension instanceof Element){
-                response.getExtensions().getAny().add(extension);
-            } else if (extension instanceof Message){
-                Message message = (Message) extension;
-                response.getExtensions().getAny().add(getDocumentElement(message));
-            } else {
-                logger.log(Level.WARNING, "Unexpected value  type '" + extension.getClass().getName() +"' found for response extensions");
-            }
         }
 
         return v2SamlpFactory.createResponse(response);
