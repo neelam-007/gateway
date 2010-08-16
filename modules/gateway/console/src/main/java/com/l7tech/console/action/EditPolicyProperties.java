@@ -75,7 +75,8 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
             throw new RuntimeException(e);
         }
 
-        Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
+        final Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
+            @Override
             public void call(Boolean changed) {
                 if (changed) {
                     policyNode.clearCachedEntities();
@@ -94,6 +95,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                             tree.updateAllAliases(pH.getOid());
 
                             SwingUtilities.invokeLater(new Runnable() {
+                                @Override
                                 public void run() {
                                     refreshTree(policyNode, tree);
                                 }
@@ -125,16 +127,19 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
         editPolicyProperties(policy, callback, canUpdate);
     }
 
-    private void editPolicyProperties(final Policy policy, final Functions.UnaryVoid<Boolean> resultCallback, boolean canUpdate) {
+    private void editPolicyProperties(final Policy policy, final Functions.UnaryVoid<Boolean> resultCallback, final boolean canUpdate) {
         final Frame mw = TopComponents.getInstance().getTopParent();
         final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, policy, canUpdate);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.wasOKed()) {
+                    Boolean success = null;
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                        success = true;
                     } catch ( DuplicateObjectException doe) {
                         String message = "Unable to save the policy '" + policy.getName() + "'.\n";
                         if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
@@ -145,16 +150,22 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                         }
 
                         DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
+                        editPolicyProperties( policy, resultCallback, canUpdate );
                     } catch (SaveException e) {
                         String msg = "Error updating policy:" + e.getMessage();
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
+                        success = false;
                     } catch (PolicyAssertionException e) {
                         String msg = "Error while changing policy properties since there is a problem with the policy.";
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
+                        success = false;
                     }
-                    resultCallback.call(true);
+
+                    if ( success != null ) {
+                        resultCallback.call(success);
+                    }
                 } else {
                     resultCallback.call(false);
                 }

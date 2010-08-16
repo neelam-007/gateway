@@ -59,15 +59,20 @@ public class CreatePolicyAction extends SecureAction {
         return "com/l7tech/console/resources/xmlObject16.gif";
     }
 
+    @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-//        String xml = WspWriter.getPolicyXml(new AllAssertion( Collections.EMPTY_LIST ));
-        String xml = null;
         // canUpdate == true because this action would be disabled if we couldn't create policies
-        final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, new Policy( PolicyType.INCLUDE_FRAGMENT, null, xml, false), true);
+        final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, null, null, false);
+        doEdit( mw, policy );
+    }
+
+    private void doEdit( final Frame parent, final Policy policy ) {
+        final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(parent, policy, true);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (!dlg.wasOKed()) return;
 
@@ -96,7 +101,8 @@ public class CreatePolicyAction extends SecureAction {
                         message += "The policy name is already used, please choose a different\n name and try again.";
 
                     }
-                    DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
+                    DialogDisplayer.showMessageDialog(parent, "Duplicate policy", message, null);
+                    doEdit( parent, policy );
                 } catch (PolicyAssertionException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
                 } catch (SaveException e) {
@@ -124,8 +130,9 @@ public class CreatePolicyAction extends SecureAction {
                     rootNode.addEntity(ph.getOid(), sn);
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
-                    
+
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             new EditPolicyAction((PolicyEntityNode)sn).invoke();
 
