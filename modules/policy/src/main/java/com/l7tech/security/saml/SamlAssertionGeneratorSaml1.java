@@ -260,11 +260,16 @@ class SamlAssertionGeneratorSaml1 {
         }
     }
 
-    private AssertionType getGenericAssertion(Calendar now, int expirySeconds, String assertionId, String caDn, int beforeOffsetSeconds, String audienceRestriction) {
-        Map caMap = CertUtils.dnToAttributeMap(caDn);
-        String caCn = (String)((List)caMap.get("CN")).get(0);
+    private AssertionType getGenericAssertion( final Calendar now,
+                                               final int expirySeconds,
+                                               final String assertionId,
+                                               final String caDn,
+                                               final int beforeOffsetSeconds,
+                                               final String audienceRestriction ) {
+        final Map caMap = CertUtils.dnToAttributeMap(caDn);
+        final String caCn = (String)((List)caMap.get("CN")).get(0);
 
-        AssertionType assertion = AssertionType.Factory.newInstance();
+        final AssertionType assertion = AssertionType.Factory.newInstance();
 
         assertion.setMinorVersion(BigInteger.ONE);
         assertion.setMajorVersion(BigInteger.ONE);
@@ -275,19 +280,33 @@ class SamlAssertionGeneratorSaml1 {
         assertion.setIssuer(caCn);
         assertion.setIssueInstant(now);
 
-        ConditionsType ct = ConditionsType.Factory.newInstance();
-        if (audienceRestriction != null) {
-            AudienceRestrictionConditionType ar = ct.addNewAudienceRestrictionCondition();
-            ar.addAudience(audienceRestriction);
+        if ( beforeOffsetSeconds > -1 ||
+             expirySeconds > -1 ||
+             audienceRestriction != null ) {
+
+            final ConditionsType ct = ConditionsType.Factory.newInstance();
+
+            if ( audienceRestriction != null ) {
+                final AudienceRestrictionConditionType ar = ct.addNewAudienceRestrictionCondition();
+                ar.addAudience(audienceRestriction);
+            }
+
+            if ( beforeOffsetSeconds > -1 ) {
+                final Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+                calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
+                calendar.set(Calendar.MILLISECOND, 0);
+                ct.setNotBefore(calendar);
+            }
+
+            if ( beforeOffsetSeconds > -1 ) {
+                final Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+                calendar.add(Calendar.SECOND, expirySeconds);
+                ct.setNotOnOrAfter(calendar);
+            }
+
+            assertion.setConditions(ct);
         }
-        Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
-        calendar.set(Calendar.MILLISECOND, 0);
-        ct.setNotBefore(calendar);
-        Calendar c2 = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        c2.add(Calendar.SECOND, expirySeconds);
-        ct.setNotOnOrAfter(c2);
-        assertion.setConditions(ct);
+
         return assertion;
     }
 

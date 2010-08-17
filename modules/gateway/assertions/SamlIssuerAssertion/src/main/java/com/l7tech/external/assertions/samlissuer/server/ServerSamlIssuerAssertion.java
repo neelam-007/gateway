@@ -119,7 +119,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
         final String testAudienceRestriction = assertion.getAudienceRestriction();
-        if(testAudienceRestriction != null) {
+        if( testAudienceRestriction != null && !testAudienceRestriction.isEmpty() ) {
             options.setAudienceRestriction(ExpandVariables.process(testAudienceRestriction, vars, auditor));
         }
         if (clientAddress != null) try {

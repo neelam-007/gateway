@@ -76,7 +76,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion samlAssertion = (SamlPolicyAssertion) settings;
-        samlAssertion.setAudienceRestriction(textFieldAudienceRestriction.getText());
+        samlAssertion.setAudienceRestriction(nullIfEmpty(textFieldAudienceRestriction.getText()));
         if (issueMode) {
             SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
             issuerConfiguration.setConditionsNotBeforeSecondsInPast(validityCheckbox.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
@@ -84,6 +84,10 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         } else {
             ((RequireWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
         }
+    }
+
+    private String nullIfEmpty( final String text ) {
+        return text!=null && text.trim().isEmpty() ? null : text;
     }
 
     @Override

@@ -336,6 +336,13 @@ public class SamlAssertionGenerator {
         public static final int VERSION_1 = 1;
         public static final int VERSION_2 = 2;
 
+        /**
+         * Get the not before seconds.
+         *
+         * <p>A value of -1 means the attribute should be omitted.</p>
+         *
+         * @return The offset from the current time in seconds.
+         */
         public int getNotBeforeSeconds() {
             return notBeforeSeconds;
         }
@@ -344,6 +351,13 @@ public class SamlAssertionGenerator {
             this.notBeforeSeconds = notBeforeSeconds;
         }
 
+        /**
+         * Get the not on or after seconds.
+         *
+         * <p>A value of -1 means the attribute should be omitted.</p>
+         *
+         * @return The offset from the current time in seconds.
+         */
         public int getNotAfterSeconds() {
             return notAfterSeconds;
         }
@@ -456,6 +470,13 @@ public class SamlAssertionGenerator {
             this.subjectConfirmationDataInResponseTo = subjectConfirmationDataInResponseTo;
         }
 
+        /**
+         * Get the not before seconds for the subject confirmation data.
+         *
+         * <p>A value of -1 means the attribute should be omitted.</p>
+         *
+         * @return The offset from the current time in seconds.
+         */
         public int getSubjectConfirmationDataNotBeforeSecondsInPast() {
             return subjectConfirmationDataNotBeforeSecondsInPast;
         }
@@ -464,6 +485,13 @@ public class SamlAssertionGenerator {
             this.subjectConfirmationDataNotBeforeSecondsInPast = subjectConfirmationDataNotBeforeSecondsInPast;
         }
 
+        /**
+         * Get the not on or after seconds for the subject confirmation data.
+         *
+         * <p>A value of -1 means the attribute should be omitted.</p>
+         *
+         * @return The offset from the current time in seconds.
+         */
         public int getSubjectConfirmationDataNotOnOrAfterExpirySeconds() {
             return subjectConfirmationDataNotOnOrAfterExpirySeconds;
         }
