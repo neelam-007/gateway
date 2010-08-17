@@ -577,7 +577,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             if (countstr == null)
                 return null;
             int count = Integer.parseInt(countstr);
-            return new PortRange(start, start + count, false, getProperty(PROP_BIND_ADDRESS));
+            if (count < 1)
+                throw new IllegalArgumentException("Invalid port count: " + count);
+            return new PortRange(start, start + count -1, false, getProperty(PROP_BIND_ADDRESS));
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;
