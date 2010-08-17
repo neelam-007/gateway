@@ -105,7 +105,7 @@ public class FirewallRulesTest extends TestCase {
             "[0:0] -A INPUT  -p tcp -m tcp --dport 8443 -j ACCEPT\n" +
             "[0:0] -A INPUT  -p tcp -m tcp --dport 9443 -j ACCEPT\n" +
             "[0:0] -A INPUT  -p tcp -m tcp --dport 4747 -j ACCEPT\n" +
-            "[0:0] -A INPUT  -p tcp -m tcp --dport 4800:4815 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4800:4814 -j ACCEPT\n" +
             "[0:0] -A INPUT  -p tcp -m tcp --dport 4547 -j ACCEPT\n" +
-            "[0:0] -A INPUT  -p tcp -m tcp --dport 4550:4565 -j ACCEPT\n";
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4550:4564 -j ACCEPT\n";
 }
