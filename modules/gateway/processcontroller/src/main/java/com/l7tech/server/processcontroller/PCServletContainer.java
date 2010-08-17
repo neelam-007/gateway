@@ -134,6 +134,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         root.setDisplayName("Layer 7 Process Controller");
         final File var = new File("var");
         final File varTmp = new File(var, "tmp");
+        final File varRun = new File(var, "run");
         if ( var.exists() && (varTmp.exists() || varTmp.mkdir()) ) {
             root.setAttribute("javax.servlet.context.tempdir", varTmp);            
         } else {
@@ -143,8 +144,8 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
         //Write certificate to file
-        if ( var.exists() ) {
-            final File certificate = new File( var, "pc.cer");
+        if ( var.exists() && (varRun.exists() || varRun.mkdir()) ) {
+            final File certificate = new File( varRun, "pc.cer");
             try {
                 FileUtils.save( new ByteArrayInputStream(keypair.left[0].getEncoded()), certificate );
                 certificate.setReadable( true, false );
