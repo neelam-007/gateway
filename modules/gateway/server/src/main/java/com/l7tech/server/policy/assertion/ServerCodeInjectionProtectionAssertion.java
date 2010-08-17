@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
@@ -188,7 +189,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                         }
                     } catch (SAXException e) {
                         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                                new String[]{where, "text/xml"}, e);
+                                new String[]{where, "text/xml"}, ExceptionUtils.getDebugException(e));
                         return getBadMessageStatus();
                     }
                 } else {
@@ -206,14 +207,14 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                         }
                     } catch (NoSuchPartException e) {
                         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                                new String[]{where, "text"}, e);
+                                new String[]{where, "text"}, ExceptionUtils.getDebugException(e));
                         return getBadMessageStatus();
                     }
                 }
             }
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                    new String[]{messageDesc + " message body", "multipart/form-data"}, e);
+                    new String[]{messageDesc + " message body", "multipart/form-data"}, ExceptionUtils.getDebugException(e));
             return getBadMessageStatus();
         }
 
@@ -230,7 +231,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                 return AssertionStatus.FALSIFIED;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                    new String[]{where, "XML"}, e);
+                    new String[]{where, "XML"}, ExceptionUtils.getDebugException(e));
             return getBadMessageStatus();
         }
 
@@ -253,7 +254,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             }
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
-                    new String[]{where, "text"}, e);
+                    new String[]{where, "text"}, ExceptionUtils.getDebugException(e));
             return getBadMessageStatus();
         }
 
