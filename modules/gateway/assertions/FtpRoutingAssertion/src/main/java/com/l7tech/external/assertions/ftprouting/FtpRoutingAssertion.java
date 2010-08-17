@@ -66,6 +66,9 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     /** Password to use if {@link #_credentialsSource} is {@link FtpCredentialsSource#SPECIFIED}. Can contain context variables. */
     private String _password;
 
+    /** Explicit flag, in order to allow "${foo}" literal passwords */
+    private boolean _passwordUsesContextVariables;
+
     /** Whether to use client cert and private key for authentication. */
     private boolean _useClientCert;
 
@@ -168,6 +171,14 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setPassword(String password) {
         _password = password;
+    }
+
+    public boolean isPasswordUsesContextVariables() {
+        return _passwordUsesContextVariables;
+    }
+
+    public void setPasswordUsesContextVariables(boolean passwordUsesContextVariables) {
+        _passwordUsesContextVariables = passwordUsesContextVariables;
     }
 
     public String getPort() {
@@ -293,7 +304,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         if (_port != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_port)));
         if (_directory != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_directory)));
         if (_userName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_userName)));
-        if (_password != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_password)));
+        if (_password != null && _passwordUsesContextVariables) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_password)));
         if (_fileNamePattern != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_fileNamePattern)));
         vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
         return vars.toArray(new String[vars.size()]);

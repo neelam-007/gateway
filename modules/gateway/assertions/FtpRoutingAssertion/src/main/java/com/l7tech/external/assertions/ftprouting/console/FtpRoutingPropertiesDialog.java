@@ -244,6 +244,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
+        Utilities.enableGrayOnDisabled(contextVariableInPassword);
 
         _useClientCertCheckBox.addItemListener(new ItemListener() {
             @Override
@@ -354,11 +355,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         } else if (_assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             _credentialsSpecifyRadioButton.doClick(0);
             _userNameTextField.setText(_assertion.getUserName());
-            String password = _assertion.getPassword();
-            _passwordField.setText(password);
-            boolean passwordReferencesVars = password != null && Syntax.getReferencedNames(password).length > 0;
-            _passwordField.enableInputMethods(passwordReferencesVars);
-            contextVariableInPassword.setSelected(passwordReferencesVars);
+            _passwordField.setText(_assertion.getPassword());
+            _passwordField.enableInputMethods(_assertion.isPasswordUsesContextVariables());
+            contextVariableInPassword.setSelected(_assertion.isPasswordUsesContextVariables());
         }
 
         _useClientCertCheckBox.setSelected(_assertion.isUseClientCert());
@@ -480,6 +479,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         }
         assertion.setUserName(_userNameTextField.getText());
         assertion.setPassword(new String(_passwordField.getPassword()));
+        assertion.setPasswordUsesContextVariables(contextVariableInPassword.isSelected());
 
         assertion.setUseClientCert(_useClientCertCheckBox.isSelected());
         if (_useClientCertCheckBox.isSelected()) {
