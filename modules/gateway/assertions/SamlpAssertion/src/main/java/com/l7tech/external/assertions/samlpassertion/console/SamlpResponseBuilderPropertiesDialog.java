@@ -267,11 +267,15 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             saml1_1Panel.setVisible(false);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml2xStatuses().toArray()));
             addIssuerCheckBox.setVisible(true);
+            extensionsTextField.setVisible(true);
+            extensionsLabel.setVisible(true);
         } else {
             saml2_0Panel.setVisible(false);
             saml1_1Panel.setVisible(true);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml1xStatuses().toArray()));
             addIssuerCheckBox.setVisible(false);
+            extensionsTextField.setVisible(false);
+            extensionsLabel.setVisible(false);
         }
     }
 
@@ -310,6 +314,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JPanel saml1_1Panel;
     private JPanel tabHolder;
     private JCheckBox addIssuerCheckBox;
+    private JLabel extensionsLabel;
 
     private static final String autoString = "<<auto>>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );
