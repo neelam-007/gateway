@@ -218,14 +218,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 throw new RuntimeException("Unknown SAML Version found");//cannot happen due to constructor.
         }
 
-        String id = responseElement.getAttribute(xsdIdAttribute);
-        if(id == null || id.trim().isEmpty()){
+        String idValue = responseElement.getAttribute(xsdIdAttribute);
+        if(idValue == null || idValue.trim().isEmpty()){
             throw new InvalidRuntimeValueException("Cannot find xsd:ID attribute with name '" +
                     xsdIdAttribute+"' on element to sign '" + responseElement.getNodeName()+"'");
         }
 
         final Element signature = DsigUtil.createEnvelopedSignature(
-                responseElement, xsdIdAttribute, signer.getCertificate(), signer.getPrivate(), null, null, null);
+                responseElement, idValue, signer.getCertificate(), signer.getPrivate(), null, null, null);
 
         //Signature must be added AFTER the Issuer element, if it's present, for SAML 2.0
         final Node insertBeforeNode;

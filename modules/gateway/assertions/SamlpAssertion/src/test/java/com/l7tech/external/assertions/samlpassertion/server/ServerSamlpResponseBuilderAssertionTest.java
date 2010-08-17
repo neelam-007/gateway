@@ -91,7 +91,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
     /**
      * Basic test for message support. Runs through main code path, where most values are auto generated.
-     * Response is signed. No issuer is added. Tests that more than one assertion can be added (authentication and attribute)
+     * Response is not signed. No issuer is added. Tests that more than one assertion can be added (authentication and attribute)
      * @throws Exception
      */
     @Test
@@ -99,7 +99,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
-        assertion.setSignResponse(true);
+        assertion.setSignResponse(false);
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
 
@@ -135,9 +135,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertNull("No issuer should have been added", nameIDType);
 
         //test no signature
-        final SignatureType sig = responseType.getSignature();
-        Assert.assertNotNull("Response should be signed", sig);
-
+        Assert.assertNull("Response should not be singed", responseType.getSignature());
+        
         //test multiple assertions ok
         final List<Object> allAssertions = responseType.getAssertionOrEncryptedAssertion();
         Assert.assertEquals("Incorrect number of assertions found", 2, allAssertions.size());
@@ -160,16 +159,18 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
-     * Basic test for Element support. Tests that Issuer is added. Response is not signed.
+     * Basic test for Element support. Tests that Issuer is added and the response is signed. Validates that the
+     * signature references the ID attribute on the Response element.
      * 
      * @throws Exception
      */
     @Test
+    @BugNumber(9047)
     public void testSAML2_0_ElementSupport() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
-        assertion.setSignResponse(false);
+        assertion.setSignResponse(true);
         assertion.setAddIssuer(true);
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
@@ -206,14 +207,18 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertEquals("Incorrect Destination found", null, responseType.getDestination());
         Assert.assertEquals("Incorrect Consent found", null, responseType.getConsent());
 
-        //not signed
-        Assert.assertNull("Response should not be singed", responseType.getSignature());
+        //signed
+        final SignatureType sig = responseType.getSignature();
+        Assert.assertNotNull("Response should be signed", sig);
 
         //issuer was added.
         final NameIDType nameIDType = responseType.getIssuer();
         Assert.assertNotNull("Issuer was not added", nameIDType);
         final String value = nameIDType.getValue();
         Assert.assertTrue("Value should be non null and not empty", value != null && !value.trim().isEmpty());
+
+        //Validate the signature reference matches the ID attribute of the Response
+        Assert.assertEquals("Signature does not reference the Response ID attribute", "#" + responseId, sig.getSignedInfo().getReference().get(0).getURI());
     }
 
     /**
@@ -940,7 +945,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
-     * Basic test for element support.
+     * Basic test for element support. Validates that the response is signed. Validates that the signature references
+     * the ResponseId attribute of the Response element.
+     *
      * @throws Exception
      */
     @Test
@@ -974,6 +981,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final saml.v1.assertion.AssertionType assertionType = responseType.getAssertion().get(0);
         Assert.assertNotNull(assertionType);
+
+        final SignatureType sig = responseType.getSignature();
+        Assert.assertNotNull("No signature found", sig);
+
+        //Validate the signature reference matches the ID attribute of the Response
+        final String responseId = responseType.getResponseID();
+        Assert.assertEquals("Signature does not reference the Response resposneId attribute", "#" + responseId, sig.getSignedInfo().getReference().get(0).getURI());
+
     }
 
     /**
