@@ -54,17 +54,17 @@ BUILD_CLASSES="$SRC_ROOT/build/classes"
 BUILD_TESTCLASSES="$SRC_ROOT/build/test-classes"
 
 for i in "$SRC_ROOT/lib"/*.jar
-    do
+  do
     # if the directory is empty, then it will return the input string
     # this is stupid, so case for it
-      if [ -f "$i" ] ; then
-	if [ -z "$LOCALCLASSPATH" ] ; then
-	  LOCALCLASSPATH="$i"
-	else
-	  LOCALCLASSPATH="$i":"$LOCALCLASSPATH"
-    	fi
+    if [ -f "$i" ] ; then
+      if [ -z "$LOCALCLASSPATH" ] ; then
+        LOCALCLASSPATH="$i"
+      else
+        LOCALCLASSPATH="$i":"$LOCALCLASSPATH"
       fi
-    done 
+    fi
+  done
 CLASSPATH=".:${JDK_CLASSES}:${BUILD_CLASSES}:${BUILD_TESTCLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
 # Cygwin - switch paths to Windows format before running java
 if $cygwin; then
@@ -101,17 +101,24 @@ case "$foo" in
 	(console | manager | ssm)
 		exec ${INSTALLER_HOME}/Manager-*/Manager.sh $*
 		;;
+	(noconsole | nomanager)
+		if [ -e "idea-classes/production/layer7-skunkworks/com/l7tech/skunkworks/console/NoManager.class" ] ; then
+			exec $JAVA_HOME/bin/java $JAVA_OPTS \
+				-cp "idea-classes/production/layer7-skunkworks" \
+				com.l7tech.skunkworks.console.NoManager $*
+		fi
+		;;
 	(gateway | ssg)
 		cd ${SSG_HOME}
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
 			-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
-                        -Dcom.l7tech.server.home=${SSG_HOME}/node/default \
+			-Dcom.l7tech.server.home=${SSG_HOME}/node/default \
 			-jar runtime/Gateway.jar $*
 		;;
 	(enterprisemanager | esm)
 		cd ${ESM_HOME}
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
-                        -Dcom.l7tech.server.log.console=true \
+			-Dcom.l7tech.server.log.console=true \
 			-Dcom.l7tech.ems.outputDbScript=overwrite \
 			-Dcom.l7tech.ems.development=true \
 			-jar EnterpriseManager.jar $*
@@ -119,8 +126,8 @@ case "$foo" in
 	(controller | pc | processcontroller)
 		cd ${PC_HOME}
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
-                        -Dcom.l7tech.server.log.console=true \
-			 -Dcom.l7tech.gateway.home=../../Gateway \
+			-Dcom.l7tech.server.log.console=true \
+			-Dcom.l7tech.gateway.home=../../Gateway \
 			-jar Controller.jar
 		;;
 	textproxy)
