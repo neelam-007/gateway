@@ -31,7 +31,8 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JPanel validityPanel;
     private JLabel notBeforeLabel;
     private JLabel notOnOrAfterLabel;
-    private JCheckBox validityCheckbox;
+    private JRadioButton defaultValidityRadioButton;
+    private JRadioButton specifyValidityRadioButton;
 
     private final boolean showTitleLabel;
     private final boolean issueMode;
@@ -79,8 +80,8 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         samlAssertion.setAudienceRestriction(nullIfEmpty(textFieldAudienceRestriction.getText()));
         if (issueMode) {
             SamlIssuerConfiguration issuerConfiguration = (SamlIssuerConfiguration) samlAssertion;
-            issuerConfiguration.setConditionsNotBeforeSecondsInPast(validityCheckbox.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
-            issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds(validityCheckbox.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
+            issuerConfiguration.setConditionsNotBeforeSecondsInPast( specifyValidityRadioButton.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
+            issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds( specifyValidityRadioButton.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
         } else {
             ((RequireWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
         }
@@ -100,11 +101,13 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             final int secondsInPast = issuerConfiguration.getConditionsNotBeforeSecondsInPast();
             final int onOrAfterExpirySeconds = issuerConfiguration.getConditionsNotOnOrAfterExpirySeconds();
             if (secondsInPast != -1 || onOrAfterExpirySeconds != -1) {
-                validityCheckbox.setSelected(true);
+                specifyValidityRadioButton.setSelected(true);
                 notBeforeLabel.setEnabled(true);
                 notBeforeSpinner.setEnabled(true);
                 notOnOrAfterLabel.setEnabled(true);
                 notOnOrAfterSpinner.setEnabled(true);
+            } else {
+                defaultValidityRadioButton.setSelected(true);
             }
 
             if (secondsInPast != -1) notBeforeSpinner.setValue(secondsInPast);
@@ -124,19 +127,22 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             validationRules.add(new InputValidator.NumberSpinnerValidationRule(notBeforeSpinner, "Not Before seconds in past"));
             notOnOrAfterSpinner.setModel(new SpinnerNumberModel(300, 30, 3600, 1));
             validationRules.add(new InputValidator.NumberSpinnerValidationRule(notOnOrAfterSpinner, "Not On Or After seconds in future"));
-            validityCheckbox.addActionListener(new ActionListener() {
+            final ActionListener validityPeriodEnableListener = new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    final boolean b = validityCheckbox.isSelected();
+                    final boolean b = specifyValidityRadioButton.isSelected();
                     notBeforeLabel.setEnabled(b);
                     notBeforeSpinner.setEnabled(b);
                     notOnOrAfterLabel.setEnabled(b);
                     notOnOrAfterSpinner.setEnabled(b);
                 }
-            });
+            };
+            defaultValidityRadioButton.addActionListener( validityPeriodEnableListener );
+            specifyValidityRadioButton.addActionListener( validityPeriodEnableListener );
         } else {
             validityPanel.setVisible(false);
-            validityCheckbox.setVisible(false);
+            defaultValidityRadioButton.setVisible(false);
+            specifyValidityRadioButton.setVisible(false);
             notBeforeLabel.setVisible(false);
             notBeforeSpinner.setVisible(false);
             notOnOrAfterLabel.setVisible(false);
