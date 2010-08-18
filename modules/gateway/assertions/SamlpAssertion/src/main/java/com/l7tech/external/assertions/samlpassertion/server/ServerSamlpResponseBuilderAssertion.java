@@ -266,7 +266,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String statusDetail = assertion.getStatusDetail();
         if (statusDetail != null && !statusDetail.trim().isEmpty()) {
-            responseContext.statusDetail = getMessageOrElementVariables(vars, statusDetail);
+            responseContext.statusDetail = getMessageOrElementVariables(vars, statusDetail, "StatusDetail");
         }
 
         final String responseId = assertion.getResponseId();
@@ -310,7 +310,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String respAssertions = assertion.getResponseAssertions();
         if(respAssertions != null && !respAssertions.trim().isEmpty()){
-            responseContext.samlTokens = getMessageOrElementVariables(vars, respAssertions);
+            responseContext.samlTokens = getMessageOrElementVariables(vars, respAssertions, "Assertion");
         }
 
         switch (assertion.getSamlVersion()){
@@ -333,7 +333,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
                 final String respExtensions = assertion.getResponseExtensions();
                 if(respExtensions != null && !respExtensions.trim().isEmpty()){
-                    responseContext.extensions = getMessageOrElementVariables(vars, respExtensions);
+                    responseContext.extensions = getMessageOrElementVariables(vars, respExtensions, "Extensions");
                 }
                break;
             case SAML1_1:
@@ -385,41 +385,54 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
     /**
      * Get the Message or Element variables from a string containing variable references only.
-     * @param vars
-     * @param variablesOnly
-     * @return
+     *
+     * @param vars Map of variables in the context
+     * @param variablesOnly String which can only reference variables.
+     * @param elemAttrName String name of the Element which is being processed. Used for logging / auditing.
+     * @return Collection containing only Element or Message objects.
      * @throws InvalidRuntimeValueException If the parameter 'variablesOnly' contains anything which is not a variable
-     * reference or resolves to a value which is not a Message or an Element.
+     *                                      reference or resolves to a value which is not a Message or an Element.
      */
-    private Collection getMessageOrElementVariables(final Map<String, Object> vars, String variablesOnly)
+    private Collection getMessageOrElementVariables(final Map<String, Object> vars,
+                                                    final String variablesOnly,
+                                                    final String elemAttrName)
             throws InvalidRuntimeValueException {
-        if (!Syntax.validateStringOnlyReferencesVariables(variablesOnly)){
-            throw new InvalidRuntimeValueException("Value for field '" +variablesOnly+"' may only reference variables");
+        if (!Syntax.validateStringOnlyReferencesVariables(variablesOnly)) {
+            throw new InvalidRuntimeValueException("Value for field '" + variablesOnly + "' may only reference variables");
         }
 
         final List<Object> objects = ExpandVariables.processNoFormat(variablesOnly, vars, auditor, true);
 
         final Collection returnCol = new ArrayList();
         for (Object o : objects) {
-            if (o instanceof Message || o instanceof Element){
+            if (o instanceof Message || o instanceof Element) {
                 returnCol.add(o);
-            }else {
-                if( o instanceof String){
+            } else {
+                if (o instanceof String) {
                     final String token = o.toString();
                     //it may just be the empty String
-                    if(token.trim().isEmpty()) continue;
+                    if (token.trim().isEmpty()) continue;
 
                     //try convert to a Message, then we support it
                     try {
                         Message message = new Message(XmlUtil.parse(token));
                         returnCol.add(message);
                     } catch (SAXException e) {
-                        throw new InvalidRuntimeValueException("String value resolved from '"+variablesOnly+"' cannot be resolved into a Message variable: " +
-                                ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        final String msg = "String value resolved from '" + variablesOnly + "' for element '" +
+                                elemAttrName + "' cannot be resolved into a Message variable: " +
+                                ExceptionUtils.getMessage(e);
+                        throw new InvalidRuntimeValueException(msg, ExceptionUtils.getDebugException(e));
                     }
+                } else if (o == null) {
+                    //this happens when a built in prefix like gateway.invalid is referenced. Message processing treats these differently.
+                    final String msg = "Variable referenced from variable string: '" + variablesOnly + "' for element '" +
+                            elemAttrName + "' resolved to no value";
+                    throw new InvalidRuntimeValueException(msg);
                 } else {
-                    throw new InvalidRuntimeValueException("Unexpected variable of type '" + o.getClass().getName()
-                            + "' found in variable string: '" + variablesOnly + "'.");
+                    final String msg = "Unexpected variable of type '" + o.getClass().getName() +
+                            "' found in variable string: '" + variablesOnly + "' for element '" +
+                            elemAttrName + "'";
+                    throw new InvalidRuntimeValueException(msg);
                 }
             }
         }

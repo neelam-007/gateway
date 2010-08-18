@@ -331,6 +331,58 @@ public class ServerSamlpResponseBuilderAssertionTest {
         failIfXmlNotEqual(extensionXml, extensionOut, "Invalid extensions element found");
     }
 
+    /**
+     * Tests that a field which expects Message / Element or XML as a String variables handles the following cases:
+     * 1) Invalid XML
+     * 2) Null value
+     * 3) Unexpected type found
+     *
+     * Validates that each condition above causes the assertion to fail with SERVER_ERROR. Look at the output to see
+     * the various messages logged, if running manually.
+     * 
+     * @throws Exception
+     */
+    @BugNumber(9048)
+    @Test
+    public void test_InvalidElementVariables() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(false);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+
+        String extensions = "extensions";
+        assertion.setResponseExtensions("${" + extensions + "}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        //invalid xml
+
+        final String extensionXml = "<extension>im an extension element</extension";
+        context.setVariable(extensions, extensionXml);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
+
+        //unsupported variable type
+        context.setVariable(extensions, new Integer(1));
+        status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
+
+        //null value built in variable
+        assertion.setResponseExtensions("${gateway.invalid}");
+        serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        
+        status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
+    }
+
     @Test(expected = PolicyAssertionException.class)
     public void testSAML2_0_NoAssertionsIfNotSuccess() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
@@ -829,8 +881,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
-        final String extensions = "extensions";
-        assertion.setResponseExtensions("${" + extensions + "}");
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
