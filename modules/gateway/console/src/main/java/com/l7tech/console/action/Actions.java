@@ -1,10 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.policy.PolicyDeletionForbiddenException;
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyAlias;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.console.logging.ErrorManager;
@@ -17,14 +14,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.gateway.common.service.ServiceHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -207,13 +199,14 @@ public class Actions {
     }
 
     static void deleteAssertion(AssertionTreeNode node, final Functions.UnaryVoid<Boolean> result) {
-        String nodeName = node.getName();
+        String nodeName = DefaultAssertionPolicyNode.getNameFromMeta(node.asAssertion(), true, false);
+
         if (nodeName != null && nodeName.length() > 80) {
             nodeName = nodeName.substring(0,76) + "...";
         }
 
         DialogDisplayer.showConfirmDialog(getTopParent(),
-                                           "Are you sure you want to delete assertion " + nodeName + "?", "Delete Assertion",
+                                           "Are you sure you want to delete assertion \"" + nodeName + "\"?", "Delete Assertion",
                                            JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
             public void reportResult(int opresult) {
                 result.call(opresult == JOptionPane.YES_OPTION);

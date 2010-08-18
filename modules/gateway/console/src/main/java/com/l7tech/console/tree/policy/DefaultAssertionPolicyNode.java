@@ -40,10 +40,10 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
 
     @Override
     public String getName(final boolean decorate) {
-        return getNameFromMeta(asAssertion(), decorate);
+        return getNameFromMeta(asAssertion(), decorate, true);
     }
 
-    public static <AT extends Assertion> String getNameFromMeta(final AT assertion, final boolean decorate){
+    public static <AT extends Assertion> String getNameFromMeta(final AT assertion, final boolean decorate, final boolean withComments) {
         //noinspection unchecked
         AssertionMetadata meta = assertion.meta();
         Object factory = meta.get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
@@ -64,7 +64,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         }
 
         final String displayText = name != null ? name : assertion.getClass().getName();
-        return (decorate)? addCommentToDisplayText(assertion, displayText): displayText;
+        return (decorate && withComments)? addCommentToDisplayText(assertion, displayText): displayText;
     }
 
     /**
@@ -105,7 +105,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             String text = stringToDisplay;
             if (decorateComment) {
                 text = text.replaceAll("<", "&lt;");
-                builder.append("<font color=\"gray\">" + text + "</font>&nbsp;");
+                builder.append("<font color=\"gray\">").append(text).append("</font>&nbsp;");
             } else {
                 builder.append(text).append(" ");
             }
@@ -123,7 +123,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             String text = stringToDisplay;
             if (decorateComment) {
                 text = text.replaceAll("<", "&lt;");
-                builder.append("&nbsp;<font color=\"gray\">" + text + "</font>");
+                builder.append("&nbsp;<font color=\"gray\">").append(text).append("</font>");
             } else {
                 builder.append(text);
             }
