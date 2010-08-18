@@ -150,7 +150,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     }
 
     private String getPassword(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
-        return expandVariables(context, assertion.getPassword());
+        return assertion.isPasswordUsesContextVariables() ? expandVariables(context, assertion.getPassword()) : assertion.getPassword();
     }
 
     private void doFtp(PolicyEnforcementContext context,
