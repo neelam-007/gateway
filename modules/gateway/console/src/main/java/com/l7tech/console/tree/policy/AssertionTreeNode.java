@@ -271,6 +271,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
                 if (hasLeft) {
                     leftComment = leftComment.replaceAll("<", "&lt;");
+                    leftComment = leftComment.replaceAll("/", "&#47;");
                     builder.append(TextUtils.enforceToBreakOnMultipleLines(leftComment, 100, "<br>"));
                 }
 
@@ -279,6 +280,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                     if (hasLeft) builder.append("<br>");
 
                     rightComment = rightComment.replaceAll("<", "&lt;");
+                    rightComment = rightComment.replaceAll("/", "&#47;");
                     builder.append(TextUtils.enforceToBreakOnMultipleLines(rightComment, 100, "<br>"));
                 }
 
