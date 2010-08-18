@@ -1,0 +1,86 @@
+package com.l7tech.external.assertions.saml2attributequery.server;
+
+import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+
+import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
+
+import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+import org.apache.commons.codec.binary.Base64;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: njordan
+ * Date: 3-Feb-2009
+ * Time: 12:42:34 AM
+ * To change this template use File | Settings | File Templates.
+ */
+public class DummySecurityTokenResolver implements SecurityTokenResolver {
+    private X509Certificate certificate;
+    private PrivateKey privateKey;
+
+    public DummySecurityTokenResolver(X509Certificate certificate, PrivateKey privateKey) {
+        this.certificate = certificate;
+        this.privateKey = privateKey;
+    }
+
+    public X509Certificate lookup(String thumbprint) {
+        return null;
+    }
+
+    public X509Certificate lookupBySki(String ski) {
+        try {
+            SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(certificate.getPublicKey());
+            String certSki = new String(Base64.encodeBase64(skis.getKeyIdentifier(), false), "UTF-8");
+            if(ski.equals(certSki)) {
+                return certificate;
+            }
+        } catch(Exception e) {
+        }
+        return null;
+    }
+
+    public X509Certificate lookupByKeyName(String keyName) {
+        return null;
+    }
+
+    public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
+        if(certificate.equals(cert)) {
+            return new SignerInfo(privateKey, new X509Certificate[] {certificate});
+        }
+        return null;
+    }
+
+    public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
+        return null;
+    }
+
+    public SignerInfo lookupPrivateKeyBySki(String ski) {
+        try {
+            SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(certificate.getPublicKey());
+            String certSki = new String(Base64.encodeBase64(skis.getKeyIdentifier(), false), "UTF-8");
+            if(ski.equals(certSki)) {
+                return new SignerInfo(privateKey, new X509Certificate[] {certificate});
+            }
+        } catch(Exception e) {
+        }
+        return null;
+    }
+
+    public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
+        return null;
+    }
+
+    public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+        return null;
+    }
+
+    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
+    }
+
+    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+        return null;
+    }
+}

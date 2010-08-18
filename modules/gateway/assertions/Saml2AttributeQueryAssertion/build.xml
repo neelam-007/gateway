@@ -1,0 +1,3 @@
+<project name="Saml2AttributeQueryAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

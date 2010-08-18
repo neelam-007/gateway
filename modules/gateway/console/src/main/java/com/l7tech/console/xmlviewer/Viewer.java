@@ -105,6 +105,18 @@ public class Viewer extends JPanel implements XDocumentListener {
     /**
      * Constructs an viewer view with the ViewerProperties supplied.
      *
+     * @param props    the viewer properties.
+     * @param document the exchanger document
+     * @param scrollpane whether to use scrollpane
+     */
+    public Viewer(ViewerProperties props, ExchangerDocument document, boolean scrollpane) {
+        this(props, document, scrollpane, DEFAULT_COPY_LABEL);
+
+    }
+
+    /**
+     * Constructs an viewer view with the ViewerProperties supplied.
+     *
      * @param props      the viewer properties.
      * @param document   the exchanger document
      * @param scrollpane whether to use scrollpane

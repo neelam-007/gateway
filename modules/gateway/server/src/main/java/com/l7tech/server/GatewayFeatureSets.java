@@ -546,6 +546,16 @@ public class GatewayFeatureSets {
         fsr("set:MtomValidate:Assertions", "The necessary assertions to enable MTOM Validate functionality",
             mass("assertion:MtomValidate"));
 
+        // Saml2AttributeQueryAssertion.aar
+        GatewayFeatureSet saml2AttributeQueryAssertions =
+        fsr("set:Saml2AttributeQuery:Assertions", "BAE Saml2AttributeQueryAssertion.aar",
+            mass("assertion:DecryptElement"),
+            mass("assertion:EncryptNameID"),
+            mass("assertion:EncryptSamlAssertion", true),
+            mass("assertion:Saml2AttributeQuery"),
+            mass("assertion:SignResponseElement"),
+            mass("assertion:ValidateSignature"));
+        
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -682,6 +692,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:US", "SecureSpan Gateway US",
             "Adds US features.",
             fs(profileGateway),
+            fs(saml2AttributeQueryAssertions),
             fs(usAssertions));
 
         GatewayFeatureSet profileFederal =
@@ -851,13 +862,25 @@ public class GatewayFeatureSets {
 
     /** Create (and register, if new) a feature set for the specified optional modular assertion, and return it. */
     private static GatewayFeatureSet mass(String fsName) {
+        return mass(fsName, false);
+    }
+
+    /**
+     * Create (and register, if new) a feature set for the specified optional modular assertion, and return it.
+     *
+     * @param fsName  feature set name.
+     * @param allowAssertionSuffix  if false, a sanity check will be performed to forbid feature set names that include the "Assertion" suffix.
+     *                              if true, a feature set name ending in "Assertion" will be allowed.
+     * @return
+     */
+    private static GatewayFeatureSet mass(String fsName, boolean allowAssertionSuffix) {
         String prefix = "assertion:";
         if (!fsName.startsWith(prefix))
             throw new IllegalArgumentException("Optional modular assertion feature set name doesn't start with \"assertion:\" :" + fsName);
         String rest = fsName.substring(prefix.length());
         if (rest.length() < 1)
             throw new IllegalArgumentException("Optional modular assertion feature set local name is empty:" + fsName);
-        if (rest.endsWith("Assertion"))
+        if (rest.endsWith("Assertion") && !allowAssertionSuffix)
             throw new IllegalArgumentException("Optional modular assertion feature set name should not end with \"Assertion\"");
         String desc = "Optional modular policy assertion: " + rest;
         optionalModules.add(fsName);
