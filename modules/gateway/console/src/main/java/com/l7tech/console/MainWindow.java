@@ -1038,9 +1038,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.addSeparator();
         this.addLogonListener(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());  //register component to logon listener
         menu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addFilterMenu(getFilterServiceAndPolicyTreeMenu()));
+        final int filterMenuIndex = menu.getMenuComponentCount() - 1;
         //Add tree sort filter menu items
         menu.addSeparator();
         menu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addSortMenu(getSortServiceAndPolicyTreeMenu()));
+        final int sortMenuIndex = menu.getMenuComponentCount() - 1;
 
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
@@ -1061,8 +1063,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 //the view menu will not get refreshed, we need to get the new state of the sorting
                 getFilterServiceAndPolicyTreeMenu().removeAll();
                 getSortServiceAndPolicyTreeMenu().removeAll();
-                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addFilterMenu(getFilterServiceAndPolicyTreeMenu()), 9);
-                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addSortMenu(getSortServiceAndPolicyTreeMenu()), 11);
+                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addFilterMenu(getFilterServiceAndPolicyTreeMenu()), filterMenuIndex);
+                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addSortMenu(getSortServiceAndPolicyTreeMenu()), sortMenuIndex);
             }
         });
 
