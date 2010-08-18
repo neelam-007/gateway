@@ -118,21 +118,11 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         signResponseCheckBox.setSelected(assertion.isSignResponse());
-        addIssuerCheckBox.setSelected(assertion.isAddIssuer());
         statusMessageTextField.setText(assertion.getStatusMessage());
         statusDetailTextField.setText(assertion.getStatusDetail());
 
-        final String responseId = assertion.getResponseId();
-        final String responseIdText = (responseId == null || responseId.trim().isEmpty()) ? autoString: responseId;
-
         final String issueInstant = assertion.getIssueInstant();
         final String issueInstantText = (issueInstant == null || issueInstant.trim().isEmpty()) ? autoString : issueInstant;
-
-        idTextField.setText(responseIdText);
-        issueInstantTextField.setText(issueInstantText);
-
-        responseIdTextField.setText(responseIdText);
-        issueInstant1_1TextField.setText(issueInstantText);
 
         final String inResponseTo = assertion.getInResponseTo();
         if(inResponseTo != null && !inResponseTo.trim().isEmpty()){
@@ -140,21 +130,39 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             inResponseTo1_1TextField.setText(inResponseTo);
         }
 
-        final String destination = assertion.getDestination();
-        if(destination != null && !destination.trim().isEmpty()) destinationTextField.setText(destination);
-
-        final String consent = assertion.getConsent();
-        if(consent != null && !consent.trim().isEmpty()) consentTextField.setText(consent);
-
-        final String responseExtensions = assertion.getResponseExtensions();
-        if(responseExtensions != null && !responseExtensions.trim().isEmpty())
-            extensionsTextField.setText(responseExtensions);
-
-        final String recipient = assertion.getRecipient();
-        if(recipient != null && !recipient.trim().isEmpty()) recipientTextField.setText(recipient);
-
         final String responseAssertions = assertion.getResponseAssertions();
-        if(responseAssertions != null && !responseAssertions.trim().isEmpty()) assertionsTextField.setText(responseAssertions);
+        if(responseAssertions != null && !responseAssertions.trim().isEmpty())
+            assertionsTextField.setText(responseAssertions);
+
+        final String responseId = assertion.getResponseId();
+        final String responseIdText = (responseId == null || responseId.trim().isEmpty()) ? autoString: responseId;
+
+        if(assertion.getSamlVersion() == SAML2){
+            addIssuerCheckBox.setSelected(assertion.isAddIssuer());
+
+            idTextField.setText(responseIdText);
+            issueInstantTextField.setText(issueInstantText);
+
+            final String destination = assertion.getDestination();
+            if(destination != null && !destination.trim().isEmpty()) destinationTextField.setText(destination);
+
+            final String consent = assertion.getConsent();
+            if(consent != null && !consent.trim().isEmpty()) consentTextField.setText(consent);
+
+            final String encryptedAssertions = assertion.getEncryptedAssertions();
+            if(encryptedAssertions != null && !encryptedAssertions.trim().isEmpty())
+                encryptedAssertionsTextField.setText(encryptedAssertions);
+
+            final String responseExtensions = assertion.getResponseExtensions();
+            if(responseExtensions != null && !responseExtensions.trim().isEmpty())
+                extensionsTextField.setText(responseExtensions);
+        } else if (assertion.getSamlVersion() == SAML1_1){
+            final String recipient = assertion.getRecipient();
+            if(recipient != null && !recipient.trim().isEmpty()) recipientTextField.setText(recipient);
+
+            responseIdTextField.setText(responseIdText);
+            issueInstant1_1TextField.setText(issueInstantText);
+        }
 
         updateComponentsForVersion();
         statusCodeComboBox.setSelectedItem(assertion.getSamlStatus());
@@ -187,6 +195,10 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
                 final String extensions = extensionsTextField.getText().trim();
                 assertion.setResponseExtensions((extensions.isEmpty()) ? null : extensions);
+
+                final String encryptedAssertions = encryptedAssertionsTextField.getText().trim();
+                assertion.setEncryptedAssertions((encryptedAssertions.isEmpty()) ? null : encryptedAssertions);
+
                 break;
             case SAML1_1:
                 responseId = responseIdTextField.getText();
@@ -219,16 +231,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private void validateData() {
 
         //Check status code against assertion selection
-        final String respAssertions = assertionsTextField.getText().trim();
         final SamlStatus samlStatus = (SamlStatus) statusCodeComboBox.getSelectedItem();
-        final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS) || samlStatus.equals(SamlStatus.SAML_SUCCESS);
-
-        if(respAssertions.isEmpty() && isSuccess){
-            throw new ValidationException("If no assertions are entered the status cannot be success.");
-        } else if (!respAssertions.isEmpty() && !isSuccess){
-            // status must be success
-            throw new ValidationException("If status is not success then no assertions can be entered.");
-        }
+        final String respAssertions = assertionsTextField.getText().trim();
 
         if(!respAssertions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(respAssertions)){
             throw new ValidationException(resources.getString("responseElements.assertions") +
@@ -247,6 +251,19 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                 (SamlVersion) samlVersionComboBox.getSelectedItem();
             switch(samlVersion){
                 case SAML2:
+                    final String encryptedAssertions = encryptedAssertionsTextField.getText().trim();
+                    if(!encryptedAssertions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(encryptedAssertions))
+                        throw new ValidationException(resources.getString("responseElements.encryptedAssertions.2_0_only") +
+                                " may only reference context variables");
+
+                    final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS);
+                    if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess){
+                        throw new ValidationException("If no assertions are entered the status cannot be success.");
+                    } else if ((!respAssertions.isEmpty() || !encryptedAssertions.isEmpty()) && !isSuccess){
+                        // status must be success
+                        throw new ValidationException("If status is not success then no assertions can be entered.");
+                    }
+
                     final String extensions = extensionsTextField.getText().trim();
                     if(!extensions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(extensions)){
                         throw new ValidationException(resources.getString("responseElements.extensions.2_0_only") +
@@ -269,6 +286,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             addIssuerCheckBox.setVisible(true);
             extensionsTextField.setVisible(true);
             extensionsLabel.setVisible(true);
+            encryptedAssertionsLabel.setVisible(true);
+            encryptedAssertionsTextField.setVisible(true);
         } else {
             saml2_0Panel.setVisible(false);
             saml1_1Panel.setVisible(true);
@@ -276,6 +295,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             addIssuerCheckBox.setVisible(false);
             extensionsTextField.setVisible(false);
             extensionsLabel.setVisible(false);
+            encryptedAssertionsLabel.setVisible(false);
+            encryptedAssertionsTextField.setVisible(false);
         }
     }
 
@@ -315,6 +336,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JPanel tabHolder;
     private JCheckBox addIssuerCheckBox;
     private JLabel extensionsLabel;
+    private JLabel encryptedAssertionsLabel;
+    private JTextField encryptedAssertionsTextField;
 
     private static final String autoString = "<<auto>>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );

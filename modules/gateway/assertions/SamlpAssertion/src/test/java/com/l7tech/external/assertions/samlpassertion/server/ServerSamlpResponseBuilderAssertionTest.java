@@ -31,12 +31,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import saml.support.ds.SignatureType;
 import saml.v2.assertion.AssertionType;
+import saml.v2.assertion.EncryptedElementType;
 import saml.v2.assertion.NameIDType;
 
 import javax.xml.bind.JAXBElement;
@@ -262,6 +262,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
+        final String encryptedToken = "encryptedAssertion";
+        assertion.setEncryptedAssertions("${"+encryptedToken+"}");
+
         final String extensions = "extensions";
         assertion.setResponseExtensions("${" + extensions + "} ${" + extensions + "}");
 
@@ -270,9 +273,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
         context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn)));
+
         final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         context.setVariable(token, element);
+
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
+        context.setVariable(encryptedToken, encryptedMessage);
+
         final String extensionXml = "<extension>im an extension element</extension>";
         context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml)));
 
@@ -280,7 +288,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
         final Message output = (Message) context.getVariable(outputVar);
-
         final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(output.getXmlKnob().getDocumentReadOnly(), saml.v2.protocol.ResponseType.class);
         final saml.v2.protocol.ResponseType responseType = typeJAXBElement.getValue();
 
@@ -329,6 +336,60 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         extensionOut = xpathResultSetIterator.nextElementAsCursor().asDomElement();
         failIfXmlNotEqual(extensionXml, extensionOut, "Invalid extensions element found");
+
+        //EncryptedAssertion - bug 9058
+        xpathResult = cursor.getXpathResult(new XpathExpression("/samlp2:Response/saml2:EncryptedAssertion/xenc:EncryptedData", map).compile());
+        xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+        Element encryptedOut = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        failIfXmlNotEqual(v2_EncryptedAssertion, encryptedOut, "Invalid EncryptedAssertion element found");
+    }
+
+    /**
+     * Tests that if the status is success, then the requirement for an assertion is satisified by providing an
+     * EncryptedAssertion.
+     * 
+     * @throws Exception
+     */
+    @BugNumber(9058)
+    @Test
+    public void testSAML2_0_EncrypedAssertionOnlySuccess() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(false);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setAddIssuer(false);
+        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        final String encryptedToken = "encryptedAssertion";
+        assertion.setEncryptedAssertions("${"+encryptedToken+"}");
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
+        context.setVariable(encryptedToken, encryptedMessage);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+        final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(output.getXmlKnob().getDocumentReadOnly(), saml.v2.protocol.ResponseType.class);
+        final saml.v2.protocol.ResponseType responseType = typeJAXBElement.getValue();
+
+        final EncryptedElementType assertionType = (EncryptedElementType) responseType.getAssertionOrEncryptedAssertion().get(0);
+        Assert.assertNotNull("EncryptedAssertion was not found", assertionType);
+
+        final ElementCursor cursor = new DomElementCursor(output.getXmlKnob().getDocumentReadOnly());
+        final HashMap<String, String> map = getNamespaces();
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/samlp2:Response/saml2:EncryptedAssertion/xenc:EncryptedData", map).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+        Element encryptedOut = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        failIfXmlNotEqual(v2_EncryptedAssertion, encryptedOut, "Invalid EncryptedAssertion element found");
     }
 
     /**
@@ -397,26 +458,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         assertion.setAddIssuer(false);
         assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
-
-        final String token = "samlToken";
-        assertion.setResponseAssertions("${" + token + "}");
-        new ServerSamlpResponseBuilderAssertion(assertion, appContext);
-    }
-
-    @Test(expected = PolicyAssertionException.class)
-    public void testSAML1_1_NoAssertionsIfNotSuccess() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
-        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
-        assertion.setSignResponse(false);
-        assertion.setTarget(TargetMessageType.OTHER);
-        final String outputVar = "outputVar";
-        assertion.setOtherTargetMessageVariable(outputVar);
-
-        assertion.setSamlVersion(SamlVersion.SAML1_1);
-
-        assertion.setAddIssuer(false);
-        assertion.setSamlStatus(SamlStatus.SAML_REQUEST_DENIED);
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
@@ -1272,4 +1313,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
     private final static String v2_0AttributeAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-657be8ad16685a0cc13c2c3966d00358\" IssueInstant=\"2010-08-13T18:41:15.906Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-13T18:46:15.908Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-13T18:36:15.000Z\" NotOnOrAfter=\"2010-08-13T18:46:15.907Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
 
     private final static String v1_1AttributeAssertion = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-2f95ff7d175a00aeb11fd3c884ef40d0\" Issuer=\"irishman.l7tech.com\" IssueInstant=\"2010-08-13T20:03:07.445Z\"><saml:Conditions NotBefore=\"2010-08-13T19:58:07.000Z\" NotOnOrAfter=\"2010-08-13T20:08:07.446Z\"><saml:AudienceRestrictionCondition><saml:Audience>https://saml.salesforce.com</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName=\"test\" AttributeNamespace=\"\"><saml:AttributeValue>testvalue</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>";
+
+    private final static String v2_EncryptedAssertion = "<xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes128-cbc\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:X509Data><ds:X509IssuerSerial><ds:X509IssuerName>OU=www.verisign.com/CPS Incorp.by Ref. LIABILITY LTD.(c)97 VeriSign, OU=VeriSign International Server CA - Class 3, OU=\"VeriSign, Inc.\", O=VeriSign Trust Network</ds:X509IssuerName><ds:X509SerialNumber>160479753879882120110470297434291570115</ds:X509SerialNumber></ds:X509IssuerSerial></ds:X509Data></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>HvTpDcuk42MmouMpo1ZUJDSE0UrD8kqLdN58qwGWAnoPquEGYSXumJ2kKblA72EEHEEZJihb/qCfpaU1ZALJixI/PJn2COsK092/s1wnsMyay7SmrJ6MD+eCDCOYWWgiYIyhnSL9KHuF7ULXOw8xX1XAXUJFeAJpB/LtpekgNq8=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>RIfrijQJDgu8GtRV3yTo7mNYZlheoMzTbXtWRhqvpPuJQurTzDy9dkBkhvgtDrPwXtoPpmw0gmHrYRfNmli9q8h7M+CDZEEVdyRvynbZh7Z2zuoL8op8adzgt9JoaW79xjVRZj0zkZ/S0h/G/wPLEOk05k3l+3Umik/3XHqCEpmabm5FKSx9qq/deYzElppFRokxumtPMuNHvwZhdQvKeDuArqA2LDq/U5kijRh7KkotibKwxBR0zbNNk3kLKadCfmHdk3x0kn8vbD4Kpvm4pVvySPtBoVty73UFgpSyirkHRzOkTihCNBJpAKaUcRyJ9d2BbHGLdcf8caRCNdXWntynBm4D5mHFteVWIolUwdCewhh9ZE1wcL5fcNFSSzi30sNQknP8f57Lt8lM0ikqTdsRZc2Hh2MVIsCkZrDuT2m3TtCoUOlTjtnEP3Of0HJbYAWOGfsmbSjlXMTEXTrX4SxPRUfvISMY5RQQKbg4G8AfbbGGK031d1REzLEqHG6zdKvc2Zb0zhstqHeO7ZIpl+rKR+/7/Pe1YtwYIsYEvsMbBJ+NqZZbC1CytjBLkp2n80ZP09230XGpDHK0XCXmKAQpBbay7BT7ULHTUGasovpKKH4ytIA0tvLJ2yfh5Z359zId3VxZZlxxRcJmJBPuApYkvbq5sVchJVHMCfQTKeRn5FYrQu6GaQp+edA1ni63I/lsPNAR7BBqBtmealk/LpROUWKMGbpRagJXUWkTi2i6nfs0hVOQP7lLHkV1SJZeBRMSixJatuNTQ1diqQQJgUfr4XFGvnnFRxqnSBuCphsAYqi5rTqfKLTVteWtdRL+smlD+l+lMcDkHzMtzHO3QyIiNknrPzKsAAbJjUf82vHOMorY5TbkddZ/2BPyBfr4y/IzTWYxHAuwHPsi6u23x4qWJOidBxDfRzfSm5K6op2i00D4rEPpALEHKWJj7aoizv4Tmd4YeUO49K0q6A6RzqP9H77hYvG+nWvc9Kodg/JNB91dEmyJMso+07WaGJYnynzwtqpeDxf+rtNO6SeDoqxtVACoNMj0SaOgdYPl4lDmEqBrXh+HE78SRZ2oSt3ATttkyQ9EoLsHMKcjprhqpUIyI/ipdwx2HH0sNLFjrwfFzhfhANMI/PqBhbZ2C4/bWANhflguB62O+RxbeFW8JQcOdot9lXRAE3KrGuullS6SytYcFwnvt/ysUktQ+ZUEmO2ZBJvJLQaNdT41R6DPjKu0rdKtNRhC6IwK88s0K0/mUYc9I6ixOX0FrgxBSBZ75U1NABXGeJPtzV5XHUNMgTdajqvJINiNNe6cqc3TiPxkuSBY0DBe3c4ZMkT4OCg72PuZ62dnoZ9GU3nu9SIEcYv5JFRdy3YuJWP3wIteFBLil8HBibbxCmf8uHiUZxXad9AvOYLj0G5TFZ0hRUlN4Vb6dOF8c325j9+0VtxNXRbHepDVQBQYdyXh6FuA4ajGOUBVqJjZdhCPgVHACnWT7z6xRewa/g3FPfJxmOX+Vl9OopzJGY77z1GzWK/vyvUtKfCWM0ea8Z/U9byOJA6pzg7UUgX5lMYAhkg2Inr8OegNSAHhe9EFrWolf3THVhNPAaOYAF3wNX3eOaHzpvGyYdhTVZXYwfybJfsBrI82bhZkx5TZdXMa8eFK3cuhglZIh/xXVaxfDto5/l6UWPiqhfhum/ewdCYEv9TK2tB2i4pCndy87KTG/sDVn79MV6StujSX80WGToz3cOOlmPx3ItuoMZiRV8Gdu7P5zj2C9sEuNYulQMpghlvrFvH4Ms5V7qMECloUKWKpTr2XcV6w2hyY5eLjo/w9Y4G3roSGbJF4iSXzuGdN6/ocFijz7C30FV/5tATiLgahcPOtuUYpE39hmtknI/1hZGYzxUiPQkOe/9EZoU1j+Z9pswAxC/loQgm89T/UOmvyiE2CJBJXAw==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData>";
 }

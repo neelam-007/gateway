@@ -5,6 +5,7 @@ import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
+import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
@@ -30,7 +31,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import saml.support.xenc.EncryptedDataType;
 import saml.v2.assertion.AssertionType;
+import saml.v2.assertion.EncryptedElementType;
 import saml.v2.assertion.NameIDType;
 import saml.v2.protocol.ExtensionsType;
 import saml.v2.protocol.StatusDetailType;
@@ -67,20 +70,25 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
 
-        //validate the assertion bean
-        final boolean isSuccessResponse = assertion.getSamlStatus() == SamlStatus.SAML2_SUCCESS ||
-                assertion.getSamlStatus() == SamlStatus.SAML_SUCCESS;
-        final String respAssertions = assertion.getResponseAssertions();
-        final boolean assertionsSupplied = respAssertions == null || respAssertions.trim().isEmpty();
-        if(isSuccessResponse && assertionsSupplied){
-            throw new PolicyAssertionException(assertion,
-                    "Assertion(s) field is not configured. One ore more are required when Response represents Success.");
-        }
+        if(assertion.getSamlVersion() == SamlVersion.SAML2){
+            //validate the assertion bean
+            final String respAssertions = assertion.getResponseAssertions();
+            final String encryptedAssertions = assertion.getEncryptedAssertions();
 
-        if(!isSuccessResponse && !assertionsSupplied){
-            //no assertions can be included
+            final boolean isSuccessResponse = assertion.getSamlStatus() == SamlStatus.SAML2_SUCCESS;
+            final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
+                    (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
+
+            if(isSuccessResponse && assertionsNotSupplied){
                 throw new PolicyAssertionException(assertion,
-                        "If Response status does not represent Success then the Assertion(s) field cannot include any SAML Assertions.");
+                        "Assertion(s) and / or EncryptedAssertion(s) are not configured. One ore more assertions are required when Response represents Success.");
+            }
+
+            if(!isSuccessResponse && !assertionsNotSupplied){
+                //no assertions can be included
+                    throw new PolicyAssertionException(assertion,
+                            "If Response status does not represent Success then the Assertion(s) and EncryptedAssertion(s) fields cannot include any SAML Assertions.");
+            }
         }
 
         switch (assertion.getSamlVersion()) {
@@ -335,7 +343,13 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 if(respExtensions != null && !respExtensions.trim().isEmpty()){
                     responseContext.extensions = getMessageOrElementVariables(vars, respExtensions, "Extensions");
                 }
-               break;
+
+                final String encryptedAssertions = assertion.getEncryptedAssertions();
+                if(encryptedAssertions != null && !encryptedAssertions.trim().isEmpty()){
+                    responseContext.encryptedAssertions = getMessageOrElementVariables(vars, encryptedAssertions, "EncryptedAssertion");
+                }
+                
+                break;
             case SAML1_1:
 
                 final String recipient = assertion.getRecipient();
@@ -471,6 +485,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         private String recipient;
 
         private Collection samlTokens = new ArrayList();//Message or Element only
+        private Collection encryptedAssertions = new ArrayList();//Message or Element only
         private Collection extensions = new ArrayList();//Message or Element only
 
     }
@@ -684,6 +699,25 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             response.getAssertionOrEncryptedAssertion().add(value);
         }
 
+        final Collection encryptedAssertions = responseContext.encryptedAssertions;
+        for (Object token : encryptedAssertions) {
+            final JAXBElement<EncryptedDataType> typeJAXBElement;
+            if(token instanceof Element){
+                typeJAXBElement = um.unmarshal((Element) token, EncryptedDataType.class);
+            } else if(token instanceof Message){
+                Message message = (Message) token;
+                typeJAXBElement = um.unmarshal(getDocumentElement(message), EncryptedDataType.class);
+            } else {
+                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response encrypted assertions");
+                continue;
+            }
+
+            final EncryptedDataType value = typeJAXBElement.getValue();
+            final EncryptedElementType encryptedElementType = v2SamlpAssnFactory.createEncryptedElementType();
+            encryptedElementType.setEncryptedData(value);
+            response.getAssertionOrEncryptedAssertion().add(encryptedElementType);
+        }
+        
         return v2SamlpFactory.createResponse(response);
     }
 

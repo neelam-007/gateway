@@ -115,6 +115,14 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
         this.responseAssertions = responseAssertions;
     }
 
+    public String getEncryptedAssertions() {
+        return encryptedAssertions;
+    }
+
+    public void setEncryptedAssertions(String encryptedAssertions) {
+        this.encryptedAssertions = encryptedAssertions;
+    }
+
     public String getResponseExtensions() {
         return responseExtensions;
     }
@@ -187,6 +195,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
                 builder.append(getDestination());
                 builder.append(getConsent());
                 builder.append(getResponseExtensions());
+                builder.append(getEncryptedAssertions());
                 break;
             case SAML1_1:
                 builder.append(getRecipient());
@@ -258,6 +267,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
     private String recipient;
 
     private String responseAssertions;
+    private String encryptedAssertions;
     private String responseExtensions;
     private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();
 
