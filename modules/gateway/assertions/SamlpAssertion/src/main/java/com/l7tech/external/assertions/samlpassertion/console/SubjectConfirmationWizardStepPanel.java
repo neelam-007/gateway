@@ -46,11 +46,10 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
     private JPanel validateMethodsPanel;
     private JCheckBox subjectCertIncludeCheckbox;
     private JComboBox certificateInclusionComboBox;
-    private JCheckBox addValidityPeriodCheckBox;
     private JSpinner notBeforeSpinner;
     private JSpinner notOnOrAfterSpinner;
-    private JLabel notBeforeLabel;
-    private JLabel notAfterLabel;
+    private JCheckBox notBeforeSecondsInCheckBox;
+    private JCheckBox notOnOrAfterCheckBox;
     private JTextField recipientTextField;
     private JTextField addressTextField;
     private JLabel addressLabel;
@@ -136,8 +135,11 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
             setText( recipientTextField, sia.getSubjectConfirmationDataRecipient() );
             setText( inResponseToTextField, sia.getSubjectConfirmationDataInResponseTo() );
             if ( sia.getSubjectConfirmationDataNotBeforeSecondsInPast() >= 0 ) {
-                addValidityPeriodCheckBox.setSelected( true );
+                notBeforeSecondsInCheckBox.setSelected( true );
                 notBeforeSpinner.setValue( sia.getSubjectConfirmationDataNotBeforeSecondsInPast() );
+            }
+            if ( sia.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() >= 0 ) {
+                notOnOrAfterCheckBox.setSelected( true );
                 notOnOrAfterSpinner.setValue( sia.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
             }
 
@@ -188,11 +190,11 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
 
             Utilities.setEnabled( subjectConfirmationDataPanel, enableSubjectConfirmationData && !isNone );
             if ( subjectConfirmationDataPanel.isEnabled() ) {
-                boolean enableValiditySelection = addValidityPeriodCheckBox.isEnabled() && addValidityPeriodCheckBox.isSelected();
-                notBeforeSpinner.setEnabled( enableValiditySelection );
-                notOnOrAfterSpinner.setEnabled( enableValiditySelection );
-                notBeforeLabel.setEnabled( enableValiditySelection );
-                notAfterLabel.setEnabled( enableValiditySelection );
+                final boolean enableNotBefore = notBeforeSecondsInCheckBox.isEnabled() && notBeforeSecondsInCheckBox.isSelected();
+                notBeforeSpinner.setEnabled( enableNotBefore );
+
+                final boolean notOnOrAfter = notOnOrAfterCheckBox.isEnabled() && notOnOrAfterCheckBox.isSelected();
+                notOnOrAfterSpinner.setEnabled( notOnOrAfter );
             }
         }
     }
@@ -235,11 +237,12 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
             assertion.setSubjectConfirmationDataAddress( getText(addressTextField) );
             assertion.setSubjectConfirmationDataRecipient( getText(recipientTextField) );
             assertion.setSubjectConfirmationDataInResponseTo( getText(inResponseToTextField) );
-            final boolean useValidityPeriod = addValidityPeriodCheckBox.isSelected() && addValidityPeriodCheckBox.isEnabled();
+            final boolean useNotBeforePeriod = notBeforeSecondsInCheckBox.isSelected() && notBeforeSecondsInCheckBox.isEnabled();
             assertion.setSubjectConfirmationDataNotBeforeSecondsInPast(
-                    useValidityPeriod  ? (Integer) notBeforeSpinner.getValue() : -1 );
+                    useNotBeforePeriod  ? (Integer) notBeforeSpinner.getValue() : -1 );
+            final boolean useNotOnOrAfterPeriod = notOnOrAfterCheckBox.isSelected() && notOnOrAfterCheckBox.isEnabled();
             assertion.setSubjectConfirmationDataNotOnOrAfterExpirySeconds(
-                    useValidityPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
+                    useNotOnOrAfterPeriod ? (Integer)notOnOrAfterSpinner.getValue() : -1 );
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> confirmations = new ArrayList<String>();
@@ -331,7 +334,8 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
             }, null, true ));
 
             subjectCertIncludeCheckbox.addActionListener(enableDisableListener);
-            addValidityPeriodCheckBox.addActionListener(enableDisableListener);
+            notBeforeSecondsInCheckBox.addActionListener(enableDisableListener);
+            notOnOrAfterCheckBox.addActionListener(enableDisableListener);
 
             notBeforeSpinner.setModel( new SpinnerNumberModel(120, 0, 3600, 1) );
             notOnOrAfterSpinner.setModel( new SpinnerNumberModel(300, 30, 3600, 1) );
@@ -345,7 +349,6 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
             inResponseToLabel.setVisible( false );
             inResponseToTextField.setVisible( false );
             addValidityPeriodPanel.setVisible( false );
-            addValidityPeriodCheckBox.addActionListener( enableDisableListener );
         }
 
         /** Set content pane */

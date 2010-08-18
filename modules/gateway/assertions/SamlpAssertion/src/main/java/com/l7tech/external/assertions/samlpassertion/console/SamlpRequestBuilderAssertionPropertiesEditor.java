@@ -42,7 +42,7 @@ public class SamlpRequestBuilderAssertionPropertiesEditor extends SamlpAssertion
            @Override
            public void wizardFinished(WizardEvent e) { confirmed = true; }
         });
-
+        wiz.addValidationRulesDefinedInWizardStepPanel(SubjectConfirmationWizardStepPanel.class, p);
         return wiz;
     }
 }
