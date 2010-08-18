@@ -179,7 +179,10 @@ public abstract class Syntax {
         for (; st.hasMoreTokens(); index++) {
             if (index >= numNames) return false;
 
-            final String token = Syntax.getReferencedNamesIndexedVarsNotOmitted(st.nextToken())[0];
+            final String[] vars = Syntax.getReferencedNamesIndexedVarsNotOmitted(st.nextToken());
+            if(vars.length == 0) return false;
+            
+            final String token = vars[0];
             if (!token.equals(refNames[index])) return false;
         }
         return true;

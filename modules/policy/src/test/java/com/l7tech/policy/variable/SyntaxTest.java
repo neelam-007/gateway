@@ -109,5 +109,8 @@ public class SyntaxTest {
 
         var = "${var1} ${var[2]} request.mainpart";
         Assert.assertFalse("Not only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "${issuedSamlAssertion saml2}";
+        Syntax.validateStringOnlyReferencesVariables(var);
     }
 }
