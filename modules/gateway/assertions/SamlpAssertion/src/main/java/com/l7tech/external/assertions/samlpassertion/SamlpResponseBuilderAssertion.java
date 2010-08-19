@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
@@ -212,7 +213,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
         if(this.getTarget() == TargetMessageType.OTHER){
             List<VariableMetadata> list = new ArrayList<VariableMetadata>();
             final String targetVar = this.getOtherTargetMessageVariable();
-            VariableMetadata meta = new VariableMetadata(targetVar, false, false, this.getOtherTargetMessageVariable(), true);
+            VariableMetadata meta = new VariableMetadata(targetVar, false, false, this.getOtherTargetMessageVariable(), true, DataType.MESSAGE);
             list.addAll(Arrays.asList(super.getVariablesSet()));
             list.add(meta);
             return list.toArray(new VariableMetadata[list.size()]);
