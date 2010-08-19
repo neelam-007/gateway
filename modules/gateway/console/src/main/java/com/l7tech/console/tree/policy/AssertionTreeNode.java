@@ -263,7 +263,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
             final Assertion.Comment comment = ass.getAssertionComment();
             if (comment != null){
-                if(sb.length() > 0) sb.append("<br><br>");
+                if(sb.length() > 0) sb.append(sb.toString().endsWith("<br>")? "<br>" : "<br><br>");
 
                 StringBuilder builder = new StringBuilder();
                 String leftComment = comment.getAssertionComment(Assertion.Comment.LEFT_COMMENT);

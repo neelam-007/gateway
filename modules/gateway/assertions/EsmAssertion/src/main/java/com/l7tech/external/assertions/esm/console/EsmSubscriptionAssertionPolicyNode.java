@@ -45,7 +45,7 @@ public class EsmSubscriptionAssertionPolicyNode extends DefaultAssertionPolicyNo
             }
         }
         String assertionName = assertion.meta().get(AssertionMetadata.SHORT_NAME).toString();
-        return MessageFormat.format(assertionName + " ({0})", polName);
+        return addCommentToDisplayText(assertion, MessageFormat.format(assertionName + " ({0})", polName));
     }
 
     @Override

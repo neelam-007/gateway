@@ -192,13 +192,13 @@ public class WspConstants {
                                               SecurityTokenType.SAML_ASSERTION),
         new SecurityTokenAssertionMapping(new RequireWssSaml2(), "RequestWssSaml",
                                           SecurityTokenType.SAML2_ASSERTION),
-        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
             // Compatibility with old 2.1 instances of this assertion
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
         },
+        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new IntegrityMapping(new RequireWssSignedElement(), "RequireWssSignedElement", false, "5.1.0"),
         new IntegrityMapping(new RequireWssSignedElement(), "Integrity", true, "3.2.0"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
         new IntegrityMapping(new RequireWssSignedElement(), "RequestWssIntegrity", false, null), // thaw pre32 form

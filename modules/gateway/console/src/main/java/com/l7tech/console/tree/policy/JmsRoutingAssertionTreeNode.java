@@ -39,7 +39,7 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
         String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
 
         if (ass.getEndpointOid() == null) {
-            return assertionName + " (Not Yet Specified)" + actor;
+            return addCommentToDisplayText(assertion, assertionName + " (Not Yet Specified)" + actor);
         }
         String endpointName = endpointName();
 
