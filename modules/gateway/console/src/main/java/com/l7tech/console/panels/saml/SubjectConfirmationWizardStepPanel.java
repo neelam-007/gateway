@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
@@ -17,10 +18,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,9 +63,9 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private boolean enableSubjectConfirmationData;
 
     private final boolean issueMode;
-    private final ActionListener enableDisableListener = new ActionListener() {
+    private final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
-        public void actionPerformed(ActionEvent e) {
+        public void run() {
             enableDisable();
         }
     };
@@ -200,6 +197,16 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 final boolean notOnOrAfter = notOnOrAfterCheckBox.isEnabled() && notOnOrAfterCheckBox.isSelected();
                 notOnOrAfterSpinner.setEnabled( notOnOrAfter );
             }
+        } else {
+            checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
+            checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
+
+            final boolean confirmationMethodWithData =
+                    confirmationSenderVouchesButton.isSelected() ||
+                    confirmationHolderOfKeyButton.isSelected() ||
+                    confirmationBearerButton.isSelected();
+
+            Utilities.setEnabled( subjectConfirmationDataPanel, enableSubjectConfirmationData && confirmationMethodWithData );
         }
     }
 
@@ -372,24 +379,15 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         confirmationHolderOfKeyButton.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +
           " MUST be present within the Subject Confirmation.</html>");
 
-        confirmationHolderOfKeyButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                checkBoxHoKMessageSignature.setEnabled(confirmationHolderOfKeyButton.isSelected());
-            }
-        });
+        confirmationHolderOfKeyButton.addItemListener( enableDisableListener );
 
         checkBoxHoKMessageSignature.setToolTipText(toolTipPRoofOfPosession);
 
         confirmationSenderVouchesButton.setToolTipText("<html>The attesting entity, different form the subject,<br>" +
           " vouches for the verification of the subject.</html>");
-        confirmationSenderVouchesButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                checkBoxSVMessageSignature.setEnabled(confirmationSenderVouchesButton.isSelected());
-            }
-        });
+        confirmationSenderVouchesButton.addItemListener( enableDisableListener );
         confirmationBearerButton.setToolTipText("<html>Browser/POST Profile of SAML</html>");
+        confirmationBearerButton.addItemListener( enableDisableListener );
 
         confirmationNoneButton.setToolTipText("<html>No Subject Confirmation MUST be present</html>");
         confirmationsMap = new HashMap<String, JToggleButton>();
