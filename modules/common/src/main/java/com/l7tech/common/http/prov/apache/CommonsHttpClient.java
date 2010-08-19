@@ -592,8 +592,23 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             }, 443);
             protoBySockFac.put(sockFac, protocol);
         }
-        hconf = new HostConfiguration();
-        HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        final HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        hconf = new HostConfiguration(){
+            @Override
+            public void setHost( final org.apache.commons.httpclient.URI uri ) {
+                // This prevents our SSL settings being lost on redirects (bug 9063)
+                if ( "https".equalsIgnoreCase( uri.getScheme() ) ) {
+                    try {
+                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), httpHost.getProtocol() ));
+                    } catch(URIException e) {
+                        // This is how HTTPClient handles this condition
+                        throw new IllegalArgumentException(e.toString());
+                    }
+                } else {
+                    super.setHost( uri );
+                }
+            }
+        };
         hconf.setHost(httpHost);
         if (proxyHost != null)
             hconf.setProxy(proxyHost, proxyPort);
