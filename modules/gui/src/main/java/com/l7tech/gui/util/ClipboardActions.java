@@ -15,6 +15,8 @@ import java.awt.event.InputEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.security.AccessController;
@@ -71,13 +73,14 @@ public class ClipboardActions {
     public static final String PASTE_HINT = "com.l7tech.clipboard.paste.enable";
 
 
-    private static boolean focusListenerInstalled = false;
+    private static AtomicReference<KeyboardFocusManager> focusManager = new AtomicReference<KeyboardFocusManager>();
     private static WeakReference focusOwner = null;
     private static boolean noClipAccess = false;
     private static boolean checkedClipboard = false;
     private static DataFlavor[] clipboardFlavors = null;
     private static Clipboard lastSystemClipboard = null;
     private static final FlavorListener FLAVOR_LISTENER = new FlavorListener() {
+        @Override
         public void flavorsChanged(FlavorEvent e) {
             final Clipboard clip = (Clipboard)e.getSource();
             updateClipboardFlavors(clip);
@@ -94,6 +97,7 @@ public class ClipboardActions {
      * @return a proxy action that runs "cut" on the currently-focused component.
      */
     public static Action getGlobalCutAction() {
+        ensureFocusListenerCurrent();
         return GLOBAL_CUT_ACTION;
     }
 
@@ -105,6 +109,7 @@ public class ClipboardActions {
      * @return a proxy action that runs "copy" on the currently-focused component.
      */
     public static Action getGlobalCopyAction() {
+        ensureFocusListenerCurrent();
         return GLOBAL_COPY_ACTION;
     }
 
@@ -117,6 +122,7 @@ public class ClipboardActions {
      * @return a proxy action that runs "copyAll" on the currently-focused component.
      */
     public static Action getGlobalCopyAllAction() {
+        ensureFocusListenerCurrent();
         return GLOBAL_COPY_ALL_ACTION;
     }
 
@@ -132,6 +138,7 @@ public class ClipboardActions {
      * @return a proxy action that runs "copy" on the currently-focused component.
      */
     public static Action getGlobalPasteAction() {
+        ensureFocusListenerCurrent();
         return GLOBAL_PASTE_ACTION;
     }
 
@@ -157,17 +164,59 @@ public class ClipboardActions {
         return initialClipboardAccess;
     }
 
+    private static void updateClipboardFlavors(final Clipboard clip) {
+        try {
+            clipboardFlavors = getFlavors(clip);
+            logger.info("Updated cached clipboard flavors for " + clip + ": " + Arrays.toString(clipboardFlavors));
+        } catch (IllegalStateException es) {
+            // Windows clipboard is busy (or maybe just non-reentrant).  Do it later.
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        clipboardFlavors = getFlavors(clip);
+                        logger.info("Updated cached clipboard flavors for " + clip + ": " + Arrays.toString(clipboardFlavors));
+                    } catch (IllegalStateException e) {
+                        // Well, at least we tried (and retried, even)
+                        clipboardFlavors = null;
+                        logger.warning("Failed to update cached clipboard flavors for " + clip + ": " + Arrays.toString(clipboardFlavors) + " (gave up - system clipboard was too busy)");
+                    }
+                }
+            });
+        }
+    }
+
+    private static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
+        return (DataFlavor[])AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
+            public Object run() {
+                return clip == null ? null : clip.getAvailableDataFlavors();
+            }
+        });
+    }
+
     /**
-     * Set up our static focus and clipboard listeners, if we haven't already done so.
+     * Set up our static focus and clipboard listeners, if we haven't already done so for the currently active context.
      */
-    private static void maybeInstallGlobalListeners() {
-        if (!focusListenerInstalled) {
-            KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-            kfm.addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
+    private static void ensureFocusListenerCurrent() {
+        KeyboardFocusManager current = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        if (focusManager.getAndSet(current) != current) {
+            logger.fine("keyboard focus manager changed");
+            if (focusOwner != null) focusOwner.clear();
+            current.addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
+                @Override
                 public void propertyChange(PropertyChangeEvent evt) {
+                    logger.fine("permanentFocusOwner changed: " + evt.getNewValue());
                     Object fo = evt.getNewValue();
-                    if (fo instanceof JComponent) {
+                    if (fo == null) {
+                        if (focusOwner != null) {
+                            focusOwner.clear();
+                            logger.fine("permanentFocusOwner cleared");
+                            updateClipboardActions();
+                        }
+                    } else if (fo instanceof JComponent) {
                         focusOwner = new WeakReference(fo);
+                        logger.fine("permanentFocusOwner updated");
                         updateClipboardActions();
                     }
                 }
@@ -179,44 +228,14 @@ public class ClipboardActions {
             }
 
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     Clipboard clip = getClipboard();
                     if (clip != null) updateClipboardFlavors(clip);
                     updateClipboardActions();
                 }
             });
-
-            focusListenerInstalled = true;
         }
-    }
-
-    private static void updateClipboardFlavors(final Clipboard clip) {
-        try {
-            clipboardFlavors = getFlavors(clip);
-            logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
-        } catch (IllegalStateException es) {
-            // Windows clipboard is busy (or maybe just non-reentrant).  Do it later.
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    try {
-                        clipboardFlavors = getFlavors(clip);
-                        logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
-                    } catch (IllegalStateException e) {
-                        // Well, at least we tried (and retried, even)
-                        clipboardFlavors = null;
-                        logger.warning("Failed to update cached clipboard flavors for " + clip + ": " + clipboardFlavors + " (gave up - system clipboard was too busy)");
-                    }
-                }
-            });
-        }
-    }
-
-    private static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
-        return (DataFlavor[])AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                return clip == null ? null : clip.getAvailableDataFlavors();
-            }
-        });
     }
 
     /**
@@ -264,7 +283,7 @@ public class ClipboardActions {
             else
                 acceptPaste = hasAction(am, "l7paste", "paste") && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
 
-            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (hasAction(am, "l7paste", "paste")) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
+            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (hasAction(am, "l7paste", "paste")) + "  clipboard=" + getClipboard() + "  flavors:" + Arrays.toString(clipboardFlavors));
         } finally {
             GLOBAL_CUT_ACTION.setEnabled(acceptCut);
             GLOBAL_COPY_ACTION.setEnabled(acceptCopy);
@@ -308,6 +327,7 @@ public class ClipboardActions {
 
     private static Clipboard getSystemClipboard() {
         return (Clipboard)AccessController.doPrivileged(new PrivilegedAction() {
+            @Override
             public Object run() {
                 try {
                     Clipboard old = lastSystemClipboard;
@@ -389,6 +409,7 @@ public class ClipboardActions {
         if (component instanceof JTextComponent) {
             final JTextComponent tc = (JTextComponent)component;
             map.put("copyAll", new AbstractAction() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     tc.selectAll();
                     ClipboardActions.getCopyAction().actionPerformed(e);
@@ -415,7 +436,6 @@ public class ClipboardActions {
             this.backupActionCommand = backupActionCommand;
             if (mnemonic > 0) putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
             if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
-            maybeInstallGlobalListeners();
         }
 
         public ProxyAction(Action actionToRun, Action backupAction, int mnemonic, KeyStroke accelerator) {
@@ -425,9 +445,11 @@ public class ClipboardActions {
                  accelerator);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             if (logger.isLoggable(Level.FINE)) logger.fine("Dispatching action command: " + actionCommand);
             AccessController.doPrivileged(new PrivilegedAction() {
+                @Override
                 public Object run() {
                     runActionCommandOnFocusedComponent(actionCommand, backupActionCommand);
                     return null;
@@ -449,6 +471,7 @@ public class ClipboardActions {
             super(actionToRun, backupActionToRun, mnemonic, accelerator);
         }
 
+        @Override
         protected void afterActionPerformed() {
             updateClipboardFlavors(getClipboard());
             updateClipboardActions();
@@ -464,6 +487,7 @@ public class ClipboardActions {
             if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             Object src = e.getSource();
             if (!(src instanceof JComponent))
