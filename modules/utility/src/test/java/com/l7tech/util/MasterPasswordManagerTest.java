@@ -1,40 +1,32 @@
 package com.l7tech.util;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Test;
+import org.junit.Test;
 
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 /**
  * Test for MasterPasswordManager class.
  */
-public class MasterPasswordManagerTest extends TestCase {
+public class MasterPasswordManagerTest {
     private static final String CIPHERTEXT = "$L7C$XeKVziKOzNnDHXebZNXMkg==$AqL4EnD+Rz9V8J/ez6hilPFM6e9ZDvLwqwvgPMrzPuk=";
 
-    public MasterPasswordManagerTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(MasterPasswordManagerTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testObfuscate() throws Exception {
         String cleartext = "secret password";
         String obfuscated = DefaultMasterPasswordFinder.obfuscate(cleartext);
         System.out.println(cleartext + " -> " + obfuscated);
     }
 
+    @Test
     public void testUnobfuscate() throws Exception {
         String obfuscated = "$L7O$LTc0MzIyOTY4NjYwODQ1MTk4ODU=$xU3WNeqb/t+tl+BtH4Be";
         String cleartext = DefaultMasterPasswordFinder.unobfuscate(obfuscated);
         System.out.println(obfuscated + " -> " + cleartext);
     }
 
+    @Test
     public void testObfuscationRoundTrip() throws Exception {
         String cleartext = "mumbleahasdfoasdghuigh";
         String obfuscated = DefaultMasterPasswordFinder.obfuscate(cleartext);
@@ -43,6 +35,7 @@ public class MasterPasswordManagerTest extends TestCase {
         assertEquals(cleartext, unobfuscated);
     }
 
+    @Test
     public void testBackwardCompatibility() throws Exception {
         // !!! this string must never change, since it's historical data to guarantee backward compatibility with existing client data
         String obfuscated = "$L7O$LTQ5ODIzNTQ4ODUzOTIyNTc1MzM=$AH9iXRGlLs5hbsJ12LPT";
@@ -58,6 +51,7 @@ public class MasterPasswordManagerTest extends TestCase {
         };
     }
 
+    @Test
     public void testEncrypt() throws Exception {
         String cleartext = "big secret password";
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("my master password"));
@@ -67,6 +61,7 @@ public class MasterPasswordManagerTest extends TestCase {
         System.out.println(cleartext + " -> " + ciphertext);
     }
     
+    @Test
     public void testDecrypt() throws Exception {
         // !!! this string must never change, since it's historical data to guarantee backward compatibility with existing client data
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("my master password"));
@@ -76,6 +71,7 @@ public class MasterPasswordManagerTest extends TestCase {
         System.out.println(CIPHERTEXT + " -> " + new String(cleartextChars));
     }
 
+    @Test
     public void testEncryptionRoundTrip() throws Exception {
         String cleartext = "round trip password 23423432";
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("rt master password grewge"));
@@ -85,6 +81,7 @@ public class MasterPasswordManagerTest extends TestCase {
         assertEquals(cleartext, decrypted);
     }
 
+    @Test
     public void testMasterKeyMissing() throws Exception {
         MasterPasswordManager mpm = new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
             public char[] findMasterPassword() {
@@ -116,6 +113,7 @@ public class MasterPasswordManagerTest extends TestCase {
         System.out.println(plaintextPassword + "\t ENC-->\t " + enc);
     }
 
+    @Test
     public void testGenerateTestPasswords() throws Exception {
         String master = "7layer";
         String masterObf = DefaultMasterPasswordFinder.obfuscate(master);
@@ -126,5 +124,49 @@ public class MasterPasswordManagerTest extends TestCase {
         show(mpm, "tralala");
         show(mpm, "7layer");
         show(mpm, "password");
+    }
+
+    @Test
+    public void testFixedKeyBytes() {
+        MasterPasswordManager mpm = new MasterPasswordManager(new byte[] { 2, 3, 4});
+        assertTrue(Arrays.equals(new byte[] { 2, 3, 4 }, mpm.getMasterPasswordBytes()));
+    }
+
+    @Test
+    public void testFixedPassword() {
+        MasterPasswordManager mpm = new MasterPasswordManager("foo234".toCharArray());
+        assertEquals("foo234", new String(mpm.getMasterPassword()));
+    }
+
+    @Test
+    public void testLooksLikeEncryptedPassword() {
+        MasterPasswordManager mpm = new MasterPasswordManager(new byte[] { 2, 3, 4});
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$asdf"));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$"));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$asdfg$asdfg5asdfg"));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$asdf askjghaeugh a3957 "));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$a sdfaksdjfhalkjrhg arepgiuhaeg"));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$$  as4%%$df"));
+        assertTrue(mpm.looksLikeEncryptedPassword("$L7C$$$"));
+
+        assertFalse(mpm.looksLikeEncryptedPassword(" $L7C$"));
+        assertFalse(mpm.looksLikeEncryptedPassword("$ L7C$"));
+        assertFalse(mpm.looksLikeEncryptedPassword("$L7D$"));
+        assertFalse(mpm.looksLikeEncryptedPassword("L7D"));
+        assertFalse(mpm.looksLikeEncryptedPassword("7layer"));
+        assertFalse(mpm.looksLikeEncryptedPassword("password"));
+    }
+
+    @Test
+    public void testDecryptPasswordIfEncrypted() throws Exception {
+        String cleartext = "round trip password 23423432";
+        MasterPasswordManager mpm = new MasterPasswordManager(staticFinder("rt master password grewge"));
+        String ciphertext = mpm.encryptPassword(cleartext.toCharArray());
+        mpm = new MasterPasswordManager(staticFinder("rt master password grewge"));
+        String decrypted = new String(mpm.decryptPasswordIfEncrypted(ciphertext));
+        assertEquals(cleartext, decrypted);
+
+        String notDecrypted = new String(mpm.decryptPasswordIfEncrypted("x" + ciphertext));
+        assertEquals("x" + ciphertext, notDecrypted);
     }
 }

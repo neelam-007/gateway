@@ -23,7 +23,7 @@ public class MasterPasswordManager {
     /**
       * @return the master password converted to key bytes, or null if the master password is unavailable.
       */
-     private byte[] getMasterPasswordBytes() {
+     byte[] getMasterPasswordBytes() {
          if (keyBytes != null)
              return keyBytes;
 
@@ -71,7 +71,7 @@ public class MasterPasswordManager {
      *
      * @return the master password, or null if one could not be found.
      */
-    private char[] getMasterPassword() {
+    char[] getMasterPassword() {
         char[] ret = null;
         Throwable t = null;
         try {
@@ -202,12 +202,12 @@ public class MasterPasswordManager {
      *
      * @param possiblyEncryptedPassword a password that might be encrypted.  Required.
      * @return the decrypted version of the password if it was encrypted and decryption was possible, otherwise
-     *         the original password's characters unchanged.
+     *         the original password's characters unchanged.  Possibly null if the input string was null.
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
     public char[] decryptPasswordIfEncrypted(String possiblyEncryptedPassword) {
         if (!looksLikeEncryptedPassword(possiblyEncryptedPassword))
-            return possiblyEncryptedPassword.toCharArray();
+            return possiblyEncryptedPassword == null ? null : possiblyEncryptedPassword.toCharArray();
 
         try {
             return decryptPassword(possiblyEncryptedPassword);
@@ -282,7 +282,7 @@ public class MasterPasswordManager {
     }
 
     /**
- * Interface implemented by strategies for obtaining the master password.
+     * Interface implemented by strategies for obtaining the master password.
      */
     public static interface MasterPasswordFinder {
         /**
