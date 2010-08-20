@@ -366,7 +366,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.keyId = keyid;
     }
 
-    final static String baseName = "Build SAML Protocol Message";
+    final static String baseName = "Build SAML Protocol Request";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpRequestBuilderAssertion>(){
         @Override
@@ -395,12 +395,12 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Build a SAML Protocol Message.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Build a SAML Protocol Request.");
         
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Protocol Message Wizard");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Protocol Request Wizard");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
