@@ -113,7 +113,7 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
 
         final String baseName = "Encode / Decode Data";
         meta.put( SHORT_NAME, baseName );
-        meta.put( DESCRIPTION, baseName );
+        meta.put( DESCRIPTION, "Encode or decode data." );
         meta.put( PALETTE_FOLDERS, new String[] { "xml" } );
         meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
         meta.put( PROPERTIES_ACTION_NAME, "Encode / Decode Data Properties" );
