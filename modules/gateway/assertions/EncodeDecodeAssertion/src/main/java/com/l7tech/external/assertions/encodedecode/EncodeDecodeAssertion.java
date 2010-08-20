@@ -111,7 +111,7 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        final String baseName = "Encode / Decode data";
+        final String baseName = "Encode / Decode Data";
         meta.put( SHORT_NAME, baseName );
         meta.put( DESCRIPTION, baseName );
         meta.put( PALETTE_FOLDERS, new String[] { "xml" } );
