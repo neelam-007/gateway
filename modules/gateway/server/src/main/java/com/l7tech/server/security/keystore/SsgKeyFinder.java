@@ -24,6 +24,7 @@ public interface SsgKeyFinder extends NamedEntity {
         PKCS11_HARDWARE,
         LUNA_HARDWARE,
         NCIPHER_HARDWARE,
+        GENERIC,
     }
 
     long getOid();

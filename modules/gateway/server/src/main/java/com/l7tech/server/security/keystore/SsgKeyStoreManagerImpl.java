@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.security.keystore.generic.GenericSsgKeyStore;
 import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
 import com.l7tech.server.security.keystore.ncipher.NcipherSsgKeyStore;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
@@ -12,6 +13,7 @@ import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,6 +84,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         boolean haveLuna = isUsingLuna();
         boolean haveNcipher = isUsingNcipher();
         boolean haveSca = isUsingSca6000();
+        boolean haveGeneric = isUsingGeneric();
         boolean createdHsmFinder = false;
         boolean createdNcipher = false;
 
@@ -116,8 +119,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
             } else if (format.equals("ss")) {
                 logger.fine("Ignoring keystore_file row with a format of ss because this keystore type is no longer supported");
             } else if (format.startsWith("sdb.")) {
-                if (haveSca || haveLuna || haveNcipher)
-                    logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna instead");
+                if (haveSca || haveLuna || haveNcipher || haveGeneric)
+                    logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna or generic provider instead");
                 else
                     list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword));
             }
@@ -127,6 +130,12 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
         if (haveLuna && list.isEmpty()) {
             list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM"));
+        }
+
+        if (haveGeneric && list.isEmpty()) {
+            String password = SyspropUtil.getString(GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD);
+            char[] decryptedPassword = password == null ? null : dbEncrypter.decryptPasswordIfEncrypted(password);
+            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword));
         }
 
         // Force all keyfinders to initialize their keystores early, so they don't end up trying to do so lazily
@@ -151,6 +160,10 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
     public boolean isUsingSca6000() {
         return JceProvider.PKCS11_ENGINE.equals( JceProvider.getEngineClass());
+    }
+
+    public boolean isUsingGeneric() {
+        return JceProvider.GENERIC_ENGINE.equals(JceProvider.getEngineClass());
     }
 
     public List<SsgKeyFinder> findAll() throws FindException, KeyStoreException {
