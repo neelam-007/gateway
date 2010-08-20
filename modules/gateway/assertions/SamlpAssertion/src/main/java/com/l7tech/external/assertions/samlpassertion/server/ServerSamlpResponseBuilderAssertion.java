@@ -21,21 +21,26 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import saml.support.xenc.EncryptedDataType;
+import saml.v1.assertion.*;
+import saml.v2.assertion.*;
 import saml.v2.assertion.AssertionType;
-import saml.v2.assertion.EncryptedElementType;
-import saml.v2.assertion.NameIDType;
+import saml.v2.assertion.ConditionAbstractType;
+import saml.v2.assertion.ConditionsType;
+import saml.v2.assertion.StatementAbstractType;
+import saml.v2.assertion.SubjectConfirmationType;
+import saml.v2.assertion.SubjectType;
 import saml.v2.protocol.ExtensionsType;
+import saml.v2.protocol.ResponseType;
 import saml.v2.protocol.StatusDetailType;
 
 import javax.xml.bind.JAXBElement;
@@ -69,27 +74,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
-
-        if(assertion.getSamlVersion() == SamlVersion.SAML2){
-            //validate the assertion bean
-            final String respAssertions = assertion.getResponseAssertions();
-            final String encryptedAssertions = assertion.getEncryptedAssertions();
-
-            final boolean isSuccessResponse = assertion.getSamlStatus() == SamlStatus.SAML2_SUCCESS;
-            final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
-                    (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
-
-            if(isSuccessResponse && assertionsNotSupplied){
-                throw new PolicyAssertionException(assertion,
-                        "Assertion(s) and / or EncryptedAssertion(s) are not configured. One ore more assertions are required when Response represents Success.");
-            }
-
-            if(!isSuccessResponse && !assertionsNotSupplied){
-                //no assertions can be included
-                    throw new PolicyAssertionException(assertion,
-                            "If Response status does not represent Success then the Assertion(s) and EncryptedAssertion(s) fields cannot include any SAML Assertions.");
-            }
-        }
 
         switch (assertion.getSamlVersion()) {
             case SAML2:
@@ -589,7 +573,11 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             }
             response.getAssertion().add(value);
         }
-        return v1SamlpFactory.createResponse(response);
+        final JAXBElement<saml.v1.protocol.ResponseType> typeJAXBElement = v1SamlpFactory.createResponse(response);
+        if(validateSSOProfileDetails){
+            validateV1Response(typeJAXBElement.getValue());
+        }
+        return typeJAXBElement;
     }
 
     private JAXBElement<saml.v2.protocol.ResponseType> createV2Response(final ResponseContext responseContext,
@@ -717,8 +705,260 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             encryptedElementType.setEncryptedData(value);
             response.getAssertionOrEncryptedAssertion().add(encryptedElementType);
         }
-        
-        return v2SamlpFactory.createResponse(response);
+
+        final JAXBElement<ResponseType> typeJAXBElement = v2SamlpFactory.createResponse(response);
+        if(validateSSOProfileDetails){
+            validateV2Response(typeJAXBElement.getValue());
+        }
+        return typeJAXBElement;
+    }
+
+    private void validateV1Response(final saml.v1.protocol.ResponseType responseType){
+
+        final String recipient = responseType.getRecipient();
+        if(recipient == null || recipient.trim().isEmpty() || !ValidationUtils.isValidUri(recipient)){
+            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                    "Response must include the Recipient attribute with a valid value");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        //Find an authentication statement
+        final List<saml.v1.assertion.AssertionType> assertionTypes = responseType.getAssertion();
+
+        boolean authenticationStatementFound = false;
+        boolean ssoAssertionFound = false; //true when authenticationStatementFound is true, plus NotBefore and NotOnOrAfter are also found
+        for (saml.v1.assertion.AssertionType assertionType : assertionTypes) {
+
+            final List<saml.v1.assertion.StatementAbstractType> statements = assertionType.getStatementOrSubjectStatementOrAuthenticationStatement();
+            for (saml.v1.assertion.StatementAbstractType statement : statements) {
+                if(statement instanceof AuthenticationStatementType){
+                    authenticationStatementFound = true;
+                    final saml.v1.assertion.ConditionsType conditionsType = assertionType.getConditions();
+                    if(conditionsType != null){
+                        if(!ssoAssertionFound){
+                            ssoAssertionFound = conditionsType.getNotBefore() != null &&
+                                    conditionsType.getNotOnOrAfter() != null;
+                        }
+                    }
+                }
+
+                if(SubjectStatementAbstractType.class.isAssignableFrom(statement.getClass())){
+                    SubjectStatementAbstractType subjectAbstractType = (SubjectStatementAbstractType) statement;
+                    final saml.v1.assertion.SubjectType subjectType = subjectAbstractType.getSubject();
+                    final List<JAXBElement<?>> content = subjectType.getContent();
+                    boolean bearerMethodFound = false;
+                    boolean subjectConfirmationFound = false;
+                    for (JAXBElement<?> jaxbElement : content) {
+                        final Object value = jaxbElement.getValue();
+                        if(value instanceof saml.v1.assertion.SubjectConfirmationType){
+                            subjectConfirmationFound = true;
+                            saml.v1.assertion.SubjectConfirmationType subjectConfType = (saml.v1.assertion.SubjectConfirmationType) value;
+                            final List<String> stringList = subjectConfType.getConfirmationMethod();
+                            for (String method : stringList) {
+                                if(SamlConstants.CONFIRMATION_BEARER.equals(method)){
+                                    bearerMethodFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    //SubjectConfirmation must be found
+                    if(!subjectConfirmationFound){
+                        auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                                "Each subject based statement must contain a saml:SubjectConfirmation element");
+                        throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                    }
+
+                    //this is a Subject based statement. We must have found a bearer method
+                    if(!bearerMethodFound){
+                        auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                                "Each subject based statement's saml:SubjectConfirmation must contain a ConfirmationMethod method of " + SamlConstants.CONFIRMATION_BEARER);
+                        throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                    }
+                }
+            }
+        }
+
+        if(!authenticationStatementFound){
+            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                    "No SSO Assertion found. No authentication statement was found");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        if(!ssoAssertionFound){
+            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                    "No SSO Assertion found. No authentication statment found which contains a Conditions element with NotBefore and NotOnOrAfter");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+    }
+
+    private void validateV2Response(final ResponseType responseType){
+        //validate the assertion bean
+        final String respAssertions = assertion.getResponseAssertions();
+        final String encryptedAssertions = assertion.getEncryptedAssertions();
+
+        final boolean isSuccessResponse = assertion.getSamlStatus() == SamlStatus.SAML2_SUCCESS;
+        final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
+                (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
+
+        if(isSuccessResponse && assertionsNotSupplied){
+            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                    "Assertion(s) and / or EncryptedAssertion(s) are not configured. One ore more assertions are required when Response represents Success");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        if(!isSuccessResponse && !assertionsNotSupplied) {
+            //no assertions can be included
+            auditor.logAndAudit(AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                    "If Response status does not represent Success then the Assertion(s) and EncryptedAssertion(s) fields cannot include any SAML Assertions");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        final List<Object> tokens = responseType.getAssertionOrEncryptedAssertion();
+        if(tokens.isEmpty()){
+            //all other rules apply only when assertions are present
+            return;
+        }
+
+        final Set<String> subjectNames = new HashSet<String>();
+        final Set<String> issuerNames = new HashSet<String>();
+
+        boolean issuerIsRequired = assertion.isSignResponse();
+        boolean bearerAssertionIsFound = false;//high level exception than bearerIsValidated
+        boolean bearerIsValidated = false;
+        boolean authnStatementFound = false;//also covers the 'one assertion must be included', as this must be found
+
+        boolean includesEncrypted = false;//need to know if encrypted assertions are present. Cannot see inside them.
+        for (Object token : tokens) {
+            if(token instanceof AssertionType){
+                AssertionType assertionType = (AssertionType) token;
+
+                //Process Subject
+                final SubjectType subjectType = assertionType.getSubject();
+                final List<JAXBElement<?>> elementList = subjectType.getContent();
+                for (JAXBElement<?> jaxbElement : elementList) {
+                    final Object value = jaxbElement.getValue();
+                    if(value instanceof NameIDType){
+                        NameIDType name = (NameIDType) value;
+                        subjectNames.add(name.getValue());
+
+                    } else if (value instanceof SubjectConfirmationType){
+                        //Ensure Bearer assertion with correct attributes0
+                        SubjectConfirmationType confirmationType = (SubjectConfirmationType) value;
+                        final String method = confirmationType.getMethod();
+                        if (SamlConstants.CONFIRMATION_SAML2_BEARER.equals(method)){
+                            bearerAssertionIsFound = true;
+                            final SubjectConfirmationDataType scd = confirmationType.getSubjectConfirmationData();
+                            if(scd != null && !bearerIsValidated){//if rule is satisfied, don't keep looking
+                                final String recipient = scd.getRecipient();
+                                final boolean recipientValid = recipient != null && !recipient.trim().isEmpty();
+                                final boolean notOnOrAfterValid = scd.getNotOnOrAfter() != null;
+                                final boolean noNotBefore = scd.getNotBefore() == null;
+                                bearerIsValidated = recipientValid && notOnOrAfterValid && noNotBefore;
+                            }
+
+                            //each Bearer assertion must contain an AudienceRestriction
+                            final ConditionsType type = assertionType.getConditions();
+                            if(type == null){
+                                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Bearer saml:Assertion does not contain any Conditions");
+                                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                            }
+
+                            boolean audienceFound = false;
+                            final List<ConditionAbstractType> conditions = type.getConditionOrAudienceRestrictionOrOneTimeUse();
+                            for (ConditionAbstractType condition : conditions) {
+                                if(condition instanceof AudienceRestrictionType) {
+                                    AudienceRestrictionType audience = (AudienceRestrictionType) condition;
+                                    final List<String> audienceList = audience.getAudience();
+
+                                    for (String audienceVal : audienceList) {
+                                        final boolean isValid = audienceVal != null &&
+                                                !audienceVal.trim().isEmpty() && ValidationUtils.isValidUri(audienceVal);
+                                        if(isValid) audienceFound = true;
+                                    }
+                                }
+                            }
+                            if(!audienceFound){
+                                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                                        "Each bearer saml:Assertion must contain an AudienceRestriction with an Audience element");
+                                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                            }
+                        }
+                    }
+                }
+
+                //Ensure Issuer and collect Issuer name
+                final NameIDType issuer = assertionType.getIssuer();
+                if(issuer == null){
+                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Assertion does not contain an Issuer");
+                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                }
+                if ( issuer.getFormat() != null && !SamlConstants.NAMEIDENTIFIER_ENTITY.equals( issuer.getFormat() ) ) {
+                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
+                    throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+                }
+
+                issuerNames.add(issuer.getValue());
+
+                //Look for Authentication statement
+                final List<StatementAbstractType> statements = assertionType.getStatementOrAuthnStatementOrAuthzDecisionStatement();
+                for (StatementAbstractType statement : statements) {
+                    if(statement instanceof AuthnStatementType){
+                        authnStatementFound = true;
+                    }
+                }
+
+            } else if (token instanceof EncryptedElementType){
+                issuerIsRequired = true;
+                includesEncrypted = true;
+            }
+
+        }
+
+        if(!includesEncrypted){
+            //Can only be sure of validation when no encrypted assertions were included.
+            final NameIDType nameIDType = responseType.getIssuer();
+            if (issuerIsRequired && nameIDType == null) {
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "Issuer is required if the samlp:Response is signed or if it contains an encrypted assertion");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+
+            if(subjectNames.size() > 1){
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "All saml:Assertion saml:Subject's must represent the same principal");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+
+            if(issuerNames.size() > 1){
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "All saml:Assertion saml:Issuer's must represent the same Issuer");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+
+            //These 3 rules are in order of granularity - highest to lowest
+            //A bearer assertion must be found
+            if(!bearerAssertionIsFound){
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "No bearer saml:Assertion found");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+
+            if(!authnStatementFound){
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "No bearer saml:Assertion found which contains an authentication statement");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+
+            //A valid bearer subjectconfirmation assertion is required.
+            if(!bearerIsValidated){
+                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                        "No bearer saml:Assertion found which satisifies all profile rules: " +
+                                "Requires SubjectConfirmationData with Recipient and NotOnOrAfter attributes, No NotBefore attribute");
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+        }
     }
 
     private Element getDocumentElement(Message message) throws InvalidRuntimeValueException {
@@ -740,5 +980,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private final saml.v2.assertion.ObjectFactory v2SamlpAssnFactory;
     private final SignerInfo signer;
 
+    //Not static to support test cases
+    private final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
     private static final Logger logger = Logger.getLogger(ServerSamlpResponseBuilderAssertion.class.getName());
+
 }

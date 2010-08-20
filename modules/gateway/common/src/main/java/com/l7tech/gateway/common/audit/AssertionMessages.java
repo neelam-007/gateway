@@ -728,6 +728,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLP_PROCREQ_BINDING_ERROR = m(9231, Level.WARNING, "Cannot access AuthnRequest for binding ''{0}'': ''{1}''.");
     public static final M SAMLP_PROCREQ_INVALID_REQUEST = m(9232, Level.WARNING, "Invalid AuthnRequest: ''{0}''.");
     public static final M SAMLP_PROCREQ_SIGNING_ERROR = m(9233, Level.WARNING, "Signature validation failure: ''{0}''.");
+    public static final M SAMLP_1_1_PROCREQ_PROFILE_VIOLATION = m(9234, Level.WARNING, "SAML 1.1 Web SSO profile rule violation: {0}.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

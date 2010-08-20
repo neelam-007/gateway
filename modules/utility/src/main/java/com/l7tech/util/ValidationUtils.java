@@ -83,6 +83,29 @@ public class ValidationUtils {
     }
 
     /**
+     * Check if a URI is valid.
+     *
+     * @param uriText the URI text
+     * @return true if URI is valid
+     */
+    public static boolean isValidUri(String uriText){
+        boolean ok = false;
+
+        boolean present = uriText != null && !uriText.trim().isEmpty();
+
+        if(present){
+            try {
+                new URI(uriText);
+                ok = true;
+            } catch (URISyntaxException e) {
+                // so is invalid
+            }
+        }
+
+        return ok;
+    }
+
+    /**
      * Check if an (absolute) URL is valid.
      *
      * @param urlText the URL text

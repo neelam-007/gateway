@@ -15,6 +15,7 @@ import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
@@ -114,7 +115,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_0AttributeAssertion)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion)));
         context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>")));
         serverAssertion.checkRequest(context);
 
@@ -155,7 +156,195 @@ public class ServerSamlpResponseBuilderAssertionTest {
         failIfXmlNotEqual(samlToken_2_0, authTokenElement, "Invalid assertion element found");
 
         final Element attributeTokenElement = xpathResultSetIterator.nextElementAsCursor().asDomElement();
-        failIfXmlNotEqual(v2_0AttributeAssertion, attributeTokenElement, "Invalid attribute assertion element found");
+        failIfXmlNotEqual(v2_AttributeAssertion, attributeTokenElement, "Invalid attribute assertion element found");
+    }
+
+    /**
+     * Validates every profile rule which the Server assertion checks when the validate system property is on
+     * @throws Exception
+     */
+    @BugNumber(9056)
+    @Test
+    public void testSaml_2_0_validateAllProfileRules() throws Exception{
+        v2EvaluateAllProfileRules(true);
+    }
+
+    /**
+     * Tests that validation is correctly controlled by the validation system property.
+     * @throws Exception
+     */
+    @BugNumber(9056)
+    @Test
+    public void testSaml_2_0_NoValidationWhenSystemPropertyIsOff() throws Exception{
+        try {
+            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            v2EvaluateAllProfileRules(false);
+        } finally {
+            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+        }
+    }
+
+    /**
+     * Validates every profile rule which the Server assertion checks when the validate system property is on
+     * @throws Exception
+     */
+    @BugNumber(9056)
+    @Test
+    public void testSaml_1_1_validateAllProfileRules() throws Exception{
+        v1EvaluateAllProfileRules(true);
+    }
+
+    /**
+     * Tests that validation is correctly controlled by the validation system property.
+     * @throws Exception
+     */
+    @BugNumber(9056)
+    @Test
+    public void testSaml_1_1_NoValidationWhenSystemPropertyIsOff() throws Exception{
+        try {
+            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            v1EvaluateAllProfileRules(false);
+        } finally {
+            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+        }
+    }
+
+    private void v1EvaluateAllProfileRules(final boolean expectThrow) throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        final PolicyEnforcementContext context = getContext();
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSamlVersion(SamlVersion.SAML1_1);
+
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
+        boolean correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A recipient must be supplied.", correctExceptionThrown);
+
+        assertion.setRecipient("   - ");
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A valid recipient must be supplied.", correctExceptionThrown);
+
+        assertion.setRecipient("http://recipient.com");
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("An SSO assertion must be supplied.", correctExceptionThrown);
+
+        //No problems when two assertions are presented. Both satisfy bearer criteria
+        assertion.setResponseAssertions("${samlToken} ${attributeToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, false);
+        Assert.assertTrue("No exception should be thrown.", correctExceptionThrown);
+
+        //One bearer assertion is missing the NotBefore and NotOnOrAfter Conditions - should be ok, as only 1 is needed
+
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_missingNotBeforeCondition)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("NotBefore condition attribute is missing.", correctExceptionThrown);
+
+        //non bearer subject based statement
+        assertion.setResponseAssertions("${samlToken} ${attributeToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_attributeOnlySenderVouches)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Each subject based assertion must use a confirmation method of bearer.", correctExceptionThrown);
+
+    }
+
+    private void v2EvaluateAllProfileRules(final boolean expectThrow) throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        final PolicyEnforcementContext context = getContext();
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("outputVar");
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        //If Success an Assertion must be supplied
+        boolean correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Status is success so a SAML token is required.", correctExceptionThrown);
+
+        //If not success, then no assertions are allowed
+        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
+
+        //Issuer required if response is signed
+        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        assertion.setSignResponse(true);
+
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Issuer is required when the response is signed.", correctExceptionThrown);
+
+        //Subjects must be the same across all assertions
+        assertion.setResponseAssertions("${samlToken} ${attributeDifferentSubject}");
+        assertion.setSignResponse(false);
+        context.setVariable("attributeDifferentSubject", new Message(XmlUtil.parse(v2_AttributeDifferentSubject)));
+
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("All assertions must have the same subject.", correctExceptionThrown);
+
+        //Response must contain a bearer assertion
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoBearerAssertion)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion is required.", correctExceptionThrown);
+
+        //Response must contain a valid bearer assertion
+        //No Recipient attribute
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoRecipientAssertion)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion with a Recipient attribute is required.", correctExceptionThrown);
+
+        //No NoOnOrAfter attribute
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoNotOnorAfterAssertion)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion with a NotOnOrAfter attribute is required.", correctExceptionThrown);
+
+        //Contains a NotBefore attribute
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_WithNotBeforeAssertion)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
+
+        //No authentication statement
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoAuthenticationStatement)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
+
+        //No audience restriction on an individual bearer assertion
+        assertion.setResponseAssertions("${samlToken} ${attributeNoAudience}");
+        context.setVariable("attributeNoAudience", new Message(XmlUtil.parse(v2_NoAudienceRestriction)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
+
+        //All issuers must be the same
+        assertion.setResponseAssertions("${samlToken} ${tokenDiffIssuer}");
+        context.setVariable("tokenDiffIssuer", new Message(XmlUtil.parse(v2_DifferentIssuer)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("All Issuers must be the same.", correctExceptionThrown);
+
+        //Issuer has the wrong format
+        assertion.setResponseAssertions("${samlToken}");
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_IssuerWrongFormat)));
+        correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
+        Assert.assertTrue("Issuer has an incorrect format.", correctExceptionThrown);
+
+    }
+
+    private boolean evaluateServerAssertion(ApplicationContext appContext,
+                                            PolicyEnforcementContext context,
+                                            SamlpResponseBuilderAssertion assertion,
+                                            boolean wantException)
+            throws PolicyAssertionException, IOException {
+        ServerSamlpResponseBuilderAssertion  serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        boolean correctExceptionThrown = (wantException)? false: true;
+        try {
+            serverAssertion.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            correctExceptionThrown = (wantException)? true: false;
+        }
+        return correctExceptionThrown;
     }
 
     /**
@@ -238,7 +427,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         assertion.setSamlVersion(SamlVersion.SAML2);
 
-        assertion.setAddIssuer(false);
+        assertion.setAddIssuer(true);
         assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
@@ -363,7 +552,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         assertion.setSamlVersion(SamlVersion.SAML2);
 
-        assertion.setAddIssuer(false);
+        assertion.setAddIssuer(true);
         assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
         final String encryptedToken = "encryptedAssertion";
         assertion.setEncryptedAssertions("${"+encryptedToken+"}");
@@ -442,26 +631,6 @@ public class ServerSamlpResponseBuilderAssertionTest {
         
         status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
-    }
-
-    @Test(expected = PolicyAssertionException.class)
-    public void testSAML2_0_NoAssertionsIfNotSuccess() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
-        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
-        assertion.setSignResponse(false);
-        assertion.setTarget(TargetMessageType.OTHER);
-        final String outputVar = "outputVar";
-        assertion.setOtherTargetMessageVariable(outputVar);
-
-        assertion.setSamlVersion(SamlVersion.SAML2);
-
-        assertion.setAddIssuer(false);
-        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
-
-        final String token = "samlToken";
-        assertion.setResponseAssertions("${" + token + "}");
-        new ServerSamlpResponseBuilderAssertion(assertion, appContext);
     }
 
     /**
@@ -646,7 +815,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String extensions = "extensions";
         assertion.setResponseExtensions("${" + extensions + "}");
 
-        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        ServerSamlpResponseBuilderAssertion serverAssertion;
+        try {
+            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        } finally {
+            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+        }
 
         final PolicyEnforcementContext context = getContext();
         final String extensionXml = "<extension>im an extension element</extension>";
@@ -704,7 +879,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
         assertion.setInResponseTo(requestId);
 
-        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        ServerSamlpResponseBuilderAssertion serverAssertion;
+        try {
+            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        } finally {
+            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+        }
 
         final PolicyEnforcementContext context = getContext();
 
@@ -739,8 +920,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setOtherTargetMessageVariable(outputVar);
 
         assertion.setSamlVersion(SamlVersion.SAML1_1);
-
-        assertion.setAddIssuer(false);
+        assertion.setRecipient("http//recipient.com");
 
         final String token = "samlToken";
         assertion.setResponseAssertions("${" + token + "}");
@@ -795,8 +975,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setOtherTargetMessageVariable(outputVar);
 
         assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setRecipient("http://recipient.com");
 
-        assertion.setAddIssuer(false);
         assertion.setSamlStatus(SamlStatus.SAML_REQUEST_DENIED);
         final String statusMessage = "Status Message";
         assertion.setStatusMessage(statusMessage);
@@ -806,13 +986,18 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
         assertion.setResponseId(responseId);
         final String issueInstant = "2010-08-11T17:13:02Z";
-        //yyyy-MM-ddTHH:mm:ssZ
         assertion.setIssueInstant(issueInstant);
 
         final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
         assertion.setInResponseTo(requestId);
 
-        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        ServerSamlpResponseBuilderAssertion serverAssertion;
+        try {
+            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+        } finally {
+            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+        }
 
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
@@ -996,6 +1181,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         assertion.setSamlVersion(SamlVersion.SAML1_1);
         assertion.setStatusMessage("Status Message is ok");
+        assertion.setRecipient("http://recipient.com");
 
         final PolicyEnforcementContext context = getContext();
 
@@ -1052,6 +1238,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         assertion.setSamlVersion(SamlVersion.SAML1_1);
         assertion.setStatusMessage("Status Message is ok");
+        assertion.setRecipient("http://recipient.com");
 
         final PolicyEnforcementContext context = getContext();
 
@@ -1138,7 +1325,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test(expected = AssertionStatusException.class)
     public void testAssertionFieldMustBeConfigured() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
@@ -1154,8 +1341,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
-        final AssertionStatus status = serverAssertion.checkRequest(context);
-        Assert.assertEquals("Status should be server error", AssertionStatus.SERVER_ERROR, status);
+        serverAssertion.checkRequest(context);
     }
 
     @Test
@@ -1310,9 +1496,93 @@ public class ServerSamlpResponseBuilderAssertionTest {
             "    </saml2:AuthnStatement>\n" +
             "  </saml2:Assertion>";
 
-    private final static String v2_0AttributeAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-657be8ad16685a0cc13c2c3966d00358\" IssueInstant=\"2010-08-13T18:41:15.906Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-13T18:46:15.908Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-13T18:36:15.000Z\" NotOnOrAfter=\"2010-08-13T18:46:15.907Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
+    private final static String v2_AttributeAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-657be8ad16685a0cc13c2c3966d00358\" IssueInstant=\"2010-08-13T18:41:15.906Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-13T18:46:15.908Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-13T18:36:15.000Z\" NotOnOrAfter=\"2010-08-13T18:46:15.907Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
 
     private final static String v1_1AttributeAssertion = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-2f95ff7d175a00aeb11fd3c884ef40d0\" Issuer=\"irishman.l7tech.com\" IssueInstant=\"2010-08-13T20:03:07.445Z\"><saml:Conditions NotBefore=\"2010-08-13T19:58:07.000Z\" NotOnOrAfter=\"2010-08-13T20:08:07.446Z\"><saml:AudienceRestrictionCondition><saml:Audience>https://saml.salesforce.com</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName=\"test\" AttributeNamespace=\"\"><saml:AttributeValue>testvalue</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>";
 
     private final static String v2_EncryptedAssertion = "<xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes128-cbc\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:X509Data><ds:X509IssuerSerial><ds:X509IssuerName>OU=www.verisign.com/CPS Incorp.by Ref. LIABILITY LTD.(c)97 VeriSign, OU=VeriSign International Server CA - Class 3, OU=\"VeriSign, Inc.\", O=VeriSign Trust Network</ds:X509IssuerName><ds:X509SerialNumber>160479753879882120110470297434291570115</ds:X509SerialNumber></ds:X509IssuerSerial></ds:X509Data></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>HvTpDcuk42MmouMpo1ZUJDSE0UrD8kqLdN58qwGWAnoPquEGYSXumJ2kKblA72EEHEEZJihb/qCfpaU1ZALJixI/PJn2COsK092/s1wnsMyay7SmrJ6MD+eCDCOYWWgiYIyhnSL9KHuF7ULXOw8xX1XAXUJFeAJpB/LtpekgNq8=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></ds:KeyInfo><xenc:CipherData><xenc:CipherValue>RIfrijQJDgu8GtRV3yTo7mNYZlheoMzTbXtWRhqvpPuJQurTzDy9dkBkhvgtDrPwXtoPpmw0gmHrYRfNmli9q8h7M+CDZEEVdyRvynbZh7Z2zuoL8op8adzgt9JoaW79xjVRZj0zkZ/S0h/G/wPLEOk05k3l+3Umik/3XHqCEpmabm5FKSx9qq/deYzElppFRokxumtPMuNHvwZhdQvKeDuArqA2LDq/U5kijRh7KkotibKwxBR0zbNNk3kLKadCfmHdk3x0kn8vbD4Kpvm4pVvySPtBoVty73UFgpSyirkHRzOkTihCNBJpAKaUcRyJ9d2BbHGLdcf8caRCNdXWntynBm4D5mHFteVWIolUwdCewhh9ZE1wcL5fcNFSSzi30sNQknP8f57Lt8lM0ikqTdsRZc2Hh2MVIsCkZrDuT2m3TtCoUOlTjtnEP3Of0HJbYAWOGfsmbSjlXMTEXTrX4SxPRUfvISMY5RQQKbg4G8AfbbGGK031d1REzLEqHG6zdKvc2Zb0zhstqHeO7ZIpl+rKR+/7/Pe1YtwYIsYEvsMbBJ+NqZZbC1CytjBLkp2n80ZP09230XGpDHK0XCXmKAQpBbay7BT7ULHTUGasovpKKH4ytIA0tvLJ2yfh5Z359zId3VxZZlxxRcJmJBPuApYkvbq5sVchJVHMCfQTKeRn5FYrQu6GaQp+edA1ni63I/lsPNAR7BBqBtmealk/LpROUWKMGbpRagJXUWkTi2i6nfs0hVOQP7lLHkV1SJZeBRMSixJatuNTQ1diqQQJgUfr4XFGvnnFRxqnSBuCphsAYqi5rTqfKLTVteWtdRL+smlD+l+lMcDkHzMtzHO3QyIiNknrPzKsAAbJjUf82vHOMorY5TbkddZ/2BPyBfr4y/IzTWYxHAuwHPsi6u23x4qWJOidBxDfRzfSm5K6op2i00D4rEPpALEHKWJj7aoizv4Tmd4YeUO49K0q6A6RzqP9H77hYvG+nWvc9Kodg/JNB91dEmyJMso+07WaGJYnynzwtqpeDxf+rtNO6SeDoqxtVACoNMj0SaOgdYPl4lDmEqBrXh+HE78SRZ2oSt3ATttkyQ9EoLsHMKcjprhqpUIyI/ipdwx2HH0sNLFjrwfFzhfhANMI/PqBhbZ2C4/bWANhflguB62O+RxbeFW8JQcOdot9lXRAE3KrGuullS6SytYcFwnvt/ysUktQ+ZUEmO2ZBJvJLQaNdT41R6DPjKu0rdKtNRhC6IwK88s0K0/mUYc9I6ixOX0FrgxBSBZ75U1NABXGeJPtzV5XHUNMgTdajqvJINiNNe6cqc3TiPxkuSBY0DBe3c4ZMkT4OCg72PuZ62dnoZ9GU3nu9SIEcYv5JFRdy3YuJWP3wIteFBLil8HBibbxCmf8uHiUZxXad9AvOYLj0G5TFZ0hRUlN4Vb6dOF8c325j9+0VtxNXRbHepDVQBQYdyXh6FuA4ajGOUBVqJjZdhCPgVHACnWT7z6xRewa/g3FPfJxmOX+Vl9OopzJGY77z1GzWK/vyvUtKfCWM0ea8Z/U9byOJA6pzg7UUgX5lMYAhkg2Inr8OegNSAHhe9EFrWolf3THVhNPAaOYAF3wNX3eOaHzpvGyYdhTVZXYwfybJfsBrI82bhZkx5TZdXMa8eFK3cuhglZIh/xXVaxfDto5/l6UWPiqhfhum/ewdCYEv9TK2tB2i4pCndy87KTG/sDVn79MV6StujSX80WGToz3cOOlmPx3ItuoMZiRV8Gdu7P5zj2C9sEuNYulQMpghlvrFvH4Ms5V7qMECloUKWKpTr2XcV6w2hyY5eLjo/w9Y4G3roSGbJF4iSXzuGdN6/ocFijz7C30FV/5tATiLgahcPOtuUYpE39hmtknI/1hZGYzxUiPQkOe/9EZoU1j+Z9pswAxC/loQgm89T/UOmvyiE2CJBJXAw==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData>";
+
+    private final static String v2_AttributeDifferentSubject = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-1e62b2db80e83e01d20269fc7626d80d\" IssueInstant=\"2010-08-19T21:32:47.565Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">DifferentSubject</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-19T21:37:47.574Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T21:27:47.000Z\" NotOnOrAfter=\"2010-08-19T21:37:47.573Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
+
+    private final static String v2_NoBearerAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-28a9a13e5f591d095dabb382aa904ed0\" IssueInstant=\"2010-08-19T21:45:37.464Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:sender-vouches\"><saml2:NameID>CN=irishman.l7tech.com</saml2:NameID><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-19T21:50:37.466Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T21:40:37.000Z\" NotOnOrAfter=\"2010-08-19T21:50:37.465Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement><saml2:AuthnStatement AuthnInstant=\"2010-08-19T21:45:37.463Z\"><saml2:SubjectLocality Address=\"10.7.48.153\"/><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion>";
+
+    private final static String v2_NoRecipientAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-67d7c95b5f9190914d7bbc9e37a18c72\" IssueInstant=\"2010-08-19T22:05:09.103Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData NotOnOrAfter=\"2010-08-19T22:10:09.473Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:00:09.000Z\" NotOnOrAfter=\"2010-08-19T22:10:09.459Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement><saml2:AuthnStatement AuthnInstant=\"2010-08-19T22:05:09.103Z\"><saml2:SubjectLocality Address=\"10.7.48.153\"/><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion>";
+
+    private final static String v2_NoNotOnorAfterAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-14350d15192ed351934eb883b203b490\" IssueInstant=\"2010-08-19T22:07:18.925Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:02:18.000Z\" NotOnOrAfter=\"2010-08-19T22:12:18.927Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement><saml2:AuthnStatement AuthnInstant=\"2010-08-19T22:07:18.925Z\"><saml2:SubjectLocality Address=\"10.7.48.153\"/><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion>";
+
+    private final static String v2_WithNotBeforeAssertion = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-e67d73b85c20e36d99fea3ca1a1167d8\" IssueInstant=\"2010-08-19T22:10:22.911Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotBefore=\"2010-08-19T22:08:22.000Z\" NotOnOrAfter=\"2010-08-19T22:15:22.919Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:05:22.000Z\" NotOnOrAfter=\"2010-08-19T22:15:22.916Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement><saml2:AuthnStatement AuthnInstant=\"2010-08-19T22:10:22.910Z\"><saml2:SubjectLocality Address=\"10.7.48.153\"/><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion>";
+
+    private final static String v2_NoAuthenticationStatement = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-f49ce894463964a4b2f062badc809d7c\" IssueInstant=\"2010-08-19T22:27:23.204Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotBefore=\"2010-08-19T22:25:23.000Z\" NotOnOrAfter=\"2010-08-19T22:32:23.462Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:22:23.000Z\" NotOnOrAfter=\"2010-08-19T22:32:23.450Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
+
+    private final static String v2_NoAudienceRestriction = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-9b4a23f512a4883a1fd3e2c6fbd7e693\" IssueInstant=\"2010-08-19T22:31:08.272Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>irishman.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotBefore=\"2010-08-19T22:29:08.000Z\" NotOnOrAfter=\"2010-08-19T22:36:08.277Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:26:08.000Z\" NotOnOrAfter=\"2010-08-19T22:36:08.276Z\"><saml2:AudienceRestriction><saml2:Audience/></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement></saml2:Assertion>";
+
+    private final static String v2_DifferentIssuer = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-cf0c5912e98790bcbe392759d8fc89e5\" IssueInstant=\"2010-08-19T22:39:44.876Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml2:Issuer>donaltest.l7tech.com</saml2:Issuer><saml2:Subject><saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID><saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\"><saml2:SubjectConfirmationData Recipient=\"https://cs2.salesforce.com\" NotOnOrAfter=\"2010-08-19T22:44:44.879Z\"/></saml2:SubjectConfirmation></saml2:Subject><saml2:Conditions NotBefore=\"2010-08-19T22:34:44.000Z\" NotOnOrAfter=\"2010-08-19T22:44:44.878Z\"><saml2:AudienceRestriction><saml2:Audience>https://saml.salesforce.com</saml2:Audience></saml2:AudienceRestriction></saml2:Conditions><saml2:AttributeStatement><saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\"><saml2:AttributeValue>http://irishman:8080/salesforce_saml2</saml2:AttributeValue></saml2:Attribute></saml2:AttributeStatement><saml2:AuthnStatement AuthnInstant=\"2010-08-19T22:39:44.876Z\"><saml2:SubjectLocality Address=\"10.7.48.153\"/><saml2:AuthnContext><saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef></saml2:AuthnContext></saml2:AuthnStatement></saml2:Assertion>";
+
+    private final static String v2_IssuerWrongFormat = "  <saml2:Assertion xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"SamlAssertion-9190940a89f8a5fa9837642a35d01f9a\" IssueInstant=\"2010-08-04T16:54:02.494Z\" Version=\"2.0\">\n" +
+            "    <saml2:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:persistent\">irishman.l7tech.com</saml2:Issuer>\n" +
+            "    <saml2:Subject>\n" +
+            "      <saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID>\n" +
+            "      <saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\">\n" +
+            "        <saml2:SubjectConfirmationData NotOnOrAfter=\"2010-07-30T22:53:06.375Z\" Recipient=\"https://cs2.salesforce.com\"/>\n" +
+            "      </saml2:SubjectConfirmation>\n" +
+            "    </saml2:Subject>\n" +
+            "    <saml2:Conditions NotBefore=\"2010-08-04T16:50:02.000Z\" NotOnOrAfter=\"2010-08-04T16:58:02.754Z\">\n" +
+            "      <saml2:AudienceRestriction>\n" +
+            "        <saml2:Audience>https://saml.salesforce.com</saml2:Audience>\n" +
+            "      </saml2:AudienceRestriction>\n" +
+            "    </saml2:Conditions>\n" +
+            "    <saml2:AttributeStatement>\n" +
+            "      <saml2:Attribute Name=\"ssostartpage\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified\">\n" +
+            "        <saml2:AttributeValue>http://irishman:8080/web_sso</saml2:AttributeValue>\n" +
+            "      </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>\n" +
+            "    <saml2:AuthnStatement AuthnInstant=\"2010-08-04T16:54:02.494Z\">\n" +
+            "      <saml2:SubjectLocality Address=\"10.7.48.153\"/>\n" +
+            "      <saml2:AuthnContext>\n" +
+            "        <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</saml2:AuthnContextClassRef>\n" +
+            "        <saml2:AuthnContextDecl xmlns:saccpwd=\"urn:oasis:names:tc:SAML:2.0:ac:classes:Password\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"saccpwd:AuthnContextDeclarationBaseType\">\n" +
+            "          <saccpwd:AuthnMethod>\n" +
+            "            <saccpwd:Authenticator>\n" +
+            "              <saccpwd:RestrictedPassword>\n" +
+            "                <saccpwd:Length min=\"3\"/>\n" +
+            "              </saccpwd:RestrictedPassword>\n" +
+            "            </saccpwd:Authenticator>\n" +
+            "          </saccpwd:AuthnMethod>\n" +
+            "        </saml2:AuthnContextDecl>\n" +
+            "      </saml2:AuthnContext>\n" +
+            "    </saml2:AuthnStatement>\n" +
+            "  </saml2:Assertion>";
+
+    private final static String v1_attributeOnlySenderVouches = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-02e04fe2cc5399162184dd5e164f9754\" Issuer=\"irishman.l7tech.com\" IssueInstant=\"2010-08-20T17:03:57.202Z\"><saml:Conditions NotBefore=\"2010-08-20T16:58:57.000Z\" NotOnOrAfter=\"2010-08-20T17:08:57.205Z\"><saml:AudienceRestrictionCondition><saml:Audience>https://saml.salesforce.com</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:sender-vouches</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName=\"testattribute\" AttributeNamespace=\"\"><saml:AttributeValue>testvalue</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>";
+
+    private final static String v1_attributeOnlyNoConditions = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-aff1bc9c20d57e1cfdd1b797b194b735\" Issuer=\"irishman.l7tech.com\" IssueInstant=\"2010-08-20T17:11:49.230Z\"><saml:Conditions NotBefore=\"2010-08-20T17:09:49.000Z\" NotOnOrAfter=\"2010-08-20T17:16:49.231Z\"><saml:AudienceRestrictionCondition><saml:Audience>https://saml.salesforce.com</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName=\"testattribute\" AttributeNamespace=\"\"><saml:AttributeValue>testvalue</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>";
+
+    private final static String v1_missingNotBeforeCondition = "  <saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" AssertionID=\"SamlAssertion-94b99f0213cdf988f1931cd55aa91232\" IssueInstant=\"2010-07-12T23:30:29.274Z\" Issuer=\"irishman.l7tech.com\" MajorVersion=\"1\" MinorVersion=\"1\">\n" +
+            "    <saml:Conditions NotOnOrAfter=\"2010-07-12T23:32:29.276Z\">\n" +
+            "      <saml:AudienceRestrictionCondition>\n" +
+            "        <saml:Audience>https://saml.salesforce.com</saml:Audience>\n" +
+            "      </saml:AudienceRestrictionCondition>\n" +
+            "    </saml:Conditions>\n" +
+            "    <saml:AttributeStatement>\n" +
+            "      <saml:Subject>\n" +
+            "        <saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"\">dummy</saml:NameIdentifier>\n" +
+            "        <saml:SubjectConfirmation>\n" +
+            "          <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod>\n" +
+            "        </saml:SubjectConfirmation>\n" +
+            "      </saml:Subject>\n" +
+            "      <saml:Attribute AttributeName=\"ssostartpage\" AttributeNamespace=\"\">\n" +
+            "        <saml:AttributeValue>http://irishman:8080/web_sso</saml:AttributeValue>\n" +
+            "      </saml:Attribute>\n" +
+            "    </saml:AttributeStatement>\n" +
+            "    <saml:AuthenticationStatement AuthenticationInstant=\"2010-07-12T23:30:29.274Z\" AuthenticationMethod=\"urn:oasis:names:tc:SAML:1.0:am:password\">\n" +
+            "      <saml:Subject>\n" +
+            "        <saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"\">dummy</saml:NameIdentifier>\n" +
+            "        <saml:SubjectConfirmation>\n" +
+            "          <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod>\n" +
+            "        </saml:SubjectConfirmation>\n" +
+            "      </saml:Subject>\n" +
+            "      <saml:SubjectLocality IPAddress=\"10.7.48.153\"/>\n" +
+            "    </saml:AuthenticationStatement>\n" +
+            "  </saml:Assertion>";
+
 }
