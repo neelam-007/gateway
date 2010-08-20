@@ -77,12 +77,35 @@ public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariabl
         data.setUsesDefaultKeyStore( usesDefaultKeyStore );
     }
 
-    private final static String baseName = "Customize SOAP Fault Response";
-
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<FaultLevel>(){
         @Override
         public String getAssertionName( final FaultLevel assertion, final boolean decorate) {
-            return baseName;
+            final String shortName = assertion.meta().get( SHORT_NAME );
+            if (!decorate) return shortName;
+
+            final StringBuilder nameBuilder = new StringBuilder(256);
+            nameBuilder.append( shortName );
+            if ( assertion.data != null ) {
+                nameBuilder.append( " as " );                
+                switch ( assertion.data.getLevel() ) {
+                    case SoapFaultLevel.DROP_CONNECTION:
+                        nameBuilder.append( "Drop Connection" );
+                        break;
+                    case SoapFaultLevel.GENERIC_FAULT:
+                        nameBuilder.append( "Generic SOAP Fault" );
+                        break;
+                    case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
+                        nameBuilder.append( "Medium Detail" );
+                        break;
+                    case SoapFaultLevel.FULL_TRACE_FAULT:
+                        nameBuilder.append( "Full Detail" );
+                        break;
+                    case SoapFaultLevel.TEMPLATE_FAULT:
+                        nameBuilder.append( "Template Fault" );
+                        break;
+                }
+            }
+            return AssertionUtils.decorateName(assertion, nameBuilder);
         }
     };
 
@@ -92,7 +115,7 @@ public class FaultLevel extends Assertion implements PrivateKeyable, UsesVariabl
 
         meta.put(PALETTE_FOLDERS, new String[]{"audit"});
 
-        meta.put(SHORT_NAME, baseName);
+        meta.put(SHORT_NAME, "Customize SOAP Fault Response");
         meta.put(DESCRIPTION, "Override the detail level of the returned SOAP fault in case of policy failure.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
