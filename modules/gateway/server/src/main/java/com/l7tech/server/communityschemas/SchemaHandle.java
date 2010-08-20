@@ -5,8 +5,8 @@ package com.l7tech.server.communityschemas;
 
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.server.util.Handle;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -24,14 +24,16 @@ public final class SchemaHandle extends Handle<CompiledSchema> {
         this.tns = cs.getTargetNamespace();
     }
 
-    /** Validate the entire message against this schema. */
-    public void validateMessage(Message msg, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
-        getCompiledSchema().validateMessage(msg, errorHandler);
-    }
-
-    /** Validate just these elements against this schema.  This will not be hardware accelerated. */
-    public void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
-        getCompiledSchema().validateElements(elementsToValidate, errorHandler);
+    /**
+     * Validate the message against this schema, following the options given with the validationTarget parameter.
+     *
+     * @param msg the message to be validated
+     * @param validationTarget specifies which parts of the message to validate, whether hardware validation should be attempted, etc.
+     *                         @see com.l7tech.message.ValidationTarget
+     * @param errorHandler collects schema validation errors
+     */
+    public void validateMessage(Message msg, ValidationTarget validationTarget, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
+        getCompiledSchema().validateMessage(msg, validationTarget, errorHandler);
     }
 
     /** Overridden in order to open up access to this to the current package. */

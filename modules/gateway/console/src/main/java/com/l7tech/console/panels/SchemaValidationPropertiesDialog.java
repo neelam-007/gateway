@@ -23,6 +23,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -318,10 +319,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private void modelToView() {
-        SchemaValidation.ValidationTarget target = schemaValidationAssertion.getValidationTarget();
-        rbApplyToArgs.setSelected(SchemaValidation.ValidationTarget.ARGUMENTS == target);
-        rbApplyToBody.setSelected(SchemaValidation.ValidationTarget.BODY == target);
-        rbApplyToEnvelope.setSelected(SchemaValidation.ValidationTarget.ENVELOPE == target);
+        ValidationTarget target = schemaValidationAssertion.getValidationTarget();
+        rbApplyToArgs.setSelected(ValidationTarget.ARGUMENTS == target);
+        rbApplyToBody.setSelected(ValidationTarget.BODY == target);
+        rbApplyToEnvelope.setSelected(ValidationTarget.ENVELOPE == target);
 
         AssertionResourceInfo ri = schemaValidationAssertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -936,11 +937,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         // save new schema
         if (rbApplyToArgs.isSelected())
-            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.ARGUMENTS);
+            schemaValidationAssertion.setValidationTarget(ValidationTarget.ARGUMENTS);
         else if (rbApplyToBody.isSelected())
-            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.BODY);
+            schemaValidationAssertion.setValidationTarget(ValidationTarget.BODY);
         else if (rbApplyToEnvelope.isSelected())
-            schemaValidationAssertion.setValidationTarget(SchemaValidation.ValidationTarget.ENVELOPE);
+            schemaValidationAssertion.setValidationTarget(ValidationTarget.ENVELOPE);
 
         // exit
         changesCommitted = true;

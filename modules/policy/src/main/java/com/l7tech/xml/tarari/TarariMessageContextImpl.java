@@ -10,9 +10,6 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.SoftwareFallbackException;
 import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.TarariElementCursor;
-import com.l7tech.xml.tarari.GlobalTarariContextImpl;
-import com.l7tech.xml.tarari.TarariUtil;
 import com.tarari.xml.XmlException;
 import com.tarari.xml.rax.cursor.RaxCursor;
 import com.tarari.xml.rax.cursor.RaxCursorFactory;
@@ -48,6 +45,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         this.raxDocument = doc;
     }
 
+    @Override
     public void close() {
         if (raxDocument != null && !raxDocument.isReleased()) {
             raxDocument.release();
@@ -68,6 +66,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         return compilerGeneration;
     }
 
+    @Override
     public ElementCursor getElementCursor() {
         if (raxCursor == null) {
             raxCursor = raxCursorFactory.createCursor("", getRaxDocument());
@@ -76,6 +75,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
     }
 
     // TODO is there some better place to stow the soapaction value?
+    @Override
     public SoapInfo getSoapInfo(String soapAction) throws SoftwareFallbackException {
         List<QName> payloadNames = new ArrayList<QName>();
         boolean hasSecurityHeaders = false;
@@ -124,7 +124,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                     }
                 }
             }
-            return new SoapInfo(true, soapAction, payloadNames.toArray(EMPTY_QNAMES), hasSecurityHeaders);
+            return new SoapInfo(true, soapAction, payloadNames.toArray(new QName[payloadNames.size()]), hasSecurityHeaders);
         } else {
             return new SoapInfo(false, soapAction, EMPTY_QNAMES, false);
         }

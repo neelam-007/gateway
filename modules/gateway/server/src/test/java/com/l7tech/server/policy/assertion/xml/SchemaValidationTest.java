@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -156,7 +157,7 @@ public class SchemaValidationTest {
         Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
         Message request = new Message(requestDoc);
 
-        handle.validateMessage(request, new SchemaValidationErrorHandler());
+        handle.validateMessage(request, ValidationTarget.BODY, new SchemaValidationErrorHandler());
     }
 
     @Test

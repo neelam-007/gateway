@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
@@ -23,14 +22,8 @@ import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -216,65 +209,10 @@ public class ServerSchemaValidation
             SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
             SAXException validationException = null;
 
-            Document doc = xmlKnob.getDocumentReadOnly();
-            if ( ! SoapUtil.isSoapMessage(doc)) {
-                try {
-                    // Validate entire message
-                    ps.validateMessage(message, reporter);
-                } catch (SAXException e) {
-                    validationException = e;
-                }
-            } else {
-                SchemaValidation.ValidationTarget target = assertion.getValidationTarget();
-                switch (target) {
-                    case BODY:
-                        try {
-                            // Validate entire message
-                            ps.validateMessage(message, reporter);
-                        } catch (SAXException e) {
-                            validationException = e;
-                        }
-                        break;
-
-                    case ENVELOPE:
-                        try {
-                            logger.finest("validating the whole message, including envelope");
-                            ps.validateElements(new Element[]{xmlKnob.getDocumentReadOnly().getDocumentElement()}, reporter);
-                        } catch (SAXException e) {
-                            validationException = e;
-                        }
-                        break;
-
-                    case ARGUMENTS:
-                        final Element[] elementsToValidate;
-                        try {
-                            if ( SoapUtil.isSoapMessage(doc)) {
-                                logger.finest("validating against the body 'arguments'");
-                                elementsToValidate = getBodyArguments(doc);
-                            } else {
-                                elementsToValidate = new Element[]{doc.getDocumentElement()};
-                            }
-                        } catch ( InvalidDocumentFormatException e) {
-                            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate does not respect the expected format");
-                            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
-                        }
-                        if (elementsToValidate == null || elementsToValidate.length < 1) {
-                            logger.fine("There is nothing to validate. This is legal because setting is set " +
-                                    "to validate arguments only and certain rpc operations do not have any " +
-                                    "argument elements.");
-                            return AssertionStatus.NONE;
-                        }
-
-                        try {
-                            ps.validateElements(elementsToValidate, reporter);
-                        } catch (SAXException e) {
-                            validationException = e;
-                        }
-                        break;
-
-                    default:
-                        throw new IllegalArgumentException("Unexpected schema validation target: " + target );
-                }
+            try {
+                ps.validateMessage(message, assertion.getValidationTarget(), reporter);
+            } catch (SAXException se) {
+                validationException = se;
             }
 
             if (validationException != null) {
@@ -334,34 +272,6 @@ public class ServerSchemaValidation
         logger.log(Level.INFO, "validation failed: " + msg);
         auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {msg}, t);
         context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, msg);
-    }
-
-    /**
-     * Goes one level deeper than getRequestBodyChild
-     */
-    private static Element[] getBodyArguments(Document soapMessage) throws InvalidDocumentFormatException {
-        // first, get the body
-        final Element bodyElement = SoapUtil.getBodyElement(soapMessage);
-        // then, get the body's first child element
-        final Element bodyFirstElement = bodyElement == null ? null : XmlUtil.findFirstChildElement( bodyElement );
-        if (bodyFirstElement == null) {
-            throw new InvalidDocumentFormatException("The soap body does not have a child element as expected");
-        }
-        // construct a return output for each element under the body first child
-        NodeList maybeArguments = bodyFirstElement.getChildNodes();
-        ArrayList<Element> argumentList = new ArrayList<Element>();
-        for (int i = 0; i < maybeArguments.getLength(); i++) {
-            Node child = maybeArguments.item(i);
-            if (child instanceof Element) {
-                argumentList.add((Element) child);
-            }
-        }
-        Element[] output = new Element[argumentList.size()];
-        int cnt = 0;
-        for (Iterator i = argumentList.iterator(); i.hasNext(); cnt++) {
-            output[cnt] = (Element) i.next();
-        }
-        return output;
     }
 
     private boolean closed = false;

@@ -3,6 +3,7 @@
  */
 package com.l7tech.policy.assertion.xml;
 
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -34,10 +35,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 @HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
 public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables, SetsVariables {
     public static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
-
-    public enum ValidationTarget {
-        ENVELOPE, BODY, ARGUMENTS
-    }
 
     public SchemaValidation() {
         super(false);

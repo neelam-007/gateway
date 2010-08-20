@@ -7,6 +7,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
 import com.l7tech.message.TarariKnob;
+import com.l7tech.message.ValidationTarget;
 import com.l7tech.server.util.AbstractReferenceCounted;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Charsets;
@@ -16,14 +17,10 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -209,7 +206,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
      * @throws IOException          if the message cannot be read
      * @throws SAXException         if the message is found to be invalid
      */
-    void validateMessage(Message msg, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
+    void validateMessage(Message msg, ValidationTarget validationTarget, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
         if (isClosed()) throw new IllegalStateException("CompiledSchema has already been closed");
         TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
         boolean isSoap = msg.isSoap();
@@ -217,7 +214,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         TarariMessageContext tmc = tk == null ? null : tk.getContext();
         boolean tryHardware = true;
 
-        if (schemaHandler == null || tk == null || tmc == null)
+        if (! validationTarget.isAttemptHardware() || schemaHandler == null || tk == null || tmc == null)
             tryHardware = false;
 
         setLastUsedTime();
@@ -229,7 +226,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
                 // Do it in Tarari
                 try {
-                    validateMessageWithTarari(schemaHandler, tk, isSoap, tmc);
+                    validateMessageWithTarari(schemaHandler, tk, isSoap, tmc, validationTarget);
 
                     // Success
                     return;
@@ -261,7 +258,9 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         // Try to run the validation in software
         readLock.lock();
         try {
-            validateMessageDom(msg, isSoap, errorHandler);
+            doValidateElements(validationTarget.elementsToValidate(msg.getXmlKnob().getDocumentReadOnly()), errorHandler);
+        } catch (InvalidDocumentFormatException e) {
+            throw new SAXException("Error getting elements to validate for " + validationTarget, e);
         } finally {
             readLock.unlock();
         }
@@ -275,16 +274,17 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private void validateMessageWithTarari(TarariSchemaHandler schemaHandler,
                                            TarariKnob tk,
                                            boolean soap,
-                                           TarariMessageContext tmc)
+                                           TarariMessageContext tmc,
+                                           ValidationTarget validationTarget)
             throws SAXException, IOException, NoSuchPartException
     {
         boolean result = schemaHandler.validate(tk.getContext());
         if (!result) throw new SAXException("Validation failed: message was not valid");
 
         // Hardware schema val succeeded.
-        if (soap) {
+        if (soap && ValidationTarget.BODY == validationTarget) {
             checkPayloadElements(tk);
-        } else {
+        } else if (!soap || ValidationTarget.ENVELOPE == validationTarget) {
             checkRootNamespace(tmc);
         }
 
@@ -313,39 +313,6 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
             ret.add(schema);
         }
         return ret;
-    }
-
-    /**
-     * Caller must hold the read lock.
-     */
-    private void validateMessageDom(Message msg, boolean soap, SchemaValidationErrorHandler errorHandler) throws SAXException, IOException {
-        final Document doc = msg.getXmlKnob().getDocumentReadOnly();
-        Element[] elements;
-        if (soap) {
-            Element bodyElement;
-            try {
-                bodyElement = SoapUtil.getBodyElement(doc);
-            } catch ( InvalidDocumentFormatException e) {
-                throw new SAXException("No SOAP Body found", e); // Highly unlikely
-            }
-            NodeList bodyChildren = bodyElement.getChildNodes();
-            ArrayList<Element> children = new ArrayList<Element>();
-            for (int i = 0; i < bodyChildren.getLength(); i++) {
-                Node child = bodyChildren.item(i);
-                if (child instanceof Element) {
-                    children.add((Element) child);
-                }
-            }
-            elements = new Element[children.size()];
-            int cnt = 0;
-            for (Iterator i = children.iterator(); i.hasNext(); cnt++) {
-                elements[cnt] = (Element) i.next();
-            }
-        } else {
-            elements = new Element[]{doc.getDocumentElement()};
-        }
-
-        doValidateElements(elements, errorHandler);
     }
 
     /**
@@ -438,29 +405,14 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         }
     }
 
-
     /**
      * Validate the specified elements.
+     * Caller must hold the read lock.
      *
-     * @param elementsToValidate  elements to validate.   Must not be null or empty.
      * @param errorHandler  error handler for accumulating errors.  Must not be null.
      * @throws IOException   if an input element could not be read.
      * @throws SAXException  if at least one element was found to be invalid.  Contains the very first validation error;
      *                       the error handler will have been told about this and any subsequent errors.
-     */
-    void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
-        setLastUsedTime();
-        final Lock readLock = manager.getReadLock();
-        readLock.lock();
-        try {
-            doValidateElements(elementsToValidate, errorHandler);
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    /**
-     * Caller must hold the read lock.
      */
     private void doValidateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         if (isClosed()) throw new IllegalStateException();
