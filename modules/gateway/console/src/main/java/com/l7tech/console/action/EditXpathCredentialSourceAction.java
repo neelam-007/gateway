@@ -38,7 +38,6 @@ public class EditXpathCredentialSourceAction extends NodeActionWithMetaSupport {
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getTopParent();
         final XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true, !node.canEdit());
-        dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
