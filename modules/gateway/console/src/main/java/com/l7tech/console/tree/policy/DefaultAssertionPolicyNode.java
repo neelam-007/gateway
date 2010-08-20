@@ -104,7 +104,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             }
             String text = stringToDisplay;
             if (decorateComment) {
-                text = text.replaceAll("<", "&lt;");
+                text = TextUtils.escapeHtmlSpecialCharacters(text);
                 builder.append("<font color=\"gray\">").append(text).append("</font>&nbsp;");
             } else {
                 builder.append(text).append(" ");
@@ -122,7 +122,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             }
             String text = stringToDisplay;
             if (decorateComment) {
-                text = text.replaceAll("<", "&lt;");
+                text = TextUtils.escapeHtmlSpecialCharacters(text);
                 builder.append("&nbsp;<font color=\"gray\">").append(text).append("</font>");
             } else {
                 builder.append(text);

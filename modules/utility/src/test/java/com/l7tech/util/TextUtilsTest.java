@@ -233,4 +233,21 @@ public class TextUtilsTest extends TestCase {
         assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
     }
 
+    public void testEnforceToBreakOnMultipleLines() {
+        final int MAX_LEN = 5;
+        final String testInput = "0123456789abcdef";
+        final String expectedOutput = "01234<br>56789<br>abcde<br>f<br>";
+        final String actualOutput = TextUtils.enforceToBreakOnMultipleLines(testInput, MAX_LEN, "<br>", true);
+
+        assertNotSame(expectedOutput, testInput);
+        assertEquals("Correctly enforce to break a string on multiple lines", expectedOutput, actualOutput);
+    }
+
+    public void testEscapeHtmlSpecialCharacters() {
+        final String testInput = "abc&#1234;abc<br>abc/abc\"abc\'abc";
+        final String expectedOutput = "abc&amp;#1234;abc&lt;br&gt;abc&frasl;abc&quot;abc&#39;abc";
+        final String actualOutput = TextUtils.escapeHtmlSpecialCharacters(testInput);
+
+        assertEquals("Correctly escape HTML special characters", expectedOutput, actualOutput);
+    }
 }

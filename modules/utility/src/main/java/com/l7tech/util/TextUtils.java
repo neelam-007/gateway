@@ -86,8 +86,8 @@ public class TextUtils {
      * @return true if and only if the provided string was matched by at least one pattern.
      */
     public static boolean matchesAny(String string, Pattern[] patterns) {
-        for (int i = 0; i < patterns.length; i++)
-            if (patterns[i].matcher(string).matches())
+        for (Pattern pattern : patterns)
+            if (pattern.matcher(string).matches())
                 return true;
         return false;
     }
@@ -149,16 +149,21 @@ public class TextUtils {
      *
      * @param input String to break up into multiple lines
      * @param maxLineLength int max line length.
-     * @param breakCharacters String to insert when ever a line should be broken
+     * @param breakCharacters String to insert when ever a line should be broken.
+     * @param escapeHtml: a flag to indicate whether to replace html special characters (such as <, >, /, &, ", ', etc) with html codes.
+     *               Note: we do not apply escaping html on breakCharacters, because it might contain some html special characters.  For example, breakCharacters are "<br>", a break line.
      * @return a well-formatted string with multiple lines.
      */
-    public static String enforceToBreakOnMultipleLines(String input, int maxLineLength, String breakCharacters) {
+    public static String enforceToBreakOnMultipleLines(String input, int maxLineLength, String breakCharacters, boolean escapeHtml) {
         StringBuilder strBuilder = new StringBuilder();
         BufferedReader reader = new BufferedReader(new StringReader(input));
 
         try {
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
                 if (line.length() <= maxLineLength) {
+                    if (escapeHtml) line = escapeHtmlSpecialCharacters(line);
+                    // Note: we do not apply escaping html on breakCharacters, because it might contain some html special characters.
+                    // For example, breakCharacters are "<br>", a break line.  This rule will be applied below as well.
                     strBuilder.append(line).append(breakCharacters);
                 } else {
                     StringTokenizer tokens = new StringTokenizer(line, " ");
@@ -168,19 +173,28 @@ public class TextUtils {
                     while (tokens.hasMoreTokens()) {
                         token = tokens.nextToken();
 
-                        if (buff.length() + token.length() <= maxLineLength) {
+                        if (buff.length() + token.length() <= maxLineLength) { // Continue to accept more tokens if possible
                             buff.append(token).append(" ");
-                        } else if (token.length() <= maxLineLength) {
-                            strBuilder.append(buff.toString()).append(breakCharacters);
-                            buff.setLength(0);
-                            buff.append(token).append(" ");
-                        } else {
-                            strBuilder.append(buff.toString()).append(token.subSequence(0, maxLineLength - buff.length())).append(breakCharacters);
+                        } else if (token.length() <= maxLineLength) { // Flush buff and the current token will be in next line.
+                            String outputLine = buff.toString();  // The current buff will be output.
+                            buff.setLength(0); // Clean buff
+                            buff.append(token).append(" "); // Add the current token into buff
+
+                            if (escapeHtml) outputLine = escapeHtmlSpecialCharacters(outputLine);
+                            strBuilder.append(outputLine).append(breakCharacters);
+                        } else { // If the toke is too long (i.e., greater than maxLineLength), then we enforce to break the current token and put the first trunk of the token into the buff.
+                            String outputLine = buff.toString() + token.subSequence(0, maxLineLength - buff.length());
                             token = token.substring(maxLineLength - buff.length());
 
+                            if (escapeHtml) outputLine = escapeHtmlSpecialCharacters(outputLine);
+                            strBuilder.append(outputLine).append(breakCharacters);
+
                             while (token.length() > maxLineLength) {
-                                strBuilder.append(token.substring(0, maxLineLength)).append(breakCharacters);
+                                outputLine = token.substring(0, maxLineLength);
                                 token = token.substring(maxLineLength);
+
+                                if (escapeHtml) outputLine = escapeHtmlSpecialCharacters(outputLine);
+                                strBuilder.append(outputLine).append(breakCharacters);
                             }
 
                             buff.setLength(0);
@@ -189,7 +203,10 @@ public class TextUtils {
                     }
 
                     if (buff.length() > 0) {
-                        strBuilder.append(buff.toString()).append(breakCharacters);
+                        String outputLine = buff.toString().trim();
+                        if (escapeHtml) outputLine = escapeHtmlSpecialCharacters(outputLine);
+
+                        strBuilder.append(outputLine).append(breakCharacters);
                     }
                 }
             }
@@ -199,6 +216,26 @@ public class TextUtils {
 
         return strBuilder.toString();
     }
+
+    /**
+     * Escape some special HTML characters in a given text.  So far, these characters are &, <, >, /, ", and '.
+     * @param text: a string to be processed.
+     * @return a string escaping HTML.
+     */
+    public static String escapeHtmlSpecialCharacters(String text) {
+        if (text == null) throw new IllegalArgumentException("The text for escaping HTML must not be null.");
+
+        // Note: replacing '&' must happen first before other chars replacement.
+        // Otherwise, some '&'s with special meaning (such as in "&lt;") will be incorrectly replaced.
+        text = text.replaceAll("&", "&amp;");
+        text = text.replaceAll("<", "&lt;");
+        text = text.replaceAll(">", "&gt;");
+        text = text.replaceAll("/", "&frasl;");
+        text = text.replaceAll("\"", "&quot;");
+        text = text.replaceAll("\'", "&#39;");
+
+        return text;
+    }   
 
     /**
      * Check if the given pattern matches the given text.
@@ -216,7 +253,7 @@ public class TextUtils {
         if (pattern==null) throw new IllegalArgumentException("pattern must not be null");
         if (text==null) throw new IllegalArgumentException("text must not be null");
 
-        boolean match = false;
+        boolean match;
 
         if ( !caseSensitive ) {
             pattern = pattern.toLowerCase();

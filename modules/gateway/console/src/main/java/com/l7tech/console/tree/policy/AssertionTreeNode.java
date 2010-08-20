@@ -270,18 +270,14 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 final boolean hasLeft = leftComment != null && !leftComment.trim().isEmpty();
 
                 if (hasLeft) {
-                    leftComment = leftComment.replaceAll("<", "&lt;");
-                    leftComment = leftComment.replaceAll("/", "&#47;");
-                    builder.append(TextUtils.enforceToBreakOnMultipleLines(leftComment, 100, "<br>"));
+                    builder.append(TextUtils.enforceToBreakOnMultipleLines(leftComment, 100, "<br>", true)); // "true" means to escape HTML special characters.
                 }
 
                 String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
                 if (rightComment != null && !rightComment.trim().isEmpty()) {
                     if (hasLeft) builder.append("<br>");
 
-                    rightComment = rightComment.replaceAll("<", "&lt;");
-                    rightComment = rightComment.replaceAll("/", "&#47;");
-                    builder.append(TextUtils.enforceToBreakOnMultipleLines(rightComment, 100, "<br>"));
+                    builder.append(TextUtils.enforceToBreakOnMultipleLines(rightComment, 100, "<br>", true)); // "true" means to escape HTML special characters.
                 }
 
                 sb.append(builder.toString());
