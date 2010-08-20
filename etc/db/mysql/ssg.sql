@@ -827,6 +827,9 @@ insert into keystore_file values (3, 0, "SafeNet HSM", "luna", null, null);
 -- serialized NcipherKeyStoreData for an nCipher keystore
 insert into keystore_file values (4, 0, "nCipher HSM", "hsm.NcipherKeyStoreData", null, null);
 
+-- Reserve OID 5 for "Generic" keystores
+-- insert into keystore_file values (5, 0, "Generic", "generic", null, null);
+
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
   encodingid varchar(32) NOT NULL,
