@@ -305,16 +305,13 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                     return;
                 }
 
-                if (size > Integer.MAX_VALUE) {
-                    logAndAudit(getOriginalClientAddr(request), user, "Backup failed",
-                            ServiceMessages.BACKUP_TOO_BIG, null, nodeName, Long.toString(size));
-                    respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
-                    return;
-                }
-
                 final String saveAsFilename = nodeName + ".zip";
                 response.setContentType("application/zip");
-                response.setContentLength((int)size);
+                if ( size <= Integer.MAX_VALUE ) {
+                    response.setContentLength( (int)size );
+                } else {
+                   response.addHeader( HttpConstants.HEADER_CONTENT_LENGTH, Long.toString(size) );
+                }
                 response.setHeader("Content-Disposition", "attachment; filename=\"" + saveAsFilename + "\"; size=" + size);
                 response.setHeader("Accept-Ranges", "none");
 
