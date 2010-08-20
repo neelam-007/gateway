@@ -86,6 +86,7 @@ class Saml2SubjectAndConditionValidate {
             }
         }
 
+        final Collection<SamlAssertionValidate.Error> subjectConfirmationValidationFailures = new ArrayList<SamlAssertionValidate.Error>();
         final SubjectConfirmationType[] subjectConfirmations = subject.getSubjectConfirmationArray();
         List<String> presentedConfirmations = new ArrayList<String>();
         boolean anyInvalid = false;
@@ -97,8 +98,10 @@ class Saml2SubjectAndConditionValidate {
                     if ( requestWssSaml.isSubjectConfirmationDataCheckValidity() ) {
                         Calendar notBefore = confirmationData.getNotBefore();
                         if (notBefore != null && now.before(adjustNotBefore(notBefore))) {
-                            if (logger.isLoggable(Level.FINE))
-                                logger.fine("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
+                            subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
+                                    "Condition 'Not Before' check failed, now :{0} Not Before:{1}",
+                                    now.toString(),
+                                    notBefore.toString() );
                             statementValid = false;
                         }
 
@@ -106,8 +109,10 @@ class Saml2SubjectAndConditionValidate {
                         if (notOnOrAfter != null) {
                             Calendar adjustedNotOnOrAfter = adjustNotAfter(notOnOrAfter);
                             if ( (now.equals(adjustedNotOnOrAfter) || now.after(adjustedNotOnOrAfter)) ) {
-                                if (logger.isLoggable(Level.FINE))
-                                    logger.fine(String.format("Condition 'Not On Or After' check failed, now: %s Not Before: %s", now.toString(), notOnOrAfter.toString()));
+                                subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
+                                        "Condition 'Not On Or After' check failed, now: {0} Not On Or After: {1}",
+                                        now.toString(),
+                                        notOnOrAfter.toString() );
                                 statementValid = false;
                             }
                         }
@@ -121,7 +126,9 @@ class Saml2SubjectAndConditionValidate {
 
                     if ( requestWssSaml.isSubjectConfirmationDataCheckAddress() && confirmationData.getAddress() != null ) {
                         if ( clientAddresses==null || !clientAddresses.contains( confirmationData.getAddress() ) ) {
-                            logger.finer("Statement condition is invalid, 'Address' " + confirmationData.getAddress() + " does not match client address." );
+                            subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
+                                    "Statement condition is invalid, 'Address' {0} does not match client address.",
+                                    confirmationData.getAddress() );
                             statementValid = false;
                         }
                     }
@@ -129,7 +136,10 @@ class Saml2SubjectAndConditionValidate {
                     if ( recipient != null &&
                          confirmationData.getRecipient() !=null &&
                          !recipient.equals(confirmationData.getRecipient()) ) {
-                        logger.finer("Statement condition is invalid, 'Recipient' " + confirmationData.getRecipient() + " does not match required value '"+recipient+"'." );
+                        subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
+                                "Statement condition is invalid, 'Recipient' {0} does not match required value {1}.", 
+                                confirmationData.getRecipient(),
+                                recipient );
                         statementValid = false;
                     }
                 }
@@ -158,6 +168,10 @@ class Saml2SubjectAndConditionValidate {
         }
 
         if (!confirmationMatch) {
+            // Add the subject confirmation data failures from before that could have
+            // caused the error. See bug 9085.
+            validationResults.addAll( subjectConfirmationValidationFailures );
+
             List<String> acceptedConfirmations = new ArrayList<String>(Arrays.asList(confirmations));
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
@@ -166,6 +180,18 @@ class Saml2SubjectAndConditionValidate {
             validationResults.add(error);
             logger.finer(error.toString());
         }
+    }
+
+    private static void subjectConfirmationDataValidationError( final Collection<SamlAssertionValidate.Error> subjectConfirmationValidationFailures,
+                                                                final String message,
+                                                                final Object... messageParameters ) {
+        final SamlAssertionValidate.Error error = new SamlAssertionValidate.Error( message, null, messageParameters );
+
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine( error.toString() );
+        }
+
+        subjectConfirmationValidationFailures.add( error );
     }
 
     /**
