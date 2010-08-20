@@ -104,19 +104,19 @@ public class KeystoreFileManagerImpl
                 KeystoreFile hsmKeystoreFile = null;
                 Collection<KeystoreFile> keystoreFiles = findAll();
                 for ( KeystoreFile file : keystoreFiles ) {
-                    if ( file.getFormat()!=null && file.getFormat().startsWith("hsm.") ) {
+                    if ( file.getFormat()!=null && file.getFormat().startsWith("hsm.sca.") ) {
                         if ( hsmKeystoreFile != null ) {
-                            throw new UpdateException("Database contains multiple entries for HSM keystore.");
+                            throw new UpdateException("Database contains multiple entries for SCA HSM keystore.");
                         }
                         hsmKeystoreFile = file;
                     }
                 }
 
-                if (hsmKeystoreFile == null) throw new UpdateException("Could not find an HSM keystore row in the database");
+                if (hsmKeystoreFile == null) throw new UpdateException("Could not find an SCA HSM keystore row in the database");
                 updatePassword(hsmKeystoreFile.getOidAsLong(), hsmPasswordDecrypted.toCharArray());
                 if (hsmInitFile.exists()) {
                     if (!hsmInitFile.delete()) {
-                        logger.warning("Delete failed for HSM init file '"+hsmInitFile.getAbsolutePath()+"'.");
+                        logger.warning("Delete failed for SCA HSM init file '"+hsmInitFile.getAbsolutePath()+"'.");
                     }
                 }
             }

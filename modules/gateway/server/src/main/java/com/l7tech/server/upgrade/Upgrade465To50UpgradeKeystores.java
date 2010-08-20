@@ -251,7 +251,7 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
             KeystoreFile hsmKeystoreFile = null;
             Collection<KeystoreFile> keystoreFiles = keystoreFileManager.findAll();
             for ( KeystoreFile file : keystoreFiles ) {
-                if ( file.getFormat()!=null && file.getFormat().startsWith("hsm.") ) {
+                if ( file.getFormat()!=null && file.getFormat().startsWith("hsm.sca.") ) {
                     if ( hsmKeystoreFile != null ) {
                         throw new FatalUpgradeException("Database contains multiple entries for HSM keystore.");
                     }
