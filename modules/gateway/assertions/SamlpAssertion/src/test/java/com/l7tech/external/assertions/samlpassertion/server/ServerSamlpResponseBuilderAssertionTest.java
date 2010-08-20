@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -408,6 +409,53 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         //Validate the signature reference matches the ID attribute of the Response
         Assert.assertEquals("Signature does not reference the Response ID attribute", "#" + responseId, sig.getSignedInfo().getReference().get(0).getURI());
+    }
+
+    /**
+     * Tests support for Element variables and index multi valued variables.
+     * Tests that Issuer is added and the response is signed. Validates that the signature references the ID attribute
+     * on the Response element.
+     *
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9077)
+    public void testSAML2_0_IndexVariableSupport() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setAddIssuer(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        assertion.setOtherTargetMessageVariable("outputVar");
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setResponseAssertions("${samlToken[1]} ${attributeToken}");
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
+        final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+        List list = new ArrayList();
+        list.add(null);
+        list.add(element);
+        context.setVariable("samlToken", list);
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion)));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable("outputVar");
+        final ElementCursor cursor = new DomElementCursor(output.getXmlKnob().getDocumentReadOnly());
+        final HashMap<String, String> map = getNamespaces();
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/samlp2:Response/saml2:Assertion", map).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        failIfXmlNotEqual(samlToken_2_0, xpathResultSetIterator.nextElementAsCursor().asDomElement(), "Incorrect Assertion found");
+        failIfXmlNotEqual(v2_AttributeAssertion, xpathResultSetIterator.nextElementAsCursor().asDomElement(), "Incorrect Assertion found");
     }
 
     /**
@@ -1222,13 +1270,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
-     * Basic test for element support. Validates that the response is signed. Validates that the signature references
-     * the ResponseId attribute of the Response element.
+     * Validates that Element type variables are supported and that index multi valued variables are also supported
      *
      * @throws Exception
      */
+    @BugNumber(9077)
     @Test
-    public void testSAML1_1_ElementSupport() throws Exception{
+    public void testSAML1_1_ElementAndIndexVariableSupport() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
@@ -1242,15 +1290,19 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
 
-        assertion.setResponseAssertions("${samlToken}");
+        assertion.setResponseAssertions("${samlToken[0]} ${attributeToken}");
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final Message msg = new Message(XmlUtil.parse(samlToken_1_1));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
-        context.setVariable("samlToken", element);
+        List list = new ArrayList();
+        list.add(element);
+        context.setVariable("samlToken", list);
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
 
-        serverAssertion.checkRequest(context);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
         final Message output = (Message) context.getVariable("outputVar");
         final JAXBElement<saml.v1.protocol.ResponseType> typeJAXBElement = v1Unmarshaller.unmarshal(output.getXmlKnob().getDocumentReadOnly(), saml.v1.protocol.ResponseType.class);
@@ -1259,6 +1311,15 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final saml.v1.assertion.AssertionType assertionType = responseType.getAssertion().get(0);
         Assert.assertNotNull(assertionType);
+
+        final ElementCursor cursor = new DomElementCursor(output.getXmlKnob().getDocumentReadOnly());
+        final HashMap<String, String> map = getNamespaces();
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/samlp:Response/saml:Assertion", map).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        failIfXmlNotEqual(samlToken_1_1, xpathResultSetIterator.nextElementAsCursor().asDomElement(), "Incorrect Assertion found");
+        failIfXmlNotEqual(v1_1AttributeAssertion, xpathResultSetIterator.nextElementAsCursor().asDomElement(), "Incorrect Assertion found");
 
         final SignatureType sig = responseType.getSignature();
         Assert.assertNotNull("No signature found", sig);
@@ -1461,7 +1522,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
             "    </saml:AuthenticationStatement>\n" +
             "  </saml:Assertion>";
 
-    private final static String samlToken_2_0 = "  <saml2:Assertion xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"SamlAssertion-9190940a89f8a5fa9837642a35d01f9a\" IssueInstant=\"2010-08-04T16:54:02.494Z\" Version=\"2.0\">\n" +
+    private final static String samlToken_2_0 = "<saml2:Assertion xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"SamlAssertion-9190940a89f8a5fa9837642a35d01f9a\" IssueInstant=\"2010-08-04T16:54:02.494Z\" Version=\"2.0\">\n" +
             "    <saml2:Issuer>irishman.l7tech.com</saml2:Issuer>\n" +
             "    <saml2:Subject>\n" +
             "      <saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml2:NameID>\n" +
@@ -1557,7 +1618,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
     private final static String v1_attributeOnlyNoConditions = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-aff1bc9c20d57e1cfdd1b797b194b735\" Issuer=\"irishman.l7tech.com\" IssueInstant=\"2010-08-20T17:11:49.230Z\"><saml:Conditions NotBefore=\"2010-08-20T17:09:49.000Z\" NotOnOrAfter=\"2010-08-20T17:16:49.231Z\"><saml:AudienceRestrictionCondition><saml:Audience>https://saml.salesforce.com</saml:Audience></saml:AudienceRestrictionCondition></saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"\">jspies@layer7tech.com.sso</saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:Attribute AttributeName=\"testattribute\" AttributeNamespace=\"\"><saml:AttributeValue>testvalue</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>";
 
-    private final static String v1_missingNotBeforeCondition = "  <saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" AssertionID=\"SamlAssertion-94b99f0213cdf988f1931cd55aa91232\" IssueInstant=\"2010-07-12T23:30:29.274Z\" Issuer=\"irishman.l7tech.com\" MajorVersion=\"1\" MinorVersion=\"1\">\n" +
+    private final static String v1_missingNotBeforeCondition = "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" AssertionID=\"SamlAssertion-94b99f0213cdf988f1931cd55aa91232\" IssueInstant=\"2010-07-12T23:30:29.274Z\" Issuer=\"irishman.l7tech.com\" MajorVersion=\"1\" MinorVersion=\"1\">\n" +
             "    <saml:Conditions NotOnOrAfter=\"2010-07-12T23:32:29.276Z\">\n" +
             "      <saml:AudienceRestrictionCondition>\n" +
             "        <saml:Audience>https://saml.salesforce.com</saml:Audience>\n" +

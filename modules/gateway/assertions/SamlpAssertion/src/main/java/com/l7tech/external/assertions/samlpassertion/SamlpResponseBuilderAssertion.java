@@ -202,7 +202,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
                 builder.append(getRecipient());
         }
 
-        final String[] refVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(builder.toString());
+        final String[] refVars = Syntax.getReferencedNames(builder.toString());
         vars.addAll(Arrays.asList(refVars));
         
         return vars.toArray(new String[vars.size()]);
