@@ -127,9 +127,9 @@
         <L7p:WssEncryptElement>
             <L7p:Enabled booleanValue="false"/>
         </L7p:WssEncryptElement>
-        <wsp:MessagePredicate
-            Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
-            L7p:Enabled="false" wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
+        <L7p:RequestXpathAssertion>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:RequestXpathAssertion>
         <L7p:ResponseXpathAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ResponseXpathAssertion>

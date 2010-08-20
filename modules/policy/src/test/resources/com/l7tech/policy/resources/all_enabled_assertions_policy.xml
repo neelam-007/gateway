@@ -89,9 +89,7 @@
         <L7p:RequireWssEncryptedElement/>
         <L7p:WssSignElement/>
         <L7p:WssEncryptElement/>
-        <wsp:MessagePredicate
-            Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
-            wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
+        <L7p:RequestXpathAssertion/>
         <L7p:ResponseXpathAssertion/>
         <L7p:WssReplayProtection/>
         <L7p:RequestSwAAssertion/>

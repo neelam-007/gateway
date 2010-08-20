@@ -92,9 +92,7 @@
                 <L7p:RequireWssEncryptedElement/>
                 <L7p:WssSignElement/>
                 <L7p:WssEncryptElement/>
-                <wsp:MessagePredicate
-                    Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
-                    wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
+                <L7p:RequestXpathAssertion/>
                 <L7p:ResponseXpathAssertion/>
                 <L7p:WssReplayProtection/>
                 <L7p:RequestSwAAssertion/>
@@ -209,10 +207,21 @@
                     </L7p:Rules>
                 </L7p:ResponseHeaderRules>
             </L7p:HttpRoutingAssertion>
-            <wsp:MessagePredicate
-                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
-                wsp:Usage="wsp:Required"
-                xmlns:abc="http://namespaces.somewhere.com/abc#bletch" xmlns:blee="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2">//blee:blaz</wsp:MessagePredicate>
+            <L7p:RequestXpathAssertion>
+                <L7p:XpathExpression xpathExpressionValue="included">
+                    <L7p:Expression stringValue="//blee:blaz"/>
+                    <L7p:Namespaces mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="abc"/>
+                            <L7p:value stringValue="http://namespaces.somewhere.com/abc#bletch"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="blee"/>
+                            <L7p:value stringValue="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2"/>
+                        </L7p:entry>
+                    </L7p:Namespaces>
+                </L7p:XpathExpression>
+            </L7p:RequestXpathAssertion>
             <wsp:All wsp:Usage="Required">
                 <L7p:RequestSwAAssertion>
                     <L7p:Bindings mapValue="included">
