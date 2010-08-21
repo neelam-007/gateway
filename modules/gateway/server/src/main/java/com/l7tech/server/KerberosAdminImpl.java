@@ -113,6 +113,20 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
     }
 
+    @Override
+    public void deleteKeytab() throws KerberosException {
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_PROPERTY);
+            if (property == null) {
+                throw new KerberosException( "Deletion not possible" );
+            }
+            clusterPropertyManager.delete( property );
+        } catch ( ObjectModelException ome ) {
+            ome.printStackTrace();
+            throw new KerberosException( "Error deleting keytab.", ome );
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosAdminImpl.class.getName());

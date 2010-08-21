@@ -52,7 +52,7 @@ public class KerberosDialog extends JDialog {
     //- PRIVATE
 
     private JPanel mainPanel;
-    private JButton okButton;
+    private JButton closeButton;
     private JLabel configKdcLabel;
     private JLabel configRealmLabel;
     private JLabel versionLabel;
@@ -65,6 +65,7 @@ public class KerberosDialog extends JDialog {
     private JLabel encryptionTypesLabel;
     private JLabel errorMessageLabel;
     private JButton uploadKeytab;
+    private JButton deleteKeytabButton;
 
     private boolean validKeytab = false;
 
@@ -75,7 +76,8 @@ public class KerberosDialog extends JDialog {
         setResizable(false);
         add(mainPanel);
 
-        okButton.addActionListener(new ActionListener(){
+        closeButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 KerberosDialog.this.dispose();
             }
@@ -83,11 +85,22 @@ public class KerberosDialog extends JDialog {
 
         String label = uploadKeytab.getText();
         uploadKeytab.setAction(new SecureAction(new AttemptedUpdateAny(EntityType.CLUSTER_PROPERTY)){
+            @Override
             protected void performAction() {
                 loadKeytab();
             }
         });
         uploadKeytab.setText(label);
+
+        label = deleteKeytabButton.getText();
+        deleteKeytabButton.setAction(new SecureAction(new AttemptedUpdateAny(EntityType.CLUSTER_PROPERTY)){
+            @Override
+            protected void performAction() {
+                perhapsDeleteKeytab();
+            }
+        });
+        deleteKeytabButton.setEnabled(false);
+        deleteKeytabButton.setText(label);
 
         initData();
         if (validKeytab) testConfiguration();
@@ -118,7 +131,13 @@ public class KerberosDialog extends JDialog {
                 keytabInvalid = true;
             }
 
+            if ( keytab != null || keytabInvalid ) {
+                 deleteKeytabButton.setEnabled( uploadKeytab.isEnabled() );
+            }
+
             if ( keytab == null ) {
+                validKeytab = false;
+
                 validLabel.setText("No");
                 if ( keytabInvalid ) {
                     summaryLabel.setText("Keytab file is invalid.");
@@ -127,6 +146,12 @@ public class KerberosDialog extends JDialog {
                     summaryLabel.setText("Keytab file not present.");
                 }
                 keytabPanel.setEnabled(false);
+
+                versionLabel.setText("");
+                dateLabel.setText("");
+                principalNameLabel.setText("");
+                realmLabel.setText("");
+                encryptionTypesLabel.setText("");
             }
             else {
                 validKeytab = true;
@@ -188,6 +213,7 @@ public class KerberosDialog extends JDialog {
                             final String errorMessage = errorMessageText;
 
                             SwingUtilities.invokeLater( new Runnable() {
+                                @Override
                                 public void run() {
                                     if ( wasValid ) {
                                         validLabel.setText("Yes");
@@ -233,6 +259,16 @@ public class KerberosDialog extends JDialog {
         return principal;
     }
 
+    private void showUpdating() {
+        validLabel.setText(" - ");
+        summaryLabel.setText("Updating configuration ...");
+        versionLabel.setText("");
+        dateLabel.setText("");
+        principalNameLabel.setText("");
+        realmLabel.setText("");
+        encryptionTypesLabel.setText("");
+    }
+
     private void doUpload(  final File keytabFile  ) {
         try {
             byte[] fileData = IOUtils.slurpFile(keytabFile);
@@ -240,12 +276,20 @@ public class KerberosDialog extends JDialog {
             KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
             kerberosAdmin.installKeytab( fileData );
 
-            SwingUtilities.invokeLater( new Runnable() {
+            showUpdating();
+
+            Background.scheduleOneShot( new TimerTask(){
+                @Override
                 public void run() {
-                    initData();
-                    if (validKeytab) testConfiguration();
+                    SwingUtilities.invokeLater( new Runnable() {
+                        @Override
+                        public void run() {
+                            initData();
+                            if (validKeytab) testConfiguration();
+                        }
+                    });
                 }
-            });
+            }, 1500 );
         } catch ( IOException ioe ) {
             DialogDisplayer.showMessageDialog(
                     KerberosDialog.this,
@@ -273,6 +317,7 @@ public class KerberosDialog extends JDialog {
                     "Confirm Keytab Update",
                     JOptionPane.OK_CANCEL_OPTION,
                     new DialogDisplayer.OptionListener(){
+                        @Override
                         public void reportResult(int option) {
                             if ( option == JOptionPane.OK_OPTION ) {
                                 doUpload( keytabFile );
@@ -298,14 +343,17 @@ public class KerberosDialog extends JDialog {
 
     private void loadKeytab() {
         FileChooserUtil.doWithJFileChooser( new FileChooserUtil.FileChooserUser(){
+            @Override
             public void useFileChooser( final JFileChooser fc ) {
                 fc.setDialogTitle("Select Keytab");
                 fc.setDialogType(JFileChooser.OPEN_DIALOG);
                 FileFilter fileFilter = new FileFilter() {
+                    @Override
                     public boolean accept(File f) {
                         return  f.isDirectory() ||
                                 f.getName().toLowerCase().endsWith(".keytab");
                     }
+                    @Override
                     public String getDescription() {
                         return "(*.keytab) Kerberos Keytab.";
                     }
@@ -327,5 +375,55 @@ public class KerberosDialog extends JDialog {
                 }
             }
         } );
+    }
+
+    private void deleteKeytab() {
+        try {
+            KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+            kerberosAdmin.deleteKeytab();
+
+            deleteKeytabButton.setEnabled( false );
+            showUpdating();
+
+            Background.scheduleOneShot( new TimerTask(){
+                @Override
+                public void run() {
+                    SwingUtilities.invokeLater( new Runnable() {
+                        @Override
+                        public void run() {
+                            initData();
+                            if (validKeytab) testConfiguration(); // deletion could have failed
+                        }
+                    });
+                }
+            }, 1500 );
+        } catch ( KerberosException ome ) {
+            DialogDisplayer.showMessageDialog(
+                    KerberosDialog.this,
+                    "Error deleting keytab:\n\t" + ExceptionUtils.getMessage(ome),
+                    "Error Deleting Keytab",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        }
+    }
+
+    private void perhapsDeleteKeytab() {
+        DialogDisplayer.showSafeConfirmDialog(
+            this,
+             "<html><center>This will delete the keytab and cannot be undone.</center><p>" +
+             "<center>Really delete the keytab?</center></html>",
+            "Confirm Keytab Deletion",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            465, 180,
+            new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if ( option == JOptionPane.OK_OPTION ) {
+                        deleteKeytab();
+                    }
+                }
+            }
+        );
     }
 }

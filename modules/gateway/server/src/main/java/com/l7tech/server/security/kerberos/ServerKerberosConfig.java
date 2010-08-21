@@ -12,7 +12,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.IOException;
 import java.text.ParseException;
 
 /**
@@ -34,6 +33,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
     /**
      * Initializer run during server startup.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         String keytabBase64 = config.getPropertyCached(KERBEROS_KEYTAB_PROP);
         String realm = config.getProperty(ServerConfig.PARAM_KERBEROS_CONFIG_REALM);
@@ -43,7 +43,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
             this.keytabB64 = keytabBase64;
             this.realm = realm;
             this.kdc = kdc;
-            updateKerberosConfig( keytabBase64, kdc, realm );
+            updateKerberosConfig( false, keytabBase64, kdc, realm );
         }
     }
 
@@ -52,13 +52,14 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
      *
      * @param evt the property change event
      */
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         boolean updated = false;
 
-        if ( KERBEROS_KEYTAB_PROP.equals(evt.getPropertyName() ) && evt.getNewValue() != null ) {
+        if ( KERBEROS_KEYTAB_PROP.equals(evt.getPropertyName() ) ) {
             updated = true;
             synchronized( configSync ) {
-                keytabB64 = evt.getNewValue().toString();
+                keytabB64 = evt.getNewValue() == null ? null :  evt.getNewValue().toString();
             }
         } else if (ServerConfig.PARAM_KERBEROS_CONFIG_REALM.equals(evt.getPropertyName())) {
             updated = true;
@@ -82,7 +83,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
 
         if ( updated ) {
             synchronized( configSync ) {
-                updateKerberosConfig( keytabB64, kdc, realm );
+                updateKerberosConfig( true, keytabB64, kdc, realm );
             }
         }
     }
@@ -104,14 +105,17 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
      * Re-create the Kerberos config file "krb5.conf" based on the updated cluster properties for
      * Realm / KDC.
      */
-    private void updateKerberosConfig( final String keytabB64, final String kdc, final String realm ) {
+    private void updateKerberosConfig( final boolean deleteIfMissing,
+                                       final String keytabB64,
+                                       final String kdc,
+                                       final String realm ) {
         logger.config("(Re)Generating kerberos configuration.");
         try {
             byte[] keytab = null;
             if ( keytabB64 != null ) {
                 keytab = HexUtils.decodeBase64(new String(clusterEncryptionManager.decryptPassword(keytabB64)));
             }
-            KerberosUtils.configureKerberos( keytab, kdc, realm );
+            KerberosUtils.configureKerberos( deleteIfMissing, keytab, kdc, realm );
         } catch (KerberosException ke) {
             logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change.", ke);
         } catch (ParseException pe) {

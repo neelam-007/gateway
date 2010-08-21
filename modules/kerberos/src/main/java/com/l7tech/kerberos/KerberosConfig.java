@@ -150,6 +150,16 @@ public class KerberosConfig implements KerberosConfigConstants {
         checkConfig( kdc, realm, false );
     }
 
+    /**
+     * Can be called by a user to delete Kerberos info.
+     */
+    static void deleteKerberosKeytab() throws KerberosException {
+        final File keytab = getKeytabFile();
+        if ( keytab.exists() && !keytab.delete() ) {
+            throw new KerberosException( "Unable to delete kerberos keytab" );
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());

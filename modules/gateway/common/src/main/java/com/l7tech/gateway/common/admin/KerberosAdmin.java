@@ -75,4 +75,13 @@ public interface KerberosAdmin  {
     @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void installKeytab( byte[] data ) throws KerberosException;
+
+    /**
+     * Delete the keytab file.
+     *
+     * @throws KerberosException if an error occurred.
+     */
+    @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
+    @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
+    public void deleteKeytab() throws KerberosException;
 }
