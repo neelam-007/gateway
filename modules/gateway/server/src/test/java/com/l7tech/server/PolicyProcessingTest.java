@@ -156,7 +156,8 @@ public class PolicyProcessingTest {
         {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
         {"/secureconversation", "POLICY_secure_conversation.xml"},
         {"/timestampresolution", "POLICY_timestampresolution.xml"},
-        {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"}
+        {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"},
+        {"/hardcoded", "POLICY_hardcodedresponse.xml"},
     };
 
     @Before
@@ -1453,6 +1454,23 @@ public class PolicyProcessingTest {
         });
 
         policyCache.unregisterGlobalPolicy( pid );
+    }
+
+    @Test
+    public void testHardcodedResponse() throws Exception {
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/hardcoded", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    Assert.assertEquals( "content-type", ContentTypeHeader.XML_DEFAULT, context.getResponse().getMimeKnob().getOuterContentType() );
+                    Assert.assertEquals( "content", "<xml>body</xml>", XmlUtil.nodeToString(document) );
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
     }
 
     /**

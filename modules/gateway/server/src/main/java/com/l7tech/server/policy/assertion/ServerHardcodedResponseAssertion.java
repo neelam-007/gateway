@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpConstants;
@@ -15,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -27,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,82 +33,85 @@ import java.util.logging.Logger;
  * The Server side Hardcoded Response.
  */
 public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<HardcodedResponseAssertion> {
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(ServerHardcodedResponseAssertion.class.getName());
+
     private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
 
-    private final String message;
-    private final byte[] messageBytesNoVar;
+    private final String message; // message if dynamically processed, else null
+    private final byte[] messageBytesNoVar; // message if static, else null
+    private final ContentTypeHeader contentType; // content type if static, else null
     private final int status;
     private final boolean earlyResponse;
-    private final ContentTypeHeader contentType;
     private final String[] variablesUsed;
 
-    public ServerHardcodedResponseAssertion(HardcodedResponseAssertion ass, ApplicationContext springContext)
+    public ServerHardcodedResponseAssertion( final HardcodedResponseAssertion ass,
+                                             final ApplicationContext springContext )
             throws PolicyAssertionException
     {
         super(ass);
         auditor = new Auditor(this, springContext, logger);
         stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
 
-        ContentTypeHeader ctype;
-        try {
-            ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
-        } catch (IOException e) {
-            // fla bugfix, instead of breaking policy completly, log the problem (which was not done before)
-            // as warning and fallback on a safe value
-            logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        // Cache the the content type if static
+        if ( ass.getResponseContentType() == null ) {
+            logger.log(Level.WARNING, "Missing content type. Falling back on text/plain");
+            this.contentType = ContentTypeHeader.TEXT_DEFAULT;
+        } else if ( Syntax.getReferencedNames( ass.getResponseContentType() ).length == 0 ) {
+            ContentTypeHeader ctype;
             try {
-                ctype = ContentTypeHeader.parseValue("text/plain");
-            } catch (IOException e1) {
-                // can't happen
-                throw new RuntimeException(e);
+                ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
+            } catch (IOException e) {
+                // fla bugfix, instead of breaking policy completely, log the problem (which was not done before)
+                // as warning and fallback on a safe value
+                logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                ctype = ContentTypeHeader.TEXT_DEFAULT;
             }
+            this.contentType = ctype;
+        } else {
+            this.contentType = null; // dynamic
         }
-        this.contentType = ctype;
 
-        variablesUsed = ass.getVariablesUsed();
-        this.message = ass.responseBodyString();
+        // If the content type is dynamic we cannot cache the response since
+        // the encoding can change
+        final String responseBody = ass.responseBodyString()==null ? "" : ass.responseBodyString();
+        if ( this.contentType != null && Syntax.getReferencedNames( responseBody ).length == 0 ) {
+            this.message = null;
+            this.messageBytesNoVar = responseBody.getBytes(contentType.getEncoding());
+        } else {
+            this.message = responseBody;
+            this.messageBytesNoVar = null;
+        }
+
         this.status = ass.getResponseStatus();
         this.earlyResponse = ass.isEarlyResponse();
-        messageBytesNoVar = this.message.getBytes(contentType.getEncoding());
+        this.variablesUsed = ass.getVariablesUsed();
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context )
       throws IOException, PolicyAssertionException
     {
         // Create a real stash manager, rather than making a RAM-only one, in case later assertions replace the
         // response with one that is huge (and hence needs the real hybrid stashing strategy).
-        StashManager stashManager = stashManagerFactory.createStashManager();
+        final StashManager stashManager = stashManagerFactory.createStashManager();
 
-        Message response = context.getResponse();
+        final Message response = context.getResponse();
+        final HttpResponseKnob hrk = getHttpResponseKnob( response );
+
+        final Map<String,Object> variableMap = context.getVariableMap(variablesUsed, auditor);
+
+        final ContentTypeHeader contentType = getResponseContentType( variableMap );
+        final byte[] bytes = getResponseContent( variableMap, contentType );
+
         // fla bugfix attach the status before closing otherwise, it's lost
-        HttpResponseKnob hrk = response.getKnob(HttpResponseKnob.class);
-        if (hrk == null) {
-            hrk = new AbstractHttpResponseKnob() {
-                @Override
-                public void addCookie(HttpCookie cookie) {
-                    // This was probably not an HTTP request, so cookies are meaningless anyway.
-                }
-            };
-        }
-
-        final byte[] bytes;
-        if (variablesUsed.length > 0) {
-            String msg = message;
-            msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor), auditor);
-            bytes = msg.getBytes(contentType.getEncoding());
-        } else {
-            bytes = this.messageBytesNoVar;
-        }
         hrk.setStatus(status);
         response.close();
         response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
         response.attachHttpResponseKnob(hrk);
 
         // todo: move to abstract routing assertion
-        Message request = context.getRequest();
+        final Message request = context.getRequest();
         request.notifyMessage(response, MessageRole.RESPONSE);
         response.notifyMessage(request, MessageRole.REQUEST);
         
@@ -119,15 +121,16 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         if ( earlyResponse ) {
             if (hrk instanceof HttpServletResponseKnob) {
                 auditor.logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_EARLY);
-                HttpServletResponseKnob hsrk = (HttpServletResponseKnob) hrk;
-                HttpServletResponse hresponse = hsrk.getHttpServletResponse();
+                final HttpServletResponseKnob hsrk = (HttpServletResponseKnob) hrk;
+                @SuppressWarnings({ "deprecation" })
+                final HttpServletResponse hresponse = hsrk.getHttpServletResponse();
 
                 try {
                     hresponse.setStatus(status);
                     if ( status != HttpConstants.STATUS_NO_CONTENT ) {
                         hresponse.setContentType(contentType.getFullValue());
                         hresponse.addHeader(HttpConstants.HEADER_CONNECTION, "close");
-                        OutputStream responseos = hresponse.getOutputStream();
+                        final OutputStream responseos = hresponse.getOutputStream();
                         IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                         responseos.close();
                     }
@@ -145,5 +148,55 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private HttpResponseKnob getHttpResponseKnob( final Message response ) {
+        HttpResponseKnob hrk = response.getKnob(HttpResponseKnob.class);
+        if (hrk == null) {
+            hrk = new AbstractHttpResponseKnob() {
+                @Override
+                public void addCookie( HttpCookie cookie) {
+                    // This was probably not an HTTP request, so cookies are meaningless anyway.
+                }
+            };
+        }
+        return hrk;
+    }
+
+    private ContentTypeHeader getResponseContentType( final Map<String, Object> variableMap ) {
+        ContentTypeHeader contentType = this.contentType;
+
+        if ( contentType == null && assertion.getResponseContentType() != null ) {
+            final String contentTypeStr = ExpandVariables.process(
+                    assertion.getResponseContentType(),
+                    variableMap,
+                    auditor);
+            try {
+                contentType = ContentTypeHeader.parseValue( contentTypeStr );
+            } catch ( IOException e ) {
+                auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] { "Invalid content type, using text/plain : " + ExceptionUtils.getMessage(e) },
+                        ExceptionUtils.getDebugException( e ));
+            }
+        }
+
+        if ( contentType == null ) {
+            contentType = ContentTypeHeader.TEXT_DEFAULT;
+        }
+
+        return contentType;
+    }
+
+    private byte[] getResponseContent( final Map<String, Object> variableMap,
+                                       final ContentTypeHeader contentType ) {
+        final byte[] bytes;
+        if ( message != null ) {
+            String msg = message;
+            msg = ExpandVariables.process(msg, variableMap, auditor);
+            bytes = msg.getBytes(contentType.getEncoding());
+        } else {
+            bytes = this.messageBytesNoVar;
+        }
+        return bytes;
     }
 }

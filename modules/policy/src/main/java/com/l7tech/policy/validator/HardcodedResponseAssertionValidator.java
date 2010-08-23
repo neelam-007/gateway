@@ -20,13 +20,17 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
     private String xmlErr;
     private boolean useContextVariable;
 
-    public HardcodedResponseAssertionValidator(HardcodedResponseAssertion ass) {
+    public HardcodedResponseAssertionValidator(final HardcodedResponseAssertion ass) {
         this.ass = ass;
+
         ContentTypeHeader ctype = null;
-        try {
-            ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
-        } catch (IOException e) {
-            this.ctypeErr = ExceptionUtils.getMessage(e);
+        final String contentType = ass.getResponseContentType();
+        if ( contentType != null && Syntax.getReferencedNames(contentType).length == 0 ) {
+            try {
+                ctype = ContentTypeHeader.parseValue( contentType );
+            } catch (IOException e) {
+                this.ctypeErr = ExceptionUtils.getMessage(e);
+            }
         }
 
         final String body = ass.responseBodyString();
