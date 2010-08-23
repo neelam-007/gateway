@@ -86,6 +86,11 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         return properties;
     }
 
+    @Override
+    public boolean isKnownProperty( final String propertyName ) {
+        return false;
+    }
+
     private void enableOrDisableComponents() {
         final boolean ssl = sslCheckbox.isSelected();
         clientAuthCheckbox.setEnabled(ssl);

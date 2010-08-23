@@ -32,6 +32,14 @@ public abstract class JmsExtraPropertiesPanel extends JPanel {
     public abstract Properties getProperties();
 
     /**
+     * Check if a property is managed by this panel.
+     *
+     * @param propertyName The property to check
+     * @return True if the property is managed by the panel
+     */
+    public abstract boolean isKnownProperty( String propertyName );
+
+    /**
      * @return <code>true</code> if all settings on the panel are valid
      */
     public abstract boolean validatePanel();

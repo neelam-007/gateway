@@ -134,6 +134,17 @@ public class TibcoEmsJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         return properties;
     }
 
+    @Override
+    public boolean isKnownProperty( final String propertyName ) {
+        return TibcoEmsConstants.TibjmsContext.SECURITY_PROTOCOL.equals( propertyName ) ||
+               TibcoEmsConstants.TibjmsContext.SSL_AUTH_ONLY.equals( propertyName )  ||
+               TibcoEmsConstants.TibjmsContext.SSL_ENABLE_VERIFY_HOST.equals( propertyName )  ||
+               TibcoEmsConstants.TibjmsContext.SSL_TRUSTED_CERTIFICATES.equals( propertyName )  ||
+               TibcoEmsConstants.TibjmsContext.SSL_ENABLE_VERIFY_HOST_NAME.equals( propertyName )  ||
+               TibcoEmsConstants.TibjmsContext.SSL_IDENTITY.equals( propertyName )  ||
+               TibcoEmsConstants.TibjmsContext.SSL_PASSWORD.equals( propertyName ) ;
+    }
+
     private void enableOrDisableComponents() {
         useSslForClientAuthOnlyCheckBox.setEnabled(useSslCheckBox.isSelected());
         verifyServerCertCheckBox.setEnabled(useSslCheckBox.isSelected());

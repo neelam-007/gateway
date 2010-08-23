@@ -37,6 +37,7 @@ public class FioranoJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         setProperties(properties);
     }
 
+    @Override
     public Properties getProperties() {
         Properties properties = new Properties();
 
@@ -49,10 +50,18 @@ public class FioranoJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         return properties;
     }
 
+    @Override
+    public boolean isKnownProperty( final String propertyName ) {
+        return Context.SECURITY_PROTOCOL.equals( propertyName ) ||
+               PROP_SEC_MANAGER.equals( propertyName );
+    }
+
+    @Override
     public boolean validatePanel() {
         return true;
     }
 
+    @Override
     public void setProperties(Properties properties) {
         if ( properties != null ) {
             if ( SECURITY_PROTOCOL_JSSE_SSL.equals(properties.get(Context.SECURITY_PROTOCOL)) ) {
@@ -65,6 +74,7 @@ public class FioranoJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
      * Define help method that will perform behaviour based on the action event
      */
     private final ActionListener enableDisableListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             enableOrDisableComponents();
         }
