@@ -123,6 +123,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         final String issueInstant = assertion.getIssueInstant();
         final String issueInstantText = (issueInstant == null || issueInstant.trim().isEmpty()) ? autoString : issueInstant;
+        issueInstantTextField.setText(issueInstantText);
+        issueInstant1_1TextField.setText(issueInstantText);
 
         final String inResponseTo = assertion.getInResponseTo();
         if(inResponseTo != null && !inResponseTo.trim().isEmpty()){
@@ -136,12 +138,11 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         final String responseId = assertion.getResponseId();
         final String responseIdText = (responseId == null || responseId.trim().isEmpty()) ? autoString: responseId;
+        idTextField.setText(responseIdText);
+        responseIdTextField.setText(responseIdText);
 
         if(assertion.getSamlVersion() == SAML2){
             addIssuerCheckBox.setSelected(assertion.isAddIssuer());
-
-            idTextField.setText(responseIdText);
-            issueInstantTextField.setText(issueInstantText);
 
             final String destination = assertion.getDestination();
             if(destination != null && !destination.trim().isEmpty()) destinationTextField.setText(destination);
@@ -159,9 +160,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         } else if (assertion.getSamlVersion() == SAML1_1){
             final String recipient = assertion.getRecipient();
             if(recipient != null && !recipient.trim().isEmpty()) recipientTextField.setText(recipient);
-
-            responseIdTextField.setText(responseIdText);
-            issueInstant1_1TextField.setText(issueInstantText);
         }
 
         updateComponentsForVersion();
