@@ -368,7 +368,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         environmentPropertiesTableModel = TableUtil.configureTable(
                 environmentPropertiesTable,
                 TableUtil.column("Name",  50, 100, 100000, property("key"), String.class),
-                TableUtil.column("value", 50, 100, 100000, property("value"), String.class)
+                TableUtil.column("Value", 50, 100, 100000, property("value"), String.class)
         );
         environmentPropertiesTable.getSelectionModel().setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
         environmentPropertiesTable.getTableHeader().setReorderingAllowed( false );
