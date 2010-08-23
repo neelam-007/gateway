@@ -1,13 +1,10 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.identity.finder.SearchType;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
-import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
@@ -103,14 +100,21 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
                 try {
                     if (entityHeader.getType() == EntityType.USER) {
                         User u = admin.findUserByID(providerId, entityHeader.getStrId());
-                        final SpecificUser specificUser =
-                                new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName());
-                        node.setUserObject(specificUser);
+                        final SpecificUser assertion = (SpecificUser) node.asAssertion();
+                        assertion.setIdentityProviderOid(u.getProviderId());
+                        assertion.setUserLogin(u.getLogin());
+                        assertion.setUserUid(u.getId());
+                        assertion.setUserName(u.getName());
                     } else if (entityHeader.getType() == EntityType.GROUP) {
+                        final MemberOfGroup assertion = (MemberOfGroup) node.asAssertion();
                         Group g = admin.findGroupByID(providerId, entityHeader.getStrId());
-                        MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
-                        node.setUserObject(ma);
+                        assertion.setIdentityProviderOid(g.getProviderId());
+                        assertion.setGroupName(g.getName());
+                        assertion.setGroupId(g.getId());
                     }
+
+                    final IdentityAssertionTreeNode identityNode = (IdentityAssertionTreeNode) node;
+                    identityNode.clearCache();
                 } catch (FindException e) {
                     throw new RuntimeException("Couldn't retrieve user or group", e);
                 }

@@ -29,7 +29,6 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
 
     public IdentityAssertionTreeNode(AT idass) {
         super(idass);
-        assertion = idass;
     }
 
     protected String decorateName( final String name ) {
@@ -61,6 +60,10 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
         return provName;
     }
 
+    public void clearCache(){
+        provName = null;    
+    }
+
     @Override
     public Action[] getActions() {
         List<Action> actions = new ArrayList<Action>( Arrays.asList(super.getActions()) );
@@ -70,7 +73,6 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
             insertPosition = 0;
         }
 
-        actions.add (insertPosition++, new AddIdentityAssertionAction(this));
         actions.add( insertPosition++, new SelectMessageTargetAction(this));
         actions.add( insertPosition, new SelectIdentityTagAction(this));
 
@@ -87,7 +89,6 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
     }
 
     private static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
-    protected AT assertion;
     protected String provName = null;
     public static final String NA = "provider not available";
 }
