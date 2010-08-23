@@ -230,7 +230,7 @@ public class TextUtils {
         text = text.replaceAll("&", "&amp;");
         text = text.replaceAll("<", "&lt;");
         text = text.replaceAll(">", "&gt;");
-        text = text.replaceAll("/", "&frasl;");
+        text = text.replaceAll("/", "&#47;");  // "&frasl;" and forward slash have different unicode ("&frasl;" is unicode U+2044 whereas forward slash is U+002F).
         text = text.replaceAll("\"", "&quot;");
         text = text.replaceAll("\'", "&#39;");
 
