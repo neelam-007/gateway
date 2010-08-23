@@ -245,7 +245,7 @@ public class TextUtilsTest extends TestCase {
 
     public void testEscapeHtmlSpecialCharacters() {
         final String testInput = "abc&#1234;abc<br>abc/abc\"abc\'abc";
-        final String expectedOutput = "abc&amp;#1234;abc&lt;br&gt;abc&frasl;abc&quot;abc&#39;abc";
+        final String expectedOutput = "abc&amp;#1234;abc&lt;br&gt;abc&#47;abc&quot;abc&#39;abc";
         final String actualOutput = TextUtils.escapeHtmlSpecialCharacters(testInput);
 
         assertEquals("Correctly escape HTML special characters", expectedOutput, actualOutput);
