@@ -796,7 +796,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         tabbedPane.setEnabledAt(TAB_SSL, isSsl);
         tabbedPane.setEnabledAt(TAB_HTTP, isHttp || isPool);
-        tabbedPane.setTitleAt(TAB_HTTP, isPool && !isHttp ? "Pool Settings" : "HTTP Settings");
         
         usePrivateThreadPoolCheckBox.setEnabled(isHttp || isPool);
         threadPoolSizeSpinner.setEnabled(usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected());
