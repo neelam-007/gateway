@@ -84,7 +84,7 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
             gen.setAddressResolver( new InetAddressResolver(assertion) {
                 protected void parse() {
                     try {
-                        this.address = InetAddress.getByName("vinsanity.l7tech.com");
+                        this.address = InetAddress.getByName("127.0.0.1");
                     } catch (UnknownHostException uhex) {
                         fail("can't create InetAddress for AddressResolver");
                     }
