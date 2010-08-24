@@ -31,6 +31,7 @@ import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.*;
+import static com.l7tech.wsdl.WsdlConstants.*;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -82,23 +83,9 @@ import java.util.logging.Level;
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private static final String PARAM_ANONYMOUS = "anon";
-    private static final String PARAM_SERVICEDOCOID = "servdocoid";
     private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
-
-    private static final String NAMESPACE_WSDL = "http://schemas.xmlsoap.org/wsdl/";
-    private static final String NAMESPACE_WSDL_SOAP_1_1 = "http://schemas.xmlsoap.org/wsdl/soap/";
-    private static final String NAMESPACE_WSDL_SOAP_1_2 = "http://schemas.xmlsoap.org/wsdl/soap12/";
-
-    private static final String ELEMENT_ADDRESS = "address";
-    private static final String ELEMENT_BINDING = "binding";
-    private static final String ELEMENT_PORT = "port";
-    private static final String ELEMENT_SERVICE = "service";
-
-    private static final String ATTR_LOCATION = "location";
-    private static final String ATTR_NAME = "name";
-    private static final String ATTR_TARGET_NAMESPACE = "targetNamespace";
 
     private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
@@ -491,7 +478,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                                     if ( !NOOP_WSDL.equals(serviceDocument.getContents()) ) {
                                         uri = requestUri + "/" + getName(serviceDocument) + "?" +
                                                 SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
-                                                PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
+                                                SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
                                     }
                                     break;
                                 }
@@ -709,7 +696,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     serviceDocumentManager.findByServiceIdAndType(svc.getOid(), "WSDL-IMPORT") :
                     Collections.<ServiceDocument>emptyList();
 
-            String documentOid = req.getParameter(PARAM_SERVICEDOCOID);
+            String documentOid = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID);
             if ( documentOid != null ) {
                 for ( ServiceDocument document : documents ) {
                     if ( documentOid.equals(document.getId()) ) {

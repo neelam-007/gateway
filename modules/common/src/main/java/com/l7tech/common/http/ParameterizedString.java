@@ -20,9 +20,6 @@ import java.util.regex.Pattern;
  * <p>Note that this class does not behave in a way that is 100% compatible
  * with the Servlet API (e.g. this class will pass back the full undecoded
  * text when url decoding fails)</p>
- *
- * @author $Author$
- * @version $Revision$
  */
 public class ParameterizedString {
     private static final int MAX_FIELD_LENGTH = SyspropUtil.getInteger("com.l7tech.http.maxParameterLength", 600000);
@@ -50,7 +47,7 @@ public class ParameterizedString {
      * @throws IllegalArgumentException if the string is illegal
      */
     public ParameterizedString(String paramStr, boolean strict) {
-        parameters = new LinkedHashMap();
+        parameters = new LinkedHashMap<String,String[]>();
         parseParameterString(parameters, paramStr, strict);
     }
 
@@ -90,7 +87,7 @@ public class ParameterizedString {
      * @return the value list (never null)
      */
     public String[] getParameterValues(String name) {
-        String[] values = (String[]) parameters.get(name);
+        String[] values = parameters.get(name);
         if(values==null) {
             values = new String[0];
         }
@@ -105,7 +102,7 @@ public class ParameterizedString {
      */
     public String getParameterValue(String name) {
         String value = null;
-        String[] values = (String[]) parameters.get(name);
+        String[] values = parameters.get(name);
         if(values!=null && values.length>0) {
             value = values[0];
         }
@@ -128,7 +125,7 @@ public class ParameterizedString {
      * @return the parameter map.
      * @throws IllegalArgumentException if the string is illegal
      */
-    public static Map parseQueryString(String queryString) {
+    public static Map<String,String[]> parseQueryString(String queryString) {
         return parseQueryString(queryString, false);
     }
 
@@ -140,8 +137,8 @@ public class ParameterizedString {
      * @return the parameter map.
      * @throws IllegalArgumentException if the string is illegal
      */
-    public static Map parseQueryString(String queryString, boolean strict) {
-        Map paramMap = new LinkedHashMap();
+    public static Map<String,String[]> parseQueryString(String queryString, boolean strict) {
+        Map<String,String[]> paramMap = new LinkedHashMap<String,String[]>();
         parseParameterString(paramMap, queryString, strict);
         return paramMap;
     }
@@ -154,7 +151,7 @@ public class ParameterizedString {
      * @param strict true for a strict parse
      * @throws IllegalArgumentException if the string is illegal
      */
-    public static void parseParameterString(Map holder, String paramStr, boolean strict) {
+    public static void parseParameterString(Map<String,String[]> holder, String paramStr, boolean strict) {
         if(holder==null) throw new IllegalArgumentException("holder must not be null.");
         if(paramStr!=null) {
             doParse(holder, paramStr, strict);
@@ -180,7 +177,7 @@ public class ParameterizedString {
     /**
      * Map of parsed parameters name (string) -> values (string array)
      */
-    private Map parameters;
+    private Map<String,String[]> parameters;
 
     /**
      * Check that the given parameter string nvp does not contain invalid characters.
@@ -214,7 +211,7 @@ public class ParameterizedString {
     /**
      * Do the work ...
      */
-    private static void doParse(Map holder, String paramStr, boolean strict) {
+    private static void doParse(Map<String,String[]> holder, String paramStr, boolean strict) {
         StringTokenizer strtok = new StringTokenizer(paramStr, "&");
         while(strtok.hasMoreTokens()) {
             String nvp = strtok.nextToken();
@@ -235,7 +232,7 @@ public class ParameterizedString {
             name = decode(name, strict);
             value = decode(value, strict);
 
-            String[] values = (String[]) holder.get(name);
+            String[] values = holder.get(name);
             if(values==null) {
                 values = new String[1];
                 values[0] = value;
@@ -255,16 +252,16 @@ public class ParameterizedString {
     /**
      * Create a string representation of the given map.
      */
-    private static String toString(Map map) {
+    private static String toString(Map<String,String[]> map) {
         StringBuffer sb = new StringBuffer(128);
 
         sb.append("ParameterizedString()[");
-        for(Iterator ei=map.entrySet().iterator(); ei.hasNext();) {
-            Map.Entry entry = (Map.Entry) ei.next();
+        for(Iterator<Map.Entry<String,String[]>> ei=map.entrySet().iterator(); ei.hasNext();) {
+            Map.Entry<String,String[]> entry = ei.next();
             sb.append("'");
             sb.append(entry.getKey());
             sb.append("'=");
-            String[] values = (String[]) entry.getValue();
+            String[] values = entry.getValue();
             for(int v=0; v<values.length; v++) {
                 if(v!=0) sb.append(",");
                 sb.append("'");

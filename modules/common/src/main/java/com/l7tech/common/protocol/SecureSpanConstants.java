@@ -188,6 +188,22 @@ public class SecureSpanConstants {
         public static final String PARAM_SERVICEOID = "serviceoid";
 
         /**
+         * WSDL proxy servlet extra parameter prefix.
+         *
+         * <p>The name suggests this is just for service document related
+         * parameters, but this is not necessarily the case.</p>
+         */
+        public static final String PARAM_WSDL_PREFIX = "servdoc";
+
+        /**
+         * Contains the OID of the service document WSDL dependency.
+         *
+         * <p>Sent by the Bridge to the Gateway's WSDL proxy servlet when a
+         * specified WSDL is requested.</p>
+         */
+        public static final String PARAM_SERVICEDOCOID = "servdocoid";        
+
+        /**
          * When downloading WSDL, this parameter can be used as an alternative to
          * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents the
          * routing uri property of a published service whose WSDL is desired.

@@ -10,9 +10,6 @@ import junit.framework.TestCase;
 
 /**
  * Test cases for parameterized string parser.
- *
- * @author $Author$
- * @version $Revision$
  */
 public class ParameterizedStringTest  extends TestCase {
 
@@ -20,7 +17,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testBasic() {
         String queryString = "a=b";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -28,7 +25,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testNoName() {
         String queryString = "=b";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -36,7 +33,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testNoValue() {
         String queryString = "a=";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -44,13 +41,13 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testNoEquals() {
         String queryString = "a";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         assertTrue("Test for query string '"+queryString+"'", paramStrMap.isEmpty() );
     }
 
     public void testEqualsInValue() {
         String queryString = "a=b&c=d=e";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -58,7 +55,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testPercentInValue() {
         String queryString = "a=b&c=d%e";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -66,7 +63,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testPermittedUnwise() {
         String queryString = "a=|//^`";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString, true);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString, true);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -74,7 +71,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testPermittedBraces() {
         String queryString = "a=()&b={}&c=[]&d=<>";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString, true);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString, true);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -82,7 +79,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testPermittedOthers() {
         String queryString = "a=\\/:@|=;?#\"`^<>~";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString, true);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString, true);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -90,7 +87,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testEncodedName() throws Exception {
         String queryString = "a%3b=b";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
@@ -98,7 +95,7 @@ public class ParameterizedStringTest  extends TestCase {
 
     public void testEncodedValue() {
         String queryString = "a=b%3b";
-        Map paramStrMap = ParameterizedString.parseQueryString(queryString);
+        Map<String,String[]> paramStrMap = ParameterizedString.parseQueryString(queryString);
         Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));

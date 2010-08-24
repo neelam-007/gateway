@@ -4,6 +4,8 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -27,16 +29,18 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.util.*;
-import com.l7tech.wsdl.Wsdl;
+import static com.l7tech.wsdl.WsdlConstants.*;
 import com.l7tech.xml.*;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.mortbay.jetty.EofException;
 import org.mortbay.jetty.HttpException;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -45,19 +49,21 @@ import org.xml.sax.SAXException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.wsdl.Port;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -555,10 +561,13 @@ public class RequestHandler extends AbstractHandler {
     /*
      * Handle a WSDL proxying request.
      */
-    private void handleWsdlRequest(Request request, Response response, Ssg ssg) throws HttpException {
-        String oidStr = request.getParameter("serviceoid");
-        if (oidStr != null) {
-            handleWsdlRequestForOid(request, response, ssg, oidStr);
+    private void handleWsdlRequest( final Request request,
+                                    final Response response,
+                                    final Ssg ssg ) throws HttpException {
+        final String oidStr = request.getParameter("serviceoid");
+        final Map<String,String[]> queryParameters = ParameterizedString.parseQueryString( request.getQueryString() );
+        if ( oidStr != null ) {
+            handleWsdlRequestForOid(request, response, ssg, oidStr, queryParameters);
             return;
         }
 
@@ -601,38 +610,124 @@ public class RequestHandler extends AbstractHandler {
     /*
      * Download a WSDL from the SSG and rewrite the port URL to point to our proxy endpoint for that SSG.
      */
-    private void handleWsdlRequestForOid(Request request, Response response, Ssg ssg, String oidStr) throws HttpException {
+    private void handleWsdlRequestForOid( final Request request,
+                                          final Response response,
+                                          final Ssg ssg,
+                                          final String oidStr,
+                                          final Map<String,String[]> queryParameters ) throws HttpException {
         try {
             long oid = Long.parseLong(oidStr);
-            Wsdl wsdl = WsdlProxy.obtainWsdlForService(ssg, oid);
+            final Document wsdlDoc = WsdlProxy.obtainWsdlForService(ssg, oid, queryParameters);
+
+            // Rewrite WSDL and Schema references
+            rewriteReferences( request, ssg, oidStr, wsdlDoc );
 
             // Rewrite the wsdl URL
-            int port = request.getLocalPort();
+            final int port = request.getLocalPort();
+            final NodeList portList = wsdlDoc.getElementsByTagNameNS( NAMESPACE_WSDL, ELEMENT_PORT );
+            for (int i = 0; i < portList.getLength(); i++) {
+                final Element portElement = (Element)portList.item(i);
+                final List<Element> addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_1, ELEMENT_ADDRESS );
 
-            Port soapPort = wsdl.getSoapPort();
-            if (soapPort != null) {
-                String existinglocation = wsdl.getPortUrl(soapPort);
-                URL newUrl;
-                if (existinglocation != null && existinglocation.lastIndexOf("/ssg/soap") == -1) {
-                    newUrl = new URL(existinglocation);
-                    newUrl = new URL("http", request.getLocalName(), port,
-                      "/" + ssg.getLocalEndpoint() + newUrl.getPath());
-                } else {
-                    newUrl = new URL("http", request.getLocalName(), port,
-                      "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+                // change the location attribute with new URL
+                for ( final Element address : addresses ) {
+                    address.setAttribute( ATTR_LOCATION, buildLocation( request, ssg, port, oid, address.getAttribute(ATTR_LOCATION) ));
                 }
-                if (soapPort != null)
-                    wsdl.setPortUrl(soapPort, newUrl);
+
+                // and for soap12
+                final List<Element> soap12Addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_2, ELEMENT_ADDRESS );
+                for ( final Element address : soap12Addresses ) {
+                    address.setAttribute( ATTR_LOCATION, buildLocation( request, ssg, port, oid, address.getAttribute(ATTR_LOCATION) ));
+                }
             }
+
             response.addHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-            wsdl.toOutputStream(response.getOutputStream());
+            XmlUtil.nodeToOutputStream( wsdlDoc, response.getOutputStream() );
             response.complete();
         } catch (WsdlProxy.ServiceNotFoundException e) {
             log.log(Level.WARNING, "WSDL proxy request failed", e);
             throw new HttpException(404, e.getMessage());
+        } catch (EofException e) {
+            log.log(Level.INFO, "WSDL proxy request failed - client closed connection.");
+            throw new HttpException(500, "WSDL proxy request failed: " + e);
         } catch (Exception e) {
             log.log(Level.WARNING, "WSDL proxy request failed", e);
             throw new HttpException(500, "WSDL proxy request failed: " + e);
         }
+    }
+
+    /**
+     * Rewrite WSDL and Schema references to download via the XVC
+     *
+     * <p>Only references that would be to the Gateway are rewritten, any
+     * external references are not changed.</p>
+     */
+    private void rewriteReferences( final Request request,
+                                    final Ssg ssg,
+                                    final String oidStr,
+                                    final Document wsdlDoc ) {
+        final String urlPrefix = "http://" + request.getLocalName() + ":" + request.getLocalPort();
+        final DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
+        documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
+            @Override
+            public String customize( final Document document,
+                                     final Node node,
+                                     final String documentUrl,
+                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                String uri = null;
+
+                if ( documentUrl != null && referenceInfo.getReferenceUrl() != null ) {
+                    try {
+                        final URI base = new URI(documentUrl);
+                        final URI referenceUrl = base.resolve(new URI(referenceInfo.getReferenceUrl()));
+                        if ( referenceUrl.getHost().equals( ssg.getSsgAddress() ) &&
+                             referenceUrl.getPort() == ssg.getSslPort() &&
+                             referenceUrl.getPath().startsWith( SecureSpanConstants.WSDL_PROXY_FILE ) &&
+                             referenceUrl.getQuery() != null ) {
+                            uri = urlPrefix + request.getUri().getPath() + "?" + referenceUrl.getQuery();
+                        }
+                    } catch (Exception e) {
+                        log.log( Level.WARNING, "Error rewriting WSDL url for service '"+oidStr+"'..", e );
+                    }
+                }
+
+                return uri;
+            }
+        } );
+    }
+
+    /**
+     * Build the location to use for service consumption.
+     *
+     * <p>If the Gateway service is published with a resolution path then that
+     * is used, else a path is constructed for the service identifier.</p> 
+     */
+    private String buildLocation( final Request request,
+                                  final Ssg ssg,
+                                  final int port,
+                                  final long oid,
+                                  final String existingLocation ) throws MalformedURLException {
+        URL newUrl = null;
+
+        final String protocol = "http";
+        final String host =request.getLocalName();
+        try {
+            if ( existingLocation != null ) {
+                final URI existingUri = new URI(existingLocation);
+                if ( !SecureSpanConstants.SSG_FILE.equals( existingUri.getPath() )) {
+                    newUrl = new URL(protocol, host, port, "/" + ssg.getLocalEndpoint() + existingUri.getPath());
+                }
+            }
+        } catch ( URISyntaxException e ) {
+            log.log(Level.WARNING,
+                    "Error processing location '"+existingLocation+"' when rewriting WSDL references.",
+                    ExceptionUtils.getDebugException( e) );
+        }
+
+        if ( newUrl == null ) {
+            newUrl = new URL(protocol, host, port,  "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+        }
+
+        return newUrl.toString();
     }
 }
