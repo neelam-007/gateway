@@ -29,6 +29,7 @@ do_usage() {
 		 	${0} rpm               - Build the RPM
 		 	${0} all               - fetch, make and rpm
 		 	${0} clean             - Cleanup
+			${0} patchmultiread    - Patch the 5.1.1.125.s drivers to disable multiread. THIS IS REQUIRED.
 	EOF
 }
 
@@ -187,7 +188,7 @@ check_flags() {
 	if [ -n "${WRONGFLAGS}" ] ; then
 		echo ""
 		echo "************************************************"
-		exitfail "you are building the 5.1.1.125s (astoria) drivers without disabling multi-read which is needed. Uncomment #LSI_FLAGS += -D__DISABLE_MULTI_READ__ in ${TARARIROOT}/src/drivers/cpp_base/linux/Makefile"
+		exitfail "you are building the 5.1.1.125s (astoria) drivers without disabling multi-read which is needed. Run \"${0} patchmultiread\" to patch the source (uncomments #LSI_FLAGS += -D__DISABLE_MULTI_READ__ in ${TARARIROOT}/src/drivers/cpp_base/linux/Makefile)"
 	fi
 }
 
@@ -211,6 +212,10 @@ check_root() {
 	[ -d "${TARARIROOT}" ] || exitfail "TARARIROOT does not exist [${TARARIROOT}]"
 }
 
+patch_5_1_1_125s() {
+	sed -i -e 's/#LSI_FLAGS += -D__DISABLE_MULTI_READ__/LSI_FLAGS += -D__DISABLE_MULTI_READ__/g' $TARARIROOT/src/drivers/cpp_base/linux/Makefile
+}
+
 case ${1} in
 	clean) 
 	   do_clean
@@ -219,6 +224,10 @@ case ${1} in
        check_root
        check_flags
 	   do_rpm
+	   ;;
+	patchmultiread)
+	   check_root
+	   patch_5_1_1_125s
 	   ;;
 	fetch) 
 	   do_getkernelsources
