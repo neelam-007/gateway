@@ -390,17 +390,17 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
      * Ensure that the root namespace of this XML message matches the tarariNamespaceUri.
      */
     private void checkRootNamespace(TarariMessageContext tmc) throws SAXException {
-        // Non-SOAP message.  Ensure root namespace URI matches up.
+        // Ensure root namespace URI matches up.
         ElementCursor cursor = tmc.getElementCursor();
         cursor.moveToDocumentElement();
         String docNs = cursor.getNamespaceUri();
         if (targetNamespace != null) {
             if (!targetNamespace.equals(docNs))
-                throw new SAXException("Hardware schema validation succeeded against non-SOAP message, " +
+                throw new SAXException("Hardware schema validation succeeded, " +
                         "but the document element namespace URI did not match the assertion at hand.");
         } else {
             if (docNs != null && docNs.length() > 0)
-                throw new SAXException("Hardware schema validation succeeded against non-SOAP message, " +
+                throw new SAXException("Hardware schema validation succeeded, " +
                         "but the document element namespace URI did not match the assertion at hand.");
         }
     }
