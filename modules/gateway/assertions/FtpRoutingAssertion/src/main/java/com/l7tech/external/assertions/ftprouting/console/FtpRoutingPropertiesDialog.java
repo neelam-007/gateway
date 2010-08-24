@@ -597,8 +597,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         tmp.append(a.getHostName()).append(" ")
            .append(a.getPort()).append(" ")
            .append(a.getUserName()).append(" ")
-           .append(a.getPassword()).append(" ")
            .append(a.getDirectory()).append(" ");
+        if (a.isPasswordUsesContextVariables())
+            tmp.append(a.getPassword());
         return Syntax.getReferencedNames(tmp.toString()).length > 0;
     }
 }
