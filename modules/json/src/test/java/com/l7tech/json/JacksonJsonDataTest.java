@@ -12,6 +12,7 @@ public class JacksonJsonDataTest {
     public void testException() throws Exception{
 
         final JSONFactory instance = JSONFactory.getInstance();
-        instance.newJsonData("{\"result\"\"success\"}");
+        final JSONData jsonData = instance.newJsonData("{\"result\"\"success\"}");
+        jsonData.getJsonObject();
     }
 }

@@ -97,7 +97,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 jsonInstanceNode = jsonFactory.newJsonData(jsonInstance);
             }
         } catch (InvalidJsonException e) {
-            auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_INVALID_JSON, messageDesc);
+            auditor.logAndAudit(AssertionMessages.JSON_INVALID_JSON, messageDesc);
             context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, messageDesc+" data is not well-formed JSON.");
             return AssertionStatus.FAILED;
         }

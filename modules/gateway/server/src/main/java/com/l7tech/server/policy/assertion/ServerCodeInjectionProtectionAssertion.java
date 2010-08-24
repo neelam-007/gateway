@@ -10,10 +10,9 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.json.InvalidJsonException;
+import com.l7tech.json.JSONData;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
@@ -30,6 +29,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -114,6 +114,8 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             return scanBodyAsMultipartFormData(message, messageDesc);
         } else if (message.isXml()) {
             return scanBodyAsXml(message, messageDesc);
+        } else if (message.isJson()){
+            return scanBodyAsJson(message, messageDesc);
         } else {
             return scanBodyAsText(message, messageDesc, contentType.getEncoding());
         }
@@ -221,6 +223,24 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         return AssertionStatus.NONE;
     }
 
+    private AssertionStatus scanBodyAsJson(final Message message, final String messageDesc ) throws IOException {
+        auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_JSON, messageDesc);
+        final String where = messageDesc + " message body";
+        final JsonKnob knob = message.getJsonKnob();
+        try {
+            final JSONData data = knob.getJsonData();
+            if (scanJson(data, where)) {
+                return getBadMessageStatus();
+            }
+        } catch (InvalidJsonException e) {
+            auditor.logAndAudit(AssertionMessages.JSON_INVALID_JSON,
+                    new String[]{messageDesc}, ExceptionUtils.getDebugException(e));
+            return getBadMessageStatus();
+        }
+
+        return AssertionStatus.NONE;
+    }
+
     private AssertionStatus scanBodyAsXml(final Message message, final String messageDesc ) throws IOException {
         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_BODY_XML, messageDesc);
         final String where = messageDesc + " message body";
@@ -259,6 +279,69 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private boolean scanJson(final JSONData jsonData, final String where) throws InvalidJsonException {
+        final Object o = jsonData.getJsonObject();
+        try {
+            process(o);
+        } catch (CodeInjectionDetectedException e) {
+            auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
+                    where + " in JSON value", e.getEvidence(), e.getProtectionViolated().getDisplayName());
+            return true;
+        }
+
+        return false;
+    }
+
+    private class CodeInjectionDetectedException extends Exception{
+        private CodeInjectionDetectedException(final String evidence,
+                                               final CodeInjectionProtectionType protectionViolated) {
+            this.evidence = evidence;
+            this.protectionViolated = protectionViolated;
+        }
+
+        public String getEvidence() {
+            return evidence;
+        }
+
+        public CodeInjectionProtectionType getProtectionViolated() {
+            return protectionViolated;
+        }
+
+        private final String evidence;
+        private final CodeInjectionProtectionType protectionViolated;
+    }
+
+    private void processString(String value) throws CodeInjectionDetectedException{
+        final StringBuilder evidence = new StringBuilder(EVIDENCE_MARGIN_BEFORE + 1 + EVIDENCE_MARGIN_AFTER);
+        final CodeInjectionProtectionType protectionViolated = scan(value, assertion.getProtections(), evidence);
+        if(protectionViolated != null){
+            throw new CodeInjectionDetectedException(evidence.toString(), protectionViolated);
+        }
+    }
+
+    private void processList(List<Object> list) throws CodeInjectionDetectedException {
+        for (Object o : list) {
+            process(o);
+        }
+    }
+
+    private void process(Object value) throws CodeInjectionDetectedException {
+        if(value instanceof Map){
+            processMap((Map<Object, Object>) value);
+        } else if (value instanceof List){
+            processList((List<Object>) value);
+        } else if (value instanceof String){
+            processString((String) value);
+        }
+    }
+
+    private void processMap(Map<Object, Object> map) throws CodeInjectionDetectedException {
+        for (Map.Entry<Object, Object> entry : map.entrySet()) {
+            process(entry.getKey());
+            process(entry.getValue());
+        }
     }
 
     /**

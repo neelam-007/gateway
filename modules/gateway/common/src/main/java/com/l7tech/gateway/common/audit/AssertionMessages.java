@@ -495,6 +495,7 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML   = m(7161, Level.FINE, "Scanning {0} as text/xml.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT  = m(7162, Level.FINE, "Scanning {0} as text/xml.");
     public static final M CODEINJECTIONPROJECTION_ALREADY_ROUTED            = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_JSON        = m(7164, Level.FINE, "Scanning {0} message body as application/json.");    
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION  = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
@@ -712,7 +713,7 @@ public class AssertionMessages extends Messages {
     public static final M JDBC_NO_QUERY_RESULT_ASSERTION_FAILED  = m(9105, Level.WARNING, "\"Perform JDBC Query\" assertion failed due to no query results via a connection {0}");
 
     public static final M JSON_SCHEMA_VALIDATION_FAILED     = m(9130, Level.INFO, "JSON Schema validation failure. {0}");
-    public static final M JSON_SCHEMA_INVALID_JSON          = m(9131, Level.INFO, "{0} is not well-formed JSON; cannot validate.");
+    public static final M JSON_INVALID_JSON                 = m(9131, Level.INFO, "{0} is not well-formed JSON.");
     public static final M JSON_SCHEMA_VALIDATION_VALIDATING = m(9132, Level.FINEST, "Validating {0} against JSON Schema.");
     public static final M JSON_VALIDATION_SUCCEEDED         = m(9133, Level.FINEST, "JSON Schema validation success.");
     public static final M JSON_SCHEMA_VALIDATION_IO_ERROR   = m(9134, Level.WARNING, "Cannot validate JSON schema because JSON schema information cannot be retrieved: {0}");

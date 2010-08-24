@@ -89,20 +89,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private void validateJsonSchema(String jsonSchemaText) throws ValidationException{
         JSONFactory jsonFactory = JSONFactory.getInstance();
 
-        final JSONData jsonNode;
-        try {
-            jsonNode = jsonFactory.newJsonData(jsonSchemaText);
-        } catch (IOException ex) {
-            final String msg = "Error: " + ExceptionUtils.getMessage(ex);
-            logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(ex));
-            throw new ValidationException(msg, "JSON Data Error", ExceptionUtils.getDebugException(ex));
-        } catch (InvalidJsonException ex) {
-            final String msg = "Error: " + ExceptionUtils.getMessage(ex);
-
-            logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(ex));
-            throw new ValidationException(msg, "JSON Data Error", ExceptionUtils.getDebugException(ex));
-        }
-
+        final JSONData jsonNode = jsonFactory.newJsonData(jsonSchemaText);
         try {
             jsonFactory.newJsonSchema(jsonNode);
         } catch (Exception ex) {

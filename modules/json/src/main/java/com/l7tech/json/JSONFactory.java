@@ -20,7 +20,7 @@ public class JSONFactory {
         return instance;
     }
 
-    public JSONData newJsonData(final String jsonData) throws IOException, InvalidJsonException {
+    public JSONData newJsonData(final String jsonData) {
         return new JacksonJsonData(OBJECT_MAPPER, jsonData);
     }
 
