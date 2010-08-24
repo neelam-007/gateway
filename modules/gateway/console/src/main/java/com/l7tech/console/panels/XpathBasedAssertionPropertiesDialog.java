@@ -1168,8 +1168,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             try {
                 doc = XmlUtil.stringToDocument(soapMessage);
                 Map<String,String> docns = DomUtils.findAllNamespaces(doc.getDocumentElement());
-                for ( final String prefix : docns.keySet( )) {
-                    String uri = docns.get(prefix);
+                for ( final Map.Entry<String,String> prefixNSEntry : docns.entrySet() ) {
+                    final String prefix = prefixNSEntry.getKey();
+                    final String uri = prefixNSEntry.getValue();
                     if (!namespaces.containsValue(uri)) {
                         if ( !namespaces.containsKey(prefix)) {
                             namespaces.put(prefix, uri);

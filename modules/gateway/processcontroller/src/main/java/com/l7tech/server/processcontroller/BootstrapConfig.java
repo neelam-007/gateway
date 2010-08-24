@@ -211,14 +211,14 @@ public class BootstrapConfig {
     }
 
     private static void saveProperties( final Properties properties, final File propertiesFile ) {
-        FileOutputStream fileOutputStream = null;
+        OutputStreamWriter outputStreamWriter = null;
         try {
-            fileOutputStream = new FileOutputStream( propertiesFile );
-            properties.store( new OutputStreamWriter(fileOutputStream), null );
+            outputStreamWriter = new OutputStreamWriter(new FileOutputStream( propertiesFile ));
+            properties.store( outputStreamWriter, null );
         } catch ( IOException e ) {
             throw new DieDieDie("Unable to save " + propertiesFile.getName() + " file.", 5, e);
         } finally {
-            ResourceUtils.closeQuietly(fileOutputStream);
+            ResourceUtils.closeQuietly(outputStreamWriter);
         }
     }
 }
