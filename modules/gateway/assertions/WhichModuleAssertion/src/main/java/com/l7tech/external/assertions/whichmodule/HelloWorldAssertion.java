@@ -21,6 +21,16 @@ public class HelloWorldAssertion extends RoutingAssertion {
     }
 
     @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return false;
+    }
+
+    @Override
     public boolean initializesResponse() {
         return true;
     }

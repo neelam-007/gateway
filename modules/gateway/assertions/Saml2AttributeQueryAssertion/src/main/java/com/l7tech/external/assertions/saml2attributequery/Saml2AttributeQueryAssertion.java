@@ -106,6 +106,16 @@ public class Saml2AttributeQueryAssertion extends RoutingAssertion implements Us
     }
 
     @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return true;
+    }
+
+    @Override
     public boolean initializesResponse() {
         return true;
     }

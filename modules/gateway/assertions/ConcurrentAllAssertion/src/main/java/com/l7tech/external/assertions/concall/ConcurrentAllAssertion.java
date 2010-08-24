@@ -86,6 +86,8 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folderConc.gif");
         meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpenConc.gif");
+
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.concall.ConcurrentAllAssertionValidator");
         
         meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.concall.console.ConcurrentAllAssertionPolicyNode");
 

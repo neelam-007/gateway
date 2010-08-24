@@ -5,27 +5,26 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL_ARRAY;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.IP_ADDRESS_ARRAY;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import com.l7tech.common.http.HttpMethod;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.*;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.OPTIONAL;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  *
@@ -259,6 +258,16 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
      */
     public void setResponseMsgDest(String variableName) {
         responseMsgDest = variableName;
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return null == requestMsgSrc;
     }
 
     @Override

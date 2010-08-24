@@ -42,7 +42,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     /**
-     * The name of the {@link com.l7tech.gateway.common.transport.jms.JmsEndpoint}.
+     * The name of the {@link JmsEndpoint}.
      * @return the name of this endpoint if known, for cosmetic purposes only. 
      */
     public String getEndpointName() {
@@ -50,7 +50,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     /**
-     * The name of the {@link com.l7tech.gateway.common.transport.jms.JmsEndpoint}.
+     * The name of the {@link JmsEndpoint}.
      * @param endpointName the name of this endpoint if known, for cosmetic purposes only.
      */
     public void setEndpointName(String endpointName) {
@@ -61,7 +61,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link JmsRoutingAssertion#DEFAULT_TIMEOUT}.
+     * Defaults to {@link #DEFAULT_TIMEOUT}.
      * @return the response timeout (in milliseconds)
      */
     public int getResponseTimeout() {
@@ -72,7 +72,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link JmsRoutingAssertion#DEFAULT_TIMEOUT}.
+     * Defaults to {@link #DEFAULT_TIMEOUT}.
      * @param responseTimeout the response timeout (in milliseconds)
      */
     public void setResponseTimeout( int responseTimeout ) {
@@ -127,6 +127,16 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
     public void setResponseTarget(MessageTargetableSupport responseTarget) {
         this.responseTarget = responseTarget;
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return responseTarget != null && TargetMessageType.REQUEST == responseTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override

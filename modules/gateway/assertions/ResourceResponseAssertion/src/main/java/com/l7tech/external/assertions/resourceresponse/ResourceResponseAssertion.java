@@ -65,6 +65,16 @@ public class ResourceResponseAssertion extends RoutingAssertion implements Routi
     }
 
     @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return true;
+    }
+
+    @Override
     public boolean initializesResponse() {
         return true;
     }

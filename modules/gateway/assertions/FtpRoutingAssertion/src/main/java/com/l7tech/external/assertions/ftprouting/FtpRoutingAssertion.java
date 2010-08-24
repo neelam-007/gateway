@@ -4,24 +4,25 @@
 
 package com.l7tech.external.assertions.ftprouting;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
+import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
+import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * <code>FtpRoutingAssertion</code> is an assertion that routes the request
@@ -225,6 +226,16 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     public void setRequestTarget(MessageTargetableSupport requestTarget) {
         this.requestTarget = requestTarget;
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override

@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
-
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
@@ -60,6 +58,16 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
      */
     public void setResponseTarget(MessageTargetableSupport responseTarget) {
         this.responseTarget = responseTarget;
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return responseTarget != null && TargetMessageType.REQUEST == responseTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override

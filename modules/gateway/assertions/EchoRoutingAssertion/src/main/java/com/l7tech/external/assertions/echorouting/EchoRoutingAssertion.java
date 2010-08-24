@@ -1,13 +1,14 @@
 package com.l7tech.external.assertions.echorouting;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertionDoesNotRoute;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.HashMap;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * <code>EchoRoutingAssertion</code> is an assertion that copies the request content into the response.
@@ -21,6 +22,16 @@ public class EchoRoutingAssertion extends RoutingAssertion implements RoutingAss
         // This is because this was the effective default when the Server
         // assertion was not actually checking this property.
         setCurrentSecurityHeaderHandling(CLEANUP_CURRENT_SECURITY_HEADER);
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return true;
     }
 
     @Override

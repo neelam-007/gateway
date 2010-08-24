@@ -70,6 +70,16 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     }
 
     @Override
+    public boolean initializesRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return false;
+    }
+
+    @Override
     public boolean initializesResponse() {
         return true;
     }

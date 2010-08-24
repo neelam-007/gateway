@@ -4,7 +4,6 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,8 +14,8 @@ import java.util.Collection;
  */
 public class AssertionValidatorSupport<AT extends Assertion> implements AssertionValidator {
     private final AT assertion;
-    private Collection<Pair<String, Throwable>> errs = new ArrayList<Pair<String, Throwable>>();
-    private Collection<String> warns = new ArrayList<String>();
+    private Collection<PendingMessage> errs = new ArrayList<PendingMessage>();
+    private Collection<PendingMessage> warns = new ArrayList<PendingMessage>();
 
     public AssertionValidatorSupport(AT assertion) {
         this.assertion = assertion;
@@ -27,14 +26,22 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
     }
 
     public void addMessage(String message) {
-        errs.add(new Pair<String, Throwable>(message, null));
+        errs.add(new PendingMessage(assertion, message));
     }
 
     public void addMessageAndException(String message, Throwable exception) {
-        errs.add(new Pair<String, Throwable>(message, exception));
+        errs.add(new PendingMessage(assertion, message, exception));
+    }
+
+    protected void addMessage(PendingMessage message) {
+        errs.add(message);
     }
 
     public void addWarningMessage(String message) {
+        warns.add(new PendingMessage(assertion, message, null));
+    }
+
+    protected void addWarningMessage(PendingMessage message) {
         warns.add(message);
     }
 
@@ -66,12 +73,18 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
 
     @Override
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
-        for (Pair<String, Throwable> err : errs) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, err.left, err.right));
+        for (PendingMessage err : errs) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            result.addError(new PolicyValidatorResult.Error(findTarget(err), path, err.getMessage(), err.getThrowable()));
         }
-        for (String warn : warns) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warn, null));
+        for (PendingMessage warn : warns) {
+            result.addWarning(new PolicyValidatorResult.Warning(findTarget(warn), path, warn.getMessage(), null));
         }
+    }
+
+    private Assertion findTarget(PendingMessage warn) {
+        Assertion target = warn.getTargetAssertion();
+        return target != null ? target : assertion;
     }
 
     private boolean isValidInt(String intStr) {
@@ -80,6 +93,34 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
             return true;
         } catch (NumberFormatException e) {
             return false;
+        }
+    }
+
+    protected static class PendingMessage {
+        private final Assertion targetAssertion;
+        private final String message;
+        private final Throwable throwable;
+
+        public PendingMessage(Assertion targetAssertion, String message) {
+            this(targetAssertion, message, null);
+        }
+
+        public PendingMessage(Assertion targetAssertion, String message, Throwable throwable) {
+            this.targetAssertion = targetAssertion;
+            this.message = message;
+            this.throwable = throwable;
+        }
+
+        public Assertion getTargetAssertion() {
+            return targetAssertion;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
         }
     }
 }
