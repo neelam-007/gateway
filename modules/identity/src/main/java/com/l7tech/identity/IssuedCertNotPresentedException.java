@@ -8,12 +8,8 @@ package com.l7tech.identity;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 12, 2004<br/>
- * $Id$<br/>
  */
 public class IssuedCertNotPresentedException extends AuthenticationException {
-    public IssuedCertNotPresentedException() {
-        super();
-    }
 
     public IssuedCertNotPresentedException( String message ) {
         super( message );

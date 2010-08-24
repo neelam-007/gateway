@@ -160,6 +160,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                     context.setAuthenticationMissing();
                 lastStatus = authFailed(pc, mce);
             } catch (AuthenticationException ae) {
+                auditor.logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), ExceptionUtils.getMessage(ae));
                 lastStatus = authFailed(pc, ae);
             }
         }
@@ -181,7 +182,10 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             authContext.getAuthSuccessCacheTime(),
             authContext.getAuthFailureCacheTime()
         );
-        if (authResult == null) return authFailed(pc, null);
+        if (authResult == null) {
+            auditor.logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), "User not found for credentials");
+            return authFailed(pc, null);
+        }
 
         if ( authResult.isCertSignedByStaleCA() && isRequest() ) {
             HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);

@@ -5,8 +5,6 @@ package com.l7tech.identity;
  * Date: Jun 25, 2008
  */
 public class FailAttemptsExceededException extends AuthenticationException {
-    public FailAttemptsExceededException() {
-    }
 
     public FailAttemptsExceededException(String message) {
         super(message);

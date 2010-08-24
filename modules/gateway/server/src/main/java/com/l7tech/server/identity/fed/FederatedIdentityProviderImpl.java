@@ -75,8 +75,10 @@ public class FederatedIdentityProviderImpl
             User user;
             try {
                 user = x509Handler.authorize(pc);
+            } catch (AuthenticationException e) {
+                throw new AuthenticationException("Couldn't authorize X.509 credentials: " + ExceptionUtils.getMessage( e ), e);
             } catch (Exception e) {
-                throw new AuthenticationException("Couldn't authorize X.509 credentials", e);
+                throw new AuthenticationException("Error authorizing X.509 credentials: " + ExceptionUtils.getMessage( e ), e);
             }
             return user == null ? null : new AuthenticationResult(user, pc.getSecurityTokens(), pc.getClientCert(), false);
         }

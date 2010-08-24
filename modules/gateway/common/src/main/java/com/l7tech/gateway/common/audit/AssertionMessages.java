@@ -102,6 +102,7 @@ public class AssertionMessages extends Messages {
     public static final M MEMBEROFGROUP_USER_NOT_MEMBER   = m(4214, Level.FINE, "User not member of group");
     public static final M MEMBEROFGROUP_USING_CACHED_FAIL = m(4215, Level.FINE, "Reusing cached group membership failure");
     public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4216, Level.WARNING, "{0} message is authenticated but has no login credentials!");
+    public static final M IDENTITY_CREDENTIAL_FAILED      = m(4217, Level.FINE, "Credentials failed for {0} due to ''{1}''");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");

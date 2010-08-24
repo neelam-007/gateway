@@ -6,6 +6,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedUser;
@@ -42,7 +43,7 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         super(provider, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
-    User authorize( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
+    User authorize( LoginCredentials pc ) throws AuthenticationException, FindException {
         if ( !providerConfig.isX509Supported() )
             throw new BadCredentialsException("This identity provider is not configured to support X.509 credentials");
 
@@ -51,8 +52,7 @@ class X509AuthorizationHandler extends FederatedAuthorizationHandler {
 
         X509Certificate requestCert = pc.getClientCert();
         if (requestCert == null) {
-            logger.info("Can only authorize credentials that include a certificate");
-            return null;
+            throw new MissingCredentialsException("Can only authorize credentials that include a certificate");
         }
         String subjectDn = requestCert.getSubjectDN().getName();
         String issuerDn = CertUtils.getIssuerDN( requestCert );

@@ -1,18 +1,11 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.identity;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class MissingCredentialsException extends AuthenticationException {
     public MissingCredentialsException() {
-        super();
+        super( "Credentials not found" );
     }
 
     public MissingCredentialsException( String message ) {

@@ -127,7 +127,7 @@ public class InternalIdentityProviderImpl
             if (dbPassHash.equals(authPassHash))
                 return new AuthenticationResult(dbUser, pc.getSecurityTokens());
             logger.info("Incorrect password for login " + login);
-            throw new BadCredentialsException();
+            throw new BadCredentialsException("Invalid password");
         } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, dbUser);
         } else {
