@@ -100,8 +100,8 @@ class Saml2SubjectAndConditionValidate {
                         if (notBefore != null && now.before(adjustNotBefore(notBefore))) {
                             subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
                                     "Condition 'Not Before' check failed, now :{0} Not Before:{1}",
-                                    now.toString(),
-                                    notBefore.toString() );
+                                    now.getTime().toString(),
+                                    notBefore.getTime().toString() );
                             statementValid = false;
                         }
 
@@ -111,14 +111,14 @@ class Saml2SubjectAndConditionValidate {
                             if ( (now.equals(adjustedNotOnOrAfter) || now.after(adjustedNotOnOrAfter)) ) {
                                 subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
                                         "Condition 'Not On Or After' check failed, now: {0} Not On Or After: {1}",
-                                        now.toString(),
-                                        notOnOrAfter.toString() );
+                                        now.getTime().toString(),
+                                        notOnOrAfter.getTime().toString() );
                                 statementValid = false;
                             }
                         }
 
                         if (notBefore != null && notOnOrAfter != null && !notBefore.before(notOnOrAfter)) {
-                            logger.finer("Statement condition is invalid, 'Not On Or After' " + notOnOrAfter.toString() + " MUST be later than 'Not Before' " + notBefore.toString());
+                            logger.finer("Statement condition is invalid, 'Not On Or After' " + notOnOrAfter.getTime().toString() + " MUST be later than 'Not Before' " + notBefore.getTime().toString());
                             validationResults.add(new SamlAssertionValidate.Error("Statement condition is invalid, 'Not On Or After' MUST be later than 'Not Before': {0}/{1}", null, notOnOrAfter.getTime().toString(), notBefore.getTime().toString()));
                             statementValid = false;
                         }
@@ -219,12 +219,12 @@ class Saml2SubjectAndConditionValidate {
                     notBefore = SamlAssertionValidate.adjustNotBefore(notBefore);
                     notOnOrAfter = SamlAssertionValidate.adjustNotAfter(notOnOrAfter);
                     if (now.before(notBefore)) {
-                        logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
+                        logger.finer("Condition 'Not Before' check failed, now :" + now.getTime().toString() + " Not Before:" + notBefore.getTime().toString());
                         validationResults.add(new SamlAssertionValidate.Error("SAML ticket does not become valid until: {0}", null, notBefore.getTime().toString()));
                     }
 
                     if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
-                        logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
+                        logger.finer("Condition 'Not On Or After' check failed, now :" + now.getTime().toString() + " Not Before:" + notOnOrAfter.getTime().toString());
                         validationResults.add(new SamlAssertionValidate.Error("SAML ticket has expired as of: {0}", null, notOnOrAfter.getTime().toString()));
                     }
                 }

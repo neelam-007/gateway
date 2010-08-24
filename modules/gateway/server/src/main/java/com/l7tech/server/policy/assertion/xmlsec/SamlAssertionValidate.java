@@ -390,7 +390,7 @@ public class SamlAssertionValidate {
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
             now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
             if (now.before(notBefore)) {
-                logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
+                logger.finer("Condition 'Not Before' check failed, now :" + now.getTime().toString() + " Not Before:" + notBefore.getTime().toString());
                 validationResults.add(new Error("SAML ticket does not become valid until: {0}",
                                                 null,
                                                 notBefore.getTime().toString()
@@ -398,7 +398,7 @@ public class SamlAssertionValidate {
             }
 
             if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
-                logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
+                logger.finer("Condition 'Not On Or After' check failed, now :" + now.getTime().toString() + " Not Before:" + notOnOrAfter.getTime().toString());
                 validationResults.add(new Error("SAML ticket has expired as of: {0}",
                                                 null,
                                                 notOnOrAfter.getTime().toString()
