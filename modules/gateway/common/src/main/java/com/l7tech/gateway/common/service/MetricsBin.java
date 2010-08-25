@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -28,8 +29,6 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     public static final int RES_HOURLY = 1;
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is daily resolution */
     public static final int RES_DAILY = 2;
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private static final Logger _logger = Logger.getLogger(MetricsBin.class.getName());
 
@@ -680,9 +679,10 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
         StringBuffer b = new StringBuffer("<MetricsBin resolution=\"");
         b.append(getResolutionName());
-        b.append("\" periodStart=\"").append(DATE_FORMAT.format(new Date(_periodStart)));
-        b.append("\" startTime=\"").append(DATE_FORMAT.format(new Date(_startTime)));
-        b.append("\" endTime=\"").append(DATE_FORMAT.format(new Date(_endTime)));
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        b.append("\" periodStart=\"").append(dateFormat.format(new Date(_periodStart)));
+        b.append("\" startTime=\"").append(dateFormat.format(new Date(_startTime)));
+        b.append("\" endTime=\"").append(dateFormat.format(new Date(_endTime)));
         if (_resolution == RES_FINE) b.append("\" interval=\"").append(_interval);
         b.append("\" attempted=\"").append(numAttemptedRequest);
         b.append("\" authorized=\"").append(numAuthorizedRequest);
