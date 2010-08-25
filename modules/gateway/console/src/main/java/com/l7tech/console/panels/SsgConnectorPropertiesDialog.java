@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.*;
@@ -1284,7 +1285,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * A comparator for TransportDescriptor that sorts by URL scheme, but with HTTP, HTTPS, FTP, and FTPS
      * sorted to the front of the list in that order.
      */
-    private static class ModularConnectorInfoComparator implements Comparator<TransportDescriptor> {
+    private static class ModularConnectorInfoComparator implements Comparator<TransportDescriptor>, Serializable {
         @Override
         public int compare(TransportDescriptor a, TransportDescriptor b) {
             return toSortKey(a).compareTo(toSortKey(b));
