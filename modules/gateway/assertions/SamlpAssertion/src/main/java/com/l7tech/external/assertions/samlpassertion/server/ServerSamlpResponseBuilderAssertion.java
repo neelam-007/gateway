@@ -916,14 +916,15 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         }
 
+        final NameIDType nameIDType = responseType.getIssuer();
+        if (issuerIsRequired && nameIDType == null) {
+            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                    "Issuer is required if the samlp:Response is signed or if it contains an encrypted assertion");
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
         if(!includesEncrypted){
-            //Can only be sure of validation when no encrypted assertions were included.
-            final NameIDType nameIDType = responseType.getIssuer();
-            if (issuerIsRequired && nameIDType == null) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
-                        "Issuer is required if the samlp:Response is signed or if it contains an encrypted assertion");
-                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
-            }
+            //The following rules can only be validated for sure when no encrypted assertions are included.
 
             if(subjectNames.size() > 1){
                 auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,

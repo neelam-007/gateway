@@ -582,6 +582,39 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
+     * When an encrypted assertion is supplied, then all profile rules which relate to the contents of the included
+     * SAML assertions cannot be validated. This tests that the Issuer rule is validated when encrypted assertions are
+     * included.
+     *
+     * @throws Exception
+     */
+    @BugNumber(9096)
+    @Test(expected = AssertionStatusException.class)
+    public void testSAML2_0_IssuerRuleEnforcedWhenEncryptedAssertionIsPresent() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(false);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "outputVar";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setAddIssuer(false);
+        assertion.setSamlStatus(SamlStatus.SAML2_SUCCESS);
+        final String encryptedToken = "encryptedAssertion";
+        assertion.setEncryptedAssertions("${"+encryptedToken+"}");
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
+        context.setVariable(encryptedToken, encryptedMessage);
+        serverAssertion.checkRequest(context);
+    }
+
+    /**
      * Tests that if the status is success, then the requirement for an assertion is satisified by providing an
      * EncryptedAssertion.
      * 
