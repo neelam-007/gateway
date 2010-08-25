@@ -96,6 +96,7 @@ public class SsgRuntime {
             return -getTimeOffset();
         }
 
+        @Override
         protected void log(long source, Date result) {
             if (log.isLoggable(Level.FINE))
                 log.fine("Translating date from SSG clock " + new Date(source) + " to local clock " + result);
@@ -107,7 +108,8 @@ public class SsgRuntime {
             return getTimeOffset();
         }
 
-        protected void log(Date source, Date result) {
+        @Override
+        protected void log(long source, Date result) {
             if (log.isLoggable(Level.FINE))
                 log.fine("Translating date from local clock " + source + " to SSG clock " + result);
         }
