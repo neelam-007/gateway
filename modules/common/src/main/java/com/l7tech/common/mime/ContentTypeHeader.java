@@ -462,16 +462,24 @@ public class ContentTypeHeader extends MimeHeader {
         }
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (!(obj instanceof ContentTypeHeader)) return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ContentTypeHeader)) return false;
 
-        ContentTypeHeader ctHeader = (ContentTypeHeader) obj;
-        if (!type.equals(ctHeader.type)) return false;
-        if (!subtype.equals(ctHeader.subtype)) return false;
-        //if (!getEncoding().equals(ctHeader.getEncoding())) return false;
+        ContentTypeHeader that = (ContentTypeHeader) o;
+
+        if (subtype != null ? !subtype.equals(that.subtype) : that.subtype != null) return false;
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + (subtype != null ? subtype.hashCode() : 0);
+        return result;
     }
 }
