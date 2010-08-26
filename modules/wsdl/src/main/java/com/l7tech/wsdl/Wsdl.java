@@ -851,12 +851,12 @@ public class Wsdl implements Serializable {
 
     /**
      * Determine the operation style ("document | "rpc") for an binding operation.
-     * First the binding operation style is checked and if noit found, then the
+     * First the binding operation style is checked and if not found, then the
      * enclosing bindings style is searched for.
      * Note that the binding operation must be owned by this wsdl instance.
      *
      * @param bo the binding operation
-     * @return the operation style "rpc" | "document", if undefined "rpc" is returned
+     * @return the operation style "rpc" | "document", if undefined "document" is returned
      */
     public String getBindingStyle(BindingOperation bo) {
         //noinspection unchecked
@@ -890,21 +890,22 @@ public class Wsdl implements Serializable {
      * Determine the binding style ("document | "rpc") for an binding.
      *
      * @param binding the binding to determine the style for
-     * @return the operation style "rpc" | "document", if undefined "rpc" is returned
+     * @return the operation style "rpc" | "document", if undefined "document" is returned
      */
     public String getBindingStyle(Binding binding) {
+        String style = null;
         ExtensibilityElement bindingProtocol = getBindingProtocol(binding);
         if (bindingProtocol == null ||
           bindingProtocol instanceof HTTPBinding) {
-            return Wsdl.STYLE_DOCUMENT; // GET/POST uses document?
+            style = Wsdl.STYLE_DOCUMENT; // GET/POST uses document?
         } else if (bindingProtocol instanceof SOAPBinding) {
             SOAPBinding sb = (SOAPBinding)bindingProtocol;
-            return sb.getStyle();
+            style = sb.getStyle();
         } else if (bindingProtocol instanceof SOAP12Binding) {
             SOAP12Binding sb = (SOAP12Binding)bindingProtocol;
-            return sb.getStyle();
+            style = sb.getStyle();
         }
-        return Wsdl.STYLE_DOCUMENT; //default
+        return style != null ? style : Wsdl.STYLE_DOCUMENT; //default
     }
 
 
