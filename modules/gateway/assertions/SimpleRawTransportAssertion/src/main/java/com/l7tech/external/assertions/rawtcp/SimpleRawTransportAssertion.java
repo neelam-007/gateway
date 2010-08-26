@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.rawtcp;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.SyspropUtil;
 
@@ -77,6 +78,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
     @Override
     public boolean needsInitializedResponse() {
+        // Response must be initialized only in the extremely unlikely event that we are sending the default response as the routing request
         return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
     }
 
@@ -177,6 +179,8 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         List<String> ret = new ArrayList<String>();
         ret.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
         ret.addAll(Arrays.asList(responseTarget.getVariablesUsed()));
+        if (responseContentType != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(responseContentType)));
+        if (targetHost != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(targetHost)));
         return ret.toArray(new String[ret.size()]);
     }
 

@@ -210,7 +210,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="MIME Content-Type to assume for the response.  May include context variables."/>
+            </properties>
           </component>
         </children>
       </grid>
@@ -258,7 +260,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="Target hostname of IP address.  May include context variables."/>
+            </properties>
           </component>
           <component id="4500d" class="javax.swing.JLabel">
             <constraints>
