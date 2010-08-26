@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
@@ -34,6 +35,10 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     @Override
     protected void initComponents() {
         super.initComponents();
+        if(TopComponents.getInstance().isApplet()){
+            contentPane.setPreferredSize(new Dimension(510, 470));
+        }
+        
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new SamlVersion[]{SAML2, SAML1_1}));
 
         final RunOnChangeListener versionListener = new RunOnChangeListener(new Runnable() {
@@ -99,7 +104,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         responseIdTextField.addFocusListener(focusAdapter);
         issueInstantTextField.addFocusListener(focusAdapter);
         issueInstant1_1TextField.addFocusListener(focusAdapter);
-        
+
         updateComponentsForVersion();
     }
 
@@ -296,6 +301,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             encryptedAssertionsLabel.setVisible(false);
             encryptedAssertionsTextField.setVisible(false);
         }
+        SamlpResponseBuilderPropertiesDialog.this.pack();
     }
 
     public static void main(String [] args){

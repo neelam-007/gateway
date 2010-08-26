@@ -3,11 +3,9 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="8" bottom="0" right="8"/>
     <constraints>
-      <xy x="48" y="54" width="572" height="505"/>
+      <xy x="48" y="54" width="572" height="555"/>
     </constraints>
     <properties>
-      <minimumSize width="487" height="386"/>
-      <preferredSize width="487" height="386"/>
       <requestFocusEnabled value="true"/>
     </properties>
     <border type="none"/>
@@ -31,50 +29,60 @@
               <component id="b8258" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="113" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.version"/>
                 </properties>
               </component>
-              <component id="e5f4" class="javax.swing.JComboBox" binding="samlVersionComboBox">
+              <grid id="5a1b2" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
-              </component>
-              <component id="9b65c" class="javax.swing.JCheckBox" binding="signResponseCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <horizontalAlignment value="0"/>
-                  <horizontalTextPosition value="2"/>
-                  <selected value="false"/>
-                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.signResponse"/>
-                </properties>
-              </component>
-              <component id="790ee" class="javax.swing.JCheckBox" binding="addIssuerCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <horizontalTextPosition value="2"/>
-                  <text value="Add Issuer:"/>
-                </properties>
-              </component>
-              <hspacer id="42324">
-                <constraints>
-                  <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </hspacer>
+                <border type="none"/>
+                <children>
+                  <component id="e5f4" class="javax.swing.JComboBox" binding="samlVersionComboBox">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="9b65c" class="javax.swing.JCheckBox" binding="signResponseCheckBox" default-binding="true">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="0"/>
+                      <horizontalTextPosition value="2"/>
+                      <selected value="false"/>
+                      <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="samlVersionPanel.signResponse"/>
+                    </properties>
+                  </component>
+                  <component id="790ee" class="javax.swing.JCheckBox" binding="addIssuerCheckBox" default-binding="true">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <horizontalTextPosition value="2"/>
+                      <text value="Add Issuer:"/>
+                    </properties>
+                  </component>
+                  <hspacer id="42324">
+                    <constraints>
+                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </hspacer>
+                </children>
+              </grid>
             </children>
           </grid>
           <grid id="7468e" binding="responseStatusPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
             </constraints>
             <properties/>
             <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseStatus.title"/>
@@ -82,7 +90,7 @@
               <component id="406e7" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
@@ -91,14 +99,17 @@
               </component>
               <component id="a9e67" class="javax.swing.JComboBox" binding="statusCodeComboBox">
                 <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
+                  </grid>
                 </constraints>
                 <properties/>
               </component>
               <component id="108cf" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
@@ -108,7 +119,8 @@
               <component id="d986" class="javax.swing.JTextField" binding="statusMessageTextField">
                 <constraints>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
@@ -116,7 +128,7 @@
               <component id="2e5e7" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="111" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
@@ -126,7 +138,8 @@
               <component id="cfca5" class="javax.swing.JTextField" binding="statusDetailTextField">
                 <constraints>
                   <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
@@ -136,7 +149,7 @@
           <grid id="b816e" binding="responseElementsPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
             </constraints>
             <properties/>
             <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" title-key="responseElements.title"/>
@@ -144,7 +157,7 @@
               <component id="c9051" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="101" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
@@ -153,8 +166,9 @@
               </component>
               <component id="2f68f" class="javax.swing.JTextField" binding="assertionsTextField">
                 <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
@@ -162,7 +176,7 @@
               <component id="35976" class="javax.swing.JLabel" binding="extensionsLabel">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                    <preferred-size width="101" height="15"/>
+                    <preferred-size width="111" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
@@ -172,14 +186,17 @@
               <component id="1b844" class="javax.swing.JTextField" binding="extensionsTextField">
                 <constraints>
                   <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
               </component>
               <component id="febc4" class="javax.swing.JLabel" binding="encryptedAssertionsLabel">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                    <preferred-size width="111" height="-1"/>
+                  </grid>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpResponseBuilderPropertiesDialog" key="responseElements.encryptedAssertions.2_0_only"/>
@@ -188,7 +205,8 @@
               <component id="75552" class="javax.swing.JTextField" binding="encryptedAssertionsTextField">
                 <constraints>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
+                    <minimum-size width="320" height="-1"/>
+                    <preferred-size width="320" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
@@ -198,7 +216,7 @@
           <grid id="7d2fa" binding="tabHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -223,7 +241,7 @@
                       <component id="236c2" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -232,8 +250,9 @@
                       </component>
                       <component id="219ec" class="javax.swing.JTextField" binding="idTextField">
                         <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -241,7 +260,7 @@
                       <component id="fb5dc" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -250,8 +269,9 @@
                       </component>
                       <component id="7d9cb" class="javax.swing.JTextField" binding="issueInstantTextField">
                         <constraints>
-                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -259,7 +279,7 @@
                       <component id="ba62b" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -268,8 +288,9 @@
                       </component>
                       <component id="89ce5" class="javax.swing.JTextField" binding="inResponseToTextField">
                         <constraints>
-                          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -277,7 +298,7 @@
                       <component id="5805f" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -286,8 +307,9 @@
                       </component>
                       <component id="11f04" class="javax.swing.JTextField" binding="destinationTextField">
                         <constraints>
-                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -295,7 +317,7 @@
                       <component id="51990" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -304,17 +326,16 @@
                       </component>
                       <component id="8413e" class="javax.swing.JTextField" binding="consentTextField">
                         <constraints>
-                          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
                       </component>
                       <vspacer id="9e480">
                         <constraints>
-                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                            <preferred-size width="101" height="14"/>
-                          </grid>
+                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </vspacer>
                     </children>
@@ -330,7 +351,7 @@
                       <component id="c7b7" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="102" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -340,7 +361,8 @@
                       <component id="6c9dd" class="javax.swing.JTextField" binding="responseIdTextField">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -348,7 +370,7 @@
                       <component id="c2314" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="102" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -358,7 +380,8 @@
                       <component id="7f7ed" class="javax.swing.JTextField" binding="issueInstant1_1TextField">
                         <constraints>
                           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -366,7 +389,7 @@
                       <component id="4db1b" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="102" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -376,7 +399,8 @@
                       <component id="dc668" class="javax.swing.JTextField" binding="inResponseTo1_1TextField">
                         <constraints>
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
@@ -384,7 +408,7 @@
                       <component id="bac60" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                            <preferred-size width="102" height="15"/>
+                            <preferred-size width="111" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
@@ -394,16 +418,15 @@
                       <component id="72978" class="javax.swing.JTextField" binding="recipientTextField">
                         <constraints>
                           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
+                            <minimum-size width="320" height="-1"/>
+                            <preferred-size width="320" height="-1"/>
                           </grid>
                         </constraints>
                         <properties/>
                       </component>
-                      <vspacer id="e2546">
+                      <vspacer id="27137">
                         <constraints>
-                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                            <preferred-size width="102" height="14"/>
-                          </grid>
+                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </vspacer>
                     </children>
@@ -414,7 +437,7 @@
           </grid>
           <vspacer id="7adfb">
             <constraints>
-              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
             </constraints>
           </vspacer>
         </children>
