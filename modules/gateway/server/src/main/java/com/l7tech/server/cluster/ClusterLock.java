@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 public class ClusterLock implements Lock {
 
     private static final Logger logger = Logger.getLogger(ClusterLock.class.getName());
+    private static final Random random = new Random();
 
-    private final long id = new Random().nextLong(); // todo: come up with a friendlier id type
-
+    private final long id = random.nextLong(); // todo: come up with a friendlier id type
     private final ClusterPropertyManager clusterPropertyManager;
     protected final PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
