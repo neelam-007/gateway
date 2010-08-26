@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import org.junit.BeforeClass;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -204,6 +206,89 @@ public class ServerSimpleRawTransportAssertionTest {
 
         context.close();
         assertTrue(sockimp.closed);
+    }
+
+    @Test
+    @BugNumber(9105)
+    public void testRoutingToResponseMessageVariable() throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setResponseTarget(new MessageTargetableSupport("responseVar"));
+
+        final String responseStr = "<response/>";
+        final String requestStr = "<defaultRequestContent/>";
+        final String respContentType = "text/xml";
+        PolicyEnforcementContext context = context(requestStr);
+        ass.setResponseContentType(respContentType);
+
+        final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
+
+        final StubSocketImpl sockimp = simulateRequest(ass, context, outputCapture, responseStr);
+
+        final Message responseMess = (Message) context.getVariable("responseVar");
+        assertNotNull(responseMess);
+        assertEquals(respContentType, responseMess.getMimeKnob().getOuterContentType().getFullValue());
+        assertEquals(requestStr, outputCapture.toString());
+
+        assertEquals(responseStr, new String(IOUtils.slurpStream(responseMess.getMimeKnob().getEntireMessageBodyAsInputStream()), Charsets.UTF8));
+        assertEquals("/127.0.0.3:2323", sockimp.sawConnectHost);
+        assertTrue(sockimp.sawShutOut);
+
+        context.close();
+        assertTrue(sockimp.closed);
+    }
+
+    @Test
+    public void testRoutingToResponseMessageVariableThatAlreadyExists() throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setResponseTarget(new MessageTargetableSupport("responseVar"));
+
+        final String responseStr = "<response/>";
+        final String requestStr = "<defaultRequestContent/>";
+        final String respContentType = "text/xml";
+        PolicyEnforcementContext context = context(requestStr);
+        context.setVariable("responseVar", new Message());
+        ass.setResponseContentType(respContentType);
+
+        final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
+
+        final StubSocketImpl sockimp = simulateRequest(ass, context, outputCapture, responseStr);
+
+        final Message responseMess = (Message) context.getVariable("responseVar");
+        assertNotNull(responseMess);
+        assertEquals(respContentType, responseMess.getMimeKnob().getOuterContentType().getFullValue());
+        assertEquals(requestStr, outputCapture.toString());
+        assertEquals(responseStr, new String(IOUtils.slurpStream(responseMess.getMimeKnob().getEntireMessageBodyAsInputStream()), Charsets.UTF8));
+        assertEquals("/127.0.0.3:2323", sockimp.sawConnectHost);
+        assertTrue(sockimp.sawShutOut);
+
+        context.close();
+        assertTrue(sockimp.closed);
+    }
+
+    @Test
+    public void testRoutingToResponseMessageVariableThatAlreadyExistsAsNonMessage() throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setResponseTarget(new MessageTargetableSupport("responseVar"));
+
+        final String requestStr = "<defaultRequestContent/>";
+        PolicyEnforcementContext context = context(requestStr);
+        context.setVariable("responseVar", "heyas");
+        ass.setResponseContentType("text/xml");
+
+        final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
+
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        final StubSocketImpl sockimp1 = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), outputCapture);
+        sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp1));
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.SERVER_ERROR, result);
     }
 
     @Test
