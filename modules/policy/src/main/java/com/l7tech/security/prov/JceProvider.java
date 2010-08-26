@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,6 +61,7 @@ public abstract class JceProvider {
     private static final String OLD_PKCS11_ENGINE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     /** Recognized service names to pass to {@link #getProviderFor(String)}. */
+    public static final String SERVICE_SECURERANDOM_DEFAULT = "SecureRandom.DEFAULT";
     public static final String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
     public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
     public static final String SERVICE_CSR_SIGNING = "Signature.BouncyCastleCsrSigner";
@@ -165,6 +167,8 @@ public abstract class JceProvider {
             return engine;
         }
     }
+
+    private final AtomicReference<SecureRandom> sharedSecureRandom = new AtomicReference<SecureRandom>();
 
     public static void init() {
         getInstance();
@@ -400,6 +404,35 @@ public abstract class JceProvider {
      */
     public KeyStore getKeyStore(String kstype) throws KeyStoreException {
         return getKeyStore(kstype, getProviderFor("KeyStore." + kstype));
+    }
+
+    /**
+     * Get a reusable cached instance of the preferred SecureRandom implementation for this JceProvider.
+     * <p/>
+     * The algorithm may differ from the system-default SecureRandom in cases where the highest-preference Security Provider
+     * offers an unsuitable default and cannot be configured differently (Bug #8885).
+     *
+     * @return a SecureRandom implementation.  Never null.
+     */
+    public SecureRandom getSecureRandom() {
+        SecureRandom ret = sharedSecureRandom.get();
+        if (ret == null) {
+            sharedSecureRandom.compareAndSet(null, newSecureRandom());
+            ret = sharedSecureRandom.get();
+        }
+        return ret != null ? ret : newSecureRandom();
+    }
+
+    /**
+     * Create a new instance of the preferred SecureRandom implementation for this JceProvider.
+     * <p/>
+     * This may differ from the system-default SecureRandom in cases where the highest-preference Security Provider
+     * offers an unsuitable default and cannot be configured differently (Bug #8885).
+     * 
+     * @return a new SecureRandom implementation.  Never null.
+     */
+    public SecureRandom newSecureRandom() {
+        return new SecureRandom();
     }
 
     /**

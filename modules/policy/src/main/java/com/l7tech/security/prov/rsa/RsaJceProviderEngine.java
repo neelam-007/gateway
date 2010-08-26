@@ -4,8 +4,11 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,6 +30,8 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final Provider TLS12_PROVIDER;
     private static final String cryptojVersion;
 
+    private static final String defaultSecureRandom;
+
     static {
         try {
             final boolean permafips = SyspropUtil.getBoolean(PROP_PERMAFIPS, false);
@@ -40,6 +45,7 @@ public class RsaJceProviderEngine extends JceProvider {
                     logger.severe("RSA library failed to initialize in FIPS 140 mode");
                     throw new RuntimeException("RSA JCE Provider is supposed to be in FIPS mode but is not");
                 }
+                defaultSecureRandom = "FIPS186PRNG"; // Use faster but still-FIPS-certified PRNG for things like TLS
 
             } else {
                 logger.info("Initializing RSA library in non-FIPS 140 mode");
@@ -48,6 +54,7 @@ public class RsaJceProviderEngine extends JceProvider {
                     cryptoj.setMode(cryptoj.NON_FIPS140_MODE);
                 PROVIDER = cryptoj.provider;
                 Security.addProvider(PROVIDER);
+                defaultSecureRandom = null;
             }
             cryptojVersion = String.valueOf(cryptoj.getVersion());
             logger.info("RSA Crypto-J version: " + cryptojVersion);
@@ -203,6 +210,16 @@ public class RsaJceProviderEngine extends JceProvider {
     @Override
     public Provider getBlockCipherProvider() {
         return PROVIDER;
+    }
+
+    @Override
+    public SecureRandom newSecureRandom() {
+        try {
+            return defaultSecureRandom == null ? super.newSecureRandom() : SecureRandom.getInstance(defaultSecureRandom);
+        } catch (NoSuchAlgorithmException e) {
+            logger.log(Level.WARNING, "Unable to initialize preferred SecureRandom implementation of " + defaultSecureRandom + "; will use system default instead: " + ExceptionUtils.getMessage(e), e);
+            return super.newSecureRandom();
+        }
     }
 
     @Override

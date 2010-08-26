@@ -70,7 +70,7 @@ public class SsgConnectorSslHelper {
         // Create and initialize SSL context
         sslContext = createSslContext(ssgConnector, desiredTlsVersionsSet);
         SsgKeyEntry keyEntry = transportModule.getKeyEntry(ssgConnector);
-        sslContext.init(getKeyManagers(keyEntry), getTrustManagers(), secureRandom);
+        sslContext.init(getKeyManagers(keyEntry), getTrustManagers(), JceProvider.getInstance().getSecureRandom());
         sslServerSocketFactory = sslContext.getServerSocketFactory();
 
         // Configure SSL session cache
