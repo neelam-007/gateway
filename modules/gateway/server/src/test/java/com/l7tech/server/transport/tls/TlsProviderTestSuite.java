@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * A suite of tests that can be used to test a variety of SSL scenarios.
@@ -41,6 +42,9 @@ public class TlsProviderTestSuite {
     public String additionalProviders = null;
     public String firstPlaceProviders = null;
     public String tokenPin = null;
+    public String repeatCount = null;
+    public String poolSize = "1";
+    public String secureRandom = null;
 
     static long starttime;
 
@@ -48,31 +52,45 @@ public class TlsProviderTestSuite {
     static final int testblocklen = testblock.getBytes().length;
 
     // A test RSA cert to use as a server or client cert
-    public static final String RSA_1024_CERT_X509_B64 =
-        "MIICFDCCAX2gAwIBAgIJANA/LVIWYlZMMA0GCSqGSIb3DQEBDAUAMBgxFjAUBgNVBAMMDXRlc3Rf" +
-        "cnNhXzEwMjQwHhcNMDkxMjE2MjM0MTE4WhcNMzQxMjEwMjM0MTE4WjAYMRYwFAYDVQQDDA10ZXN0" +
-        "X3JzYV8xMDI0MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCDh9hs9BnqyPvL7qoHARHjKwq9" +
-        "ZwGeeWDU+oed9H4/Qjnw5PZ54ZgXfU+pEisDxADHfvHXnMrUNuSOXNaH1Lyg+EjOWwQVRW7EbQFK" +
-        "paMP6d6FLy70/ErA616i1dPE+gmdtQEZiAqoe+5gch0oZVVu5V6cREFcjzVSv3K5Uo5PhQIDAQAB" +
-        "o2YwZDAOBgNVHQ8BAf8EBAMCBeAwEgYDVR0lAQH/BAgwBgYEVR0lADAdBgNVHQ4EFgQU3bG81B25" +
-        "MHuoBRi9apZWR2bVqHMwHwYDVR0jBBgwFoAU3bG81B25MHuoBRi9apZWR2bVqHMwDQYJKoZIhvcN" +
-        "AQEMBQADgYEADeL5oHQBkkqkojQ+GQBFOpYuDq6yi4QkAe1CKlt4ieXczmoPd1NmhWY8U+AyORdu" +
-        "9I8H+N/OAwfCHNqS9a7xBjd55gObOJ1ZDYJEVXSJ/gx0vRwm166BY5A6hF/7F24Me5ItDiwQbK1c" +
-        "J7t7E2C6q1B2qkLUujTACbCAyCpv5B4=";
+    public static final String RSA_2048_CERT_X509_B64 =
+        "MIIDGDCCAgCgAwIBAgIIB2dtRKOWrgswDQYJKoZIhvcNAQEMBQAwGDEWMBQGA1UEAwwNdGVzdF9y" +
+        "c2FfMjA0ODAeFw0wOTEyMTYyMzQxMThaFw0zNDEyMTAyMzQxMThaMBgxFjAUBgNVBAMMDXRlc3Rf" +
+        "cnNhXzIwNDgwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCxNW9CQzGqUV38EirNbD0x" +
+        "xEVIamH4WGUeCbCYq7np1FWz7uBG137duU7ZOr1oMgkdaCv1l2D8mNc5u6S9pgOptNFSZRodxB9N" +
+        "13vl1pV8b+ZmltN7zgEYVNNbK7DegonNgF8qjzol03gU5z1qAAt1txMrDO5yFwSJz5NMk4jCudvA" +
+        "3ZCnI++Cm3FtZpssKY6ma41M4i4PPtsatIF+3ao6zqfrXaRQgS8gcONgiGn0PNDJZBJgD6CTlzk2" +
+        "kVC2SQts6EILjkXqumvA06XCEe1h3AA0QUROzaNpJ5zmr9502itTEv28kyVrr2aMDgK0QjXb3jlb" +
+        "foiY8qSkxivoYRpbAgMBAAGjZjBkMA4GA1UdDwEB/wQEAwIF4DASBgNVHSUBAf8ECDAGBgRVHSUA" +
+        "MB0GA1UdDgQWBBRNqj1i9aNTI2d/4CX81FGCuHfvbDAfBgNVHSMEGDAWgBRNqj1i9aNTI2d/4CX8" +
+        "1FGCuHfvbDANBgkqhkiG9w0BAQwFAAOCAQEAUKvuuvPdjFFEXcdht4GR76W7++MaTc0QUVegTbDT" +
+        "+E3CcAfBWqTi7Q6djRSqAOP6xoDmGUpKX4ef3tDonFJ+nz8HPAkxV//yAVzC7asbfOtMZshrG5YV" +
+        "k/WbFzz09YqJbs6JIibMgj6SR7GoYV86YVv80ZT1Zc94AECWid3Thvc1OHzcndRkCBX1b4nkWffX" +
+        "cblHP5dXnfISImULWf0R88IEP+G/aLEMfZ5SHWdO5TVgztrXeEnR9Efiz/MSRA8JY4eBywexXjMF" +
+        "f0fvJNenDoIY7Dxp3mRqBXf9smKmvF0YqQ29u/l7ZlvF1D2dEhAHqX2yotJISjirZE5VbQKFBw==";
 
-    public static final String RSA_1024_KEY_PKCS8_B64 =
-        "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAIOH2Gz0GerI+8vuqgcBEeMrCr1n" +
-        "AZ55YNT6h530fj9COfDk9nnhmBd9T6kSKwPEAMd+8decytQ25I5c1ofUvKD4SM5bBBVFbsRtAUql" +
-        "ow/p3oUvLvT8SsDrXqLV08T6CZ21ARmICqh77mByHShlVW7lXpxEQVyPNVK/crlSjk+FAgMBAAEC" +
-        "gYAE60ix0nNBr6CTIOrk9ipIF60AJmEOHzX64R+/TYyHKx/lnXqGVmSMxFf9V7uaGXN6Aopi6O9A" +
-        "/oiPtnMjg1ZGlP7ONFyaf0ZsaMs4jm7FAfDHtnaemEJkDEadYSvppN8oB1bPm1NYe6mAvaui3PiM" +
-        "EGkkq+MSgms5j8RFHyUvBQJBANYoloJJ6hfhRGJiTSyP1TRYoKHrf2mVFnEyHxALhK32+TnasKZI" +
-        "CkVLcAPhqfnNQKwn3nATfc0ZXeI9BMTwHNMCQQCdOoSZCNUFjslXOC1zS+XtoiE1znjtlIYqGR+h" +
-        "TLWdJQkdyoB5ATOtL3uj+7muwMmKc7rmsW6imAqxxwDBmctHAkABMVatQRYhreqAlcWSQvbQBNJY" +
-        "NISQJPlsBfhwUXAau+5laRdkxa/w9NuZ2e7lakQ68Tnm6+TeeI6yTN6y7hdrAkBmgWtHdomjSPcd" +
-        "RQPkwlvSNLygHs+aXRWnRp/ngmJ5ZFbwNEDUIyN0yps6SvhA5XHAMTluA8nUeXmnc82batArAkEA" +
-        "gW39CjSVbeUpgwEpt2CAz0qa08IQ56clJcyCHiwLQelfezLrQkwX+k6Lkf11JxOsf9a4A2ToElml" +
-        "KyZu+sPE/g==";
+    public static final String RSA_2048_KEY_PKCS8_B64 =
+        "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCxNW9CQzGqUV38EirNbD0xxEVI" +
+        "amH4WGUeCbCYq7np1FWz7uBG137duU7ZOr1oMgkdaCv1l2D8mNc5u6S9pgOptNFSZRodxB9N13vl" +
+        "1pV8b+ZmltN7zgEYVNNbK7DegonNgF8qjzol03gU5z1qAAt1txMrDO5yFwSJz5NMk4jCudvA3ZCn" +
+        "I++Cm3FtZpssKY6ma41M4i4PPtsatIF+3ao6zqfrXaRQgS8gcONgiGn0PNDJZBJgD6CTlzk2kVC2" +
+        "SQts6EILjkXqumvA06XCEe1h3AA0QUROzaNpJ5zmr9502itTEv28kyVrr2aMDgK0QjXb3jlbfoiY" +
+        "8qSkxivoYRpbAgMBAAECggEAKAVqYCuuvslrkW9E7WnhlCjAgO9NuvmztIn5sTEvZqjGxkFPs5Ad" +
+        "ndOpBBRpDGwodNS/ANM0Wzfle6tuNEqXDy/ACny83jYZ38mnuKuyzQy0mzy6/H3071rQ9Qk0A7y1" +
+        "hIzWcVUxi7NrrkTfMN5buDUlhhaAj5G1O65+lM/JFjjlEH2L6rwfcPAiyD1dyDzjXd4k8acv0JPD" +
+        "JANJ2hLjXnOHFDR/cCxCOysdGHQuH9aMIdeNz0JGyiWLD6SP+9va0G49DwSG7xL7bdnbDC812XUo" +
+        "wqVhksg4yjRkvL3ZExG25XQwkdJ01QU4atz4QJdqYVy/X/Vt7SG1kJoyMDWKgQKBgQDiIaxbkDnf" +
+        "Vr1aDZMUZ3/dKWePclbSqQoUExgfidhYoJn92j+rNbLoIseyBe8nBMeBuLSsyFQJU81ZdvpRaGMH" +
+        "jltef/cGY7DZtoPx/WpKjIJxGH0Hk3/kJMWxhcar0eXyuXDj+rNGy6wp7yZFnZlr70SRsD1AxdaE" +
+        "x400Vl8RmwKBgQDInYEBMj3TRUhqWspgXEB4cy67zaOh+LYxJTbkLGPi5rm/tX1QxGZJNvT/RZRA" +
+        "vQuy/tdJqaZrZWtP/z8AQ/2Ya7zcHu0oqz1YrAIG7WH75ZupOp7SaNbcZ1ojHyQTtmYDTs8ErFK0" +
+        "YTEzylpOYjKAQ4uvKcv/XIiuIv/OlrwGQQKBgQDfUqgYiVhONCiujedqaEjDz0dCSIZsZ5rXdoAF" +
+        "baom5P0P0gG9ATxduzOCog+sdjDd8N8mIHW1/Hg52aGe0juy06lyq2f3fG7EpFasnzvgweF09d1M" +
+        "pSPR2WsQRfCN8a5pxzAxRn7U9QJjK5ade+ZvzQ3n36iulnOkEDtoq8AZ7wKBgQCm6AuVcDRp2sGV" +
+        "4rVvGDF3RPVDwKH8Nw11s+2IRrpP4//0VM3O7afgD/4jh8MBXYcnQ8jf+2p+/aEbrFPBJ9AMCM7X" +
+        "IE/VvypJ5MnG86bKyUwJrsDGc/0W4FHo2JbOY7lZ1S59R9WDRz2FRjx97Erx1cCYWiDj8xuwLWRA" +
+        "f74tQQKBgQCfGlni4CM9YerW+YI8MRbWSydvXPZ3uirRUVmXiODp8XoUbzKeohg4dDw4Ns0VykRJ" +
+        "sUTOApGOlL1pxHoTUoxwLLrVa580+RZeDt9b4Q4j9ZuMNbndNUQOqcifv7hHEQTPXEqgTx3i4t6p" +
+        "sOX8p9A1peKQeUL75mr1HwLYi+NHig==";
 
     // A test ECC cert to use as a server or client cert
     private static final String EC_P256_CERT =
@@ -122,7 +140,7 @@ public class TlsProviderTestSuite {
 
     static PrivateKey getPrivateKey(String name) throws GeneralSecurityException, IOException {
         if ("rsa".equals(name)) {
-            return getPrivateKey(false, RSA_1024_KEY_PKCS8_B64);
+            return getPrivateKey(false, RSA_2048_KEY_PKCS8_B64);
         } else if ("ecc".equals(name)) {
             return getPrivateKey(true, EC_P256_PRIVATE_KEY);
         } else if ("ecc2".equals(name)) {
@@ -138,7 +156,7 @@ public class TlsProviderTestSuite {
 
     static X509Certificate getCertificate(String name) throws CertificateException, IOException {
         if ("rsa".equals(name)) {
-            return getCertificateFromB64(RSA_1024_CERT_X509_B64);
+            return getCertificateFromB64(RSA_2048_CERT_X509_B64);
         } else if ("ecc".equals(name)) {
             return getCertificateFromB64(EC_P256_CERT);
         } else if ("ecc2".equals(name)) {
@@ -278,11 +296,24 @@ public class TlsProviderTestSuite {
         secretKeysMethod.invoke(manager, true);
     }
 
+    private void initCryptoJFipsMode() throws Exception {
+        Class cryptojClass = Class.forName("com.rsa.jsafe.crypto.CryptoJ");
+        Method setModeMethod = cryptojClass.getMethod("setMode", int.class);
+        int fips140SslEcc = (Integer)cryptojClass.getField("FIPS140_SSL_ECC_MODE").get(null);
+        setModeMethod.invoke(null, fips140SslEcc);
+    }
+
     private void start() throws Exception {
         if (Boolean.valueOf(debug)) System.setProperty("javax.net.debug", "ssl");
 
         if ("rsa".equals(jceprov)) {
             addProv("com.rsa.jsafe.provider.JsafeJCE", false);
+        } else if ("rsafips".equals(jceprov)) {
+            addProv("com.rsa.jsafe.provider.JsafeJCE", true);
+            initCryptoJFipsMode();
+            if (secureRandom == null) {
+                secureRandom = "FIPS186PRNG";
+            }
         } else if ("luna4".equals(jceprov)) {
             addProv("com.chrysalisits.cryptox.LunaJCEProvider", true);
             addProv("com.chrysalisits.crypto.LunaJCAProvider", true);
@@ -291,7 +322,11 @@ public class TlsProviderTestSuite {
             addProv("com.safenetinc.luna.provider.LunaProvider", true);
             initLuna(true);
         } else if ("bc".equals(jceprov)) {
-            addProv("org.bouncycastle.jce.provider.BouncyCastleProvider", false);            
+            addProv("org.bouncycastle.jce.provider.BouncyCastleProvider", false);
+        } else if ("sun".equals(jceprov) || "default".equals(jceprov)) {
+            // Do nothing
+        } else {
+            throw new IllegalArgumentException("Unknown jceprov: " + jceprov);
         }
 
         String expectTlsProv = null;
@@ -314,10 +349,13 @@ public class TlsProviderTestSuite {
         X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(certtype), getPrivateKey(certtype))};
         if (!server && !"yes".equals(clientcert)) km = null;
 
+        SecureRandom secRand = secureRandom != null ? SecureRandom.getInstance(secureRandom, "JsafeJCE") : new SecureRandom();
         sslContext.init(
                 km,
                 new X509TrustManager[] { new TrustEverythingTrustManager(createAcceptedIssuersList()) },
-                new SecureRandom());
+                secRand);
+
+        System.out.println("using SecureRandom algorithm: " + secRand.getAlgorithm());
 
         if (server)
             runServer(sslContext);
@@ -362,39 +400,107 @@ public class TlsProviderTestSuite {
         if ("optional".equals(clientcert)) sock.setWantClientAuth(true);
         if ("no".equals(clientcert)) { sock.setNeedClientAuth(false); sock.setWantClientAuth(false); }
 
-        byte buf[] = new byte[testblocklen];
-        System.out.println("Awaiting connection on " + sock.getLocalSocketAddress());
+        int runsLeft = repeatCount == null ? 1 : Integer.parseInt(repeatCount);
+        final boolean sout = runsLeft < 2;
+        ExecutorService executorService = makePool();
+
+        if (sout) System.out.println("Awaiting connections on " + sock.getLocalSocketAddress());
         sock.setSoTimeout(Integer.parseInt(timeoutMillis));
-        SSLSocket s = (SSLSocket) sock.accept();
-        System.out.println("Connected: " + s.getSession().getProtocol() + ": " + s.getSession().getCipherSuite());
-        assertEquals(testblocklen, s.getInputStream().read(buf));
-        String request = new String(buf);
-        System.out.println("Read: " + request);
-        try {
-            System.out.println("Client presented certificate: " + s.getSession().getPeerCertificateChain()[0].getSubjectDN());
-        } catch (SSLPeerUnverifiedException e) {
-            System.out.println("No client certificate was presented.");
+
+        while (--runsLeft >= 0) {
+            final SSLSocket s = (SSLSocket) sock.accept();
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        handleRequest(sout, s);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
         }
-        s.getOutputStream().write(("Echoing request: " + request).getBytes());
-        System.out.println("Closing connection");
-        s.close();
-        System.out.println("Test successful on server side.");
+    }
+
+    private ExecutorService makePool() {
+        BlockingQueue<Runnable> mutationQueue = new ArrayBlockingQueue<Runnable>(100, false);
+        int poolSizeInt = Integer.parseInt(poolSize);
+        return new ThreadPoolExecutor(poolSizeInt, poolSizeInt, 5 * 60, TimeUnit.SECONDS, mutationQueue, new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+    private void handleRequest(boolean sout, SSLSocket s) throws IOException {
+        try {
+            final byte buf[] = new byte[testblocklen];
+            System.out.println("Connected: " + s.getSession().getProtocol() + ": " + s.getSession().getCipherSuite());
+            s.getSession().invalidate();
+            assertEquals(testblocklen, s.getInputStream().read(buf));
+            String request = new String(buf);
+            if (sout) System.out.println("Read: " + request);
+            try {
+                if (sout) System.out.println("Client presented certificate: " + s.getSession().getPeerCertificateChain()[0].getSubjectDN());
+            } catch (SSLPeerUnverifiedException e) {
+                System.out.println("No client certificate was presented.");
+            }
+            s.getOutputStream().write(("Echoing request: " + request).getBytes());
+            if (sout) System.out.println("Closing connection");
+            s.close();
+            if (sout) System.out.println("Test successful on server side.");
+        } finally {
+            s.close();
+        }
     }
 
     private void runClient(SSLContext sslContext) throws Exception {
-        SSLSocketFactory csf = sslContext.getSocketFactory();
-        SSLSocket sock = (SSLSocket) csf.createSocket();
-        sock.setSoTimeout(Integer.parseInt(timeoutMillis));
-        delay();
-        sock.connect(new InetSocketAddress(host, Integer.parseInt(port)));
-        if (tlsversions != null) sock.setEnabledProtocols(tlsversions.split(","));
-        if (ciphers != null) sock.setEnabledCipherSuites(ciphers.split(","));
-        sock.setWantClientAuth("yes".equals(clientcert));
+        int runsLeft = repeatCount == null ? 1 : Integer.parseInt(repeatCount);
+        int totalRuns = runsLeft;
+        final boolean sout = runsLeft < 2;
 
-        sock.getOutputStream().write(testblock.getBytes());
-        sock.getOutputStream().flush();
-        String response = new String(slurp(sock.getInputStream()));
-        System.out.println("Got response: " + response);
-        System.out.println("Test successful on client side.");
+        ExecutorService executorService = makePool();
+        final SSLSocketFactory csf = sslContext.getSocketFactory();
+
+        long startTime = System.currentTimeMillis();
+
+        while (--runsLeft >= 0) {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        sendRequest(sout, csf);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
+
+        long endTime = System.currentTimeMillis();
+
+        long totalTime = endTime - startTime;
+        System.out.println("Total time: " + totalTime + " ms (" + (totalTime/totalRuns) + " ms/req)");
+    }
+
+    private void sendRequest(boolean sout, SSLSocketFactory csf) throws IOException, InterruptedException {
+        SSLSocket sock = (SSLSocket) csf.createSocket();
+        try {
+            sock.setSoTimeout(Integer.parseInt(timeoutMillis));
+            if (sout) System.out.println("Delaying");
+            delay();
+            if (sout) System.out.println("Connecting to server " + host);
+            sock.connect(new InetSocketAddress(host, Integer.parseInt(port)));
+            if (tlsversions != null) sock.setEnabledProtocols(tlsversions.split(","));
+            if (ciphers != null) sock.setEnabledCipherSuites(ciphers.split(","));
+            sock.setWantClientAuth("yes".equals(clientcert));
+
+            sock.getOutputStream().write(testblock.getBytes());
+            sock.getOutputStream().flush();
+            String response = new String(slurp(sock.getInputStream()));
+            sock.getSession().invalidate();
+            if (sout) System.out.println("Got response: " + response);
+            if (sout) System.out.println("Test successful on client side.");
+        } finally {
+            sock.close();
+        }
     }
 }
