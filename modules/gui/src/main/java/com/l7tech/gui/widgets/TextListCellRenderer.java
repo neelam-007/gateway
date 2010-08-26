@@ -51,11 +51,29 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
                                 final Functions.Unary<Icon,SO> iconAccessorFunction,
                                 final boolean useAccessorForNull) {
         if(accessorFunction == null) throw new NullPointerException("accessorFunction cannot be null");
-        
+
         this.accessorFunction = accessorFunction;
         this.tooltipAccessorFunction = tooltipAccessorFunction;
         this.useAccessorForNull = useAccessorForNull;
         this.iconAccessorFunction = iconAccessorFunction;
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        //Get the text and add 3 spaces, then recalculate the size, then set the text back to what it originally was.
+        //The result is that the preferred size for this label will have been calculated at the length of the text plus
+        //3 characters. The end result is that when the combo box that uses this renderer is calculating it's preferred
+        //size, it will do so based on the largest JLabel it contains. This solves an apparent outstanding issue with
+        //the windows look and feel where its bounds are off by a couple of pixels.
+        //See http://bugs.sun.com/bugdatabase/view_bug.do;jsessionid=b03d208eca8872e536f9f5084a20?bug_id=6477341
+
+        //Do this for all look and feel's as it gets around any issue trying to determine system properties if a
+        //security manager is installed.
+        final String text = getText();
+        setText(text + "   ");
+        final Dimension size = super.getPreferredSize();
+        setText(text);
+        return size;
     }
 
     /**
