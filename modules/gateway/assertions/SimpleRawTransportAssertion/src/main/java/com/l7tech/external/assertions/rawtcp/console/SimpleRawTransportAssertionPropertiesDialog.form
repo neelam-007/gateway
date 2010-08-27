@@ -139,7 +139,9 @@
                     <preferred-size width="100" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <toolTipText value="Maximum number of response bytes to read from the remote server.  Zero means &quot;unlimited&quot;."/>
+                </properties>
               </component>
               <component id="db836" class="javax.swing.JLabel">
                 <constraints>
