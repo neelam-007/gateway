@@ -48,6 +48,7 @@ public class ServerSimpleRawTransportAssertionTest {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
+        ass.setMaxResponseBytes(0);
 
         final String responseStr = "<response/>";
         final String requestStr = "<blah/>";
@@ -67,6 +68,50 @@ public class ServerSimpleRawTransportAssertionTest {
 
         context.close();
         assertTrue(sockimp.closed);
+    }
+
+    @Test
+    @BugNumber(9106)
+    public void testReponseSizeLimitSuccess() throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setMaxResponseBytes(20);
+
+        final String responseStr = "<response/>";
+        final String requestStr = "<blah/>";
+        final String respContentType = "text/xml";
+        PolicyEnforcementContext context = context(requestStr);
+        ass.setResponseContentType(respContentType);
+
+        final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
+
+        final StubSocketImpl sockimp = simulateRequest(ass, context, outputCapture, responseStr);
+
+        assertEquals(respContentType, context.getResponse().getMimeKnob().getOuterContentType().getFullValue());
+        assertEquals(requestStr, outputCapture.toString());
+        assertEquals(responseStr, new String(IOUtils.slurpStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()), Charsets.UTF8));
+        assertEquals("/127.0.0.3:2323", sockimp.sawConnectHost);
+        assertTrue(sockimp.sawShutOut);
+
+        context.close();
+        assertTrue(sockimp.closed);
+    }
+
+    @Test
+    @BugNumber(9106)
+    public void testReponseSizeLimitFailure() throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setMaxResponseBytes(10);
+        ass.setResponseContentType("text/xml");
+
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        final StubSocketImpl sockimp = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), new ByteArrayOutputStream());
+        sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp));
+        AssertionStatus result = sass.checkRequest(context("<blah/>"));
+        assertEquals(AssertionStatus.FAILED, result);
     }
 
     @Test

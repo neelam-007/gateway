@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -120,7 +121,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
                 ContentTypeHeader contentType = responseContentType != null
                         ? responseContentType
                         : ContentTypeHeader.parseValue(ExpandVariables.process(responseContentTypeTemplate, vars, auditor, true));
-                response.initialize(stashManagerFactory.createStashManager(), contentType, new BufferedInputStream(sock.getInputStream()));
+                response.initialize(stashManagerFactory.createStashManager(), contentType, new ByteLimitInputStream(new BufferedInputStream(sock.getInputStream()), 1024, assertion.getMaxResponseBytes()));
                 final Socket finalSock = sock;
                 sock = null; // defer closing response socket until end of request, so we might be able to stream it
                 context.runOnClose(new Runnable() {
