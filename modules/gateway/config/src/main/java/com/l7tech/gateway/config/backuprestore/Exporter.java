@@ -24,7 +24,7 @@ import java.text.SimpleDateFormat;
  *
  * <p>
  * The utility that backups up an SSG image
- * Exporter is responsible for accecpting parameters, validating them then calling the appropriate methods of
+ * Exporter is responsible for accepting parameters, validating them then calling the appropriate methods of
  * the Backup interface
  * </p>
  *
@@ -52,7 +52,7 @@ public final class Exporter{
             new CommandLineOption("-p", "ignored parameter for backup", false) ));
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
-     * the ability for this to be theoritically installed into other directories*/
+     * the ability for this to be theoretically installed into other directories*/
     private final File ssgHome;
 
     /**
@@ -75,7 +75,7 @@ public final class Exporter{
     /**
      * When backing up 5.0 we won't have the config/backup/images folder. This is where we will write back ups
      * to by default. Post 5.0 if the image name is just a file name, then the image will be written into the
-     * config/backup/images folder by default. This default behaivour does not happen in 5.0 
+     * config/backup/images folder by default. This default behaviour does not happen in 5.0
      */
     private final boolean isPostFiveO;
 
@@ -90,7 +90,7 @@ public final class Exporter{
     private boolean isHaltOnFirstFailure;
 
     /**
-     * When true, only the components actually requrested via the program parameters will be backed up
+     * When true, only the components actually requested via the program parameters will be backed up
      */
     private boolean isSelectiveBackup;
 
@@ -130,8 +130,9 @@ public final class Exporter{
      * @param secureSpanHome home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param printStream    stream for verbose output. Can be null
      * @throws NullPointerException     if ssgHome or ssgAppliance are null
-     * @throws IllegalArgumentException if ssgHome does not exsit or is not a directory, or if applianceHome is the
+     * @throws IllegalArgumentException if ssgHome does not exist or is not a directory, or if applianceHome is the
      *                                  empty string
+     * @throws com.l7tech.gateway.config.backuprestore.Backup.BackupException any exception which causes backup to fail
      */
     Exporter(final File secureSpanHome, final PrintStream printStream) throws Backup.BackupException {
         if (secureSpanHome == null) throw new NullPointerException("ssgHome cannot be null");
@@ -165,8 +166,8 @@ public final class Exporter{
      * <p>
      * Create the backup image zip file.
      * The returned BackupResult will contain BackupResult.Status.SUCCESS when all components applicable were backed up
-     * and no failures occured. BackupResult.Status.PARTIAL_SUCCESS is returned when -halt was used and 1 or more
-     * components failed to back up succesfully, BackupResult.Status.FAILURE is returned when the back up failed,
+     * and no failures occurred. BackupResult.Status.PARTIAL_SUCCESS is returned when -halt was used and 1 or more
+     * components failed to back up successfully, BackupResult.Status.FAILURE is returned when the back up failed,
      * and no image zip file was produced
      * </p>
      * @param args array of all command line arguments
@@ -353,9 +354,9 @@ public final class Exporter{
      * If any selective components were requested via the program parameters, then the returned Map only
      * contains the requested components 
      * </p>
-     * @param mappingFile should the db compoment backup create a mapping file? Can be null if not required
+     * @param mappingFile should the db component backup create a mapping file? Can be null if not required
      * @param backup the Backup instance to use for backup
-     * @throws IOException if any exception ocurs reading node.properties to get database information. This is always
+     * @throws IOException if any exception occurs reading node.properties to get database information. This is always
      * @return A List of BackupComponent. Clients can iterate over this list and call doBackup() to back up the component
      * its wrapping
      */
@@ -365,6 +366,7 @@ public final class Exporter{
         final List<BackupComponent> componentList = new ArrayList<BackupComponent>();
 
         final BackupComponent versionComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -372,6 +374,7 @@ public final class Exporter{
                 return backup.backUpVersion();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.VERSION;
             }
@@ -384,6 +387,7 @@ public final class Exporter{
         final DatabaseConfig config = ImportExportUtilities.getDatabaseConfig(nodePropsFile, ompFile);
 
         final BackupComponent dbComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -392,6 +396,7 @@ public final class Exporter{
                 return backup.backUpComponentMainDb(mappingFile, config);
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.MAINDB;
             }
@@ -402,6 +407,7 @@ public final class Exporter{
         //audits are different as the user has to always explicitly say they want audits
         if (includeAudits) {
             final BackupComponent auditComp = new BackupComponent() {
+                @Override
                 public ComponentResult doBackup() throws Backup.BackupException {
                     final String msg = "Backing up component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -409,6 +415,7 @@ public final class Exporter{
                     return backup.backUpComponentAudits(config);
                 }
 
+                @Override
                 public ImportExportUtilities.ComponentType getComponentType() {
                     return ImportExportUtilities.ComponentType.AUDITS;
                 }
@@ -417,6 +424,7 @@ public final class Exporter{
         }
 
         final BackupComponent configComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -424,6 +432,7 @@ public final class Exporter{
                 return backup.backUpComponentConfig();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.CONFIG;
             }
@@ -431,6 +440,7 @@ public final class Exporter{
         componentList.add(configComp);
 
         final BackupComponent osComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -439,6 +449,7 @@ public final class Exporter{
                 return backup.backUpComponentOS();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.OS;
             }
@@ -446,6 +457,7 @@ public final class Exporter{
         componentList.add(osComp);
 
         final BackupComponent caComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -453,6 +465,7 @@ public final class Exporter{
                 return backup.backUpComponentCA();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.CA;
             }
@@ -461,6 +474,7 @@ public final class Exporter{
         componentList.add(caComp);
 
         final BackupComponent maComp = new BackupComponent() {
+            @Override
             public ComponentResult doBackup() throws Backup.BackupException {
                 final String msg = "Backing up component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -468,15 +482,33 @@ public final class Exporter{
                 return backup.backUpComponentMA();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.MA;
             }
         };
         componentList.add(maComp);
 
+        final BackupComponent extComp = new BackupComponent() {
+            @Override
+            public ComponentResult doBackup() throws Backup.BackupException {
+                final String msg = "Backing up component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+
+                return backup.backUpComponentEXT();
+            }
+
+            @Override
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.EXT;
+            }
+        };
+        componentList.add(extComp);
+        
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
         if (programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())) {
             final BackupComponent emComp = new BackupComponent() {
+                @Override
                 public ComponentResult doBackup() throws Backup.BackupException {
                     final String msg = "Backing up component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -484,6 +516,7 @@ public final class Exporter{
                     return backup.backUpComponentESM();
                 }
 
+                @Override
                 public ImportExportUtilities.ComponentType getComponentType() {
                     return ImportExportUtilities.ComponentType.ESM;
                 }
@@ -502,9 +535,8 @@ public final class Exporter{
 
     /**
      * Validate all program arguments. This method will validate all required params are met, and that any which expect
-     * a value recieve it.
+     * a value receive it.
      * Checks for -v parameter, if found sets verbose = true
-     * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
      */
     private void validateProgramParameters() throws BackupRestoreLauncher.InvalidProgramArgumentException {
@@ -593,7 +625,7 @@ public final class Exporter{
      *
      * If a mapping file was supplied, it will also have the same tests applied
      * @param args program arguments
-     * @param validateImageExistence if true, check that the iamge file exists and that we can write to it
+     * @param validateImageExistence if true, check that the image file exists and that we can write to it
      * @throws IOException if any exception occurs when trying to write to the files
      */
     private void validateFiles(final Map<String, String> args, final boolean validateImageExistence) throws IOException {

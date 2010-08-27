@@ -133,6 +133,7 @@ public class BackupRestoreLauncher {
         switch (utilityType) {
             case RESTORE:
                 return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    @Override
                     public ImportExportUtilities.UtilityResult call(final String[] args)
                             throws Exception {
                         final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
@@ -141,6 +142,7 @@ public class BackupRestoreLauncher {
                 };
             case MIGRATE:
                 return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    @Override
                     public ImportExportUtilities.UtilityResult call(final String[] args)
                             throws Exception {
                         final Importer importer = new Importer(new File(SECURE_SPAN_HOME), System.out);
@@ -149,6 +151,7 @@ public class BackupRestoreLauncher {
                 };
             case BACKUP:
                 return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    @Override
                     public ImportExportUtilities.UtilityResult call(final String[] args)
                             throws Exception {
                         final Exporter exporter = new Exporter(new File(SECURE_SPAN_HOME), System.out);
@@ -157,6 +160,7 @@ public class BackupRestoreLauncher {
                 };
             case CFGDEAMON:
                 return new Functions.UnaryThrows<ImportExportUtilities.UtilityResult, String[], Exception>() {
+                    @Override
                     public ImportExportUtilities.UtilityResult call(final String[] notUsed)
                             throws Exception {
                         final File ssgHome = new File(SECURE_SPAN_HOME, ImportExportUtilities.GATEWAY);

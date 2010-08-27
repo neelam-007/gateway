@@ -1,8 +1,6 @@
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Jun 29, 2009
- * Time: 12:54:57 PM
+ * author: darmstrong
  */
 package com.l7tech.gateway.config.backuprestore;
 
@@ -46,12 +44,16 @@ final class CommonCommandLineOptions {
             new CommandLineOption("-"+ ImportExportUtilities.ComponentType.MA.getComponentName(),
             "modular assertion aar files", false);
 
+    public static final CommandLineOption EXT_OPTION =
+            new CommandLineOption("-"+ ImportExportUtilities.ComponentType.EXT.getComponentName(),
+            "Gateway/runtime/lib/ext files", false);
+
     /**
      * The ESM_OPTION should never go into ALL_COMPONENTS. This variable is used to determine if a selective
      * backup or restore is being done. The -esm never causes a selective backup / restore
      */
     public static final List<CommandLineOption> ALL_COMPONENTS = Collections.unmodifiableList(Arrays.asList(
-       OS_OPTION, CONFIG_OPTION, MAINDB_OPTION, AUDITS_OPTION, CA_OPTION, MA_OPTION
+       OS_OPTION, CONFIG_OPTION, MAINDB_OPTION, AUDITS_OPTION, CA_OPTION, MA_OPTION, EXT_OPTION
     ));
 
     public static final CommandLineOption ESM_OPTION =

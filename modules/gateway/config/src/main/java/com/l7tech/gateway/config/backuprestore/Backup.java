@@ -101,6 +101,19 @@ public interface Backup {
     public ComponentResult backUpComponentMA() throws BackupException;
 
     /**
+     * Back up the Gateway/runtime/lib/ext jar files. All files in this folder will be backup apart from
+     * any Jar file which starts with jms and belongs to an rpm which starts with 'ssg-'.
+     * A restore first installs / upgrades the SSG / Appliance. The second step is to restore a backup image. During
+     * the restore we don't want to override a SSG provided jar file with a potentially out of date one, which is why
+     * the above logic should be implemented.
+     *
+     *
+     * @return ComponentResult who's getResult() method will always return SUCCESS
+     * @throws BackupException if any exception occurs writing the files found to the backup folder
+     */
+    public ComponentResult backUpComponentEXT() throws BackupException;
+
+    /**
      * Back up the ESM, if it is installed and not running. Backs up the ESM to the esm folder
      *
      * Backing up the ESM consists of : backing up omp.dat, emconfig.properties and the /var/db folder

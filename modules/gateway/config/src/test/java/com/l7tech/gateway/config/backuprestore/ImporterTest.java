@@ -558,4 +558,16 @@ public class ImporterTest {
         Assert.assertEquals("Incorrect result found", ComponentResult.Result.SUCCESS, result.getResult());
 
     }
+
+    @BugNumber(9070)
+    @Test
+    public void testExtRestore() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
+        final Restore restore =
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+
+        final ComponentResult result = restore.restoreComponentEXT();
+        Assert.assertEquals("Incorrect result found", ComponentResult.Result.SUCCESS, result.getResult());
+    }
 }

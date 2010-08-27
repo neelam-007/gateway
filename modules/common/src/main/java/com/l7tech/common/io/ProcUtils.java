@@ -261,17 +261,12 @@ public class ProcUtils {
 
             if (logger.isLoggable(Level.FINEST)) logger.finest("Reading output from program: " + program.getName());
             is = proc.getInputStream();
-            final InputStream is1 = is;
-            byte[]  slurped = Executors.newSingleThreadExecutor().submit(new Callable<ByteArrayHolder>() {
-                @Override
-                public ByteArrayHolder call() throws Exception {
-                    return new ByteArrayHolder(IOUtils.slurpStream(is1));
-                }
-            }).get().getData();
-            is.close(); is = null;
+            final byte[]  slurped = IOUtils.slurpStream(is);
+            is.close();
+            is = null;
             if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + slurped.length + " bytes of output from program: " + program.getName());
 
-            int status = proc.waitFor();
+            final int status = proc.waitFor();
             if (logger.isLoggable(Level.FINEST)) logger.finest("Program " + program.getName() + " exited status code " + status);
             if (!allowNonzeroExit && status != 0)
                 throw new IOException("Program " + program.getName() + " exited with nonzero status " + status + ".  Output: " + new String(slurped));
@@ -282,17 +277,6 @@ public class ProcUtils {
             ResourceUtils.closeQuietly(os);
             if (proc != null)
                 proc.destroy();
-        }
-    }
-
-    private static class ByteArrayHolder {
-        private final byte[] data;
-        private ByteArrayHolder(byte[] data) {
-            this.data = data;
-        }
-
-        public byte[] getData() {
-            return data;
         }
     }
 }

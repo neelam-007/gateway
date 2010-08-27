@@ -117,6 +117,7 @@ final class RestoreImpl implements Restore{
 
     }
 
+    @Override
     public ComponentResult restoreComponentCA() throws RestoreException {
 
         final File imageCADir = image.getCAFolder();
@@ -129,6 +130,7 @@ final class RestoreImpl implements Restore{
             //restore all .property files found in the ca folder to the node/default/etc/conf folder
             final boolean propFilesCopied = ImportExportUtilities.copyFiles(
                     imageCADir, ssgConfigDir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".properties");
                 }
@@ -143,6 +145,7 @@ final class RestoreImpl implements Restore{
             //restore all jar files found to /opt/SecureSpan/Gateway/runtime/modules/lib
             final boolean jarFilesCopied = ImportExportUtilities.copyFiles(
                     imageCADir, ssgCaFolder, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
@@ -160,6 +163,7 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
+    @Override
     public ComponentResult restoreComponentMA() throws RestoreException {
         final File imageMADir = image.getMAFolder();
         if(imageMADir == null){
@@ -178,6 +182,7 @@ final class RestoreImpl implements Restore{
                 throw new IllegalStateException("Modular assertion folder not found");
 
             final String [] foundAssertions = ssgMaFolder.list(new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".aar");
                 }
@@ -200,6 +205,7 @@ final class RestoreImpl implements Restore{
 
             //restore all aar files found to /opt/SecureSpan/Gateway/runtime/modules/assertions
             final boolean aarFilesCopied = ImportExportUtilities.copyFiles(imageMADir, ssgMaFolder, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     //if it's not .aar, ignore it completely
                     if(!name.endsWith(".aar")){
@@ -242,6 +248,34 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
+    @Override
+    public ComponentResult restoreComponentEXT() throws RestoreException {
+        final File imageEXTDir = image.getEXTFolder();
+        if(imageEXTDir == null){
+            final String msg = "No ext folder found. No lib/ext files can be restored.";
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
+        }
+
+        final File ssgExtFolder = new File(ssgHome, ImportExportUtilities.LIB_EXT_DIR);
+        if(!ssgExtFolder.exists() || !ssgExtFolder.isDirectory())
+            throw new IllegalStateException("/Gateway/runtime/lib/ext folder not found");
+
+        //restore all files found to /opt/SecureSpan/Gateway/runtime/lib/ext
+        try {
+            final boolean extFilesCopied = ImportExportUtilities.copyFiles(imageEXTDir, ssgExtFolder, null, isVerbose, printStream);
+            if(!extFilesCopied){
+                final String msg = "No lib/ext files were restored";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
+        } catch (IOException e) {
+            throw new RestoreException("Problem restoring lib/ext component: " + e.getMessage());
+        }
+
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
+    }
+
+    @Override
     public ComponentResult restoreComponentConfig(final boolean isMigrate,
                                                   final boolean ignoreNodeIdentity) throws RestoreException {
         final File imageConfigDir = image.getConfigFolder();
@@ -286,6 +320,7 @@ final class RestoreImpl implements Restore{
 
             //copy all ssg config property files from the config folder to the ssg config folder
             ImportExportUtilities.copyFiles(imageConfigDir, ssgConfigDir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
 
                     //has this file being excluded during a migrate?
@@ -313,6 +348,7 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
+    @Override
     public ComponentResult restoreComponentOS() throws RestoreException {
 
         if (applianceHome.exists()) {
@@ -334,6 +370,7 @@ final class RestoreImpl implements Restore{
         }
     }
 
+    @Override
     public ComponentResult restoreComponentESM() throws RestoreException {
         try {
             //validate the esm looks ok - just a basic check
@@ -395,7 +432,8 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public ComponentResult restoreComponentAudits(final boolean isMigate)
+    @Override
+    public ComponentResult restoreComponentAudits(final boolean isMigrate)
             throws RestoreException {
         final File auditsFile = image.getAuditsBackupFile();
 
@@ -419,7 +457,7 @@ final class RestoreImpl implements Restore{
         }
 
         if (auditsFile == null || !auditsFile.exists() || !auditsFile.isFile()) {
-            if(isMigate){
+            if(isMigrate){
                 //if it's a migrate, then it's ok that we don't have an audits file file
                 //this is a success case, as migrate will always specify -audits, but it may not be applicable
                 final String msg = "No audit data found in image";
@@ -452,7 +490,7 @@ final class RestoreImpl implements Restore{
                 //see http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec#ssgmigrate.sh
                 //to understand this requirement - when isMigrate is true, missing audit data is ok
                 final String msg = "No audit data found in image";
-                if (isMigate) {
+                if (isMigrate) {
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return new ComponentResult(ComponentResult.Result.SUCCESS, msg);
                 } else {
@@ -484,6 +522,7 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
+    @Override
     public ComponentResult restoreComponentMainDb(final boolean isMigrate,
                                                   final boolean newDatabaseIsRequired,
                                                   final String pathToMappingFile) throws RestoreException {
@@ -632,7 +671,8 @@ final class RestoreImpl implements Restore{
         return new ComponentResult(ComponentResult.Result.SUCCESS);
     }
 
-    public ComponentResult restoreNodeIdentity(final boolean isMigrate,                                               
+    @Override
+    public ComponentResult restoreNodeIdentity(final boolean isMigrate,
                                                final PropertiesConfiguration propertiesConfiguration,
                                                final File ompDatFile) throws RestoreException {
 

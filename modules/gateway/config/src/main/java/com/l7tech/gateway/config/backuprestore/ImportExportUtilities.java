@@ -76,6 +76,7 @@ public class ImportExportUtilities {
     public static final String NODE_CONF_DIR = "node/default/etc/conf/";
     public static final String CA_JAR_DIR = "runtime/modules/lib";
     public static final String MA_AAR_DIR = "runtime/modules/assertions";
+    public static final String LIB_EXT_DIR = "runtime/lib/ext";
     public static final String POST_FIVE_O_DEFAULT_BACKUP_FOLDER = "config/backup/images";
     static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
     private static final String FTP_PROTOCOL = "ftp://";
@@ -256,6 +257,7 @@ public class ImportExportUtilities {
         AUDITS("audits", "Database audit data"),
         CA("ca", "Custom Assertions"),
         MA("ma", "Modular Assertions"),
+        EXT("ext", "Gateway/runtime/lib/ext"),
         VERSION("version", "Gateway Version Information"),
         ESM("esm", "Enterprise Service Manager"),
         //Only required for migrate when only config is being restored

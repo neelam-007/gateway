@@ -6,6 +6,7 @@
  */
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.test.BugNumber;
 import org.junit.*;
 
 import java.io.File;
@@ -25,7 +26,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
 
 /**
- * Tests eveything in the Backup interface except for any database related backup
+ * Tests everything in the Backup interface except for any database related backup
  * These tests write to temporary folder in the system temp directory
  * Regardless of test outcome, no temp folders will be left over in the system temp directory. If there are its a
  * coding error
@@ -219,46 +220,59 @@ public class ExporterTest {
             final Map<String, String> fileToFolderMap = new HashMap<String, String>();
             while((zipEntry = zipInputStream.getNextEntry()) != null){
                 final String entryName = zipEntry.getName();
-                fileToFolderMap.put(ImportExportUtilities.getFilePart(entryName), ImportExportUtilities.getDirPart(entryName));
+                final String dirPart = ImportExportUtilities.getDirPart(entryName);
+                final String prefix = (dirPart == null) ? "" : dirPart + "_";
+
+                fileToFolderMap.put(prefix + ImportExportUtilities.getFilePart(entryName),
+                        ImportExportUtilities.getDirPart(entryName));
             }
 
             //validate our hardcoded list of resources are in the correct places
             //First the config folder
-            Assert.assertTrue(ImportExportUtilities.NODE_PROPERTIES+" should exist in the config folder",
-                    fileToFolderMap.get(ImportExportUtilities.NODE_PROPERTIES).equals(
+            String key = ImportExportUtilities.ComponentType.CONFIG.getComponentName()
+                    + "_" + ImportExportUtilities.NODE_PROPERTIES;
+            Assert.assertTrue(ImportExportUtilities.NODE_PROPERTIES + " should exist in the config folder",
+                    fileToFolderMap.get(key).equals(
                             ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
+
+            key = ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "_" + ImportExportUtilities.SSGLOG_PROPERTIES;
             Assert.assertTrue(ImportExportUtilities.SSGLOG_PROPERTIES+" should exist in the config folder",
-                    fileToFolderMap.get(ImportExportUtilities.SSGLOG_PROPERTIES).equals(
+                    fileToFolderMap.get(key).equals(
                             ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
+
+            key = ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "_" + ImportExportUtilities.SYSTEM_PROPERTIES;
             Assert.assertTrue(ImportExportUtilities.SYSTEM_PROPERTIES+" should exist in the config folder",
-                    fileToFolderMap.get(ImportExportUtilities.SYSTEM_PROPERTIES).equals(
+                    fileToFolderMap.get(key).equals(
                             ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
+
+            key = ImportExportUtilities.ComponentType.CONFIG.getComponentName() + "_" + ImportExportUtilities.OMP_DAT;
             Assert.assertTrue(ImportExportUtilities.OMP_DAT+" should exist in the config folder",
-                    fileToFolderMap.get(ImportExportUtilities.OMP_DAT).equals(
+                    fileToFolderMap.get(key).equals(
                             ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
 
             //Custom assertions property files
+            key = ImportExportUtilities.ComponentType.CA.getComponentName() + "_empty.properties";
             Assert.assertTrue("empty.properties should exist in the config folder",
-                    fileToFolderMap.get("empty.properties").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
+                    fileToFolderMap.get(key).equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
+
             //Custom assertions jar files
+            key = ImportExportUtilities.ComponentType.CA.getComponentName() + "_empty.jar";
             Assert.assertTrue("empty.jar should exist in the config folder",
-                    fileToFolderMap.get("empty.jar").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
+                    fileToFolderMap.get(key).equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
 
             //Modular assertion aar files
+            key = ImportExportUtilities.ComponentType.MA.getComponentName() + "_empty.aar";
             Assert.assertTrue("empty.aar should exist in the config folder",
-                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ComponentType.MA.getComponentName()));
+                    fileToFolderMap.get(key).equals(ImportExportUtilities.ComponentType.MA.getComponentName()));
 
             //os files
             //os files retain their complete folder strucutre in the image zip. Their root folder will come after
             //the /os folder in the imagezip, which is why tmpSsgHome is used in conjunction with the OS folder name
             //in this assertion
+            key = ImportExportUtilities.ComponentType.OS.getComponentName() + tmpSsgHome + "_" + OS_FILE_TO_COPY;
             Assert.assertTrue(OS_FILE_TO_COPY+" should exist in the os folder",
-                    fileToFolderMap.get(OS_FILE_TO_COPY).equals(
+                    fileToFolderMap.get(key).equals(
                             ImportExportUtilities.ComponentType.OS.getComponentName()+tmpSsgHome));
-
-            //confirm pretend os file was copied
-            Assert.assertTrue("empty.aar should exist in the config folder",
-                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ComponentType.MA.getComponentName()));
 
             //version
             Assert.assertTrue(ImportExportUtilities.VERSION +" should exist in the zip root folder",
@@ -645,31 +659,70 @@ public class ExporterTest {
                 true, true, System.out);
 
         try{
-            backup.backUpComponentCA();
+            backup.backUpComponentMA();
 
             final File backupFolder = backup.getBackupFolder();
             //Check config dir exists
             final File configDir = new File(backupFolder.getAbsolutePath(),
-                    ImportExportUtilities.ComponentType.CA.getComponentName());
+                    ImportExportUtilities.ComponentType.MA.getComponentName());
 
-            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
+            Assert.assertTrue(ImportExportUtilities.ComponentType.MA.getComponentName() +
                     " directory should exist in '" + backupFolder.getAbsolutePath() + "'", configDir.exists());
-            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
+            Assert.assertTrue(ImportExportUtilities.ComponentType.MA.getComponentName() +
                     " directory should be a directory '" + backupFolder.getAbsolutePath() + "'", configDir.isDirectory());
 
             //Test for the individual files, based on this project's resources
-            final File nodeProp = new File(backupFolder.getAbsolutePath() + File.separator +
-                    ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.properties");
-            Assert.assertTrue(nodeProp.getName() +
+            final File echoAar = new File(backupFolder.getAbsolutePath() + File.separator +
+                    ImportExportUtilities.ComponentType.MA.getComponentName(), "EchoRoutingAssertion-5.0.aar");
+            Assert.assertTrue(echoAar.getName() +
                     " should exist in '" + backupFolder.getAbsolutePath() + File.separator
-                    + ImportExportUtilities.ComponentType.CA.getComponentName() + "'", nodeProp.exists());
+                    + ImportExportUtilities.ComponentType.MA.getComponentName() + "'", echoAar.exists());
 
-            final File ssgLog = new File(backupFolder.getAbsolutePath() + File.separator
-                    + ImportExportUtilities.ComponentType.CA.getComponentName(), "empty.jar");
+            final File emptyAar = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.MA.getComponentName(), "empty.aar");
 
-            Assert.assertTrue(ssgLog.getName() +
+            Assert.assertTrue(emptyAar.getName() +
                     " should exist in '" + backupFolder.getAbsolutePath() + File.separator
-                    + ImportExportUtilities.ComponentType.CA.getComponentName() + "'", ssgLog.exists());
+                    + ImportExportUtilities.ComponentType.MA.getComponentName() + "'", emptyAar.exists());
+        }finally{
+            backup.deleteTemporaryDirectory();
+        }
+    }
+
+    /**
+     * Test the lib/ext backup
+     * Tests that the folder "ext" is created in the tmp folder used for generating the backup image from, and that
+     * it contains the correct jar files, based on this project's resources
+     *
+     * @throws IOException
+     */
+    @BugNumber(9070)
+    @Test
+    public void testExtBackup() throws Exception {
+        createTestEnvironment();
+        final Backup backup = BackupRestoreFactory.getBackupInstance(tmpSecureSpanHome, null, "notusedinthistest",
+                true, true, System.out);
+
+        try{
+            backup.backUpComponentEXT();
+
+            final File backupFolder = backup.getBackupFolder();
+            //Check config dir exists
+            final File configDir = new File(backupFolder.getAbsolutePath(),
+                    ImportExportUtilities.ComponentType.EXT.getComponentName());
+
+            Assert.assertTrue(ImportExportUtilities.ComponentType.EXT.getComponentName() +
+                    " directory should exist in '" + backupFolder.getAbsolutePath() + "'", configDir.exists());
+            Assert.assertTrue(ImportExportUtilities.ComponentType.EXT.getComponentName() +
+                    " directory should be a directory '" + backupFolder.getAbsolutePath() + "'", configDir.isDirectory());
+
+            //Test for the individual files, based on this project's resources
+            final File jarFile = new File(backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.EXT.getComponentName(), "empty.jar");
+
+            Assert.assertTrue(jarFile.getName() +
+                    " should exist in '" + backupFolder.getAbsolutePath() + File.separator
+                    + ImportExportUtilities.ComponentType.EXT.getComponentName() + "'", jarFile.exists());
         }finally{
             backup.deleteTemporaryDirectory();
         }
@@ -781,7 +834,7 @@ public class ExporterTest {
      * 
      * Tests the following:
      * - In all situations the file name is made unique 
-     * - In a 5.0 environement if the file name has no path part, then none is added
+     * - In a 5.0 environment if the file name has no path part, then none is added
      * - When ftp is being used, no path part is added when the image name does not contain any
      * - When ftp is not being used, and the environment is post 5.0, then the default images folder is added to
      * the image name, if it contains no path part

@@ -1,5 +1,7 @@
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.BuildInfo;
@@ -13,7 +15,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
-import java.util.ArrayList;
 import java.util.List;
 import java.sql.SQLException;
 
@@ -92,6 +93,7 @@ final class BackupImpl implements Backup {
         this.isPostFiveO = isPostFiveO;
     }
 
+    @Override
     public ComponentResult backUpVersion() throws BackupException {
         FileOutputStream fos = null;
         try {
@@ -105,6 +107,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentMainDb(final String mappingFile, final DatabaseConfig config)
             throws BackupException {
 
@@ -146,6 +149,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentAudits(final DatabaseConfig config) throws BackupException {
         if (!ImportExportUtilities.isDatabaseAvailableForBackupRestore(config.getHost())) {
             final String msg = "Cannot backup database as it is not local";
@@ -175,12 +179,14 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentConfig() throws BackupException {
         try {
             final File dir = createComponentDir(
                     tmpOutputDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
 
             ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
                         if (ssgFile.equals(name)) return true;
@@ -196,6 +202,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentOS() throws BackupException {
         if(!applianceHome.exists()){
             final String msg = "Appliance is not installed";
@@ -222,6 +229,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentCA() throws BackupException {
         try {
             final File dir =
@@ -229,6 +237,7 @@ final class BackupImpl implements Backup {
 
             //backup all .property files in the conf folder which are not in CONFIG_FILES
             final boolean propFilesCopied = ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     if (!name.endsWith(".properties")) return false;
 
@@ -247,6 +256,7 @@ final class BackupImpl implements Backup {
             //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
             final boolean jarFilesCopied = ImportExportUtilities.copyFiles(
                     new File(ssgHome, ImportExportUtilities.CA_JAR_DIR), dir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");
                 }
@@ -263,6 +273,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public ComponentResult backUpComponentMA() throws BackupException {
         try {
             final File dir =
@@ -271,6 +282,7 @@ final class BackupImpl implements Backup {
             //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
             final boolean aarFilesCopied = ImportExportUtilities.copyFiles(
                     new File(ssgHome, ImportExportUtilities.MA_AAR_DIR), dir, new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".aar");
                 }
@@ -287,6 +299,64 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
+    public ComponentResult backUpComponentEXT() throws BackupException {
+        try {
+            final File dir =
+                    createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.EXT.getComponentName());
+
+            //backup all files found in /opt/SecureSpan/Gateway/runtime/lib/ext apart from any jms*.jar file which
+            //belongs to an ssg rpm.
+            final boolean libExtFilesCopied = ImportExportUtilities.copyFiles(
+                    new File(ssgHome, ImportExportUtilities.LIB_EXT_DIR), dir, new FilenameFilter() {
+
+                @Override
+                public boolean accept(File dir, String name) {
+
+                    if(!name.toLowerCase().startsWith("jms")) return true;
+
+                    //check if we own this file
+                    try {
+                        final ProcResult result = ProcUtils.exec(new File("/bin/rpm"), new String[]{"-qf", new File(dir, name).getAbsolutePath()});
+                        if(result.getExitStatus() != 0){
+                            //no rpm owns this file, it can be copied.
+                            return true;
+                        }
+
+                        final String processOutput = new String(result.getOutput());
+                        if(processOutput.length() < 3) {
+                            return true;//copy it, not owned by an ssg* rpm
+                        }
+
+                        if(processOutput.substring(0,3).toLowerCase().startsWith("ssg")) {
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "File '" + name + "' belongs to an SSG rpm. Not copying.", isVerbose, printStream);
+                            return false;
+                        }
+                    } catch (IOException e) {
+                        final String msg = "Could not check owner of JMS jar '" +
+                                new File(dir, name).getAbsolutePath() + "'. Not copying to backup image. " + 
+                                e.getMessage();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        return false;
+                    }
+
+                    return true;
+                }
+            }, isVerbose, printStream);
+
+            if(!libExtFilesCopied){
+                final String msg = "No files from Gateway/runtime/lib/ext needed to be backed up";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            }
+
+        } catch (IOException e) {
+            throw new BackupException("Cannot back up Gateway/runtime/lib/ext: " + e.getMessage());
+        }
+
+        return new ComponentResult(ComponentResult.Result.SUCCESS);
+    }
+
+    @Override
     public ComponentResult backUpComponentESM() throws BackupException {
 
         try {
@@ -315,6 +385,7 @@ final class BackupImpl implements Backup {
             final File dbFile = new File(dir, varDbFolder);
             FileUtils.ensurePath(dbFile);
             ImportExportUtilities.copyDir(new File(esmHome, varDbFolder), dbFile, new FilenameFilter(){
+                @Override
                 public boolean accept(File dir, String name) {
                     return !name.endsWith("derby.log");
                 }
@@ -336,6 +407,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public void createBackupImage() throws BackupException {
         //when we are using ftp, we need to store the image file somewhere locally
         //not using the same temp directory as the image data as it causes recursive problems when zipping
@@ -365,6 +437,7 @@ final class BackupImpl implements Backup {
 
     }
 
+    @Override
     public boolean deleteTemporaryDirectory() {
         logger.info("cleaning up temp files at " + tmpOutputDirectory);
         if (printStream != null && isVerbose) printStream.println("Cleaning temporary files at " + tmpOutputDirectory);
@@ -465,6 +538,7 @@ final class BackupImpl implements Backup {
         }
     }
 
+    @Override
     public File getBackupFolder() {
         return tmpOutputDirectory;
     }

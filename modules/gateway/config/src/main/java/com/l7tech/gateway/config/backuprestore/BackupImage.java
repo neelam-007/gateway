@@ -302,6 +302,14 @@ public final class BackupImage {
     }
 
     /**
+     * Get the ext folder from the image
+     * @return File the ext folder. If it's not null, then the folder exists and is a directory
+     */
+    File getEXTFolder(){
+        return getFolder(ImportExportUtilities.ComponentType.EXT);
+    }
+
+    /**
      * Get the esm folder from the image, the esm folder only exists in a post 5.0 image
      * @return File the ma folder. If it's not null, then the folder exists and is a directory
      */

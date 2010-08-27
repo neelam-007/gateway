@@ -1036,15 +1036,31 @@ public final class Importer{
             }
         });
 
+        componentList.add(new RestoreComponent(){
+            @Override
+            public ComponentResult doRestore() throws Restore.RestoreException {
+                final String msg = taskVerb + " component " + getComponentType().getComponentName();
+                ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                return restore.restoreComponentEXT();
+            }
+
+            @Override
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.EXT;
+            }
+        });
+
         //Check for -esm, we don't add this by default, only when it's explicitly asked for
         if(programFlagsAndValues.containsKey(CommonCommandLineOptions.ESM_OPTION.getName())){
             componentList.add(new RestoreComponent(){
+                @Override
                 public ComponentResult doRestore() throws Restore.RestoreException {
                     final String msg = taskVerb + " component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                     return restore.restoreComponentESM();
                 }
 
+                @Override
                 public ImportExportUtilities.ComponentType getComponentType() {
                     return ImportExportUtilities.ComponentType.ESM;
                 }
@@ -1070,6 +1086,7 @@ public final class Importer{
         //for migrate, always overwrite the hosts identity with updated values from the command line
         if(isDbComponent || isMigrate){
             returnList.add(new RestoreComponent(){
+                @Override
                 public ComponentResult doRestore() throws Restore.RestoreException {
                     final String msg = taskVerb + " component " + getComponentType().getComponentName();
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -1078,6 +1095,7 @@ public final class Importer{
                     return restore.restoreNodeIdentity(isMigrate, nodePropertyConfig, ompDatToMatchNodePropertyConfig);
                 }
 
+                @Override
                 public ImportExportUtilities.ComponentType getComponentType() {
                     return ImportExportUtilities.ComponentType.NODE_IDENTITY;
                 }
