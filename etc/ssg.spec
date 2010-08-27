@@ -139,6 +139,13 @@ fi
 [ ! -d "${RPM_INSTALL_PREFIX0}/config" ] || chown -R layer7.layer7 "${RPM_INSTALL_PREFIX0}/config"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/etc/conf" ] || chown -R layer7.gateway "${RPM_INSTALL_PREFIX0}/node/default/etc/conf"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/var" ] || chown -R gateway.gateway "${RPM_INSTALL_PREFIX0}/node/default/var"
+
+# hack to turn back ownership/permissions for what's needed in software
+chown gateway:gateway /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
+chmod 660 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
+chown gateway:gateway /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
+chmod 660 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
+
 prev_gateway_uid=`find /opt/SecureSpan/Controller/ -nouser -printf "%u\n" 2>/dev/null | sort -n | head -1`
 if [ -n "$prev_gateway_uid" ]; then
     find /opt/SecureSpan/Controller/ -user $prev_gateway_uid -exec chown gateway '{}' \;

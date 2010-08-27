@@ -44,3 +44,9 @@ if [ -f "${INSTALL_DIR}/Appliance/controller/etc/host.properties" ] ; then
 
     mv "${INSTALL_DIR}/Appliance/controller/etc/host.properties" "${INSTALL_DIR}/Controller/etc/host.properties"
 fi
+
+# hack to ensure ownership/permissions are set correctly for what's needed on appliance
+chown layer7:layer7 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
+chmod 660 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
+chown layer7:layer7 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
+chmod 660 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
