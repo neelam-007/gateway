@@ -250,22 +250,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     private final static String baseName = "Route via FTP(S)";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<FtpRoutingAssertion>(){
-        @Override
-        public String getAssertionName( final FtpRoutingAssertion assertion, final boolean decorate) {
-            if(!decorate) return baseName;
-
-            final StringBuilder sb = new StringBuilder("Route via FTP");
-            if (assertion.getSecurity() == FtpSecurity.FTPS_EXPLICIT ||
-                assertion.getSecurity() == FtpSecurity.FTPS_IMPLICIT) {
-                sb.append("S");
-            }
-            sb.append(" Server ");
-            sb.append(assertion.getHostName());
-            return sb.toString();
-        }
-    };
-
     @Override
     public AssertionMetadata meta() {
         final DefaultAssertionMetadata meta = defaultMeta();
@@ -276,14 +260,21 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "routing" });
 
-        //meta.put(POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<FtpRoutingAssertion>() {
             @Override
             public String getAssertionName(final FtpRoutingAssertion assertion, final boolean decorate) {
-                final String displayName = meta.getString(AssertionMetadata.SHORT_NAME);
-                if (!decorate) return displayName;
-                return assertion.getRequestTarget().getTargetName() + ": " + displayName;
+                if(!decorate) return baseName;
+
+                final StringBuilder sb = new StringBuilder("Route via FTP");
+                if (assertion.getSecurity() == FtpSecurity.FTPS_EXPLICIT ||
+                    assertion.getSecurity() == FtpSecurity.FTPS_IMPLICIT) {
+                    sb.append("S");
+                }
+                sb.append(" Server ");
+                sb.append(assertion.getHostName());
+                
+                return AssertionUtils.decorateName(assertion, assertion.getRequestTarget().getTargetName() + ": " + sb.toString());
             }
         });
 

@@ -1,13 +1,20 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 
-import javax.swing.JDialog;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Collections;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Support class for AssertionPropertiesEditor implementations.
@@ -144,6 +151,54 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         }
 
         return assertion;
+    }
+
+    protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion ) {
+        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+
+        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
+        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
+
+        final Map<String, VariableMetadata> predecessorVariables =
+                (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                Collections.<String, VariableMetadata>emptyMap();
+
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName: predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final MessageTargetableSupport item = new MessageTargetableSupport( TargetMessageType.OTHER );
+                item.setOtherTargetMessageVariable( variableName );
+                comboBoxModel.addElement( item );
+            }
+        }
+
+        return comboBoxModel;
+    }
+
+    protected ComboBoxModel buildMessageTargetComboBoxModel() {
+        final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
+        comboBoxModel.addElement( null );
+        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
+        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
+        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.OTHER ) );
+        return comboBoxModel;
+    }
+
+    protected Functions.Unary<String, MessageTargetable> getMessageNameFunction( final String defaultName,
+                                                                                final String variableName ) {
+        return new Functions.Unary<String,MessageTargetable>(){
+            @Override
+            public String call( final MessageTargetable messageTargetable ) {
+                if ( messageTargetable == null ) {
+                    return defaultName;
+                } else if ( variableName != null && messageTargetable.getTarget()== TargetMessageType.OTHER ) {
+                    return variableName;
+                } else {
+                    return messageTargetable.getTargetName();
+                }
+            }
+        };
     }
 
     //- PRIVATE

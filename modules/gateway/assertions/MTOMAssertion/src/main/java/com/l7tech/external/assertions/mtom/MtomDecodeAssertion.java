@@ -80,6 +80,7 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
         meta.put(CLUSTER_PROPERTIES, Collections.singletonMap( PROP_DECODE_SECURED, new String[]{
                 "Should MTOM messages containing WS-Security for processing by this gateway be automatically decoded (true/false)",
                 "true" } ));
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

@@ -20,8 +20,10 @@ import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -37,10 +39,7 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.EventListener;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -87,32 +86,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private EventListenerList _listenerList = new EventListenerList();
 
     private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
-
-    private static class MsgSrcComboBoxItem {
-        private boolean undefined = false;
-
-        private final MessageTargetableSupport target;
-        public MsgSrcComboBoxItem(MessageTargetableSupport target) {
-            this.target = target;
-        }
-
-        public MessageTargetableSupport getTarget() {
-            return target;
-        }
-
-        public void setUndefined(boolean undefined) {
-            this.undefined = undefined;
-        }
-
-        public boolean isUndefined() {
-            return undefined;
-        }
-
-        @Override
-        public String toString() {
-            return (undefined ? "Undefined: " : "") + target.getTargetName();
-        }
-    }
 
     /**
      * Creates new form ServicePanel
@@ -271,8 +244,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (((MsgSrcComboBoxItem) messageSource.getSelectedItem()).isUndefined()) {
-                    JOptionPane.showMessageDialog(_okButton, "Undefined context variable for message source: " + ((MsgSrcComboBoxItem) messageSource.getSelectedItem()).getTarget().getTargetName());
+                MessageTargetableSupport selected = (MessageTargetableSupport) messageSource.getSelectedItem();
+                if (TargetMessageType.OTHER == selected.getTarget() && ! getPredecessorVariables().keySet().contains(selected.getOtherTargetMessageVariable())) {
+                    JOptionPane.showMessageDialog(_okButton, "Undefined context variable for message source: " + selected.getOtherTargetMessageVariable());
                     return;
                 }
                 getData(_assertion);
@@ -300,19 +274,20 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
         String contextVariableSourceTarget = sourceTarget == TargetMessageType.OTHER ? currentMessageSource.getOtherTargetMessageVariable() : null;
 
-        messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.REQUEST, false)));
-        messageSource.addItem(new MsgSrcComboBoxItem(new MessageTargetableSupport(TargetMessageType.RESPONSE, false)));
+        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.REQUEST));
+        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.RESPONSE));
 
         if (sourceTarget == TargetMessageType.REQUEST)
             messageSource.setSelectedIndex(0);
         else if (sourceTarget == TargetMessageType.RESPONSE)
             messageSource.setSelectedIndex(1);
 
-        final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(_assertion);
+        final Map<String, VariableMetadata> predecessorVariables = getPredecessorVariables();
+
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName : predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(new MessageTargetableSupport(variableName));
+                MessageTargetableSupport item = new MessageTargetableSupport(variableName);
                 messageSource.addItem(item);
                 if ( variableName.equals(contextVariableSourceTarget) ) {
                     messageSource.setSelectedItem(item);
@@ -321,11 +296,16 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         }
 
         if (contextVariableSourceTarget != null && ! predecessorVariableNames.contains(contextVariableSourceTarget)) {
-            MsgSrcComboBoxItem current = new MsgSrcComboBoxItem(new MessageTargetableSupport(contextVariableSourceTarget));
-            current.setUndefined(true);
+            MessageTargetableSupport current = new MessageTargetableSupport(contextVariableSourceTarget);
             messageSource.addItem(current);
             messageSource.setSelectedItem(current);
         }
+    }
+
+    private Map<String, VariableMetadata> getPredecessorVariables() {
+        return  (_assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( _assertion ) :
+                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                Collections.<String, VariableMetadata>emptyMap();
     }
 
     private void initFormData() {
@@ -366,6 +346,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _timeoutTextField.setText(Integer.toString(_assertion.getTimeout() / 1000));
 
         RoutingDialogUtils.configSecurityHeaderRadioButtons(_assertion, -1, null, secHdrButtons);
+
+        messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
 
         enableOrDisableComponents();
     }
@@ -433,6 +415,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     @Override
     public void setData(FtpRoutingAssertion assertion) {
         this._assertion = assertion;
+        messageSource.setModel( buildMessageSourceComboBoxModel(assertion) );
+        messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()) );
         initFormData();
     }
 
@@ -448,7 +432,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             assertion.setSecurity(FtpSecurity.FTPS_IMPLICIT);
         }
 
-        assertion.setRequestTarget(((MsgSrcComboBoxItem) messageSource.getSelectedItem()).getTarget());
+        assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
 
         assertion.setVerifyServerCert(_verifyServerCertCheckBox.isSelected());
 
