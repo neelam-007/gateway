@@ -31,6 +31,15 @@ public class SecureConversationKeyDeriver {
     private static final String DEFAULT_DEFAULT_LABEL = "WS-SecureConversationWS-SecureConversation";
     private static final String DEFAULT_LABEL = nullAsNull(SyspropUtil.getString("com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL));
     private static final boolean IGNORE_ALGORITHM_URI = SyspropUtil.getBoolean("com.l7tech.security.wssc.ignoreAlgorithmUri", false);
+    private static final int MAX_GENERATION = SyspropUtil.getInteger("com.l7tech.security.wssc.maxGeneration", 100);
+    private static final int MAX_LENGTH = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
+
+    private static final String ATTR_ALGORITHM = "Algorithm";
+    private static final String ELE_GENERATION = "Generation";
+    private static final String ELE_LENGTH = "Length";
+    private static final String ELE_LABEL = "Label";
+    private static final String ELE_NONCE = "Nonce";
+
 
     private static String nullAsNull(String s) {
         return "null".equals(s) ? null : s;
@@ -47,7 +56,8 @@ public class SecureConversationKeyDeriver {
      * @throws java.security.NoSuchAlgorithmException   if the algorithm specified in the derived key token is not available
      * @throws com.l7tech.util.InvalidDocumentFormatException  if the derived key token cannot be parsed
      */
-    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret)
+    public byte[] derivedKeyTokenToKey( final Element derivedKeyToken,
+                                        final byte[] secret)
                                     throws NoSuchAlgorithmException, InvalidDocumentFormatException {
 
         String namespaceURI = derivedKeyToken.getNamespaceURI();
@@ -62,16 +72,16 @@ public class SecureConversationKeyDeriver {
                 || DomUtils.elementInNamespace(derivedKeyToken, SoapConstants.SECURITY_URIS_ARRAY)) {
             // ok wsc 1.0, 1.1 or whatever wsc is in WSE 3.0
         } else {
-            throw new InvalidDocumentFormatException("Unsuported DerivedKeyToken namespace " +
+            throw new InvalidDocumentFormatException("Unsupported DerivedKeyToken namespace " +
                                                          derivedKeyToken.getNamespaceURI());
         }
 
         if (!IGNORE_ALGORITHM_URI) {
             // check that default algorithm is in effect
-            String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
-            if (algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
+            String algo = derivedKeyToken.getAttributeNS(namespaceURI, ATTR_ALGORITHM );
+            if (algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute( ATTR_ALGORITHM );
             if (algo != null && algo.length() > 0 && !URI_ALG_PSHA1S.contains(algo))
-                throw new NoSuchAlgorithmException("Unsupported DerivedKeyToken Algrithm: " + algo);
+                throw new NoSuchAlgorithmException("Unsupported DerivedKeyToken "+ATTR_ALGORITHM+": " + algo);
         }
 
         String lengthVal = null;
@@ -79,39 +89,54 @@ public class SecureConversationKeyDeriver {
         final String nonce;
         int generation = 0;
         // get generation
-        Element genNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Generation");
+        Element genNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_GENERATION );
         if (genNode != null) {
             String genVal = DomUtils.getTextValue(genNode);
             if (genVal != null && genVal.trim().length() > 0) {
                 try {
                     generation = Integer.parseInt(genVal.trim());
+                    if ( generation < 0 || generation > MAX_GENERATION ) {
+                        throw new InvalidDocumentFormatException("Illegal DerivedKeyToken " + ELE_GENERATION + ": " + generation );
+                    }
                 } catch (NumberFormatException e) {
                     throw new InvalidDocumentFormatException(e);
                 }
             }
         }
         // get length
-        Element lenNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Length");
+        Element lenNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LENGTH );
         if (lenNode != null) {
             lengthVal = DomUtils.getTextValue(lenNode);
         }
+        if (lengthVal == null || lengthVal.length() < 1) {
+            throw new InvalidDocumentFormatException("DerivedKeyToken " +ELE_LENGTH+ " is required");
+        }
+        int length;
+        try {
+            length = Integer.parseInt(lengthVal.trim());
+            if ( length < 0 || length > MAX_LENGTH ) {
+                throw new InvalidDocumentFormatException("Illegal DerivedKeyToken " + ELE_LENGTH + ": " + length );
+            }
+        } catch (NumberFormatException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
 
         // get label
-        Element labelNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Label");
+        Element labelNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LABEL );
         if (labelNode != null) {
             label = DomUtils.getTextValue(labelNode);
         }
 
         // get nonce
         Element nonceNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken,
-                                                                  SoapConstants.SECURITY_URIS_ARRAY,
-                                                                  "Nonce");
+                                                                   SoapConstants.SECURITY_URIS_ARRAY,
+                                                                   ELE_NONCE );
 
         if(nonceNode==null) nonceNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken,
-                                                                  namespaceURI,
-                                                                  "Nonce");
+                                                                               namespaceURI,
+                                                                               ELE_NONCE );
         if (nonceNode == null)
-            throw new InvalidDocumentFormatException("DerivedKeyToken has no Nonce");
+            throw new InvalidDocumentFormatException("DerivedKeyToken has no " + ELE_NONCE);
         nonce = DomUtils.getTextValue(nonceNode);
 
         final byte[] nonceA;
@@ -121,10 +146,6 @@ public class SecureConversationKeyDeriver {
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
 
-        if (lengthVal == null || lengthVal.length() < 1) {
-            throw new InvalidDocumentFormatException("Derived key length not specified");
-        }
-        int length = Integer.parseInt(lengthVal);
         int offset = generation * length;
         try{
             byte[] generated = pSHA1(secret, seed, offset+length);
@@ -210,5 +231,4 @@ public class SecureConversationKeyDeriver {
         }
     };
 
-    private static final String ALGO_ATTRNAME = "Algorithm";
 }
