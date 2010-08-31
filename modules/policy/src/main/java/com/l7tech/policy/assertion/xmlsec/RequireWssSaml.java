@@ -225,9 +225,15 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     @Override
     public String[] getVariablesUsed() {
         final Set<String> variables = new HashSet<String>();
-        variables.addAll( Arrays.asList(messageTargetableSupport.getVariablesUsed()) );
+        variables.addAll(Arrays.asList(messageTargetableSupport.getVariablesUsed()));
         if ( subjectConfirmationDataRecipient!=null ) {
-            variables.addAll( Arrays.asList(Syntax.getReferencedNames(subjectConfirmationDataRecipient)) );
+            variables.addAll(Arrays.asList(Syntax.getReferencedNames(subjectConfirmationDataRecipient)));
+        }
+        if( nameQualifier != null) {
+            variables.addAll(Arrays.asList(Syntax.getReferencedNames(nameQualifier)));
+        }
+        if( audienceRestriction != null) {
+            variables.addAll(Arrays.asList(Syntax.getReferencedNames(audienceRestriction)));
         }
         return variables.toArray( new String[variables.size()] );
     }

@@ -6,6 +6,8 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -27,6 +29,9 @@ import java.util.logging.Logger;
 /**
  * Validates the SAML Assertion within the Document. The Document must represent a well formed
  * SOAP message.
+ *
+ * Note: Instances of this class are currently only used by the ServerRequireWssSaml server assertion. Other usages
+ * are of static members.
  *
  * @author emil
  * @version Jan 25, 2005
@@ -75,7 +80,8 @@ public class SamlAssertionValidate {
                           final Collection<Error> validationResults,
                           final Collection<Pair<String, String[]>> collectAttrValues,
                           final Collection<String> clientAddresses,
-                          final String recipient ) {
+                          final Map<String, Object> serverVariables,
+                          final Auditor auditor) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -115,8 +121,8 @@ public class SamlAssertionValidate {
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
                                     SamlStatementValidate statementValidate = validators.get(clazz);
-                                    validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
-                                    validateConditions(assertionType, validationResults);
+                                    validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults, serverVariables, auditor);
+                                    validateConditions(assertionType, validationResults, serverVariables, auditor);
                                     statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues);
                                 }
                             }
@@ -124,8 +130,8 @@ public class SamlAssertionValidate {
                     } else if (xmlObject instanceof x0Assertion.oasisNamesTcSAML2.AssertionType) {
                         x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
                             (x0Assertion.oasisNamesTcSAML2.AssertionType)xmlObject;
-                        validateConditions(assertionType.getConditions(), now, validationResults);
-                        validateSubjectConfirmation(assertionType.getSubject(), now, clientAddresses, recipient ,validationResults);
+                        validateConditions(assertionType.getConditions(), now, validationResults, serverVariables, auditor);
+                        validateSubjectConfirmation(assertionType.getSubject(), now, clientAddresses, validationResults, serverVariables, auditor);
 
                         Collection<XmlObject> statementList = new ArrayList<XmlObject>();
                         statementList.addAll(Arrays.asList(assertionType.getAuthnStatementArray()));
@@ -362,7 +368,10 @@ public class SamlAssertionValidate {
      * @param assertionType
      * @param validationResults
      */
-    private void validateConditions(AssertionType assertionType, Collection<Error> validationResults) throws IOException {
+    private void validateConditions(final AssertionType assertionType,
+                                    final Collection<Error> validationResults,
+                                    final Map<String, Object> serverVariables,
+                                    final Auditor auditor) throws IOException {
         ConditionsType conditionsType = assertionType.getConditions();
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
@@ -406,7 +415,8 @@ public class SamlAssertionValidate {
             }
         }
 
-        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
+        final String audienceResTest = requestWssSaml.getAudienceRestriction();
+        final String audienceRestriction = (audienceResTest == null) ? audienceResTest : ExpandVariables.process(audienceResTest, serverVariables, auditor);
         if (audienceRestriction == null || "".equals(audienceRestriction)) {
             logger.finer("No audience restriction requested");
             return;
@@ -460,22 +470,26 @@ public class SamlAssertionValidate {
     /**
      * Subject validation for 1.x
      */
-    private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection<Error> validationResults) {
+    private void validateSubjectConfirmation(final SubjectStatementAbstractType subjectStatementAbstractType,
+                                             final Collection<Error> validationResults,
+                                             final Map<String, Object> serverVariables,
+                                             final Auditor auditor) {
         final SubjectType subject = subjectStatementAbstractType.getSubject();
         if (subject == null) {
             validationResults.add(new Error("Subject Statement Required", null));
             return;
         }
 
-        final String nameQualifier = requestWssSaml.getNameQualifier();
+        final String nameQualTest = requestWssSaml.getNameQualifier();
+        final String nameQualifier = (nameQualTest == null) ? nameQualTest : ExpandVariables.process(nameQualTest, serverVariables, auditor);
         final NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
         if (nameQualifier != null && !"".equals(nameQualifier)) {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
                     Error result = new Error("Name Qualifiers does not match presented/required {0}/{1}",
-                                             null,
-                                             presentedNameQualifier, nameQualifier
+                            null,
+                            presentedNameQualifier, nameQualifier
                     );
                     validationResults.add(result);
                     logger.finer(result.toString());
@@ -560,19 +574,36 @@ public class SamlAssertionValidate {
     /**
      * Validate the SAML assertion conditions for v2.x
      */
-    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Calendar timeNow, Collection<Error> validationResults) {
-        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, timeNow, validationResults);
+    private void validateConditions(final x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType,
+                                    final Calendar timeNow,
+                                    final Collection<Error> validationResults,
+                                    final Map<String, Object> serverVariables,
+                                    final Auditor auditor) {
+
+        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml,
+                conditionsType,
+                timeNow,
+                validationResults,
+                serverVariables,
+                auditor);
     }
 
     /**
      * Subject validation for 2.x
      */
-    private void validateSubjectConfirmation( final x0Assertion.oasisNamesTcSAML2.SubjectType subjectType,
-                                              final Calendar timeNow,
-                                              final Collection<String> clientAddresses,
-                                              final String recipient,
-                                              final Collection<Error> validationResults) {
-        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, clientAddresses, recipient, validationResults);
+    private void validateSubjectConfirmation(final x0Assertion.oasisNamesTcSAML2.SubjectType subjectType,
+                                             final Calendar timeNow,
+                                             final Collection<String> clientAddresses,
+                                             final Collection<Error> validationResults,
+                                             final Map<String, Object> serverVariables,
+                                             final Auditor auditor) {
+        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml,
+                subjectType,
+                timeNow,
+                clientAddresses,
+                validationResults,
+                serverVariables,
+                auditor);
     }
 
     /**

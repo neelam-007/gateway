@@ -1,5 +1,6 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.test.BugNumber;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.MockProcessorResult;
@@ -53,7 +54,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -93,7 +94,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -135,7 +136,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         // check for error message
         String expectedErrorStart = "SAML Constraint Error: SAML ticket has expired as of:";
@@ -175,7 +176,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         // check for error message
         String expectedError = "SAML Constraint Error: Audience Restriction Check Failed";
@@ -292,7 +293,8 @@ public class Saml2ValidationTest {
                                          final String address ) {
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, Collections.singleton( address ), templateSaml.getSubjectConfirmationDataRecipient());
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, Collections.singleton( address ),
+                Collections.<String, Object>emptyMap(), null);
 
         // check for error message
         boolean foundError = false;
@@ -331,7 +333,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         boolean foundUnsignedError = false;
         for ( final Object result : results ) {
@@ -366,7 +368,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         boolean foundError = false;
         String expectedError = "SAML Constraint Error: Multiple OneTimeUse conditions are not permitted.";
@@ -406,7 +408,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -425,7 +427,7 @@ public class Saml2ValidationTest {
         // validate 2
         SamlAssertionValidate sav2 = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results2 = new ArrayList<SamlAssertionValidate.Error>();
-        sav2.validate(assertionDocument, null, fakeProcessorResults(assertion), results2, null, null, null);
+        sav2.validate(assertionDocument, null, fakeProcessorResults(assertion), results2, null, null, Collections.<String, Object>emptyMap(), null);
 
         boolean foundError2 = false;
         boolean methodError = false;
@@ -470,7 +472,7 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -510,7 +512,58 @@ public class Saml2ValidationTest {
         // validate
         SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
         List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
-        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, null);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, Collections.<String, Object>emptyMap(), null);
+
+        boolean foundError = false;
+        for ( final Object result : results ) {
+            String errorMessage = result.toString();
+            System.out.println( errorMessage );
+            if ( "SAML Constraint Error: Unsigned SAML assertion found in security Header".equals( errorMessage ) )
+                foundError = true;
+        }
+
+        // check only unsigned assertion error
+        assertTrue("Should be no errors.", results.size()==1 && foundError);
+    }
+
+    /**
+     * TEST context variable support for recipient, audience restriction and name qualifier properties.
+     */
+    @BugNumber(9090)
+    @Test
+    public void testContextVariableSupport() throws Exception {
+        // create doc
+        Document assertionDocument = XmlUtil.stringToDocument(BUG_9090_ASSERTION);
+        SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
+
+        // create validation template
+        RequireWssSaml templateSaml = new RequireWssSaml();
+        templateSaml.setVersion(2);
+        templateSaml.setCheckAssertionValidity(false);
+        templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
+        templateSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        templateSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS_SAML2);
+        String recipientValue = "http://example.com/service";
+        String recipient = "recipient";
+        templateSaml.setSubjectConfirmationDataRecipient("${" + recipient + "}");
+
+        String audienceValue = "http://restricted.audience.com/";
+        String audience = "audience";
+        templateSaml.setAudienceRestriction("${" + audience + "}");
+
+        String nameQualifierValue = "NameQualifier1";
+        String nameQualifier = "namequalifier";
+        templateSaml.setNameQualifier("${" + nameQualifier + "}");
+
+        // validate
+        SamlAssertionValidate sav = new SamlAssertionValidate(templateSaml);
+        List<SamlAssertionValidate.Error> results = new ArrayList<SamlAssertionValidate.Error>();
+
+        Map<String, Object> serverVariables = new HashMap<String, Object>();
+        serverVariables.put(recipient, recipientValue);
+        serverVariables.put(audience, audienceValue);
+        serverVariables.put(nameQualifier, nameQualifierValue);
+        sav.validate(assertionDocument, null, fakeProcessorResults(assertion), results, null, null, serverVariables, null);
 
         boolean foundError = false;
         for ( final Object result : results ) {
@@ -812,4 +865,53 @@ public class Saml2ValidationTest {
             "                    <saml:Action>Get</saml:Action>\n" +
             "                </saml:AuthzDecisionStatement>\n" +
             "            </saml:Assertion>";
+
+    private static final String BUG_9090_ASSERTION =
+            "<saml:Assertion\n" +
+            "                ID=\"BinarySecurityToken-0-7e8a1451b089b9c30c92ccd3e702494b\"\n" +
+            "                IssueInstant=\"2006-06-27T23:15:30.040Z\" Version=\"2.0\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "                <saml:Issuer>Service Provider</saml:Issuer>\n" +
+            "                <saml:Subject>\n" +
+            "                    <saml:NameID\n" +
+            "                        Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName\"" +
+            "                        NameQualifier=\"NameQualifier1\">CN=John\n" +
+            "                        Smith, OU=Java Technology Center, O=IBM,\n" +
+            "                        L=Cupertino, ST=California, C=US" +
+            "                        </saml:NameID>\n" +
+            "                    <saml:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:holder-of-key\" >\n" +
+            "                        <saml:SubjectConfirmationData \n" +
+            "                            xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"\n" +
+            "                            xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"urn:KeyInfoConfirmationDataType\"\n" +
+            "                            Recipient=\"http://example.com/service\" > \n" +                    
+            "                            <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
+            "                                <dsig:X509Data>\n" +
+            "                                    <dsig:X509Certificate>MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRoMB4XDTAyMTAyOTIwMTEwMFoXDTA3MTAwMzIwMTEwMFowejELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRoMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtitis5FONvv236Xw1CKOvKAOQ0NYlvRd/FKwuf+T1XCFadHMrtvHhq/+Z/Dlcn2YQYOCp9auS+WkBcL0AUrJJPUbwZIB2CyBZJjnS7+jdb37RKYQUsNRNlgdIcoZM8bvCZldBSfnat4xDPyQOJB7ExDrMmI9tP0NY9GN0npfnwwIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAFLNrEP8Y0xwUVIl4XigEiDM6jAdDJFCI+m8EA07nAsYWmV/Ic8kkqDzXaWyLkIBJQ0gElRlWHYe+W/K/pT9CNEWRFViKbZGevivBKek7GQXhuEgo+pWalpEtg4nA741+46iKeKpEQILL6OYEj7aHcreIxaQ1WH2v1iMig33Q0+S</dsig:X509Certificate>\n" +
+            "                                </dsig:X509Data>\n" +
+            "                            </dsig:KeyInfo>\n" +
+            "                        </saml:SubjectConfirmationData>\n" +
+            "                    </saml:SubjectConfirmation>\n" +
+            "                </saml:Subject>\n" +
+            "                <saml:Conditions>\n" +
+            "                    <saml:AudienceRestriction>\n" +
+            "                        <saml:Audience>http://other.audience.com/</saml:Audience>\n" +
+            "                        <saml:Audience>http://restricted.audience.com/</saml:Audience>\n" +
+            "                    </saml:AudienceRestriction>\n" +
+            "                </saml:Conditions>\n" +
+            "                <saml:AuthnStatement>\n" +
+            "                    <saml:SubjectLocality Address=\"192.168.1.192\" DNSName=\"fish.l7tech.com\"/>\n" +
+            "                    <saml:AuthnContext>\n" +
+            "                        <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig</saml:AuthnContextClassRef>\n" +
+            "                        <saml:AuthnContextDecl\n" +
+            "                            xmlns:saccxds=\"urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig\"\n" +
+            "                            xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"urn:AuthnContextDeclarationBaseType\">\n" +
+            "                            <saccxds:AuthnMethod>\n" +
+            "                                <saccxds:Authenticator>\n" +
+            "                                    <saccxds:DigSig keyValidation=\"urn:oasis:names:tc:SAML:2.0:ac:classes:X509\"/>\n" +
+            "                                </saccxds:Authenticator>\n" +
+            "                            </saccxds:AuthnMethod>\n" +
+            "                        </saml:AuthnContextDecl>\n" +
+            "                    </saml:AuthnContext>\n" +
+            "                </saml:AuthnStatement>\n" +
+            "            </saml:Assertion>";
+
 }

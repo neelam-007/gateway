@@ -46,6 +46,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
     private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
     private final MessageIdManager messageIdManager;
+    private final String[] variablesUsed;
 
     /**
      * Create the server side saml security policy element
@@ -59,6 +60,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
         }
 
         assertionValidate = new SamlAssertionValidate(sa);
+        variablesUsed = sa.getVariablesUsed();
         auditor = new Auditor(this, beanFactory, eventPub, logger);
         securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
         messageIdManager = beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
@@ -147,8 +149,17 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             final Collection<String> clientAddresses = message.getKnob(TcpKnob.class) != null && message.getTcpKnob().getRemoteAddress() != null?
                     Collections.singleton( message.getTcpKnob().getRemoteAddress() ) :
                     null;
-            final String recipient = expandVars( assertion.getSubjectConfirmationDataRecipient(), context );
-            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults, collectAttrValues, clientAddresses, recipient);
+
+            final Map<String, Object> serverVariables = context.getVariableMap( variablesUsed, auditor );
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(),
+                    credentials,
+                    wssResults,
+                    validateResults,
+                    collectAttrValues,
+                    clientAddresses,
+                    serverVariables,
+                    auditor);
+            
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
                 boolean firstPass = true;
@@ -202,17 +213,6 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
         // Publish as context variables
         publishAttrVariables(context, attrvals);
-    }
-
-    private String expandVars( final String text, final PolicyEnforcementContext context ) {
-        String expanded = null;
-
-        if ( text != null ) {
-            final Map<String, Object> variables = context.getVariableMap( assertion.getVariablesUsed(), auditor );
-            expanded = ExpandVariables.process( text, variables, auditor );
-        }
-
-        return expanded;
     }
 
     private static Map<String, List<String>> collateAttrValues(Collection<Pair<String, String[]>> collectAttrValues) {

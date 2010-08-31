@@ -101,7 +101,7 @@ public class SamlPolicyAssertion extends Assertion {
 
     /**
          * @return the authentication statement constraints or <b>null</b> if no
-         *         authentication statemement constraints have been sent
+         *         authentication statement constraints have been sent
          */
     public SamlAuthenticationStatement getAuthenticationStatement() {
         return authenticationStatement;
@@ -118,7 +118,7 @@ public class SamlPolicyAssertion extends Assertion {
 
     /**
          * @return the authorization statement constraints or <b>null</b> if no
-         *         authorization statemement constraints have been sent
+         *         authorization statement constraints have been sent
          */
     public SamlAuthorizationStatement getAuthorizationStatement() {
         return authorizationStatement;
@@ -135,7 +135,7 @@ public class SamlPolicyAssertion extends Assertion {
 
     /**
          * @return the attribute statement constraints or <b>null</b> if no
-         *         attribute statemement constraints have been sent
+         *         attribute statement constraints have been sent
          */
     public SamlAttributeStatement getAttributeStatement() {
         return attributeStatement;
@@ -143,7 +143,7 @@ public class SamlPolicyAssertion extends Assertion {
 
     /**
      * Set the attribute statement constraints
-     * @param attributeStatement the atribute statement constraints
+     * @param attributeStatement the attribute statement constraints
      */
     public void setAttributeStatement(SamlAttributeStatement attributeStatement) {
         this.attributeStatement = attributeStatement;

@@ -2,6 +2,8 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import x0Assertion.oasisNamesTcSAML2.*;
@@ -20,17 +22,20 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Subject validation for 2.x
      */
-    static void validateSubject( final RequireWssSaml requestWssSaml,
-                                 final SubjectType subject,
-                                 final Calendar now,
-                                 final Collection<String> clientAddresses,
-                                 final String recipient,
-                                 final Collection<SamlAssertionValidate.Error> validationResults ) {
+    static void validateSubject(final RequireWssSaml requestWssSaml,
+                                final SubjectType subject,
+                                final Calendar now,
+                                final Collection<String> clientAddresses,
+                                final Collection<SamlAssertionValidate.Error> validationResults,
+                                final Map<String, Object> serverVariables,
+                                final Auditor auditor) {
         if (subject == null) {
             validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
             return; // no point trying to continue validating a null subject
         }
-        final String nameQualifier = requestWssSaml.getNameQualifier();
+
+        final String nameQualTest = requestWssSaml.getNameQualifier();
+        final String nameQualifier = (nameQualTest == null) ? nameQualTest : ExpandVariables.process(nameQualTest, serverVariables, auditor);
         NameIDType nameIdentifierType = subject.getNameID();
         if (nameQualifier != null && !"".equals(nameQualifier)) {
             if (nameIdentifierType != null) {
@@ -133,11 +138,13 @@ class Saml2SubjectAndConditionValidate {
                         }
                     }
 
+                    final String recipientTest = requestWssSaml.getSubjectConfirmationDataRecipient();
+                    final String recipient = (recipientTest == null)? recipientTest: ExpandVariables.process(recipientTest, serverVariables, auditor);
                     if ( recipient != null &&
                          confirmationData.getRecipient() !=null &&
                          !recipient.equals(confirmationData.getRecipient()) ) {
                         subjectConfirmationDataValidationError( subjectConfirmationValidationFailures,
-                                "Statement condition is invalid, 'Recipient' {0} does not match required value {1}.", 
+                                "Statement condition is invalid, 'Recipient' {0} does not match required value {1}.",
                                 confirmationData.getRecipient(),
                                 recipient );
                         statementValid = false;
@@ -197,10 +204,12 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Validate the SAML v2 assertion conditions
      */
-    static void validateConditions( final RequireWssSaml requestWssSaml,
-                                    final ConditionsType conditionsType,
-                                    final Calendar now,
-                                    final Collection<SamlAssertionValidate.Error> validationResults) {
+    static void validateConditions(final RequireWssSaml requestWssSaml,
+                                   final ConditionsType conditionsType,
+                                   final Calendar now,
+                                   final Collection<SamlAssertionValidate.Error> validationResults,
+                                   final Map<String, Object> serverVariables,
+                                   final Auditor auditor) {
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
@@ -231,7 +240,7 @@ class Saml2SubjectAndConditionValidate {
             }
         }
 
-        validateAudienceRestriction(requestWssSaml, conditionsType, validationResults);
+        validateAudienceRestriction(requestWssSaml, conditionsType, validationResults, serverVariables, auditor);
 
         if (conditionsType != null) {
             if (conditionsType.getOneTimeUseArray() != null &&
@@ -248,10 +257,13 @@ class Saml2SubjectAndConditionValidate {
         }
     }
 
-    private static void validateAudienceRestriction( final RequireWssSaml requestWssSaml,
-                                                     final ConditionsType conditionsType,
-                                                     final Collection<SamlAssertionValidate.Error> validationResults) {
-        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
+    private static void validateAudienceRestriction(final RequireWssSaml requestWssSaml,
+                                                    final ConditionsType conditionsType,
+                                                    final Collection<SamlAssertionValidate.Error> validationResults,
+                                                    final Map<String, Object> serverVariables,
+                                                    final Auditor auditor) {
+        final String audienceResTest = requestWssSaml.getAudienceRestriction();
+        final String audienceRestriction = (audienceResTest == null) ? audienceResTest : ExpandVariables.process(audienceResTest, serverVariables, auditor);
         if (audienceRestriction == null || "".equals(audienceRestriction)) {
             logger.finer("No audience restriction requested");
             return;
