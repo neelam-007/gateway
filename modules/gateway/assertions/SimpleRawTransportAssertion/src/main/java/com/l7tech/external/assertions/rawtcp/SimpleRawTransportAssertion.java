@@ -178,7 +178,6 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
         ret.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        ret.addAll(Arrays.asList(responseTarget.getVariablesUsed()));
         if (responseContentType != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(responseContentType)));
         if (targetHost != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(targetHost)));
         return ret.toArray(new String[ret.size()]);
