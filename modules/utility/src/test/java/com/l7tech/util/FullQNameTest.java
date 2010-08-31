@@ -23,7 +23,7 @@ public class FullQNameTest {
 
     @Test
     public void testEquals() throws Exception {
-        assertTrue(new FullQName(null, null, null).equals(new FullQName()));
+        assertTrue(new FullQName(null, null, null).equals(new FullQName(null, null, null)));
         assertTrue(new FullQName(null, null, "a").equals(new FullQName(null, null, "a")));
         assertTrue(new FullQName(null, "b", null).equals(new FullQName(null, "b", null)));
         assertTrue(new FullQName("u", null, null).equals(new FullQName("u", null, null)));

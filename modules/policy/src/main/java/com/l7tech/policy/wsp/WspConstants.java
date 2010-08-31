@@ -4,20 +4,9 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.policy.*;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.wsdl.BindingInfo;
-import com.l7tech.wsdl.BindingOperationInfo;
-import com.l7tech.wsdl.MimePartInfo;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.WsTrustRequestType;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.transport.PreemptiveCompression;
-import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -31,18 +20,30 @@ import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertio
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
+import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.objectmodel.AttributeHeader;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.util.FullQName;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.wsdl.BindingInfo;
+import com.l7tech.wsdl.BindingOperationInfo;
+import com.l7tech.wsdl.MimePartInfo;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.WsTrustRequestType;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.math.BigInteger;
 
 /**
  * Contains the registry of types we can freeze to a policy.
@@ -294,7 +295,9 @@ public class WspConstants {
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
 
-        // Special types
+        // Special types that are broadly useful, across modules
+        new BasicTypeMapping(FullQName.class, "fullQName"),
+        new ArrayTypeMapping(new FullQName[0], "fullQNameArray"),
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
         new ArrayTypeMapping(new XpathExpression[0], "xpathExpressionArray"),
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
@@ -365,4 +368,5 @@ public class WspConstants {
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
+
 }

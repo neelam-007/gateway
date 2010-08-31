@@ -6,21 +6,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility class for parsing QName in one of the formats NAME, PREFIX:NAME, {URI}NAME, or {URI}PREFIX:NAME.
+ * Immutable utility class for holding a QName along with its prefix, and for parsing a QName in one of the formats NAME, PREFIX:NAME, {URI}NAME, or {URI}PREFIX:NAME.
+ * <p/>
+ * This differs from the Expat-compatible format used by {@link javax.xml.namespace.QName} which only supports the formats NAME and {URI}NAME.
  */
 public class FullQName implements Serializable {
     private static final long serialVersionUID = 2984398572304958427L;
 
     // Regex matching a QName pattern in one of the formats NAME, PREFIX:NAME, {URI}NAME, or {URI}PREFIX:NAME
-    private static final Pattern EXPAT_QNAME_PATTERN = Pattern.compile("^(?:\\{([^}]*)\\})?(?:([^:]+):)?(.+?)$");
-    private String nsUri;
-    private String prefix;
-    private String local;
+    private static final Pattern EXTENDED_EXPAT_QNAME_PATTERN = Pattern.compile("^(?:\\{([^}]*)\\})?(?:([^:]+):)?(.+?)$");
+    private final String nsUri;
+    private final String prefix;
+    private final String local;
 
-    public FullQName() {
-    }
-
+    /**
+     * Constructor-from-String that decodes from encoded form.
+     *
+     * @param encodedString  an encoded FullQName, ie "{urn:foo}pfx:blah".  Required.
+     * @throws ParseException if the specified string cannot be parsed as a FullQName.
+     */
     public FullQName(String encodedString) throws ParseException {
+        // Do not remove or add arguments to this constructor without updating any type mappings that rely on it.
         FullQName parsed = valueOf(encodedString);
         this.nsUri = parsed.getNsUri();
         this.prefix = parsed.getPrefix();
@@ -37,24 +43,12 @@ public class FullQName implements Serializable {
         return nsUri;
     }
 
-    public void setNsUri(String nsUri) {
-        this.nsUri = nsUri;
-    }
-
     public String getPrefix() {
         return prefix;
     }
 
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
     public String getLocal() {
         return local;
-    }
-
-    public void setLocal(String local) {
-        this.local = local;
     }
 
     public String getFullName() {
@@ -65,7 +59,7 @@ public class FullQName implements Serializable {
 
     public static FullQName valueOf(String text) throws ParseException {
         // Check namespace URI, if any
-        Matcher matcher = EXPAT_QNAME_PATTERN.matcher(text);
+        Matcher matcher = EXTENDED_EXPAT_QNAME_PATTERN.matcher(text);
         if (!matcher.matches())
             throw new ParseException("Attribute name is formatted incorrectly.", 0);
 

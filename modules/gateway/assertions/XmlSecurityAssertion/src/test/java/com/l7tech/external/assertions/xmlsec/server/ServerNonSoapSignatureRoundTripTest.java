@@ -140,7 +140,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         assertEquals(1, signatureValues.length);
     }
 
-    PolicyEnforcementContext verify(String signedXml, AssertionStatus expectedAssertionResult) throws InvalidXpathException, IOException, PolicyAssertionException {
+    PolicyEnforcementContext verify(String signedXml, AssertionStatus expectedAssertionResult) throws InvalidXpathException, IOException, PolicyAssertionException, ParseException {
         NonSoapVerifyElementAssertion ass = new NonSoapVerifyElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
         ass.setTarget(TargetMessageType.REQUEST);

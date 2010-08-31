@@ -5,27 +5,29 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.FullQName;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.HashMap;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -47,6 +49,24 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "<ds:SignatureValue>" + SIGNATURE_VALUE + "</ds:SignatureValue>" +
             "<ds:KeyInfo><ds:X509Data><ds:X509Certificate>" + SIGNER_CERT + "</ds:X509Certificate>" +
             "</ds:X509Data></ds:KeyInfo></ds:Signature></bar><blat/></foo>";
+
+    static final String SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR =
+            "<foo xmlns:pfx=\"urn:other\"><bar pfx0:customId=\"bar-1-e284b01f7aa88d1dd1cb8ad9318d6eda\" xmlns:pfx0=\"urn:blatch\"><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationM" +
+            "ethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#bar-1-e284b01f7aa88d1dd1cb8ad9318d6eda\"><ds:Transforms" +
+            "><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org" +
+            "/2000/09/xmldsig#sha1\"/><ds:DigestValue>Xy+FSrEU2C6X9PEad4XpRxubXTY=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>SB3FJxzRZtpAmgvQnNJ/qG6orW9GTTUjnLzxGVs8v/fcFCUzW4glRygTpfDZaM/+8fDNm+j+I+UFs52" +
+            "tZI4qhos2dcdr38+L2VQIJLHFRq5Blfd8vbFo6srBHbAQz8svH5PV2X0EA/kgRlhBCalbj9c749JNFovNpXZ2JTv/M2w=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIB8TCCAVqgAwIBAgIIJiwd8ruk6HcwDQYJKoZIhvcNAQEMBQAwGjEYM" +
+            "BYGA1UEAwwPZGF0YS5sN3RlY2guY29tMB4XDTA5MDYyNjIyMjMzOVoXDTE5MDYyNDIyMjMzOVowGjEYMBYGA1UEAwwPZGF0YS5sN3RlY2guY29tMIGdMA0GCSqGSIb3DQEBAQUAA4GLADCBhwKBgQCTEO6rGMn+X+lVNIEprLUi9a2e6VVBg1Ozr91TPaOhK8JeWDNtkXUych0PFN6YpBDE" +
+            "siLSb8aiej5CwZFt/mmWdRn2qAKfutJ8F52SgW5ZLuYTtD4MFcOMySfC6aLk726VUUIipYKngNPOLHxUqnMapTWT4x2Ssi9+23TN6QH63QIBA6NCMEAwHQYDVR0OBBYEFEJIF1caGbInfcje2ODXnxszns+yMB8GA1UdIwQYMBaAFEJIF1caGbInfcje2ODXnxszns+yMA0GCSqGSIb3DQE" +
+            "BDAUAA4GBAFU/MTZm3TZACawEgBUKSJd04FvnLV99lGIBLp91rHcbCAL9roZJp7RC/w7sHVUve8khtYm5ynaZVTu7S++NTqnCWQI1Bx021zFhAeucFsx3tynfAdjW/xRre8pQLF9A7PoJTYcaS2tNQgS7um3ZHxjA/JV3dQWzeR1Kwepvzmk9</ds:X509Certificate></ds:X509Data" +
+            "></ds:KeyInfo></ds:Signature></bar></foo>";
+
+    static final String SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR =
+            "<foo><bar customId=\"bar-1-0458e75189e78fb5b252c18d33a1d72c\"><child1/><child2>foo</child2><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#bar-1-0458e75189e78fb5b252c18d33a1d72c\">" +
+            "<ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>NGt5v42qZBpUq214IzBYVb7eSQc=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>T8GcDYwojM/DfXUTyXgykZ3Yr" +
+            "KAUBr5tsAVbViPoJHBx8DlE1gOtsrUnG95uOgD+Y8XsSo1ohDm8CWZEQJN0AZL+RHiAXyd9HK+jIo6H3/ejpPAedPCmZk72QmRlMfqe/ADgoVKqRDrFK4bMLDdjdN4VU8qxMbXGsRjt4GfywWY=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIB8TCCAVqgAwIBAgIIJiwd8ruk6HcwDQYJKoZIhvcNAQEMBQAwGjEYMBYGA1UEAwwPZGF0YS5sN3RlY2guY29tMB4XDTA5MDYyNjIyMjMzOVoXDTE5MDYyNDIyMjMzOVowGjEYMBYGA1UEAwwPZGF0YS5sN3RlY2guY29tMI" +
+            "GdMA0GCSqGSIb3DQEBAQUAA4GLADCBhwKBgQCTEO6rGMn+X+lVNIEprLUi9a2e6VVBg1Ozr91TPaOhK8JeWDNtkXUych0PFN6YpBDEsiLSb8aiej5CwZFt/mmWdRn2qAKfutJ8F52SgW5ZLuYTtD4MFcOMySfC6aLk726VUUIipYKngNPOLHxUqnMapTWT4x2Ssi9+23TN6QH63QIBA6NCMEAwHQYDVR0OBBYEFEJIF1caGbInfcje2ODXnxszns+yMB8GA1UdIwQYMBaAFEJIF1caGbInfcje2ODXnxszns+yMA0GCSqGSIb3DQEBDAUAA4GBAFU/MTZm3TZACawEgBUKSJd04FvnLV99lGIBLp91rHcbCAL9roZJp7RC" +
+            "/w7sHVUve8khtYm5ynaZVTu7S++NTqnCWQI1Bx021zFhAeucFsx3tynfAdjW/xRre8pQLF9A7PoJTYcaS2tNQgS7um3ZHxjA/JV3dQWzeR1Kwepvzmk9</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></bar></foo>";
 
     static final String LAYER7_SIGNED_ECDSA =
             "<foo><bar Id=\"bar-1-6200bc512237668f3a916eea7e6db597\"><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>" +
@@ -126,35 +146,162 @@ public class ServerNonSoapVerifyElementAssertionTest {
 
     @Test
     public void testVerify() throws Exception {
-        verifyAndCheck(SIGNED, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+        verifyAndCheck(ass(), SIGNED, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
                 "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", SIGNATURE_VALUE);
+    }
+
+    @Test
+    public void testVerifyFailed_badSignatureValue() throws Exception {
+        AssertionStatus result = sass(ass()).checkRequest(context(SIGNED.replace(SIGNATURE_VALUE, SIGNATURE_VALUE.replace("m8jS4twP54ltD", "m8jS3twP54ltD"))));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    @Test
+    public void testVerifyFailed_badDigestValue() throws Exception {
+        AssertionStatus result = sass(ass()).checkRequest(context(SIGNED.replace("VU0equBu1", "VU0ebuBu1")));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    @Test
+    public void testVerifyFailed_alteredDocument() throws Exception {
+        AssertionStatus result = sass(ass()).checkRequest(context(SIGNED.replace("<bar ", "<bar evilAttr=\"added\" ")));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
     }
 
     @Test
     public void testVerifyApacheSignedEcdsa() throws Exception {
         ServerNonSoapVerifyElementAssertion.CERT_PARSE_BC_FALLBACK = true;
-        verifyAndCheck(APACHE_SAMPLE_SIGNED_XML, false, null,
+        verifyAndCheck(ass(), APACHE_SAMPLE_SIGNED_XML, false, null,
                 "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", null);
     }
 
     @Test
     public void testVerifyLayer7SignedEcdsa() throws Exception {
-        verifyAndCheck(LAYER7_SIGNED_ECDSA, false, NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),
+        verifyAndCheck(ass(), LAYER7_SIGNED_ECDSA, false, NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),
                 "http://www.w3.org/2001/04/xmldsig-more#sha384", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384", null);
     }
 
-    void verifyAndCheck(String signedXml, boolean signedElementIsBar, X509Certificate expectedSigningCert, String expectedDigestMethod, String expectedSignatureMethod, String expectedSignatureValue) throws InvalidXpathException, IOException, PolicyAssertionException, SAXException, NoSuchVariableException {
-        NonSoapVerifyElementAssertion ass = new NonSoapVerifyElementAssertion();
-        ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
-        ass.setTarget(TargetMessageType.REQUEST);
+    @Test
+    @BugNumber(9028)
+    public void testVerifyCustomIdAttr() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:blatch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
 
-        ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
-        Message request = new Message(XmlUtil.stringAsDocument(signedXml));
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        AssertionStatus result = sass.checkRequest(context);
+    @Test
+    @BugNumber(9028)
+    public void testVerifyCustomIdAttr_duplicateLocalNames() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:blortch}customId"), FullQName.valueOf("{urn:blatch}customId"), FullQName.valueOf("customId"), FullQName.valueOf("{urn:bleetch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifyCustomIdAttr_duplicateLocalNames_noLocalAttrs() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:blortch}customId"), FullQName.valueOf("{urn:blatch}customId"), FullQName.valueOf("{urn:bleetch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifyCustomIdAttr_duplicateLocalNames_onlyLocalAttrs() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("otherId"), FullQName.valueOf("customId"), FullQName.valueOf("{urn:blatch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifyCustomIdAttr_duplicateLocalNames_missingPrefix() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("customId") });
+        AssertionStatus result = sass(ass).checkRequest(context(SIGNED_WITH_CUSTOM_ID_GLOBAL_ATTR));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimpleCustomIdAttr() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimpleCustomIdAttr_dynamicAttrNode() throws Exception {
+        PolicyEnforcementContext context = context(SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR);
+
+        // Replace the custom ID attribute with a dynamically-created node whose namespace URI is null instead of ""
+        Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
+        Element signedElement = XmlUtil.findOnlyOneChildElement(doc.getDocumentElement());
+        assertEquals("bar", signedElement.getNodeName());
+        Attr idAttr = signedElement.getAttributeNodeNS(null, "customId");
+        assertEquals(null, idAttr.getNamespaceURI());
+        String idValue = idAttr.getValue();
+        assertTrue(idValue != null && idValue.trim().length() > 0);
+        signedElement.removeAttributeNode(idAttr);
+        signedElement.setAttribute("customId", idValue); // use DOM level 1 method
+
+        NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("customId") });
+        AssertionStatus result = sass(ass).checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimleCustomIdAttr_duplicateLocalNames() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:blortch}customId"), FullQName.valueOf("{urn:blatch}customId"), FullQName.valueOf("customId"), FullQName.valueOf("{urn:bleetch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimpleCustomIdAttr_duplicateLocalNames_noLocalAttrs() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:blortch}customId"), FullQName.valueOf("{urn:blatch}customId"), FullQName.valueOf("{urn:bleetch}customId") });
+        AssertionStatus result = sass(ass).checkRequest(context(SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimpleCustomIdAttr_duplicateLocalNames_onlyLocalAttrs() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("otherId"), FullQName.valueOf("customId"), FullQName.valueOf("{urn:blatch}customId") });
+        verifyAndCheck(ass, SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR, true, CertUtils.decodeFromPEM(SIGNER_CERT, false),
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
+    }
+
+    @Test
+    @BugNumber(9028)
+    public void testVerifySimpleCustomIdAttr_duplicateLocalNames_extraPrefix() throws Exception {
+        final NonSoapVerifyElementAssertion ass = ass();
+        ass.setCustomIdAttrs(new FullQName[] { FullQName.valueOf("{urn:specialNs}customId") });
+        AssertionStatus result = sass(ass).checkRequest(context(SIGNED_WITH_CUSTOM_ID_LOCAL_ATTR));
+        assertEquals(AssertionStatus.BAD_REQUEST, result);
+    }
+
+    void verifyAndCheck(NonSoapVerifyElementAssertion ass, String signedXml,
+                        boolean signedElementIsBar, X509Certificate expectedSigningCert,
+                        String expectedDigestMethod, String expectedSignatureMethod, String expectedSignatureValue) throws Exception
+    {
+        PolicyEnforcementContext context = context(signedXml);
+        AssertionStatus result = sass(ass).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
-        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        Document doc = context.getRequest().getXmlKnob().getDocumentReadOnly();
 
         Object[] elementsVerified = (Object[])context.getVariable("elementsVerified");
         assertNotNull(elementsVerified);
@@ -193,5 +340,21 @@ public class ServerNonSoapVerifyElementAssertionTest {
         Element sigElement = (Element) signatureElements[0];
         assertEquals("Signature", sigElement.getLocalName());
         assertEquals(SoapConstants.DIGSIG_URI, sigElement.getNamespaceURI());
+    }
+
+    private static ServerNonSoapVerifyElementAssertion sass(NonSoapVerifyElementAssertion ass) throws InvalidXpathException, ParseException {
+        return new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
+    }
+
+    private static PolicyEnforcementContext context(String signedXml) {
+        final Message request = new Message(XmlUtil.stringAsDocument(signedXml));
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+    }
+
+    private static NonSoapVerifyElementAssertion ass() {
+        NonSoapVerifyElementAssertion ass = new NonSoapVerifyElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
+        ass.setTarget(TargetMessageType.REQUEST);
+        return ass;
     }
 }

@@ -9,6 +9,11 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.FullQName;
+
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Immediately verify one or more signed Elements in a non-SOAP XML message.
@@ -22,10 +27,23 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     public static final String VAR_SIGNATURE_VALUES = "signatureValues";
     public static final String VAR_SIGNATURE_ELEMENTS = "signatureElements";
 
+    public static final Set<FullQName> DEFAULT_ID_ATTRS = Collections.unmodifiableSet(new LinkedHashSet<FullQName>() {{
+        add(new FullQName("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", null, "AssertionID"));
+        add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", null, "ID"));
+        add(new FullQName(null, null, "Id"));
+        add(new FullQName(null, null, "id"));
+        add(new FullQName(null, null, "ID"));
+    }});
+
     protected String variablePrefix = "";
     private String verifyCertificateName;
     private long verifyCertificateOid;
     private boolean ignoreKeyInfo;
+    private FullQName[] customIdAttrs;
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST, false);
@@ -64,6 +82,14 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
     public void setVerifyCertificateOid(long verifyCertificateOid) {
         this.verifyCertificateOid = verifyCertificateOid;
+    }
+
+    public FullQName[] getCustomIdAttrs() {
+        return customIdAttrs;
+    }
+
+    public void setCustomIdAttrs(FullQName[] customIdAttrs) {
+        this.customIdAttrs = customIdAttrs;
     }
 
     @Override

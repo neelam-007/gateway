@@ -20,6 +20,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.xml.XMLConstants;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.text.ParseException;
@@ -106,7 +107,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
         id = element.getLocalName() + "-" + count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (ns == null) {
-            element.setAttribute( name, id);
+            element.setAttributeNS( XMLConstants.NULL_NS_URI, name, id );
         } else {
             element.setAttributeNS( ns, name, id);
         }

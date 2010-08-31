@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
@@ -93,7 +94,10 @@ public class ServerNonSoapSignElementAssertionTest {
 
         Element sigElement = applySignature(ass, makeRequest(null));
         Element signed = (Element) sigElement.getParentNode();
-        assertTrue(signed.getAttribute("customId").length() > 0);
+        Attr attr = signed.getAttributeNode("customId");
+        assertTrue(attr.getValue().length() > 0);
+        assertTrue(attr.getNamespaceURI() == null || XMLConstants.NULL_NS_URI.equals(attr.getNamespaceURI()));
+        assertEquals("customId", attr.getLocalName());
     }
 
     @Test
