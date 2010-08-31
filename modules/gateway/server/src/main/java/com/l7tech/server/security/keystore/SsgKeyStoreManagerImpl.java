@@ -45,7 +45,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
     private final KeystoreFileManager keystoreFileManager;
     private final ServerConfig serverConfig;
-    private MasterPasswordManager dbEncrypter;
+    private final MasterPasswordManager dbEncrypter;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
@@ -167,10 +167,14 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     }
 
     public List<SsgKeyFinder> findAll() throws FindException, KeyStoreException {
+        if (!initialized)
+            init();
         return keystores;
     }
 
     public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
+        if (!initialized)
+            init();
         for (SsgKeyFinder keystore : keystores) {
             if (keystore.getOid() == id)
                 return keystore;
@@ -180,6 +184,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
     @Transactional(readOnly = true)
     public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+        if (!initialized)
+            init();
         boolean mustSearchAll = preferredKeystoreId == -1 || preferredKeystoreId == 0;
 
         // First look in the preferred keystore
