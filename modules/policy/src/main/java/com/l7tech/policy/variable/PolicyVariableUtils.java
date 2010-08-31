@@ -326,13 +326,15 @@ public final class PolicyVariableUtils {
         Iterator<Assertion> it = assertion.preorderIterator();
         while (it.hasNext()) {
             Assertion kid = it.next();
+            if (kid == null || !kid.isEnabled())
+                continue;
 
             visitor.call(kid);
 
             if (assertionTranslator != null && kid instanceof Include) {
                 try {
                     Assertion translated = assertionTranslator.translate(kid);
-                    if (translated != kid)
+                    if (translated != kid && translated.isEnabled())
                         visitDescendantsAndSelf(translated, visitor, assertionTranslator);
                 } catch (PolicyAssertionException e) {
                     if (logger.isLoggable(Level.FINE))

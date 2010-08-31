@@ -3,12 +3,14 @@ package com.l7tech.policy.variable;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
 import org.junit.Test;
 
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -82,6 +84,14 @@ public class PolicyVariableUtilsTest {
         assertEquals("Leaf assertion shall have been visited exactly once", 1, (long)visitCounts.get(leafAssertion));
     }
 
+    @BugNumber(9111)
+    @Test
+    public void testVisitDisabledLeaf() throws Exception {
+        leafAssertion.setEnabled(false);
+        PolicyVariableUtils.visitDescendantsAndSelf(leafAssertion, visitor, translator);
+        assertEquals("Disabled assertions shall not be visited", 0, visitOrder.size());
+    }
+
     @Test
     public void testVisitSubtree() throws Exception {
         PolicyVariableUtils.visitDescendantsAndSelf(simplePolicy, visitor, translator);
@@ -96,5 +106,13 @@ public class PolicyVariableUtilsTest {
         assertEquals(17, visitOrder.size());
         assertEquals(includePolicy, visitOrder.get(0));
         assertEquals("Leaf assertion shall have been visited twice since its fragment was included twice", 2, (long)visitCounts.get(leafAssertion));
+    }
+
+    @Test
+    public void testVisitIncludeWithDisabledTarget() throws Exception {
+        simplePolicy.setEnabled(false);
+        PolicyVariableUtils.visitDescendantsAndSelf(includePolicy, visitor, translator);
+        assertNull("Children of disabled include target shall not have been visited", visitCounts.get(leafAssertion));
+        assertEquals(7, visitOrder.size());
     }
 }
