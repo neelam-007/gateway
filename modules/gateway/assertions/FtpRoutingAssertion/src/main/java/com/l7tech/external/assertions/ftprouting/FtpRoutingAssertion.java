@@ -274,7 +274,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
                 sb.append(" Server ");
                 sb.append(assertion.getHostName());
                 
-                return AssertionUtils.decorateName(assertion, assertion.getRequestTarget().getTargetName() + ": " + sb.toString());
+                return AssertionUtils.decorateName(assertion, sb.toString());
             }
         });
 
