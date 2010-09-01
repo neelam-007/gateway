@@ -32,6 +32,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dom.DOMURIReference;
@@ -650,8 +651,8 @@ public class WssProcessorTest {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Simple attrs with no namespace prefixes are recognized (apparently allowed by SOAP 1.1)
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
-                        blarg.setAttribute("mustUnderstand", "1");
-                        blarg.setAttribute("actor", SoapUtil.ACTOR_VALUE_NEXT);
+                        blarg.setAttributeNS( null, "mustUnderstand", "1" );
+                        blarg.setAttributeNS( null, "actor", SoapUtil.ACTOR_VALUE_NEXT );
                         return true;
                     }
                     public String toString() {
@@ -663,7 +664,7 @@ public class WssProcessorTest {
                         // An actor with a SOAP namepsace URI is recognized and rejected
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
                         blarg.setAttributeNS(soapns, "soapenv:actor", SoapUtil.ACTOR_VALUE_NEXT);
                         return true;
@@ -677,7 +678,7 @@ public class WssProcessorTest {
                         // A role (SOAP 1.2) is recognized and rejected
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
                         blarg.setAttributeNS(soapns, "soapenv:role", SoapUtil.ROLE_VALUE_NEXT);
                         return true;
@@ -690,8 +691,8 @@ public class WssProcessorTest {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Same as #1 but with SecureSpan actor
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
-                        blarg.setAttribute("mustUnderstand", "1");
-                        blarg.setAttribute("actor", "secure_span");
+                        blarg.setAttributeNS( null, "mustUnderstand", "1" );
+                        blarg.setAttributeNS( null, "actor", "secure_span" );
                         return true;
                     }
                     public String toString() {
@@ -703,7 +704,7 @@ public class WssProcessorTest {
                         // Same as #2 but with SecureSpan actor
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
                         blarg.setAttributeNS(soapns, "soapenv:actor", "secure_span");
                         return true;
@@ -717,7 +718,7 @@ public class WssProcessorTest {
                         // Same as #3 but with SecureSpan role
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
                         blarg.setAttributeNS(soapns, "soapenv:role", "secure_span");
                         return true;
@@ -730,8 +731,8 @@ public class WssProcessorTest {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Not rejected for mustUndestand=false
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
-                        blarg.setAttribute("mustUnderstand", "false");
-                        blarg.setAttribute("actor", "secure_span");
+                        blarg.setAttributeNS( null, "mustUnderstand", "false" );
+                        blarg.setAttributeNS( null, "actor", "secure_span" );
                         return false;
                     }
                     public String toString() {
@@ -742,7 +743,7 @@ public class WssProcessorTest {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Not rejected for no mustUnderstand
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
-                        blarg.setAttribute("actor", "secure_span");
+                        blarg.setAttributeNS( null, "actor", "secure_span" );
                         return false;
                     }
                     public String toString() {
@@ -754,7 +755,7 @@ public class WssProcessorTest {
                         // Not rejected for no actor
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
                         return false;
                     }
@@ -767,7 +768,7 @@ public class WssProcessorTest {
                         // Not rejected for empty role
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
-                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.getOwnerDocument().getDocumentElement().setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapns );
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
                         blarg.setAttributeNS(soapns, "soapenv:role", "");
                         return false;
@@ -992,6 +993,16 @@ public class WssProcessorTest {
         assertEquals(Boolean.FALSE, XpathUtil.compileAndEvaluate(d, "count(/*/*[local-name()=\"Header\"]/*[local-name()=\"Security\"]/ds:Signature)=1", nsmap, null));
     }
 
+    /**
+     * It is not important how this test fails, this is to ensure we don't loop
+     */
+    @Test(expected=InvalidDocumentFormatException.class)
+    public void testRecursiveEncryptedKeys() throws Exception {
+        Document d = XmlUtil.parse( RECURSIVE_ENCRYPTED_KEYS );
+        TestDocument td = new TestDocument("Recursive Encrypted Keys", d, null, null, null, null, null);
+        doTest(td);
+    }
+
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));
@@ -1102,7 +1113,7 @@ public class WssProcessorTest {
             "/security/sc/dk\"/></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security></soap:Header><soap:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"><" +
             "delay>0</delay></listProducts></soap:Body></soap:Envelope>";
 
-    public static final String ECDSA_EXAMPLE_FROM_MILTON_GD =
+    private static final String ECDSA_EXAMPLE_FROM_MILTON_GD =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?><S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"><S:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"><wsse:BinarySecurityToken xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" wsu:Id=\"CertId-1BD8AC45F3134AF165125555972903310\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">MIIBVDCB26ADAgECAgIE0jAKBggqhkjOPQQDAzAUMRIwEAYDVQQDEwlUZXN0IHRlc3QwHhcNMDkxMDE0MjIzNDM4WhcNMDkxMTEzMjIzNTI4WjAWMRQwEgYDVQQDEwtNaWx0b24gdGVzdDB2MBAGByqGSM49AgEGBSuBBAAiA2IABCUrgO1fN22cSMKU0B0wfY179NelsKPozAJSwjkgjhEEDSNWB+7MuLnXgu+oJ45V/4+eNH0HxqeoXJs+KER2pRkE08ALv1vKeFUkwWie6b7zM2Lc7MnO7Wk+hfccbTBovDAKBggqhkjOPQQDAwNoADBlAjBVLFIv45yIBkrYXbvelm/nou0Zeha89ps+G4ytwlV5bFIi6oxNML281URBz5auejQCMQDYGIuGvaOmGZZAV/klAVs+pWnOYKnGfffHYf/O5uRd9sQWUZrilT/UssjNT0Dvbx4=</wsse:BinarySecurityToken><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" Id=\"Signature-5\">\n" +
             "<ds:SignedInfo>\n" +
             "<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\n" +
@@ -1123,4 +1134,43 @@ public class WssProcessorTest {
             "<wsse:SecurityTokenReference xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"STRId-1BD8AC45F3134AF165125555972903312\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"><wsse:Reference URI=\"#CertId-1BD8AC45F3134AF165125555972903310\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/></wsse:SecurityTokenReference>\n" +
             "</ds:KeyInfo>\n" +
             "</ds:Signature></wsse:Security></S:Header><S:Body xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"id-6\"><ns2:buyHatResponse xmlns:ns2=\"http://hats/\"><return>test</return></ns2:buyHatResponse></S:Body></S:Envelope>";
+
+    private static final String RECURSIVE_ENCRYPTED_KEYS =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soapenv:Envelope\n" +
+            "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "    xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"\n" +
+            "    xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"\n" +
+            "    xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"\n" +
+            "    xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"\n" +
+            ">\n" +
+            "    <soapenv:Header>\n" +
+            "        <wsse:Security soapenv:mustUnderstand=\"1\">\n" +
+            "            <xenc:EncryptedKey Id=\"EncryptedKey-1\">\n" +
+            "                <xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/>\n" +
+            "                <dsig:KeyInfo>\n" +
+            "                    <wsse:SecurityTokenReference>\n" +
+            "                        <wsse:Reference URI=\"EncryptedKey-2\" ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKey\"/>\n" +
+            "                    </wsse:SecurityTokenReference>\n" +
+            "                </dsig:KeyInfo>\n" +
+            "                <xenc:CipherData>\n" +
+            "                    <xenc:CipherValue>SWVtMUz5+92Scmwtc28IUo2nZG14dyitl0CGiiIiHUIt1wTHSb0Opi/jD73hEr88rCMnOiNd+H8FfN+ivn2xK4tJvSPzktKZw0jpX3iaOfCVB+m9BjdB3Mkdesc2vfb0B0l5x6bFN7QihCZI89ViEAFHQizhnar/iPAiNKixlvQ=</xenc:CipherValue>\n" +
+            "                </xenc:CipherData>\n" +
+            "            </xenc:EncryptedKey>\n" +
+            "            <xenc:EncryptedKey Id=\"EncryptedKey-2\">\n" +
+            "                <xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/>\n" +
+            "                <dsig:KeyInfo>\n" +
+            "                    <wsse:SecurityTokenReference>\n" +
+            "                        <wsse:Reference URI=\"EncryptedKey-1\" ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKey\"/>\n" +
+            "                    </wsse:SecurityTokenReference>\n" +
+            "                </dsig:KeyInfo>\n" +
+            "                <xenc:CipherData>\n" +
+            "                    <xenc:CipherValue>SWVtMUz5+92Scmwtc28IUo2nZG14dyitl0CGiiIiHUIt1wTHSb0Opi/jD73hEr88rCMnOiNd+H8FfN+ivn2xK4tJvSPzktKZw0jpX3iaOfCVB+m9BjdB3Mkdesc2vfb0B0l5x6bFN7QihCZI89ViEAFHQizhnar/iPAiNKixlvQ=</xenc:CipherValue>\n" +
+            "                </xenc:CipherData>\n" +
+            "            </xenc:EncryptedKey>\n" +
+            "        </wsse:Security>\n" +
+            "    </soapenv:Header>\n" +
+            "    <soapenv:Body>\n" +
+            "    </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
 }
