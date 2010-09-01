@@ -5,8 +5,12 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import static org.junit.Assert.*;
+import com.l7tech.util.ResourceUtils;
 import org.junit.Test;
 
 import java.io.*;
@@ -14,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Test for MimeBody class.
@@ -466,6 +472,53 @@ public class MimeBodyTest {
             assertEquals(got, null);
         } finally {
             stashManager.close();
+        }
+    }
+
+    @BugNumber(9107)
+    @Test
+    public void testIOExceptionDuringInitialStash_checkingLength() throws Exception {
+        @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")));
+
+        try {
+            m.getEntireMessageBodyLength();
+            fail("Expected exception not thrown");
+        } catch (IOException e) {
+            // Ok
+        }
+
+        try {
+            m.getEntireMessageBodyLength();
+            fail("Expected exception not thrown");
+        } catch (IOException e) {
+            assertTrue(ExceptionUtils.getMessage(e).contains("Problem?"));
+        }
+    }
+
+    @BugNumber(9107)
+    @Test
+    public void testIOExceptionDuringInitialStash_reading() throws Exception {
+        @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")));
+
+        InputStream s = null;
+        try {
+            IOUtils.copyStream(s = m.getEntireMessageBodyAsInputStream(false), new NullOutputStream());
+            fail("Expected exception not thrown");
+        } catch (IOException e) {
+            // Ok
+        } finally {
+            ResourceUtils.closeQuietly(s);
+        }
+
+        try {
+            IOUtils.copyStream(s = m.getEntireMessageBodyAsInputStream(false), new NullOutputStream());
+            fail("Expected exception not thrown");
+        } catch (IOException e) {
+            assertTrue(ExceptionUtils.getMessage(e).contains("Problem?"));
+        } finally {
+            ResourceUtils.closeQuietly(s);
         }
     }
 

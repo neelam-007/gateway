@@ -1093,20 +1093,25 @@ public class MimeBody implements Iterable<PartInfo> {
          */
         void stashAndCheckContentLength(InputStream is) throws IOException {
             if (is == null) throw new NullPointerException();
-            stashManager.stash(ordinal, is);
-            // Replace content length with up-to-date version
-            final long actualLength = MimeBody.this.stashManager.getSize(ordinal);
-            final String clen = Long.toString(actualLength);
-            if (headers.hasContentLength()) {
-                // Make sure the declared content length is accurate
-                long declaredLength = headers.getContentLength();
-                if (declaredLength != actualLength) {
-                    String part = isMultipart() ? "MIME multipart message part #" + ordinal : "message";
-                    throw new IOException(part + " declared in Content-Length header that size was " + declaredLength +
-                                          " bytes, but actual size was " + actualLength + " bytes");
+            try {
+                stashManager.stash(ordinal, is);
+                // Replace content length with up-to-date version
+                final long actualLength = MimeBody.this.stashManager.getSize(ordinal);
+                final String clen = Long.toString(actualLength);
+                if (headers.hasContentLength()) {
+                    // Make sure the declared content length is accurate
+                    long declaredLength = headers.getContentLength();
+                    if (declaredLength != actualLength) {
+                        String part = isMultipart() ? "MIME multipart message part #" + ordinal : "message";
+                        throw new IOException(part + " declared in Content-Length header that size was " + declaredLength +
+                                " bytes, but actual size was " + actualLength + " bytes");
+                    }
                 }
+                headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null));
+            } catch (IOException e) {
+                errorCondition = e;
+                throw e;
             }
-            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null));
         }
 
         /**
