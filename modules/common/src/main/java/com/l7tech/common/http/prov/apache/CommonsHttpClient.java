@@ -390,13 +390,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
                 } catch (IOException e) {
-                    String target = null;
-                    try {
-                        target = method.getURI().toString();
-                    } catch (URIException e1) {
-                        logger.log(Level.WARNING, "cannot get URI", e1);
-                    }
-                    throw new GenericHttpException("Unable to obtain HTTP response from " + target + ": " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response from " + getTarget(method) + ": " + ExceptionUtils.getMessage(e), e);
+                } catch (NumberFormatException e) {
+                    throw new GenericHttpException("Unable to obtain HTTP response from " + getTarget(method) + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
@@ -459,6 +455,16 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     method.releaseConnection();
                     method = null;
                 }
+            }
+
+            private String getTarget( final org.apache.commons.httpclient.HttpMethod method ) {
+                String target = null;
+                try {
+                    target = method.getURI().toString();
+                } catch ( URIException e1) {
+                    logger.log( Level.WARNING, "cannot get URI", e1);
+                }
+                return target;
             }
         };
     }

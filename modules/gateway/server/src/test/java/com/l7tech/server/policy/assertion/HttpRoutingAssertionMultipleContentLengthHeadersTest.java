@@ -1,4 +1,4 @@
-package com.l7tech.server;
+package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
@@ -9,6 +9,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
