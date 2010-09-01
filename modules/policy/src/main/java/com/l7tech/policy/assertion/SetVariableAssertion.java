@@ -195,7 +195,8 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.SetVariableAssertionPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "Context Variable Properties");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
-        
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SetVariableAssertionValidator");
+
         return meta;
     }
 

@@ -58,7 +58,7 @@ public class ContentTypeHeader extends MimeHeader {
             XML_DEFAULT.getEncoding();
             SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
-            APPLICATION_JSON = parseValue("application/json");
+            APPLICATION_JSON = parseValue("application/json; charset=UTF-8");
         } catch (Throwable e) {
             throw new Error(e);
         }

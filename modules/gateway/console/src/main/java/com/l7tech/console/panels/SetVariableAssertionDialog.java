@@ -39,7 +39,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private static class DataTypeComboBoxItem {
         private final DataType _dataType;
-        public DataTypeComboBoxItem(DataType dataType) { _dataType = dataType; }
+        private DataTypeComboBoxItem(DataType dataType) { _dataType = dataType; }
         public DataType getDataType() { return _dataType; }
         @Override
         public String toString() { return _dataType.getName(); }
@@ -53,7 +53,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField _variableNameTextField;
     private JLabel _variableNameStatusLabel;
     private JComboBox _dataTypeComboBox;
-    private JTextField _contentTypeTextField;
     private JLabel _contentTypeStatusLabel;
     private JTextArea _expressionTextArea;
     private JRadioButton _crlfRadioButton;
@@ -64,6 +63,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JScrollPane _expressionStatusScrollPane;
     private JButton _cancelButton;
     private JButton _okButton;
+    private JComboBox _contentTypeComboBox;
 
     private final boolean readOnly;
     private boolean _assertionModified;
@@ -94,10 +94,15 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _dataTypeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                _contentTypeTextField.setEnabled(getSelectedDataType() == DataType.MESSAGE);
+                _contentTypeComboBox.setEnabled(getSelectedDataType() == DataType.MESSAGE);
                 validateFields();
             }
         });
+
+        _contentTypeComboBox.addItem( ContentTypeHeader.TEXT_DEFAULT.getFullValue() );
+        _contentTypeComboBox.addItem( ContentTypeHeader.XML_DEFAULT.getFullValue() );
+        _contentTypeComboBox.addItem( ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() );
+        _contentTypeComboBox.addItem( ContentTypeHeader.APPLICATION_JSON.getFullValue() );
 
         TextComponentPauseListenerManager.registerPauseListener(
                 _variableNameTextField,
@@ -114,7 +119,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 },
                 500);
         TextComponentPauseListenerManager.registerPauseListener(
-                _contentTypeTextField,
+                (JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent(),
                 new PauseListener() {
                     @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
@@ -159,7 +164,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 assertion.setDataType(dataType);
 
                 if (dataType == DataType.MESSAGE) {
-                    assertion.setContentType(_contentTypeTextField.getText());
+                    assertion.setContentType((String)_contentTypeComboBox.getSelectedItem());
                 } else {
                     assertion.setContentType(null);
                 }
@@ -189,7 +194,11 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
         _variableNameTextField.setText(assertion.getVariableToSet());
         selectDataType(assertion.getDataType());
-        _contentTypeTextField.setText(assertion.getContentType());
+        if ( assertion.getContentType() != null ) {
+            _contentTypeComboBox.setSelectedItem( assertion.getContentType() );
+        } else {
+            _contentTypeComboBox.setSelectedIndex( 0 );            
+        }
 
         // JTextArea likes all line break to be LF.
         String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n");
@@ -258,7 +267,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
      */
     private synchronized void validateFields() {
         final String variableName = _variableNameTextField.getText();
-        final String contentType = _contentTypeTextField.getText();
+        final String contentType = ((JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent()).getText();
         final String expression = _expressionTextArea.getText();
 
         boolean ok = true;
@@ -295,12 +304,12 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         if (getSelectedDataType() == DataType.MESSAGE) {
-            _contentTypeTextField.setEnabled(true);
+            _contentTypeComboBox.setEnabled(true);
             if (contentType.length() == 0) {
                 ok = false;
             } else {
                 try {
-                    ContentTypeHeader.parseValue(_contentTypeTextField.getText());
+                    ContentTypeHeader.parseValue( contentType );
                     _contentTypeStatusLabel.setIcon(OK_ICON);
                     _contentTypeStatusLabel.setText("OK");
                 } catch (IOException e) {
@@ -311,7 +320,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
             }
         } else {
-            _contentTypeTextField.setEnabled(false);
+            _contentTypeComboBox.setEnabled(false);
             clearContentTypeStatus();
         }
 
