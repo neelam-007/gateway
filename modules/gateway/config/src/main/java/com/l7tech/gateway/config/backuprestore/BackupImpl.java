@@ -525,7 +525,9 @@ final class BackupImpl implements Backup {
 
             //Add the manifest listing all files in the archive to the archive
             final File manifest = new File(tmpOutputDirectory, ImportExportUtilities.MANIFEST_LOG);
-            manifest.createNewFile();
+            final boolean fileCreated = manifest.createNewFile();
+            if(!fileCreated) throw new IOException("File already exists " + manifest.getAbsolutePath());
+
             final FileOutputStream fos = new FileOutputStream(manifest);
             fos.write(sb.toString().getBytes());
             fos.close();
@@ -556,7 +558,6 @@ final class BackupImpl implements Backup {
                                      final StringBuilder sb)
             throws IOException {
         final byte[] tmpBuf = new byte[1024];
-        final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
         if (printStream != null && isVerbose) printStream.println("\t- " + fileToAdd.getAbsolutePath());
         String zipEntryName = fileToAdd.getAbsolutePath();
         if (zipEntryName.startsWith(tmpOutputDirectory.getAbsolutePath())) {
@@ -569,12 +570,16 @@ final class BackupImpl implements Backup {
         if(sb != null) sb.append(zipEntryName).append("\n");
         // Transfer from the file to the ZIP fileToAdd
         int len;
-        while ((len = in.read(tmpBuf)) > 0) {
-            out.write(tmpBuf, 0, len);
+        final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
+        try {
+            while ((len = in.read(tmpBuf)) > 0) {
+                out.write(tmpBuf, 0, len);
+            }
+        } finally {
+            // Complete the entry
+            out.closeEntry();
+            in.close();
         }
-        // Complete the entry
-        out.closeEntry();
-        in.close();
     }
 
     /**
@@ -610,9 +615,10 @@ final class BackupImpl implements Backup {
     private File createComponentDir(final File tmpOutputDirectory, final String componentName) throws IOException {
         final File dir = new File(tmpOutputDirectory, componentName);
         if (dir.exists()) {
-            dir.delete();
+            final boolean dirDeleted = FileUtils.deleteDir(dir);
+            if(!dirDeleted) throw new IOException("Could not delete directory " + dir.getAbsolutePath());
         }
-        dir.mkdir();
+        FileUtils.mkdir(dir);
         return dir;
     }
 

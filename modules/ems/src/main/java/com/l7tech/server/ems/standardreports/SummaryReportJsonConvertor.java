@@ -85,8 +85,8 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             String paramName,
             ReportApi.ReportSubmission.ReportParam paramToAdd) {
 
-        for (String s : clusterToReportParams.keySet()) {
-            Map<String, ReportApi.ReportSubmission.ReportParam> reportParams = clusterToReportParams.get(s);
+        for (Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> entry : clusterToReportParams.entrySet()) {
+            final Map<String, ReportApi.ReportSubmission.ReportParam> reportParams = entry.getValue();
             reportParams.put(paramName, paramToAdd);
         }
     }
@@ -147,12 +147,13 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             serviceIdToName.put(serviceId, (String) currentEntity.get(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME));
         }
 
-        for (String clusterId : returnMap.keySet()) {
+        for (Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> entry : returnMap.entrySet()) {
+            final String clusterId = entry.getKey();
             Map<String, Set<String>> serviceIdToOps = clusterIdToServicesAndOperations.get(clusterId);
             ReportApi.ReportSubmission.ReportParam serviceIdToOperationParam = new ReportApi.ReportSubmission.ReportParam();
             serviceIdToOperationParam.setName(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP);
             serviceIdToOperationParam.setValue(serviceIdToOps);
-            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = returnMap.get(clusterId);
+            final Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = entry.getValue();
             clusterParams.put(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP, serviceIdToOperationParam);
 
             //check if any operations are selected, if they are, then we have a detail query
@@ -399,9 +400,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         //iterate through based on the clusters we know about
         //this is important as otherwise we can not set the keys to filter pairs parameter on a cluster which has
         //had no mapping keys added for it
-        for (String clusterId : clusterToReportParams.keySet()) {
+        for (Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> entry : clusterToReportParams.entrySet()) {
+            final String clusterId = entry.getKey();
+            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = entry.getValue();
 
-            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(clusterId);
             ReportApi.ReportSubmission.ReportParam keysToFilterParam = new ReportApi.ReportSubmission.ReportParam();
             keysToFilterParam.setName(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 

@@ -60,6 +60,7 @@ public class TimeOfDay implements Comparable, Serializable {
         return _secondsSinceMidnight > other._secondsSinceMidnight;
     }
 
+    @Override
     public int compareTo(Object o) {
         TimeOfDay other = (TimeOfDay)o;
         if ( other._secondsSinceMidnight == _secondsSinceMidnight )
@@ -70,15 +71,16 @@ public class TimeOfDay implements Comparable, Serializable {
             return -1;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (o == null) {
-            return false;
-        }
-        TimeOfDay other = (TimeOfDay)o;
-        if (other._secondsSinceMidnight == _secondsSinceMidnight)
-            return true;
-        else
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TimeOfDay timeOfDay = (TimeOfDay) o;
+
+        if (_secondsSinceMidnight != timeOfDay._secondsSinceMidnight) return false;
+
+        return true;
     }
 
     public int hashCode() {

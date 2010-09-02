@@ -17,6 +17,7 @@ import static com.l7tech.policy.PolicyType.*;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
+import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -49,7 +50,7 @@ public final class RootNode extends FolderNode {
         return comparator;
     }
 
-    public static class ServicesAndPoliciesNodeComparator implements Comparator<TreeNode>{
+    public static class ServicesAndPoliciesNodeComparator implements Comparator<TreeNode>, Serializable {
         //defaults
         private boolean nameAscending = true;
         private boolean typeDescending = true;
@@ -63,7 +64,7 @@ public final class RootNode extends FolderNode {
         }
         /**
          * Services are shown before policies in a folder by default
-         * As a result this method is called *descenidng* as this is the default
+         * As a result this method is called *descending* as this is the default
          * If you want ascending you got to to supply false here 
          * @param descending
          */

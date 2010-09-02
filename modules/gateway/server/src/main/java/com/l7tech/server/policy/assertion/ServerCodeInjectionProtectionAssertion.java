@@ -133,8 +133,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
 
         final StringBuilder evidence = new StringBuilder();
         final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
-        for (String urlParamName : urlParams.keySet()) {
-            for (String urlParamValue : urlParams.get(urlParamName)) {
+        for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
+            final String urlParamName = entry.getKey();
+            for (String urlParamValue : entry.getValue()) {
                 final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
                 if (protectionViolated != null) {
                     auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
@@ -150,8 +151,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_URL);
         final StringBuilder evidence = new StringBuilder();
         final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
-        for (String urlParamName : urlParams.keySet()) {
-            for (String urlParamValue : urlParams.get(urlParamName)) {
+        for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
+            final String urlParamName = entry.getKey();
+            for (String urlParamValue : entry.getValue()) {
                 final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
                 if (protectionViolated != null) {
                     auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,

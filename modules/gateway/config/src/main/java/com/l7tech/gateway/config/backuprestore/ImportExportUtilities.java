@@ -115,13 +115,15 @@ public class ImportExportUtilities {
      * @return  TRUE if can write on the given path, otherwise FALSE.
      */
     static boolean testCanWriteSilently(final String path) {
+        final File file = new File(path);
         try {
-            final FileOutputStream fos = new FileOutputStream(path);
+            final FileOutputStream fos = new FileOutputStream(file);
             fos.close();
         } catch (Exception e) {
             return false;
         } finally {
-            (new File(path)).delete();
+            final boolean deleted = file.delete();
+            if(!deleted) logger.log(Level.WARNING, "Cannot delete file " + file.getAbsolutePath());
         }
         return true;
     }
@@ -727,13 +729,15 @@ public class ImportExportUtilities {
         final File file = new File(fileName);
         FileOutputStream fos = null;
         try {
-            file.createNewFile();
+            final boolean fileCreated = file.createNewFile();
+            if(!fileCreated) throw new IOException("Could not create file " + file.getAbsolutePath());
             fos = new FileOutputStream(file);
             fos.write("I can write to this file".getBytes());
             //file exists
         } finally {
             ResourceUtils.closeQuietly(fos);
-            file.delete();
+            final boolean fileDeleted = file.delete();
+            if(!fileDeleted) throw new IOException("Could not delete file " + file.getAbsolutePath());
         }
     }
 
@@ -744,10 +748,8 @@ public class ImportExportUtilities {
      * @throws IOException if the temp directory cannot be created
      */
     public static String createTmpDirectory() throws IOException {
-        final File tmp = File.createTempFile("ssg_backup_restore", "tmp");
-        tmp.delete();
-        tmp.mkdir();
-        logger.info("created temporary directory at " + tmp.getPath());
+        final File tmp = FileUtils.createTempDirectory("ssg_backup_restore", "tmp", null, false);
+        logger.info("Created temporary directory at " + tmp.getPath());
         return tmp.getPath();
     }
 

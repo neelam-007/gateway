@@ -17,8 +17,8 @@ import java.util.logging.Level;
  * During backup the OSConfigManager will read backup_manifest and place all the files its able to find
  * from this file into a specified directory, maintaining the original folder structure
  *
- * During import the OSConfigManager has 2 responsibilies
- * 1) knowing where to place os files when restoring prior to reboot - these files will orginate in a source
+ * During import the OSConfigManager has 2 responsibilities
+ * 1) knowing where to place os files when restoring prior to reboot - these files will originate in a source
  * directory from an unzipped zip file
  * 2) Knowing where to find os files when this process runs as root following a reboot
  *
@@ -34,7 +34,7 @@ final class OSConfigManager {
     private final PrintStream printStream;
 
     /**
-     * This is the directory where we store files when we restore files while wating for a reboot to happen
+     * This is the directory where we store files when we restore files while waiting for a reboot to happen
      */
     private final File internalOsFolder;
 
@@ -198,7 +198,7 @@ final class OSConfigManager {
 
     /**
      * The configfiles folder must exist or be capable of being created for this method to be called.
-     * If it exists, it will not be emptied. If it does not exist, then it must be successfull in creating it
+     * If it exists, it will not be emptied. If it does not exist, then it must be successful in creating it
      * @param fileToCopy
      * @throws IOException
      */
@@ -306,7 +306,8 @@ final class OSConfigManager {
         } else {
             //were going to delete it, if somehow it got turned into a file
             if(internalOsFolder.isFile()){
-                internalOsFolder.delete();
+                final boolean fileDeleted = internalOsFolder.delete();
+                if(!fileDeleted) throw new RuntimeException("Could not delete file " + internalOsFolder.getAbsolutePath());
                 boolean success = internalOsFolder.mkdir();
                 if (!success)
                     throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");

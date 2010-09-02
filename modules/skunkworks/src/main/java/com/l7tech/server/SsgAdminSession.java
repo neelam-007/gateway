@@ -68,12 +68,14 @@ public class SsgAdminSession {
         AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
         AdminLoginResult loginResult = adminLogin.login(adminlogin, adminpass);
 
-        subject.getPrincipals().clear();
-        UserBean u = new UserBean();
-        u.setLogin(loginResult.getSessionCookie());
-        u.setName(loginResult.getSessionCookie());
-        subject.getPrincipals().add(u);
-        subject.getPrivateCredentials().clear();
+        if(subject != null){
+            subject.getPrincipals().clear();
+            UserBean u = new UserBean();
+            u.setLogin(loginResult.getSessionCookie());
+            u.setName(loginResult.getSessionCookie());
+            subject.getPrincipals().add(u);
+            subject.getPrivateCredentials().clear();
+        }
     }
 
     public AdminContext getAdminContext() {

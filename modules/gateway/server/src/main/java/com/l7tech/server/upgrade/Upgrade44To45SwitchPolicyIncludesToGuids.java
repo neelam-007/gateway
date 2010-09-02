@@ -111,6 +111,7 @@ public class Upgrade44To45SwitchPolicyIncludesToGuids implements UpgradeTask {
         } finally {
             ResourceUtils.closeQuietly(rs);
             ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(updateStmt);
         }
     }
 
@@ -150,6 +151,10 @@ public class Upgrade44To45SwitchPolicyIncludesToGuids implements UpgradeTask {
             }
         } catch(SQLException e) {
             throw new FatalUpgradeException("Failed to policy XML field");
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(updateStmt);
+            ResourceUtils.closeQuietly(rs);
         }
     }
 
@@ -195,6 +200,8 @@ public class Upgrade44To45SwitchPolicyIncludesToGuids implements UpgradeTask {
             stmt.execute(SQL_ADD_GUID_UNIQUE_KEY);
         } catch(SQLException e) {
             throw new FatalUpgradeException("Failed to add GUID unique key constraint to policy table");
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
         }
     }
 }

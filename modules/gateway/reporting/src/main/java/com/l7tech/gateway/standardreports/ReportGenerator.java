@@ -75,7 +75,7 @@ public class ReportGenerator {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 
-        JasperReport jasperReport;
+        final JasperReport jasperReport;
         try {
             // Compile sub-reports
             for (ReportTemplate subReportTemplate : template.getSubReports()) {
@@ -106,7 +106,7 @@ public class ReportGenerator {
         if (handle.getJasperReport() == null) throw new ReportGenerationException("ReportHandle not compiled.");
 
         Map<String, Object> reportParams = new HashMap<String, Object>(handle.getReportParameters());
-        JasperPrint jasperPrint;
+        final JasperPrint jasperPrint;
         PreparedStatementDataSource psds = null;
         try {
             psds = new PreparedStatementDataSource(connection);
@@ -129,7 +129,7 @@ public class ReportGenerator {
                                        final String type) throws ReportGenerationException {
         if (handle.getJasperPrint() == null) throw new ReportGenerationException("ReportHandle not filled.");
 
-        byte[] report;
+        final byte[] report;
         if ("PDF".equals(type)) {
             try {
 //                handle.getJasperPrint().setProperty(JRPdfExporterParameter.PROPERTY_PDF_VERSION.toString(), JRPdfExporterParameter.PDF_VERSION_1_6.toString());
@@ -432,20 +432,20 @@ public class ReportGenerator {
     @SuppressWarnings({"unchecked"})
     private Document getRuntimeDocument(final ReportTemplate template,
                                         final Map<String, Object> reportParameters) {
-        JasperDocument runtimeDocument = null;
+        final JasperDocument runtimeDocument;
 
-        LinkedHashSet<List<String>> distinctMappingSets =
+        final LinkedHashSet<List<String>> distinctMappingSets =
                 (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
 
-        LinkedHashMap<String, List<ReportApi.FilterPair>>
+        final LinkedHashMap<String, List<ReportApi.FilterPair>>
                 keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
                 reportParameters.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 
         if (template.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY ||
                 template.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL) {
 
-            boolean isCtxMapping = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString());
-            boolean isUsingKeys = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_USING_KEYS).toString());
+            final boolean isCtxMapping = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString());
+            final boolean isUsingKeys = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_USING_KEYS).toString());
 
             if (isCtxMapping && isUsingKeys) {
                 runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
@@ -457,7 +457,7 @@ public class ReportGenerator {
             return runtimeDocument.getDocument();
         }
 
-        ReportApi.ReportType templateType = template.getType();
+        final ReportApi.ReportType templateType = template.getType();
         if (templateType != ReportApi.ReportType.USAGE_SUMMARY &&
                 templateType != ReportApi.ReportType.USAGE_INTERVAL) {
             throw new IllegalArgumentException("Report type: " + templateType.toString() + " is not currently supported for runtime transformation");
@@ -471,6 +471,9 @@ public class ReportGenerator {
             runtimeDocument = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         } else if (template.getParameterMapName().equals(ReportApi.ReportParameters.SUB_REPORT)) {
             runtimeDocument = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        } else {
+            //programming error. Above else conditions check every possible report configuration currently.
+            throw new IllegalStateException("Unknown report confirugration found.");
         }
 
         return runtimeDocument.getDocument();

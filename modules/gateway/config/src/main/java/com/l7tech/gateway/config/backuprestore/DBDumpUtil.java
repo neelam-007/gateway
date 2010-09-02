@@ -1,9 +1,6 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 
@@ -62,10 +59,10 @@ class DBDumpUtil {
         };
         ResultSet tableNames = null;
         final File dbBackupFile = new File(outputDirectory, backupFileName);
-        if(dbBackupFile.exists()){
-            dbBackupFile.delete();//is this needed?
-        }
-        dbBackupFile.createNewFile();
+        FileUtils.delete(dbBackupFile);//delete if it exists
+        final boolean fileCreated = dbBackupFile.createNewFile();
+        if(!fileCreated) throw new IOException("File already exists " + dbBackupFile.getAbsolutePath());
+        
         final FileOutputStream mainOutput = new FileOutputStream(dbBackupFile);
 
         Functions.BinaryThrows<Boolean, String, ResultSet, Exception> checkForClusterPropTable =

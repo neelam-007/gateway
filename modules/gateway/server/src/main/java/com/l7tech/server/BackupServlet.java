@@ -242,11 +242,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         File tmpDirectory = null;
         try {
             //we need a temp folder
-            tmpDirectory = File.createTempFile("ssg_backup_restore", "tmp");
-            tmpDirectory.createNewFile();
-            tmpDirectory.delete();
-            tmpDirectory.mkdir();
-
+            tmpDirectory = FileUtils.createTempDirectory("ssg_backup_restore", "tmp", null, false);
             final String imageName = "image.zip";
 
             final String ssgHome = System.getProperty("com.l7tech.server.home");
@@ -323,7 +319,10 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 imageFile.delete();//not really necessary as the folder will get deleted
             }
         } finally {
-            if(tmpDirectory!= null) FileUtils.deleteDir(tmpDirectory);
+            if(tmpDirectory!= null) {
+                final boolean deleted = FileUtils.deleteDir(tmpDirectory);
+                if(!deleted) logger.log(Level.WARNING, "Could not delete directory " + tmpDirectory.getAbsolutePath());
+            }
         }
 
         logAndAudit(getOriginalClientAddr(request), user, "Backup downloaded", ServiceMessages.BACKUP_SUCCESS, null, nodeName, user.getName(), getOriginalClientHostAndAddr(request));

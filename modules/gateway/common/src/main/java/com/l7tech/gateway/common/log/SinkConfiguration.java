@@ -436,8 +436,8 @@ public class SinkConfiguration extends NamedEntityImp {
 
         static final String HOST_ENTRY_DELIM = ":";
 
-        String hostName;
-        String port;
+        final String hostName;
+        final String port;
 
         /**
          * Constructor that parses the hostName and port number from a single host entry.
@@ -445,18 +445,23 @@ public class SinkConfiguration extends NamedEntityImp {
          */
         SyslogHostEntry(String hostString) {
             StringTokenizer stok = new StringTokenizer(hostString, HOST_ENTRY_DELIM);
+            String hostNameTest = null;
+            String portTest = null;
             if (stok.hasMoreTokens())
-                hostName = stok.nextToken();
+                hostNameTest = stok.nextToken();
             if (stok.hasMoreTokens())
-                port = stok.nextToken();
+                portTest = stok.nextToken();
 
             // if either are null, get angry
-            if (hostName == null || hostName.length() == 0) {
+            if (hostNameTest == null || hostNameTest.trim().isEmpty()) {
                 throw new IllegalArgumentException("Syslog hostName cannot be null or empty");
             }
-            if (port == null || port.length() == 0) {
+            if (portTest == null || portTest.trim().isEmpty()) {
                 throw new IllegalArgumentException("Syslog port cannot be null or empty");
             }
+
+            hostName = hostNameTest;
+            port = portTest;
         }
 
         public String getHostName() {
@@ -469,6 +474,26 @@ public class SinkConfiguration extends NamedEntityImp {
 
         public String getValue() {
             return new StringBuffer(hostName).append(HOST_ENTRY_DELIM).append(port).toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SyslogHostEntry that = (SyslogHostEntry) o;
+
+            if (!hostName.equals(that.hostName)) return false;
+            if (!port.equals(that.port)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = hostName.hashCode();
+            result = 31 * result + port.hashCode();
+            return result;
         }
     }
 }

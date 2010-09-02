@@ -341,7 +341,7 @@ public final class BackupImage {
                 final File outputFile = new File(destinationpath + File.separator + entryName);
 
                 if ( zipentry.isDirectory() ) {
-                    outputFile.mkdirs();
+                    FileUtils.mkdir(outputFile);
                 } else {
                     if (isVerbose && printStream != null) System.out.println("\t- " + entryName);
                     FileUtils.ensurePath( outputFile.getParentFile() );
