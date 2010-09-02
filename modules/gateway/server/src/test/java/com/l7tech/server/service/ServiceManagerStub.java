@@ -1,11 +1,11 @@
 package com.l7tech.server.service;
 
+import com.l7tech.gateway.common.StubDataStore;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.EntityManagerStub;
-import com.l7tech.server.StubDataStore;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.BeansException;
