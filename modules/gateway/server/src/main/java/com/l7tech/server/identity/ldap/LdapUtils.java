@@ -8,6 +8,9 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResourceUtils;
 
+import javax.naming.CompositeName;
+import javax.naming.InvalidNameException;
+import javax.naming.Name;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.InitialDirContext;
@@ -38,8 +41,24 @@ public final class LdapUtils {
      */
     public static final Pattern LDAP_URL_QUERY_PATTERN = Pattern.compile("^\\?([^\\?]+).*$");
     public static final boolean LDAP_USES_UNSYNC_NAMING = SyspropUtil.getBoolean( "com.l7tech.server.ldap.unsyncNaming", false );
+    public static final boolean LDAP_PARSE_NAMES = SyspropUtil.getBoolean( "com.l7tech.server.ldap.parseNames", false );
 
     private LdapUtils() { }
+
+    /**
+     * Convert the given name text to a Name.
+     *
+     * @param name The name as text.
+     * @return The name
+     * @throws InvalidNameException If the name is not valid.
+     */
+    public static Name name( final String name ) throws InvalidNameException {
+        if ( LDAP_PARSE_NAMES ) {
+            return new CompositeName( name );
+        } else {
+            return new CompositeName().add( name );
+        }
+    }
 
     static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
         if (valueToLookFor == null || "".equals(valueToLookFor))
@@ -413,7 +432,7 @@ public final class LdapUtils {
 
             NamingEnumeration<SearchResult> answer = null;
             try {
-                answer = context.search(base, filter, sc);
+                answer = context.search( name(base), filter, sc);
                 if ( listener != null ) {
                     listener.searchResults( answer );
                 }
@@ -450,7 +469,7 @@ public final class LdapUtils {
          */
         void attributes( final DirContext context, final String dn, final LdapListener listener ) throws NamingException {
             try {
-                listener.attributes( dn, context.getAttributes( dn, returningAttributes ));
+                listener.attributes( dn, context.getAttributes( name(dn), returningAttributes ));
             } finally {
                 ResourceUtils.closeQuietly( context );
             }

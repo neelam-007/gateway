@@ -158,7 +158,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 sc.setCountLimit( 2 );
-                answer = dirContext.search(identityProvider.getConfig().getSearchBase(), filter, sc);
+                answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
 
                 if (answer.hasMore()) {
                     final SearchResult sr = (SearchResult) answer.next();
