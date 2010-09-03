@@ -1,16 +1,20 @@
-package com.l7tech.identity.ldap;
+package com.l7tech.server.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.ldap.LdapGroup;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.PasswdStrategy;
+import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.ldap.*;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.security.token.http.HttpBasicToken;
+import org.junit.Ignore;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
@@ -30,7 +34,8 @@ import java.util.Hashtable;
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  */
-public class LdapIdentityProviderTest {
+@Ignore("Developer test")
+public class DeveloperLdapIdentityProviderTest {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
@@ -224,7 +229,7 @@ public class LdapIdentityProviderTest {
     }
 
     public static void main(String[] args) throws Exception {
-        LdapIdentityProviderTest me = new LdapIdentityProviderTest();
+        DeveloperLdapIdentityProviderTest me = new DeveloperLdapIdentityProviderTest();
         /*//me.localProvider = me.getSpockProvider();
         me.localProvider = me.getBonesProvider();
         //me.localProvider = me.getSpockProviderWithBadSearchBase();

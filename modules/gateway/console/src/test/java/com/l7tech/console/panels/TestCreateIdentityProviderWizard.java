@@ -1,6 +1,5 @@
-package com.l7tech.identity.ldap;
+package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.*;
 import com.l7tech.gui.util.Utilities;
 
 /**

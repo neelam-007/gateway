@@ -19,7 +19,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
  */
 public class ApplicationContexts {
     static ClassPathXmlApplicationContext testApplicationContext;
-    static FileSystemXmlApplicationContext prodApplicationContext;
+    static ClassPathXmlApplicationContext prodApplicationContext;
 
     public static synchronized ApplicationContext getTestApplicationContext() {
         if (testApplicationContext !=null) {
@@ -38,14 +38,12 @@ public class ApplicationContexts {
 
     }
 
-    private static FileSystemXmlApplicationContext createProdApplicationContext() {
-        FileSystemXmlApplicationContext context = new FileSystemXmlApplicationContext(PRODUCTION_BEAN_DEFINITIONS);
-        return context;
+    private static ClassPathXmlApplicationContext createProdApplicationContext() {
+        return new ClassPathXmlApplicationContext(PRODUCTION_BEAN_DEFINITIONS);
     }
 
     private static ClassPathXmlApplicationContext createTestApplicationContext() {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{DEFAULT_TEST_BEAN_DEFINITIONS});
-        return context;
+        return new ClassPathXmlApplicationContext(new String[]{DEFAULT_TEST_BEAN_DEFINITIONS});
     }
     public static final String DEFAULT_TEST_BEAN_DEFINITIONS = "com/l7tech/server/resources/testApplicationContext.xml";
 

@@ -255,4 +255,17 @@ public class CertUtilsTest {
         assertEquals( "Subject DN 1", cert.getSubjectDN().getName().toLowerCase().replaceAll(" ", ""), CertUtils.getSubjectDN( cert ));
     }
 
+    @Ignore("Developer test")
+    public void testPerformance() throws Exception {
+        CertUtils.dnToAttributeMap("dc=layer7-tech,dc=com, uid=acruise");
+        long before = System.currentTimeMillis();
+        int i = 0;
+        for (; i < 250000; i++) {
+            CertUtils.dnToAttributeMap("dc=layer7-tech,dc=com, uid=acruise");
+        }
+        final long t = (System.currentTimeMillis() - before);
+        System.out.println( i + " iterations in " + t + "ms.");
+        System.out.println((double)i/t *1000 + " iterations per second");
+    }
+
 }

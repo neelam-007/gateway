@@ -1,16 +1,15 @@
-package com.l7tech.server;
+package com.l7tech.console;
 
-import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.console.util.Registry;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
-import javax.security.auth.Subject;
 import java.io.IOException;
-import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
@@ -25,108 +24,106 @@ import java.util.Set;
  * <li>Other tests rely on the last SSG used by the Console on the machine being up and running
  * </ul>
  */
-public class TrustedCertAdminTest extends TestCase {
-    private static AdminContext adminContext;
+@Ignore("Developer test")
+public class TrustedCertAdminTest {
+    private static Registry registry;
 
-    /**
-     * test <code>TrustedCertAdminTest</code> constructor
-     */
-    public TrustedCertAdminTest(String name) throws Exception {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the TrustedCertAdminTest <code>TestCase</code>
-     */
-    public static Test suite() {
+    @BeforeClass
+    public static void init() {
         try {
-            SsgAdminSession ssgAdminSession = new SsgAdminSession();
-            adminContext = ssgAdminSession.getAdminContext();
-            return new TestSuite(TrustedCertAdminTest.class);
+            new SsgAdminSession();
+            registry = Registry.getDefault();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    @Test
     public void testRetrieveCertIgnoreHostname() throws Exception {
-        X509Certificate[] chain = adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", true);
+        X509Certificate[] chain = registry.getTrustedCertManager().retrieveCertFromUrl("https://mail.l7tech.com/", true);
         assertNotNull(chain);
         for (X509Certificate cert : chain) {
             System.out.println("Found cert with dn " + cert.getSubjectDN().getName());
         }
     }
 
+    @Test
     public void testRetrieveCertWrongHostname() throws Exception {
         try {
-            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", false);
+            registry.getTrustedCertManager().retrieveCertFromUrl("https://mail.l7tech.com/", false);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
         }
     }
 
+    @Test
     public void testRetrieveCertHttpUrl() throws Exception {
         try {
-            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
+            registry.getTrustedCertManager().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
         }
     }
 
+    @Test
     public void testRetrieveCertWrongPort() throws Exception {
         try {
-            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
+            registry.getTrustedCertManager().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
         }
     }
 
+    @Test
     public void testRetrieveCertUnknownHost() throws Exception {
         try {
-            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
+            registry.getTrustedCertManager().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
         }
     }
 
+    @Test
     public void testUpdateCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
         final Long oid =
-          new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
+                registry.getTrustedCertManager().saveCert( tc );
         System.out.println("Saved " + oid);
 
         tc.setSubjectDn("The other one");
         tc.setTrustedForSsl(true);
         tc.setOid(oid.longValue());
 
-        new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
+        new Long( registry.getTrustedCertManager().saveCert(tc));
         System.out.println("Updated " + oid);
 
-        TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
+        TrustedCert tc2 = registry.getTrustedCertManager().findCertByPrimaryKey( oid );
 
         assertEquals(tc, tc2);
 
-        adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
+        registry.getTrustedCertManager().deleteCert( oid );
         System.out.println("Deleted " + oid);
     }
 
+    @Test
     public void testFindAllCerts() throws Exception {
         final TrustedCert tc = getTrustedCert();
 
         Set<Long> oids = new HashSet<Long>();
-        oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
-        oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
+        oids.add( registry.getTrustedCertManager().saveCert( tc ) );
+        oids.add( registry.getTrustedCertManager().saveCert( tc ) );
 
         System.out.println("Saved " + oids);
 
-        List<TrustedCert> all = adminContext.getTrustedCertAdmin().findAllCerts();
+        List<TrustedCert> all = registry.getTrustedCertManager().findAllCerts();
 
         Set<Long> foundOids = new HashSet<Long>();
         for (TrustedCert tc2 : all) {
-            foundOids.add(new Long(tc2.getOid()));
+            foundOids.add( tc2.getOid() );
         }
 
         System.out.println("Found " + foundOids);
@@ -135,7 +132,7 @@ public class TrustedCertAdminTest extends TestCase {
 
         final Set<Long> deletedOids = new HashSet<Long>();
         for (Long oid : oids) {
-            adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
+            registry.getTrustedCertManager().deleteCert( oid );
             deletedOids.add(oid);
         }
         System.out.println("Deleted " + deletedOids);
@@ -150,6 +147,7 @@ public class TrustedCertAdminTest extends TestCase {
         return tc;
     }
 
+    @Test
     public void testSaveCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
         tc.setTrustedForSigningClientCerts(true);
@@ -159,11 +157,11 @@ public class TrustedCertAdminTest extends TestCase {
         X509Certificate cert = tc.getCertificate();
         System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'");
 
-        final Long oid = new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
+        final Long oid = registry.getTrustedCertManager().saveCert( tc );
         System.out.println("Saved cert " + oid);
 
 
-        TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
+        TrustedCert tc2 = registry.getTrustedCertManager().findCertByPrimaryKey( oid );
         assertNotNull(tc2);
         System.out.println("Loaded TrustedCert " + tc2);
         System.out.println("DN is " + tc2.getCertificate().getSubjectDN().getName());
@@ -171,28 +169,16 @@ public class TrustedCertAdminTest extends TestCase {
         assertEquals(tc2.getSubjectDn(), tc.getSubjectDn());
         assertEquals(tc2.getCertificate(), tc.getCertificate());
 
-        adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
+        registry.getTrustedCertManager().deleteCert( oid );
         System.out.println("Deleted TrustedCert " + oid);
 
-        Object gone = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
+        Object gone = registry.getTrustedCertManager().findCertByPrimaryKey( oid );
         assertNull(gone);
     }
 
     private X509Certificate getCert() throws CertificateException, IOException {
         byte[] certBytes = HexUtils.decodeBase64(CERT_BASE64);
         return CertUtils.decodeCert(certBytes);
-    }
-
-    /**
-     * Test <code>TrustedCertAdminTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
-            public Object run() {
-                junit.textui.TestRunner.run(suite());
-                return null;
-            }
-        }, null);
     }
 
     private static final String CERT_BASE64 =

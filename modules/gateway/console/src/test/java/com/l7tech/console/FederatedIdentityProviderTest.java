@@ -1,6 +1,6 @@
-package com.l7tech.identity.fed;
+package com.l7tech.console;
 
-import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
@@ -8,44 +8,34 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.SsgAdminSession;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import javax.security.auth.Subject;
-import java.security.PrivilegedAction;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * @author alex
- * @version $Revision$
  */
-public class FederatedIdentityProviderTest extends TestCase {
-    private static SsgAdminSession ssgAdminSession;
-    private static AdminContext adminContext;
+@Ignore
+public class FederatedIdentityProviderTest {
+    private static Registry registry;
     private FederatedIdentityProviderConfig config;
-
-    /**
-     * test <code>FederatedIdentityProviderTest</code> constructor
-     */
-    public FederatedIdentityProviderTest(String name) throws Exception {
-        super(name);
-
-    }
 
     /**
      * create the <code>TestSuite</code> for the FederatedIdentityProviderTest <code>TestCase</code>
      */
-    public static Test suite() {
+    @BeforeClass
+    public static void init() {
         try {
-            ssgAdminSession = new SsgAdminSession();
-            adminContext = ssgAdminSession.getAdminContext();
-            return new TestSuite(FederatedIdentityProviderTest.class);
+            new SsgAdminSession();
+            registry = Registry.getDefault();
         } catch (Exception e) {
             throw new RuntimeException(e); // can't happen
         }
     }
 
+    @Before
     public void setUp() throws Exception {
         this.config = new FederatedIdentityProviderConfig();
         config.setX509Supported(true);
@@ -53,25 +43,23 @@ public class FederatedIdentityProviderTest extends TestCase {
         config.setName("Example FIP");
     }
 
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
+    @Test
     public void testSaveConfig() throws Exception {
-        final long oid = adminContext.getIdentityAdmin().saveIdentityProviderConfig(config);
+        final long oid = registry.getIdentityAdmin().saveIdentityProviderConfig(config);
         System.err.println("Saved Federated IDPC #" + oid);
 
-        FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig)adminContext.getIdentityAdmin().findIdentityProviderConfigByID(oid);
+        FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig) registry.getIdentityAdmin().findIdentityProviderConfigByID(oid);
 
         assertNotNull(conf);
         System.err.println("Loaded FIPC " + conf);
-        adminContext.getIdentityAdmin().deleteIdentityProviderConfig(oid);
+        registry.getIdentityAdmin().deleteIdentityProviderConfig(oid);
     }
 
+    @Test
     public void testSaveVirtualGroup() throws Exception {
         IdentityProviderConfig config = null;
 
-        final IdentityAdmin identityAdmin = adminContext.getIdentityAdmin();
+        final IdentityAdmin identityAdmin = registry.getIdentityAdmin();
         EntityHeader[] configs = identityAdmin.findAllIdentityProviderConfig();
         for (int i = 0; i < configs.length; i++) {
             EntityHeader entityHeader = configs[i];
@@ -92,17 +80,5 @@ public class FederatedIdentityProviderTest extends TestCase {
         String soid = identityAdmin.saveGroup(config.getOid(), vg, null);
 
         assertNotNull("Couldn't save virtual group", soid);
-    }
-
-    /**
-     * Test <code>FederatedIdentityProviderTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
-            public Object run() {
-                junit.textui.TestRunner.run(suite());
-                return null;
-            }
-        }, null);
     }
 }

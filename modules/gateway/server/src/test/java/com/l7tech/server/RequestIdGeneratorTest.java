@@ -10,7 +10,6 @@ import java.util.Set;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class RequestIdGeneratorTest {
 
