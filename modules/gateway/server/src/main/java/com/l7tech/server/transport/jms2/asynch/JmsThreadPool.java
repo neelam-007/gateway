@@ -1,12 +1,16 @@
 package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.Config;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ValidatedConfig;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,18 +23,19 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
 
     private static final Logger _logger = Logger.getLogger(JmsThreadPool.class.getName());
 
-    /** Singleton instance */
-    private static JmsThreadPool _instance;
+    /** Hold singleton instance */
+    private static final AtomicReference<JmsThreadPool> _instance = new AtomicReference<JmsThreadPool>();
 
     /* Cluster property keys */
-    private static final String PARAM_THREAD_LIMIT = "jmsListenerThreadLimit";
     private static final String PARAM_THREAD_DISTRIBUTION = "jmsEndpointThreadDistribution";
 
     /* constants passed to the executor */
-    private static int CORE_SIZE = 5;
+    private static final int CORE_SIZE = 5;
     private static final long KEEP_ALIVE = 30000l; // 30 sec
     private static final long MAX_SHUTDOWN_TIME = 8000l; // 8 sec
     private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
+
+    private static volatile ServerConfig serverConfig;//to support testing, volatile only for correctness
 
     /** Executor that handles the execution tasks via a threadpool */
     private ThreadPoolExecutor workerPool;
@@ -38,30 +43,18 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
     /** Configured global thread size limit */
     private int maxPoolSize;
 
-    /** Thread pool initialized flag */
-    private boolean initialized;
-
-    /** Mutex */
+    /** Mutex for instances of JmsThreadPool, multiple may exist as while pool is shutting down _instance may
+     * not longer refer to it, and instead it may refer to a new thread pool.*/
     private final Object synchLock = new Object();
-    /** Mutex for ThreadPool singleton instance updates */
-    private static final Object updateLock = new Object();
 
     /** Thread pool stop flag */
     private boolean stop;
 
     /**
      * Default private constructor.
-     *
-     * @throws Exception if the pool initialization fails.
      */
     private JmsThreadPool() {
-
-        try {
-            this.init();
-        } catch (Exception ex) {
-            // should not get to this point
-            ex.printStackTrace();
-        }
+        this.init();
     }
 
     /**
@@ -71,11 +64,18 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
      */
     public static JmsThreadPool getInstance() {
 
-        if (_instance == null) {
-            _instance = new JmsThreadPool();
+        final JmsThreadPool threadPoolTest = _instance.get();
+        if (threadPoolTest == null) {
+            synchronized (JmsThreadPool.class){
+                //locked so only a single thread pool is created
+                final JmsThreadPool doubleCheck = _instance.get();
+                if(doubleCheck == null){
+                    _instance.set(new JmsThreadPool());
+                }
+            }
         }
 
-        return _instance;
+        return _instance.get();
     }
 
     /**
@@ -83,56 +83,36 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
      * used for cluster property changes.
      */
     private static void recreateInstance() {
-
-        JmsThreadPool oldThreadPool;
-        synchronized (updateLock) {
-            // clear the singleton instance so it gets re-created on next getInstance call;
-            oldThreadPool = _instance;
-            _instance = null;
-        }
-
-        // the shutdown is controlled and gives time to existing threads to complete execution
-        oldThreadPool.shutdown();
+        final JmsThreadPool prev = _instance.getAndSet(null);
+        if (prev != null) prev.shutdown();
     }
 
     /**
-     * Initializer method.
-     *
-     * @throws Exception when errors are encountered while initializing the pool
+     * Initializer method. Only called from synchronized block in private constructor.
      */
-    private void init() throws Exception {
+    private void init()  {
+        // read cluster properties from a validated ServerConfig instance.
+        final Config serverCfg = validated( getServerConfig() );
 
-        // do we need synchronization? -- yes
-        synchronized (synchLock) {
-            if (!initialized) {
+        // max Jms processing thread pool size
+        // - what is emergency default?? - 25. If an illegal value is supplied it is ignored.
+        maxPoolSize = serverCfg.getIntProperty(ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT, 25); // or DEFAULT_JMS_THREAD_POOL_SIZE?
 
-                // read cluster properties from the serverConfig
-                ServerConfig serverCfg = ServerConfig.getInstance();
-
-                // max Jms processing thread pool size
-                // - what is emergency default??
-                maxPoolSize = serverCfg.getIntProperty(ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT, 25); // or DEFAULT_JMS_THREAD_POOL_SIZE?
-
-                // create the pool executor
-                workerPool = new ThreadPoolExecutor(
-                        CORE_SIZE,
-                        getMaxSize(),
-                        KEEP_ALIVE,
-                        TIME_UNIT,
-                        new LinkedBlockingQueue(CORE_SIZE) // TODO: need to revisit
-                        // Use default ThreadFactory for now
-                );
-
-                // set the flag
-                initialized = true;
-            }
-        }
+        // create the pool executor
+        workerPool = new ThreadPoolExecutor(
+                CORE_SIZE,
+                getMaxSize(),
+                KEEP_ALIVE,
+                TIME_UNIT,
+                new LinkedBlockingQueue(CORE_SIZE) // TODO: need to revisit
+                // Use default ThreadFactory for now
+        );
     }
 
-
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
 
-        if (PARAM_THREAD_LIMIT.equals(evt.getPropertyName())) {
+        if (ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT.equals(evt.getPropertyName())) {
 
             JmsThreadPool.recreateInstance();
 
@@ -145,7 +125,8 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
     }
 
     public void shutdown() {
-        
+
+        boolean doCompareAndSet = false;
         synchronized (synchLock) {
             if (!stop) {
 
@@ -169,10 +150,13 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
                 // log threadpool stats
                 _logger.info(stats());
                 stop = this.workerPool.isShutdown();
-
-                // null the instance to force - re-initialize on next access
-                _instance = null;
+                doCompareAndSet = true;
             }
+        }
+
+        if(doCompareAndSet){
+            // Set the instance to null only if it holds a reference to the JmsThreadPool which is being shutdown.
+            _instance.compareAndSet(this, null);
         }
     }
 
@@ -185,6 +169,9 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
         workerPool.execute(newTask);
     }
 
+    public static void setServerConfig(ServerConfig serverConfig) {
+        JmsThreadPool.serverConfig = serverConfig;
+    }
 
     private String stats() {
 
@@ -201,4 +188,26 @@ public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener
     private int getMaxSize() {
         return maxPoolSize;
     }
+
+    private static ServerConfig getServerConfig() {
+        if(serverConfig != null) return serverConfig;
+
+        return ServerConfig.getInstance();
+    }
+
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, _logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                if(ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT.equals(key)){
+                    return "jms.listenerThreadLimit";
+                }
+                return null;
+            }
+        } );
+
+        vc.setMinimumValue( ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT, 1 );
+        return vc;
+    }
+    
 }

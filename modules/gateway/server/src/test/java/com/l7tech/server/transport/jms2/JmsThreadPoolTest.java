@@ -1,12 +1,9 @@
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 
-import org.springframework.context.ApplicationContext;
 import org.junit.Test;
-import org.junit.Ignore;
-import org.junit.Before;
 import org.junit.Assert;
 
 /**
@@ -14,29 +11,44 @@ import org.junit.Assert;
  */
 public class JmsThreadPoolTest {
 
-    private ApplicationContext ctx;
-
-    @Before
-    public void setUp() throws Exception {
-
-        if (ctx == null) {
-            ctx = ApplicationContexts.getTestApplicationContext();
-        }
-    }
-
-    @Ignore("This test creates a thread pool without stopping it")
     @Test
     public void testThreadPoolInit() {
 
+        JmsThreadPool pool = null;
         try {
-
-            JmsThreadPool pool = JmsThreadPool.getInstance();
+            pool = JmsThreadPool.getInstance();
             Assert.assertNotNull(pool);
             
         } catch (Exception ex) {
             Assert.fail("Unexpected exception occurred: " + ex);
+        } finally {
+            if(pool != null){
+                pool.shutdown();
+            }
         }
     }
 
+    /**
+     * Tests that a value of 0 for jms.listenerThreadLimit does not cause the JmsThreadPool any issues, as the value
+     * is ignored.
+     */
+    @Test
+    public void testServerConfig(){
+        ServerConfigStub configStub = new ServerConfigStub();
+        configStub.putProperty("jmsListenerThreadLimit", "0");
+        JmsThreadPool.setServerConfig(configStub);
 
+        JmsThreadPool pool = null;
+        try {
+            pool = JmsThreadPool.getInstance();
+            Assert.assertNotNull(pool);
+
+        } catch (Exception ex) {
+            Assert.fail("Unexpected exception occurred: " + ex);
+        } finally {
+            if(pool != null){
+                pool.shutdown();
+            }
+        }
+    }
 }
