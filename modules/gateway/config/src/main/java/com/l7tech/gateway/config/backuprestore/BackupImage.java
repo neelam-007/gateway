@@ -50,7 +50,7 @@ public final class BackupImage {
     private static final String MY_CNF = "my.cnf";
 
     /**
-     * my.cnf makes up part of a databsae backup. This is the current known path to this file
+     * my.cnf makes up part of a database backup. This is the current known path to this file
      */
     static final String PATH_TO_MY_CNF = "/etc/"+ MY_CNF;
 
@@ -142,7 +142,7 @@ public final class BackupImage {
 
         //What does the image look like? 5.0 or Buzzcut?
         //5.0 has no directories, its a flat layout
-        //A 5.0 image can contain a os folder, so this is not a valid way of determing version
+        //A 5.0 image can contain a os folder, so this is not a valid way of determining version
         //instead read the version file
         //Version is in the same place for 5.0 and post 5.0 (for now)
         final File versionFile = new File(tempDirectory, ImportExportUtilities.ComponentType.VERSION.getComponentName());
@@ -214,7 +214,7 @@ public final class BackupImage {
     /**
      * Get the directory which contains the main database backup components. Does not contain audits
      * @return File representing the directory where the backup data can be found. Can be null if after 5.0 and
-     * imgae does not contain a maindb folder
+     * image does not contain a maindb folder
      */
     File getMainDbBackupFolder(){
         if(imageVersion == ImageVersion.AFTER_FIVE_O){
@@ -329,7 +329,7 @@ public final class BackupImage {
         return compFolder;
     }
 
-    private void unzipToDir(final String filename, final String destinationpath)
+    private void unzipToDir(final String filename, final String destinationPath)
             throws IOException {
         ZipInputStream zipinputstream = null;
         try {
@@ -338,10 +338,11 @@ public final class BackupImage {
             while ( zipentry != null ) {
                 // for each entry to be extracted
                 String entryName = zipentry.getName();
-                final File outputFile = new File(destinationpath + File.separator + entryName);
+                final File outputFile = new File(destinationPath + File.separator + entryName);
 
-                if ( zipentry.isDirectory() ) {
-                    FileUtils.mkdir(outputFile);
+                if ( zipentry.isDirectory() && !outputFile.exists()) {
+                    final boolean dirCreated = outputFile.mkdirs();
+                    if(!dirCreated) throw new IOException("Cannot create directory " + outputFile.getAbsolutePath());
                 } else {
                     if (isVerbose && printStream != null) System.out.println("\t- " + entryName);
                     FileUtils.ensurePath( outputFile.getParentFile() );
