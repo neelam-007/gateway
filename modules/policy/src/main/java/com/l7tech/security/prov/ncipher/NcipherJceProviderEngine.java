@@ -31,16 +31,16 @@ public class NcipherJceProviderEngine extends JceProvider {
 
     @Override
     protected String getRsaNoPaddingCipherName() {
-        return "RSA/NONE/NoPadding";
+        return "RSA/ECB/NoPadding";
     }
 
     @Override
     protected String getRsaOaepPaddingCipherName() {
-        return "RSA/NONE/OAEPPadding";
+        return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
     }
 
     @Override
     protected String getRsaPkcs1PaddingCipherName() {
-        return "RSA/NONE/PKCS1Padding";
+        return "RSA/ECB/PKCS1Padding";
     }
 }
