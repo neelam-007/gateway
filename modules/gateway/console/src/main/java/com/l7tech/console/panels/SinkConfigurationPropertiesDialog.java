@@ -161,7 +161,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // When the type field is changed, enable or disable the tabs that aren't associated
         // with the new type value.
         typeField.setModel(new DefaultComboBoxModel(SinkType.values()));
-        typeField.setRenderer(new KeyedResourceRenderer(resources, "baseSettings.type.{0}.text"));
+        typeField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.type.{0}.text"));
         typeField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableDisableTabs();
@@ -169,10 +169,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         });
 
         severityField.setModel(new DefaultComboBoxModel(SeverityThreshold.values()));
-        severityField.setRenderer(new KeyedResourceRenderer(resources, "baseSettings.severity.{0}.text"));
+        severityField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.severity.{0}.text"));
 
         categoriesList.setListData(SinkConfiguration.CATEGORIES_SET.toArray());
-        categoriesList.setCellRenderer(new KeyedResourceRenderer(resources, "baseSettings.categories.{0}.text"));
+        categoriesList.setCellRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.categories.{0}.text"));
         inputValidator.addRule(new InputValidator.ValidationRule(){
             public String getValidationError() {
                 String error = null;
@@ -221,7 +221,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         numberEditor.getModel().setValue(1);
 
         fileFormatField.setModel(new DefaultComboBoxModel(SinkConfiguration.FILE_FORMAT_SET.toArray()));
-        fileFormatField.setRenderer(new KeyedResourceRenderer(resources, "fileSettings.format.{0}.text"));
+        fileFormatField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "fileSettings.format.{0}.text"));
         fileFormatField.setSelectedIndex(1);
 
         // add validation rule for maximum file use
@@ -277,7 +277,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     private void initializeSyslogFields() {
         syslogProtocolField.setModel(new DefaultComboBoxModel(SinkConfiguration.SYSLOG_PROTOCOL_SET.toArray()));
-        syslogProtocolField.setRenderer(new KeyedResourceRenderer(resources, "syslogSettings.protocol.{0}.text"));
+        syslogProtocolField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "syslogSettings.protocol.{0}.text"));
         syslogProtocolField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableDisableSyslogSslSettings();
@@ -682,50 +682,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private void createUIComponents() {
     }
 
-    /**
-     * Renderer for items keyed into given resource bundle.
-     */
-    private static final class KeyedResourceRenderer extends JLabel implements ListCellRenderer {
-        private final ResourceBundle bundle;
-        private final String keyFormat;
 
-        public KeyedResourceRenderer( final ResourceBundle bundle,
-                                      final String keyFormat ) {
-            this.bundle = bundle;
-            this.keyFormat = keyFormat;
-        }
-
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
-            Object[] keyFormatArgs = new Object[]{ value };
-
-            String label = "";
-            if ( value != null ) {
-                label = bundle.getString(MessageFormat.format(keyFormat, keyFormatArgs));
-            }
-
-            setText(label);
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
-    }
 
     public static class SyslogHostPanel extends TextEntryPanel {
         public SyslogHostPanel() {

@@ -59,9 +59,16 @@ class SamlAssertionGeneratorSaml1 {
                 now, options.getNotAfterSeconds(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
                 caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
+        buildSubjectStatement( subjectStatement, options, assertionType );
+        return assertionType;
+    }
+
+    private void buildSubjectStatement( final SubjectStatement subjectStatement,
+                                        final SamlAssertionGenerator.Options options,
+                                        final AssertionType assertionType ) throws CertificateException {
         final SubjectStatementAbstractType subjectStatementAbstractType;
 
-        if (subjectStatement instanceof AuthenticationStatement) {
+        if (subjectStatement instanceof AuthenticationStatement ) {
             AuthenticationStatement as = (AuthenticationStatement)subjectStatement;
             AuthenticationStatementType authStatement = assertionType.addNewAuthenticationStatement();
             authStatement.setAuthenticationMethod(as.getAuthenticationMethod());
@@ -75,11 +82,11 @@ class SamlAssertionGeneratorSaml1 {
                     subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
             }
             subjectStatementAbstractType = authStatement;
-        } else if (subjectStatement instanceof AuthorizationStatement) {
+        } else if (subjectStatement instanceof AuthorizationStatement ) {
             AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
             AuthorizationDecisionStatementType atzStatement = assertionType.addNewAuthorizationDecisionStatement();
             atzStatement.setResource(as.getResource());
-            atzStatement.setDecision(DecisionType.PERMIT);
+            atzStatement.setDecision( DecisionType.PERMIT);
             if (as.getAction() != null) {
                 ActionType actionType = atzStatement.addNewAction();
                 actionType.setStringValue(as.getAction());
@@ -89,7 +96,7 @@ class SamlAssertionGeneratorSaml1 {
             }
             subjectStatementAbstractType = atzStatement;
 
-        } else if (subjectStatement instanceof AttributeStatement) {
+        } else if (subjectStatement instanceof AttributeStatement ) {
             AttributeStatement as = (AttributeStatement)subjectStatement;
             AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
             Attribute[] attributes = as.getAttributes();
@@ -108,7 +115,6 @@ class SamlAssertionGeneratorSaml1 {
         }
 
         populateSubjectStatement(subjectStatementAbstractType, subjectStatement);
-        return assertionType;
     }
 
     /**
@@ -131,54 +137,7 @@ class SamlAssertionGeneratorSaml1 {
                 caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
 
         for (SubjectStatement subjectStatement : subjectStatements) {
-            final SubjectStatementAbstractType subjectStatementAbstractType;
-
-            if (subjectStatement instanceof AuthenticationStatement) {
-                AuthenticationStatement as = (AuthenticationStatement)subjectStatement;
-                AuthenticationStatementType authStatement = assertionType.addNewAuthenticationStatement();
-                authStatement.setAuthenticationMethod(as.getAuthenticationMethod());
-                authStatement.setAuthenticationInstant(as.getAuthenticationInstant());
-
-                InetAddress clientAddress = options.getClientAddress();
-                if (clientAddress != null) {
-                    final SubjectLocalityType subjectLocality = authStatement.addNewSubjectLocality();
-                    subjectLocality.setIPAddress(clientAddress.getHostAddress());
-                    if ( options.isClientAddressDNS() )
-                        subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
-                }
-                subjectStatementAbstractType = authStatement;
-            } else if (subjectStatement instanceof AuthorizationStatement) {
-                AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
-                AuthorizationDecisionStatementType atzStatement = assertionType.addNewAuthorizationDecisionStatement();
-                atzStatement.setResource(as.getResource());
-                atzStatement.setDecision(DecisionType.PERMIT);
-                if (as.getAction() != null) {
-                    ActionType actionType = atzStatement.addNewAction();
-                    actionType.setStringValue(as.getAction());
-                    if (as.getActionNamespace() != null) {
-                        actionType.setNamespace(as.getActionNamespace());
-                    }
-                }
-                subjectStatementAbstractType = atzStatement;
-
-            } else if (subjectStatement instanceof AttributeStatement) {
-                AttributeStatement as = (AttributeStatement)subjectStatement;
-                AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
-                Attribute[] attributes = as.getAttributes();
-                for (Attribute attribute : attributes) {
-                    AttributeType attributeType = attStatement.addNewAttribute();
-                    attributeType.setAttributeName(attribute.getName());
-                    if (attribute.getNamespace() != null) {
-                        attributeType.setAttributeNamespace(attribute.getNamespace());
-                    }
-                    XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
-                    attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
-                }
-                subjectStatementAbstractType = attStatement;
-            } else {
-                throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
-            }
-            populateSubjectStatement(subjectStatementAbstractType, subjectStatement);
+            buildSubjectStatement( subjectStatement, options, assertionType );
         }
 
         return assertionType;

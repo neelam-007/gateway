@@ -98,15 +98,7 @@ public class ResolutionParameters extends PersistentEntityImp implements Seriali
     public boolean equals(Object obj) {
         if (!(obj instanceof ResolutionParameters)) return false;
         ResolutionParameters theotherone = (ResolutionParameters)obj;
-        if (uri == null) {
-            if (uri != theotherone.getUri()) return false;
-        } else if (!uri.equals(theotherone.getUri())) return false;
-        if (soapaction == null) {
-            if (soapaction != theotherone.getSoapaction()) return false;
-        } else if (!soapaction.equals(theotherone.getSoapaction())) return false;
-        if (urn == null) {
-            if (urn != theotherone.getUrn()) return false;
-        } else if (!urn.equals(theotherone.getUrn())) return false;
+        if (!resolutionEquals(theotherone)) return false;
         if (serviceid != theotherone.getServiceid()) return false;
         return true;
     }

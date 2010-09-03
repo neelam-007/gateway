@@ -50,7 +50,7 @@ public class CertValidationPanel extends WizardStepPanel {
                 setRevocationCheckPolicyComboState();
             }
         });
-        revocationCheckPolicyComboBox.setRenderer(new RevocationCheckPolicyRenderer());
+        revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
         setRevocationCheckPolicyComboState();
 
@@ -192,44 +192,5 @@ public class CertValidationPanel extends WizardStepPanel {
 
         // combos
         revocationCheckPolicyComboBox.setEnabled(false);
-    }
-
-    /**
-     * Renderer for  RevocationCheckPolicys
-     */
-    private static final class RevocationCheckPolicyRenderer extends JLabel implements ListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus) {
-            RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) value;
-
-            String label = "";
-            if ( revocationCheckPolicy != null ) {
-                label = revocationCheckPolicy.getName();
-                if (revocationCheckPolicy.isDefaultPolicy())  {
-                    label += " [Default]";
-                }
-            }
-
-            setText(label);
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
     }
 }

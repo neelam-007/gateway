@@ -197,7 +197,7 @@ public class CertPropertiesWindow extends JDialog {
                 setRevocationCheckPolicyComboState(editable);
             }
         });
-        revocationCheckPolicyComboBox.setRenderer(new RevocationCheckPolicyRenderer());
+        revocationCheckPolicyComboBox.setRenderer(new Renderers.RevocationCheckPolicyRenderer());
 
         populateData();
         setRevocationCheckPolicyComboState(editable);
@@ -545,45 +545,6 @@ public class CertPropertiesWindow extends JDialog {
     private static TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
-    }
-
-    /**
-     * Renderer for  RevocationCheckPolicys
-     */
-    private static final class RevocationCheckPolicyRenderer extends JLabel implements ListCellRenderer {
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
-            RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) value;
-
-            String label = "";
-            if ( revocationCheckPolicy != null ) {
-                label = revocationCheckPolicy.getName();
-                if (revocationCheckPolicy.isDefaultPolicy())  {
-                    label += " [Default]";
-                }
-            }
-
-            setText(label);
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
     }
 
     /**

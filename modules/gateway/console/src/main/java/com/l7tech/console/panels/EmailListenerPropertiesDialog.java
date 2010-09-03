@@ -215,7 +215,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // with the new type value.
         serverType.setModel(new DefaultComboBoxModel(EmailServerType.values()));
         serverType.setSelectedItem(EmailServerType.POP3);
-        serverType.setRenderer(new KeyedResourceRenderer(resources, "settings.serverType.{0}.text"));
+        serverType.setRenderer(new Renderers.KeyedResourceRenderer(resources, "settings.serverType.{0}.text"));
         serverType.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -544,51 +544,5 @@ public class EmailListenerPropertiesDialog extends JDialog {
         d.setVisible(true);
         d.dispose();
         f.dispose();
-    }
-
-    /**
-     * Renderer for items keyed into given resource bundle.
-     */
-    private static final class KeyedResourceRenderer extends JLabel implements ListCellRenderer {
-        private final ResourceBundle bundle;
-        private final String keyFormat;
-
-        public KeyedResourceRenderer( final ResourceBundle bundle,
-                                      final String keyFormat ) {
-            this.bundle = bundle;
-            this.keyFormat = keyFormat;
-        }
-
-        @Override
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
-            Object[] keyFormatArgs = new Object[]{ value };
-
-            String label = "";
-            if ( value != null ) {
-                label = bundle.getString(MessageFormat.format(keyFormat, keyFormatArgs));
-            }
-
-            setText(label);
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
     }
 }

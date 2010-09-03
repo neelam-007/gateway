@@ -389,9 +389,19 @@ public class SoapMessageGenerator {
             return soapMessage;
         }
         javax.wsdl.Message message = input.getMessage();
+
+        processParts( bindingOperation, envelope, bodyElement, message );
+        
+        return soapMessage;
+    }
+
+    private void processParts( final BindingOperation bindingOperation,
+                               final SOAPEnvelope envelope,
+                               final SOAPBodyElement bodyElement,
+                               final javax.wsdl.Message message ) throws SOAPException {
         List parts = message.getOrderedParts(null);
 
-        for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
+        for ( Iterator iterator = parts.iterator(); iterator.hasNext();) {
             Part part = (Part)iterator.next();
             String elementName = "";
             String value = "value";
@@ -427,9 +437,7 @@ public class SoapMessageGenerator {
                 parameterElement.addTextNode(value);
             }
         }
-        return soapMessage;
     }
-
 
     /**
      * Generate a SOAP response
@@ -478,44 +486,8 @@ public class SoapMessageGenerator {
             return soapMessage;
         }
 
-        List parts = message.getOrderedParts(null);
+        processParts( bindingOperation, envelope, bodyElement, message );
 
-        for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
-            Part part = (Part)iterator.next();
-            String elementName = "";
-            String value = "value";
-            SOAPElement parameterElement = null;
-
-
-            elementName = part.getName();
-            Name partName = envelope.createName(elementName);
-            parameterElement = bodyElement.addChildElement(partName);
-            QName typeName = part.getTypeName();
-            if (typeName != null) {
-                String typeNameLocalPart = typeName.getLocalPart();
-                String uri = typeName.getNamespaceURI();
-                if (uri != null) {
-                    Iterator prefixes = envelope.getNamespacePrefixes();
-                    while (prefixes.hasNext()) {
-                        String prefix = (String)prefixes.next();
-                        String nsURI = envelope.getNamespaceURI(prefix);
-                        if (nsURI.equals(typeName.getNamespaceURI())) {
-                            typeNameLocalPart = prefix + ":" + typeNameLocalPart;
-                        }
-                    }
-                }
-                parameterElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
-                value = typeName.getLocalPart();
-            }
-            if (messageInputGenerator != null) {
-                value = messageInputGenerator.generate(elementName,
-                                                       bindingOperation.getName(),
-                                                       wsdl.getDefinition());
-            }
-            if (value != null) {
-                parameterElement.addTextNode(value);
-            }
-        }
         return soapMessage;
     }
 

@@ -186,7 +186,7 @@ public class ManageCertificateValidationDialog extends JDialog {
         });
         Utilities.setDoubleClickAction(validationOptionsTable, validationPropertiesButton);
 
-        policyList.setCellRenderer(new RevocationCheckPolicyRenderer());
+        policyList.setCellRenderer(new Renderers.RevocationCheckPolicyRenderer());
         ListSelectionModel policyListSelectionModel = policyList.getSelectionModel();
         policyListSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         policyListSelectionModel.addListSelectionListener(new ListSelectionListener() {
@@ -444,44 +444,5 @@ public class ManageCertificateValidationDialog extends JDialog {
      */
     private ClusterStatusAdmin getClusterStatusAdmin() throws RuntimeException {
         return Registry.getDefault().getClusterStatusAdmin();
-    }
-
-    /**
-     * Renderer for  RevocationCheckPolicys
-     */
-    private static final class RevocationCheckPolicyRenderer extends JLabel implements ListCellRenderer {
-        public Component getListCellRendererComponent( JList list,
-                                                       Object value,
-                                                       int index,
-                                                       boolean isSelected,
-                                                       boolean cellHasFocus)
-        {
-            RevocationCheckPolicy revocationCheckPolicy = (RevocationCheckPolicy) value;
-
-            String label = "";
-            if ( revocationCheckPolicy != null ) {
-                label = revocationCheckPolicy.getName();
-                if (revocationCheckPolicy.isDefaultPolicy())  {
-                    label += " [Default]";
-                }
-            }
-
-            setText(label);
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-                setOpaque(true);
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-                setOpaque(false);
-            }
-
-            setEnabled(list.isEnabled());
-            setFont(list.getFont());
-
-            return this;
-        }
     }
 }
