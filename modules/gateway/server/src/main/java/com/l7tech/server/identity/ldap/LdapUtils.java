@@ -1,8 +1,6 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.util.ExceptionUtils;
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
@@ -20,6 +18,12 @@ import javax.naming.directory.SearchControls;
 import javax.naming.NamingException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.Hashtable;
 import java.util.Set;
@@ -42,6 +46,20 @@ public final class LdapUtils {
     public static final Pattern LDAP_URL_QUERY_PATTERN = Pattern.compile("^\\?([^\\?]+).*$");
     public static final boolean LDAP_USES_UNSYNC_NAMING = SyspropUtil.getBoolean( "com.l7tech.server.ldap.unsyncNaming", false );
     public static final boolean LDAP_PARSE_NAMES = SyspropUtil.getBoolean( "com.l7tech.server.ldap.parseNames", false );
+    public static final String LDAP_ENV_PREFIX = "com.l7tech.server.ldap.env.";
+    public static final Map<String,String> LDAP_ENV_OVERRIDES;
+
+    // Environment properties
+    public static final String ENV_PROP_LDAP_VERSION = "java.naming.ldap.version";
+    public static final String ENV_PROP_LDAP_CONNECT_POOL = "com.sun.jndi.ldap.connect.pool";
+    public static final String ENV_PROP_LDAP_CONNECT_TIMEOUT = "com.sun.jndi.ldap.connect.timeout";
+    public static final String ENV_PROP_LDAP_READ_TIMEOUT = "com.sun.jndi.ldap.read.timeout";
+    public static final String ENV_PROP_LDAP_FACTORY_SOCKET = "java.naming.ldap.factory.socket";
+
+    public static final String ENV_VALUE_INITIAL_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+    public static final String ENV_VALUE_LDAP_VERSION = "3";
+    public static final String ENV_VALUE_REFERRAL = "follow";
+    public static final String ENV_VALUE_SECURITY_PROTOCOL = "ssl";
 
     private LdapUtils() { }
 
@@ -240,19 +258,19 @@ public final class LdapUtils {
 
             LdapURL lurl = new LdapURL(url);
             Hashtable<? super String,? super String> env = newEnvironment();
-            env.put("java.naming.ldap.version", "3");
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(ENV_PROP_LDAP_VERSION, ENV_VALUE_LDAP_VERSION);
+            env.put(Context.INITIAL_CONTEXT_FACTORY, ENV_VALUE_INITIAL_CONTEXT_FACTORY);
             env.put(Context.PROVIDER_URL, url);
             if ( useConnectionPooling ) {
-                env.put("com.sun.jndi.ldap.connect.pool", "true");
+                env.put(ENV_PROP_LDAP_CONNECT_POOL, "true");
             }
-            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(connectTimeout));
-            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(readTimeout));
-            env.put( Context.REFERRAL, "follow" );
+            env.put(ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(connectTimeout));
+            env.put(ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(readTimeout));
+            env.put(Context.REFERRAL, ENV_VALUE_REFERRAL);
 
             if (lurl.useSsl()) {
-                env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( useClientAuth, keystoreId, keyAlias ));
-                env.put(Context.SECURITY_PROTOCOL, "ssl");
+                env.put(ENV_PROP_LDAP_FACTORY_SOCKET, LdapSslCustomizerSupport.getSSLSocketFactoryClassname( useClientAuth, keystoreId, keyAlias ));
+                env.put(Context.SECURITY_PROTOCOL, ENV_VALUE_SECURITY_PROTOCOL);
             }
 
             if (login != null && login.length() > 0) {
@@ -260,6 +278,7 @@ public final class LdapUtils {
                 env.put(Context.SECURITY_PRINCIPAL, login);
                 env.put(Context.SECURITY_CREDENTIALS, pass);
             }
+            env.putAll(LDAP_ENV_OVERRIDES);
             lock( env );
             return new InitialDirContext(env);
         } finally {
@@ -482,5 +501,44 @@ public final class LdapUtils {
          * @throws NamingException If an error occurs.
          */
         abstract DirContext getDirContext() throws NamingException;
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( LdapUtils.class.getName() );
+
+    static {
+        LDAP_ENV_OVERRIDES = readEnvironmentOverrides();
+    }
+
+    /**
+     * Load extra/replacement environment properties.
+     *
+     * If this is used we should consider adding UI to LDAP providers since
+     * the settings should really be per provider.
+     */
+    private static Map<String,String> readEnvironmentOverrides() {
+        final Map<String,String> overrides = new HashMap<String,String>();
+
+        try {
+            final Properties systemProperties = System.getProperties();
+            for ( final String name : systemProperties.stringPropertyNames() ) {
+                if ( name.startsWith( LDAP_ENV_PREFIX ) ) {
+                    overrides.put(
+                            name.substring( LDAP_ENV_PREFIX.length() ),
+                            systemProperties.getProperty( name ) );
+                }
+            }
+        } catch ( SecurityException e ) {
+            logger.log( Level.WARNING, 
+                    "Permission denied when loading LDAP environment overrides.",
+                    ExceptionUtils.getDebugException(e) );
+        }
+
+        if ( !overrides.isEmpty() ) {
+            logger.config( "Loaded LDAP environment overrides : " + overrides );
+        }
+
+        return Collections.unmodifiableMap( overrides );
     }
 }

@@ -697,13 +697,13 @@ public class LdapIdentityProviderImpl
         }
         while (ldapurl != null) {
             Hashtable<? super String, ? super String> env = LdapUtils.newEnvironment();
-            env.put("java.naming.ldap.version", "3");
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(LdapUtils.ENV_PROP_LDAP_VERSION, LdapUtils.ENV_VALUE_LDAP_VERSION);
+            env.put(Context.INITIAL_CONTEXT_FACTORY, LdapUtils.ENV_VALUE_INITIAL_CONTEXT_FACTORY);
             env.put(Context.PROVIDER_URL, ldapurl);
-            env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapRuntimeConfig.getLdapConnectionTimeout()));
-            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapRuntimeConfig.getLdapReadTimeout()));
-            env.put( Context.REFERRAL, "follow" );
+            env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_POOL, "true");
+            env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapConnectionTimeout()));
+            env.put(LdapUtils.ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapReadTimeout()));
+            env.put( Context.REFERRAL, LdapUtils.ENV_VALUE_REFERRAL );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
                 String pass = config.getBindPasswd();
@@ -715,8 +715,8 @@ public class LdapIdentityProviderImpl
             try {
                 LdapURL url = new LdapURL(ldapurl);
                 if (url.useSsl()) {
-                    env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( config.isClientAuthEnabled(), config.getKeystoreId(), config.getKeyAlias() ) );
-                    env.put(Context.SECURITY_PROTOCOL, "ssl");
+                    env.put(LdapUtils.ENV_PROP_LDAP_FACTORY_SOCKET, LdapSslCustomizerSupport.getSSLSocketFactoryClassname( config.isClientAuthEnabled(), config.getKeystoreId(), config.getKeyAlias() ) );
+                    env.put(Context.SECURITY_PROTOCOL, LdapUtils.ENV_VALUE_SECURITY_PROTOCOL);
                 }
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -728,6 +728,7 @@ public class LdapIdentityProviderImpl
                 continue;
             }
 
+            env.putAll(LdapUtils.LDAP_ENV_OVERRIDES);
             LdapUtils.lock( env );
 
             try {
