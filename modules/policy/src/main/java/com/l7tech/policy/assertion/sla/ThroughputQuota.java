@@ -271,8 +271,9 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     }
 
     public static String validateQuota(String quota) {
-        String error = Syntax.validateAtMostOneVariableReference(quota, "throughput quota");
-        if (error == null && ! ValidationUtils.isValidLong(quota, false, 1, Long.MAX_VALUE) ) {
+        String error = null;
+        final String[] varsUsed = Syntax.getReferencedNames(quota);
+        if ( varsUsed.length==0 && !ValidationUtils.isValidLong(quota, false, 1, Long.MAX_VALUE) ) {
             error = "Throughput quota must be a long value no less than " + 1;
         }
         return error;
