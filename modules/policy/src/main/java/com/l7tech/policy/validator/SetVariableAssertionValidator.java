@@ -30,7 +30,7 @@ public class SetVariableAssertionValidator  extends AssertionValidatorSupport<Se
         super(assertion);
 
         try {
-            if ( assertion.isEnabled() && contentTypeConflicts( assertion ) ) {
+            if ( assertion.isEnabled() && assertion.getDataType()==DataType.MESSAGE && contentTypeConflicts( assertion ) ) {
                 this.addWarningMessage( "The character encoding in the Content-Type header does not match the encoding in the XML declaration." );   
             }
         } catch ( IOException e ) {
