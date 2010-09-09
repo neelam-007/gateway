@@ -492,8 +492,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     /**
      * Determines whether wsdl extracting is supported, and extracts schemas if so.
-     * This is supported for 'document' style services only.
-     * Traverse all the soap bindings, and if all the bindings are of style 'document' extracts the schemas.
+     * This is supported for document/literal and rpc/literal style services only.
+     * Traverse all the soap bindings, and if all the bindings have literal use - extracts the schemas.
      *
      * Initializes fullSchemas, inputSchemas, and outputSchemas fields, or leaves them uninitialized if schema extraction is not supported.
      */
@@ -551,7 +551,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     /**
-     * @return true if the supplied WSDLs are valid and their SOAP bindings are all document style and literal use; false otherwise.
+     * @return true if the supplied WSDLs are valid and all their SOAP bindings have 'literal' use.
      */
     private boolean isDocumentLiteral(Map<String, String> wsdls) {
         try {
@@ -560,7 +560,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
             Collection<Binding> bindings = wsdl.getBindings();
             for (Binding binding : bindings) {
-                if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding)) || !Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
+                if ( !Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding)) ) {
                     return false;
                 }
             }
