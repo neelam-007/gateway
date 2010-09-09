@@ -165,15 +165,17 @@ echo "ssgconfig ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/systemconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/scahsmconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7,root) NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/ssgconfig_launch" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/patchcli_launch" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status" >> /etc/sudoers
 
-# The layer7 user is allowed to run the sca stuff without having to enter a password
+# The layer7 user is allowed to run the sca and ncipher stuff without having to enter a password
 echo "Defaults:layer7 env_reset" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
+echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 

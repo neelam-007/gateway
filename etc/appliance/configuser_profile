@@ -9,6 +9,7 @@ CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ssgconfig_launch"
 HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
+NCIPHERCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
 PATCHTOOL="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/patchcli_launch"
 
@@ -21,6 +22,13 @@ checkForSca() {
         SCA_PRESENT="true"
     else
         SCA_PRESENT=""
+    fi
+}
+
+checkForNcipher() {
+    NCIPHER_PRESENT=""
+    if [ -s "/opt/nfast/bin/new-world" ] ; then
+        NCIPHER_PRESENT="true"
     fi
 }
 
@@ -474,6 +482,18 @@ doHsmMasterKeyBackup() {
     fi
 }
 
+doScaOrNcipherConfiguration() {
+    if [ "${NCIPHER_PRESENT}" == "true" ] ; then
+        doNcipherConfiguration
+    else
+        doHsmConfiguration
+    fi
+}
+
+doNcipherConfiguration() {
+    (${NCIPHERCONFIG})    
+}
+
 doHsmConfiguration() {
     isMenuValid="n"
     while [ "$isMenuValid" != "y" ]
@@ -878,6 +898,7 @@ IFS='
 }
 
 checkForSca
+checkForNcipher
 checkForEm
 checkForPatcher
 isPatchListMenuValid="n"
@@ -894,7 +915,7 @@ do
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
         echo " 5) Display Remote Management configuration menu"
-        if [ "${SCA_PRESENT}" == "true" ] ; then
+        if [ "${SCA_PRESENT}" == "true" || "${NCIPHER_PRESENT}" == "true" ] ; then
             echo " 6) Manage HSM"
         fi
 
@@ -937,9 +958,9 @@ do
                         sudo /sbin/reboot
                     fi
                     clear;;
-                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" ]; then
+                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" || "${NCIPHER_PRESENT}" == "true" ]; then
                         clear;
-                        doHsmConfiguration
+                        doScaOrNcipherConfiguration
                         clear;
                     elif [ "$choice" == "7" ] && [ "${EM_PRESENT}" == "true" ]; then
                         clear;
