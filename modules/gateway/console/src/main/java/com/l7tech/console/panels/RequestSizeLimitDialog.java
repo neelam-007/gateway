@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.RequestSizeLimit;
 
@@ -23,16 +22,21 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
     private boolean modified;
     private boolean confirmed = false;
 
-    public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal, boolean readOnly) throws HeadlessException {
+    public RequestSizeLimitDialog( final Frame owner,
+                                   final RequestSizeLimit assertion,
+                                   final boolean modal,
+                                   final boolean readOnly ) throws HeadlessException {
         super(owner, assertion, modal);
         doInit(assertion, readOnly);
     }
 
-    private void doInit(RequestSizeLimit assertion, boolean readOnly) {
+    private void doInit( final RequestSizeLimit assertion,
+                         final boolean readOnly ) {
         this.sizeAssertion = assertion;
-        sizeLimit.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
 
-        Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
+        Utilities.setEscKeyStrokeDisposes( this );
+        Utilities.setMaxLength( sizeLimit.getDocument(), 1024 );
+        Utilities.equalizeButtonSizes( okButton, cancelButton );
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {

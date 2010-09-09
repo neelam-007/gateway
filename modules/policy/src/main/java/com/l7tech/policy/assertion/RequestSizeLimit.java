@@ -5,18 +5,24 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion for limiting request size.
  */
 @ProcessesRequest
-public class RequestSizeLimit extends Assertion {
-    public static final int MIM_SIZE_LIMIT = 1;
+public class RequestSizeLimit extends Assertion implements UsesVariables {
+    public static final long MIN_SIZE_LIMIT = 1;
+    public static final long MAX_SIZE_LIMIT =  Long.MAX_VALUE / 1024;
 
     private String limit = "128"; // kbytes
     private boolean entireMessage = true;
@@ -63,6 +69,12 @@ public class RequestSizeLimit extends Assertion {
         this.entireMessage = entireMessage;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Override
+    public String[] getVariablesUsed() {
+        return limit==null ? new String[0] : Syntax.getReferencedNames( limit );
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -80,9 +92,10 @@ public class RequestSizeLimit extends Assertion {
     }
 
     public static String validateSizeLimit(String limit) {
-        String error = Syntax.validateAtMostOneVariableReference(limit, "size limit");
-        if (error == null && ! ValidationUtils.isValidLong(limit, false, MIM_SIZE_LIMIT, Long.MAX_VALUE)) {
-            error = "Size limit must be a long value no less than " + MIM_SIZE_LIMIT;
+        String error = null;
+        final String[] vars = Syntax.getReferencedNames(limit);
+        if ( vars.length==0 && !ValidationUtils.isValidLong(limit, false, MIN_SIZE_LIMIT, MAX_SIZE_LIMIT)) {
+            error = "The size limit field must be a number between " + MIN_SIZE_LIMIT + " and " + MAX_SIZE_LIMIT + ".";
         }
         return error;
     }
