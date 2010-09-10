@@ -40,6 +40,8 @@ elif [ "${1}" == "-processController" ] ; then
   launch "ConfigProcessController" "$*"
 elif [ "${1}" == "-databaseUgrade" ] ; then
   launch "DatabaseUpgrader" "$*"
+elif [ "${1}" == "-keystoreProperty" ] ; then
+  launch "ConfigKeystoreFileProperty" "$*"
 else
   launch "ConfigWizard" "$*"
 fi

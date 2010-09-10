@@ -915,7 +915,7 @@ do
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
         echo " 5) Display Remote Management configuration menu"
-        if [ "${SCA_PRESENT}" == "true" || "${NCIPHER_PRESENT}" == "true" ] ; then
+        if [ "${SCA_PRESENT}" == "true" -o "${NCIPHER_PRESENT}" == "true" ] ; then
             echo " 6) Manage HSM"
         fi
 
@@ -958,7 +958,7 @@ do
                         sudo /sbin/reboot
                     fi
                     clear;;
-                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" || "${NCIPHER_PRESENT}" == "true" ]; then
+                *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" -o "${NCIPHER_PRESENT}" == "true" ]; then
                         clear;
                         doScaOrNcipherConfiguration
                         clear;
