@@ -1707,7 +1707,7 @@
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path-skunkworks" pathid="build-path.text"/>
-        <modules buildpathref="module-build-path-skunkworks" target="publish"/>
+        <modules buildpathref="module-build-path-skunkworks" target="publish-all-quick"/>
     </target>
 
     <!--
