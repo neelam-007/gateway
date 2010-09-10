@@ -82,5 +82,5 @@ elif [ "$USER" == "layer7" ]; then
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${RESTORE_HOME}/SSGBackupUtility.jar restore "$@"
 else
-    echo "Must be layer7 to invoke ssgrestore.sh"
+    echo "Must be root or layer7 to invoke ssgrestore.sh"
 fi

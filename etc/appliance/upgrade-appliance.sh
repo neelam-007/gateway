@@ -50,3 +50,7 @@ chown layer7:layer7 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
 chmod 660 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
 chown layer7:layer7 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
 chmod 660 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
+
+# process controller runs as layer7 on appliance, gateway shouldn't have any access to its files
+find /opt/SecureSpan/Controller/etc -user gateway -exec chown layer7 '{}' \;
+find /opt/SecureSpan/Controller/etc -group gateway -exec chgrp layer7 '{}' \;

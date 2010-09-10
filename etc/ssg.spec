@@ -83,7 +83,8 @@ rm -fr %{buildroot}
 
 #Configuration
 %defattr(0644,layer7,layer7,0755)
-%dir /opt/SecureSpan/Gateway/config
+%dir %attr(0755,root,root) /opt/SecureSpan/Gateway/config
+%dir %attr(0755,layer7,layer7) /opt/SecureSpan/Gateway/config/logs
 /opt/SecureSpan/Gateway/config/*.properties
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/*.jar
@@ -91,15 +92,14 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/*.sh
 
 %defattr(0644,layer7,layer7,0755)
-%dir /opt/SecureSpan/Gateway/config/backup
+%dir %attr(0755,root,root) /opt/SecureSpan/Gateway/config/backup
+%attr(0755,root,root) /opt/SecureSpan/Gateway/config/backup/*.sh
 /opt/SecureSpan/Gateway/config/backup/cfg/
 /opt/SecureSpan/Gateway/config/backup/*.properties
 /opt/SecureSpan/Gateway/config/backup/logs/
 /opt/SecureSpan/Gateway/config/backup/images/
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/backup/*.jar
-%defattr(0555,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/config/backup/*.sh
 
 # Gateway process controller
 %defattr(0640,layer7,layer7,0755)
@@ -107,12 +107,10 @@ rm -fr %{buildroot}
 
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Controller/Controller.jar
-%dir /opt/SecureSpan/Controller/bin
-%dir /opt/SecureSpan/Controller/etc
+%attr(0555,root,root) /opt/SecureSpan/Controller/bin
 /opt/SecureSpan/Controller/lib
-%attr(0555,layer7,layer7) /opt/SecureSpan/Controller/bin/*
 %dir %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc
-%config %attr(0775,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
+%config %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/etc/conf
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/run
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
@@ -166,6 +164,10 @@ fi
 %post
 if [ -d "/ssg" ] ; then
    sh "${RPM_INSTALL_PREFIX0}/runtime/bin/upgrade.sh" >> "${RPM_INSTALL_PREFIX0}/config/upgrade.log" 2>&1
+fi
+
+if [ -f /opt/SecureSpan/Gateway/config/config.log ]; then
+ mv /opt/SecureSpan/Gateway/config/config.log /opt/SecureSpan/Gateway/config/logs/config.log 2>/dev/null
 fi
 
 %preun

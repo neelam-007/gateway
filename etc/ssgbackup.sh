@@ -51,6 +51,6 @@ elif [ "$USER" == "gateway" ]; then
         -Djava.util.logging.config.file=backupgatewaylogging.properties \
         -jar ${BACKUP_HOME}/SSGBackupUtility.jar backup "$@"
 else
-    echo "Must be layer7 to invoke ssgbackup.sh"
+    echo "Must be root or layer7 to invoke ssgbackup.sh"
     exit 1
 fi

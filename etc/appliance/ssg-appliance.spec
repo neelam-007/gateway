@@ -102,10 +102,12 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 /opt/SecureSpan/Appliance/config/lib
 /opt/SecureSpan/Appliance/config/*.jar
 # this script does not need to be executable
-/opt/SecureSpan/Appliance/config/ssg_sys_config.pl
-%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/config/*.sh
-%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/config/netconfig.pl
+%dir %attr(0755,root,root) /opt/SecureSpan/Appliance/config
+%attr(0644,root,root) /opt/SecureSpan/Appliance/config/ssg_sys_config.pl
+%attr(0755,root,root) /opt/SecureSpan/Appliance/config/*.sh
+%attr(0755,root,root) /opt/SecureSpan/Appliance/config/netconfig.pl
 %defattr(0644,layer7,layer7,0775)
+%dir /opt/SecureSpan/Appliance/config/logs 
 /opt/SecureSpan/Appliance/config/*.properties
 
 # SSG config user files
@@ -243,6 +245,8 @@ fi
 
 %post
 sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/appliance-upgrade.log 2>&1
+[ ! -f %{prefix}/config/appliance-upgrade.log ] || mv %{prefix}/config/appliance-upgrade.log %{prefix}/config/logs/appliance-upgrade.log 2>/dev/null
+sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/logs/appliance-upgrade.log 2>&1
 
 # After above item has executed, on first install only
 # we need to set password for ssgconfig and pre-expire it
