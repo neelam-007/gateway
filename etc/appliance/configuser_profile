@@ -332,7 +332,7 @@ doEmsConfiguration() {
             2)
                 clear;
                 if [ ! -f "/opt/SecureSpan/EnterpriseManager/var/emconfig.properties" ] ; then
-                    confirmedMessage "Please configure the Enterprise Service Manager and try again."                
+                    confirmedMessage "Please configure the Enterprise Service Manager and try again."
                 else
                     /sbin/chkconfig ssem && true # && true due to set -e
                     if [ ${?} -eq 0 ] ; then
@@ -491,7 +491,17 @@ doScaOrNcipherConfiguration() {
 }
 
 doNcipherConfiguration() {
-    (${NCIPHERCONFIG})    
+    (${NCIPHERCONFIG})
+    ERR=$?
+    if [ $ERR -ne 0 ] ; then
+        echo ""
+        confirmedMessage "There was an error while configuring the HSM."
+        return 0
+    else
+        echo ""
+        confirmedMessage ""
+        return 0
+    fi
 }
 
 doHsmConfiguration() {
@@ -698,7 +708,7 @@ doPatchUpload() {
         echo ""
         echo "If the patch you want to upload is not listed below,"
         echo "use the \"S\" option to locate it."
-        
+
         if [ $LEN -eq 0 ] ; then
             echo ""
             echo "No patches were found in the ssgconfig directory."
@@ -769,7 +779,7 @@ IFS='
         echo ""
         echo "This option installs a patch that has been uploaded."
         echo ""
-        
+
         if [ $LEN -eq 0 ] ; then
             echo ""
             echo "No patches are available for installation."

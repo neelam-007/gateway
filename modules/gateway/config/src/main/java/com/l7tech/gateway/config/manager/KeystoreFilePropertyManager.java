@@ -15,8 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +27,9 @@ public class KeystoreFilePropertyManager {
 
     public static final int EXIT_STATUS_OK = 0;
     public static final int EXIT_STATUS_ERROR = 1;
+    public static final int EXIT_STATUS_USAGE = 2;
     public static final int EXIT_STATUS_NO_SUCH_PROPERTY = 11;
+    public static final int EXIT_STATUS_NO_SUCH_OBJECT_ID = 12;
 
     private static final String DEFAULT_CONFIG_PATH = "../node/{0}/etc/conf";
     private static final String DEFAULT_NODE = "default";
@@ -39,45 +40,62 @@ public class KeystoreFilePropertyManager {
     private final DatabaseConfig dbConfig;
 
     private static class NoSuchPropertyException extends Exception {}
+    private static class NoSuchObjectIdException extends Exception {}
 
-    public static void main(final String[] args) {
+    public static void main(final String[] argsArray) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
-        String errorAction = "process";
+        int oid = -1;
+        String action = "process";
         String propertyName = null;
+        String propertyValue = null;
         try {
-            if (args.length < 3)
-                usage("Not enough arguments.");
-            if (args.length > 4)
+            LinkedList<String> args = new LinkedList<String>(Arrays.asList(argsArray));
+
+            action = args.removeFirst();                                                        
+            oid = Integer.parseInt(args.removeFirst());
+            propertyName = args.removeFirst();
+
+            if (!args.isEmpty())
+                propertyValue = args.removeFirst();
+
+            if (!args.isEmpty())
                 usage("Too many arguments.");
+        } catch (NumberFormatException nfe) {
+            usage("Object ID must be an integer.");
+        } catch (NoSuchElementException e) {
+            usage("Not enough arguments.");
+        }
 
-            String oid = args[0];
-            String action = args[1];
-            propertyName = args[2];
-            String propertyValueStr = args.length > 3 ? args[3] : null;
-
+        try {
             KeystoreFilePropertyManager kpm = new KeystoreFilePropertyManager(getDatabaseConfig());
             if ("get".equalsIgnoreCase(action)) {
-                errorAction = "get";
-                if (propertyValueStr != null)
+                if (propertyValue != null)
                     usage("Property value should not be provided for get.");
 
-                propertyValueStr = kpm.getProperty(Integer.parseInt(oid), propertyName);
-                System.out.println(propertyValueStr);
-                System.exit(0);
+                propertyValue = kpm.getProperty(oid, propertyName);
+                System.out.println(propertyValue);
+                System.exit(EXIT_STATUS_OK);
             } else if ("set".equalsIgnoreCase(action)) {
-                errorAction = "set";
-                if (propertyValueStr == null)
+                if (propertyValue == null)
                     usage("New property value must be provided for set.");
 
-                kpm.setProperty(Integer.parseInt(oid), propertyName, propertyValueStr);
+                kpm.setProperty(oid, propertyName, propertyValue);
+                System.exit(EXIT_STATUS_OK);
+            } else if ("clear".equalsIgnoreCase(action)) {
+                if (propertyValue != null)
+                    usage("Property value should not be provided for clear.");
+
+                kpm.clearProperty(oid, propertyName);
                 System.exit(EXIT_STATUS_OK);
             } else {
-                usage("Invalid action; must be set or get.");
+                usage("Invalid action.");
             }
         } catch (NoSuchPropertyException e) {
             fatal("No such property: " + propertyName, null, EXIT_STATUS_NO_SUCH_PROPERTY);
+        } catch (NoSuchObjectIdException e) {
+            fatal("No such keystore objectid: " + propertyName, null, EXIT_STATUS_NO_SUCH_OBJECT_ID);
         } catch (Throwable e) {
-            fatal("Unable to " + errorAction + " keystore property: " + ExceptionUtils.getMessage(e), e, EXIT_STATUS_ERROR);
+            fatal("Unable to " + action + " keystore property: " + ExceptionUtils.getMessage(e), e, EXIT_STATUS_ERROR);
         }
     }
 
@@ -90,7 +108,7 @@ public class KeystoreFilePropertyManager {
     // Never returns; calls System.exit
     private static void usage(String prefix) {
         String p = prefix == null ? "" : prefix + "\n";
-        fatal(p + "Usage: KeystoreFilePropertyManager <objectid> <get|set> <propertyname> [newPropertyValueString]", null, 2);
+        fatal(p + "Usage: KeystoreFilePropertyManager <get|set|clear> <objectid> <propertyname> [<newPropertyValueString>]", null, EXIT_STATUS_USAGE);
     }
 
     private static DatabaseConfig getDatabaseConfig() throws IOException {
@@ -129,13 +147,21 @@ public class KeystoreFilePropertyManager {
         this.dbConfig = dbConfig;
     }
 
-    public void setProperty(int oid, String propertyName, String propertyValueStr) throws SQLException {
+    public void setProperty(int oid, String propertyName, String propertyValueStr) throws SQLException, NoSuchObjectIdException {
+        if ("databytes".equalsIgnoreCase(propertyName)) {
+            throw new SQLException("set not supported for databytes property");
+        }
+
         Map<String, String> properties = loadProperties(oid);
         properties.put(propertyName, propertyValueStr);
         saveProperties(oid, properties);
     }
 
-    public String getProperty(int oid, String propertyName) throws SQLException, NoSuchPropertyException {
+    public String getProperty(int oid, String propertyName) throws SQLException, NoSuchPropertyException, NoSuchObjectIdException {
+        if ("databytes".equalsIgnoreCase(propertyName)) {
+            throw new SQLException("get not supported for databytes property");
+        }
+
         Map<String, String> properties = loadProperties(oid);
         String result = properties.get(propertyName);
         if (result == null)
@@ -143,7 +169,18 @@ public class KeystoreFilePropertyManager {
         return result;
     }
 
-    private Map<String, String> loadProperties(int oid) throws SQLException {
+    public void clearProperty(int oid, String propertyName) throws SQLException, NoSuchObjectIdException {
+        // Recognizes special property name: databytes
+        if ("databytes".equalsIgnoreCase(propertyName)) {
+            clearDataBytes(oid);
+        } else {
+            Map<String, String> properties = loadProperties(oid);
+            properties.remove(propertyName);
+            saveProperties(oid, properties);
+        }
+    }
+
+    private Map<String, String> loadProperties(int oid) throws SQLException, NoSuchObjectIdException {
         final Map<String, String> properties;
 
         DBActions dbactions = new DBActions();
@@ -164,7 +201,7 @@ public class KeystoreFilePropertyManager {
                     properties = new HashMap<String, String>();
                 }
             } else {
-                throw new SQLException("No keystore_file found with objectid " + oid);
+                throw new NoSuchObjectIdException();
             }
         } finally {
             ResourceUtils.closeQuietly(resultSet);
@@ -175,7 +212,7 @@ public class KeystoreFilePropertyManager {
         return properties;
     }
 
-    private void saveProperties(int oid, Map<String, String> properties) throws SQLException {
+    private void saveProperties(int oid, Map<String, String> properties) throws SQLException, NoSuchObjectIdException {
         final String xml;
         if ( properties == null )
             throw new NullPointerException("properties");
@@ -200,7 +237,27 @@ public class KeystoreFilePropertyManager {
             statement.execute();
             int updateCount = statement.getUpdateCount();
             if (updateCount < 1) {
-                throw new SQLException("No keystore_file found with objectid " + oid);
+                throw new NoSuchObjectIdException();
+            }
+        } finally {
+            ResourceUtils.closeQuietly(resultSet);
+            ResourceUtils.closeQuietly(statement);
+            ResourceUtils.closeQuietly(connection);
+        }
+    }
+
+    private void clearDataBytes(int oid) throws SQLException, NoSuchObjectIdException {
+        DBActions dbactions = new DBActions();
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = dbactions.getConnection(dbConfig, false);
+            statement = connection.prepareStatement("update keystore_file set databytes = null where objectid = " + oid);
+            statement.execute();
+            int updateCount = statement.getUpdateCount();
+            if (updateCount < 1) {
+                throw new NoSuchObjectIdException();
             }
         } finally {
             ResourceUtils.closeQuietly(resultSet);
