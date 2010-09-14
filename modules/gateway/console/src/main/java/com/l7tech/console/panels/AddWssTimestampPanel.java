@@ -10,7 +10,6 @@ import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
-import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -138,8 +137,6 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
 
     @Override
     protected void doUpdateModel() {
-        validateData();
-        
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         if ( tu == null ) {
             tu = TimeUnit.MILLIS;            
@@ -168,12 +165,5 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
     @Override
     public void focusFirstComponent() {
         expiryTimeField.requestFocus();
-    }
-
-    private void validateData() throws AssertionPropertiesOkCancelSupport.ValidationException {
-        int multiplier = ((TimeUnit)expiryTimeUnitCombo.getSelectedItem()).getMultiplier();
-        if ( !ValidationUtils.isValidInteger( expiryTimeField.getText().trim(), false, 1, Integer.MAX_VALUE / multiplier )) {
-            throw new AssertionPropertiesOkCancelSupport.ValidationException("Expiry is required and must be greater than zero and less than 25 days.");
-        }
     }
 }
