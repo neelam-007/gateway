@@ -144,7 +144,6 @@
             <properties>
               <horizontalAlignment value="4"/>
               <text value=""/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="tooltip.cache.size"/>
             </properties>
           </component>
           <component id="11942" class="javax.swing.JLabel">
@@ -152,8 +151,19 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
+              <labelFor value="efc1a"/>
               <text resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="advancedConfiguration.group.hierarchyMaxAge"/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="tooltip.cache.maximum.age"/>
+            </properties>
+          </component>
+          <component id="efc1a" class="javax.swing.JTextField" binding="groupCacheHierarchyMaxAgeTextField">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <horizontalAlignment value="4"/>
+              <text value=""/>
             </properties>
           </component>
           <component id="31eb7" class="javax.swing.JLabel">
@@ -174,10 +184,9 @@
             <properties>
               <horizontalAlignment value="4"/>
               <text value=""/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="tooltip.maximum.nesting"/>
             </properties>
           </component>
-          <component id="db43f" class="javax.swing.JComboBox" binding="hierarchyUnitComboBox">
+          <component id="db43f" class="javax.swing.JComboBox" binding="hierarchyUnitcomboBox">
             <constraints>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -189,17 +198,6 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/IdentityProviderDialog" key="advancedConfiguration.group.caseInsensitiveMembership"/>
-            </properties>
-          </component>
-          <component id="6d665" class="javax.swing.JFormattedTextField" binding="groupCacheHierarchyMaxAgeTextField">
-            <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="-1"/>
-              </grid>
-            </constraints>
-            <properties>
-              <horizontalAlignment value="4"/>
-              <toolTipText value="Cache maximum age is required and must be greater than zero and less than 25 days."/>
             </properties>
           </component>
         </children>

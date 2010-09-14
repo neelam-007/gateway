@@ -9,8 +9,6 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
-import javax.swing.text.NumberFormatter;
-import java.text.DecimalFormat;
 import java.util.ResourceBundle;
 import java.util.Collection;
 import java.awt.*;
@@ -109,7 +107,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private final SortedListModel<String> listModel = new SortedListModel<String>(String.CASE_INSENSITIVE_ORDER);
 
     private boolean isValid = true;
-    private TimeUnit oldTimeUnit;
 
     private JPanel mainPanel;
     private JRadioButton retrieveAllAttributesRadioButton;
@@ -119,26 +116,15 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private JButton editButton;
     private JButton removeButton;
     private JTextField groupCacheSizeTextField;
-    private JFormattedTextField groupCacheHierarchyMaxAgeTextField;
+    private JTextField groupCacheHierarchyMaxAgeTextField;
     private JTextField groupMaximumNestingTextField;
-    private JComboBox hierarchyUnitComboBox;
+    private JComboBox hierarchyUnitcomboBox;
     private JCheckBox groupMembershipCaseInsensitive;
 
     private void initComponents() {
         this.setLayout( new BorderLayout() );
         this.add( mainPanel, BorderLayout.CENTER );
         boolean readOnly = isReadOnly();
-
-        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
-        numberFormatter.setValueClass(Double.class);
-        numberFormatter.setMinimum((double) 0);
-
-        groupCacheHierarchyMaxAgeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
-            @Override
-            public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
-                return numberFormatter;
-            }
-        });
 
         groupCacheSizeTextField.setEnabled( !readOnly );
         groupCacheHierarchyMaxAgeTextField.setEnabled( !readOnly );
@@ -155,24 +141,9 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener( validationListener );
         groupMaximumNestingTextField.getDocument().addDocumentListener( validationListener );
 
-        hierarchyUnitComboBox.setModel( new DefaultComboBoxModel( TimeUnit.ALL ) );
-        hierarchyUnitComboBox.setSelectedItem( TimeUnit.MINUTES );
-        hierarchyUnitComboBox.setEnabled( !readOnly );
-
-        hierarchyUnitComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                TimeUnit newTimeUnit = (TimeUnit) hierarchyUnitComboBox.getSelectedItem();
-
-                if (newTimeUnit != oldTimeUnit) {
-                    Double time = (Double) groupCacheHierarchyMaxAgeTextField.getValue();
-                    long oldMillis = (long) (oldTimeUnit.getMultiplier() * time);
-                    groupCacheHierarchyMaxAgeTextField.setValue((double) oldMillis / newTimeUnit.getMultiplier());
-
-                    oldTimeUnit = newTimeUnit;
-                }
-            }
-        });
+        hierarchyUnitcomboBox.setModel( new DefaultComboBoxModel( TimeUnit.ALL ) );
+        hierarchyUnitcomboBox.setSelectedItem( TimeUnit.MINUTES );
+        hierarchyUnitcomboBox.setEnabled( !readOnly );
 
         addButton.setEnabled( !readOnly );
         addButton.addActionListener( new ActionListener(){
@@ -269,7 +240,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
 
     private void validateComponents() {
         boolean valid = true;
-
+        
         if ( !ValidationUtils.isValidInteger( groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE ) ||
              !ValidationUtils.isValidInteger( groupCacheHierarchyMaxAgeTextField.getText(), false, 0, Integer.MAX_VALUE ) ||
              !ValidationUtils.isValidInteger( groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE ) ) {
@@ -321,11 +292,10 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
 
         TimeUnit hierarchyTimeUnit = TimeUnit.largestUnitForValue( groupHierarchyMaxAge, TimeUnit.MINUTES );
 
-        oldTimeUnit = hierarchyTimeUnit;
-        hierarchyUnitComboBox.setSelectedItem( hierarchyTimeUnit );
+        hierarchyUnitcomboBox.setSelectedItem( hierarchyTimeUnit );
 
         groupCacheSizeTextField.setText( Integer.toString(groupCacheSize) );
-        groupCacheHierarchyMaxAgeTextField.setValue((double) groupHierarchyMaxAge / hierarchyTimeUnit.getMultiplier());
+        groupCacheHierarchyMaxAgeTextField.setText( Integer.toString(groupHierarchyMaxAge / hierarchyTimeUnit.getMultiplier()) );
         groupMaximumNestingTextField.setText( Integer.toString(groupMaxNesting) );
         groupMembershipCaseInsensitive.setSelected( config.isGroupMembershipCaseInsensitive() );
 
@@ -341,7 +311,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
 
     private void storeProviderConfig( final LdapIdentityProviderConfig config ) {
         config.setGroupCacheSize( getInteger(groupCacheSizeTextField) );
-        config.setGroupCacheMaxAge( getInteger(groupCacheHierarchyMaxAgeTextField, ((TimeUnit) hierarchyUnitComboBox.getSelectedItem()).getMultiplier()) );
+        config.setGroupCacheMaxAge( getInteger(groupCacheHierarchyMaxAgeTextField, ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier()) );
         config.setGroupMaxNesting( getInteger(groupMaximumNestingTextField) );
         config.setGroupMembershipCaseInsensitive(groupMembershipCaseInsensitive.isSelected());
 
