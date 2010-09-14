@@ -37,7 +37,6 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
-    private static final int MAX_REQUESTS_PER_SECOND = 80220368; // Limit to 80million requests per second limit to avoid nanosecond overflow
     private static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
     private static final long MILLIS_PER_SECOND = 1000L;
     static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
@@ -205,6 +204,13 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             long newPoints = points + (idleNanos * pointsPerSecond) / NANOS_PER_SECOND;
             if (newPoints > maxPoints)
                 newPoints = maxPoints;
+
+            if(newPoints < 0){
+                //This should never happen due to the enforcement of the max rps being RateLimitAssertion.MAX_REQUESTS_PER_SECOND
+                //Todo: if required, change the data type's involved in the computation of newPoints to be BigInteger
+                //if we got here, then overflow happened causing a negative long value
+                throw new IllegalStateException("Overflow in type long detected in rate limit points calculation.");
+            }
 
             if (newPoints >= POINTS_PER_REQUEST) {
                 // Spend-n-send
@@ -380,7 +386,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 return false;
 
             if (logger.isLoggable(SUBINFO_LEVEL))
-                logger.log(SUBINFO_LEVEL, "Rate limit: Thead " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + "ms " + nanos + "ns");
+                logger.log(SUBINFO_LEVEL, "Rate limit: Thread " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + "ms " + nanos + "ns");
             clock.sleep(sleepMillis, nanos);
             return true;
         } catch (InterruptedException e) {
@@ -412,8 +418,22 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
         if (rps < 1) throw new IllegalStateException("Max requests per second cannot be less than 1");
 
-        if (rps > MAX_REQUESTS_PER_SECOND)
-            rps = MAX_REQUESTS_PER_SECOND; // Guard agaist overflow
+        if (rps > RateLimitAssertion.MAX_REQUESTS_PER_SECOND){
+
+            final int maxRate = RateLimitAssertion.MAX_REQUESTS_PER_SECOND;
+            auditor.logAndAudit(AssertionMessages.RATELIMIT_MAX_RPS_TO_LARGE,
+                    String.valueOf(rps), String.valueOf(maxRate), String.valueOf(maxRate));
+
+            //93824 is the maximum rate value which can be used with the primitive type long
+            //this is due to a max allowable idle time of 3 seconds in calculating the points when bursts are allowed.
+            //The maximum long value is 2^63-1, so 93824 is the largest value which will fit into a long when multiplied
+            //by 3 billion (3 seconds in nanoseconds). 93824 * (3 * 1000 * 1000000) < 2^63-1 and is the largest whole
+            //number for which this is true. See Counter.spendNanos()
+            //long newPoints = points + (idleNanos * pointsPerSecond) / NANOS_PER_SECOND;
+            //If a value higher than 93824 is used, then the calculations must be done with BigIntegers. 
+            rps = RateLimitAssertion.MAX_REQUESTS_PER_SECOND;
+        }
+
         return rps * POINTS_PER_REQUEST / getClusterSize();
     }
 

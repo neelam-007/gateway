@@ -31,6 +31,13 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private String maxConcurrency = "0";
     private boolean hardLimit = false;
 
+    /**
+     * Maximum number of requests per second that we can enforce.
+     * Warning - if the value is changed to be higher than 93824, then the server assertion must be updated to use
+     * BigIntegers. See the server assertion for more details. 
+     */
+    public static final int MAX_REQUESTS_PER_SECOND = 90000;
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
@@ -102,7 +109,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     }
 
     /**
-     * Provided for backwards compatability for policies before bug5041 was fixed
+     * Provided for backwards compatibility for policies before bug5041 was fixed
      * @param maxConcurrency int
      */
     public void setMaxConcurrency(int maxConcurrency) {
@@ -150,6 +157,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 return "Invalid value for maximum requests per second.";
             }
             if (maxRequests < 1) return "Max requests per second cannot be less than 1.";
+            if (maxRequests > MAX_REQUESTS_PER_SECOND) return "Max requests cannot be greater than " + MAX_REQUESTS_PER_SECOND + ".";
         }
 
         return null;

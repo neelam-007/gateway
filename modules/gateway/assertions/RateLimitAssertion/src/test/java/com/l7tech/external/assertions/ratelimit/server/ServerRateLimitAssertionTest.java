@@ -367,69 +367,110 @@ public class ServerRateLimitAssertionTest {
         assertTrue("Success: " + desc, finished[0]);
     }
 
-    @Test
-    public void testHighRateLimitNoSleepSingleThreadNanos() throws Exception {
-        ServerRateLimitAssertion.useNanos = true;
+//    /**
+//     * Test to show that the initial flow through the server assertions will generate an overflow for a value
+//     * over 93824.
+//     * @throws Exception
+//     */
+//    @Test
+//    public void testOverflow() throws Exception{
+//        long maxRate = 93825;
+//
+//        final long maxIdle = 3 * 1000L * 1000000L;
+//        final long rps = maxRate * 0x8000L;
+//        final long top = maxIdle * rps;
+//        final long newPoints = top / (1000L * 1000000L);
+//
+//        System.out.println("newPoints: " + newPoints); - this number is negative
+//
+//    }
+//
 
-        RateLimitAssertion rla = new RateLimitAssertion();
-        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
-        int rps = 80220369; // 1 higher than highest safe value of 80220368
-        rla.setMaxRequestsPerSecond(String.valueOf(rps));
-        rla.setShapeRequests(false);
-        rla.setHardLimit(false);
-        final ServerAssertion ass = makePolicy(rla);
-        final int nreq = 5000;
-        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
+//    /**
+//     * Same as above but with BigIntegers. The long value calculated is negative.
+//     * @throws Exception
+//     */
+//    @Test
+//    public void testOverflowBigInteger() throws Exception{
+//        long maxRate = 2621440;
+//
+//        final BigInteger maxIdle = new BigInteger(String.valueOf(3 * 1000L * 1000000L));
+//
+//        final BigInteger rps = maxIdle.multiply(new BigInteger(String.valueOf(maxRate * 0x8000L) ) );
+//        final BigInteger top = maxIdle.multiply(rps);
+//        final BigInteger newPoints = top.divide(new BigInteger(String.valueOf(1000L * 1000000L)));
+//
+//        System.out.println("newPoints: " + newPoints);
+//
+//        long l = newPoints.longValue();
+//        System.out.println("Long: " + l);
+//
+//    }
 
-        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
-        clock.sync();
-        for (int i = 0; i < nreq; ++i) {
-            final PolicyEnforcementContext context = makeContext();
-            try {
-                assertEquals("Limit should have succeeded (Iteration " + i + ")", AssertionStatus.NONE, ass.checkRequest(context));
-                if (i % 11 == 0)
-                    clock.advanceByNanos(3416L);
-                if (i % 3000 == 0)
-                    log.info("Request " + i + " of " + nreq);
-            } finally {
-                context.close();
-            }
-        }
+    //Commented out the following 2 test cases as its no longer possible to supply a value larger than RateLimitAssertion.MAX_REQUESTS_PER_SECOND
+//    @Test
+//    public void testHighRateLimitNoSleepSingleThreadNanos() throws Exception {
+//        ServerRateLimitAssertion.useNanos = true;
+//
+//        RateLimitAssertion rla = new RateLimitAssertion();
+//        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
+//        int rps = RateLimitAssertion.MAX_REQUESTS_PER_SECOND + 1; // 1 higher than highest safe value of 80220368
+//        rla.setMaxRequestsPerSecond(String.valueOf(rps));
+//        rla.setShapeRequests(false);
+//        rla.setHardLimit(false);
+//        final ServerAssertion ass = makePolicy(rla);
+//        final int nreq = 5000;
+//        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
+//
+//        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
+//        clock.sync();
+//        for (int i = 0; i < nreq; ++i) {
+//            final PolicyEnforcementContext context = makeContext();
+//            try {
+//                assertEquals("Limit should have succeeded (Iteration " + i + ")", AssertionStatus.NONE, ass.checkRequest(context));
+//                if (i % 11 == 0)
+//                    clock.advanceByNanos(3416L);
+//                if (i % 3000 == 0)
+//                    log.info("Request " + i + " of " + nreq);
+//            } finally {
+//                context.close();
+//            }
+//        }
+//
+//        log.info("Success: " + desc);
+//    }
 
-        log.info("Success: " + desc);
-    }
-
-    @Test
-    public void testHighRateLimitNoSleepSingleThreadMillis() throws Exception {
-        ServerRateLimitAssertion.useNanos = false;
-
-        RateLimitAssertion rla = new RateLimitAssertion();
-        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
-        int rps = 80220369; // 1 higher than highest safe value of 80220368
-        rla.setMaxRequestsPerSecond(String.valueOf(rps));
-        rla.setShapeRequests(false);
-        rla.setHardLimit(false);
-        final ServerAssertion ass = makePolicy(rla);
-        final int nreq = 5000;
-        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
-
-        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
-        clock.sync();
-        for (int i = 0; i < nreq; ++i) {
-            final PolicyEnforcementContext context = makeContext();
-            try {
-                assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
-                if (i % 11 == 0)
-                    clock.advanceByNanos(3416L);
-                if (i % 3000 == 0)
-                    log.info("Request " + i + " of " + nreq);
-            } finally {
-                context.close();
-            }
-        }
-
-        log.info("Success: " + desc);
-    }
+//    @Test
+//    public void testHighRateLimitNoSleepSingleThreadMillis() throws Exception {
+//        ServerRateLimitAssertion.useNanos = false;
+//
+//        RateLimitAssertion rla = new RateLimitAssertion();
+//        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
+//        int rps = 80220369; // 1 higher than highest safe value of 80220368
+//        rla.setMaxRequestsPerSecond(String.valueOf(rps));
+//        rla.setShapeRequests(false);
+//        rla.setHardLimit(false);
+//        final ServerAssertion ass = makePolicy(rla);
+//        final int nreq = 5000;
+//        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
+//
+//        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
+//        clock.sync();
+//        for (int i = 0; i < nreq; ++i) {
+//            final PolicyEnforcementContext context = makeContext();
+//            try {
+//                assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+//                if (i % 11 == 0)
+//                    clock.advanceByNanos(3416L);
+//                if (i % 3000 == 0)
+//                    log.info("Request " + i + " of " + nreq);
+//            } finally {
+//                context.close();
+//            }
+//        }
+//
+//        log.info("Success: " + desc);
+//    }
 
     @Test
     public void testHighRateLimitNoSleepMultiThread() throws Exception {
