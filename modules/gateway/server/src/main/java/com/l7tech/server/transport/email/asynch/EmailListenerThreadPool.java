@@ -1,142 +1,56 @@
 package com.l7tech.server.transport.email.asynch;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.Config;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ValidatedConfig;
 
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Manages a pool of threads that process messages from email listeners.
+ * Bean which manages a Thread Pool that holds / manages all email listener worker threads.
+ * It's purpose is to manage property change events related to the pool.
  */
-public class EmailListenerThreadPool {
-    private static final Logger _logger = Logger.getLogger(EmailListenerThreadPool.class.getName());
+public class EmailListenerThreadPool extends ThreadPoolBean<EmailTask> implements PropertyChangeListener{
 
-    /** Singleton instance */
-    private static EmailListenerThreadPool _instance;
+    public EmailListenerThreadPool(ServerConfig serverConfig) {
+        super("EmailListenerThreadPool",
+                validated(serverConfig).getIntProperty(ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT, 25));
+        validatedConfig = validated(serverConfig);
+    }
 
-    /* constants passed to the executor */
-    private static final int CORE_SIZE = 5;
-    private static final long KEEP_ALIVE = 30000L; // 30 sec
-    private static final long MAX_SHUTDOWN_TIME = 8000L; // 8 sec
-    private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
-    
-    /** Executor that handles the execution tasks via a threadpool */
-    private ThreadPoolExecutor workerPool;
-    
-    /** Configured global thread size limit */
-    private int maxPoolSize;
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT.equals(evt.getPropertyName())) {
+            final int maxPoolSize = validatedConfig.getIntProperty(ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT, 25);
 
-    /** Thread pool initialized flag */
-    private boolean initialized;
+            threadPool.setMaxPoolSize(maxPoolSize);
 
-    /** Mutex */
-    private final Object synchLock = new Object();
+            String newValue = (evt.getNewValue() != null ? evt.getNewValue().toString() : null);
+            logger.log(Level.CONFIG, "Updated Email Listener ThreadPool size to {0}.", newValue);
 
-    /** Thread pool stop flag */
-    private boolean stop;
-    
-    public EmailListenerThreadPool() {
-        try {
-            this.init();
-        } catch (Exception ex) {
-            // TODO proper exception handling
-            ex.printStackTrace();
         }
     }
 
-    public static EmailListenerThreadPool getInstance() {
-        if (_instance == null) {
-            _instance = new EmailListenerThreadPool();
-        }
-
-        return _instance;
-    }
-
-    /**
-     * Initializer method.
-     *
-     * @throws Exception when errors are encountered while initializing the pool
-     */
-    private void init() throws Exception {
-        // do we need synchronization? -- yes
-        synchronized (synchLock) {
-            if (!initialized) {
-
-                // read cluster properties from the serverConfig
-                ServerConfig serverCfg = ServerConfig.getInstance();
-
-                // max Jms processing thread pool size
-                // - what is emergency default??
-                maxPoolSize = serverCfg.getIntProperty(ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT, 25); // or DEFAULT_JMS_THREAD_POOL_SIZE?
-
-                // create the pool executor
-                workerPool = new ThreadPoolExecutor(
-                        CORE_SIZE,
-                        getMaxSize(),
-                        KEEP_ALIVE,
-                        TIME_UNIT,
-                        new LinkedBlockingQueue<Runnable>(CORE_SIZE) // TODO: need to revisit
-                        // Use default ThreadFactory for now
-                );
-
-                // set the flag
-                initialized = true;
-            }
-        }
-    }
-
-    public void shutdown() {
-        synchronized (synchLock) {
-            if (!stop) {
-
-                // shutdown the executor
-                workerPool.shutdown();
-
-                // check to ensure tasks left in the work queue are not dropped
-                try {
-                    long start = System.currentTimeMillis();
-                    long now = start;
-                    for (;(workerPool.getQueue().size() > 0) && (now-start < MAX_SHUTDOWN_TIME); )
-                    {
-                        workerPool.awaitTermination(2000L, TIME_UNIT);
-                        now = System.currentTimeMillis();
-                    }
-
-                } catch (InterruptedException iex) {
-                    _logger.info("JmsThreadPool shutdown interrupted.");
+    private static Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                if(ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT.equals(key)){
+                    return "email.listenerThreadLimit";
                 }
-
-                // log threadpool stats
-                _logger.info(stats());
-                stop = this.workerPool.isShutdown();
-
-                // null the instance to force - re-initialize on next access
-                _instance = null;
+                return null;
             }
-        }
+        } );
+
+        vc.setMinimumValue( ServerConfig.PARAM_EMAIL_LISTENER_THREAD_LIMIT, 5 );
+        return vc;
     }
 
-    /**
-     * Add a new task for the workpool to execute.
-     */
-    public void newTask(EmailTask newTask) {
-        workerPool.execute(newTask);
-    }
-
-    private String stats() {
-        final String SEP="\n";
-
-        StringBuffer sb = new StringBuffer("Stats:").append(SEP);
-        sb.append("MaxRunningThreads=").append(workerPool.getLargestPoolSize()).append(SEP);
-        sb.append("CompletedTasks=").append(workerPool.getCompletedTaskCount()).append(SEP);
-        sb.append("TasksCount=").append(workerPool.getTaskCount()); //.append(SEP);
-
-        return sb.toString();
-    }
-
-    private int getMaxSize() {
-        return maxPoolSize;
-    }
+    private final Config validatedConfig;
+    private static final Logger logger = Logger.getLogger(EmailListenerThreadPool.class.getName());
 }

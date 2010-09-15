@@ -8,11 +8,11 @@ import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsMessages;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ThreadPool;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.beans.PropertyChangeEvent;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,13 +35,17 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /** Mutex object */
     private final Object sync = new Object();
 
+    private final JmsThreadPool jmsThreadPool;
+
     /**
      * Constructor.
      *
      * @param endpointConfig attributes for the Jms endpoint to listen to
+     * @param jmsThreadPool
      */
-    public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig) {
+    public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final JmsThreadPool jmsThreadPool) {
         super(endpointConfig);
+        this.jmsThreadPool = jmsThreadPool;
     }
 
     /**
@@ -94,12 +98,16 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
         try {
             // fire-and-forget
-            JmsThreadPool.getInstance().newTask(task);
+            jmsThreadPool.newTask(task);
 
         } catch (RejectedExecutionException reject) {
             _logger.log(Level.WARNING, JmsMessages.WARN_THREADPOOL_LIMIT_REACHED, new String[] {ExceptionUtils.getMessage(reject)});
             task.cleanup();
             throw new JmsRuntimeException(reject);
+        } catch (ThreadPool.ThreadPoolShutDownException e) {
+            _logger.log(Level.WARNING, "Cannot submit JmsTask to queue as it has been shutdown", ExceptionUtils.getDebugException(e));
+            task.cleanup();
+            throw new JmsRuntimeException(e);
         }
     }
 
@@ -214,17 +222,6 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             }
             return _failureQueue;
         }
-    }
-
-    /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#propertyChange(java.beans.PropertyChangeEvent)
-     */
-    public void propertyChange(PropertyChangeEvent evt) {
-
-        super.propertyChange(evt);
-
-        // also check if the JmsThreadPool properties were changed
-        JmsThreadPool.getInstance().propertyChange(evt);
     }
 
     /**

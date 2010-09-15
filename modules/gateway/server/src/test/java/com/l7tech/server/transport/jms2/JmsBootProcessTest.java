@@ -2,6 +2,7 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 import com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory;
 import com.l7tech.gateway.common.Component;
 
@@ -65,11 +66,12 @@ public class JmsBootProcessTest extends JmsTestCase {
             TestConnectionManager connMgr = new TestConnectionManager(testName, 1);
             TestEndpointManager endptMgr = new TestEndpointManager(testName);
             endptMgr.connMgr = connMgr;
-            bootProcess = new JmsBootProcess(serverConfig, licenseManager, connMgr, endptMgr, mapper, null);
+            JmsThreadPool jmsThreadPool = new JmsThreadPool(serverConfig);
+            bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, null);
             bootProcess.setApplicationContext(appCtx);
 
             // choose the jms listener factory
-            bootProcess.setJmsEndpointListenerFactory(new PooledJmsEndpointListenerFactory());
+            bootProcess.setJmsEndpointListenerFactory(new PooledJmsEndpointListenerFactory(jmsThreadPool));
 
             // add data to queue
             populateQueues(createEndpoints(connMgr, endptMgr), 15);

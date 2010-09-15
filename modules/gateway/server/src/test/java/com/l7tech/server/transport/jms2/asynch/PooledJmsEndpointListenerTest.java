@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.jms2.asynch;
 
+import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
@@ -25,8 +26,11 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
     // factory
     JmsEndpointListenerFactory factory;
 
+    JmsThreadPool jmsThreadPool;
+
 //    List<JmsEndpointListener> listeners;
 
+    @Override
     @Before
     public void setUp() throws Exception {
 
@@ -35,10 +39,15 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
         if (factory == null) {
             // use a test factory
 
+            ServerConfigStub configStub = new ServerConfigStub();
+            configStub.putProperty("jmsListenerThreadLimit", "25");
+
+            jmsThreadPool = new JmsThreadPool(configStub);
             // asynch processing
             factory = new JmsEndpointListenerFactory() {
+                @Override
                 public JmsEndpointListener createListener(JmsEndpointConfig endpointConfig) {
-                    return new TestEndpointListener(endpointConfig);
+                    return new TestEndpointListener(endpointConfig, jmsThreadPool);
                 }
             };
 
@@ -56,7 +65,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
 
         super.tearDown();
 
-        JmsThreadPool.getInstance().shutdown();
+        jmsThreadPool.shutdown();
     }
 
 
@@ -121,8 +130,8 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
     class TestEndpointListener extends PooledJmsEndpointListenerImpl {
 //    class TestEndpointListener extends LegacyJmsEndpointListenerImpl {
 
-        TestEndpointListener(JmsEndpointConfig endpointConfig) {
-            super(endpointConfig);
+        TestEndpointListener(JmsEndpointConfig endpointConfig, JmsThreadPool jmsThreadPool) {
+            super(endpointConfig, jmsThreadPool);
         }
 
 //        protected void handleMessage(Message dequeueMessage) throws JmsRuntimeException {

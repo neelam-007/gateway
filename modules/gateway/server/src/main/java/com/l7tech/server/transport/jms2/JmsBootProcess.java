@@ -40,8 +40,9 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
     private static final Logger logger = Logger.getLogger(JmsBootProcess.class.getName());
 
-    /** Server configuration properties */
-    private final ServerConfig serverConfig;
+    //Thread pool to shutdown when life cycle ends
+    private final JmsThreadPool jmsThreadPool;
+
     /** Persisted/configured Jms connection manager */
     private final JmsConnectionManager connectionManager;
     /** Persisted/configured Jms endpoint manager */
@@ -67,14 +68,14 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
      * Constructor.  Remains unchanged from original constructor to us to swap between
      * the "legacy" and new JMS implementations.
      *
-     * @param serverConfig configuration properties
+     * @param jmsThreadPool thread pool to shutdown when gateway shuts down
      * @param licenseManager licence manager
      * @param connectionManager Persisted JMS connection manager
      * @param endpointManager Persisted JMS endpoint manager
      * @param jmsPropertyMapper Jms intital context properties
      * @param timer timer object used by the connection/endpoint update checker
      */
-    public JmsBootProcess(ServerConfig serverConfig,
+    public JmsBootProcess(final JmsThreadPool jmsThreadPool,
                           LicenseManager licenseManager,
                           JmsConnectionManager connectionManager,
                           JmsEndpointManager endpointManager,
@@ -83,7 +84,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     {
         super("JMS Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
 
-        this.serverConfig = serverConfig;
+        this.jmsThreadPool = jmsThreadPool;
         this.connectionManager = connectionManager;
         this.endpointManager = endpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
@@ -111,7 +112,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
     @Override
     protected void init() {
-        if(serverConfig == null) throw new IllegalStateException("serverConfig is required.");
+        if(jmsThreadPool == null) throw new IllegalStateException("jmsThreadPool is required.");
         if(connectionManager == null) throw new IllegalStateException("connectionManager is required.");
         if(endpointManager == null) throw new IllegalStateException("endpointManager is required.");
     }
@@ -243,8 +244,8 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
             }
             activeListeners.clear();
 
-            // shutdown the JmsThreadPool (whether it's used or not)
-            JmsThreadPool.getInstance().shutdown();
+            // shutdown the JmsThreadPool
+            jmsThreadPool.shutdown();
         }
     }
 

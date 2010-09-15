@@ -14,11 +14,14 @@ public class JmsThreadPoolTest {
     @Test
     public void testThreadPoolInit() {
 
+        ServerConfigStub configStub = new ServerConfigStub();
+        configStub.putProperty("jmsListenerThreadLimit", "25");
+
         JmsThreadPool pool = null;
         try {
-            pool = JmsThreadPool.getInstance();
+            pool = new JmsThreadPool(configStub);
             Assert.assertNotNull(pool);
-            
+
         } catch (Exception ex) {
             Assert.fail("Unexpected exception occurred: " + ex);
         } finally {
@@ -36,11 +39,10 @@ public class JmsThreadPoolTest {
     public void testServerConfig(){
         ServerConfigStub configStub = new ServerConfigStub();
         configStub.putProperty("jmsListenerThreadLimit", "0");
-        JmsThreadPool.setServerConfig(configStub);
 
         JmsThreadPool pool = null;
         try {
-            pool = JmsThreadPool.getInstance();
+            pool = new JmsThreadPool(configStub);
             Assert.assertNotNull(pool);
 
         } catch (Exception ex) {

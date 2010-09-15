@@ -14,6 +14,7 @@ import java.beans.PropertyChangeListener;
  */
 public class PooledPollingEmailListenerFactory implements PollingEmailListenerFactory, PropertyChangeListener {
     private ServerConfig serverConfig;
+    private final EmailListenerThreadPool emailListenerThreadPool;
     private static final long DEFAULT_CONNECTION_TIMEOUT = 30000;
     private static final long DEFAULT_TIMEOUT = 60000;
     private static final long MAX_CACHE_AGE_VALUE = 30000;
@@ -26,20 +27,26 @@ public class PooledPollingEmailListenerFactory implements PollingEmailListenerFa
     /**
      * Constructor
      * @param serverConfig  Server config
+     * @param emailListenerThreadPool thread pool for email listeners
      */
-    public PooledPollingEmailListenerFactory(ServerConfig serverConfig) {
-        if (serverConfig == null) throw new IllegalArgumentException("ServerConfig cannot be null.");
+    public PooledPollingEmailListenerFactory(final ServerConfig serverConfig,
+                                             final EmailListenerThreadPool emailListenerThreadPool) {
+        if (serverConfig == null) throw new IllegalArgumentException("serverConfig cannot be null.");
+        if(emailListenerThreadPool == null) throw new IllegalArgumentException("emailListenerThreadPool cannot be null.");
         this.serverConfig = serverConfig;
+        this.emailListenerThreadPool = emailListenerThreadPool;
 
         //initialize timeouts
         this.connectionTimeout = serverConfig.getTimeUnitPropertyCached(IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
         this.timeout = serverConfig.getTimeUnitPropertyCached(IN_TIMEOUT, DEFAULT_TIMEOUT, MAX_CACHE_AGE_VALUE);
     }
 
+    @Override
     public PollingEmailListener createListener(EmailListenerConfig emailListenerCfg, EmailListenerManager emailListenerManager) {
-        return new PooledPollingEmailListenerImpl(emailListenerCfg, emailListenerManager, connectionTimeout, timeout);
+        return new PooledPollingEmailListenerImpl(emailListenerCfg, emailListenerManager, emailListenerThreadPool, connectionTimeout, timeout);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if (ServerConfig.PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT.equals(propertyName)) {

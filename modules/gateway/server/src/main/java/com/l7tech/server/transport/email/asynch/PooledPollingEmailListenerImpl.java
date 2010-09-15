@@ -6,11 +6,13 @@ import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ThreadPool;
 import com.l7tech.util.TimeUnit;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.*;
 import javax.mail.search.FlagTerm;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.*;
@@ -40,6 +42,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     public static final int DEFAULT_MAX_SIZE = 5242880;
 
     private EmailListenerConfig emailListenerCfg;
+    private final EmailListenerThreadPool emailListenerThreadPool;
 
     private EmailListenerManager emailListenerManager;
 
@@ -65,13 +68,18 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
      *
      * @param emailListenerCfg attributes for the email listener configuration
      * @param emailListenerManager the manager object for EmailLister's
+     * @param emailListenerThreadPool thread pool for email listeners
      * @param connectionTimeout Socket connection timeout value in milliseconds.
      * @param timeout Socket I/O timeout value in milliseconds.
      */
-    public PooledPollingEmailListenerImpl(final EmailListenerConfig emailListenerCfg, EmailListenerManager emailListenerManager,
-                                          long connectionTimeout, long timeout) {
+    public PooledPollingEmailListenerImpl(final EmailListenerConfig emailListenerCfg,
+                                          final EmailListenerManager emailListenerManager,
+                                          final EmailListenerThreadPool emailListenerThreadPool,
+                                          long connectionTimeout,
+                                          long timeout) {
         this.emailListenerCfg = emailListenerCfg;
         this.emailListenerManager = emailListenerManager;
+        this.emailListenerThreadPool = emailListenerThreadPool;
 
         if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.POP3) {
             Properties props = new Properties();
@@ -254,9 +262,15 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
         EmailTask task = newEmailTask(message);
 
         // fire-and-forget
-        EmailListenerThreadPool.getInstance().newTask(task);
-
-        // how to handle errors, if any ???
+        try {
+            emailListenerThreadPool.newTask(task);
+        } catch (RejectedExecutionException reject) {
+            _logger.log(Level.WARNING, "Email listener ThreadPool size limit reached.  Unable to add new EmailTask: {0}", new String[] {ExceptionUtils.getMessage(reject)});
+            throw new RuntimeException(reject);
+        } catch (ThreadPool.ThreadPoolShutDownException e) {
+            _logger.log(Level.WARNING, "Cannot submit EmailTask to queue as it has been shutdown", ExceptionUtils.getDebugException(e));
+            throw new RuntimeException(e);
+        }
     }
 
     /**

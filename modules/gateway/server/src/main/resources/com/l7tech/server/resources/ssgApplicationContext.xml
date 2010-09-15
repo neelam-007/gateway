@@ -110,22 +110,32 @@
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
+    <bean id="jmsThreadPool" class="com.l7tech.server.transport.jms2.asynch.JmsThreadPool">
+        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig" />
+    </bean>
+
     <!-- JMS boot process  -->
     <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
-        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
+        <constructor-arg type="com.l7tech.server.transport.jms2.asynch.JmsThreadPool" ref="jmsThreadPool" />
         <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
         <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
         <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
         <constructor-arg type="com.l7tech.server.transport.jms.JmsPropertyMapper" ref="jmsPropertyMapper"/>
         <constructor-arg type="java.util.Timer"><null/></constructor-arg>
         <property name="jmsEndpointListenerFactory">
-            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
+            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
+                <constructor-arg type="com.l7tech.server.transport.jms2.asynch.JmsThreadPool" ref="jmsThreadPool" />
+            </bean>
         </property>
+    </bean>
+
+    <bean id="emailListenerThreadPool" class="com.l7tech.server.transport.email.asynch.EmailListenerThreadPool">
+        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig" />
     </bean>
 
     <!-- Email boot process -->
     <bean id="emailListenerBootProcess" class="com.l7tech.server.transport.email.EmailListenerBootProcess">
-        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
+        <constructor-arg type="com.l7tech.server.transport.email.asynch.EmailListenerThreadPool" ref="emailListenerThreadPool"/>
         <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
         <constructor-arg type="com.l7tech.server.transport.email.EmailListenerManager" ref="emailListenerManager"/>
         <constructor-arg ref="clusterNodeId"/>
@@ -135,6 +145,7 @@
 
     <bean id="pollingEmailListenerFactory" class="com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerFactory">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="emailListenerThreadPool"/>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
@@ -168,8 +179,17 @@
                             <list>
                                 <value>ioJmsErrorSleep</value>
                                 <value>ioJmsMessageMaxBytes</value>
-                                <value>jmsListenerThreadLimit</value>
                                 <value>jmsEndpointThreadDistribution</value>
+                            </list>
+                        </entry>
+                        <entry key="jmsThreadPool">
+                            <list>
+                                <value>jmsListenerThreadLimit</value>
+                            </list>
+                        </entry>
+                        <entry key="emailListenerThreadPool">
+                            <list>
+                                <value>emailListenerThreadLimit</value>
                             </list>
                         </entry>
                         <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>

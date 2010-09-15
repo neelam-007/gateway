@@ -10,6 +10,10 @@ import com.l7tech.server.transport.jms2.JmsEndpointListenerFactory;
  */
 public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFactory {
 
+    public PooledJmsEndpointListenerFactory(JmsThreadPool threadPool) {
+        this.threadPool = threadPool;
+    }
+
     /**
      * Creates JmsEndpointListener implemented by the PooledJmsEndpointListener type.
      *
@@ -19,6 +23,9 @@ public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFact
     @Override
     public JmsEndpointListener createListener(final JmsEndpointConfig endpointConfig) {
 
-        return new PooledJmsEndpointListenerImpl(endpointConfig);
+        return new PooledJmsEndpointListenerImpl(endpointConfig, threadPool);
     }
+
+    // - PRIVATE
+    private final JmsThreadPool threadPool;
 }

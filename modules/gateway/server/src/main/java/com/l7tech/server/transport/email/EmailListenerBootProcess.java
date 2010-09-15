@@ -25,8 +25,9 @@ import java.util.logging.Logger;
 public class EmailListenerBootProcess extends LifecycleBean implements PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(EmailListenerBootProcess.class.getName());
 
-    /** Server configuration properties */
-    private final ServerConfig serverConfig;
+    //Thread pool to shutdown when life cycle ends
+    private final EmailListenerThreadPool emailThreadPool;
+
     /** Persisted/configured email listener manager */
     private final EmailListenerManager emailListenerManager;
     private final String clusterNodeId;
@@ -50,12 +51,13 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
     /**
      * Constructor.
      *
-     * @param serverConfig configuration properties
+     * @param emailThreadPool thread pool to shut down when gateway shuts down
      * @param licenseManager licence manager
      * @param emailListenerManager Persisted email listener manager
+     * @param clusterNodeId cluster node id
      * @param timer timer object used by the connection/endpoint update checker
      */
-    public EmailListenerBootProcess(ServerConfig serverConfig,
+    public EmailListenerBootProcess(final EmailListenerThreadPool emailThreadPool,
                           LicenseManager licenseManager,
                           EmailListenerManager emailListenerManager,
                           String clusterNodeId,
@@ -63,7 +65,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
     {
         super("Email Listener Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
 
-        this.serverConfig = serverConfig;
+        this.emailThreadPool = emailThreadPool;
         this.emailListenerManager = emailListenerManager;
         this.clusterNodeId = clusterNodeId;
 
@@ -99,7 +101,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
 
     @Override
     protected void init() {
-        if(serverConfig == null) throw new IllegalStateException("serverConfig is required.");
+        if(emailThreadPool == null) throw new IllegalStateException("emailThreadPool is required.");
         if(emailListenerManager == null) throw new IllegalStateException("emailListenerManager is required.");
     }
 
@@ -225,8 +227,8 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
             }
             activeListeners.clear();
 
-            // shutdown the EmailListenerThreadPool (whether it's used or not)
-            EmailListenerThreadPool.getInstance().shutdown();
+            // shutdown the EmailListenerThreadPool
+            emailThreadPool.shutdown();
         }
     }
 
