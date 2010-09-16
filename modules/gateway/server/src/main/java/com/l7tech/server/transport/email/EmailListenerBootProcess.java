@@ -63,7 +63,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
                           String clusterNodeId,
                           Timer timer)
     {
-        super("Email Listener Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
+        super("Email Listener Boot Process", logger, GatewayFeatureSets.SERVICE_EMAIL_MESSAGE_INPUT, licenseManager);
 
         this.threadPoolBean = threadPoolBean;
         this.emailListenerManager = emailListenerManager;

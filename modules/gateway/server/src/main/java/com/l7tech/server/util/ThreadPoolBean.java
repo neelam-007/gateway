@@ -89,15 +89,13 @@ public class ThreadPoolBean implements PropertyChangeListener {
     }
 
     private final Config validatedConfig;
-    private static Logger logger = Logger.getLogger(ThreadPoolBean.class.getName());
-
-    // - PRIVATE
     private final ThreadPool threadPool;
     private final String poolName;
     private final String maxPoolSizeClusterPropName;
     private final String maxPoolSizeClusterPropUiName;
     private final int maxPoolSizeEmergencyDefault;
     private final static int CORE_SIZE = 5;
+    private static Logger logger = Logger.getLogger(ThreadPoolBean.class.getName());
 }
 
 

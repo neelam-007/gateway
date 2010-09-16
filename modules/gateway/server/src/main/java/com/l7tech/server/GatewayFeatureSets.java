@@ -69,6 +69,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
+    public static final String SERVICE_EMAIL_MESSAGE_INPUT = "service:EmailMessageInput";
     public static final String SERVICE_L7RAWTCP_MESSAGE_INPUT = "service:L7RawTcpMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
     public static final String SERVICE_REMOTE_MANAGEMENT = "service:RemoteManagement";
@@ -168,6 +169,11 @@ public class GatewayFeatureSets {
             "Current requires allowing the JMS front end as well",
             srvJms,
             ass(JmsRoutingAssertion.class));
+
+        GatewayFeatureSet srvEmail = misc(SERVICE_EMAIL_MESSAGE_INPUT, "Accept incoming messages via email", null);
+        GatewayFeatureSet emailFront =
+        fsr("set:email:front", "Allow incoming email messages",
+            srvEmail);
 
         GatewayFeatureSet ssb =
         fsr("set:ssb", "Features needed for best use of the SecureSpan XML VPN Client",
@@ -385,6 +391,7 @@ public class GatewayFeatureSets {
             fs(httpBack),
             fs(jmsFront),
             fs(jmsBack),
+            fs(emailFront),
             fs(trustStore),
             fs(keyStore));
 
@@ -411,6 +418,7 @@ public class GatewayFeatureSets {
             fs(ftpFront),
             fs(jmsFront),
             fs(jmsBack),
+            fs(emailFront),
             fs(rawTcpFront),
             fs(rawTcpBack),
             fs(uiEmailListenersDialog),
