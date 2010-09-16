@@ -2,10 +2,10 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 import com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory;
 import com.l7tech.gateway.common.Component;
 
+import com.l7tech.server.util.ThreadPoolBean;
 import org.junit.Ignore;
 import org.junit.Assert;
 
@@ -66,7 +66,8 @@ public class JmsBootProcessTest extends JmsTestCase {
             TestConnectionManager connMgr = new TestConnectionManager(testName, 1);
             TestEndpointManager endptMgr = new TestEndpointManager(testName);
             endptMgr.connMgr = connMgr;
-            JmsThreadPool jmsThreadPool = new JmsThreadPool(serverConfig);
+            ThreadPoolBean jmsThreadPool = new ThreadPoolBean(serverConfig, "JMS Thread Pool", "jmsListenerThreadLimit",
+                    "jms.listenerThreadLimit", 25);
             bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, null);
             bootProcess.setApplicationContext(appCtx);
 
@@ -115,7 +116,7 @@ public class JmsBootProcessTest extends JmsTestCase {
                         break;
 
                     } else {
-//                        System.out.println(JmsThreadPool.getInstance().stats());
+                        //todo get a reference to the thread pool and print it's stats
                     }
                     
                 } catch(InterruptedException iex) {}

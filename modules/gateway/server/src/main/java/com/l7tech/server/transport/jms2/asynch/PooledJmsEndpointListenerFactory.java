@@ -3,15 +3,16 @@ package com.l7tech.server.transport.jms2.asynch;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointListenerFactory;
+import com.l7tech.server.util.ThreadPoolBean;
 
 /**
  *
- * @author: vchan
+ * @author vchan
  */
 public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFactory {
 
-    public PooledJmsEndpointListenerFactory(JmsThreadPool threadPool) {
-        this.threadPool = threadPool;
+    public PooledJmsEndpointListenerFactory(ThreadPoolBean threadPoolBean) {
+        this.threadPoolBean = threadPoolBean;
     }
 
     /**
@@ -23,9 +24,9 @@ public class PooledJmsEndpointListenerFactory implements JmsEndpointListenerFact
     @Override
     public JmsEndpointListener createListener(final JmsEndpointConfig endpointConfig) {
 
-        return new PooledJmsEndpointListenerImpl(endpointConfig, threadPool);
+        return new PooledJmsEndpointListenerImpl(endpointConfig, threadPoolBean);
     }
 
     // - PRIVATE
-    private final JmsThreadPool threadPool;
+    private final ThreadPoolBean threadPoolBean;
 }

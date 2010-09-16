@@ -14,9 +14,9 @@ import java.util.logging.Logger;
 
 /**
  * Worker task that handles inbound Jms requests.  This task is used in conjunction with the
- * JmsThreadPool to handle asynchronous processing of Jms messages.
+ * PooledPollingEmailListenerImpl to handle asynchronous processing of Jms messages.
  *
- * @see com.l7tech.server.transport.jms2.asynch.JmsThreadPool
+ * @see com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerImpl
  * @author: vchan
  */
 public class JmsTask implements Runnable {
@@ -68,6 +68,7 @@ public class JmsTask implements Runnable {
      * Task execution.  This method performs the call to the JmsRequestHandler and handling any errors
      * accordingly.
      */
+    @Override
     public final void run() {
 
         // call the handler to process the message

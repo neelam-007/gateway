@@ -16,11 +16,11 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
-import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.server.util.ThreadPoolBean;
 import org.springframework.context.ApplicationEvent;
 
 import java.beans.PropertyChangeEvent;
@@ -40,8 +40,8 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
     private static final Logger logger = Logger.getLogger(JmsBootProcess.class.getName());
 
-    //Thread pool to shutdown when life cycle ends
-    private final JmsThreadPool jmsThreadPool;
+    //Thread pool for JMS tasks. Managed by this boot process.
+    private final ThreadPoolBean threadPoolBean;
 
     /** Persisted/configured Jms connection manager */
     private final JmsConnectionManager connectionManager;
@@ -68,14 +68,14 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
      * Constructor.  Remains unchanged from original constructor to us to swap between
      * the "legacy" and new JMS implementations.
      *
-     * @param jmsThreadPool thread pool to shutdown when gateway shuts down
+     * @param threadPoolBean thread pool to manage. This class will start and stop this thread pool bean appropriately.
      * @param licenseManager licence manager
      * @param connectionManager Persisted JMS connection manager
      * @param endpointManager Persisted JMS endpoint manager
-     * @param jmsPropertyMapper Jms intital context properties
+     * @param jmsPropertyMapper Jms initial context properties
      * @param timer timer object used by the connection/endpoint update checker
      */
-    public JmsBootProcess(final JmsThreadPool jmsThreadPool,
+    public JmsBootProcess(final ThreadPoolBean threadPoolBean,
                           LicenseManager licenseManager,
                           JmsConnectionManager connectionManager,
                           JmsEndpointManager endpointManager,
@@ -84,7 +84,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     {
         super("JMS Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
 
-        this.jmsThreadPool = jmsThreadPool;
+        this.threadPoolBean = threadPoolBean;
         this.connectionManager = connectionManager;
         this.endpointManager = endpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
@@ -112,7 +112,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
     @Override
     protected void init() {
-        if(jmsThreadPool == null) throw new IllegalStateException("jmsThreadPool is required.");
+        if(threadPoolBean == null) throw new IllegalStateException("threadPoolBean is required.");
         if(connectionManager == null) throw new IllegalStateException("connectionManager is required.");
         if(endpointManager == null) throw new IllegalStateException("endpointManager is required.");
     }
@@ -213,6 +213,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
         if (applicationEvent instanceof ReadyForMessages) {
             try {
+                threadPoolBean.start();
                 startListeners();
             } catch (LifecycleException e) {
                 logger.log(Level.SEVERE, "Unable to start JMS EndpointListener", e);
@@ -244,8 +245,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
             }
             activeListeners.clear();
 
-            // shutdown the JmsThreadPool
-            jmsThreadPool.shutdown();
+            threadPoolBean.shutdown();
         }
     }
 

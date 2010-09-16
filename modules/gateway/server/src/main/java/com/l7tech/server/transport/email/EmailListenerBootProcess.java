@@ -9,7 +9,7 @@ import com.l7tech.server.*;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.transport.email.asynch.EmailListenerThreadPool;
+import com.l7tech.server.util.ThreadPoolBean;
 import org.springframework.context.ApplicationEvent;
 
 import java.beans.PropertyChangeEvent;
@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 public class EmailListenerBootProcess extends LifecycleBean implements PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(EmailListenerBootProcess.class.getName());
 
-    //Thread pool to shutdown when life cycle ends
-    private final EmailListenerThreadPool emailThreadPool;
+    //Thread pool for email tasks. Managed by this boot process.
+    private final ThreadPoolBean threadPoolBean;
 
     /** Persisted/configured email listener manager */
     private final EmailListenerManager emailListenerManager;
@@ -51,13 +51,13 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
     /**
      * Constructor.
      *
-     * @param emailThreadPool thread pool to shut down when gateway shuts down
+     * @param threadPoolBean thread pool to manage. This class will start and stop this thread pool bean appropriately.
      * @param licenseManager licence manager
      * @param emailListenerManager Persisted email listener manager
      * @param clusterNodeId cluster node id
      * @param timer timer object used by the connection/endpoint update checker
      */
-    public EmailListenerBootProcess(final EmailListenerThreadPool emailThreadPool,
+    public EmailListenerBootProcess(final ThreadPoolBean threadPoolBean,
                           LicenseManager licenseManager,
                           EmailListenerManager emailListenerManager,
                           String clusterNodeId,
@@ -65,7 +65,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
     {
         super("Email Listener Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
 
-        this.emailThreadPool = emailThreadPool;
+        this.threadPoolBean = threadPoolBean;
         this.emailListenerManager = emailListenerManager;
         this.clusterNodeId = clusterNodeId;
 
@@ -76,6 +76,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
             this.backgroundTimer = timer;
 
         this.backgroundTimer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 List<EmailListener> stolenListeners = EmailListenerBootProcess.this.emailListenerManager.stealSubscriptionsFromDeadNodes(EmailListenerBootProcess.this.clusterNodeId);
                 for(EmailListener emailListener : stolenListeners) {
@@ -101,7 +102,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
 
     @Override
     protected void init() {
-        if(emailThreadPool == null) throw new IllegalStateException("emailThreadPool is required.");
+        if(threadPoolBean == null) throw new IllegalStateException("threadPoolBean is required.");
         if(emailListenerManager == null) throw new IllegalStateException("emailListenerManager is required.");
     }
 
@@ -198,6 +199,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
 
         if (applicationEvent instanceof ReadyForMessages) {
             try {
+                threadPoolBean.start();
                 startListeners();
             } catch (LifecycleException e) {
                 logger.log(Level.SEVERE, "Unable to start Email Listener", e);
@@ -227,8 +229,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
             }
             activeListeners.clear();
 
-            // shutdown the EmailListenerThreadPool
-            emailThreadPool.shutdown();
+            threadPoolBean.shutdown();
         }
     }
 

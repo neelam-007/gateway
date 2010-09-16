@@ -7,6 +7,7 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointListenerFactory;
 import com.l7tech.server.transport.jms2.JmsTestCase;
+import com.l7tech.server.util.ThreadPoolBean;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,7 +27,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
     // factory
     JmsEndpointListenerFactory factory;
 
-    JmsThreadPool jmsThreadPool;
+    ThreadPoolBean jmsThreadPool;
 
 //    List<JmsEndpointListener> listeners;
 
@@ -42,7 +43,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
             ServerConfigStub configStub = new ServerConfigStub();
             configStub.putProperty("jmsListenerThreadLimit", "25");
 
-            jmsThreadPool = new JmsThreadPool(configStub);
+            jmsThreadPool = new ThreadPoolBean(configStub, "JMS Thread Pool", "jmsListenerThreadLimit", "jms.listenerThreadLimit", 25);
             // asynch processing
             factory = new JmsEndpointListenerFactory() {
                 @Override
@@ -130,7 +131,7 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
     class TestEndpointListener extends PooledJmsEndpointListenerImpl {
 //    class TestEndpointListener extends LegacyJmsEndpointListenerImpl {
 
-        TestEndpointListener(JmsEndpointConfig endpointConfig, JmsThreadPool jmsThreadPool) {
+        TestEndpointListener(JmsEndpointConfig endpointConfig, ThreadPoolBean jmsThreadPool) {
             super(endpointConfig, jmsThreadPool);
         }
 

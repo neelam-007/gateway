@@ -16,19 +16,18 @@ import java.util.logging.Logger;
  * Main constructor allows almost everything to be configured. Several get methods are supplied and this class can be
  * extended as needed.
  *
- * @param <T> type of tasks the pool will execute
  */
-public class ThreadPool<T extends Runnable> {
+public class ThreadPool {
 
     /**
-     * Construct a ThreadPool with this class specific defaults.
+     * Construct a ThreadPool with a core pool size of 5 and a maximum pool size of 25 with bounded queues of 25.
      * <p/>
-     * Delegates to {@link #ThreadPool(String, int)}
+     * Delegates to {@link #ThreadPool(String, int, int)}
      *
      * @param poolName name of the pool
      */
     public ThreadPool(String poolName) {
-        this(poolName, 25);
+        this(poolName, 5, 25);
     }
 
     /**
@@ -37,7 +36,7 @@ public class ThreadPool<T extends Runnable> {
      * The ThreadPool will use create a ThreadPoolExecutor with the following characteristics:-
      * <p>
      * <ul>
-     * <li>Core size is 5 and the threads are allowed to terminate if idle past keep alive time.
+     * <li>Core threads are allowed to terminate if idle past keep alive time.
      * <li>Keep alive time is 30 seconds
      * <li>A bounded queue with a max of 25 is used to store tasks for execution.
      * <li>The maximum amount of threads is set to 25.
@@ -50,25 +49,27 @@ public class ThreadPool<T extends Runnable> {
      * the keep alive time.
      *
      * @param poolName name of the pool
+     * @param corePoolSize core thread size of the pool.
      * @param maxPoolSize max thread in the pool. Must be bigger than core pool size of 5.
      */
     public ThreadPool(final String poolName,
+                      final int corePoolSize,
                       final int maxPoolSize){
-        this(poolName, 5, maxPoolSize, 25, 30000l, TIME_UNIT, true, null, null, null);
+        this(poolName, corePoolSize, maxPoolSize, 25, 30000l, TIME_UNIT, true, null, null, null);
     }
 
     /**
      * Create a ThreadPool with specific configuration. The ThreadPoolExecutor created can be made boundless by setting
      * the maxPoolSize to Integer.MAX_VALUE.
      * 
-     * @param poolName name of the pool
-     * @param corePoolSize core size of the thread pool. Always <= of the maximum pool size.
-     * @param maxPoolSize maximum size the pool may reach.
+     * @param poolName name of the pool. Cannot be null or empty.
+     * @param corePoolSize core size of the thread pool. Always <= of the maximum pool size. Must be > 1
+     * @param maxPoolSize maximum size the pool may reach. Must be >= corePoolSize.
      * @param maxQueuedTasks maximum number of tasks which can be queued before a new thread is created. A new thread
      * is created only if maxPoolSize has not been reached. If it has the behavior is dependent on the rejected
-     * execution handler.
+     * execution handler. Set to Long.MAX_VALUE to make the queue unbounded.
      * @param keepAliveTime how long threads above the core size can idle before being terminating.
-     * @param timeUnit time unit which applies to keep alive times
+     * @param timeUnit time unit which applies to keep alive times.
      * @param allowCoreThreadTimeOuts if true, then core threads are allowed to terminate when idle.
      * @param rejectedExecutionHandler if null the default ThreadPoolExecutor.AbortPolicy is used, which will throw when
      * maximum threads have been created and the bound queue is full.
@@ -85,48 +86,102 @@ public class ThreadPool<T extends Runnable> {
                       final RejectedExecutionHandler rejectedExecutionHandler,
                       final Functions.BinaryVoid<Thread, Runnable> beforeExecute,
                       final Functions.BinaryVoid<Runnable, Throwable> afterExecute) {
-        if(corePoolSize <= 1) throw new IllegalArgumentException("Core pool size must be >= 0");
+        if(poolName == null || poolName.trim().isEmpty()) throw new IllegalArgumentException("poolName cannot be null or empty");
+        if(corePoolSize < 1) throw new IllegalArgumentException("Core pool size must be >= 0");
         if(maxPoolSize < corePoolSize) throw new IllegalArgumentException("maxPoolSize must be >= corePoolSize");
         if(keepAliveTime < 1) throw new IllegalArgumentException("keepAliveTime must be >= 0");
-        
+        if(timeUnit == null) throw new IllegalArgumentException("timeUnit cannot be null");
+
         this.poolName = poolName;
         this.corePoolSize = corePoolSize;
         this.maxPoolSize = maxPoolSize;
+        this.maxQueuedTasks = maxQueuedTasks;
+        this.keepAliveTime = keepAliveTime;
+        this.timeUnit = timeUnit;
+        this.allowCoreThreadTimeOuts = allowCoreThreadTimeOuts;
+        this.rejectedExecutionHandler = rejectedExecutionHandler;
+        this.beforeExecute = beforeExecute;
+        this.afterExecute = afterExecute;
+    }
 
-        workerPool = new ThreadPoolExecutor(
-                corePoolSize,
-                maxPoolSize,
-                keepAliveTime,
-                timeUnit,
-                new LinkedBlockingQueue<Runnable>(maxQueuedTasks),
-                (rejectedExecutionHandler == null) ? new ThreadPoolExecutor.AbortPolicy() : rejectedExecutionHandler
-        ) {
-            @Override
-            protected void beforeExecute(Thread t, Runnable r) {
-                if (beforeExecute != null) {
-                    beforeExecute.call(t, r);
+    /**
+     * Start the pool. Before start() is called the pool is not created and no methods can be used.
+     * Subsequent invocations do nothing.
+     */
+    public void start(){
+        if(workerPool == null){
+            synchronized (this){
+                if(workerPool == null){
+                    workerPool = new ThreadPoolExecutor(
+                            corePoolSize,
+                            maxPoolSize,
+                            keepAliveTime,
+                            timeUnit,
+                            new LinkedBlockingQueue<Runnable>(maxQueuedTasks),
+                            (rejectedExecutionHandler == null) ? new ThreadPoolExecutor.AbortPolicy() : rejectedExecutionHandler
+                    ) {
+                        @Override
+                        protected void beforeExecute(Thread t, Runnable r) {
+                            if (beforeExecute != null) {
+                                beforeExecute.call(t, r);
+                            }
+                            super.beforeExecute(t, r);
+                        }
+
+                        @Override
+                        protected void afterExecute(Runnable r, Throwable t) {
+                            if (afterExecute != null) {
+                                afterExecute.call(r, t);
+                            }
+                            super.afterExecute(r, t);
+                        }
+
+                        @Override
+                        protected void terminated() {
+                            logger.log(Level.INFO, "Thread pool '" + poolName+"' has terminated.");
+                            super.terminated();
+                        }
+                    };
+
+                    //should the core thread pool size drop when inactive?
+                    if(allowCoreThreadTimeOuts){
+                        workerPool.allowCoreThreadTimeOut(true);
+                    }
                 }
-                super.beforeExecute(t, r);
             }
+        }
+    }
 
-            @Override
-            protected void afterExecute(Runnable r, Throwable t) {
-                if (afterExecute != null) {
-                    afterExecute.call(r, t);
+    /**
+     * Shutdown the ThreadPoolExecutor this ThreadPool manages. Invocation has no affect after first call.
+     */
+    public void shutdown(){
+        if(workerPool.isShutdown()) return;
+
+        synchronized (this){
+            if(!workerPool.isShutdown()){
+
+                // shutdown the executor
+                workerPool.shutdown();
+
+                // tasks may still be queued for execution and actively executing.
+                try {
+                    long start = System.currentTimeMillis();
+                    long now = start;
+                    while ((!workerPool.isTerminated()) && (now - start < MAX_SHUTDOWN_TIME)) {
+                        //block for 2 seconds waiting for pool to shutdown
+                        workerPool.awaitTermination(2000L, TIME_UNIT);
+                        now = System.currentTimeMillis();
+                    }
+
+                    if(logger.isLoggable(Level.INFO)){
+                        logger.info(stats());
+                    }
+
+                } catch (InterruptedException iex) {
+                    logger.info(poolName + " shutdown interrupted.");
                 }
-                super.afterExecute(r, t);
             }
-
-            @Override
-            protected void terminated() {
-                logger.log(Level.INFO, "Thread pool '" + poolName+"' has terminated.");
-                super.terminated();
-            }
-        };
-
-        //should the core thread pool size drop when inactive?
-        if(allowCoreThreadTimeOuts){
-            workerPool.allowCoreThreadTimeOut(true);
         }
     }
 
@@ -171,7 +226,7 @@ public class ThreadPool<T extends Runnable> {
      * shutdown() has been executed.
      *
      */
-    public void submitTask(T newTask) throws ThreadPoolShutDownException, RejectedExecutionException{
+    public void submitTask(final Runnable newTask) throws ThreadPoolShutDownException, RejectedExecutionException{
         if(workerPool.isShutdown() || workerPool.isTerminating()){
             throw new ThreadPoolShutDownException();
         }
@@ -183,40 +238,6 @@ public class ThreadPool<T extends Runnable> {
         return workerPool.isShutdown();
     }
 
-    /**
-     * Shutdown the ThreadPoolExecutor this ThreadPool manages. Invocation has no affect after first call.
-     */
-    public void shutdown(){
-        System.out.println("SHUTTING DOWN!");
-        if(workerPool.isShutdown()) return;
-
-        synchronized (shutdownLock){
-            if(!workerPool.isShutdown()){
-
-                // shutdown the executor
-                workerPool.shutdown();
-
-                // tasks may still be queued for execution and actively executing.
-                try {
-                    long start = System.currentTimeMillis();
-                    long now = start;
-                    while ((!workerPool.isTerminated()) && (now - start < MAX_SHUTDOWN_TIME)) {
-                        //block for 2 seconds waiting for pool to shutdown
-                        workerPool.awaitTermination(2000L, TIME_UNIT);
-                        now = System.currentTimeMillis();
-                    }
-
-                    if(logger.isLoggable(Level.INFO)){
-                        logger.info(stats());
-                    }
-
-                } catch (InterruptedException iex) {
-                    logger.info(poolName + " shutdown interrupted.");
-                }
-            }
-        }
-    }
-
     public static class ThreadPoolShutDownException extends Exception{}
 
     // - PRIVATE
@@ -225,7 +246,7 @@ public class ThreadPool<T extends Runnable> {
 
         final String SEP="\n";
 
-        StringBuffer sb = new StringBuffer();
+        final StringBuffer sb = new StringBuffer();
         sb.append(SEP).append("Pool Status:").append(SEP);
         final String status = (workerPool.isTerminated()) ? "terminated" : (workerPool.isTerminating()) ? "still terminating" : "active";
         sb.append("\tPool '" + poolName+"' is ").append(status).append(".").append(SEP);
@@ -243,9 +264,15 @@ public class ThreadPool<T extends Runnable> {
 
     private int corePoolSize;
     private int maxPoolSize;
-    private final ThreadPoolExecutor workerPool;
+    private volatile ThreadPoolExecutor workerPool;
     private final String poolName;
-    private final Object shutdownLock = new Object();
+    private final Functions.BinaryVoid<Thread,Runnable> beforeExecute;
+    private final Functions.BinaryVoid<Runnable, Throwable> afterExecute;
+    private final boolean allowCoreThreadTimeOuts;
+    private final RejectedExecutionHandler rejectedExecutionHandler;
+    private final int maxQueuedTasks;
+    private final long keepAliveTime;
+    private final TimeUnit timeUnit;
 
     private static final long MAX_SHUTDOWN_TIME = 8000l; // 8 sec
     private static final java.util.concurrent.TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;

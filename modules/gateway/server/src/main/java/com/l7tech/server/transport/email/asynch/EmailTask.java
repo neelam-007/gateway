@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * An email task is a task to process a justs received email message.
+ * An email task is a task to process a just received email message.
  */
 public class EmailTask implements Runnable {
     private static final Logger _logger = Logger.getLogger(EmailTask.class.getName());
@@ -51,6 +51,7 @@ public class EmailTask implements Runnable {
      * Task execution.  This method performs the call to the EmailHandler and handles any errors
      * accordingly.
      */
+    @Override
     public final void run() {
         // call the handler to process the message
         try {

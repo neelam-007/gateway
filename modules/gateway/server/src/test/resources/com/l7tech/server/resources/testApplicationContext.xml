@@ -292,12 +292,16 @@
         <!--<property name="stashManagerFactory" ref="stashManagerFactory"/>-->
     <!--</bean>-->
 
-    <bean id="jmsThreadPool" class="com.l7tech.server.transport.jms2.asynch.JmsThreadPool">
+    <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
         <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig" />
+        <constructor-arg index="1" value="JMS Thread Pool" />
+        <constructor-arg index="2" value="jmsListenerThreadLimit" />
+        <constructor-arg index="3" value="jms.listenerThreadLimit" />
+        <constructor-arg index="4" value="25" />
     </bean>
 
     <bean id="jmsBootprocess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
-        <constructor-arg type="com.l7tech.server.transport.jms2.asynch.JmsThreadPool" ref="jmsThreadPool" />
+        <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
         <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
         <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
         <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
@@ -306,7 +310,7 @@
         <property name="jmsEndpointListenerFactory">
             <!--<bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>-->
             <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
-                <constructor-arg type="com.l7tech.server.transport.jms2.asynch.JmsThreadPool" ref="jmsThreadPool" />
+                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
             </bean>
         </property>
     </bean>

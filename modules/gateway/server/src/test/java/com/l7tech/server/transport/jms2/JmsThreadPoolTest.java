@@ -1,8 +1,8 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.ServerConfigStub;
-import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 
+import com.l7tech.server.util.ThreadPoolBean;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -17,10 +17,11 @@ public class JmsThreadPoolTest {
         ServerConfigStub configStub = new ServerConfigStub();
         configStub.putProperty("jmsListenerThreadLimit", "25");
 
-        JmsThreadPool pool = null;
+        ThreadPoolBean pool = null;
         try {
-            pool = new JmsThreadPool(configStub);
+            pool = new ThreadPoolBean(configStub, "JMS Thread Pool", "jmsListenerThreadLimit", "jms.listenerThreadLimit", 25);
             Assert.assertNotNull(pool);
+            pool.start();
 
         } catch (Exception ex) {
             Assert.fail("Unexpected exception occurred: " + ex);
@@ -32,7 +33,7 @@ public class JmsThreadPoolTest {
     }
 
     /**
-     * Tests that a value of 0 for jms.listenerThreadLimit does not cause the JmsThreadPool any issues, as the value
+     * Tests that a value of 0 for jms.listenerThreadLimit does not cause the ThreadPoolBean any issues, as the value
      * is ignored.
      */
     @Test
@@ -40,10 +41,11 @@ public class JmsThreadPoolTest {
         ServerConfigStub configStub = new ServerConfigStub();
         configStub.putProperty("jmsListenerThreadLimit", "0");
 
-        JmsThreadPool pool = null;
+        ThreadPoolBean pool = null;
         try {
-            pool = new JmsThreadPool(configStub);
+            pool = new ThreadPoolBean(configStub, "JMS Thread Pool", "jmsListenerThreadLimit", "jms.listenerThreadLimit", 25);
             Assert.assertNotNull(pool);
+            pool.start();
 
         } catch (Exception ex) {
             Assert.fail("Unexpected exception occurred: " + ex);

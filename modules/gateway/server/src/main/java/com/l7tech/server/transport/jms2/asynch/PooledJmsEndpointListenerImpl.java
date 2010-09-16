@@ -7,6 +7,7 @@ import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsMessages;
+import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 
@@ -18,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author: vchan
+ * @author vchan
  */
 public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
@@ -35,22 +36,23 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /** Mutex object */
     private final Object sync = new Object();
 
-    private final JmsThreadPool jmsThreadPool;
+    private final ThreadPoolBean threadPoolBean;
 
     /**
      * Constructor.
      *
      * @param endpointConfig attributes for the Jms endpoint to listen to
-     * @param jmsThreadPool
+     * @param threadPoolBean Thread pool bean which JmsTasks can be submitted to.
      */
-    public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final JmsThreadPool jmsThreadPool) {
+    public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final ThreadPoolBean threadPoolBean) {
         super(endpointConfig);
-        this.jmsThreadPool = jmsThreadPool;
+        this.threadPoolBean = threadPoolBean;
     }
 
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getJmsBag()
      */
+    @Override
     protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException {
 
         synchronized(sync) {
@@ -88,6 +90,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#handleMessage(javax.jms.Message)
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     protected final void handleMessage(Message jmsMessage) throws JmsRuntimeException {
 
@@ -98,7 +101,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
         try {
             // fire-and-forget
-            jmsThreadPool.newTask(task);
+            threadPoolBean.submitTask(task);
 
         } catch (RejectedExecutionException reject) {
             _logger.log(Level.WARNING, JmsMessages.WARN_THREADPOOL_LIMIT_REACHED, new String[] {ExceptionUtils.getMessage(reject)});
@@ -113,7 +116,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
 
     /**
-     * Creates a Jms task for a request message.  To be sent to the JmsThreadPool for processing.
+     * Creates a Jms task for a request message.  To be sent to the threadPoolBean for processing.
      *
      * @param jmsMessage the message for the task to run
      * @return new JmsTask instance for the given request
@@ -156,6 +159,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getConsumer()
      */
+    @Override
     protected QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
         synchronized(sync) {
             if ( _consumer == null ) {
@@ -227,6 +231,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#cleanup()
      */
+    @Override
     protected void cleanup() {
         
         // close the consumer
