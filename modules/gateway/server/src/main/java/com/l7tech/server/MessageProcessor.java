@@ -778,7 +778,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (InvalidDocumentFormatException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO,
+                            new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                     context.setAuditLevel(Level.WARNING);
                     securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
