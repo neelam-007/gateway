@@ -30,6 +30,7 @@ import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -646,6 +647,17 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     private transient URL _serviceUrl;
 
     private transient Boolean multipart;
+
+    /**
+     * Clear WSDL and Port before serializing, the Port can cause errors when
+     * serialized (e.g. bug 9152), the WSDL is safe but redundant (and could be
+     * large). 
+     */
+    private void writeObject( final ObjectOutputStream out ) throws IOException {
+        _parsedWsdl.set( null );
+        _wsdlPort.set( null );
+        out.defaultWriteObject();
+    }
 
     /**
      * The default strategy resolves based on lookup of an resolver in the
