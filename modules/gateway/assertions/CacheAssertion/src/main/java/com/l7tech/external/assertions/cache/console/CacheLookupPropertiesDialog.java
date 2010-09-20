@@ -16,10 +16,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.text.MessageFormat;import java.util.ResourceBundle;
 
 public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSupport<CacheLookupAssertion> {
-    public static final String TITLE = "Cache Lookup Properties";
-    
+    private static ResourceBundle resourceBundle = ResourceBundle.getBundle(CacheLookupPropertiesDialog.class.getName());
+    public static final String TITLE = resourceBundle.getString("cache.lookup.properties.title");
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -70,11 +72,11 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
                 if (refs == null || refs.length < 1)
-                    return "The cache entry key must contain at least one interpolated context variable.";
+                    return resourceBundle.getString("the.cache.entry.key.error");
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, 1000000L);
+        validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, CacheStoragePropertiesDialog.kMAX_ENTRY_AGE);
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -85,7 +87,7 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                     ContentTypeHeader.parseValue(contentType);
                     return null;
                 } catch (IOException e) {
-                    return "Invalid content type configured: " + ExceptionUtils.getMessage(e);
+                    return MessageFormat.format(resourceBundle.getString("invalid.content.type.invalid.configured"), ExceptionUtils.getMessage(e));
                 }
             }
         });

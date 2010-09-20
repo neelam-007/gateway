@@ -13,9 +13,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ResourceBundle;
 
 public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSupport<CacheStorageAssertion> {
-    public static final String TITLE = "Cache Storage Properties";
+    private static ResourceBundle resourceBundle = ResourceBundle.getBundle(CacheLookupPropertiesDialog.class.getName());
+
+    public static final String TITLE = resourceBundle.getString("cache.storage.properties.title");
+    public static final long kMAX_ENTIRES = 1000000L;
+    public static final long kMAX_ENTRY_AGE = 100000000L;
+    public static final long kMAX_ENTRY_SIZE = 1000000000L;
+
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -69,14 +76,13 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
                 if (refs == null || refs.length < 1)
-                    return "The cache entry key must contain at least one interpolated context variable.";
+                    return resourceBundle.getString("the.cache.entry.key.error");
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange("Max Entries", maxEntriesField, 0, 1000000L);
-        validator.constrainTextFieldToNumberRange("Max Entry Age", maxEntryAgeField, 0, 100000000L);
-        validator.constrainTextFieldToNumberRange("Max Entry Size", maxEntrySizeField, 0, 1000000000L);
-
+        validator.constrainTextFieldToNumberRange("Max Entries", maxEntriesField, 0, kMAX_ENTIRES);
+        validator.constrainTextFieldToNumberRange("Max Entry Age", maxEntryAgeField, 0, kMAX_ENTRY_AGE);
+        validator.constrainTextFieldToNumberRange("Max Entry Size", maxEntrySizeField, 0, kMAX_ENTRY_SIZE);
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
