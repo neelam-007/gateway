@@ -18,6 +18,8 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
     private RequestSizeLimit sizeAssertion;
     private JTextField sizeLimit;
     private JCheckBox exemptAttachmentCheck;
+    private TargetMessagePanel targetMessagePanel;
+    private JPanel panel;
 
     private boolean modified;
     private boolean confirmed = false;
@@ -35,6 +37,12 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
         this.sizeAssertion = assertion;
 
         Utilities.setEscKeyStrokeDisposes( this );
+
+        targetMessagePanel.setTitle(null);
+        targetMessagePanel.setBorder(null);
+        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setAllowNonMessageVariables(false);
+
         Utilities.setMaxLength( sizeLimit.getDocument(), 1024 );
         Utilities.equalizeButtonSizes( okButton, cancelButton );
 
@@ -81,6 +89,7 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
                                           "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        targetMessagePanel.updateModel(sizeAssertion);
         sizeAssertion.setLimit(limit);
         sizeAssertion.setEntireMessage(!exemptAttachmentCheck.isSelected());
         modified = true;

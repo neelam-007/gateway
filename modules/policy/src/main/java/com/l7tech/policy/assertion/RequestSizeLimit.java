@@ -5,13 +5,15 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -19,8 +21,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Assertion for limiting request size.
  */
-@ProcessesRequest
-public class RequestSizeLimit extends Assertion implements UsesVariables {
+public class RequestSizeLimit extends MessageTargetableAssertion implements UsesVariables {
     public static final long MIN_SIZE_LIMIT = 1;
     public static final long MAX_SIZE_LIMIT =  Long.MAX_VALUE / 1024;
 
@@ -28,6 +29,7 @@ public class RequestSizeLimit extends Assertion implements UsesVariables {
     private boolean entireMessage = true;
 
     public RequestSizeLimit() {
+         super(true);
     }
 
     /** @return the current size limit, in kilobytes, or a context variable reference. */
@@ -72,7 +74,13 @@ public class RequestSizeLimit extends Assertion implements UsesVariables {
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return limit==null ? new String[0] : Syntax.getReferencedNames( limit );
+        List<String> vars = new ArrayList<String>();
+        if (limit != null)
+            vars.addAll(Arrays.asList( Syntax.getReferencedNames( limit )));
+        vars.addAll(Arrays.asList(super.getVariablesUsed()));
+
+        return vars.toArray(new String[vars.size()]);
+
     }
 
     @Override

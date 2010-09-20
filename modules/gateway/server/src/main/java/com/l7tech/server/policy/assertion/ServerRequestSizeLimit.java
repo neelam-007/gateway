@@ -9,6 +9,8 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSizeLimit;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -21,7 +23,7 @@ import java.util.logging.Logger;
 /**
  * The Server side Regex Assertion
  */
-public class ServerRequestSizeLimit extends AbstractServerAssertion implements ServerAssertion {
+public class ServerRequestSizeLimit extends AbstractServerAssertion <RequestSizeLimit>  {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -39,8 +41,6 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException
     {
-        Message request = context.getRequest();
-
         long limit;
         try {
             limit = getLimit(context);
@@ -49,25 +49,59 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
             return AssertionStatus.FAILED;
         }
 
+        final Message message;
+        final TargetMessageType isRequest = assertion.getTarget();
+
+
+        switch (isRequest) {
+            case REQUEST:
+                auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
+                message = context.getRequest();
+                break;
+            case RESPONSE:
+                auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
+                message = context.getResponse();
+                break;
+            case OTHER:
+                final String mvar = assertion.getOtherTargetMessageVariable();
+                if (mvar == null) throw new PolicyAssertionException(assertion, "Target message variable not set");
+                try {
+                    auditor.logAndAudit(AssertionMessages.XSLT_OTHER, mvar);
+                    message = context.getTargetMessage(assertion, true);
+                    break;
+                } catch (NoSuchVariableException e) {
+                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{ e.getVariable() }, e);
+                    return AssertionStatus.FAILED;
+                }                
+            default:
+                // should not get here!
+                auditor.logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
+                return AssertionStatus.SERVER_ERROR;
+        }
+        return checkMessage(message,limit);
+    }
+
+    private AssertionStatus checkMessage(Message message,long limit) throws IOException {
+        
         final long messlen;
         if (entireMessage) {
             try {
-                request.getMimeKnob().setContentLengthLimit(limit);
-                messlen = request.getMimeKnob().getContentLength();
+                message.getMimeKnob().setContentLengthLimit(limit);
+                messlen = message.getMimeKnob().getContentLength();
             } catch(IOException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE);
+                auditor.logAndAudit(AssertionMessages.MESSAGE_BODY_TOO_LARGE, assertion.getTargetName());
                 return AssertionStatus.FALSIFIED;
             }
             if (messlen > limit) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE);
+                auditor.logAndAudit(AssertionMessages.MESSAGE_BODY_TOO_LARGE, assertion.getTargetName());
                 return AssertionStatus.FALSIFIED;
             }
             return AssertionStatus.NONE;
         } else {
             try {
-                long xmlLen = request.getMimeKnob().getFirstPart().getActualContentLength();
+                long xmlLen = message.getMimeKnob().getFirstPart().getActualContentLength();
                 if (xmlLen > limit) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_FIRST_PART_TOO_LARGE);
+                    auditor.logAndAudit(AssertionMessages.MESSAGE_FIRST_PART_TOO_LARGE, assertion.getTargetName());
                     return AssertionStatus.FALSIFIED;
                 }
                 return AssertionStatus.NONE;
