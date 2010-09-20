@@ -190,8 +190,8 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
-        portField.setDocument(new NumberField(6));
-        validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
+//        portField.setDocument(new NumberField(6));
+//        validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
 
         pack();
         Utilities.centerOnScreen(this);
@@ -223,7 +223,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
     private void modelToView(final EmailAlertAssertion assertion) {
         protocolCombo.setSelectedItem(assertion.getProtocol());
         hostField.setText(assertion.getSmtpHost());
-        portField.setText(Integer.toString(assertion.getSmtpPort()));
+        portField.setText(assertion.getSmtpPort());
         toAddressesField.setText(assertion.getTargetEmailAddress());
         ccAddressesField.setText(assertion.getTargetCCEmailAddress());
         bccAddressesField.setText(assertion.getTargetBCCEmailAddress());
@@ -240,7 +240,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
      */
     private void viewToModel(final EmailAlertAssertion assertion) {
         assertion.setSmtpHost(hostField.getText());
-        assertion.setSmtpPort(safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT));
+        assertion.setSmtpPort(portField.getText());
         assertion.setTargetEmailAddress(toAddressesField.getText());
         assertion.setTargetCCEmailAddress(ccAddressesField.getText());
         assertion.setTargetBCCEmailAddress(bccAddressesField.getText());
@@ -284,9 +284,9 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         if (toAddressesField.getText().length() < 1) ok = false;
         if (hostField.getText().length() < 1) ok = false;
         if (fromAddressField.getText().length() < 1) ok = false;
-        if (!isValidInt(portField.getText())) ok = false;
-        int port = safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT);
-        if (port < 1 || port > 65535) ok = false;
+//        if (!isValidInt(portField.getText())) ok = false;
+//        int port = safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT);
+//        if (port < 1 || port > 65535) ok = false;
         if (authenticateCheckBox.isSelected() && authUsernameField.getText().length() == 0) ok = false;
 
         authUsernameLabel.setEnabled(authenticateCheckBox.isSelected());
@@ -322,7 +322,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         Frame f = new JFrame();
         f.setVisible(true);
         EmailAlertAssertion ass = new EmailAlertAssertion();
-        ass.setSmtpPort(27);
+        ass.setSmtpPort("27");
         EmailAlertPropertiesDialog d = new EmailAlertPropertiesDialog(f, ass, false);
         d.setVisible(true);
         d.dispose();

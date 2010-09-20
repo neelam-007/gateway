@@ -32,9 +32,16 @@ public class EmailAdminImpl implements EmailAdmin {
     public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException {
         long connectTimeout = 25000;
         long readTimeout = 25000;
+        int port = EmailAlertAssertion.DEFAULT_PORT;
+
+        try{
+            port = Integer.parseInt(eaa.getSmtpPort());
+        }catch(NumberFormatException nfe){
+            port = EmailAlertAssertion.DEFAULT_PORT;
+        }
 
         EmailConfig emailConfig = new EmailConfig(eaa.isAuthenticate(), eaa.getAuthUsername(), eaa.getAuthPassword(),
-                eaa.getSmtpHost(), eaa.getSmtpPort(), eaa.getProtocol(), connectTimeout, readTimeout);
+                eaa.getSmtpHost(), port, eaa.getProtocol(), connectTimeout, readTimeout);
 
         EmailMessage emailMessage = new EmailMessage(eaa.getTargetBCCEmailAddress(), eaa.getTargetCCEmailAddress(),
                 eaa.getSourceEmailAddress(), eaa.getTargetEmailAddress(), eaa.messageString(), eaa.getSubject());

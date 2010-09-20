@@ -15,6 +15,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -35,13 +36,25 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String targetBCCEmailAddress = "";
     private String sourceEmailAddress = DEFAULT_FROM;
     private String smtpHost = DEFAULT_HOST;
-    private int smtpPort = DEFAULT_PORT;
+    private String smtpPort = Integer.toString(DEFAULT_PORT);
+//    private String stringSmtpPort = Integer.toString(DEFAULT_PORT);
     private String subject = DEFAULT_SUBJECT;
     private String base64message = "";
     private Protocol protocol = Protocol.PLAIN;
     private boolean authenticate = false;
     private String authUsername;
     private String authPassword;
+
+    private boolean subjectHasVars;
+    private boolean toHasVars;
+    private boolean ccHasVars;
+    private boolean bccHasVars;
+    private boolean fromHasVars;
+    private boolean hostHasVars;
+    private boolean portHasVars;
+    private boolean userNameHasVars;
+    private boolean pwdHasVars;
+    private boolean msgHasVars;
 
     public static enum Protocol {
         PLAIN("Plain SMTP"),
@@ -77,6 +90,46 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 //        this.targetEmailAddress = targetEmailAddress;
 //        this.smtpHost = snmpServer;
 //    }
+
+    public boolean toHasVars() {
+        return toHasVars;
+    }
+
+    public boolean ccHasVars() {
+        return ccHasVars;
+    }
+
+    public boolean bccHasVars() {
+        return bccHasVars;
+    }
+
+    public boolean fromHasVars() {
+        return fromHasVars;
+    }
+
+    public boolean hostHasVars() {
+        return hostHasVars;
+    }
+
+    public boolean portHasVars() {
+        return portHasVars;
+    }
+
+    public boolean userNameHasVars() {
+        return userNameHasVars;
+    }
+
+    public boolean pwdHasVars() {
+        return pwdHasVars;
+    }
+
+    public boolean msgHasVars() {
+        return msgHasVars;
+    }
+
+    public boolean subjectHasVars() {
+        return subjectHasVars;
+    }
 
     public String getTargetEmailAddress() {
         return targetEmailAddress;
@@ -114,14 +167,26 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.smtpHost = smtpHost;
     }
 
-    public int getSmtpPort() {
+    public String getSmtpPort() {
         return smtpPort;
     }
 
-    public void setSmtpPort(int smtpPort) {
-        if (smtpPort < 0 || smtpPort > 65535) throw new IllegalArgumentException();
+    public void setSmtpPort(String smtpPort) {
         this.smtpPort = smtpPort;
+//        try{
+//            int port = Integer.parseInt(smtpPort);
+//            if (port < 0 || port > 65535) throw new IllegalArgumentException();
+//            this.smtpPort = smtpPort;
+//        }catch (NumberFormatException nfe){
+//            //port was not a number dumbass!
+//            //set it to the default
+//            this.smtpPort = Integer.toString(DEFAULT_PORT);
+//        }
     }
+
+//    public void setSmtpPort(String stringSmtpPort){
+//        this.stringSmtpPort = stringSmtpPort;
+//    }
 
     public String getSubject() {
         return subject;
@@ -149,7 +214,9 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         setBase64message(HexUtils.encodeBase64(HexUtils.encodeUtf8(text), true));
     }
 
-    /** @return the source email address.  May be empty but never null. */
+    /**
+     * @return the source email address.  May be empty but never null.
+     */
     public String getSourceEmailAddress() {
         return sourceEmailAddress;
     }
@@ -194,15 +261,143 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(this.messageString());
+        String[] hostReferencedNames = null;
+        String[] toRefNames = null;
+        String[] bccRefNames = null;
+        String[] ccRefNames = null;
+        String[] subjectRefNames = null;
+        String[] fromRefNames = null;
+        String[] userRefNames = null;
+        String[] pwdRefNames = null;
+        String[] portRefNames = null;
+//        int count = 0;//this var will hold the total num of context vars accross all fields
+        ArrayList<String> list = new ArrayList();
+
+
+        //Variables originally were only used in the message string.
+        //Now let's check all the fields for variables.
+        //the vars are: message, host, to, from, cc, bcc, subject,
+        //First get the message ones:
+        //(note that the original code did not check for null in .messageString() so I left it as is
+        String[] messageReferencedNames = Syntax.getReferencedNames(this.messageString());
+        if(messageReferencedNames!=null){
+            msgHasVars = true;
+            for(String s: messageReferencedNames){
+                list.add(s);
+            }
+        }
+
+        //Now get: port
+        if (this.smtpPort != null){
+            portRefNames = Syntax.getReferencedNames(this.smtpPort);
+            if(portRefNames!=null){
+                portHasVars = true;
+                for(String s: portRefNames){
+                    list.add(s);
+                }
+            }
+        }
+
+
+        //Now get: host
+        if (this.smtpHost != null){
+            hostReferencedNames = Syntax.getReferencedNames(this.smtpHost);
+            if(hostReferencedNames!=null){
+                hostHasVars = true;
+                for(String s: hostReferencedNames){
+                    list.add(s);
+                }
+            }
+        }
+
+        //now get: to
+        if (this.targetEmailAddress != null){
+            toRefNames = Syntax.getReferencedNames(this.targetEmailAddress);
+            if(toRefNames!=null){
+                toHasVars = true;
+                for(String s: toRefNames){
+                    list.add(s);
+                }
+            }
+            
+        }
+        //now get bcc
+        if (this.targetBCCEmailAddress != null){
+            bccRefNames = Syntax.getReferencedNames(this.targetBCCEmailAddress);
+            if(bccRefNames!=null){
+                bccHasVars = true;
+                for(String s: bccRefNames){
+                    list.add(s);
+                }
+            }
+        }
+        //now get cc
+        if (this.targetCCEmailAddress != null){
+            ccRefNames = Syntax.getReferencedNames(this.targetCCEmailAddress);
+            if(ccRefNames!=null){
+                ccHasVars = true;
+                for(String s: ccRefNames){
+                    list.add(s);
+                }
+            }
+        }
+        //now get the subject context vars
+        if (this.subject != null){
+            subjectRefNames = Syntax.getReferencedNames(this.subject);
+            if(subjectRefNames!=null){
+                subjectHasVars = true;
+                for(String s: subjectRefNames){
+                    list.add(s);
+                }
+            }
+        }
+        //now get the from email vars
+        if (this.sourceEmailAddress != null){
+            fromRefNames = Syntax.getReferencedNames(this.sourceEmailAddress);
+            if(fromRefNames!=null){
+                fromHasVars = true;
+                for(String s: fromRefNames){
+                    list.add(s);
+                }
+            }
+        }
+
+        if (this.authUsername != null){
+            userRefNames = Syntax.getReferencedNames(this.authUsername);
+            if(userRefNames!=null){
+                userNameHasVars = true;
+                for(String s: userRefNames){
+                    list.add(s);
+                }
+            }
+        }
+
+        if (this.authPassword != null){
+            pwdRefNames = Syntax.getReferencedNames(this.authPassword);
+            if(pwdRefNames!=null){
+                pwdHasVars = true;
+                for(String s: pwdRefNames){
+                    list.add(s);
+                }
+            }
+        }
+
+
+        //(chances are there won't be context vars in all of those fields but\
+        //we will check them all anyway
+
+        //amalgamate all the arrays to a single return.
+        String endList [] = (String []) list.toArray (new String [list.size ()]);
+
+        return endList;
     }
 
     private final static String baseName = "Send Email Alert";
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EmailAlertAssertion>(){
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EmailAlertAssertion>() {
         @Override
-        public String getAssertionName( final EmailAlertAssertion assertion, final boolean decorate) {
-            return baseName;            
+        public String getAssertionName(final EmailAlertAssertion assertion, final boolean decorate) {
+            return baseName;
         }
     };
 
