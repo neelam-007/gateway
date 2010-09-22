@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Body>
+        <listProductsResponse xmlns="http://warehouse.acme.com/ws">
+            <listProductsResult>
+                <ProductListHeader>
+                    <productName>Speakers</productName>
+                    <productId>20105806</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Digital camera</productName>
+                    <productId>20105805</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>White board</productName>
+                    <productId>20105804</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Wall Clock</productName>
+                    <productId>20105803</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>PhoneBook</productName>
+                    <productId>20105802</productId>
+                </ProductListHeader>
+            </listProductsResult>
+        </listProductsResponse>
+    </soap:Body>
+</soap:Envelope>

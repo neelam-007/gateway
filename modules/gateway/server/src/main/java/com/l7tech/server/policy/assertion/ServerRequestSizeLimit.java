@@ -4,15 +4,15 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSizeLimit;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import org.springframework.context.ApplicationContext;
@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * The Server side Regex Assertion
+ * The Server side Request Limit Assertion
  */
-public class ServerRequestSizeLimit extends AbstractServerAssertion <RequestSizeLimit>  {
+public class ServerRequestSizeLimit extends AbstractMessageTargetableServerAssertion <RequestSizeLimit>  {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -31,16 +31,26 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion <RequestSize
     private final String limitString;
 
     public ServerRequestSizeLimit(RequestSizeLimit ass, ApplicationContext springContext) {
-        super(ass);
+        super(ass,ass);
         auditor = new Auditor(this, springContext, logger);
         this.entireMessage = ass.isEntireMessage();
         this.limitString = ass.getLimit();
     }
 
+
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
-      throws IOException, PolicyAssertionException
-    {
+    protected Audit getAuditor() {
+        return auditor;
+    }
+
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext )
+        throws IOException, PolicyAssertionException {
+
+
         long limit;
         try {
             limit = getLimit(context);
@@ -48,40 +58,6 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion <RequestSize
             auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, limitString, "Long");
             return AssertionStatus.FAILED;
         }
-
-        final Message message;
-        final TargetMessageType isRequest = assertion.getTarget();
-
-
-        switch (isRequest) {
-            case REQUEST:
-                auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
-                message = context.getRequest();
-                break;
-            case RESPONSE:
-                auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
-                message = context.getResponse();
-                break;
-            case OTHER:
-                final String mvar = assertion.getOtherTargetMessageVariable();
-                if (mvar == null) throw new PolicyAssertionException(assertion, "Target message variable not set");
-                try {
-                    auditor.logAndAudit(AssertionMessages.XSLT_OTHER, mvar);
-                    message = context.getTargetMessage(assertion, true);
-                    break;
-                } catch (NoSuchVariableException e) {
-                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{ e.getVariable() }, e);
-                    return AssertionStatus.FAILED;
-                }                
-            default:
-                // should not get here!
-                auditor.logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
-                return AssertionStatus.SERVER_ERROR;
-        }
-        return checkMessage(message,limit);
-    }
-
-    private AssertionStatus checkMessage(Message message,long limit) throws IOException {
         
         final long messlen;
         if (entireMessage) {
@@ -97,7 +73,8 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion <RequestSize
                 return AssertionStatus.FALSIFIED;
             }
             return AssertionStatus.NONE;
-        } else {
+        }
+        else {
             try {
                 long xmlLen = message.getMimeKnob().getFirstPart().getActualContentLength();
                 if (xmlLen > limit) {
