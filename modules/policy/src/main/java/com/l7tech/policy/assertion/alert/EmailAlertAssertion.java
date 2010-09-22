@@ -37,7 +37,6 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String sourceEmailAddress = DEFAULT_FROM;
     private String smtpHost = DEFAULT_HOST;
     private String smtpPort = Integer.toString(DEFAULT_PORT);
-//    private String stringSmtpPort = Integer.toString(DEFAULT_PORT);
     private String subject = DEFAULT_SUBJECT;
     private String base64message = "";
     private Protocol protocol = Protocol.PLAIN;
@@ -55,6 +54,10 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private boolean userNameHasVars;
     private boolean pwdHasVars;
     private boolean msgHasVars;
+
+    //placeholder for some properties for the server email alert assertion
+    private long connectTimeout;
+    private long readTimeout;
 
     public static enum Protocol {
         PLAIN("Plain SMTP"),
@@ -90,6 +93,22 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 //        this.targetEmailAddress = targetEmailAddress;
 //        this.smtpHost = snmpServer;
 //    }
+
+    public long getConnectTimeout(){
+        return this.connectTimeout;
+    }
+
+    public void setConnectTimeout(long timeout){
+        this.connectTimeout = timeout;
+    }
+
+    public long getReadTimeout(){
+         return this.readTimeout;
+    }
+
+    public void setReadTimeout(long timeout){
+        this.readTimeout = timeout;
+    }
 
     public boolean toHasVars() {
         return toHasVars;
@@ -173,20 +192,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 
     public void setSmtpPort(String smtpPort) {
         this.smtpPort = smtpPort;
-//        try{
-//            int port = Integer.parseInt(smtpPort);
-//            if (port < 0 || port > 65535) throw new IllegalArgumentException();
-//            this.smtpPort = smtpPort;
-//        }catch (NumberFormatException nfe){
-//            //port was not a number dumbass!
-//            //set it to the default
-//            this.smtpPort = Integer.toString(DEFAULT_PORT);
-//        }
     }
-
-//    public void setSmtpPort(String stringSmtpPort){
-//        this.stringSmtpPort = stringSmtpPort;
-//    }
 
     public String getSubject() {
         return subject;
@@ -276,7 +282,8 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 
         //Variables originally were only used in the message string.
         //Now let's check all the fields for variables.
-        //the vars are: message, host, to, from, cc, bcc, subject,
+        //the vars are: message, host, to, from, cc, bcc, subject,port
+        //(also going to keep track of what fields have context vars to speed processing hopefully later)
         //First get the message ones:
         //(note that the original code did not check for null in .messageString() so I left it as is
         String[] messageReferencedNames = Syntax.getReferencedNames(this.messageString());
