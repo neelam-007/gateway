@@ -44,21 +44,6 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String authUsername;
     private String authPassword;
 
-    private boolean subjectHasVars;
-    private boolean toHasVars;
-    private boolean ccHasVars;
-    private boolean bccHasVars;
-    private boolean fromHasVars;
-    private boolean hostHasVars;
-    private boolean portHasVars;
-    private boolean userNameHasVars;
-    private boolean pwdHasVars;
-    private boolean msgHasVars;
-
-    //placeholder for some properties for the server email alert assertion
-    private long connectTimeout;
-    private long readTimeout;
-
     public static enum Protocol {
         PLAIN("Plain SMTP"),
         SSL("SMTP over SSL"),
@@ -81,73 +66,6 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     public EmailAlertAssertion() {
-    }
-
-//    public EmailAlertAssertion(String subject, String message, String targetEmailAddress, String snmpServer) {
-//        if (targetEmailAddress == null || snmpServer == null)
-//            throw new NullPointerException();
-//        if (subject == null) subject = "";
-//        if (message == null) message = "";
-//        this.subject = subject;
-//        this.base64message = message;
-//        this.targetEmailAddress = targetEmailAddress;
-//        this.smtpHost = snmpServer;
-//    }
-
-    public long getConnectTimeout(){
-        return this.connectTimeout;
-    }
-
-    public void setConnectTimeout(long timeout){
-        this.connectTimeout = timeout;
-    }
-
-    public long getReadTimeout(){
-         return this.readTimeout;
-    }
-
-    public void setReadTimeout(long timeout){
-        this.readTimeout = timeout;
-    }
-
-    public boolean toHasVars() {
-        return toHasVars;
-    }
-
-    public boolean ccHasVars() {
-        return ccHasVars;
-    }
-
-    public boolean bccHasVars() {
-        return bccHasVars;
-    }
-
-    public boolean fromHasVars() {
-        return fromHasVars;
-    }
-
-    public boolean hostHasVars() {
-        return hostHasVars;
-    }
-
-    public boolean portHasVars() {
-        return portHasVars;
-    }
-
-    public boolean userNameHasVars() {
-        return userNameHasVars;
-    }
-
-    public boolean pwdHasVars() {
-        return pwdHasVars;
-    }
-
-    public boolean msgHasVars() {
-        return msgHasVars;
-    }
-
-    public boolean subjectHasVars() {
-        return subjectHasVars;
     }
 
     public String getTargetEmailAddress() {
@@ -277,7 +195,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         String[] pwdRefNames = null;
         String[] portRefNames = null;
 //        int count = 0;//this var will hold the total num of context vars accross all fields
-        ArrayList<String> list = new ArrayList();
+        ArrayList<String> list = new ArrayList<String>();
 
 
         //Variables originally were only used in the message string.
@@ -288,20 +206,14 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         //(note that the original code did not check for null in .messageString() so I left it as is
         String[] messageReferencedNames = Syntax.getReferencedNames(this.messageString());
         if(messageReferencedNames!=null){
-            msgHasVars = true;
-            for(String s: messageReferencedNames){
-                list.add(s);
-            }
+            list.addAll(Arrays.asList(messageReferencedNames));
         }
 
         //Now get: port
         if (this.smtpPort != null){
             portRefNames = Syntax.getReferencedNames(this.smtpPort);
             if(portRefNames!=null){
-                portHasVars = true;
-                for(String s: portRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(portRefNames));
             }
         }
 
@@ -310,10 +222,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         if (this.smtpHost != null){
             hostReferencedNames = Syntax.getReferencedNames(this.smtpHost);
             if(hostReferencedNames!=null){
-                hostHasVars = true;
-                for(String s: hostReferencedNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(hostReferencedNames));
             }
         }
 
@@ -321,10 +230,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         if (this.targetEmailAddress != null){
             toRefNames = Syntax.getReferencedNames(this.targetEmailAddress);
             if(toRefNames!=null){
-                toHasVars = true;
-                for(String s: toRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(toRefNames));
             }
             
         }
@@ -332,60 +238,42 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         if (this.targetBCCEmailAddress != null){
             bccRefNames = Syntax.getReferencedNames(this.targetBCCEmailAddress);
             if(bccRefNames!=null){
-                bccHasVars = true;
-                for(String s: bccRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(bccRefNames));
             }
         }
         //now get cc
         if (this.targetCCEmailAddress != null){
             ccRefNames = Syntax.getReferencedNames(this.targetCCEmailAddress);
             if(ccRefNames!=null){
-                ccHasVars = true;
-                for(String s: ccRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(ccRefNames));
             }
         }
         //now get the subject context vars
         if (this.subject != null){
             subjectRefNames = Syntax.getReferencedNames(this.subject);
             if(subjectRefNames!=null){
-                subjectHasVars = true;
-                for(String s: subjectRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(subjectRefNames));
             }
         }
         //now get the from email vars
         if (this.sourceEmailAddress != null){
             fromRefNames = Syntax.getReferencedNames(this.sourceEmailAddress);
             if(fromRefNames!=null){
-                fromHasVars = true;
-                for(String s: fromRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(fromRefNames));
             }
         }
 
         if (this.authUsername != null){
             userRefNames = Syntax.getReferencedNames(this.authUsername);
             if(userRefNames!=null){
-                userNameHasVars = true;
-                for(String s: userRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(userRefNames));
             }
         }
 
         if (this.authPassword != null){
             pwdRefNames = Syntax.getReferencedNames(this.authPassword);
             if(pwdRefNames!=null){
-                pwdHasVars = true;
-                for(String s: pwdRefNames){
-                    list.add(s);
-                }
+                list.addAll(Arrays.asList(pwdRefNames));
             }
         }
 

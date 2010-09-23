@@ -432,6 +432,10 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_SSL_FAIL     = m(6705, Level.WARNING, "SSL connection failure, message not sent");
     public static final M EMAILALERT_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
     public static final M EMAILALERT_BAD_PORT     = m(6707, Level.WARNING, "Bad smtp port set, message not sent");
+    public static final M EMAILALERT_BAD_HOST     = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
+    public static final M EMAILALERT_BAD_USER     = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
+    public static final M EMAILALERT_BAD_PWD     = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
+
 
     // HTTP Form POST
     public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, true, false, "Request does not appear to be an HTTP form submission ({0})");

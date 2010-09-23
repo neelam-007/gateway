@@ -29,11 +29,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.WeakHashMap;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Logger;
 import java.net.ConnectException;
 
@@ -42,17 +38,9 @@ import java.net.ConnectException;
  */
 public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAlertAssertion> {
     private static final Logger logger = Logger.getLogger(ServerEmailAlertAssertion.class.getName());
-
+    private final ServerConfig config;
     private final Auditor auditor;
-//    private final Map<String, String> propertyMap;
-    private final InternetAddress[] toAddresses;
-    private final InternetAddress[] ccAddresses;
-    private final InternetAddress[] bccAddresses;
-    private final InternetAddress[] recipients;
-    private final InternetAddress fromAddress;
     private static final Map<Map<String, String>, Session> sessionCache = new WeakHashMap<Map<String, String>, Session>();
-    private Session session = null;
-    private final String[] varsUsed;
 
     // We only support SSL without client cert, but allow configuration of SSL default key just in case.
     private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
@@ -64,78 +52,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     public ServerEmailAlertAssertion(EmailAlertAssertion ass, ApplicationContext spring) {
         super(ass);
         auditor = new Auditor(this, spring, logger);
-
-        ServerConfig config = spring.getBean("serverConfig", ServerConfig.class);
-        long connectTimeout = config.getTimeUnitPropertyCached("ioMailConnectTimeout", 60000, 30000);
-        long readTimeout = config.getTimeUnitPropertyCached("ioMailReadTimeout", 60000, 30000);
-        ass.setConnectTimeout(connectTimeout);
-        ass.setReadTimeout(readTimeout);
-        //I'm moving this to be initialized in the first run of checkRequest.
-        //I'm doing this because the port property being set could be a context variable that has to be expanded,
-        //also the host name could be a context var.
-//        propertyMap = buildProperties(ass, connectTimeout, readTimeout);
-
-
-        InternetAddress[] addr;
-        try {
-            addr = InternetAddress.parse(ass.getTargetEmailAddress());
-        } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to initialize EmailAlertAssert: invalid destination email address"}, ExceptionUtils.getDebugException(e));
-            addr = null;
-        }
-        toAddresses = addr;
-
-        try {
-            addr = InternetAddress.parse(ass.getTargetCCEmailAddress());
-        } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"Unable to initialize EmailAlertAssert: invalid CC email address"}, ExceptionUtils.getDebugException(e));
-            addr = null;
-        }
-        ccAddresses = addr;
-
-        try {
-            addr = InternetAddress.parse(ass.getTargetBCCEmailAddress());
-        } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"Unable to initialize EmailAlertAssert: invalid BCC email address"}, ExceptionUtils.getDebugException(e));
-            addr = null;
-        }
-        bccAddresses = addr;
-
-
-        int size = 0;
-        if (toAddresses != null) size += toAddresses.length;
-        if (ccAddresses != null) size += ccAddresses.length;
-        if (bccAddresses != null) size += bccAddresses.length;
-        recipients = new InternetAddress[size];
-
-        int i = 0;
-        if (toAddresses != null) {
-            for (InternetAddress address : toAddresses) {
-                recipients[i++] = address;
-            }
-        }
-        if (ccAddresses != null) {
-            for (InternetAddress address : ccAddresses) {
-                recipients[i++] = address;
-            }
-        }
-        if (bccAddresses != null) {
-            for (InternetAddress address : bccAddresses) {
-                recipients[i++] = address;
-            }
-        }
-
-
-        InternetAddress fromaddr;
-        try {
-            fromaddr = new InternetAddress(ass.getSourceEmailAddress());
-        } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    "Unable to initialize EmailAlertAssert: invalid destination email address: " + ExceptionUtils.getMessage(e));
-            fromaddr = null;
-        }
-        fromAddress = fromaddr;
-        varsUsed = ass.getVariablesUsed();
+        config = spring.getBean("serverConfig", ServerConfig.class);
     }
 
     /**
@@ -148,7 +65,6 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
                                                 final String host) {
         EmailAlertAssertion.Protocol protocol = assertion.getProtocol();
         String protoVal = protocol == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp";
-
         Map<String, String> props = new HashMap<String, String>();
         props.put("mail.from", emailAlertAssertion.getSourceEmailAddress());
 
@@ -157,11 +73,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         props.put("mail." + protoVal + ".sendpartial", "true");
         props.put("mail." + protoVal + ".connectiontimeout", Long.toString(connectTimeout));
         props.put("mail." + protoVal + ".timeout", Long.toString(readTimeout));
-        //if the host name has a context var, this needs to be replaced before putting the prop.
-        //Same as port number
         props.put("mail." + protoVal + ".host", host);
-//        props.put("mail." + protoVal + ".port", Integer.toString(emailAlertAssertion.getSmtpPort()));
-        
         props.put("mail." + protoVal + ".port", port);
         props.put("mail." + protoVal + ".fallback", "false");
 
@@ -185,15 +97,13 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     /**
      * Find a shared session that uses the same SMTP host, SMTP port, and mail From address.
      *
+     * @param propertyMap map of the variables
      * @return a session, either new or reusing one from another ServerEmailAlertAssertion with compatible settings.
      */
     @SuppressWarnings({"UseOfPropertiesAsHashtable"})
     private Session getSession(Map<String, String> propertyMap) {
-        if (session != null)
-            return session;
-
         synchronized (sessionCache) {
-            session = sessionCache.get(propertyMap);
+            Session session = sessionCache.get(propertyMap);
             if (session == null) {
                 // create properties for session instantiation
                 Properties properties = new Properties();
@@ -207,74 +117,99 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         }
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
+        InternetAddress[] toAddresses = null;
+        InternetAddress[] ccAddresses = null;
+        InternetAddress[] bccAddresses = null;
+        InternetAddress[] recipients = null;
+        InternetAddress fromAddress = null;
+        InternetAddress[] fromAddresses = null;
+        String host = null;
+        String userName = null;
+        String pwd = null;
+        String subject = null;
+        String portNum = null;
+        String[] varsUsed = assertion.getVariablesUsed();
+        Map<String, Object> variableMap = context.getVariableMap(varsUsed, auditor);
+        long connectTimeout = config.getTimeUnitPropertyCached("ioMailConnectTimeout", 60000, 30000);
+        long readTimeout = config.getTimeUnitPropertyCached("ioMailReadTimeout", 60000, 30000);
 
+        //start putting together the lists of email addresses and other variables to send email
+        //and replace the context variables
+        toAddresses = assembleAddresses(ExpandVariables.process(assertion.getTargetEmailAddress(), variableMap, auditor), "destination email address");
+        ccAddresses = assembleAddresses(ExpandVariables.process(assertion.getTargetCCEmailAddress(), variableMap, auditor), "cc email address");
+        bccAddresses = assembleAddresses(ExpandVariables.process(assertion.getTargetBCCEmailAddress(), variableMap, auditor), "bcc email address");
+        fromAddresses = assembleAddresses(ExpandVariables.process(assertion.getSourceEmailAddress(), variableMap, auditor), "from email address");
+        if(fromAddresses!=null&&fromAddresses.length>0)
+                fromAddress = fromAddresses[0];
+
+        host = assertion.getSmtpHost();
+        portNum = assertion.getSmtpPort();
+        userName = assertion.getAuthUsername();
+        pwd = assertion.getAuthPassword();
+        subject = assertion.getSubject();
+
+        host = ExpandVariables.process(host, variableMap, auditor);
+        portNum = ExpandVariables.process(portNum, variableMap, auditor);
+        userName = ExpandVariables.process(userName, variableMap, auditor);
+        pwd = ExpandVariables.process(pwd, variableMap, auditor);
+        subject = ExpandVariables.process(subject, variableMap, auditor);
+
+        //get the recipients populated
+        recipients = amalgamateAddresses(toAddresses, ccAddresses, bccAddresses);
 
         //check if smtp port is valid.  This port could be a context var that needs to be filled in.
-        String portNum = assertion.getSmtpPort();
-        if (assertion.portHasVars()) {
-            //the port num is a context var.  get the real value
-            String tempNum = ExpandVariables.process(portNum, context.getVariableMap(varsUsed, auditor), auditor);
-            if (tempNum != null) {
-                //check if it is a valid port number;
-                try {
-                    int port = Integer.parseInt(tempNum);
-                    if (port < 0 || port > 65535) throw new IllegalArgumentException();
-                    portNum = tempNum;
-                    //tempNum is ok, use that num to send the message
-                    //ie: this.portNum is ok.
-                } catch (NumberFormatException nfe) {
-                    //port was not a number dumbass!
-                    //fail the assertion
-                    auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PORT);
-                    return AssertionStatus.FAILED;
-                }
-            }
-        }else{
-            //port number is not a context var just make sure it is a good number.
-            try {
-                int port = Integer.parseInt(portNum);
-                if (port < 0 || port > 65535){
-                    //bad port range, fail assertion
-                    auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PORT);
-                    return AssertionStatus.FAILED;
-                }
-
-            } catch (NumberFormatException nfe) {
-                //port was not a number dumbass!
-                //fail the assertion
-                auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PORT);
-                return AssertionStatus.FAILED;
+        //the port num might be a context var.  get the real value
+        if (portNum != null && !portNum.equals("")) {
+            boolean isOk = portNumberOk(portNum);
+            if(!isOk){
+             //bad port number.
+              auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PORT);
+              return AssertionStatus.FAILED;
             }
         }
+        //port number is ok, let's keep an int version
+        int portNumberInt = Integer.parseInt(portNum);
 
         if (toAddresses == null) {
+            //no to addresses!
             auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_TO_ADDR);
             return AssertionStatus.FAILED;
         }
 
         if (fromAddress == null) {
+            //no from address!
             auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_FROM_ADDR);
             return AssertionStatus.FAILED;
         }
 
         //check that the host name is not a context var
-        String host = assertion.getSmtpHost();
-        if (assertion.hostHasVars()) {
-            String ias = ExpandVariables.process(host, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(host)) {
-                host = ias;
-            }
+        if(host==null || host.equals("")){
+            //host is null or empty, fail the assertion
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_HOST);
+            return AssertionStatus.FAILED;
         }
 
+        if(userName==null || userName.equals("")){
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_USER);
+            return AssertionStatus.FAILED;
+        }
+
+        if(pwd==null || pwd.equals("")){
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PWD);
+            return AssertionStatus.FAILED;
+        }
+
+
         try {
-            final Map<String, String> propertyMap = buildProperties(assertion, assertion.getConnectTimeout(), assertion.getReadTimeout(), portNum, host);
+            final Map<String, String> propertyMap = buildProperties(assertion, connectTimeout, readTimeout, portNum, host);
             final Session session = getSession(propertyMap);
             final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, auditor), auditor);
 
-            sendMessage(session, body, context);
+            sendMessage(session, body, host, toAddresses, ccAddresses, bccAddresses, userName, pwd, recipients, fromAddress, subject, portNumberInt);
 
             auditor.logAndAudit(AssertionMessages.EMAILALERT_MESSAGE_SENT);
             return AssertionStatus.NONE;
@@ -299,93 +234,11 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     /**
      * Send the message.
      */
-    private void sendMessage(final Session session, final String body, PolicyEnforcementContext context) throws MessagingException {
-        String host = assertion.getSmtpHost();
-        String userName = assertion.getAuthUsername();
-        String pd = assertion.getAuthPassword();
-//        String portNumber = assertion.getSmtpPort();
-
-
-        //before sending, check that the to addresses don't have a context var in them
-        //(only process ones that have context vars in 'em)
-        if (assertion.toHasVars())
-            for (int i = 0; i < toAddresses.length; i++) {
-                InternetAddress ia = toAddresses[i];
-                String ias = ExpandVariables.process(ia.getAddress(), context.getVariableMap(varsUsed, auditor), auditor);
-                if (!ias.equals(ia.getAddress())) {
-                    toAddresses[i].setAddress(ias);
-                }
-            }
-        //and then the cc field.....
-        if (assertion.ccHasVars())
-            for (int i = 0; i < ccAddresses.length; i++) {
-                InternetAddress ia = ccAddresses[i];
-                String ias = ExpandVariables.process(ia.getAddress(), context.getVariableMap(varsUsed, auditor), auditor);
-                if (!ias.equals(ia.getAddress())) {
-                    ccAddresses[i].setAddress(ias);
-                }
-            }
-        //and then the bcc field.....
-        if (assertion.bccHasVars())
-            for (int i = 0; i < bccAddresses.length; i++) {
-                InternetAddress ia = bccAddresses[i];
-                String ias = ExpandVariables.process(ia.getAddress(), context.getVariableMap(varsUsed, auditor), auditor);
-                if (!ias.equals(ia.getAddress())) {
-                    bccAddresses[i].setAddress(ias);
-                }
-            }
-        //and then the from field....
-        if (assertion.fromHasVars()) {
-            String ias = ExpandVariables.process(fromAddress.getAddress(), context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(fromAddress.getAddress())) {
-                fromAddress.setAddress(ias);
-            }
-        }
-
-        //check that the host name is not a context var
-        if (assertion.hostHasVars()) {
-            String ias = ExpandVariables.process(host, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(host)) {
-                host = ias;
-            }
-        }
-
-        //check the username has no context vars
-        if (assertion.userNameHasVars()) {
-            String ias = ExpandVariables.process(userName, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(userName)) {
-                userName = ias;
-            }
-        }
-
-        if (assertion.pwdHasVars()) {
-            String ias = ExpandVariables.process(pd, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(pd)) {
-                pd = ias;
-            }
-        }
-
-        //get the subject from the assertion and fill in any context vars that may exist
-        String subject = assertion.getSubject();
-        //replace any context vars in the subject
-        if (assertion.subjectHasVars()) {
-            String ias = ExpandVariables.process(subject, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(subject)) {
-                subject = ias;
-            }
-        }
-
-        String portNum = assertion.getSmtpPort();
-        //replace the context var if there is one with the real value
-        if (assertion.portHasVars()) {
-            String ias = ExpandVariables.process(portNum, context.getVariableMap(varsUsed, auditor), auditor);
-            if (!ias.equals(portNum)) {
-                portNum = ias;
-            }
-        }
-
-        int portNumber = Integer.parseInt(portNum);
-
+    private void sendMessage(final Session session, final String body,
+                             String host,
+                             InternetAddress[] toAddresses, InternetAddress[] ccAddresses, InternetAddress[] bccAddresses,
+                             String userName, String pwd, InternetAddress[] recipients, InternetAddress fromAddress,
+                             String subject, int portNumber) throws MessagingException {
         MimeMessage message = new MimeMessage(session);
         message.addRecipients(javax.mail.Message.RecipientType.TO, toAddresses);
         message.addRecipients(javax.mail.Message.RecipientType.CC, ccAddresses);
@@ -397,7 +250,59 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         message.saveChanges();
 
         Transport tr = session.getTransport(assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
-        tr.connect(host, portNumber, userName, pd);
+        tr.connect(host, portNumber, userName, pwd);
         tr.sendMessage(message, recipients);
     }
+
+    private InternetAddress[] assembleAddresses(String addresses, String addressName) {
+        InternetAddress[] addr = null;
+        if(addresses!=null){
+            try {
+                addr = InternetAddress.parse(addresses);
+            } catch (AddressException e) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to compose email addresses in ServerEmailAlertAssertion: invalid "+addressName}, ExceptionUtils.getDebugException(e));
+                addr = null;
+            }
+        }
+        return addr;
+    }
+
+    /**
+     * amalgamate three arrays of InternetAddress[] types to a single list
+     *
+     * @return a single InternetAddress[] array with contents of the to, cc, and bcc address arrays 
+     */
+    private InternetAddress[] amalgamateAddresses(InternetAddress[] toAddresses, InternetAddress[] ccAddresses, InternetAddress[] bccAddresses){
+        ArrayList<InternetAddress> list = new ArrayList<InternetAddress>();
+        //add the to addresses
+        if(toAddresses!=null)
+            list.addAll(Arrays.asList(toAddresses));
+        //add the cc addresses
+        if(ccAddresses!=null)
+            list.addAll(Arrays.asList(ccAddresses));
+        //add the bcc addresses
+        if(bccAddresses!=null)
+            list.addAll(Arrays.asList(bccAddresses));
+        return list.toArray(new InternetAddress[list.size()]);
+    }
+
+    /**
+     * check that the port number string is ok
+     *
+     * @return true if it's ok, false if it's bad
+     */
+    private boolean portNumberOk(String portNumber){
+       try {
+          int port = Integer.parseInt(portNumber);
+          if (port < 0 || port > 65535){
+            //invalid port number log and fail assertion.
+            return false;
+          }
+       }catch (NumberFormatException nfe) {
+            return false;
+       }
+       return true;
+    }
+
+
 }
