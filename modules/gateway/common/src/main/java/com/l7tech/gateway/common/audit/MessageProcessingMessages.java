@@ -110,8 +110,8 @@ public class MessageProcessingMessages extends Messages {
     public static final M POLICY_CACHE_RESETTING_POLICIES = m(3251, Level.INFO, "License changed/module loaded -- resetting {0} affected policies");
     public static final M POLICY_CACHE_STORAGE_ERROR      = m(3252, Level.WARNING, "Error accessing policy (#{1})");
     public static final M POLICY_CACHE_BUILD              = m(3253, Level.INFO, "(Re)building policy cache");
-    public static final M POLICY_CACHE_INVALID            = m(3254, Level.INFO, "Policy {0} (#{1}) is invalid: {2}");
-    public static final M POLICY_CACHE_UNLICENSED         = m(3255, Level.WARNING,  "Policy {0} (#{1}) contains an unlicensed assertion: {2}");
+    public static final M POLICY_CACHE_INVALID            = m(3254, Level.INFO, "Policy \"{0}\" (#{1}) is invalid: {2}");
+    public static final M POLICY_CACHE_UNLICENSED         = m(3255, Level.WARNING,  "Policy \"{0}\" (#{1}) contains an unlicensed assertion: {2}");
 
      // MAX -                                                  m(3499
 }
