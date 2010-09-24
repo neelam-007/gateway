@@ -4,7 +4,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
-import com.l7tech.proxy.SsgManagerStub;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.test.util.GuiTestMethod;
 import com.l7tech.test.util.GuiTestLauncher;

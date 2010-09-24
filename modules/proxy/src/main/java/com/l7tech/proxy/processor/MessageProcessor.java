@@ -1159,7 +1159,7 @@ public class MessageProcessor {
             final WssTimestampDate wtdExpires = timestamp.getExpires();
             final long expiresSkew = getLongProperty(ssg, SSGPROP_TIMESTAMP_EXPIRESGRACE, TimeUnit.MINUTES.toMillis(1));
             final boolean checkExpires = expiresSkew >= 0;
-            if ( checkExpires && wtdCreated != null ) {
+            if ( checkExpires && wtdExpires != null ) {
                 if ( (now-expiresSkew) >= wtdExpires.asTime() ) {
                     throw new ResponseValidationException("Timestamp expired.");
                 }

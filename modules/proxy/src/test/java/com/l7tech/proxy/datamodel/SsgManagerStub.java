@@ -1,8 +1,6 @@
-package com.l7tech.proxy;
+package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import com.l7tech.proxy.datamodel.SsgManager;
-import com.l7tech.proxy.datamodel.Ssg;
 
 import java.util.*;
 import java.io.IOException;

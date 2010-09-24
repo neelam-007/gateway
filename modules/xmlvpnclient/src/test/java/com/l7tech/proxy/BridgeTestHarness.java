@@ -2,9 +2,9 @@ package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.PolicyManagerStub;
+import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.SsgManagerStub;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.client.ClientProxy;

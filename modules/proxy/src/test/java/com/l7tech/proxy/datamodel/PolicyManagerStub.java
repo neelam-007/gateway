@@ -1,14 +1,4 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
-package com.l7tech.proxy;
-
-import com.l7tech.proxy.datamodel.PolicyManager;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+package com.l7tech.proxy.datamodel;
 
 import java.util.Collections;
 import java.util.HashMap;

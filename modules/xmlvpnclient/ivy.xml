@@ -28,7 +28,7 @@
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency org="com.incors.plaf" name="kunststoff" rev="2.0.2" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.24" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.24" force="true" conf="core"/>
