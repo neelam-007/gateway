@@ -43,6 +43,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private boolean authenticate = false;
     private String authUsername;
     private String authPassword;
+    private boolean isTestBean = false;
 
     public static enum Protocol {
         PLAIN("Plain SMTP"),
@@ -66,6 +67,14 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     public EmailAlertAssertion() {
+    }
+
+    public boolean isTestBean(){
+        return isTestBean;
+    }
+
+    public void setIsTestBean(boolean isTestBean){
+        this.isTestBean = isTestBean;
     }
 
     public String getTargetEmailAddress() {
@@ -185,22 +194,21 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        String[] hostReferencedNames = null;
-        String[] toRefNames = null;
-        String[] bccRefNames = null;
-        String[] ccRefNames = null;
-        String[] subjectRefNames = null;
-        String[] fromRefNames = null;
-        String[] userRefNames = null;
-        String[] pwdRefNames = null;
-        String[] portRefNames = null;
-//        int count = 0;//this var will hold the total num of context vars accross all fields
+        String[] hostReferencedNames;
+        String[] toRefNames;
+        String[] bccRefNames;
+        String[] ccRefNames;
+        String[] subjectRefNames;
+        String[] fromRefNames;
+        String[] userRefNames;
+        String[] pwdRefNames;
+        String[] portRefNames;
         ArrayList<String> list = new ArrayList<String>();
 
 
         //Variables originally were only used in the message string.
         //Now let's check all the fields for variables.
-        //the vars are: message, host, to, from, cc, bcc, subject,port
+        //the vars are: message, host, to, from, cc, bcc, subject, port, username, pwd
         //(also going to keep track of what fields have context vars to speed processing hopefully later)
         //First get the message ones:
         //(note that the original code did not check for null in .messageString() so I left it as is

@@ -55,7 +55,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         config = spring.getBean("serverConfig", ServerConfig.class);
     }
 
-    /**
+    /*
      * Build immutable properties for this assertion
      */
     private Map<String, String> buildProperties(final EmailAlertAssertion emailAlertAssertion,
@@ -121,17 +121,17 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
-        InternetAddress[] toAddresses = null;
-        InternetAddress[] ccAddresses = null;
-        InternetAddress[] bccAddresses = null;
-        InternetAddress[] recipients = null;
+        InternetAddress[] toAddresses;
+        InternetAddress[] ccAddresses;
+        InternetAddress[] bccAddresses;
+        InternetAddress[] recipients;
         InternetAddress fromAddress = null;
-        InternetAddress[] fromAddresses = null;
-        String host = null;
-        String userName = null;
-        String pwd = null;
-        String subject = null;
-        String portNum = null;
+        InternetAddress[] fromAddresses;
+        String host;
+        String userName;
+        String pwd;
+        String subject;
+        String portNum;
         String[] varsUsed = assertion.getVariablesUsed();
         Map<String, Object> variableMap = context.getVariableMap(varsUsed, auditor);
         long connectTimeout = config.getTimeUnitPropertyCached("ioMailConnectTimeout", 60000, 30000);
@@ -203,13 +203,47 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             return AssertionStatus.FAILED;
         }
 
+        if(assertion.isTestBean()){
+            //This is a test, set all the expanded values back on the bean so the TestCase will not fail
+            assertion.setSubject(subject);
+            assertion.setSmtpPort(portNum);
+            assertion.setSmtpHost(host);
+            assertion.setAuthUsername(userName);
+            assertion.setAuthPassword(pwd);
+            assertion.setSourceEmailAddress(fromAddress.getAddress());
+
+            //concat all the to, bcc, cc email addresses to a single string and set
+            StringBuffer sb = new StringBuffer();
+            for(int i=0; i < toAddresses.length; i++){
+                sb.append(toAddresses[i].getAddress());
+                if(i<toAddresses.length-1)
+                    sb.append(",");
+            }
+            assertion.setTargetEmailAddress(sb.toString());
+            sb = new StringBuffer();
+            for(int i=0; i < ccAddresses.length; i++){
+                sb.append(ccAddresses[i].getAddress());
+                if(i<ccAddresses.length-1)
+                    sb.append(",");
+            }
+            assertion.setTargetCCEmailAddress(sb.toString());
+            sb = new StringBuffer();
+            for(int i=0; i < bccAddresses.length; i++){
+                sb.append(bccAddresses[i].getAddress());
+                if(i<bccAddresses.length-1)
+                    sb.append(",");
+            }
+            assertion.setTargetBCCEmailAddress(sb.toString());
+        }
+
 
         try {
             final Map<String, String> propertyMap = buildProperties(assertion, connectTimeout, readTimeout, portNum, host);
             final Session session = getSession(propertyMap);
             final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, auditor), auditor);
 
-            sendMessage(session, body, host, toAddresses, ccAddresses, bccAddresses, userName, pwd, recipients, fromAddress, subject, portNumberInt);
+            if(!assertion.isTestBean())
+                sendMessage(session, body, host, toAddresses, ccAddresses, bccAddresses, userName, pwd, recipients, fromAddress, subject, portNumberInt);
 
             auditor.logAndAudit(AssertionMessages.EMAILALERT_MESSAGE_SENT);
             return AssertionStatus.NONE;
@@ -231,7 +265,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         }
     }
 
-    /**
+    /*
      * Send the message.
      */
     private void sendMessage(final Session session, final String body,
@@ -267,7 +301,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         return addr;
     }
 
-    /**
+    /*
      * amalgamate three arrays of InternetAddress[] types to a single list
      *
      * @return a single InternetAddress[] array with contents of the to, cc, and bcc address arrays 
@@ -289,6 +323,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     /**
      * check that the port number string is ok
      *
+     * @param portNumber the string value of the port number to send the email on
      * @return true if it's ok, false if it's bad
      */
     private boolean portNumberOk(String portNumber){
