@@ -57,6 +57,13 @@ public class FullQName implements Serializable {
                 : prefix + ":" + local;
     }
 
+    /**
+     * Decode the String encoded form of a FullQName.
+     *
+     * @param text an encoded FullQName, ie "{urn:foo}pfx:blah".  Required.
+     * @return the decoded FullQName.  Never null.
+     * @throws ParseException if the input string cannot be parsed into a FullQName.
+     */
     public static FullQName valueOf(String text) throws ParseException {
         // Check namespace URI, if any
         Matcher matcher = EXTENDED_EXPAT_QNAME_PATTERN.matcher(text);

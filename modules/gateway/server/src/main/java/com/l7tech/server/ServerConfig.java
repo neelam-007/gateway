@@ -1123,10 +1123,10 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             }
 
             if (pcl != null) {
-                String newValue = getPropertyCached(propertyName);
                 String oldValue = clusterPropertyOld!=null ?
                         clusterPropertyOld.getValue() :
                         getPropertyUncached(propertyName, false);
+                String newValue = getPropertyCached(propertyName);
 
                 if (oldValue==null || newValue==null || !oldValue.equals(newValue)) {
                     PropertyChangeEvent pce = new PropertyChangeEvent(this, propertyName, oldValue, newValue);

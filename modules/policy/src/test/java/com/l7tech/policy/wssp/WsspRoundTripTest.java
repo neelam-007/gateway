@@ -13,10 +13,9 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.wsdl.Wsdl;
 import org.apache.ws.policy.Policy;
-import org.junit.*;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import static org.junit.Assert.*;
 
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
@@ -24,6 +23,8 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Try converted a policy from WSSP -> Layer 7 -> WSSP  and from Layer 7 -> WSSP -> Layer 7
@@ -84,7 +85,7 @@ public class WsspRoundTripTest {
         test_L7WsspL7(WsspWriterTest.L7_POLICY_T3);
     }
 
-    private void test_L7WsspL7(String l7Xml) throws IOException, SAXException, PolicyAssertionException, WSDLException, Wsdl.BadPolicyReferenceException, PolicyConversionException {
+    private void test_L7WsspL7(String l7Xml) throws Exception {
         Assertion l7root = WspReader.getDefault().parsePermissively(l7Xml, WspReader.INCLUDE_DISABLED);
         System.out.println("Starting L7 policy:\n" + l7root + "\n\n");
 

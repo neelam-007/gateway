@@ -3,6 +3,7 @@ package com.l7tech.security.xml.processor;
 import com.l7tech.security.token.DerivedKeyToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -14,7 +15,7 @@ class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
     private final XmlSecurityToken sourceToken;
     private final String elementWsuId;
 
-    public DerivedKeyTokenImpl(Element dktel, byte[] finalKey, XmlSecurityToken sourceToken) {
+    public DerivedKeyTokenImpl(Element dktel, byte[] finalKey, XmlSecurityToken sourceToken) throws InvalidDocumentFormatException {
         super(dktel);
         this.finalKey = finalKey;
         this.sourceToken = sourceToken;

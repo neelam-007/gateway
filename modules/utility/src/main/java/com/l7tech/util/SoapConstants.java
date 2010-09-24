@@ -1,9 +1,7 @@
 package com.l7tech.util;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * @author steve
@@ -204,4 +202,45 @@ public class SoapConstants {
 
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
+
+    /**
+     * A permissive list of possible ID attribute names you might encounter when doing SOAP security processing.
+     */
+    public static final Set<FullQName> DEFAULT_ID_ATTRIBUTE_QNAMES = Collections.unmodifiableSet(new LinkedHashSet<FullQName>() {{
+        add(new FullQName("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", "local", "AssertionID"));
+        add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", "local", "ID"));
+        add(new FullQName(null, null, "Id"));
+        add(new FullQName(null, null, "id"));
+        add(new FullQName(null, null, "ID"));
+    }});
+
+    public static final IdAttributeConfig DEFAULT_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(DEFAULT_ID_ATTRIBUTE_QNAMES);
+
+
+    /**
+     * An ID attribute configuration that does not recognize SAML assertions or local ID attributes.
+     */
+    public static final Set<FullQName> NOSAML_ID_ATTRIBUTE_QNAMES = Collections.unmodifiableSet(new LinkedHashSet<FullQName>() {{
+        add(new FullQName("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+    }});
+
+    public static final IdAttributeConfig NOSAML_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(NOSAML_ID_ATTRIBUTE_QNAMES);
+
+
+    /**
+     * A strict configuration that only recognizes wsu:Id (with the final wsu namespace) attributes.  
+     */
+    public static final Set<FullQName> STRICT_WSS_ID_ATTRIBUTE_QNAMES = Collections.unmodifiableSet(new LinkedHashSet<FullQName>() {{
+        add(new FullQName("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", null, "Id"));
+    }});
+
+    public static final IdAttributeConfig STRICT_WSS_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(STRICT_WSS_ID_ATTRIBUTE_QNAMES);
+
 }

@@ -1,33 +1,31 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.message.Message;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.BeanFactory;
-import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -138,22 +136,29 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         for (XmlSecurityToken tok : tokens) {
             if (isX509Token(tok)) {
                 X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
-                if ( x509Tok.isPossessionProved() &&
-                     isTargetSignature(requiredSignatureElements,requiredSignatureReferenceElements,x509Tok)) {
+                try {
+                    if ( x509Tok.isPossessionProved() &&
+                         isTargetSignature(requiredSignatureElements,requiredSignatureReferenceElements,x509Tok)) {
 
-                    // Check for a single signature element, not token or certificate (bug 7157)
-                    final X509Certificate signingCertificate = x509Tok.getMessageSigningCertificate();
-                    if ( processedSignatureElement != null &&
-                         processedSignatureElement != x509Tok.getSignedElements()[0].getSignatureElement() &&
-                         !assertion.isAllowMultipleSignatures() ) {
-                        auditor.logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
-                        return getBadMessageStatus();
+                        // Check for a single signature element, not token or certificate (bug 7157)
+                        final X509Certificate signingCertificate = x509Tok.getMessageSigningCertificate();
+                        if ( processedSignatureElement != null &&
+                             processedSignatureElement != x509Tok.getSignedElements()[0].getSignatureElement() &&
+                             !assertion.isAllowMultipleSignatures() ) {
+                            auditor.logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
+                            return getBadMessageStatus();
+                        }
+
+                        processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();
+                        String certCN = CertUtils.extractFirstCommonNameFromCertificate(signingCertificate);
+                        authContext.addCredentials( LoginCredentials.makeLoginCredentials( x509Tok, assertion.getClass() ) );
+                        auditor.logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
                     }
-
-                    processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();
-                    String certCN = CertUtils.extractFirstCommonNameFromCertificate(signingCertificate);
-                    authContext.addCredentials( LoginCredentials.makeLoginCredentials( x509Tok, assertion.getClass() ) );
-                    auditor.logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
+                } catch (InvalidDocumentFormatException e) {
+                    //noinspection ThrowableResultOfMethodCallIgnored
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            new String[] { "Unable to check security tokens: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
+                    return getBadMessageStatus();
                 }
             }
         }
@@ -206,7 +211,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
      */
     private boolean isTargetSignature( final Element[] targets,
                                        final Element[] referenceTargets,
-                                       final X509SigningSecurityToken token ) {
+                                       final X509SigningSecurityToken token ) throws InvalidDocumentFormatException {
         boolean match = false;
 
         if ( targets == null && referenceTargets == null ) {
@@ -246,7 +251,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
      * elements match.
      */
     private boolean isReferenceMatch( final Element[] referenceTargets,
-                                      final SignedElement[] signedElements ) {
+                                      final SignedElement[] signedElements ) throws InvalidDocumentFormatException {
         boolean referenceMatches;
 
         if ( referenceTargets != null ) {
@@ -273,7 +278,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
      * Check that the given signed elements contains a element with the given wsu:Id 
      */
     private boolean containsElementByWsuId( final SignedElement[] signedElements,
-                                            final String elementWsuId ) {
+                                            final String elementWsuId ) throws InvalidDocumentFormatException {
         boolean found = false;
 
         for ( SignedElement signedElement : signedElements ) {

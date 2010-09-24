@@ -185,7 +185,11 @@ public class UsernameTokenImpl implements UsernameToken {
     public String getElementId() {
         if (elementId != null)
             return elementId;
-        return elementId = SoapUtil.getElementWsuId(asElement());
+        try {
+            return elementId = SoapUtil.getElementWsuId(asElement());
+        } catch (InvalidDocumentFormatException e) {
+            throw new IllegalStateException(e); // normally can't happen
+        }
     }
 
     /**

@@ -890,6 +890,7 @@ public class WssProcessorTest {
     @BugNumber(6002)
 	public void testProcessNcesSignedMessageWithTrogdor() throws Exception {
         Document doc = getNcesSignedRequest();
+        System.out.println("Document (reformatted): " + XmlUtil.nodeToFormattedString(doc));
         WssProcessorImpl proc = new WssProcessorImpl(new Message(doc));
         ProcessorResult result = proc.processMessage();
         final SignedElement[] signed = result.getElementsThatWereSigned();
@@ -918,7 +919,12 @@ public class WssProcessorTest {
                 final String targetUri = ref.getURI();
                 if (targetUri == null)
                     throw new URIReferenceException("Reference lacks target URI: " + ref.getHere().getNodeName());
-                Element found = SoapUtil.getElementByWsuId(doc, targetUri);
+                Element found = null;
+                try {
+                    found = SoapUtil.getElementByWsuId(doc, targetUri);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new RuntimeException(e);
+                }
                 if (found == null)
                     throw new URIReferenceException("Reference target element not found: " + ref.getHere().getNodeName() + ": URI=" + targetUri);
                 return new DOMSubTreeData(found, false);

@@ -1,51 +1,51 @@
 package com.l7tech.server.util;
 
+import com.ibm.xml.dsig.IDResolver;
+import com.ibm.xml.dsig.SignatureContext;
+import com.ibm.xml.dsig.Validity;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
-
-import com.l7tech.server.message.PolicyEnforcementContextWrapper;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
-import com.l7tech.server.security.keystore.SsgKeyFinderStub;
-import com.l7tech.server.TestDefaultKey;
-import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.util.MockConfig;
-import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.xml.SecurityActor;
-import com.ibm.xml.dsig.SignatureContext;
-import com.ibm.xml.dsig.IDResolver;
-import com.ibm.xml.dsig.Validity;
+import com.l7tech.security.xml.processor.MockProcessorResult;
+import com.l7tech.server.TestDefaultKey;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.PolicyEnforcementContextWrapper;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.security.keystore.SsgKeyFinderStub;
+import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.MockConfig;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import javax.xml.XMLConstants;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
-import java.util.Properties;
-import java.util.HashMap;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -625,7 +625,11 @@ public class SoapFaultManagerTest {
             sigContext.setIDResolver(new IDResolver() {
                 @Override
                 public Element resolveID(Document doc, String s) {
-                    return SoapUtil.getElementByWsuId( doc, s );
+                    try {
+                        return SoapUtil.getElementByWsuId( doc, s );
+                    } catch (InvalidDocumentFormatException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             });
             Validity validity = sigContext.verify( signature, key.getCertificate().getPublicKey() );

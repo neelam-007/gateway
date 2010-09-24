@@ -298,8 +298,7 @@ public class WssInteropTestMessage extends TestCase {
     private static Element makeSignature(Key senderSigningKey,
                                   Element[] elementsToSign,
                                   Element securityHeader)
-            throws DecoratorException, InvalidDocumentFormatException
-    {
+            throws Exception {
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
         // make sure all elements already have an id
@@ -361,8 +360,11 @@ public class WssInteropTestMessage extends TestCase {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
-                Element e = SoapUtil.getElementByWsuId(doc, s);
-                return e;
+                try {
+                    return SoapUtil.getElementByWsuId(doc, s);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
@@ -407,8 +409,7 @@ public class WssInteropTestMessage extends TestCase {
     private static void addKeyInfo(Element securityHeader,
                                    Element signatureElement,
                                    Element keyInfoReferenceTarget,
-                                   String keyInfoValueTypeURI)
-    {
+                                   String keyInfoValueTypeURI) throws Exception {
         String bstId = getWsuId(keyInfoReferenceTarget);
         String wssePrefix = securityHeader.getPrefix();
         Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(signatureElement.getNamespaceURI(),
@@ -428,7 +429,7 @@ public class WssInteropTestMessage extends TestCase {
         signatureElement.appendChild(keyInfoEl);
     }
 
-    private static String getWsuId(Element element) {
+    private static String getWsuId(Element element) throws Exception {
         String id = SoapUtil.getElementWsuId(element);
         if (id == null)
             throw new IllegalArgumentException("Element does not have a wsu:Id attribute: " + (element == null ? null : element.getNodeName()));

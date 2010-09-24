@@ -211,8 +211,11 @@ public class KeyInfoThumbprintTestMessage extends TestCase {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
-                Element e = SoapUtil.getElementByWsuId(doc, s);
-                return e;
+                try {
+                    return SoapUtil.getElementByWsuId(doc, s);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
@@ -276,7 +279,7 @@ public class KeyInfoThumbprintTestMessage extends TestCase {
         signatureElement.appendChild(keyInfoEl);
     }
 
-    private static String getWsuId(Element element) {
+    private static String getWsuId(Element element) throws InvalidDocumentFormatException {
         String id = SoapUtil.getElementWsuId(element);
         if (id == null)
             throw new IllegalArgumentException("Element does not have a wsu:Id attribute: " + (element == null ? null : element.getNodeName()));

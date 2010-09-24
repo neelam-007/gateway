@@ -40,6 +40,8 @@ public class DomUtils {
     /** Precompiled regex Pattern that will only match a string containing nothing but a valid XML QName (optional NCName-plus-colon, followed by an NCName). */
     private static final Pattern PATTERN_QNAME = Pattern.compile("^(?:" + PAT_STR_NCName + "\\:)?" + PAT_STR_NCName + "$");
 
+    private static final boolean ALLOW_DUPLICATE_ID_ATTRS_ON_ELEMENT = SyspropUtil.getBoolean("com.l7tech.util.allowDuplicateIdAttrsOnElem", true);
+
    /**
      * Finds the first child {@link Element} of a parent {@link Element}.
      * @param parent the {@link Element} in which to search for children. Must be non-null.
@@ -1292,4 +1294,127 @@ public class DomUtils {
         }
     }
 
+    /**
+     * Construct a Map from ID attribute value to target Element for the specified Document, recognizing only the
+     * specified attribute names as ID attributes, and failing if any duplicate attribute values are detected.
+     * <p/>
+     * The returned Map is mutable, so additional mappings can be inserted if required (such as a mapping from the
+     * empty string to the document element, for recognizing URI="" dsig references).
+     *
+     * @param doc the Document to examine.  Required.
+     * @param idAttributeConfig a configuration of which ID attributes to recognize.  Required.
+     *                          See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                          Also see {@link SoapConstants} for some pregenerated configurations.
+     * @return a Map from ID attribute values to the Element instance that owned the corresponding attribute.  Never null.
+     * @throws InvalidDocumentFormatException  if more than one ID attribute contained the same value.
+     */
+    public static Map<String, Element> getElementByIdMap(Document doc, IdAttributeConfig idAttributeConfig) throws InvalidDocumentFormatException {
+        Map<String, Element> map = new HashMap<String, Element>();
+        NodeList elements = doc.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element)elements.item(i);
+
+            String id = getElementIdValue(element, idAttributeConfig);
+            if (id != null) {
+                Element existing = map.put(id, element);
+                if (existing != null)
+                    throw new InvalidDocumentFormatException("Duplicate ID attribute value found in document: " + id);
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Find an ID value for the specified element, if any, according to the specified IdAttributeConfig.
+     *
+     * @param element  the element to examine.  Required.
+     * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                          Also see {@link SoapConstants} for some pregenerated configurations.
+     * @return the ID attribute value, or null if the element did not appear to have an ID attribute or it did but it was empty.  Never empty.
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
+     */
+    public static String getElementIdValue(Element element, IdAttributeConfig idAttributeConfig) throws InvalidDocumentFormatException {
+        Attr attr = getElementIdAttr(element, idAttributeConfig);
+        if (attr == null) {
+            return null;
+        }
+        String id = attr.getValue();
+        return id != null && id.length() > 0 ? id : null;
+    }
+
+    /**
+     * Find an ID attribute to use for the specified element, according to the specified IdAttributeConfig.
+     *
+     * @param element  the element to examine.  Required.
+     * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                          Also see {@link SoapConstants} for some pregenerated configurations.
+     * @return the ID attribute node, or null if the element did not appear to have an ID attribute.
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
+     */
+    public static Attr getElementIdAttr(Element element, IdAttributeConfig idAttributeConfig) throws InvalidDocumentFormatException {
+        if (idAttributeConfig == null)
+            throw new NullPointerException("idAttributeConfig is required");
+
+        Attr ret = null;
+
+        for (FullQName qn : idAttributeConfig.idAttrsInPreferenceOrder) {
+            String wantNs = qn.getNsUri();
+
+            // do "local" hack
+            if ("local".equals(qn.getPrefix()) && wantNs != null) {
+                // Check against element NS instead
+                if (wantNs.equals(element.getNamespaceURI())) {
+                    // Element NS is OK; match attr as local attr
+                    wantNs = null;
+                } else {
+                    // Element NS mismatch; this ID attr doesn't apply here
+                    continue;
+                }
+            }
+
+            Attr attr = element.getAttributeNodeNS(wantNs, qn.getLocal());
+            if (attr != null && attr.getValue() != null && attr.getValue().length() > 0) {
+                if (ret != null) {
+                    throw new InvalidDocumentFormatException("Multiple ID attributes found on element: " + element.getNodeName());
+                }
+
+                ret = attr;
+
+                if (ALLOW_DUPLICATE_ID_ATTRS_ON_ELEMENT) // stop on highest-priority match
+                    return ret;
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Search for an element by its ID value.
+     * This does a linear search over the entire document.
+     *
+     * @param doc  the document to search.  Required.
+     * @param elementId  the ID value to search for.  Required.
+     * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                          Also see {@link SoapConstants} for some pregenerated configurations.
+     * @return the first Element in the document that has the requested ID attribute value.
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
+     */
+    public static Element getElementByIdValue(Document doc, String elementId, IdAttributeConfig idAttributeConfig) throws InvalidDocumentFormatException {
+        String url;
+        if (elementId.charAt(0) == '#') {
+            url = elementId.substring(1);
+        } else
+            url = elementId;
+        NodeList elements = doc.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element)elements.item(i);
+            if (url.equals(getElementIdValue(element, idAttributeConfig))) {
+                return element;
+            }
+        }
+        return null;
+    }
 }

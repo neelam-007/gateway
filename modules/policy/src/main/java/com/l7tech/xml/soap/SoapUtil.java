@@ -4,46 +4,39 @@
 
 package com.l7tech.xml.soap;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.*;
-import com.l7tech.util.ElementAlreadyExistsException;
+import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.MessageNotSoapException;
-import static com.l7tech.xml.soap.SoapVersion.SOAP_1_1;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.wsdl.*;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
-import javax.wsdl.extensions.soap12.SOAP12Binding;
-import javax.wsdl.BindingOperation;
-import javax.wsdl.BindingInput;
-import javax.wsdl.Input;
-import javax.wsdl.Part;
-import javax.wsdl.Operation;
-import javax.wsdl.Binding;
-import javax.wsdl.Definition;
-import javax.wsdl.OperationType;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
+import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.xml.soap.SoapVersion.SOAP_1_1;
 
 /**
  * @author alex
@@ -55,7 +48,11 @@ public class SoapUtil extends SoapConstants {
     // Bug #6478
     public static final String PROPERTY_MUSTUNDERSTAND = "com.l7tech.common.security.xml.decorator.secHdrMustUnderstand";
 
+    public static final String PROPERTY_ID_CONFIG = "com.l7tech.common.security.xml.idAttributeConfig";
+
     private static final String DEFAULT_UUID_PREFIX = "http://www.layer7tech.com/uuid/";
+
+    private static final AtomicReference<Pair<String,IdAttributeConfig>> idAttributeConfig = new AtomicReference<Pair<String, IdAttributeConfig>>();
 
     /**
      * Get the SOAP envelope from the message
@@ -353,27 +350,6 @@ public class SoapUtil extends SoapConstants {
     }
 
     /**
-     * Creates a map of wsu:Id values to target elements in the specified document.
-     *
-     * @param doc  the Document to examine.
-     * @return a Map of wsu:Id String to Element.  May be empty, but never null.
-     */
-    public static Map<String, Element> getElementByWsuIdMap(Document doc) throws InvalidDocumentFormatException {
-        Map<String, Element> map = new HashMap<String, Element>();
-        NodeList elements = doc.getElementsByTagName("*");
-        for (int i = 0; i < elements.getLength(); i++) {
-            Element element = (Element)elements.item(i);
-            String id = getElementWsuId(element);
-            if (id != null) {
-                Element existing = map.put(id, element);
-                if (existing != null)
-                    throw new InvalidDocumentFormatException("Duplicate wsu:Id:" + id);
-            }
-        }
-        return map;
-    }
-
-    /**
      * Resolves the element in the passed document that has the id passed in elementId.
      * The id attributes can be of any supported WSU namespaces.
      * <p/>
@@ -381,21 +357,10 @@ public class SoapUtil extends SoapConstants {
      * top to bottom.
      *
      * @return the leement or null if no such element exists
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
      */
-    public static Element getElementByWsuId(Document doc, String elementId) {
-        String url;
-        if (elementId.charAt(0) == '#') {
-            url = elementId.substring(1);
-        } else
-            url = elementId;
-        NodeList elements = doc.getElementsByTagName("*");
-        for (int i = 0; i < elements.getLength(); i++) {
-            Element element = (Element)elements.item(i);
-            if (url.equals(getElementWsuId(element))) {
-                return element;
-            }
-        }
-        return null;
+    public static Element getElementByWsuId(Document doc, String elementId) throws InvalidDocumentFormatException {
+        return DomUtils.getElementByIdValue(doc, elementId, getDefaultIdAttributeConfig());
     }
 
     /**
@@ -403,9 +368,42 @@ public class SoapUtil extends SoapConstants {
      * SAML1 AssertionID and SAML2 ID values too.
      *
      * @return the string value of the attribute or null if the attribute is not present
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
      */
-    public static String getElementWsuId(Element node) {
-        return getElementWsuId(node, true);
+    public static String getElementWsuId(Element node) throws InvalidDocumentFormatException {
+        return DomUtils.getElementIdValue(node, getDefaultIdAttributeConfig());
+    }
+
+    /**
+     * Get the current system-wide default ID attribute config.
+     *
+     * @return the ID attribute config curently configured via system property.
+     */
+    public static IdAttributeConfig getDefaultIdAttributeConfig() {
+        String idConfig = SyspropUtil.getStringCached(PROPERTY_ID_CONFIG, null);
+        if (idConfig == null)
+            return DEFAULT_ID_ATTRIBUTE_CONFIG;
+
+        Pair<String, IdAttributeConfig> p = idAttributeConfig.get();
+        if (p != null && p.left.equals(idConfig))
+            return p.right;
+
+        synchronized (idAttributeConfig) {
+            p = idAttributeConfig.get();
+            if (p != null && p.left.equals(idConfig))
+                return p.right;
+
+            IdAttributeConfig cfg = null;
+            try {
+                cfg = IdAttributeConfig.fromString(idConfig);
+            } catch (ParseException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                log.log(Level.WARNING, "Invalid ID attribute config string: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            p = new Pair<String, IdAttributeConfig>(idConfig, cfg);
+            idAttributeConfig.set(p);
+            return cfg;
+        }
     }
 
     /**
@@ -416,52 +414,15 @@ public class SoapUtil extends SoapConstants {
      *
      * @param node the element to examine.  May be modified if a wsu:Id needs to be added.  Required.
      * @return the wsu:Id value from this element, possibly newly-created.
+     * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
      */
-    public static String getOrCreateElementWsuId(Element node) {
+    public static String getOrCreateElementWsuId(Element node) throws InvalidDocumentFormatException {
         String id = getElementWsuId(node);
         if (id != null)
             return id;
 
         id = generateUniqueId(node.getLocalName(), 0);
         setWsuId(node, SoapConstants.WSU_NAMESPACE, id);
-        return id;
-    }
-
-    /**
-     * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
-     *
-     * @param specialSamlHandling true if the method should find SAML1 AssertionID or SAML2 ID attributes as well
-     * @return the string value of the attribute or null if the attribute is not present
-     */
-    public static String getElementWsuId(Element node, boolean specialSamlHandling) {
-        String id = node.getAttributeNS( SoapConstants.WSU_NAMESPACE, ID_ATTRIBUTE_NAME);
-        if (id == null || id.length() < 1) {
-            id = node.getAttributeNS( SoapConstants.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
-            if (id == null || id.length() < 1) {
-                id = node.getAttributeNS( SoapConstants.WSU_NAMESPACE3, ID_ATTRIBUTE_NAME);
-                if (id == null || id.length() < 1) {
-                    // This special handing for SAML is here for backwards compatibility.
-                    // Any references to a SAML token should use a KeyIdentifier, not a
-                    // Reference.
-                    // SSG/SSB 4.0 onwards use only KeyIdentifier references.
-
-                    // Special handling for saml:Assertion
-                    if (specialSamlHandling && SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
-                        SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
-                        id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
-                    }
-                    // Special handling for saml2:Assertion
-                    if (specialSamlHandling && SamlConstants.NS_SAML2.equals(node.getNamespaceURI()) &&
-                        SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
-                        id = node.getAttribute(SamlConstants.ATTR_SAML2_ASSERTION_ID);
-                    }
-                    if (id == null || id.length() < 1)
-                        id = node.getAttribute(ID_ATTRIBUTE_NAME);
-                }
-            }
-        }
-        // for some reason this is set to "" when not present.
-        if (id.length() < 1) id = null;
         return id;
     }
 

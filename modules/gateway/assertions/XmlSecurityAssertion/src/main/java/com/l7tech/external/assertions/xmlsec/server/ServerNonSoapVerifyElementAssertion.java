@@ -64,7 +64,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
 
     private final SecurityTokenResolver securityTokenResolver;
     private final TrustedCertCache trustedCertCache;
-    private final Map<String,Collection<FullQName>> idAttrsByLocalName;
+    private final IdAttributeConfig idAttributeConfig;
 
     public ServerNonSoapVerifyElementAssertion(NonSoapVerifyElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException, ParseException {
         super(assertion, logger, beanFactory, eventPub);
@@ -74,17 +74,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         final FullQName[] idAttrsArray = assertion.getCustomIdAttrs();
         Collection<FullQName> ids = idAttrsArray == null || idAttrsArray.length < 1 ? DEFAULT_ID_ATTRS : Arrays.asList(idAttrsArray);
 
-        idAttrsByLocalName = new LinkedHashMap<String,Collection<FullQName>>();
-        for (FullQName qn : ids) {
-            if (qn.getLocal() != null) {
-                Collection<FullQName> qns = idAttrsByLocalName.get(qn.getLocal());
-                if (qns == null) {
-                    qns = new LinkedHashSet<FullQName>();
-                    idAttrsByLocalName.put(qn.getLocal(), qns);
-                }
-                qns.add(qn);
-            }
-        }
+        this.idAttributeConfig = IdAttributeConfig.makeIdAttributeConfig(ids);
     }
 
     private static <T> Collection<T> getColumn(List<Object[]> table, int column, Class<T> clazz) {
@@ -103,7 +93,8 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
     protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> affectedElements) throws Exception {
         List<Object[]> infos = new ArrayList<Object[]>();
 
-        Map<String, Element> elementsById = getElementByIdMap(doc);
+        Map<String, Element> elementsById = DomUtils.getElementByIdMap(doc, idAttributeConfig);
+        elementsById.put("", doc.getDocumentElement());
 
         final X509Certificate selectedCert = getSelectedCertificate();
 
@@ -127,47 +118,6 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         context.setVariable(assertion.prefix(VAR_SIGNATURE_ELEMENTS), signatureElements.toArray(new Element[signatureElements.size()]));
 
         return AssertionStatus.NONE;
-    }
-
-    public Map<String, Element> getElementByIdMap(Document doc) throws InvalidDocumentFormatException {
-        Map<String, Element> map = new HashMap<String, Element>();
-        NodeList elements = doc.getElementsByTagName("*");
-        for (int i = 0; i < elements.getLength(); i++) {
-            Element element = (Element)elements.item(i);
-
-            NamedNodeMap attrs = element.getAttributes();
-            int numAttrs = attrs.getLength();
-            for (int j = 0; j < numAttrs; j++) {
-                Attr attr = (Attr)attrs.item(j);
-                String localName = attr.getLocalName();
-                if (localName == null)
-                    localName = attr.getNodeName();
-                if (localName != null) {
-                    Collection<FullQName> qns = idAttrsByLocalName.get(localName);
-                    if (qns != null) {
-                        for (FullQName qn : qns) {
-                            if (qn != null && localName.equals(qn.getLocal())) {
-
-                                // Allow match by local name (with no NS URI expected or provided), or by full qname (in which case NS URI must match as well)
-                                final String attrNsUri = attr.getNamespaceURI();
-                                if (((attrNsUri == null || attrNsUri.length() < 1) && qn.getNsUri() == null) ||
-                                        (qn.getNsUri() != null && qn.getNsUri().equals(attrNsUri)))
-                                {
-                                    String id = attr.getValue();
-                                    if (id != null && id.length() > 0) {
-                                        Element existing = map.put(id, element);
-                                        if (existing != null)
-                                            throw new InvalidDocumentFormatException("Duplicate ID attribute value found in document: " + id);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        map.put("", doc.getDocumentElement());
-        return map;
     }
 
     private static final DOMXPath extractSignatureMethodUri;

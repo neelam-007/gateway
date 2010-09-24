@@ -1,26 +1,23 @@
 package com.l7tech.xml.soap;
 
-import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.ExceptionUtils;
-
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Operation;
 import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  * For testing stuff in SoapUtil class
@@ -245,5 +242,14 @@ public class SoapUtilTest  {
         output.attachHttpRequestKnob(new HttpRequestKnobAdapter(saction));
         return output;
     }
-
+    
+    @Test
+    public void testDefaultIdAttrConfig() throws Exception {
+        StringBuilder out = new StringBuilder();
+        Set<FullQName> qns = SoapConstants.DEFAULT_ID_ATTRIBUTE_QNAMES;
+        for (FullQName qn : qns) {
+            out.append(qn.toString()).append("\n");
+        }
+        System.out.println(out.toString());
+    }
 }

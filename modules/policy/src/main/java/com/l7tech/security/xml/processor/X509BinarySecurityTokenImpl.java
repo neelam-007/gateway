@@ -3,6 +3,7 @@ package com.l7tech.security.xml.processor;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -46,7 +47,12 @@ public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl {
 
     @Override
     public String getElementId() {
-        return SoapUtil.getElementWsuId(asElement());
+        try {
+            return SoapUtil.getElementWsuId(asElement());
+        } catch (InvalidDocumentFormatException e) {
+            // Normally this can't happen; we'd have noticed earlier
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override

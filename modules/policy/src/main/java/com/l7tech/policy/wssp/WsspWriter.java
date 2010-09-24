@@ -73,8 +73,9 @@ public class WsspWriter {
      * @param overrideOutputPolicyXml Optional.  if specified, will be used in place of output policy XML.
      * @throws PolicyAssertionException if the policy cannot be converted to WS-SP
      * @throws SAXException if specified override XML is not well formed
+     * @throws InvalidDocumentFormatException if the document contains duplicate ID attributes.
      */
-    public static void decorate(Document wsdl, Assertion layer7Root, boolean isWss11, String overrideBasePolicyXml, String overrideInputPolicyXml, String overrideOutputPolicyXml) throws PolicyAssertionException, SAXException {
+    public static void decorate(Document wsdl, Assertion layer7Root, boolean isWss11, String overrideBasePolicyXml, String overrideInputPolicyXml, String overrideOutputPolicyXml) throws PolicyAssertionException, SAXException, InvalidDocumentFormatException {
         addPreferredNamespacesIfAvailable(wsdl.getDocumentElement());
         WsspWriter wsspWriter = new WsspWriter();
 

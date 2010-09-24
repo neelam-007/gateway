@@ -124,7 +124,7 @@ public class Saml2WssProcessorImpl {
         securityTokens.clear();
         timestamp = null;
         releventSecurityHeader = null;
-        elementsByWsuId = SoapUtil.getElementByWsuIdMap(processedDocument);
+        elementsByWsuId = DomUtils.getElementByIdMap(processedDocument, SoapConstants.DEFAULT_ID_ATTRIBUTE_CONFIG);
 
         releventSecurityHeader = signedElement;
         if(releventSecurityHeader != null && releventSecurityHeader.getAttribute("ID") != null) {
@@ -681,11 +681,16 @@ public class Saml2WssProcessorImpl {
             res.signingCert = certificate;
             res.signingToken = new X509IssuerSerialSecurityToken(issuerSerial) {
                 public String getElementId() {
-                    String id = SoapUtil.getElementWsuId(str);
-                    if (id == null) {
-                        id = SoapUtil.getElementWsuId(x509data);
+                    String id = null;
+                    try {
+                        id = SoapUtil.getElementWsuId(str);
+                        if (id == null) {
+                            id = SoapUtil.getElementWsuId(x509data);
+                        }
+                        return id;
+                    } catch (InvalidDocumentFormatException e) {
+                        throw new IllegalStateException(e); // shouldn't be possible at this point
                     }
-                    return id;
                 }
 
                 public SecurityTokenType getType() {
@@ -858,7 +863,11 @@ public class Saml2WssProcessorImpl {
                     return found;
                 }
 
-                return SoapUtil.getElementByWsuId(doc, s);
+                try {
+                    return SoapUtil.getElementByWsuId(doc, s);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
@@ -1208,7 +1217,11 @@ public class Saml2WssProcessorImpl {
         }
 
         public String getElementId() {
-            return SoapUtil.getElementWsuId(asElement());
+            try {
+                return SoapUtil.getElementWsuId(asElement());
+            } catch (InvalidDocumentFormatException e) {
+                throw new IllegalStateException(e); // shouldn't be possible at this point
+            }
         }
 
         public X509Certificate getMessageSigningCertificate() {
@@ -1334,7 +1347,7 @@ public class Saml2WssProcessorImpl {
         private final String identifier;
         private final String elementWsuId;
 
-        public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) {
+        public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) throws InvalidDocumentFormatException {
             super(secConTokEl);
             this.secContext = secContext;
             this.identifier = identifier;

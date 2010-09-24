@@ -34,15 +34,18 @@ import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.*;
-import java.security.cert.*;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -80,6 +83,7 @@ public class WssProcessorImpl implements WssProcessor {
     private boolean permitUnknownBinarySecurityTokens = false;
     private boolean strictSignatureConfirmationValidation = true;
     private boolean contextUsesWss11 = false;
+    private IdAttributeConfig idAttributeConfig = SoapUtil.getDefaultIdAttributeConfig();
     // WARNING : Settings must be copied in undecorateMessage
 
     private Document processedDocument;
@@ -134,6 +138,7 @@ public class WssProcessorImpl implements WssProcessor {
         context.setRejectOnMustUnderstand(rejectOnMustUnderstand);
         context.setStrictSignatureConfirmationValidation(strictSignatureConfirmationValidation);
         context.setContextUsesWss11(contextUsesWss11);
+        context.setIdAttributeConfig(idAttributeConfig);
         return context.processMessage();
     }
 
@@ -239,6 +244,20 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /**
+     * @return the current strategy for recognizing ID attributes (e.g. for Signature references).
+     */
+    public IdAttributeConfig getIdAttributeConfig() {
+        return idAttributeConfig;
+    }
+
+    /**
+     * @param idAttributeConfig  the new strategy for recognizing ID attributes (e.g. for Signature references).
+     */
+    public void setIdAttributeConfig(IdAttributeConfig idAttributeConfig) {
+        this.idAttributeConfig = idAttributeConfig;
+    }
+
+    /**
      * Process the current Message in-place.
      * That is, the contents of the Header/Security are processed as per the WSS rules.
      * The message may be modified if encrypted elements are decrypted.  If this modification results in an
@@ -273,7 +292,7 @@ public class WssProcessorImpl implements WssProcessor {
         securityTokens.clear();
         timestamp = null;
         releventSecurityHeader = null;
-        elementsByWsuId = SoapUtil.getElementByWsuIdMap(processedDocument);
+        elementsByWsuId = DomUtils.getElementByIdMap(processedDocument, idAttributeConfig);
 
         String currentSoapNamespace = processedDocument.getDocumentElement().getNamespaceURI();
 
@@ -500,8 +519,9 @@ public class WssProcessorImpl implements WssProcessor {
 
     /**
      * Scans for SOAP headers addressed to us with mustUnderstand=1 that we don't understand.
-     * @throws InvalidDocumentFormatException if there is at least one SOAP header addressed to us
+     * @throws ProcessorException if there is at least one SOAP header addressed to us
      *                                        with mustUnderstand=1 that we don't understand
+     * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Header element
      */
     private void rejectIfHeadersNotUnderstood() throws InvalidDocumentFormatException, ProcessorException {
         Element header = SoapUtil.getHeaderElement(processedDocument);
@@ -1026,7 +1046,7 @@ public class WssProcessorImpl implements WssProcessor {
         if ( strToTarget.containsKey( str ) ) return;
 
         // Get identifier
-        final String id = SoapUtil.getElementWsuId(str);
+        final String id = DomUtils.getElementIdValue(str, idAttributeConfig);
         final String logId = id == null ? "<noid>" : id;
 
         // Reference or KeyIdentifier values
@@ -1484,8 +1504,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement)
-            throws ProcessorException, GeneralSecurityException
-    {
+            throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing BinarySecurityToken");
 
         // assume that this is a b64ed binary x509 cert, get the value
@@ -1513,7 +1532,7 @@ public class WssProcessorImpl implements WssProcessor {
         final byte[] decodedValue; // must strip whitespace or base64 decoder misbehaves
         decodedValue = HexUtils.decodeBase64(value, true);
 
-        final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
+        final String wsuId = DomUtils.getElementIdValue(binarySecurityTokenElement, idAttributeConfig);
         if(valueType.endsWith("X509v3")) {
             // create the x509 binary cert based on it
             X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
@@ -1887,7 +1906,7 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(e);
         }
 
-        String wsuId = SoapUtil.getElementWsuId(encryptedKeyElement);
+        String wsuId = DomUtils.getElementIdValue(encryptedKeyElement, idAttributeConfig);
         if (wsuId != null) encryptedKeyById.put(wsuId, ekTok);
 
         securityTokens.add(ekTok);
@@ -2026,7 +2045,14 @@ public class WssProcessorImpl implements WssProcessor {
                     return found;
                 }
 
-                return SoapUtil.getElementByWsuId(doc, s);
+                // Might be a reference to an element that didn't exist yet when the elementsByWsuId map was
+                // generated (perhaps it was just decrypted out of an EncryptedData)?  Do a full slow scan
+                // before giving up.
+                try {
+                    return SoapUtil.getElementByWsuId(doc, s);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));

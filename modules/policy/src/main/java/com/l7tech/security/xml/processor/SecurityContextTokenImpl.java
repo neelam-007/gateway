@@ -2,6 +2,7 @@ package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -13,7 +14,7 @@ class SecurityContextTokenImpl extends SigningSecurityTokenImpl implements Secur
     private final String identifier;
     private final String elementWsuId;
 
-    public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) {
+    public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) throws InvalidDocumentFormatException {
         super(secConTokEl);
         this.secContext = secContext;
         this.identifier = identifier;

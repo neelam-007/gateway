@@ -73,6 +73,7 @@ public class WssDecoratorImpl implements WssDecorator {
         private AttachmentEntityResolver attachmentResolver;
         private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
         private Set<String> encryptedSignatures = new HashSet<String>();
+        private IdAttributeConfig idAttributeConfig = SoapUtil.getDefaultIdAttributeConfig();
 
         private Context( final Message message,
                          final DecorationRequirements dreq ) {
@@ -1075,6 +1076,12 @@ public class WssDecoratorImpl implements WssDecorator {
         return sct;
     }
 
+    private static final class UncheckedInvalidDocumentFormatException extends RuntimeException {
+        private UncheckedInvalidDocumentFormatException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     /**
      * Add a ds:Signature element to the Security header and return it.
      *
@@ -1232,7 +1239,11 @@ public class WssDecoratorImpl implements WssDecorator {
                 Element e = c.idToElementCache.get(s);
                 if (e != null)
                     return e;
-                e = SoapUtil.getElementByWsuId(doc, s);
+                try {
+                    e = DomUtils.getElementByIdValue(doc, s, c.idAttributeConfig);
+                } catch (InvalidDocumentFormatException e1) {
+                    throw new UncheckedInvalidDocumentFormatException(e1);
+                }
                 if (e != null)
                     c.idToElementCache.put(s, e);
                 return e;
@@ -1252,6 +1263,8 @@ public class WssDecoratorImpl implements WssDecorator {
             String msg = e.getMessage();
             if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
                 throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI.", e);
+            throw new DecoratorException(e);
+        } catch (UncheckedInvalidDocumentFormatException e) {
             throw new DecoratorException(e);
         }
 
@@ -1466,16 +1479,30 @@ public class WssDecoratorImpl implements WssDecorator {
      * Get the wsu:Id for the specified element.  If it doesn't already have a wsu:Id attribute a new one
      * is created for the element.
      *
-     * @param c
-     * @param element
+     * @param c the deocration context.  Required.
+     * @param element the element to examine and possibly change.  Required.
      * @param basename Optional.  If non-null, will be used as the start of the Id string
+     * @return the wsu:Id for the element.  Never null.
+     * @throws DecoratorException if the element has conflicting IDs. 
      */
     private String getOrCreateWsuId(Context c, Element element, String basename) throws DecoratorException {
-        String id = SoapUtil.getElementWsuId(element, false);
-        if (id == null) {
-            id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
+        IdAttributeConfig idAttributeConfig = c.idAttributeConfig;
+
+        // Special case hack to preserve previous default behavior for handling SAML assertions when STRTransform is disabled:
+        // avoid recognizing the AssertionID.
+        if (SoapConstants.DEFAULT_ID_ATTRIBUTE_CONFIG == idAttributeConfig) {
+            idAttributeConfig = SoapConstants.NOSAML_ID_ATTRIBUTE_CONFIG;
         }
-        return id;
+
+        try {
+            String id = DomUtils.getElementIdValue(element, idAttributeConfig);
+            if (id == null) {
+                id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
+            }
+            return id;
+        } catch (InvalidDocumentFormatException e) {
+            throw new DecoratorException(e);
+        }
     }
 
     /**
