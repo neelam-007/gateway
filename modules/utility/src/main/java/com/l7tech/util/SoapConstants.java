@@ -214,8 +214,6 @@ public class SoapConstants {
         add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", "local", "AssertionID"));
         add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", "local", "ID"));
         add(new FullQName(null, null, "Id"));
-        add(new FullQName(null, null, "id"));
-        add(new FullQName(null, null, "ID"));
     }});
 
     public static final IdAttributeConfig DEFAULT_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(DEFAULT_ID_ATTRIBUTE_QNAMES);
@@ -229,6 +227,7 @@ public class SoapConstants {
         add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
         add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
         add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
+        add(new FullQName(null, null, "Id"));
     }});
 
     public static final IdAttributeConfig NOSAML_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(NOSAML_ID_ATTRIBUTE_QNAMES);

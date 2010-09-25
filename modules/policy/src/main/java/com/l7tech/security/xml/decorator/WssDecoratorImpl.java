@@ -73,7 +73,7 @@ public class WssDecoratorImpl implements WssDecorator {
         private AttachmentEntityResolver attachmentResolver;
         private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
         private Set<String> encryptedSignatures = new HashSet<String>();
-        private IdAttributeConfig idAttributeConfig = SoapUtil.getDefaultIdAttributeConfig();
+        private IdAttributeConfig idAttributeConfig = SoapConstants.NOSAML_ID_ATTRIBUTE_CONFIG;
 
         private Context( final Message message,
                          final DecorationRequirements dreq ) {
@@ -1487,12 +1487,6 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private String getOrCreateWsuId(Context c, Element element, String basename) throws DecoratorException {
         IdAttributeConfig idAttributeConfig = c.idAttributeConfig;
-
-        // Special case hack to preserve previous default behavior for handling SAML assertions when STRTransform is disabled:
-        // avoid recognizing the AssertionID.
-        if (SoapConstants.DEFAULT_ID_ATTRIBUTE_CONFIG == idAttributeConfig) {
-            idAttributeConfig = SoapConstants.NOSAML_ID_ATTRIBUTE_CONFIG;
-        }
 
         try {
             String id = DomUtils.getElementIdValue(element, idAttributeConfig);
