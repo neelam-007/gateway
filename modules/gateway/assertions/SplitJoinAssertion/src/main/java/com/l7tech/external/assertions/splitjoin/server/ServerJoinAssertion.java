@@ -37,46 +37,41 @@ public class ServerJoinAssertion extends AbstractServerAssertion<JoinAssertion> 
         //noinspection ThisEscapedInObjectConstruction
         this.auditor = context == null ? new LogOnlyAuditor(logger) : new Auditor(this, context, logger);
         this.substring = assertion.getJoinSubstring();
-        if (substring == null) throw new PolicyAssertionException(assertion, "join substring is null");
         inputVariable = assertion.getInputVariable();
         outputVariable = assertion.getOutputVariable();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
-            Object value = context.getVariable(inputVariable);
-            if (value == null) {
-                // This results in an empty target string.
-                context.setVariable(assertion.getOutputVariable(), "");
-                return AssertionStatus.NONE;
-            }
+            final Object value = context.getVariable(inputVariable);
 
-            final CharSequence[] tojoin;
+            final CharSequence[] toJoin;
             //noinspection ChainOfInstanceofChecks
             if (value instanceof Collection) {
                 Collection collection = (Collection)value;
                 List<String> got = new ArrayList<String>();
                 for (Object o : collection)
                     got.add(o == null ? "" : o.toString());
-                tojoin = got.toArray(new CharSequence[got.size()]);
+                toJoin = got.toArray(new CharSequence[got.size()]);
             } else if (value instanceof Object[]) {
                 Object[] objects = (Object[])value;
                 List<String> got = new ArrayList<String>();
                 for (Object o : objects)
                     got.add(o == null ? "" : o.toString());
-                tojoin = got.toArray(new CharSequence[got.size()]);
+                toJoin = got.toArray(new CharSequence[got.size()]);
             } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Input variable " + inputVariable + " is neither an array nor a collection" }, null);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Input variable " + inputVariable + " is not a multi valued context variable." }, null);
                 return AssertionStatus.FAILED;
             }
 
-            String output = TextUtils.join(substring, tojoin).toString();
+            final String output = TextUtils.join(substring, toJoin).toString();
 
             context.setVariable(outputVariable, output);
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Can't find variable to join" }, e);
-            return AssertionStatus.FAILED;
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, e.getVariable());
+            return AssertionStatus.SERVER_ERROR;
         }
     }
 }

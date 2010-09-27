@@ -8,12 +8,9 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.InvalidContextVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -30,41 +27,38 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
     private static final String[] EMPTY_STRING = new String[0];
     private static final VariableMetadata[] EMPTY_VARIABLE_METADATA = new VariableMetadata[0];
 
+    /**
+     * String pattern to use to split inputVariable on.
+     */
     private String splitPattern = ",";
+    /**
+     * Do not rename input and output variable to be source and target variable as this will break existing policies.
+     * If they are renamed, the old setters will still be needed to be backwards compatible with previous versions.
+     */
     private String inputVariable;
     private String outputVariable;
 
-    /** @return the regex pattern to split on. */
     public String getSplitPattern() {
         return splitPattern;
     }
 
-    /** @param splitPattern  a regex pattern to split on. */
     public void setSplitPattern(String splitPattern) {
         this.splitPattern = splitPattern;
     }
 
-    /** @return name of variable to split. */
     public String getInputVariable() {
         return inputVariable;
     }
 
-    /** @param inputVariable name of variable to split. */
     public void setInputVariable(String inputVariable) {
-        String invalidationResult = validateVariable(inputVariable);
-        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.inputVariable = inputVariable;
     }
 
-    /** @return name of variable in which to store the result. May be the same as inputVariable. */
     public String getOutputVariable() {
         return outputVariable;
     }
 
-    /** @param outputVariable name of variable in which to store the result.  May be the same as outputVariable. */
     public void setOutputVariable(String outputVariable) {
-        String invalidationResult = validateVariable(outputVariable);
-        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.outputVariable = outputVariable;
     }
 
@@ -92,7 +86,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         @Override
         public String getAssertionName( final SplitAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on " + assertion.getSplitPattern();
+            return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on \"" + assertion.getSplitPattern() + "\"";
         }
     };
 
@@ -102,30 +96,25 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Split a single-valued context variable into a multi-valued context variable.");
-
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, baseName);
-
-        // Add to palette folder(s)
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/resources/split16.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/split16.gif");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Split Variable Properties");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.splitjoin.console.SplitVariablePropertiesDialog");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/resources/split16.gif");
-
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/split16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
-
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
+    /**
+     * Class left in for backwards compatibility as this assertion is deployed in the field. The productized version
+     * will not dismiss the dialog if the split pattern is invalid, however there may be policies with an invalid
+     * split pattern so this validator warning should be kept.
+     */
     public static class Validator implements AssertionValidator {
         private SplitAssertion assertion;
         private String message;
@@ -147,43 +136,4 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         }
     }
 
-    /**
-     * Validate the variable against the name convention of context variables.
-     * Note: the method also checks if the name is overlapped with other user defined context variables.
-     * @return a validation result if the name is not valid.  Otherwise, return a null string.
-     */
-    private String validateVariable(String variable) {
-        String invalidationResult;
-
-        if (StringUtils.isBlank(variable)) {
-            // It is not a vaild variable.
-            invalidationResult = "Variable cannot be empty.";
-        } else if ((invalidationResult = VariableMetadata.validateName(variable)) != null) {
-            // It is not a vaild variable.
-            // Nothing to do here, since invalidationResult has been set.
-        } else {
-            final VariableMetadata meta = BuiltinVariables.getMetadata(variable);
-            if (meta == null) {
-                // It is a vaild variable.
-                // New variable will be created
-                invalidationResult = null;
-            } else {
-                if (meta.isSettable()) {
-                    if (meta.getType() == DataType.MESSAGE) {
-                        // It is a vaild variable.
-                        // Built-in, settable
-                        invalidationResult = null;
-                    } else {
-                        // It is not a vaild variable.
-                        invalidationResult = "Built-in, settable but not message type";
-                    }
-                } else {
-                    // It is not a vaild variable.
-                    invalidationResult = "Built-in, not settable";
-                }
-            }
-        }
-        
-        return invalidationResult;
-    }
 }

@@ -1,24 +1,26 @@
 package com.l7tech.external.assertions.splitjoin.server;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.TextUtils;
 import com.l7tech.external.assertions.splitjoin.SplitAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.Before;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Test the SplitAssertion.
+ *
  * @noinspection FieldCanBeLocal
  */
-public class ServerSplitAssertionTest extends TestCase {
-    private Message request;
-    private Message response;
+public class ServerSplitAssertionTest {
     private PolicyEnforcementContext context;
     private String b1;
     private String b2;
@@ -28,26 +30,13 @@ public class ServerSplitAssertionTest extends TestCase {
     private String outputVariable;
     private SplitAssertion assertion;
 
-    public ServerSplitAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerSplitAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Before
     public void setUp() throws Exception {
-        request = new Message();
-        response = new Message();
-        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context = getContext();
         b1 = "blah 1 blah blah";
         b2 = "bleeh 1 blee blee";
         b3 = "blih 1 blih blih";
-        joined = TextUtils.join(",", new CharSequence[] {b1, b2, b3}).toString();
+        joined = TextUtils.join(",", new CharSequence[]{b1, b2, b3}).toString();
         inputVariable = "myinputvar";
         outputVariable = "myoutputvar";
         context.setVariable(inputVariable, joined);
@@ -56,22 +45,28 @@ public class ServerSplitAssertionTest extends TestCase {
         assertion.setOutputVariable(outputVariable);
     }
 
+    private PolicyEnforcementContext getContext() {
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+    }
+
+    @Test
     public void testSplit() throws Exception {
         ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
         AssertionStatus result = ssa.checkRequest(context);
 
-        assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals(result, AssertionStatus.NONE);
         Object outputObj = context.getVariable(outputVariable);
-        assertTrue(outputObj instanceof List);
-        List outs = (List)outputObj;
+        Assert.assertTrue(outputObj instanceof List);
+        List outs = (List) outputObj;
         for (Object outObj : outs)
-            assertTrue(outObj instanceof String);
-        assertEquals(outs.size(), 3);
-        assertEquals(outs.get(0), b1);
-        assertEquals(outs.get(1), b2);
-        assertEquals(outs.get(2), b3);
+            Assert.assertTrue(outObj instanceof String);
+        Assert.assertEquals(outs.size(), 3);
+        Assert.assertEquals(outs.get(0), b1);
+        Assert.assertEquals(outs.get(1), b2);
+        Assert.assertEquals(outs.get(2), b3);
     }
 
+    @Test
     public void testSplitOnWhitespace() throws Exception {
         String w1 = "asdfjhasdfljkahd";
         String w2 = "h097y2,asdf\u382724,szcxv;:248y\\swegsfz";
@@ -83,15 +78,107 @@ public class ServerSplitAssertionTest extends TestCase {
         ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
         AssertionStatus result = ssa.checkRequest(context);
 
-        assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals(result, AssertionStatus.NONE);
         Object outputObj = context.getVariable(outputVariable);
-        assertTrue(outputObj instanceof List);
-        List outs = (List)outputObj;
+        Assert.assertTrue(outputObj instanceof List);
+        List outs = (List) outputObj;
         for (Object outObj : outs)
-            assertTrue(outObj instanceof String);
-        assertEquals(outs.size(), 3);
-        assertEquals(outs.get(0), w1);
-        assertEquals(outs.get(1), w2);
-        assertEquals(outs.get(2), w3);
+            Assert.assertTrue(outObj instanceof String);
+        Assert.assertEquals(outs.size(), 3);
+        Assert.assertEquals(outs.get(0), w1);
+        Assert.assertEquals(outs.get(1), w2);
+        Assert.assertEquals(outs.get(2), w3);
     }
+
+    /**
+     * When pattern does not match, the output should equal the input.
+     * @throws Exception
+     */
+    @Test
+    public void testNoMatchOfPattern() throws Exception{
+        final PolicyEnforcementContext context = getContext();
+        final String value = "one;two;three";
+        context.setVariable("input", value);
+
+        SplitAssertion assertion = new SplitAssertion();
+        assertion.setInputVariable("input");
+        assertion.setOutputVariable("output");
+
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        final AssertionStatus status = serverSplitAssertion.checkRequest(context);
+
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Object variable = context.getVariable("output");
+        Assert.assertTrue("Variable is wrong type", variable instanceof Collection);
+
+        String s = ExpandVariables.process("${output}", context.getVariableMap(new String[]{"output"}, null), null);
+        Assert.assertEquals("Invalid value found", value, s);
+
+        s = ExpandVariables.process("${output[0]}", context.getVariableMap(new String[]{"output"}, null), null);
+        Assert.assertEquals("Invalid value found", value, s);
+    }
+
+    /**
+     * Tests spaces are not removed from the split pattern
+     * @throws Exception
+     */
+    @Test
+    public void testSpaces() throws Exception{
+        final PolicyEnforcementContext context = getContext();
+        final String value = "one two three";
+        context.setVariable("input", value);
+
+        SplitAssertion assertion = new SplitAssertion();
+        assertion.setInputVariable("input");
+        assertion.setOutputVariable("output");
+        assertion.setSplitPattern(" ");
+
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        final AssertionStatus status = serverSplitAssertion.checkRequest(context);
+
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Object variable = context.getVariable("output");
+        Assert.assertTrue("Variable is wrong type", variable instanceof Collection);
+
+        String s = ExpandVariables.process("${output[0]}", context.getVariableMap(new String[]{"output"}, null), null);
+        Assert.assertEquals("Invalid value found", "one", s);
+
+        s = ExpandVariables.process("${output[1]}", context.getVariableMap(new String[]{"output"}, null), null);
+        Assert.assertEquals("Invalid value found", "two", s);
+
+        s = ExpandVariables.process("${output[2]}", context.getVariableMap(new String[]{"output"}, null), null);
+        Assert.assertEquals("Invalid value found", "three", s);    
+    }
+
+    /**
+     * Tests spaces are not removed from the split pattern
+     * @throws Exception
+     */
+    @Test
+    public void testEmptyCompiles() throws Exception{
+        final PolicyEnforcementContext context = getContext();
+        final String value = "one two three";
+        context.setVariable("input", value);
+
+        SplitAssertion assertion = new SplitAssertion();
+        assertion.setInputVariable("input");
+        assertion.setOutputVariable("output");
+        assertion.setSplitPattern("");
+
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        final AssertionStatus status = serverSplitAssertion.checkRequest(context);
+
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Object variable = context.getVariable("output");
+        List<String> coll = (List<String>) variable;
+        Assert.assertEquals("Wrong number of elements found", 14, coll.size());
+        Assert.assertEquals("First character should be the empty string", "", coll.get(0));
+
+        for(int i = 1; i < value.length(); i++){
+            Assert.assertEquals("Wrong value found", String.valueOf(value.charAt(i - 1)), coll.get(i));
+        }
+   }
 }

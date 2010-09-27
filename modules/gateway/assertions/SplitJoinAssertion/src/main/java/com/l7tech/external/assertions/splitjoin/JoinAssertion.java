@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.splitjoin;
 
-import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -26,10 +25,14 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
     private static final VariableMetadata[] EMPTY_VARIABLE_METADATA = new VariableMetadata[0];
 
     private String joinSubstring = ",";
+    /**
+     * Do not rename input and output variable to be source and target variable as this will break existing policies.
+     * If they are renamed, the old setters will still be needed to be backwards compatible with previous versions.
+     */
     private String inputVariable;
     private String outputVariable;
 
-    /** @return the substring to insert between each pair of items. */
+    /** @return the substring to insert between each pair of items. Never null. */
     public String getJoinSubstring() {
         return joinSubstring;
     }
@@ -39,27 +42,23 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         this.joinSubstring = joinSubstring;
     }
 
-    /** @return name of variable to join. */
+    /** @return name of variable to join.*/
     public String getInputVariable() {
         return inputVariable;
     }
 
     /** @param inputVariable name of variable to join. */
     public void setInputVariable(String inputVariable) {
-        String invalidationResult = validateVariable(inputVariable);
-        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.inputVariable = inputVariable;
     }
 
-    /** @return name of variable in which to store the result.  May be the same as inputVariable. */
+    /** @return name of variable in which to store the result.  May be the same as inputVariable.*/
     public String getOutputVariable() {
         return outputVariable;
     }
 
     /** @param outputVariable name of variable in which to store the result.  May be the same as outputVariable. */
     public void setOutputVariable(String outputVariable) {
-        String invalidationResult = validateVariable(outputVariable);
-        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.outputVariable = outputVariable;
     }
 
@@ -97,65 +96,17 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Join a multi-valued context variable into a single-valued context variable.");
-
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-
-        // Add to palette folder(s)
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
-        //   misc, audit, policyLogic, threatProtection
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/resources/join16.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/join16.gif");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Join Variable Properties");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.splitjoin.console.JoinVariablePropertiesDialog");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/resources/join16.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/splitjoin/console/join16.gif");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
-    }
-
-    /**
-     * Validate the variable against the name convention of context variables.
-     * Note: the method also checks if the name is overlapped with other user defined context variables.
-     * @return a validation result if the name is not valid.  Otherwise, return a null string.
-     */
-    private String validateVariable(String variable) {
-        String invalidationResult;
-
-        if (StringUtils.isBlank(variable)) {
-            // It is not a vaild variable.
-            invalidationResult = "Variable cannot be empty.";
-        } else if ((invalidationResult = VariableMetadata.validateName(variable)) != null) {
-            // It is not a vaild variable.
-            // Nothing to do here, since invalidationResult has been set.
-        } else {
-            final VariableMetadata meta = BuiltinVariables.getMetadata(variable);
-            if (meta == null) {
-                // It is a vaild variable.
-                // New variable will be created
-                invalidationResult = null;
-            } else {
-                if (meta.isSettable()) {
-                    if (meta.getType() == DataType.MESSAGE) {
-                        // It is a vaild variable.
-                        // Built-in, settable
-                        invalidationResult = null;
-                    } else {
-                        // It is not a vaild variable.
-                        invalidationResult = "Built-in, settable but not message type";
-                    }
-                } else {
-                    // It is not a vaild variable.
-                    invalidationResult = "Built-in, not settable";
-                }
-            }
-        }
-
-        return invalidationResult;
     }
 }
