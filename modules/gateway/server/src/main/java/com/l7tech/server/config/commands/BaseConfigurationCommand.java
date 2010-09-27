@@ -1,55 +1,30 @@
 package com.l7tech.server.config.commands;
 
-
 import com.l7tech.server.config.beans.ConfigurationBean;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.logging.Logger;
 
 /**
  * User: megery
  * Date: Aug 16, 2005
  * Time: 2:53:52 PM
  */
-public abstract class BaseConfigurationCommand implements ConfigurationCommand {
-    private static final Logger logger = Logger.getLogger(BaseConfigurationCommand.class.getName());
+public abstract class BaseConfigurationCommand<CBT extends ConfigurationBean> implements ConfigurationCommand {
 
-    protected ConfigurationBean configBean;
-    protected DateFormat formatter;
-    protected boolean cloningMode = false;
+    // - PUBLIC
 
-    protected BaseConfigurationCommand(ConfigurationBean bean) {
-        this();
-        this.configBean = bean;
-    }
-
-    public BaseConfigurationCommand() {
-        formatter = new SimpleDateFormat("E_MMM_d_yyyy_HH_mm");
-    }
-
-    public boolean executeSilent() {
-        cloningMode = true;
-        return execute();
-    }
-
+    @Override
     public String[] getActions() {
-        return (configBean != null)?configBean.explain():null;
+        return ( configBean != null ) ? configBean.explain() : null;
     }
 
-    public ConfigurationBean getConfigBean() {
-        return this.configBean;
-    }
+    // - PROTECTED
 
-    public void setConfigBean(ConfigurationBean configBean) {
-        this.configBean = configBean;
-    }
+    protected CBT configBean;
+    protected DateFormat formatter;
 
-    public boolean isCloningMode() {
-        return cloningMode;
-    }
-
-    public void setCloningMode(boolean cloningMode) {
-        this.cloningMode = cloningMode;
+    protected BaseConfigurationCommand(CBT bean) {
+        formatter = new SimpleDateFormat("E_MMM_d_yyyy_HH_mm");
+        this.configBean = bean;
     }
 }

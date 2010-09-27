@@ -16,7 +16,7 @@ import java.util.*;
  * @noinspection PublicInnerClass,InterfaceNamingConvention,StaticMethodNamingConvention
  */
 public final class Functions {
-    private Functions() {}
+    public Functions() {}
 
     /**
      * A function that takes no arguments and returns a value.

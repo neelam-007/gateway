@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
+
 /**
  * User: megery
  * Date: Mar 20, 2007
@@ -47,6 +49,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         configCommand = new PackageUpdateConfigCommand(configBean);
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         try {
             askSpecifyPackageQuestions(null);
@@ -57,12 +60,13 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     }
 
     //check if it's ok to proceed to next step
+    @Override
     public boolean validateStep() {
         return isOnePackageSelected();
     }
     
     private void askSpecifyPackageQuestions(List<File> listOfPackages) throws IOException, WizardNavigationException {
-        String updateLocation = null;
+        String updateLocation;
         if (listOfPackages != null) {
             updateLocation = chooseUpdateFromList(listOfPackages);
         } else {
@@ -81,7 +85,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                 askSpecifyPackageQuestions(null);
             }
         } catch (UpdateWizardException e) {
-            String message = MessageFormat.format("*** {0} *** {1}", e.getMessage(), getEolChar());
+            String message = MessageFormat.format("*** {0} *** {1}", e.getMessage(), EOL);
             printText(message);
             logger.warning(message);
             List<File> updateList = null;
@@ -99,9 +103,9 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         if (StringUtils.isEmpty(description))
             description = "";
 
-        return "The following update package will be installed." + getEolChar() +
-               "\t" + "Package: " + selectedUpdatePackage.getOriginalLocation() + getEolChar() +
-               "\t" + "Description: " + description + getEolChar() +
+        return "The following update package will be installed." + EOL +
+               "\t" + "Package: " + selectedUpdatePackage.getOriginalLocation() + EOL +
+               "\t" + "Description: " + description + EOL +
                "Is this correct?";
     }
 
@@ -119,15 +123,15 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
     private String chooseUpdateFromList(List<File> listOfPackages) throws IOException, WizardNavigationException {
         String updateLocation;
         List<String> strings = new ArrayList<String>();
-        strings.add("Select the update package you wish to install" + getEolChar());
+        strings.add("Select the update package you wish to install" + EOL);
         String[] allowedEntries = new String[listOfPackages.size()];
         for (int i = 0; i < listOfPackages.size(); i++) {
             allowedEntries[i] = String.valueOf(i+1);
             String pkg = listOfPackages.get(i).getAbsolutePath();
-            strings.add("\t" + String.valueOf(i+1) + ": " + pkg + getEolChar());
+            strings.add("\t" + String.valueOf(i+1) + ": " + pkg + EOL);
         }
         strings.add("Please make a selection: [1] ");
-        String[] prompts = strings.toArray(new String[0]);
+        String[] prompts = strings.toArray(new String[strings.size()]);
         String whichChoice = getData(
                                 prompts,
                                 "1",
@@ -139,7 +143,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
     private boolean isOnePackageSelected() {
         if (selectedUpdatePackage == null) {
-            printText("*** No Update Packages are selected ***" + getEolChar());
+            printText("*** No Update Packages are selected ***" + EOL);
             return false;
         }
         return true;
@@ -183,7 +187,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
         //get listing of scripts from the updatelist.txt
         String upgradePackageWorkingDir = updatePackage.getExpandedLocation();
 
-        JarFile updatejar = null;
+        JarFile updatejar;
         try {
             updatejar = new JarFile(new File(upgradePackageWorkingDir, PackageUpdateConfigBean.INSTALLER_JAR_FILENAME));
         } catch (IOException e) {
@@ -261,9 +265,10 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
 
     private PackageUpdateConfigBean.UpdatePackageInfo checkUpdateFile(File updatePath) throws UpdateWizardException {
         getAvailableUpdatePackages().clear();
-        File[] updateFiles = null;
+        File[] updateFiles;
         if (updatePath.isDirectory()) {
             updateFiles = updatePath.listFiles(new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(PackageUpdateConfigBean.PACKAGE_UPDATE_EXTENSION);
                 }
@@ -363,7 +368,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                 String name = ze.getName();
                 logger.info("Extracting " + name);
 
-                BufferedInputStream bis = null;
+                BufferedInputStream bis;
                 bis = new BufferedInputStream(zipFile.getInputStream(ze));
 
                 File destFile = new File(zipOutputDir, name);
@@ -373,7 +378,7 @@ public class UpdateWizardPackageQuestionsStep extends BaseConsoleStep {
                     dest = new BufferedOutputStream(new FileOutputStream(destFile));
 
                     byte[] buf = new byte[512];
-                    int len = 0;
+                    int len;
                     while ((len = bis.read(buf)) != -1) {
                         dest.write(buf, 0, len);
                     }

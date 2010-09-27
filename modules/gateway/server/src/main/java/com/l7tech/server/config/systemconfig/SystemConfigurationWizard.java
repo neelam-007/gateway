@@ -4,15 +4,13 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.server.config.wizard.ConsoleWizardUtils;
 import com.l7tech.server.config.Utilities;
-
-import java.io.InputStream;
-import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.text.MessageFormat;
 import java.util.List;
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
 
 /**
  * User: megery
@@ -20,53 +18,49 @@ import java.util.List;
  * Time: 11:12:55 AM
  */
 public class SystemConfigurationWizard extends ConfigurationWizard {
-    public SystemConfigurationWizard(InputStream in, PrintStream out) {
-        super(in, out);
-
+    public SystemConfigurationWizard() {
         //this will throw if we are on windows so we'll fail early
         osFunctions.getNetworkConfigurationDirectory();
     }
 
     public void printConfigOnly() {
-        ConsoleWizardUtils utils = getWizardUtils();
         try {
-            List<NetworkingConfigurationBean.NetworkConfig> netConfigs = osFunctions.getNetworkConfigs(false, true);
+            List<NetworkingConfigurationBean.InterfaceConfig> netConfigs = osFunctions.getNetworkConfigs(false);
             if ( !netConfigs.isEmpty() ) {
-                for (NetworkingConfigurationBean.NetworkConfig netConfig : netConfigs) {
+                for (NetworkingConfigurationBean.InterfaceConfig netConfig : netConfigs) {
                     NetworkInterface networkInterface = netConfig.getNetworkInterface();
                     if (!networkInterface.isLoopback()) {
                         printNetworkConfig(netConfig);
                     }
                 }
             } else {
-                utils.printText("No interfaces found." + ConsoleWizardUtils.EOL_CHAR);
+                ConsoleWizardUtils.printText("No interfaces found." + EOL);
             }
         } catch (SocketException e) {
-            utils.printText("Error while determining the interface information for this machine:" + e.getMessage() + ConsoleWizardUtils.EOL_CHAR);
+            ConsoleWizardUtils.printText("Error while determining the interface information for this machine:" + e.getMessage() + EOL);
         }
     }
 
-    private void printNetworkConfig(NetworkingConfigurationBean.NetworkConfig networkConfig) {
-        ConsoleWizardUtils utils = getWizardUtils();
+    private void printNetworkConfig(NetworkingConfigurationBean.InterfaceConfig interfaceConfig) {
         try {
-            utils.printText(MessageFormat.format("Interface \"{0}\"", networkConfig.getInterfaceName()) + ConsoleWizardUtils.EOL_CHAR);
-            utils.printText("Details:" + ConsoleWizardUtils.EOL_CHAR);
-            utils.printText("\tBoot Protocol: " + networkConfig.getBootProto().toUpperCase() +  ConsoleWizardUtils.EOL_CHAR);            
-            utils.printText("\tCurrently Online: " + (networkConfig.getNetworkInterface().isUp()?"yes":"no") +  ConsoleWizardUtils.EOL_CHAR);
-            byte[] hardwareAdress = networkConfig.getHardwareAddress();
+            ConsoleWizardUtils.printText(MessageFormat.format("Interface \"{0}\"", interfaceConfig.getInterfaceName()) + EOL);
+            ConsoleWizardUtils.printText("Details:" + EOL);
+            ConsoleWizardUtils.printText("\tBoot Protocol: " + interfaceConfig.getIpv4BootProto().toUpperCase() +  EOL);
+            ConsoleWizardUtils.printText("\tCurrently Online: " + (interfaceConfig.getNetworkInterface().isUp()?"yes":"no") +  EOL);
+            byte[] hardwareAdress = interfaceConfig.getHardwareAddress();
             if (hardwareAdress != null) {
-                String mac = HexUtils.hexDump(networkConfig.getHardwareAddress()).toUpperCase();
-                utils.printText("\tHardware Address (MAC): " + Utilities.getFormattedMac(mac) + ConsoleWizardUtils.EOL_CHAR);
+                String mac = HexUtils.hexDump(interfaceConfig.getHardwareAddress()).toUpperCase();
+                ConsoleWizardUtils.printText("\tHardware Address (MAC): " + Utilities.getFormattedMac(mac) + EOL);
             }
-            utils.printText("\tAddresses:" + ConsoleWizardUtils.EOL_CHAR);
-            List<InterfaceAddress> interfaceAddresses   = networkConfig.getInterfaceAddresses();
+            ConsoleWizardUtils.printText("\tAddresses:" + EOL);
+            List<InterfaceAddress> interfaceAddresses   = interfaceConfig.getInterfaceAddresses();
             for (InterfaceAddress interfaceAddress : interfaceAddresses) {
                 InetAddress address = interfaceAddress.getAddress();
                 short maskLength = interfaceAddress.getNetworkPrefixLength();
-                utils.printText("\t\t" + address.getHostAddress() + "/" + maskLength + ConsoleWizardUtils.EOL_CHAR);
+                ConsoleWizardUtils.printText("\t\t" + address.getHostAddress() + "/" + maskLength + EOL);
             }
         } catch (SocketException e) {
-            utils.printText("Error while determining the interface information for this machine:" + e.getMessage() + ConsoleWizardUtils.EOL_CHAR);
+            ConsoleWizardUtils.printText("Error while determining the interface information for this machine:" + e.getMessage() + EOL);
         }
     }
 }

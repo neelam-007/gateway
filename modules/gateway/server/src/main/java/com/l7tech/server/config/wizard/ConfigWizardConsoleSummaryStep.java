@@ -24,8 +24,8 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
         this.title = title;
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
-
         try {
             printText("The following configuration changes will be made:\n");
 
@@ -47,14 +47,17 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
         }
     }
 
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public boolean shouldApplyConfiguration() {
         return true;
     }
 
+    @Override
     public boolean validateStep() {
         return true;
     }

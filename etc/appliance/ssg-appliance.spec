@@ -105,7 +105,6 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 %dir %attr(0755,root,root) /opt/SecureSpan/Appliance/config
 %attr(0644,root,root) /opt/SecureSpan/Appliance/config/ssg_sys_config.pl
 %attr(0755,root,root) /opt/SecureSpan/Appliance/config/*.sh
-%attr(0755,root,root) /opt/SecureSpan/Appliance/config/netconfig.pl
 %defattr(0644,layer7,layer7,0775)
 %dir /opt/SecureSpan/Appliance/config/logs 
 /opt/SecureSpan/Appliance/config/*.properties

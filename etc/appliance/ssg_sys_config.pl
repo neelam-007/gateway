@@ -2,6 +2,7 @@
 
 use strict;
 use FileHandle;
+use File::Copy;
 
 my $timestamp = localtime time;
 my $logFile = new FileHandle;
@@ -13,108 +14,66 @@ if ($logFile->open(">>/opt/SecureSpan/Appliance/config/ssgsysconfig.log")) {
  	print("Could not open log file. Will not proceed with system configuration\n");
 }
 
-my @commandArray;
-my @dhcpInterfaces;
-my @staticNameservers;
-
-my %hostnameInfo = ();
-my %gatewayInfo = ();
 my $foundNtp = undef;
 my @ntpServerToUse;
 my $timezone = undef;
 my @filesToDelete;
 
-my $netConfigCommand = "/opt/SecureSpan/Appliance/config/netconfig.pl";
-my $netConfigPattern = "/opt/SecureSpan/Appliance/config/configfiles/netconfig_*";
+my $interfaceConfigPattern = "/opt/SecureSpan/Appliance/config/configfiles/ifcfg-*";
+
+my %copyFiles = (
+    "/opt/SecureSpan/Appliance/config/configfiles/network" => "/etc/sysconfig/network",
+    "/opt/SecureSpan/Appliance/config/configfiles/resolv.conf" => "/etc/resolv.conf"
+);
 
 my $inputFh = new FileHandle;
 my %inputFiles = (
-    "HOSTNAMEFILE" => "/opt/SecureSpan/Appliance/config/configfiles/hostname",
     "NTPFILE" => "/opt/SecureSpan/Appliance/config/configfiles/ntpconfig",
     "TIMEZONEFILE" => "/opt/SecureSpan/Appliance/config/configfiles/timezone",
-    "DEFAULTGATEWAYFILE" => "/opt/SecureSpan/Appliance/config/configfiles/default_gateway"
 );
 
 my $outputFh = new FileHandle;
 my %outputFiles = (
-    "NETFILE" => "/etc/sysconfig/network",
     "NTPCONFFILE" => "/etc/ntp.conf",
     "STEPTICKERSFILE" => "/etc/ntp/step-tickers",
     "TZCLOCKFILE" => "/etc/sysconfig/clock",
     "TZSYMLINK" => "/etc/localtime",
     "TZBASEDIR" => "/usr/share/zoneinfo/",
-    "RESOLVCONF" => "/etc/resolv.conf"
 );
 
 ##
-## READ ALL THE INPUTS
+## NETWORK CONFIGURATION
 ##
 
-#network configurations
-my @netConfigFiles = glob($netConfigPattern);
-for my $configFile(@netConfigFiles) {
-    if($inputFh->open("<$configFile")) {
-        my (undef, $ifName) = split("_", $configFile);
-        my $params = " ";
-        while(my $line = <$inputFh>) {
-            chomp($line);
-            if ($line =~ /(.*--nameserver)\=(.*)/i) {
-                push(@staticNameservers,$2);
-            }
-
-            $params = $params."$line ";
-            if ($line =~ /bootproto=dhcp/i) {
-                push(@dhcpInterfaces,$ifName);
-            }
-        }
-        push(@commandArray, $params);
-        push (@filesToDelete, $configFile);
-        $inputFh->close();
+# copy network configuration files
+keys %copyFiles;
+while ( my($sourceConfigFile, $destConfigFile) = each %copyFiles ) {
+    if (-e $sourceConfigFile) {
+        if ( copy($sourceConfigFile, $destConfigFile) ) {
+            push(@filesToDelete, $sourceConfigFile);
+            $logFile->print("Updated $destConfigFile");
+        } else {
+            $logFile->print("Error updating $destConfigFile");
+        };
     }
 }
 
-#hostname
-if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
-	my $fileContent = do { local( $/ ) ; <$inputFh> } ;
-    %hostnameInfo = $fileContent =~ /^(\w+)=(.+)$/mg ;
-    push (@filesToDelete, $inputFiles{'HOSTNAMEFILE'});
-	my $hostnameToUse = $hostnameInfo{'hostname'};
-	if ($hostnameToUse ne "") {
-	   $logFile->print("$timestamp: hostname found: $hostnameToUse\n");
-	} else {
-	   $logFile->print("$timestamp: no hostname found. Hostname will not be set\n");
-	   %hostnameInfo = undef;
-	}
-	$inputFh->close();
-} else {
-	$logFile->print("$timestamp: $inputFiles{'HOSTNAMEFILE'} not found. The hostname will not be changed.\n");
+# copy network interface configuration files
+my @interfaceConfigFiles = glob($interfaceConfigPattern);
+$logFile->print("$timestamp: applying network interfaces configurations: @interfaceConfigFiles\n");
+for my $configFile(@interfaceConfigFiles) {
+    if ( copy($configFile, "/etc/sysconfig/network-scripts/")) {
+        push (@filesToDelete, $configFile);
+    } else {
+        $logFile->print("Error updating $configFile");
+    }
 }
 
-#default gateway
-if ($inputFh->open("<$inputFiles{'DEFAULTGATEWAYFILE'}")) {
-	my $fileContent = do { local( $/ ) ; <$inputFh> } ;
-    %gatewayInfo = $fileContent =~ /^(\w+)=(.+)$/mg ;
-    push (@filesToDelete, $inputFiles{'DEFAULTGATEWAYFILE'});
-	my $gatewayIp= $gatewayInfo{'gateway'};
-	if ($gatewayIp ne "") {
-	   $logFile->print("$timestamp: Gateway IP found: $gatewayIp\n");
-	} else {
-	   $logFile->print("$timestamp: no gateway IP found. Gateway will not be set\n");
-	   %gatewayInfo = undef;
-	}
-	my $gatewayDevice= $gatewayInfo{'gatewaydev'};
-	if ($gatewayIp ne "") {
-	   $logFile->print("$timestamp: gateway device found: $gatewayDevice\n");
-	} else {
-	   $logFile->print("$timestamp: no gateway device found. Gateway device will not be set\n");
-	   %gatewayInfo = undef;
-	}
-	$inputFh->close();
-} else {
-	$logFile->print("$timestamp: $inputFiles{'DEFAULTGATEWAYFILE'} not found. The gateway will not be changed.\n");
-}
+##
+## TIMEZONE AND NTP CONFIGURATION
+##
 
-#timezone
+# read timezone inputs
 if ($inputFh->open("<$inputFiles{'TIMEZONEFILE'}")) {
     $timezone = do  { local( $/ ) ; <$inputFh> } ;
     chomp($timezone);
@@ -129,7 +88,7 @@ if ($inputFh->open("<$inputFiles{'TIMEZONEFILE'}")) {
 	$logFile->print("$timestamp: $inputFiles{'TIMEZONEFILE'} not found. The timezone will not be changed.\n");
 }
 
-#ntp servers
+# read ntp servers inputs
 if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 	my @lines = $inputFh->getlines();
 	for my $ntpLine(@lines) {
@@ -143,77 +102,7 @@ if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 	$logFile->print("$timestamp: $inputFiles{'NTPFILE'} not found. The NTP configuration will not be changed.\n");
 }
 
-##
-## APPLY THE CONFIGURATION BASED ON THE INPUTS
-##
-
-#configure the network interfaces
-for my $command (@commandArray) {
-	$logFile->print("$timestamp: executing network configuration command:\n");
-	$logFile->print("\t$netConfigCommand $command\n");
-	`$netConfigCommand $command`;
-}
-
-#update the resolv.conf in case this is a static configuration where netconfig doesn't do the right thing
-
-#if we have static nameservers configured, put them in resolv.conf
-if (! @dhcpInterfaces) {
-	if (@staticNameservers && defined($hostnameInfo{'domain'}) ) {
-   	    $logFile->print("$timestamp: Static interfaces are being configured, $outputFiles{'RESOLVCONF'} will be configured\n");		
-	    if ($outputFh->open(">$outputFiles{'RESOLVCONF'}")) {
-                $outputFh->print("; generated by Layer 7 System Configuration Tool\n");
-                $outputFh->print("search $hostnameInfo{'domain'}\n");
-                for my $ns (@staticNameservers) {
-                   $outputFh->print("nameserver $ns\n");
-                }
-                $outputFh->close();
-	   	$logFile->print("$timestamp: Wrote $outputFiles{'RESOLVCONF'} (DHCP configurations will overwrite this on reboot)\n");
-            } else {
-                $logFile->print("$timestamp: Couldn't open $outputFiles{'RESOLVCONF'}. Skipping resolv.conf configuration\n");
-            }
-	}
-} else {
-	$logFile->print("$timestamp: DHCP interfaces are being configured, skipping $outputFiles{'RESOLVCONF'} configuration\n");
-}
-
-#enable networking and setup hostname, default network gateway, and gateway device
-if (defined($hostnameInfo{'hostname'}) && $hostnameInfo{'hostname'} ne "") {
-	if ($outputFh->open(">$outputFiles{'NETFILE'}")) {
-       my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
-       if (defined($domain) && $domain ne "") {
-           $hostname .= ".$domain";
-       }
-
-	   $outputFh->print("NETWORKING=yes\n");
-	   $outputFh->print("HOSTNAME=$hostname\n");
-
-	   my ($gateway, $gatewaydev) = ($gatewayInfo{'gateway'}, $gatewayInfo{'gatewaydev'});
-       $outputFh->print("GATEWAY=$gateway\n") if (defined($gateway) && $gateway ne "");
-       $outputFh->print("GATEWAYDEV=$gatewaydev\n") if (defined($gatewaydev) && $gatewaydev ne "");
-
-	   $outputFh->close();
-
-	   system("hostname $hostnameInfo{'hostname'}");
-
-	   $logFile->print("$timestamp: Wrote $outputFiles{'NETFILE'} with:\n");
-	   $logFile->print("\tNETWORKING=yes\n");
-	   $logFile->print("\tHOSTNAME=$hostname\n") if (defined($hostname));
-	   $logFile->print("\tGATEWAY=$gateway\n") if (defined($gateway));
-	   $logFile->print("\tGATEWAYDEV=$gatewaydev\n") if (defined($gatewaydev));
-
-       for my $whichInterface(@dhcpInterfaces){
-            if ($outputFh->open(">>/etc/sysconfig/network-scripts/ifcfg-$whichInterface")) {
-                $outputFh->print("DHCP_HOSTNAME=$hostnameInfo{'hostname'}\n");
-                $outputFh->close();
-            }
-        }
-
-	} else {
-		$logFile->print("$timestamp: Couldn't open $outputFiles{'NETFILE'}. Skipping Network configuration\n");
-	}
-}
-
-#configure the timezone
+# configure the timezone
 if (defined($timezone)) {
     my $originalFile = new FileHandle;
     if ($originalFile->open("<$outputFiles{'TZCLOCKFILE'}")) {
@@ -235,7 +124,7 @@ if (defined($timezone)) {
     }
 }
 
-#configure NTP
+# configure NTP
 if (@ntpServerToUse) {
 	if ($outputFh->open(">$outputFiles{'NTPCONFFILE'}")) {
 	    #the ntpfile that is output will have the following contents

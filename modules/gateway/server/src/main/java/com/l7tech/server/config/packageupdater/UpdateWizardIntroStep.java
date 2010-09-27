@@ -3,9 +3,12 @@ package com.l7tech.server.config.packageupdater;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.wizard.ConsoleWizardUtils;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
 
 /**
  * User: megery
@@ -21,23 +24,26 @@ public class UpdateWizardIntroStep extends BaseConsoleStep {
         showNavigation = false;
     }
 
+    @Override
     public boolean validateStep() {
         return true;
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
          printText(new String[] {
-                "This wizard will install selected updates to the SecureSpan Gateway Appliance (SSG)" + getEolChar(),
-                "Press [Enter] to continue" + getEolChar(),
+                "This wizard will install selected updates to the SecureSpan Gateway Appliance (SSG)" + EOL,
+                "Press [Enter] to continue" + EOL,
         });
 
         try {
-            handleInput(consoleWizardUtils.readLine());
+            handleInput(ConsoleWizardUtils.readLine());
         } catch (IOException e) {
             logger.severe("Exception caught: " + e.getMessage());
         }
     }
 
+    @Override
     public String getTitle() {
         return TITLE;
     }

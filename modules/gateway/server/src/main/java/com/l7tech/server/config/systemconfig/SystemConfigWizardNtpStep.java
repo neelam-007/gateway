@@ -14,34 +14,37 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
+
 /**
  * User: megery
  * Date: Jun 22, 2006
  * Time: 10:14:03 AM
  */
-public class SystemConfigWizardNtpStep extends BaseConsoleStep {
-    private static final Logger logger = Logger.getLogger(SystemConfigWizardNtpStep.class.getName());
+public class SystemConfigWizardNtpStep extends BaseConsoleStep<NtpConfigurationBean, NtpConfigurationCommand> {
 
-    private static final String TITLE = "Configure Time Synchronization (NTP)";
-    private NtpConfigurationBean ntpBean;
     public static final int TIMEZONES_PER_PAGE = 10;
 
+    private static final Logger logger = Logger.getLogger(SystemConfigWizardNtpStep.class.getName());
+    private static final String TITLE = "Configure Time Synchronization (NTP)";
 
     public SystemConfigWizardNtpStep(ConfigurationWizard parentWizard) {
         super(parentWizard);
-        init();
-    }
-
-    private void init() {
         configBean = new NtpConfigurationBean("Network Interface Configuration", "");
         configCommand = new NtpConfigurationCommand(configBean);
-        ntpBean = (NtpConfigurationBean) configBean;}
+    }
 
-    //each step must implement these.
+    @Override
+    public String getTitle() {
+        return TITLE;
+    }
+
+    @Override
     public boolean validateStep() {
         return true;
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         try {
             doTimeZoneConfig();
@@ -61,7 +64,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
                 File tzInfo = doTzConfigurationPrompts(new File(osFunctions.getTimeZonesDir()));
                 String absolutePath = tzInfo.getAbsolutePath();
                 String base = osFunctions.getTimeZonesDir();
-                ntpBean.setTimeZoneInfo(absolutePath.replace(base, ""));
+                configBean.setTimeZoneInfo(absolutePath.replace(base, ""));
             }
         }
     }
@@ -75,7 +78,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
         File selectedTimeZone = null;
         if (!dir.exists()) {
-            printText("*** " + "Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist" + " ***" + getEolChar());
+            printText("*** " + "Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist" + " ***" + EOL);
             logger.warning("Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist");
         } else {
             OSSpecificFunctions osFunctions = OSSpecificFunctions.getOSSpecificFunctions();
@@ -122,6 +125,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
     private File[] getTimezones(File baseDir) {
         File[] subdirs = baseDir.listFiles(new FileFilter() {
+            @Override
             public boolean accept(File pathname) {
                 return pathname.isDirectory();
             }
@@ -129,6 +133,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         if (subdirs != null) Arrays.sort(subdirs);
 
         File[] filesonly = baseDir.listFiles(new FileFilter() {
+            @Override
             public boolean accept(File pathname) {
                 return !pathname.isDirectory();
             }
@@ -143,16 +148,17 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
 
     private int showTimeZones(File[] timezones, File baseDir, int startingIndex, List<String> allowedEntries, boolean hasMoreEntries) throws IOException, WizardNavigationException {
         List<String> prompts = new ArrayList<String>();
-        prompts.add("Select a timezone from the following list " + getEolChar());
+        prompts.add("Select a timezone from the following list " + EOL);
 
         if (baseDir != null && baseDir.isDirectory())
-            prompts.add("[" + baseDir.getName() + "]" + getEolChar());
+            prompts.add("[" + baseDir.getName() + "]" + EOL);
 
         int x = startingIndex;
         for (File file : timezones) {
-            String indexStr = String.valueOf(x++);
+            String indexStr = String.valueOf(x);
+            x++;
             String prompt = indexStr + ") " + file.getName() + (file.isDirectory()?"[more choices]":"");
-            prompts.add(prompt + getEolChar());
+            prompts.add(prompt + EOL);
         }
 
         String[] acceptedEntries;
@@ -184,22 +190,23 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
     }
 
     private void doNtpConfigurationPrompts(String existingNtpServer) throws IOException, WizardNavigationException {
+        String existingNtpServer1 = existingNtpServer;
         String prompt = "Enter a comma separated list of time servers to use for synchronization (ex. host1,host2) ";
-        if (StringUtils.isNotEmpty(existingNtpServer))
-            prompt += "[" + existingNtpServer + "]";
+        if (StringUtils.isNotEmpty(existingNtpServer1))
+            prompt += "[" + existingNtpServer1 + "]";
         else
-            existingNtpServer = "";
+            existingNtpServer1 = "";
 
         prompt += " : ";
 
         String timeserverLine;
 
-        ntpBean.reset();
+        configBean.reset();
         timeserverLine = getData(
-                new String[]{prompt},
-                existingNtpServer,
-                (String[]) null,
-                null
+            new String[]{prompt},
+            existingNtpServer1,
+            (String[]) null,
+            null
         );
 
         if (StringUtils.isEmpty(timeserverLine)) {
@@ -207,11 +214,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         }
         String[] timeServers = timeserverLine.split(",");
         for (String singleTimeServer : timeServers) {
-            ntpBean.addTimeServer(singleTimeServer);
+            configBean.addTimeServer(singleTimeServer);
         }
-    }
-
-    public String getTitle() {
-        return TITLE;
     }
 }

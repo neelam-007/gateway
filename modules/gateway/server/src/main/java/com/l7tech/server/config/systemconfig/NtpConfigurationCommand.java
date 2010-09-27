@@ -1,6 +1,5 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
 import org.apache.commons.lang.StringUtils;
 
@@ -9,34 +8,27 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.logging.Logger;
-import java.util.Map;
 
 /**
  * User: megery
  * Date: Jun 22, 2006
  * Time: 10:27:43 AM
  */
-public class NtpConfigurationCommand extends BaseConfigurationCommand {
+public class NtpConfigurationCommand extends BaseConfigurationCommand<NtpConfigurationBean> {
     private static final Logger logger = Logger.getLogger(NtpConfigurationCommand.class.getName());
 
-    private NtpConfigurationBean ntpBean;
-    protected NtpConfigurationCommand(ConfigurationBean bean) {
+    protected NtpConfigurationCommand(NtpConfigurationBean bean) {
         super(bean);
-        ntpBean = (NtpConfigurationBean) bean;
     }
 
+    @Override
     public boolean execute() {
-        boolean success = true;
-
-        boolean ntpSuccess = writeNtpLitterFiles();
-        boolean timezoneSuccess = writeTimezoneLitterFiles();
-
-        return success;
+        return writeNtpLitterFiles() & writeTimezoneLitterFiles();
     }
 
     private boolean writeTimezoneLitterFiles() {
         boolean success = true;
-        if (StringUtils.isNotEmpty(ntpBean.getTimezone())) {
+        if (StringUtils.isNotEmpty(configBean.getTimezone())) {
             File configDir = checkConfigDir();
 
             if (configDir == null) {
@@ -52,7 +44,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
                 else
                     logger.info("editing file \"" + timezoneConfigFile.getAbsolutePath() + "\"");
                 pw = new PrintWriter(new FileOutputStream(timezoneConfigFile));
-                pw.println(ntpBean.getTimezone());
+                pw.println(configBean.getTimezone());
             } catch (IOException e) {
                 logger.severe("Error while writing the timezone configuration file: " + e.getMessage());
                 success = false;
@@ -72,12 +64,11 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
             logger.info("Created new directory for NTP and Timezone configuration: " + configDir.getAbsolutePath());
 
         return configDir;
-
     }
 
     private boolean writeNtpLitterFiles() {
         boolean success = true;
-        if (!ntpBean.getTimeServers().isEmpty()) {
+        if (!configBean.getTimeServers().isEmpty()) {
             File currentWorkingDir = new File(".");
             File configDir = new File(currentWorkingDir, "configfiles");
             if (configDir.mkdir())
@@ -93,7 +84,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
 
                 pw = new PrintWriter(new FileOutputStream(ntpConfFile));
 
-                for (String tsInfo : ntpBean.getTimeServers()) {
+                for (String tsInfo : configBean.getTimeServers()) {
                     pw.println(tsInfo);
                 }
             } catch (IOException e) {

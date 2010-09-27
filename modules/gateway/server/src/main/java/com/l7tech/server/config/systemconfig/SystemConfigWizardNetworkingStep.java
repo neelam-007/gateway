@@ -5,7 +5,6 @@ import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.common.io.InetAddressUtil;
 import org.apache.commons.lang.StringUtils;
-
 import java.io.IOException;
 import java.net.InterfaceAddress;
 import java.text.MessageFormat;
@@ -13,126 +12,147 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
+
 /**
  * User: megery
  * Date: May 16, 2006
  * Time: 11:16:36 AM
  */
-public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
+public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<NetworkingConfigurationBean, NetworkingConfigurationCommand> {
 
-    private static final Logger logger = Logger.getLogger(SystemConfigWizardNetworkingStep.class.getName());
-
-    private static final String STEP_INFO = "This step lets you configure the network adapters on this machine" + getEolChar();
-    private static final String HEADER_BOOTPROTO = "-- Boot Protocol --" + getEolChar();
-    private static final String PROMPT_STATIC_NIC = NetworkingConfigurationBean.STATIC_BOOT_PROTO + " - all configuration is fixed" + getEolChar();
-    private static final String PROMPT_DYNAMIC_NIC = NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO + " - all configuration is determined by the DHCP server" + getEolChar();
-    private static final String TITLE = "Configure Network Interfaces";
-
-    private static final String NETBEANNAME = "Network Interface Configuration";
-
-    private static final String HOSTNAME_PROMPT = "Enter the fully qualified hostname for this SSG: ";
-    private static final String DEFAULT_GATEWAY_PROMPT = "Enter IP Address of the default gateway: ";
-    private static final String DEFAULT_GATEWAY_INTERFACE_PROMPT = "Select the Interface you wish to use as the gateway device: ";
-    private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
-    private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
-    private static final String MISSING_GATEWAY_MSG = "Missing Gateway.";
-    private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface?";
-    private static final String CONFIGURE_GATEWAY_PROMPT = "Would you like to configure a default gateway and interface?";
-    private static final String NEW_INTERFACE_NAME_PROMPT = "Please enter the name of the new interface (ex: eth5): ";
-    private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface?";
-    private static final String INVALID_SOMETHING = "\"{0}\" is not a valid {1}";
-
-    private NetworkingConfigurationBean netBean;
-    private static final Pattern interfaceNamePattern = Pattern.compile("\\S+");
+    // - PUBLIC
 
     public SystemConfigWizardNetworkingStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
-
         configBean = new NetworkingConfigurationBean(NETBEANNAME, "");
         configCommand = new NetworkingConfigurationCommand(configBean);
-        netBean = (NetworkingConfigurationBean) configBean;
     }
 
+    @Override
+    public String getTitle() {
+        return TITLE;
+    }
+
+    @Override
+    public boolean isShowNavigation() {
+        return false;
+    }
+
+    @Override
     public boolean validateStep() {
         return true;
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
-        printText(STEP_INFO + getEolChar());
+        printText(STEP_INFO + EOL);
 
         try {
-            doNetConfigPrompts();
+            doInterfaceConfigPrompts();
             doDefaultGatewayPrompt();
             doHostnamePrompt();
+            doNameserversPrompt();
             storeInput();
-
         } catch (IOException e) {
             logger.severe("Exception caught: " + e.getMessage());
         }
     }
 
-    private void doNetConfigPrompts() throws IOException, WizardNavigationException {
-        NetworkingConfigurationBean.NetworkConfig whichConfig;
+    // - PRIVATE
 
-        whichConfig = doSelectInterfacePrompts();
-        whichConfig = doConfigurationPrompts(whichConfig);
-        saveConfig(whichConfig);
-        if (doRepeatConfiguration()) {
-            printText(getEolChar());
-            doNetConfigPrompts();
+    private static final Logger logger = Logger.getLogger(SystemConfigWizardNetworkingStep.class.getName());
+
+    // global network config
+    private static final String TITLE = "Configure Network Interfaces";
+    private static final String NETBEANNAME = "Network Interface Configuration";
+    private static final String STEP_INFO = "This step lets you configure the network adapters on this machine" + EOL;
+
+    // hostname
+    private static final String HOSTNAME_PROMPT = EOL + "Enter the fully qualified hostname for this SSG: ";
+
+    // nameserver(s)
+    private static final String CONFIGURE_NAMESERVERS_PROMPT = EOL + "Would you like to configure the nameservers?";
+
+    // interface(s)
+    private static final String CONFIGURE_MORE_INTERFACES_PROMPT = EOL + "Would you like to configure another interface?";
+    private static final String NEW_INTERFACE_NAME_PROMPT = EOL + "Please enter the name of the new interface (ex: eth5): ";
+    private static final String CONFIGURE_IPV4 = EOL + "Would you like to configure IPv4 networking?";
+    private static final String CONFIGURE_IPV6 = EOL + "Would you like to configure IPv6 networking?";
+    private static final String CONFIGURE_IPV6_AUTO = EOL + "Enable IPv6 auto-configuration for this interface?";
+    private static final String CONFIGURE_IPV6_DHCP = EOL + "Enable DHCPv6 for this interface?";
+    private static final String CONFIGURE_IPV6_STATIC = EOL + "Add static IPv6 address(es) for this interface?";
+
+    private static final String HEADER_BOOTPROTO = "-- Boot Protocol --" + EOL;
+    private static final String PROMPT_STATIC_NIC = NetworkingConfigurationBean.STATIC_BOOT_PROTO + " - all configuration is fixed" + EOL;
+    private static final String PROMPT_DYNAMIC_NIC = NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO + " - all configuration is determined by the DHCP server" + EOL;
+
+    // errors
+    private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
+    private static final String INVALID_SOMETHING = "\"{0}\" is not a valid {1}";
+
+    private static final Pattern interfaceNamePattern = Pattern.compile("\\S+");
+
+    private void doInterfaceConfigPrompts() throws IOException, WizardNavigationException {
+        NetworkingConfigurationBean.InterfaceConfig ifConfig;
+        ifConfig = doSelectInterfacePrompts();
+        doInterfaceConfigPrompts(ifConfig);
+        saveConfig(ifConfig);
+        if (getConfirmationFromUser(CONFIGURE_MORE_INTERFACES_PROMPT, "no")) {
+            printText(EOL);
+            doInterfaceConfigPrompts();
         }
     }
 
     private void doDefaultGatewayPrompt() throws IOException, WizardNavigationException {
-        boolean shouldDoIt = getConfirmationFromUser(CONFIGURE_GATEWAY_PROMPT, "no");
+        for (IpProtocol ipProtocol : EnumSet.allOf(IpProtocol.class)) {
+            if (getConfirmationFromUser(ipProtocol.getConfigureDefaultGatewayPrompt(), "no")) {
 
-        if (shouldDoIt) {
-            boolean isValid;
-            List<String> errors;
-
-            String gatewayIP;
-            do {
-                gatewayIP = getData(
-                        new String[] {DEFAULT_GATEWAY_PROMPT},
+                boolean isValid;
+                List<String> errors;
+                String gatewayIP;
+                do {
+                    gatewayIP = getData(
+                        new String[]{ipProtocol.getDefaultGatewayPrompt()},
                         "",
                         (String[]) null,
                         null
-                );
-                errors = validateIpAddress(gatewayIP);
-                isValid = errors.isEmpty();
-                if (!isValid) printText(errors);
-            } while (!isValid);
+                    );
+                    errors = ipProtocol.validateAddress(gatewayIP);
+                    isValid = errors.isEmpty();
+                    if (!isValid) {
+                        printText("Invalid default gateway IP address: " + EOL);
+                        printText(errors);
+                    }
+                } while (!isValid);
 
-            //get the gateway device
-            List<NetworkingConfigurationBean.NetworkConfig> allNetworkConfigs = getInterfaces();
+                //get the gateway device
+                List<NetworkingConfigurationBean.InterfaceConfig> allInterfaceConfigs = getInterfaces();
+                List<String> promptList = new ArrayList<String>();
 
-            List<String> promptList = new ArrayList<String>();
+                int x = 1;
+                for (NetworkingConfigurationBean.InterfaceConfig interfaceConfig : allInterfaceConfigs) {
+                    String indexStr = String.valueOf(x);
+                    x++;
+                    String prompt = indexStr + ") " + interfaceConfig.describe();
+                    promptList.add(prompt + EOL);
+                }
+                promptList.add("Please make a selection [1] : ");
+                printText(ipProtocol.getDefaultGatewayDevicePrompt() + EOL);
+                String[] allowedEntries = new String[x - 1];
+                int allowedSize = x - 1;
+                for (int index = 0; index < allowedSize; ++index) {
+                    allowedEntries[index] = String.valueOf(index + 1);
+                }
 
-            int x = 1;
-            for (NetworkingConfigurationBean.NetworkConfig networkConfig : allNetworkConfigs) {
-                String indexStr = String.valueOf(x++);
-                String prompt = indexStr + ") " + networkConfig.describe();
-                promptList.add(prompt + getEolChar());
+                String whichChoice = getData(promptList.toArray(new String[promptList.size()]), "1", allowedEntries, null);
+                int choiceNum = Integer.parseInt(whichChoice);
+
+                String theDevice = allInterfaceConfigs.get(choiceNum - 1).getInterfaceName();
+
+                configBean.setDefaultGatewayIp(gatewayIP, ipProtocol);
+                configBean.setDefaultGatewayDevice(theDevice, ipProtocol);
             }
-
-            promptList.add("Please make a selection [1] : ");
-
-            printText(DEFAULT_GATEWAY_INTERFACE_PROMPT + getEolChar());
-
-            String[] allowedEntries = new String[x-1];
-            int allowedSize = x-1;
-            for (int index=0; index < allowedSize; ++index) {
-                allowedEntries[index] = String.valueOf(index+1);
-            }
-
-            String whichChoice = getData(promptList.toArray(new String[promptList.size()]), "1", allowedEntries,null);
-
-            int choiceNum = Integer.parseInt(whichChoice);
-
-            String theDevice = allNetworkConfigs.get(choiceNum -1).getInterfaceName();
-
-            netBean.setDefaultGatewayIp(gatewayIP);
-            netBean.setGatewayDevice(theDevice);
         }
     }
 
@@ -152,154 +172,122 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             domainPart = fqdn.substring(firstDotPos+1);
         }
 
-        netBean.setHostname(justHostname);
-        netBean.setDomain(domainPart);
+        configBean.setHostname(justHostname);
+        configBean.setDomain(domainPart);
     }
 
-    private List<String> validateIpAddress(String ipAddress) {
-        List<String> errors = new ArrayList<String>();
-
-        String message = null;
-        if (StringUtils.isEmpty(ipAddress))
-            message = MISSING_IP_ADDRESS_MSG;
-        else if (!isValidIpAddress(ipAddress))
-            message = MessageFormat.format(INVALID_SOMETHING, ipAddress , "IP Address");
-
-        if (message != null)
-            errors.add("*** " + message + " ***" + getEolChar());
-
-        return errors;
+    private void doNameserversPrompt() throws IOException, WizardNavigationException {
+        if (getConfirmationFromUser(CONFIGURE_NAMESERVERS_PROMPT, "yes")) {
+            configBean.addNameservers(getNameServers());
+        }
     }
 
-    private List<String> validateNetMask(String netMask) {
+    private static List<String> validateNetMask(String netMask) {
         List<String> errors = new ArrayList<String>();
 
         String message = null;
         if (StringUtils.isEmpty(netMask))
             message = MISSING_NETMASK_MSG;
-        else if (!isValidIpAddress(netMask))
+        else if (!InetAddressUtil.isValidIpAddress(netMask))
             message = MessageFormat.format(INVALID_SOMETHING, netMask , "netmask");
 
         if (message != null)
-            errors.add("*** " + message + " ***" + getEolChar());
+            errors.add("*** " + message + " ***" + EOL);
 
         return errors;
     }
 
-    private List<String> validateGateway(String gateway) {
-        List<String> errors = new ArrayList<String>();
-
-        if (!StringUtils.isEmpty(gateway) && (!isValidIpAddress(gateway)) )
-            errors.add("*** " + MessageFormat.format(INVALID_SOMETHING, gateway , "gateway address") + " ***" + getEolChar());
-
-        return errors;
+    private void saveConfig(NetworkingConfigurationBean.InterfaceConfig whichConfig) {
+        configBean.addNetworkingConfig(whichConfig);
     }
 
-    private List<String> validateNameServers(String[] nameServers) {
-        if (nameServers == null || nameServers.length == 0) return null;
-        List<String> errors = new ArrayList<String>();
-        for (String ns : nameServers) {
-            if (!isValidIpAddress(ns))
-                errors.add(ns);
-        }
-
-        if (!errors.isEmpty()) {
-            printText("*** The following nameserver entries are not valid ***" + getEolChar());
-            for (String invalidNs : errors) {
-               printText("\t" + invalidNs + getEolChar());
-            }
-        }
-
-        return errors;
-    }
-
-    private boolean isValidIpAddress(String address) {
-        return InetAddressUtil.isValidIpAddress(address);
-    }
-
-    private boolean doRepeatConfiguration() throws IOException, WizardNavigationException {
-        boolean doItAgain = getConfirmationFromUser(CONFIGURE_MORE_INTERFACES_PROMPT, "no");
-
-        return (doItAgain) ;
-    }
-
-    private void saveConfig(NetworkingConfigurationBean.NetworkConfig whichConfig) {
-        netBean.addNetworkingConfig(whichConfig);
-    }
-
-    private NetworkingConfigurationBean.NetworkConfig doSelectInterfacePrompts() throws IOException, WizardNavigationException {
-
-        List<NetworkingConfigurationBean.NetworkConfig> allNetworkConfigs = getInterfaces();
-
+    private NetworkingConfigurationBean.InterfaceConfig doSelectInterfacePrompts() throws IOException, WizardNavigationException {
+        List<NetworkingConfigurationBean.InterfaceConfig> allInterfaceConfigs = getInterfaces();
         List<String> promptList = new ArrayList<String>();
 
         int x = 1;
-        for (NetworkingConfigurationBean.NetworkConfig networkConfig : allNetworkConfigs) {
-            String indexStr = String.valueOf(x++);
-            String prompt = indexStr + ") " + networkConfig.describe();
-            promptList.add(prompt + getEolChar());
+        for (NetworkingConfigurationBean.InterfaceConfig interfaceConfig : allInterfaceConfigs) {
+            String indexStr = String.valueOf(x);
+            x++;
+            String prompt = indexStr + ") " + interfaceConfig.describe();
+            promptList.add(prompt + EOL);
         }
 
-        promptList.add(x + ") Configure an unlisted interface" + getEolChar());
-
+        promptList.add(x + ") Configure an unlisted interface" + EOL);
         promptList.add("Please make a selection [1] : ");
-
-        printText("Select the Interface you wish to configure." + getEolChar());
-        printText("Current configurations are shown in ()" + getEolChar());
+        printText("Select the interface you wish to configure." + EOL);
+        printText("Current configurations are shown in ()" + EOL);
 
         String[] allowedEntries = new String[x];
         for (int index=1; index <= x; ++index) {
             allowedEntries[index-1] = String.valueOf(index);
         }
-        String whichChoice = getData(promptList.toArray(new String[0]), "1", allowedEntries,null);
+        String whichChoice = getData(promptList.toArray(new String[promptList.size()]), "1", allowedEntries,null);
 
         int choiceNum = Integer.parseInt(whichChoice);
-        NetworkingConfigurationBean.NetworkConfig theConfig;
+        NetworkingConfigurationBean.InterfaceConfig theConfig;
 
-        if (choiceNum < 1 || choiceNum > allNetworkConfigs.size()) {
+        if (choiceNum < 1 || choiceNum > allInterfaceConfigs.size()) {
             //creating a new interface
             theConfig = NetworkingConfigurationBean.makeNetworkConfig(null, null, false);
         } else {
-            theConfig = allNetworkConfigs.get(choiceNum -1);
+            theConfig = allInterfaceConfigs.get(choiceNum -1);
         }
+        theConfig.setNetworkConfig(configBean);
         theConfig.setDirtyFlag(true);
         return theConfig;
     }
 
-    private NetworkingConfigurationBean.NetworkConfig doConfigurationPrompts(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
-
-        if (StringUtils.isEmpty(whichConfig.getInterfaceName())) {
-            whichConfig.setInterfaceName(promptForNewInterfaceName(whichConfig));
+    private void doInterfaceConfigPrompts(NetworkingConfigurationBean.InterfaceConfig ifConfig) throws IOException, WizardNavigationException {
+        if (StringUtils.isEmpty(ifConfig.getInterfaceName())) {
+            ifConfig.setInterfaceName(promptForNewInterfaceName());
         }
 
-        String bootProto = getBootProtocol(whichConfig);
-        whichConfig.setBootProto(bootProto);
-
-        if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
-            whichConfig.setIpAddress(getIpAddress(whichConfig), true);
-            whichConfig.setGateway(getGateway(whichConfig));
-            whichConfig.setNetMask(getNetMask(whichConfig));
-            whichConfig.setNameServer(getNameServer(whichConfig.getNameServers(), whichConfig.getInterfaceName()));
+        if (getConfirmationFromUser(CONFIGURE_IPV4, "yes")) {
+            ifConfig.setIpv4Enabled(true);
+            printText(EOL);
+            doIpv4ConfigPrompts(ifConfig);
         }
 
-        return whichConfig;
+        if (getConfirmationFromUser(CONFIGURE_IPV6, "yes")) {
+            // todo: detect and warn if ipv6 is not available
+            ifConfig.setIpv6Enabled(true);
+            printText(EOL);
+            doIpv6ConfigPrompts(ifConfig);
+        }
     }
 
-    private String promptForNewInterfaceName(NetworkingConfigurationBean.NetworkConfig theConfig) throws IOException, WizardNavigationException {
+    private void doIpv4ConfigPrompts(NetworkingConfigurationBean.InterfaceConfig ifConfig) throws IOException, WizardNavigationException {
+        String bootProto = getBootProtocol(ifConfig);
+        ifConfig.setIpv4BootProto(bootProto);
+        if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
+            ifConfig.setIpv4Address(getIpAddress(ifConfig, IpProtocol.IPv4), true);
+            ifConfig.setIpv4Gateway(getGateway(ifConfig, IpProtocol.IPv4));
+            ifConfig.setIpv4NetMask(getIpv4NetMask(ifConfig));
+        }
+    }
 
+    private void doIpv6ConfigPrompts(NetworkingConfigurationBean.InterfaceConfig ifConfig) throws IOException, WizardNavigationException {
+        ifConfig.setIpv6AutoConf(getConfirmationFromUser(CONFIGURE_IPV6_AUTO, "yes"));
+        ifConfig.setIpv6Dhcp(getConfirmationFromUser(CONFIGURE_IPV6_DHCP, "no"));
+        while (getConfirmationFromUser(CONFIGURE_IPV6_STATIC, "yes")) {
+            ifConfig.addIpv6Address(getIpAddress(ifConfig, IpProtocol.IPv6));
+        }
+    }
+
+    private String promptForNewInterfaceName() throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
             NEW_INTERFACE_NAME_PROMPT,
         };
-
 
         boolean duplicateName;
         String name;
         do {
             duplicateName = false;
             name = getData(prompts, "", interfaceNamePattern, "*** Please specify an interface name ***");
-            List<NetworkingConfigurationBean.NetworkConfig> existingConfigs = getInterfaces();
-            for (NetworkingConfigurationBean.NetworkConfig networkConfig : existingConfigs) {
-                if (StringUtils.equals(name, networkConfig.getInterfaceName()))
+            List<NetworkingConfigurationBean.InterfaceConfig> existingConfigs = getInterfaces();
+            for (NetworkingConfigurationBean.InterfaceConfig interfaceConfig : existingConfigs) {
+                if (StringUtils.equals(name, interfaceConfig.getInterfaceName()))
                     duplicateName = true;
             }
             if (duplicateName) printText("*** The interface \"" + name + "\" already exists, please choose a different name ***\n");
@@ -307,86 +295,97 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return name;
     }
 
-    private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {
-        boolean hasCurrentNameServers = (currentNameServers != null && currentNameServers.length != 0);
+    private List<String> getNameServers() throws IOException, WizardNavigationException {
         String[] nameServers = null;
-
-        boolean shouldConfigNameServers = getConfirmationFromUser(CONFIGURE_NAMESERVERS_PROMPT, "no");
-
-        String defaultNameserversLine = null;
-        boolean isFirst = true;
-        if (hasCurrentNameServers) {
-            for (String s : currentNameServers) {
-                defaultNameserversLine += (isFirst?"":", ") + s;
-                if (isFirst)
-                    isFirst = false;
-            }
-        }
-
         boolean isValid;
         String nameserversline;
-        if (shouldConfigNameServers) {
-                do {
-                    nameserversline = getData(
-                            new String[] {
-                                    "Enter the nameservers to be associated with the \"" + interfaceName + "\" interface (comma separated): "
-                            },
-                            defaultNameserversLine,
-                            (String[])null,
-                            null
-                        );
+        do {
+            nameserversline = getData(
+                new String[]{
+                    "Enter the nameservers (comma separated): "
+                },
+                configBean.getNameservesLine(),
+                (String[]) null,
+                null
+            );
 
-                if (StringUtils.isEmpty(nameserversline)) {
-                    printText("*** No nameserver(s) specified ***" + getEolChar());
+            if (StringUtils.isEmpty(nameserversline)) {
+                printText("*** No nameserver(s) specified ***" + EOL);
+                isValid = false;
+            } else {
+                nameServers = nameserversline.split(",");
+                if (nameServers == null || nameServers.length == 0) {
+                    printText("*** No nameserver(s) specified ***" + EOL);
                     isValid = false;
                 } else {
-                    nameServers = nameserversline.split(",");
                     for (int i = 0; i < nameServers.length; i++) {
                         nameServers[i] = nameServers[i].trim();
                     }
                     List<String> invalidNameServers = validateNameServers(nameServers);
                     isValid = invalidNameServers.isEmpty();
                 }
-            } while (!isValid);
-        }
-        return nameServers;
+            }
+        } while (!isValid);
+        return Arrays.asList(nameServers);
     }
 
-    private String getGateway(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
+    private List<String> validateNameServers(String[] nameServers) {
+        List<String> errors = new ArrayList<String>();
 
-        String interfaceName = whichConfig.getInterfaceName();
+        if (nameServers == null || nameServers.length == 0) {
+            errors.add("*** No nameserver(s) specified ***");
+        } else {
+            nameservers_for:
+            for (String ns : nameServers) {
+                for(IpProtocol ipProtocol : EnumSet.allOf(IpProtocol.class)) {
+                    if (ipProtocol.validateAddress(ns).isEmpty())
+                        continue nameservers_for;
+                }
+                errors.add(ns);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            printText("*** The following nameserver entries are not valid ***" + EOL);
+            for (String invalidNs : errors) {
+               printText("\t" + invalidNs + EOL);
+            }
+        }
+
+        return errors;
+    }
+
+    private String getGateway(NetworkingConfigurationBean.InterfaceConfig ifConfig, IpProtocol ipProtocol) throws IOException, WizardNavigationException {
+        String interfaceName = ifConfig.getInterfaceName();
+        String prompt = "Enter the default " + ipProtocol + " gateway for interface \"" + interfaceName + "\" (optional): ";
         String gateway;
-//        String gateway = whichConfig.getGateway();
-
-        String prompt = "Enter the default gateway for interface \"" + interfaceName + "\" (optional)";
-//        if (StringUtils.isNotEmpty(gateway)) prompt += " [" + gateway + "] ";
-        prompt += ": ";
-
         boolean isValid;
         List<String> errors;
-
         do {
             gateway = getData(new String[] {prompt}, "", (String[]) null,null);
-            errors = validateGateway(gateway);
-
-            isValid = errors.isEmpty();
-            if (!isValid) printText(errors);
+            errors = ipProtocol.validateAddress(gateway);
+            isValid = StringUtils.isEmpty(gateway) || errors.isEmpty();
+            if (!isValid) {
+                printText("Invalid gateway IP address: " + EOL);
+                printText(errors);
+            }
         } while (!isValid);
 
         return gateway;
     }
 
 
-    private String getIpAddress(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
-        String interfaceName = netConfig.getInterfaceName();
-        List<InterfaceAddress> addresses = netConfig.getInterfaceAddresses();
+    private String getIpAddress(NetworkingConfigurationBean.InterfaceConfig ifConfig, IpProtocol ipProtocol) throws IOException, WizardNavigationException {
+        String interfaceName = ifConfig.getInterfaceName();
+        List<InterfaceAddress> addresses = ifConfig.getInterfaceAddresses();
         String currentFirstAddress = null;
         if (!addresses.isEmpty()) {
             List<String> stringAddresses = new ArrayList<String>();
             for (InterfaceAddress address : addresses) {
-//                if (!(address.getAddress() instanceof Inet6Address)) {
-                    stringAddresses.add(address.getAddress().getHostAddress());
-//                }
+                String strAddress = address.getAddress().getHostAddress();
+                if ( (ipProtocol.validateAddress(strAddress)).isEmpty()) {
+                    stringAddresses.add(strAddress);
+                }
             }
             currentFirstAddress = stringAddresses.get(0);
         }
@@ -394,7 +393,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         boolean isValid;
         List<String> errors;
         String defaultAddress = StringUtils.isNotEmpty(currentFirstAddress)?currentFirstAddress:"";
-        String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
+        // todo: clarify expected format (prefix for ipv6)
+        String prompt = EOL + "Enter " + ipProtocol + " address for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(defaultAddress))
             prompt += " [" + defaultAddress + "] ";
         prompt += ": ";
@@ -402,18 +402,21 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String newAddress;
         do {
             newAddress = getData(new String[] {prompt}, defaultAddress, (String[]) null,null);
-            errors = validateIpAddress(newAddress);
+            errors = ipProtocol.validateAddress(newAddress);
 
             isValid = errors.isEmpty();
-            if (!isValid) printText(errors);
+            if (!isValid) {
+                printText("Invalid " + ipProtocol + " address: " + EOL);
+                printText(errors);
+            }
         } while (!isValid);
 
         return newAddress;
     }
 
-    private String getNetMask(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
+    private String getIpv4NetMask(NetworkingConfigurationBean.InterfaceConfig netConfig) throws IOException, WizardNavigationException {
         String interfaceName = netConfig.getInterfaceName();
-        String netMask = netConfig.getNetMask();
+        String netMask = netConfig.getIpv4NetMask();
 
         String prompt = "Enter the netmask for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(netMask)) prompt += " [" + netMask + "] ";
@@ -436,9 +439,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return netMask;
     }
 
-    private String getBootProtocol(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
+    private String getBootProtocol(NetworkingConfigurationBean.InterfaceConfig netConfig) throws IOException, WizardNavigationException {
         String whichInterface = netConfig.getInterfaceName();
-        String bootProto = netConfig.getBootProto();
+        String bootProto = netConfig.getIpv4BootProto();
 
         String defaultValue = (StringUtils.isEmpty(bootProto) || StringUtils.equalsIgnoreCase(NetworkingConfigurationBean.STATIC_BOOT_PROTO, bootProto)?"1":"2");
 
@@ -448,35 +451,26 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             protoQuestion += " (Currently " + bootProto + ")";
 
         String[] prompts = new String[] {
-            protoQuestion + getEolChar(),
+            protoQuestion + EOL,
             "1) " + PROMPT_STATIC_NIC,
             "2) " + PROMPT_DYNAMIC_NIC,
             "Please make a selection [" + defaultValue + "] : "
         };
 
-        printText(getEolChar() + HEADER_BOOTPROTO);
+        printText(EOL + HEADER_BOOTPROTO);
 
         String input = getData(prompts, defaultValue, new String[]{"1","2"},null);
         bootProto = StringUtils.equals("1", input)?NetworkingConfigurationBean.STATIC_BOOT_PROTO:NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO;
         return bootProto;
     }
 
-    private List<NetworkingConfigurationBean.NetworkConfig> getInterfaces() {
-        List<NetworkingConfigurationBean.NetworkConfig> allConfigs = netBean.getAllNetworkInterfaces();
-        List<NetworkingConfigurationBean.NetworkConfig> configurableConfigs = new LinkedList<NetworkingConfigurationBean.NetworkConfig>();
-        for (NetworkingConfigurationBean.NetworkConfig aConfig : allConfigs) {
+    private List<NetworkingConfigurationBean.InterfaceConfig> getInterfaces() {
+        List<NetworkingConfigurationBean.InterfaceConfig> allConfigs = configBean.getAllNetworkInterfaces();
+        List<NetworkingConfigurationBean.InterfaceConfig> configurableConfigs = new LinkedList<NetworkingConfigurationBean.InterfaceConfig>();
+        for (NetworkingConfigurationBean.InterfaceConfig aConfig : allConfigs) {
             if (!aConfig.isVirtual())
                 configurableConfigs.add(aConfig);
         }
         return configurableConfigs;
     }
-
-    public String getTitle() {
-        return TITLE;
-    }
-
-    public boolean isShowNavigation() {
-        return false;
-    }
-
 }

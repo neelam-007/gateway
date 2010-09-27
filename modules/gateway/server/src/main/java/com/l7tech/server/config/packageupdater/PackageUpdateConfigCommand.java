@@ -1,7 +1,6 @@
 package com.l7tech.server.config.packageupdater;
 
 import com.l7tech.util.FileUtils;
-import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
 import com.l7tech.server.config.packageupdater.installer.UpdatePackageInstaller;
 
@@ -19,20 +18,18 @@ import java.util.logging.Logger;
  * Date: Mar 20, 2007
  * Time: 4:16:10 PM
  */
-public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
+public class PackageUpdateConfigCommand extends BaseConfigurationCommand<PackageUpdateConfigBean> {
     private static final Logger logger = Logger.getLogger(PackageUpdateConfigCommand.class.getName());
     private static final String INSTALLER_CLASSNAME = "com.l7tech.server.config.packageupdater.installer.UpdatePackageInstaller";
 
-    PackageUpdateConfigBean packageBean;
-
-    protected PackageUpdateConfigCommand(ConfigurationBean bean) {
+    protected PackageUpdateConfigCommand(PackageUpdateConfigBean bean) {
         super(bean);
-        packageBean = (PackageUpdateConfigBean) bean;
     }
 
+    @Override
     public boolean execute() {
-        boolean success = false;
-        PackageUpdateConfigBean.UpdatePackageInfo info = packageBean.getPackageInfo();
+        boolean success;
+        PackageUpdateConfigBean.UpdatePackageInfo info = configBean.getPackageInfo();
         success = loadAndExecuteJar(info);
         if (success)
             FileUtils.deleteDir(new File(info.getExpandedLocation()));
@@ -41,11 +38,11 @@ public class PackageUpdateConfigCommand extends BaseConfigurationCommand {
     }
 
     private boolean loadAndExecuteJar(PackageUpdateConfigBean.UpdatePackageInfo info) {
-        boolean success = true;
+        boolean success;
         File f = new File(info.getExpandedLocation(), PackageUpdateConfigBean.INSTALLER_JAR_FILENAME);
         String errorMsg = "Could not run the installer at " + info.getExpandedLocation() + ". ({0} - {1})";
         ClassLoader currentCl = this.getClass().getClassLoader();
-        URL installerUrl = null;
+        URL installerUrl;
         try {
             installerUrl = f.toURL();
             URL[] urls = new URL[]{installerUrl};

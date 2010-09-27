@@ -41,7 +41,7 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
         }
         if (StringUtils.isNotEmpty(timezone)) {
             explanations.add("Configure the timezone on this server");
-            explanations.add("\tTimezone: " + timezone + eol);
+            explanations.add("\tTimezone: " + timezone + EOL);
         }
     }
 

@@ -1,13 +1,9 @@
 package com.l7tech.server.config.wizard;
 
 import com.l7tech.server.config.ListHandler;
-import com.l7tech.server.config.wizard.BaseConsoleStep;
-import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-
-import java.io.*;
 import java.util.*;
-import java.util.logging.Logger;
+import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
 
 /**
  * User: megery
@@ -15,15 +11,10 @@ import java.util.logging.Logger;
  * Time: 10:00:57 AM
  */
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep {
-    private static final Logger logger = Logger.getLogger(ConfigWizardConsoleResultsStep.class.getName());
-        
-    private String manualStepsFileName = "ssg_config_manual_steps.txt";
+
     private String title = "Configuration Results";
-    private List<String> manualSteps;
-    private String logFilename = "ssgconfig0.log";
-    private File manualStepsFile;
-    private static final String CONFIG_ERRORS_TEXT = getEolChar() + "*** Configuration problems detected: There were warnings and/or errors during configuration, see the logs above for details. ***" + getEolChar();
-    private String successMsg = "The configuration was successfully applied." + getEolChar() + "You must restart the SSG in order for the configuration to take effect." + getEolChar();
+    private static final String CONFIG_ERRORS_TEXT = EOL + "*** Configuration problems detected: There were warnings and/or errors during configuration, see the logs above for details. ***" + EOL;
+    private String successMsg = "The configuration was successfully applied." + EOL + "You must restart the SSG in order for the configuration to take effect." + EOL;
 
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -35,112 +26,48 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep {
         this.title = title;
     }
 
+    @Override
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         ConfigurationWizard wizard = getParentWizard();
 
         if (wizard.isHadFailures())
-            printText("There were errors during configuration, see below for details" + getEolChar());
+            printText("There were errors during configuration, see below for details" + EOL);
         else {
             printText(successMsg);
         }
 
-        printText(getEolChar() + "The following is a summary of the actions taken by the wizard" + getEolChar());
-        printText("\tThese logs have been saved to the file: "+ logFilename + getEolChar());
+        printText(EOL + "The following is a summary of the actions taken by the wizard" + EOL);
 
-        printText(getEolChar());
+        printText(EOL);
 
         List<String> logs = ListHandler.getLogList();
         if (logs != null) {
             for (String log : logs) {
-                if (log != null) printText(log + getEolChar());
+                if (log != null) printText(log + EOL);
             }
         }
 
         if (wizard.isHadFailures()) {
             printText(CONFIG_ERRORS_TEXT);
-            printText(getEolChar() + "The wizard will now exit." + getEolChar());
+            printText(EOL + "The wizard will now exit." + EOL);
         }
         else
-            printText(getEolChar() + "Configuration complete. The wizard will now exit." + getEolChar());
+            printText(EOL + "Configuration complete. The wizard will now exit." + EOL);
     }
 
-    private String convertStepsForConsole(String originalSteps) {
-        String convertedSteps;
-        //convert UL and LI to an equivalent form
-        convertedSteps = originalSteps.replaceAll("<[Bb][Rr]>", getEolChar());
-        convertedSteps = convertedSteps.replaceAll("<[Uu][Ll]>|<[Dd][Ll]>|</.*>", "");
-        convertedSteps = convertedSteps.replaceAll("<[Pp]>", getEolChar() + "\t ");
-        convertedSteps = convertedSteps.replaceAll("<[Ll][Ii]>", "\t* ");
-        convertedSteps = convertedSteps.replaceAll("<[Dd][Tt]>", "\t\t- ");
-        convertedSteps = convertedSteps.replaceAll("<[Dd][Dd]>", "\t\t\t- ");
-        //strip out any html tags other than those that have been converted
-        return convertedSteps;
-    }
-
-    public String getManualStepsFileName() {
-        return manualStepsFileName;
-    }
-
-    public void setManualStepsFileName(String fileName) {
-        this.manualStepsFileName = fileName;
-    }
-
-    public String getLogFilename() {
-        return logFilename;
-    }
-
-    public void setLogFilename(String logFilename) {
-        this.logFilename = logFilename;
-    }
-
+    @Override
     public String getTitle() {
         return title;
     }
 
+    @Override
     public boolean validateStep() {
         return true;
     }
 
+    @Override
     public boolean isShowQuitMessage() {
         return false;
-    }
-
-    public boolean getPartitionActionsConfirmation(String message) {
-        boolean ok = false;
-        try {
-            getConfirmationFromUser(message, "n");
-        } catch (IOException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        } catch (WizardNavigationException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        }
-        return ok;
-    }
-
-    public void showPartitionActionErrorMessage(String message) {
-        List<String> messages = new ArrayList<String>();
-        messages.add("**** " + message + " ****");
-        messages.add("Press [Enter] to continue");
-        try {
-            getData(messages.toArray(new String[0]),"", (String[]) null,null);
-        } catch (IOException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        } catch (WizardNavigationException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        }
-    }
-
-    public void showPartitionActionMessage(String message) {
-        List<String> messages = new ArrayList<String>();
-        messages.add(message);
-        messages.add("Press [Enter] to continue");
-        try {
-            getData(messages.toArray(new String[0]),"", (String[]) null,null);
-        } catch (IOException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        } catch (WizardNavigationException e) {
-            logger.severe("Error while getting input. [" + e.getMessage() + "]");
-        }
     }
 
     public void setSuccessMessage(String msg) {

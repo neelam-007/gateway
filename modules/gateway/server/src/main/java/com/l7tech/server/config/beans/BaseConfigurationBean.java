@@ -1,7 +1,5 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.OSSpecificFunctions;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,16 +10,10 @@ import java.util.List;
  */
 public abstract class BaseConfigurationBean implements ConfigurationBean {
 
-    protected String elementName;
-    protected String elementDescription;
-    
-    protected List<String> explanations;
+    // - PUBLIC
 
-    protected String insertTab = "\t";
-    protected static final String eol = System.getProperty("line.separator");
-
-    protected BaseConfigurationBean() {
-    }
+    public static final String TAB = "\t";
+    public static final String EOL = System.getProperty("line.separator");
 
     public BaseConfigurationBean(String name, String description) {
         elementName = name;
@@ -31,19 +23,29 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
 
     public abstract void reset();
 
+    @Override
     public String getName() {
         return elementName;
     }
 
+    @Override
     public String getDescription() {
         return elementDescription;
     }
 
+    @Override
     public String[] explain() {
         explanations.clear();
         populateExplanations();
         return explanations.toArray(new String[explanations.size()]);
     }
+
+    // - PROTECTED
+
+    protected String elementName;
+    protected String elementDescription;
+    protected List<String> explanations;
+
 
     protected abstract void populateExplanations();
 }

@@ -25,8 +25,8 @@ public class PackageUpdateConfigBean extends BaseConfigurationBean {
 
     protected void populateExplanations() {
         explanations.add("Install the following update package:");
-        explanations.add(insertTab + "Package: " + packageInfo.getOriginalLocation());
-        explanations.add(insertTab + "Description: " + packageInfo.getDescription());
+        explanations.add(TAB + "Package: " + packageInfo.getOriginalLocation());
+        explanations.add(TAB + "Description: " + packageInfo.getDescription());
     }
 
     public void setPackageInformation(UpdatePackageInfo updatePackageInfo) {
