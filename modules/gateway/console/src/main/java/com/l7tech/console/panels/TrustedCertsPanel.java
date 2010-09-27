@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
+
 /**
  * Component for selection of Trusted Certificates.
  *
@@ -257,6 +259,7 @@ public class TrustedCertsPanel extends JPanel {
     private final java.util.List<TrustedCert> removedCerts = new ArrayList<TrustedCert>();
     private Collection<RevocationCheckPolicy> policies;
     private boolean notifiedMaximum = false;
+    private final PermissionFlags flags = PermissionFlags.get(TRUSTED_CERT);
 
     /**
      * Initialize the panel
@@ -542,8 +545,12 @@ public class TrustedCertsPanel extends JPanel {
     private void enableOrDisableControls() {
         boolean enableControls = !readOnly;
 
+
+        // check if user is allowed to import/create certificates
+         boolean enableCreate = flags.canCreateSome();
+
         // disable if readonly
-        createCertButton.setEnabled(enableControls);
+        createCertButton.setEnabled(enableControls && enableCreate);
         addCertButton.setEnabled(enableControls);
         removeCertButton.setEnabled(enableControls);
 
@@ -553,7 +560,7 @@ public class TrustedCertsPanel extends JPanel {
             contextualEnabled = true;
         }
 
-        createCertButton.setEnabled(enableControls && trustedCertsTable.getRowCount() < maximumItems);
+        createCertButton.setEnabled(enableControls && enableCreate && trustedCertsTable.getRowCount() < maximumItems);
         addCertButton.setEnabled(enableControls && trustedCertsTable.getRowCount() < maximumItems);
         removeCertButton.setEnabled(enableControls && contextualEnabled);
         propertiesCertButton.setEnabled(contextualEnabled);
