@@ -89,13 +89,13 @@ public class RequestSizeLimit extends MessageTargetableAssertion implements Uses
 
         meta.put(PALETTE_FOLDERS, new String[]{"threatProtection"});
 
-        meta.put(SHORT_NAME, "Limit Request Size");
+        meta.put(SHORT_NAME, "Message Size Limit");
         meta.put(DESCRIPTION, "Enable a size limit for the entire message or just the XML portion of the message.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/MessageLength-16x16.gif");
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.RequestSizeLimitDialogAction");
-        meta.put(PROPERTIES_ACTION_NAME, "Request Size Limit Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Message Size Limit Properties");
         return meta;
     }
 
