@@ -416,7 +416,7 @@ public class EditRoleDialog extends JDialog {
             Permission p = showEditPermissionDialog(perm);
             if (p != null) tableModel.fireTableDataChanged();
         } else if (srcButton == removePermission) {
-            Utilities.doWithConfirmation(EditRoleDialog.this, "Remove Permission", "Are you sure you want to remove this permission", new Runnable() {
+            Utilities.doWithConfirmation(EditRoleDialog.this, "manageRoles.removePermissionTitle", "removePermissionMessage", new Runnable() {
                 @Override
                 public void run() {
                     tableModel.remove(perm);

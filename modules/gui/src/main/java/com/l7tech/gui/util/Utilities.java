@@ -483,7 +483,7 @@ public class Utilities {
 
     public static void doWithConfirmation(Component parent, String title, String message, Runnable runnable) {
         int result = JOptionPane.showConfirmDialog(
-            parent, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
+            parent, message, title, JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION) runnable.run();
     }
