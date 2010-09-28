@@ -324,6 +324,29 @@ public class Utilities {
      */
     public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
 
+    public static void setButtonAccelerator( final RootPaneContainer rootPaneContainer,
+                                             final JButton button,
+                                             final int keyCode ) {
+        setButtonAccelerator( rootPaneContainer, button, KeyStroke.getKeyStroke(keyCode, 0) );
+    }
+
+    public static void setButtonAccelerator( final RootPaneContainer rootPaneContainer,
+                                             final JButton button,
+                                             final KeyStroke keyStroke ) {
+
+        final String actionName = "buttonAccelerator-"+button.getText()+"-"+keyStroke.toString();
+        final Action buttonAction = getDispatchingActionListener(button, button.getActionListeners());
+
+        buttonAction.putValue(Action.NAME, actionName);
+        buttonAction.putValue(Action.ACCELERATOR_KEY, keyStroke);
+        rootPaneContainer.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+        rootPaneContainer.getRootPane().getActionMap().put(actionName, buttonAction);
+        rootPaneContainer.getLayeredPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+        rootPaneContainer.getLayeredPane().getActionMap().put(actionName, buttonAction);
+        ((JComponent)rootPaneContainer.getContentPane()).getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+        ((JComponent)rootPaneContainer.getContentPane()).getActionMap().put(actionName, buttonAction);
+    }
+
     /**
      * Update the input map of the JDialog's <code>JLayeredPane</code> so
      * the ESC keystroke  invoke dispose on the dialog.
@@ -365,6 +388,17 @@ public class Utilities {
 
     /**
      * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ESC keystroke invokes the passed buttons action on the dialog.
+     *
+     * @param d the dialog
+     * @param button the dialog button to invoke on Esc key
+     */
+    public static void setEscAction(final JDialog d, final JButton button) {
+        setEscAction( d, getDispatchingActionListener(button, button.getActionListeners()) );
+    }
+
+    /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
      * the ESC keystroke invokes the passed action dispose on the dialog.
      *
      * @param d the dialog
@@ -377,6 +411,17 @@ public class Utilities {
         layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
         layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
         layeredPane.getActionMap().put(KEY_ESCAPE, action);
+    }
+
+    /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ENTER keystroke invokes the passed buttons action.
+     *
+     * @param d the dialog
+     * @param button the dialog button to invoke on Enter key
+     */
+    public static void setEnterAction(final JDialog d, final JButton button) {
+        setEnterAction( d, getDispatchingActionListener(button, button.getActionListeners()) );
     }
 
     /**
@@ -1374,7 +1419,7 @@ public class Utilities {
      * @param listeners The listeners to pass the event
      * @return The dispatching listener           
      */
-    public static ActionListener getDispatchingActionListener(final Component component, final ActionListener... listeners) {
+    public static Action getDispatchingActionListener(final Component component, final ActionListener... listeners) {
         return new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if ( component.isEnabled() ) {

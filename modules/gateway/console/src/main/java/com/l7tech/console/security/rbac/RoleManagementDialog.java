@@ -1,5 +1,6 @@
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.action.Actions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.*;
@@ -17,14 +18,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.logging.Logger;
 
 public class RoleManagementDialog extends JDialog {
-    private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
-
-    private JButton buttonOK;
-    private JButton buttonCancel;
-    private JPanel informationPane;
+    private JButton buttonHelp;
+    private JButton buttonClose;
 
     private JList roleList;
     private JButton addRole;
@@ -45,23 +42,19 @@ public class RoleManagementDialog extends JDialog {
             doUpdateRoleAction(e);
         }
     };
-    private JScrollPane propertyScroller;
     private JTable roleAssigneeTable;
     private RoleAssignmentTableModel roleAssignmentTableModel;
 
-    public RoleManagementDialog(Dialog parent) throws HeadlessException {
-        super(parent, resources.getString("manageRoles.title"));
-        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
-        initialize();
-    }
-
-    public RoleManagementDialog(Frame parent) throws HeadlessException {
-        super(parent, resources.getString("manageRoles.title"));
+    public RoleManagementDialog(final Window parent) throws HeadlessException {
+        super(parent, resources.getString("manageRoles.title"), JDialog.DEFAULT_MODALITY_TYPE);
         flags = PermissionFlags.get(EntityType.RBAC_ROLE);
         initialize();
     }
 
     private void initialize() {
+        add(mainPanel);
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
         enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
 
         // reset cached identity provider names
@@ -73,13 +66,13 @@ public class RoleManagementDialog extends JDialog {
 
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        add(mainPanel);
-
-        setModal(true);
-        getRootPane().setDefaultButton(buttonOK);
         enableEditRemoveButtons();
 
         pack();
+        getRootPane().setDefaultButton(buttonClose);
+        Utilities.setButtonAccelerator(this, buttonHelp, KeyEvent.VK_F1);
+        Utilities.centerOnParentWindow(this);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void enableRoleManagmentButtons(boolean enable) {
@@ -88,19 +81,6 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void setupActionListeners() {
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                onCancel();
-            }
-        });
-
-        informationPane.registerKeyboardAction(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-
         roleList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                     //disable this code for now since we are not allowing the editing of roles in 3.6.
@@ -168,7 +148,7 @@ public class RoleManagementDialog extends JDialog {
                     }
                     sorted.add(sb1.toString());
                 }
-                String [] p = sorted.toArray(new String[]{});
+                String [] p = sorted.toArray(new String[sorted.size()]);
                 for (int i = 0; i < p.length; i++) {
                     //sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", s));
                     if(i == p.length - 1){
@@ -215,15 +195,15 @@ public class RoleManagementDialog extends JDialog {
         addRole.addActionListener(roleActionListener);
         removeRole.addActionListener(roleActionListener);
 
-        buttonOK.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onOK();
+        buttonHelp.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                Actions.invokeHelp( RoleManagementDialog.this);
             }
-        });
-
-        buttonCancel.addActionListener(new ActionListener() {
+        } );
+        buttonClose.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onCancel();
+                onClose();
             }
         });
     }
@@ -232,7 +212,6 @@ public class RoleManagementDialog extends JDialog {
         boolean validRowSelected = roleList.getModel().getSize() != 0 &&
                 roleList.getSelectedValue() != null;
 
-        boolean hasUpdatePermissions = flags.canUpdateSome();
         boolean canRemovePermissions = flags.canDeleteSome();
 
         removeRole.setEnabled(canRemovePermissions && validRowSelected);
@@ -309,9 +288,10 @@ public class RoleManagementDialog extends JDialog {
 
     private void populateList() {
         try {
-            Role[] roles = rbacAdmin.findAllRoles().toArray(new Role[0]);
+            final Collection<Role> roleCollection = rbacAdmin.findAllRoles();
+            final Role[] roles = roleCollection.toArray(new Role[roleCollection.size()]);
             Arrays.sort(roles);
-            RoleModel[] models = new RoleModel[roles.length];
+            final RoleModel[] models = new RoleModel[roles.length];
             for (int i = 0; i < roles.length; i++) {
                 Role role = roles[i];
                 models[i] = new RoleModel(role);
@@ -337,11 +317,7 @@ public class RoleManagementDialog extends JDialog {
         }
     }
 
-    private void onOK() {
-        dispose();
-    }
-
-    private void onCancel() {
+    private void onClose() {
         dispose();
     }
 }
