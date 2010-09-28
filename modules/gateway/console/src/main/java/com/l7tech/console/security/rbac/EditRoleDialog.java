@@ -96,7 +96,6 @@ public class EditRoleDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
-        ((AbstractDocument)roleDescription.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
         if (role.getOid() == Role.DEFAULT_OID) {
             setTitle(resources.getString("editRoleDialog.newTitle"));
         } else {
@@ -110,6 +109,9 @@ public class EditRoleDialog extends JDialog {
             roleDescription.getCaret().setDot(0);
         }
 
+        // set limit after populating.  default description could be longer then 255
+        ((AbstractDocument)roleDescription.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
+        
         setUpAssigneeTable();        
 
         setupButtonListeners();
