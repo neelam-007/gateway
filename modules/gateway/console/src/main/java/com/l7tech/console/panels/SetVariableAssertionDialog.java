@@ -99,8 +99,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
-        _contentTypeComboBox.addItem( ContentTypeHeader.TEXT_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.XML_DEFAULT.getFullValue() );
+        _contentTypeComboBox.addItem( ContentTypeHeader.TEXT_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.APPLICATION_JSON.getFullValue() );
 
