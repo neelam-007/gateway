@@ -292,9 +292,10 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
      * @throws InvalidPolicyException If there is a problem with the XACML policy
      */
     private PolicyFinder getPolicyFinder( final PolicyEnforcementContext context ) throws IOException, InvalidPolicyException {
+        final Map<String,Object> variables = context.getVariableMap(variablesUsed, auditor);
         if (resourceGetter != null) {
             try {
-                return resourceGetter.getResource(null, new HashMap<String, String>());
+                return resourceGetter.getResource(null, variables);
             } catch (ResourceIOException e) {
                 throw new InvalidPolicyException("Error accessing XACML policy resource '" + ExceptionUtils.getMessage(e) + "'.", e);
             } catch (GeneralSecurityException e) {
@@ -312,7 +313,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         PolicyFinder policyFinder = new PolicyFinder();
         try {
             String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
-            String expandedPolicy = ExpandVariables.process(policy, context.getVariableMap(variablesUsed, auditor), auditor, true);
+            String expandedPolicy = ExpandVariables.process(policy, variables, auditor, true);
             ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
             Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
             policyModules.add(policyModule);

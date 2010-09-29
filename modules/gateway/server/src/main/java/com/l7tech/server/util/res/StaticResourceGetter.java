@@ -17,7 +17,6 @@ import com.l7tech.server.policy.ServerPolicyException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * A ResourceGetter that owns a single statically-configured value for the resource, with no network
@@ -28,7 +27,6 @@ import java.util.logging.Logger;
  * getResource().
  */
 class StaticResourceGetter<R, M> extends ResourceGetter<R, M> {
-    private static final Logger logger = Logger.getLogger(StaticResourceGetter.class.getName());
     private final ResourceObjectFactory<R> rof;
     private R userObject;
     private boolean hasVariable;
@@ -69,7 +67,7 @@ class StaticResourceGetter<R, M> extends ResourceGetter<R, M> {
     }
 
     @Override
-    public R getResource(M notUsed, Map vars) throws IOException {
+    public R getResource(M notUsed, Map<String,Object> vars) throws IOException {
         if(!hasVariable) return userObject;
 
         final String doc = ExpandVariables.process(staticResourceInfo.getDocument(), vars, audit);

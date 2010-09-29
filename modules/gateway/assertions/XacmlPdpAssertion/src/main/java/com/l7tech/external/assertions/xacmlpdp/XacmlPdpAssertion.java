@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 
@@ -97,6 +98,12 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
             String doc = sri.getDocument();
             if (doc != null)
                 variables.addAll( Arrays.asList( Syntax.getReferencedNames(doc) ));
+        } else if (resourceInfo instanceof SingleUrlResourceInfo ) {
+            final SingleUrlResourceInfo singleUrlResourceInfo = (SingleUrlResourceInfo) resourceInfo;
+            final String url = singleUrlResourceInfo.getUrl();
+            if ( url != null ) {
+                variables.addAll( Arrays.asList( Syntax.getReferencedNames(url) ));
+            }
         }
 
         if ( inputMessageSource == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE &&

@@ -153,35 +153,32 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
         if (resourceInfo instanceof SingleUrlResourceInfo) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            return Syntax.getReferencedNames(suri.getUrl());
-        } else if (!(resourceInfo instanceof StaticResourceInfo)) {
-            // Try again later, in case the stylesheet hasn't been set yet
-            return new String[0];
-        }
+            vars.addAll( Arrays.asList( Syntax.getReferencedNames(suri.getUrl()) ) );
+        } else if ( resourceInfo instanceof StaticResourceInfo ) {
+            StaticResourceInfo sri = (StaticResourceInfo)resourceInfo;
+            String xslSrc = sri.getDocument();
+            if (xslSrc == null || xslSrc.length() == 0) return new String[0];
 
-        StaticResourceInfo sri = (StaticResourceInfo)resourceInfo;
-        String xslSrc = sri.getDocument();
-        if (xslSrc == null || xslSrc.length() == 0) return new String[0];
-
-        try {
-            TransformerFactory tf = TransformerFactory.newInstance();
-            tf.setURIResolver( new URIResolver(){
-                public Source resolve( String href, String base ) throws TransformerException {
-                    return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
+            try {
+                TransformerFactory tf = TransformerFactory.newInstance();
+                tf.setURIResolver( new URIResolver(){
+                    public Source resolve( String href, String base ) throws TransformerException {
+                        return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
+                    }
+                } );
+                Templates temp = tf.newTemplates(new DOMSource( XmlUtil.parse(new StringReader(xslSrc), false)));
+                if (temp instanceof StylesheetRoot) {
+                    StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;
+                    Vector<ElemVariable> victor = stylesheetRoot.getVariablesAndParamsComposed();
+                    for (ElemVariable var : victor) {
+                        vars.add(var.getName().getLocalName());
+                    }
+                } else {
+                    logger.warning("XSLT was not a " + StylesheetRoot.class.getName() + ", can't get declared variables");
                 }
-            } );
-            Templates temp = tf.newTemplates(new DOMSource( XmlUtil.parse(new StringReader(xslSrc), false)));
-            if (temp instanceof StylesheetRoot) {
-                StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;
-                Vector<ElemVariable> victor = stylesheetRoot.getVariablesAndParamsComposed();
-                for (ElemVariable var : victor) {
-                    vars.add(var.getName().getLocalName());
-                }
-            } else {
-                logger.warning("XSLT was not a " + StylesheetRoot.class.getName() + ", can't get declared variables");
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet", e);
             }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet", e);
         }
 
         this.varsUsed = vars.toArray(new String[vars.size()]);

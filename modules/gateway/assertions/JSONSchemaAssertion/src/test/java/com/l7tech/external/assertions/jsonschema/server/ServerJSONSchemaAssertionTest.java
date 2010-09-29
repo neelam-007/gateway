@@ -25,10 +25,8 @@ import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.Charsets;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -41,7 +39,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,7 +47,6 @@ import java.util.regex.Pattern;
  */
 public class ServerJSONSchemaAssertionTest {
 
-    private static final Logger log = Logger.getLogger(ServerJSONSchemaAssertionTest.class.getName());
     private StashManager stashManager;
 
     // -  STATIC RESOURCE
@@ -62,7 +58,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, buildContext(), ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -75,7 +71,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(schemaVar, jsonSchema);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
@@ -88,7 +84,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.RESPONSE);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, false, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, false, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -102,7 +98,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setOtherTargetMessageVariable(varName);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(varName, jsonInstance);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
@@ -117,7 +113,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setOtherTargetMessageVariable(varName);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
         final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(jsonInstance.getBytes()));
         pec.setVariable(varName, message);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -131,7 +127,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.BAD_REQUEST, assertionStatus);
     }
@@ -143,7 +139,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.RESPONSE);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(invalidJsonInstance, false, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(invalidJsonInstance, false, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.BAD_RESPONSE, assertionStatus);
     }
@@ -157,7 +153,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setOtherTargetMessageVariable(varName);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
         pec.setVariable(varName, invalidJsonInstance);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, assertionStatus);
@@ -172,7 +168,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setOtherTargetMessageVariable(varName);
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(null, true, varName, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
         final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidJsonInstance.getBytes()));
         pec.setVariable(varName, message);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
@@ -188,7 +184,20 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
+    }
+
+    @Test
+    public void testMonitorUrlWithContextVariables() throws Exception{
+        JSONSchemaAssertion assertion = new JSONSchemaAssertion();
+        assertion.setResourceInfo(new SingleUrlResourceInfo("http://${schemahost}"));
+        assertion.setTarget(TargetMessageType.REQUEST);
+        final GenericApplicationContext context = buildContext(jsonSchema.getBytes(), "http://imaurl.com");
+        ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
+        pec.setVariable( "schemahost", "imaurl.com" );
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -200,7 +209,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(invalidJsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.BAD_REQUEST, assertionStatus);
     }
@@ -219,7 +228,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
 
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
@@ -236,7 +245,7 @@ public class ServerJSONSchemaAssertionTest {
         assertion.setTarget(TargetMessageType.REQUEST);
         final GenericApplicationContext context = buildContext(invalidJsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.APPLICATION_JSON, null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.APPLICATION_JSON, null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
@@ -251,7 +260,7 @@ public class ServerJSONSchemaAssertionTest {
 
         final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -264,7 +273,7 @@ public class ServerJSONSchemaAssertionTest {
 
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json;profile=http://testurl.com"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
@@ -278,7 +287,7 @@ public class ServerJSONSchemaAssertionTest {
         final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), linkHeader);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json"), linkHeader);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -292,7 +301,7 @@ public class ServerJSONSchemaAssertionTest {
         final GenericApplicationContext context = buildContext(jsonSchema.getBytes());
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
-        PolicyEnforcementContext pec = getContext(jsonInstance, false, null, context, ContentTypeHeader.create("application/json"), linkHeader);
+        PolicyEnforcementContext pec = getContext(jsonInstance, false, null, ContentTypeHeader.create("application/json"), linkHeader);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -306,7 +315,7 @@ public class ServerJSONSchemaAssertionTest {
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         String linkHeader = "<http://irishman:8080/templateschema>;rel=\"describedby\"";
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), linkHeader);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json"), linkHeader);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
@@ -319,7 +328,7 @@ public class ServerJSONSchemaAssertionTest {
 
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.SERVER_ERROR, assertionStatus);
     }
@@ -334,7 +343,7 @@ public class ServerJSONSchemaAssertionTest {
 
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
-        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, context, ContentTypeHeader.create("application/json"), null);
+        PolicyEnforcementContext pec = getContext(jsonInstance, true, null, ContentTypeHeader.create("application/json"), null);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
     }
@@ -381,7 +390,6 @@ public class ServerJSONSchemaAssertionTest {
     private PolicyEnforcementContext getContext(String requestData,
                                                 boolean useRequest,
                                                 String contextVariableName,
-                                                ApplicationContext context,
                                                 ContentTypeHeader contentType,
                                                 String addLinkHeader) throws IOException {
 
@@ -420,10 +428,23 @@ public class ServerJSONSchemaAssertionTest {
     }
 
     private GenericApplicationContext buildContext(byte[] bytes) throws Exception{
+        return buildContext( bytes, null );
+    }
+
+    private GenericApplicationContext buildContext(final byte[] bytes,
+                                                   final String expectedUrl) throws Exception{
         final TestingHttpClientFactory testFactory = new TestingHttpClientFactory();
         if(bytes != null){
             MockGenericHttpClient mockClient = new MockGenericHttpClient(200, new GenericHttpHeaders(new HttpHeader[]{}),
-                    ContentTypeHeader.APPLICATION_JSON, (long) bytes.length, bytes);
+                    ContentTypeHeader.APPLICATION_JSON, (long) bytes.length, bytes){
+                @Override
+                public GenericHttpRequest createRequest( final HttpMethod method, final GenericHttpRequestParams params ) throws GenericHttpException {
+                    if ( expectedUrl != null ) {
+                        Assert.assertEquals( "JSON schema url", expectedUrl, params.getTargetUrl().toString() );
+                    }
+                    return super.createRequest( method, params );
+                }
+            };
             testFactory.setMockHttpClient(mockClient);
         }
         

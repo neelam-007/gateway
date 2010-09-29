@@ -468,6 +468,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         //policy XML is validated on OK
         boolean enableOkButton =
                 isProvidedPolicyXML() ||
+                Syntax.getReferencedNames( urlToMonitorField.getText() ).length > 0 || 
                 ValidationUtils.isValidUrl( urlToMonitorField.getText().trim() );
 
         okButton.setEnabled(enableOkButton);        

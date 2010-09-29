@@ -1,12 +1,8 @@
-/*
- * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.util.res;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.url.UrlResolver;
-import com.l7tech.xml.ElementCursor;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -26,6 +22,7 @@ import java.util.Map;
  */
 class SingleUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
     private final String url;
+    private final boolean expandVariables;
 
     SingleUrlResourceGetter(Assertion assertion,
                             SingleUrlResourceInfo ri,
@@ -37,12 +34,15 @@ class SingleUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
         String url = ri.getUrl();
         if (url == null) throw new ServerPolicyException(assertion, "Missing resource url");
         this.url = url;
+        this.expandVariables = Syntax.getReferencedNames( url ).length > 0;
 
-        // Ensure URL is well-formed
-        try {
-            new URL(url);
-        } catch (MalformedURLException e) {
-            throw new ServerPolicyException(assertion, "Invalid resource URL: " + url);
+        if ( !expandVariables ) {
+            // Ensure URL is well-formed
+            try {
+                new URL(url);
+            } catch (MalformedURLException e) {
+                throw new ServerPolicyException(assertion, "Invalid resource URL: " + url);
+            }
         }
     }
 
@@ -52,8 +52,11 @@ class SingleUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
     }
 
     @Override
-    public R getResource(M notUsed, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
-        String actualUrl = vars == null ? url : ExpandVariables.process(url, vars, audit);
+    public R getResource( final M notUsed,
+                          final Map<String,Object> vars ) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
+        final String actualUrl = vars == null || !expandVariables ?
+                url :
+                ExpandVariables.process(url, vars, audit);
         try {
             return fetchObject(actualUrl);
         } catch (ParseException e) {

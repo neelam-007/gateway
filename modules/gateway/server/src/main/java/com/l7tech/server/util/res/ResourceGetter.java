@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.util.res;
 
 import com.l7tech.gateway.common.audit.Audit;
@@ -69,7 +65,7 @@ public abstract class ResourceGetter<R, M> {
 
     /** Thrown if a Message cannot be examined for a resource URL because the message format is invalid. */
     public static class InvalidMessageException extends Exception {
-        public InvalidMessageException() { super(); }
+        public InvalidMessageException() {}
         public InvalidMessageException(String message) { super(message); }
         public InvalidMessageException(String message, Throwable cause) { super(message, cause); }
         public InvalidMessageException(Throwable cause) { super(cause); }
@@ -135,7 +131,7 @@ public abstract class ResourceGetter<R, M> {
      * @throws ResourceParseException if an external resource is fetched but is found to be invalid
      * @throws GeneralSecurityException  if an SSL context is needed but cannot be created
      */
-    public abstract R getResource(M message, Map vars)
+    public abstract R getResource(M message, Map<String,Object> vars)
             throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException,
                    UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException;
 
@@ -214,7 +210,7 @@ public abstract class ResourceGetter<R, M> {
             }
 
             @Override
-            public R getResource( M message, Map vars ) throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException, UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException {
+            public R getResource( M message, Map<String,Object> vars ) throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException, UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException {
                 if ( exception instanceof IOException ) {
                     throw (IOException) exception;
                 } else if ( exception instanceof InvalidMessageException ) {

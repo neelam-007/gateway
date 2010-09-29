@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.PopupModel;
@@ -35,6 +32,7 @@ import com.l7tech.policy.assertion.GlobalResourceInfo;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
@@ -129,7 +127,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     private final Logger log = Logger.getLogger(getClass().getName());
 
-    private static int CONTROL_SPACING = 5;
+    private static final int CONTROL_SPACING = 5;
 
     // Combo box strings that also serve as mode identifiers
     private final String MODE_SPECIFY = resources.getString("specifyItem.label");
@@ -887,7 +885,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return false;
         }
 
-        if ( !ValidationUtils.isValidUrl(url.trim()) ) {
+        if ( Syntax.getReferencedNames( url ).length==0 &&
+             !ValidationUtils.isValidUrl(url.trim()) ) {
             displayError(resources.getString("error.badurl"), null);
             return false;
         }

@@ -1,13 +1,8 @@
-/*
- * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.util.res;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.url.UrlResolver;
 import com.l7tech.util.TextUtils;
-import com.l7tech.xml.ElementCursor;
 import com.l7tech.policy.MessageUrlResourceInfo;
 
 import java.io.IOException;
@@ -47,7 +42,7 @@ class MessageUrlResourceGetter<R, M> extends UrlResourceGetter<R, M> {
     }
 
     @Override
-    public R getResource(M message, Map vars)
+    public R getResource(M message, Map<String,Object> vars)
             throws IOException, MalformedResourceUrlException, UrlNotPermittedException,
             ResourceIOException, InvalidMessageException, ResourceParseException, GeneralSecurityException, UrlNotFoundException
     {

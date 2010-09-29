@@ -1,12 +1,8 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -53,7 +49,8 @@ public class MonitorUrlPanel extends JPanel {
     public String check() {
         String url = urlField.getText();
         if (url != null && !url.trim().isEmpty() ) {
-            if ( !ValidationUtils.isValidUrl(url.trim()) ) {
+            if ( Syntax.getReferencedNames( url ).length==0 &&
+                 !ValidationUtils.isValidUrl(url.trim()) ) {
                 return resourceBundle.getString("error.badurl");
             }
             return null;

@@ -193,7 +193,7 @@ public class ServerSchemaValidation
                     return AssertionStatus.SERVER_ERROR;
                 }
             } else {
-                Map vars = context.getVariableMap(varsUsed, auditor);
+                final Map<String,Object> vars = context.getVariableMap(varsUsed, auditor);
                 String schemaUrl = null;
                 try {
                     //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
