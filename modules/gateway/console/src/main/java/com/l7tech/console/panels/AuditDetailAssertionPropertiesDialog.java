@@ -101,6 +101,15 @@ public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropert
         customLoggerNameCheckBox.addActionListener(enableListener);
         customLoggerTextField.setDocument(new MaxLengthDocument(128));
         customLoggerTextField.setText(cust == null ? "" : cust);
+        customLoggerTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { enableButtons(); }
+        });
+        
         Utilities.enableGrayOnDisabled(customLoggerTextField);
 
         enableButtons();
