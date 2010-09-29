@@ -78,6 +78,9 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "DASBgNVHSUBAf8ECDAGBgRVHSUAMB0GA1UdDgQWBBSxICMdkP6HesLjcsKr//Q+yU4vvDAfBgNVHSMEGDAWgBSxICMdkP6HesLjcsKr//Q+yU4vvDAKBggqhkjOPQQDAwNpADBlAjBlh8gFJlrtXBvaRlxM/uPlpSVQNkjMK+JQlDFYZ7GvDXh2txez5HOatn/+3+nk7MkCMQD0sWMGiePG" +
             "WPAFvaneFzQ8UBp5K9kBeBNXZ7nXTDnYxh28bvcLvVbtnQ5wa1Q34cgA</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></bar></foo>";
 
+    static final String SAML_11_ASSERTION =
+            "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\" AssertionID=\"SamlAssertion-5b3f1ec7e856441b9d61d8d4ffedf44d\" Issuer=\"data.l7tech.local\" IssueInstant=\"2010-09-29T21:00:19.167Z\"><saml:Conditions NotBefore=\"2010-09-29T20:58:19.000Z\" NotOnOrAfter=\"2010-09-29T21:05:19.361Z\"/><saml:AuthenticationStatement AuthenticationMethod=\"urn:oasis:names:tc:SAML:1.0:am:unspecified\" AuthenticationInstant=\"2010-09-29T21:00:19.167Z\"><saml:Subject><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:bearer</saml:ConfirmationMethod></saml:SubjectConfirmation></saml:Subject><saml:SubjectLocality IPAddress=\"127.0.0.1\"/></saml:AuthenticationStatement><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#SamlAssertion-5b3f1ec7e856441b9d61d8d4ffedf44d\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>HfhX0I2kqRhbex7MlLGqUkQ3BlM=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>ebLcJu5ltRJc0q5+ws4Ju/cxhry/S07EuJQWlVtP3K1lV2ued8QVxNaB32xIFpjhVSt0XSKNZaovYnhrZOLcFY4UMlm632tezm3DZdpRmIjGqg4M8goqnUX3ONQAIwTxjE627J69tcVkdWF9mfhoCdKNlDtKsqjNMpihPAG3FsFcOD3zOTxPtG8ZlqxoKsV+z4LfBnkfJYDkQJv+uU1fU2D4ANHbU52KJunKiws5UniNjCdpk8I2i+B+xfPRfSgN29XSTY/63O7Asck2NGcFd/ghwdIhXssXfo7IFhQ37bMU/9lljChn8Tsws5I+0UT2DS5JY8SdpyBDK6R7UCd7og==</ds:SignatureValue><KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><X509Data><X509SubjectName>CN=data.l7tech.local</X509SubjectName><X509Certificate>MIIC/TCCAeWgAwIBAgIJALQ69EvSLyHRMA0GCSqGSIb3DQEBDAUAMBwxGjAYBgNVBAMTEWRhdGEubDd0ZWNoLmxvY2FsMB4XDTEwMDkyMjIzNDUxNloXDTIwMDkxOTIzNDUxNlowHDEaMBgGA1UEAxMRZGF0YS5sN3RlY2gubG9jYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCbsHn5S7bjQxAVqM9mwT9mF/xpUwkhQFDjdnaZ3EgEWMNogmD8w94JMlV9FThYhNNkMm4KsbldmW80Zgj3Wg61/U8oNGwMDhNSzl8A5HJZpQYcGr1f0f9pHty1K35WRPy3Kwj27s+A0xnl9mFpWqOstZDL/R73dUDTRjLiyt1T5gIBvOJLSyCBdm4EKEYxd5pccXE0dMjme/H+9zeF1ZZcdVeCy/4p89g5uH4oRr5JwZpE2t257vvDCm3JMZz+0cehyqLm1dp43aOn5meFVBQnnxSqwQsROql0B4QAHE8v2ey6XV1IdFR0xWAixc6rqFcydkZ5ZlCaAGpnHu9q31bxAgMBAAGjQjBAMB0GA1UdDgQWBBQZdpWMAS2VY398QD2tHIYcZ6xpDDAfBgNVHSMEGDAWgBQZdpWMAS2VY398QD2tHIYcZ6xpDDANBgkqhkiG9w0BAQwFAAOCAQEAV1W4yGe892/0kMNFoGFzMbshrKZIQzKiWIOg4EMGx6m4RPT0wh+biTCmz6p+ZfEZiQ3NooN7VFawgWfGjxvhZv+8+lLCircBvaL9xPBdswTx7QUgxEJIoU8SSwRMQjG/WdrBsfmjG21UyBtswsvhvnwqYpFGptHBt/oAlNe6EGOkR8AvZAim4M0S0TXzBdJekXYzsnshxKBMsqVnoaBN1WFnIdb/U3oGXB/x+IsGIqusJpMhjyzhdvN3RfXPk9Dr/sxNDXq+9uF0EZ0ea8NlSI5ngVIavjVSuktwW80ZrDAgVPeDvBV9n14HlJ5TWwQwMRk/dftUUjQN3xamJXl3BQ==</X509Certificate></X509Data></KeyInfo></ds:Signature></saml:Assertion>";
+
     // Unfortunately this includes an EC cert that uses explicit parameters rather than a named curve, so
     // requires the Bouncy Castle certificate factory to parse it.
     public static final String APACHE_SAMPLE_SIGNED_XML =
@@ -179,6 +182,13 @@ public class ServerNonSoapVerifyElementAssertionTest {
     public void testVerifyLayer7SignedEcdsa() throws Exception {
         verifyAndCheck(ass(), LAYER7_SIGNED_ECDSA, false, NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),
                 "http://www.w3.org/2001/04/xmldsig-more#sha384", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384", null);
+    }
+
+    @Test
+    @BugNumber(9179)
+    public void testVerifySignedSaml11Assertion() throws Exception {
+        verifyAndCheck(ass(), SAML_11_ASSERTION, false, null,
+                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2000/09/xmldsig#rsa-sha1", null);
     }
 
     @Test

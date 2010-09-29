@@ -32,8 +32,8 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         add(new FullQName("http://schemas.xmlsoap.org/ws/2002/07/utility", null, "Id"));
         add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
         add(new FullQName("http://schemas.xmlsoap.org/ws/2003/06/utility", null, "Id"));
-        add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", null, "AssertionID"));
-        add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", null, "ID"));
+        add(new FullQName("urn:oasis:names:tc:SAML:1.0:assertion", "local", "AssertionID"));
+        add(new FullQName("urn:oasis:names:tc:SAML:2.0:assertion", "local", "ID"));
         add(new FullQName(null, null, "Id"));
         add(new FullQName(null, null, "id"));
         add(new FullQName(null, null, "ID"));
