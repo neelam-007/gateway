@@ -136,11 +136,11 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_SCHEMA_CACHE_MAX_ENTRIES = "schemaMaxCacheEntries";
     public static final String PARAM_SCHEMA_CACHE_MAX_AGE = "schemaMaxCacheAge";
     public static final String PARAM_SCHEMA_CACHE_MAX_STALE_AGE = "schemaMaxStaleCacheAge";
-
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY = "schemaRecompileLatency";
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE = "schemaRecompileMinAge";
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE = "schemaRecompileMaxAge";
     public static final String PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE = "schemaCacheMaxSchemaSize";
+    public static final String PARAM_SCHEMA_REMOTE_URL_REGEX = "schema.remoteResourceRegex";
 
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
     public static final String PARAM_RSA_SIGNATURE_CACHE_MAX_ENTRIES = "rsaSignatureCacheMaxEntries";

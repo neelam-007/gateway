@@ -236,6 +236,7 @@
                                 <value>schemaRecompileMaxAge</value>
                                 <value>schemaCacheMaxSchemaSize</value>
                                 <value>schemaSoftwareFallback</value>
+                                <value>schema.remoteResourceRegex</value>
                             </list>
                         </entry>
                         <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>

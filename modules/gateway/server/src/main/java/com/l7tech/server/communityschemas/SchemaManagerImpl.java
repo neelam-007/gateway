@@ -45,6 +45,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Creates and manages all in-memory instances of {@link CompiledSchema}, including uploading them to hardware
@@ -82,6 +84,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     private final Config config;
+    private final AtomicReference<Pattern> remoteResourcePattern;
     private final AtomicReference<CacheConfiguration> cacheConfigurationReference;
     private final GenericHttpClientFactory httpClientFactory;
 
@@ -179,6 +182,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         this.config = validated(config);
         this.httpClientFactory = httpClientFactory;
         this.tarariSchemaHandler = tarariSchemaHandler;
+        this.remoteResourcePattern = new AtomicReference<Pattern>();
         this.cacheConfigurationReference = new AtomicReference<CacheConfiguration>();
         this.httpStringCache = new AtomicReference<HttpObjectCache<String>>();
 
@@ -187,6 +191,18 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         maintenanceTimer = timer;
 
         updateCacheConfiguration();
+    }
+
+    private void updateRemoteResourceRegex() {
+        final String regex = config.getProperty( ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX, ".*" );
+        try {
+            final Pattern pattern = Pattern.compile( regex );
+            remoteResourcePattern.set( pattern );
+            logger.config( "Using '"+ ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX+"' value '"+regex+"'." );
+        } catch ( final PatternSyntaxException pse ) {
+            remoteResourcePattern.set( null );
+            logger.warning( "Invalid '"+ ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX+"' ('"+regex+"'), remote XML Schema resource access will fail." );
+        }
     }
 
     private synchronized void updateCacheConfiguration() {
@@ -241,11 +257,16 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
     @Override
     public void propertyChange(final PropertyChangeEvent evt) {
-        logger.info("Rebuilding schema cache due to change in cache configuration");
-        try {
-            updateCacheConfiguration();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error while rebuilding schema cache: " + ExceptionUtils.getMessage(e), e);
+        if ( ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX.equals( evt.getPropertyName() )) {
+            logger.config( "Updating remote XML Schema resource regular expression." );
+            updateRemoteResourceRegex();
+        } else {
+            logger.info("Rebuilding schema cache due to change in cache configuration");
+            try {
+                updateCacheConfiguration();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error while rebuilding schema cache: " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 
@@ -490,7 +511,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             if (schema != null) {
                 final String url = schema.getSystemId();
                 try {
-                    getSchemaStringForUrl(url, url, true);
+                    getSchemaStringForUrl(url, url, true, true);
                 } catch ( IOException e ) {
                     invalidateSchemaForUrl( url );
                     logger.log( Level.WARNING,
@@ -586,7 +607,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
-        final String schemaDoc = getSchemaStringForUrl(url, url, true).getStringData();
+        final String schemaDoc = getSchemaStringForUrl(url, url, true, true).getStringData();
         assert schemaDoc != null;
 
         // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
@@ -636,12 +657,14 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      * @param policyOk      if true, urls of the form "policy:whatever" will be allowed.  This should be allowed
      *                      only if this is a top-level fetch; otherwise, policies can import each others static schemas,
      *                      possibly in violation of access control partitions.
+     * @param remoteOk      true to allow any remote URL, false to verify remote URLs
      * @return as LSInput that contains both StringData and a SystemId.  Never null.
      * @throws IOException  if schema text could not be fetched for the specified URL.
      */
     private LSInput getSchemaStringForUrl( final String baseUrl,
                                            String url,
-                                           final boolean policyOk) throws IOException {
+                                           final boolean policyOk,
+                                           final boolean remoteOk ) throws IOException {
         if (!policyOk && url.trim().toLowerCase().startsWith("policy:"))
             throw new IOException("Schema URL not permitted in this context: " + url);
 
@@ -658,7 +681,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (schemaDoc != null)
             return makeLsInput(url, schemaDoc);
 
-        // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
+        // Not a global schema -- do a remote schema load
+        if ( !remoteOk ) {
+            validateRemoteSchemaUrl( url );
+        }
         try {
             schemaDoc = httpStringCache.get().resolveUrl(url);
             if (schemaDoc != null)
@@ -669,6 +695,14 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         // Shouldn't happen
         throw new IOException("Unable to download remote schema " + describeResource(baseUrl, url));
+    }
+
+    private void validateRemoteSchemaUrl( final String url ) throws IOException {
+        final Pattern pattern = remoteResourcePattern.get();
+        if ( pattern == null || !pattern.matcher(url).matches() ) {
+            // Context information is added when this exception is handled
+            throw new IOException("Remote resource access forbidden.");
+        }
     }
 
     /** @return an LSInput that contains StringData and a SystemId. */
@@ -882,7 +916,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                             throw new CausedIOException("No systemId, cannot resolve resource");
                         }
                     }
-                    LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
+                    LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false, false);
                     assert lsi != null;
                     dependencies.add(lsi.getSystemId());
                     return lsi;
@@ -898,7 +932,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             return dependencies;
         } catch (RuntimeException e) {
             UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
-            if (exception != null) throw new CausedIOException("Unable to resolve remote sub-schema for resource " + exception.getResourceDescription(), exception.getCause());
+            if (exception != null) throw new CausedIOException(
+                    "Unable to resolve remote sub-schema for resource " + exception.getResourceDescription() +
+                    " : " + ExceptionUtils.getMessage(exception.getCause()),
+                    exception.getCause());
             throw e;
         }
     }
@@ -1081,7 +1118,10 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             throw new SAXException("Unable to parse Schema", e);
         } catch (RuntimeException e) {
             UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
-            if (exception != null) throw new CausedIOException("Unable to resolve remote sub-schema for resource " + exception.getResourceDescription(), exception.getCause());
+            if (exception != null) throw new CausedIOException(
+                    "Unable to resolve remote sub-schema for resource " + exception.getResourceDescription() +
+                    " : " + ExceptionUtils.getMessage(exception.getCause()),
+                    exception.getCause());
             throw e;
         } finally {
             if ( !success ) {
@@ -1107,7 +1147,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 throw new CausedIOException("No systemId, cannot resolve resource");
             }
         }
-        LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
+        LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false, false);
         assert lsi != null;
 
         SchemaHandle handle = schemasBySystemId.get(lsi.getSystemId());
