@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
@@ -199,7 +200,11 @@ public class Actions {
     }
 
     static void deleteAssertion(AssertionTreeNode node, final Functions.UnaryVoid<Boolean> result) {
-        String nodeName = DefaultAssertionPolicyNode.getNameFromMeta(node.asAssertion(), true, false);
+        String nodeName;
+        if(node instanceof CustomAssertionTreeNode)
+            nodeName = node.getName(true);   // get name set by the custom assertion, not in metadata
+        else
+            nodeName= DefaultAssertionPolicyNode.getNameFromMeta(node.asAssertion(), true, false);
 
         if (nodeName != null && nodeName.length() > 80) {
             nodeName = nodeName.substring(0,76) + "...";
