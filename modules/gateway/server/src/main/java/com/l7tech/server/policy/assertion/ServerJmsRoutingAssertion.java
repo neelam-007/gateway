@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.io.XmlUtil;
@@ -97,7 +93,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
 
     @Override
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException {
 
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -232,13 +228,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             if (cfg!=null) jmsResourceManager.invalidate(cfg);
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             String msg = "Caught FindException";
-            throw new PolicyAssertionException(assertion, msg, e);
-        } catch ( JmsConfigException e ) {
-            String msg = "Invalid JMS configuration";
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
-            throw new PolicyAssertionException(assertion, msg, e);
+            return AssertionStatus.FAILED;
+        } catch ( JmsConfigException e ) {
+            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR,
+                    new String[]{ExceptionUtils.getMessage(e)}, 
+                    ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
         } catch ( AssertionStatusException e ) {
             throw e;
         } catch ( Throwable t ) {
@@ -283,11 +280,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return messageSent;
         }
 
-        private void doException() throws IOException, SAXException, NamingException, JMSException, PolicyAssertionException {
+        private void doException() throws IOException, SAXException, NamingException, JMSException {
             if ( exception != null) {
-                if ( exception instanceof PolicyAssertionException ) {
-                    throw (PolicyAssertionException) exception;
-                } else if ( exception instanceof JMSException ) {
+                if ( exception instanceof JMSException ) {
                     throw (JMSException) exception;
                 } else if ( exception instanceof SAXException ) {
                     throw (SAXException) exception;
@@ -340,7 +335,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 MessageProducer jmsProducer = null;
                 try {
                     if ( jmsSession instanceof QueueSession ) {
-                        if ( !(jmsOutboundDestination instanceof Queue ) ) throw new PolicyAssertionException(assertion, "Destination/Session type mismatch" );
+                        if ( !(jmsOutboundDestination instanceof Queue ) ) {
+                            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_DESTINATION_SESSION_MISMATCH );
+                            throw new AssertionStatusException(AssertionStatus.FAILED);
+                        }
                         // the reason for this distinction is that IBM throws java.lang.AbstractMethodError: com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
                         jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDestination );
                     } else if ( jmsSession instanceof TopicSession && cfg.getEndpoint().getReplyType() != JmsReplyType.NO_REPLY) {
@@ -470,8 +468,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     requestMessage.notifyMessage(responseMessage, MessageRole.RESPONSE);
                     responseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
                 }
-            } catch ( PolicyAssertionException e ) {
-                exception = e;
             } catch ( JMSException e ) {
                 exception = e;
             } catch ( SAXException e ) {
@@ -628,7 +624,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
 
     private String getSelector( final Message jmsOutboundRequest,
-                                final JmsEndpoint jmsEndpoint ) throws JMSException, PolicyAssertionException {
+                                final JmsEndpoint jmsEndpoint ) throws JMSException {
         final String selector;
 
         if (jmsEndpoint.getReplyType() == JmsReplyType.AUTOMATIC) {
@@ -639,7 +635,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             final StringBuilder sb = new StringBuilder("JMSCorrelationID = '");
             if (jmsEndpoint.isUseMessageIdForCorrelation()) {
                 final String id = jmsOutboundRequest.getJMSMessageID();
-                if (id == null) throw new PolicyAssertionException(assertion, "Sent message had no message ID");
+                if (id == null) {
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_MISSING_MESSAGE_ID);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+                }
                 sb.append(id);
             } else {
                 sb.append(jmsOutboundRequest.getJMSCorrelationID());

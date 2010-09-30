@@ -1,11 +1,8 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -178,13 +175,13 @@ public class JmsUtil {
                     }
                 }
                 catch (ClassNotFoundException cnfe) {
-                    throw new JmsConfigException("Could not configure connection factory.", cnfe);
+                    throw new JmsConfigException("Could not configure connection factory : " + ExceptionUtils.getMessage( cnfe ), cnfe);
                 }
                 catch (InstantiationException ie) {
-                    throw new JmsConfigException("Could not configure connection factory.", ie);
+                    throw new JmsConfigException("Could not configure connection factory : " + ExceptionUtils.getMessage( ie ), ie);
                 }
                 catch (IllegalAccessException iae) {
-                    throw new JmsConfigException("Could not configure connection factory.", iae);
+                    throw new JmsConfigException("Could not configure connection factory : " + ExceptionUtils.getMessage( iae ), iae);
                 }
             }
 
@@ -226,8 +223,7 @@ public class JmsUtil {
 
             return result;
         } catch ( RuntimeException rte ) {
-            logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
-            throw (JmsConfigException)new JmsConfigException(rte.toString()).initCause(rte);
+            throw new JmsConfigException("Error connecting to JMS : " + ExceptionUtils.getMessage(rte), rte);
         } finally {
             Thread.currentThread().setContextClassLoader(contextLoader);            
             try { if ( sess != null ) sess.close(); } catch (Throwable t) { logit(t); }

@@ -2,6 +2,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.io.SingleCertX509KeyManager;
@@ -122,9 +123,9 @@ public class JmsSslCustomizerSupport {
                 context.getClientSessionContext().setSessionTimeout(timeout);
                 instance = context;
             } catch (GeneralSecurityException e) {
-                throw new JmsConfigException("Couldn't initialize LDAP client SSL context", e);
+                throw new JmsConfigException("Couldn't initialize LDAP client SSL context : " + ExceptionUtils.getMessage( e ), e);
             } catch (ObjectModelException e) {
-                throw new JmsConfigException("Couldn't initialize LDAP client SSL context", e);
+                throw new JmsConfigException("Couldn't initialize LDAP client SSL context : " + ExceptionUtils.getMessage( e ), e);
             }
 
             instancesByKeyEntryId.put(keyId, instance);

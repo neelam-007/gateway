@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.TibcoEmsConstants;
 import com.l7tech.server.transport.jms.ConnectionFactoryCustomizer;
 import com.l7tech.server.transport.jms.JmsConfigException;
+import com.l7tech.util.ExceptionUtils;
 import com.tibco.tibjms.TibjmsConnectionFactory;
 
 import javax.jms.ConnectionFactory;
@@ -84,7 +85,7 @@ public class TibcoConnectionFactoryCustomizer implements ConnectionFactoryCustom
                 }
             }
         } catch(Exception exception) {
-            throw new JmsConfigException("Error configuring connection factory.", exception);
+            throw new JmsConfigException("Error configuring connection factory : " + ExceptionUtils.getMessage( exception ), exception);
         }
     }
 
