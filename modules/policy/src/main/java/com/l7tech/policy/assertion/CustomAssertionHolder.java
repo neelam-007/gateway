@@ -164,7 +164,19 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
 
         meta.put(SHORT_NAME, "Custom Assertion");
         meta.put(DESCRIPTION, "Custom Assertion");
+        meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<CustomAssertionHolder>(){
+            @Override
+            public String getAssertionName( CustomAssertionHolder assertion, boolean decorate) {
+                final CustomAssertion ca = getCustomAssertion();
+                String name = ca.getName();
+                if (name == null) {
+                    name = "Unspecified custom assertion (class '" + ca.getClass() + "'";
+                }
+                return (decorate) ? AssertionUtils.decorateName(assertion, name) : name;
+            }
+        });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/custom.gif");
+
         return meta;
     }
 

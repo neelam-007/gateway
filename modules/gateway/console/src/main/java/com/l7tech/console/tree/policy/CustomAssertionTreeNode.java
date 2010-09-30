@@ -43,14 +43,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      */
     @Override
     public String getName(final boolean decorate) {
-        CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
-        final CustomAssertion ca = cha.getCustomAssertion();
-        String name = ca.getName();
-        if (name == null) {
-            name = "Unspecified custom assertion (class '" + ca.getClass() + "'";
-        }
-
-        return (decorate) ? DefaultAssertionPolicyNode.addCommentToDisplayText(cha, name) : name;
+        return DefaultAssertionPolicyNode.getNameFromMeta(asAssertion(), decorate, true);
     }
 
     /**
