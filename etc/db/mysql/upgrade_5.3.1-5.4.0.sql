@@ -21,6 +21,11 @@ UPDATE ssg_version SET current_version = '5.4.0';
 SET FOREIGN_KEY_CHECKS=1;
 
 --
+-- bug 9071  allow larger JDBC URL
+--
+ALTER TABLE jdbc_connection MODIFY COLUMN jdbc_url varchar(4096) ;
+
+--
 -- DO NOT ADD STATEMENTS HERE. ADD THEM ABOVE "SET FOREIGN_KEY_CHECKS"
 --
 

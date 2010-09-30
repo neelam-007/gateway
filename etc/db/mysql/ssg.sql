@@ -874,7 +874,7 @@ CREATE TABLE jdbc_connection (
   version integer NOT NULL,
   name varchar(128) NOT NULL,
   driver_class varchar(256) NOT NULL,
-  jdbc_url varchar(256) NOT NULL,
+  jdbc_url varchar(4096) NOT NULL,
   user_name varchar(128) NOT NULL,
   password varchar(64) NOT NULL,
   enabled tinyint(1) NOT NULL DEFAULT 1,
