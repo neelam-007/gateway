@@ -91,7 +91,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
 
         connectionNameTextField.setDocument(new MaxLengthDocument(128));
         ((JTextField)driverClassComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(256));
-        jdbcUrlTextField.setDocument(new MaxLengthDocument(256));
+        jdbcUrlTextField.setDocument(new MaxLengthDocument(4096));
         usernameTextField.setDocument(new MaxLengthDocument(128));
         passwordField.setDocument(new MaxLengthDocument(64));
 
