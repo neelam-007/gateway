@@ -49,19 +49,40 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      */
     public static final WaitMode WAIT_LATEST = new WaitMode();
 
+    /**
+     * Use cached resources indefinitely when resource access fails.
+     */
+    public static final long STALE_CACHE_NO_EXPIRY = -1;
+
     // -- Instance fields --
     protected TimeSource clock = new TimeSource();
     protected final long maxCacheAge;
+    protected final long maxStaleCacheAge;
     protected final WaitMode defaultWaitMode;
 
     /**
      * Construct a new AbstractUrlObjectCache.
      *
-     * @param maxCacheAge
-     * @param defaultWaitMode
+     * @param maxCacheAge Threshold for resource refresh
+     * @param defaultWaitMode The wait mode to use by default
      */
-    protected AbstractUrlObjectCache(long maxCacheAge, WaitMode defaultWaitMode) {
+    protected AbstractUrlObjectCache( final long maxCacheAge,
+                                      final WaitMode defaultWaitMode ) {
+        this( maxCacheAge, STALE_CACHE_NO_EXPIRY, defaultWaitMode );
+    }
+
+    /**
+     * Construct a new AbstractUrlObjectCache.
+     *
+     * @param maxCacheAge Threshold for resource refresh
+     * @param maxStaleCacheAge Threshold for resource "eviction"
+     * @param defaultWaitMode The wait mode to use by default
+     */
+    protected AbstractUrlObjectCache( final long maxCacheAge,
+                                      final long maxStaleCacheAge,
+                                      final WaitMode defaultWaitMode ) {
         this.maxCacheAge = maxCacheAge;
+        this.maxStaleCacheAge = maxStaleCacheAge;
         this.defaultWaitMode = defaultWaitMode == null ? WAIT_INITIAL : defaultWaitMode;
     }
 
@@ -322,18 +343,25 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
     @Override
     public UT resolveUrl(String url) throws IOException, ParseException {
-        FetchResult<UT> result = fetchCached(url, defaultWaitMode);
+        final FetchResult<UT> result = fetchCached(url, defaultWaitMode);
 
-        UT obj = result.getUserObject();
+        final UT obj = result.getUserObject();
 
-        // Return object if we got one, even if we have an exception that's even newer
+        // Return object if we have one, unless it is stale.
         if (obj != null) {
-            IOException e = result.getException();
-            if (e != null && logger.isLoggable(Level.WARNING))
-                logger.log(Level.WARNING,
-                           "Reusing previously-cached copy of remote resource: URL: " + url + ": " +
-                                   ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return obj;
+            final IOException e = result.getException();
+            if ( e != null ) {
+                if ( maxStaleCacheAge == STALE_CACHE_NO_EXPIRY ||
+                     (clock.currentTimeMillis() - result.getUserObjectCreated()) <= maxStaleCacheAge ) {
+                    if (logger.isLoggable(Level.WARNING))
+                        logger.log(Level.WARNING,
+                                   "Reusing previously-cached copy of remote resource: URL: " + url + ": " +
+                                           ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    return obj;
+                }
+            } else {
+                return obj;
+            }
         }
 
         // No object.  Report exception.

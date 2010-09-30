@@ -26,8 +26,10 @@ import java.util.*;
 public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String CPROP_XACML_POLICY_CACHE_MAX_ENTRIES = "xacml.pdp.policyCache.maxEntries";
     public static final String CPROP_XACML_POLICY_CACHE_MAX_AGE = "xacml.pdp.policyCache.maxAge";
+    public static final String CPROP_XACML_POLICY_CACHE_MAX_STALE_AGE = "xacml.pdp.policyCache.maxStaleAge";
     public static final String PARAM_XACML_POLICY_CACHE_MAX_ENTRIES = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_ENTRIES);
     public static final String PARAM_XACML_POLICY_CACHE_MAX_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_AGE);
+    public static final String PARAM_XACML_POLICY_CACHE_MAX_STALE_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_XACML_POLICY_CACHE_MAX_STALE_AGE);
     public static final String XACML_PDP_MAX_DOWNLOAD_SIZE = "xacml.pdp.maxDownloadSize";
 
     public enum SoapEncapsulationType {
@@ -191,7 +193,10 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
                 "Maximum age to cache a downloaded policy before checking to see if it has been updated (Milliseconds). Requires gateway restart.",
                 "300000"
         });
-
+        props.put(CPROP_XACML_POLICY_CACHE_MAX_STALE_AGE, new String[] {
+                "Maximum age of stale (expired) cached policies loaded from URLs, -1 for no expiry (Milliseconds). Requires gateway restart.",
+                "-1"
+        });
         props.put(XACML_PDP_MAX_DOWNLOAD_SIZE, new String[]{
                 "Maximum size in bytes of a XACML policy document download, or 0 for unlimited (Integer).",
                 "${documentDownload.maxSize}" } );

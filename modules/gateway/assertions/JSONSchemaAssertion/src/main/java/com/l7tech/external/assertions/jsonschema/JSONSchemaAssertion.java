@@ -28,9 +28,11 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
 
     public static final String CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES = "json.schemaCache.maxEntries";
     public static final String CPROP_JSON_SCHEMA_CACHE_MAX_AGE = "json.schemaCache.maxAge";
+    public static final String CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE = "json.schemaCache.maxStaleAge";
     public static final String CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = "json.schemaCache.maxDownloadSize";
     public static final String PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES);
     public static final String PARAM_JSON_SCHEMA_CACHE_MAX_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_AGE);
+    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE);
     public static final String PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
 
     @Override
@@ -77,6 +79,11 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_AGE, new String[] {
                 "Maximum age of cached JSON Schema documents loaded from URLs (Milliseconds). Requires gateway restart.",
                 "300000"
+        });
+
+        props.put(CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE, new String[] {
+                "Maximum age of stale (expired) cached JSON schema documents loaded from URLs, -1 for no expiry (Milliseconds). Requires gateway restart.",
+                "-1"
         });
 
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES, new String[] {

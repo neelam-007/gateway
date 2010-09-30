@@ -131,7 +131,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
     //- PROTECTED
 
-    protected byte[] getResponseBody() {
+    protected byte[] getResponseBody() throws IOException {
         return responseBody;
     }
 
@@ -208,7 +208,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         private long responseLength;
         private byte[] responseData;
 
-        private void initResponse() {
+        private void initResponse() throws IOException {
             if ( responseData == null ) {
                 responseData = getResponseBody();
                 if ( contentLength==null ) {
@@ -221,8 +221,12 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
         @Override
         public InputStream getInputStream() throws GenericHttpException {
-            initResponse();
-            return new ByteArrayInputStream(responseData);
+            try {
+                initResponse();
+                return new ByteArrayInputStream(responseData);
+            } catch ( IOException e ) {
+                throw new GenericHttpException(e);
+            }
         }
 
         @Override
@@ -247,7 +251,11 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
         @Override
         public Long getContentLength() {
-            initResponse();
+            try {
+                initResponse();
+            } catch ( IOException e ) {
+                // ok
+            }
             return responseLength;
         }
     }

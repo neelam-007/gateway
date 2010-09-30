@@ -131,9 +131,11 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
     public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";
+    public static final String PARAM_XSLT_CACHE_MAX_STALE_AGE = "xsltMaxStaleCacheAge";
 
     public static final String PARAM_SCHEMA_CACHE_MAX_ENTRIES = "schemaMaxCacheEntries";
     public static final String PARAM_SCHEMA_CACHE_MAX_AGE = "schemaMaxCacheAge";
+    public static final String PARAM_SCHEMA_CACHE_MAX_STALE_AGE = "schemaMaxStaleCacheAge";
 
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY = "schemaRecompileLatency";
     public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE = "schemaRecompileMinAge";

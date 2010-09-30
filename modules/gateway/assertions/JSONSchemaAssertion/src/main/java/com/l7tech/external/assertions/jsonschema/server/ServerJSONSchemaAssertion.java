@@ -218,54 +218,14 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
         Config config = validated( ServerConfig.getInstance() );
-        final int maxAge = config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_AGE, 300000);
-        // expiring cache
-        httpObjectCache = 
-            new HttpObjectCache<JSONSchema>(
+        httpObjectCache = new HttpObjectCache<JSONSchema>(
                 config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES, 100),
-                maxAge,
+                config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_AGE, 300000),
+                config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE, -1),
                 clientFactory,
                 jsonSchemaObjectFactory,
                 HttpObjectCache.WAIT_INITIAL,
-                ClusterProperty.asServerConfigPropertyName(JSONSchemaAssertion.PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE)) {
-            @Override
-            public JSONSchema resolveUrl(String url) throws IOException, ParseException
-            {
-                FetchResult<JSONSchema> result = fetchCached(url, defaultWaitMode);
-
-                // expired ?
-                if (! isFresh(result, maxAge)) {
-                    cacheRemove(url);
-                    result = fetchCached(url, defaultWaitMode);
-                    if (! isFresh(result, maxAge)) {
-                        throw new IOException("Fetching took longer than max cache age (" + maxAge + " ms) for: " + url);
-                    }
-                }
-
-                JSONSchema schema = result.getUserObject();
-                IOException error = result.getException();
-
-                if (schema != null && (error == null || result.getExceptionCreated() < result.getUserObjectCreated()) ) {
-                    // success
-                    return schema;
-                } else if (error != null && (schema == null || result.getUserObjectCreated() < result.getExceptionCreated()) ) {
-                    // report error, unwrap any wrapped ParseException
-                    ParseException pe = ExceptionUtils.getCauseIfCausedBy(error, ParseException.class);
-                    if (pe != null) throw pe;
-                    throw error;
-                } else {
-                    // no schema, no error, may be possible if using WAIT_NEVER
-                    throw new IOException("No user object available for url " + url);
-                }
-            }
-
-            private boolean isFresh(FetchResult<JSONSchema> result, int maxAge) {
-                long now = System.currentTimeMillis();
-                long latest = result.getUserObject() != null ? result.getUserObjectCreated() : Long.MIN_VALUE;
-                latest = result.getException() != null && result.getExceptionCreated() > latest ? result.getExceptionCreated() : latest;
-                return latest > Long.MIN_VALUE && now -latest < maxAge;
-            }
-        };
+                ClusterProperty.asServerConfigPropertyName(JSONSchemaAssertion.PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE));
 
         return httpObjectCache;
     }
@@ -285,6 +245,10 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     return JSONSchemaAssertion.CPROP_JSON_SCHEMA_CACHE_MAX_AGE;
                 }
 
+                if(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE.equals(key)){
+                    return JSONSchemaAssertion.CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE;
+                }
+
                 if(JSONSchemaAssertion.PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE.equals(key)){
                     return JSONSchemaAssertion.CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE;
                 }
@@ -297,6 +261,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         vc.setMaximumValue( JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES, 1000000 );
 
         vc.setMinimumValue( JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_AGE, 0 );
+        vc.setMinimumValue( JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE, -1 );
 
         vc.setMinimumValue( JSONSchemaAssertion.PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE, 0 );
 

@@ -230,6 +230,7 @@
                             <list>
                                 <value>schemaMaxCacheEntries</value>
                                 <value>schemaMaxCacheAge</value>
+                                <value>schemaMaxStaleCacheAge</value>
                                 <value>schemaRecompileLatency</value>
                                 <value>schemaRecompileMinAge</value>
                                 <value>schemaRecompileMaxAge</value>

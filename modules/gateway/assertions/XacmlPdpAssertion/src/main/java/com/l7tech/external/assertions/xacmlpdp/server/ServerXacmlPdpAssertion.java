@@ -340,6 +340,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
+                config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_STALE_AGE, -1),
                 clientFactory,
                 cacheObjectFactory,
                 HttpObjectCache.WAIT_INITIAL,
@@ -353,14 +354,23 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
             @Override
             public String resolve( final String key ) {
-                return XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES.equals( key ) ?
-                        XacmlPdpAssertion.CPROP_XACML_POLICY_CACHE_MAX_ENTRIES :
-                        key;
+
+                if ( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES.equals( key ) ) {
+                    return XacmlPdpAssertion.CPROP_XACML_POLICY_CACHE_MAX_ENTRIES;
+                }
+
+                if ( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_STALE_AGE.equals( key ) ) {
+                    return XacmlPdpAssertion.CPROP_XACML_POLICY_CACHE_MAX_STALE_AGE;
+                }
+
+                return key;
             }
         } );
 
         vc.setMinimumValue( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 0 );
         vc.setMaximumValue( XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 1000000 );
+
+        vc.setMinimumValue(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_STALE_AGE, -1);
 
         return vc;
     }

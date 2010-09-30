@@ -198,6 +198,7 @@ public class ServerXslTransformation
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
+                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1),
                         clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE);
 
             return httpObjectCache;
@@ -214,6 +215,8 @@ public class ServerXslTransformation
 
         vc.setMinimumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 0 );
         vc.setMaximumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 1000000 );
+
+        vc.setMinimumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1 );
 
         return vc;
     }

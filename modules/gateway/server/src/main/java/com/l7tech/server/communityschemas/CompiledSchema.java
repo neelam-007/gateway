@@ -60,6 +60,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final Schema softwareSchema;
     private final boolean softwareFallback;
     private final boolean tarariCompatible;
+    private final long createdTime = System.currentTimeMillis();
 
     // These properties are synchronized by the schema manager
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
@@ -68,7 +69,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
     private boolean loadedAsInclude = false;  // true while (and only while) this schema is loaded on the hardware as an include
 
-    private long lastUsedTime = System.currentTimeMillis();
+    private long lastUsedTime = createdTime;
 
     CompiledSchema( final String targetNamespace,
                     final String systemId,
@@ -480,5 +481,9 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     synchronized long getLastUsedTime() {
         return lastUsedTime;
+    }
+
+    long getCreatedTime() {
+        return createdTime;
     }
 }

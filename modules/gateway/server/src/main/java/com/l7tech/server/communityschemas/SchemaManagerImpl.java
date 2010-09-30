@@ -36,6 +36,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,6 +59,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
     private static class CacheConfiguration {
         private final int maxCacheAge;
+        private final int maxStaleAge;
         private final int maxCacheEntries;
         private final int hardwareRecompileLatency;
         private final int hardwareRecompileMinAge;
@@ -67,6 +69,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         CacheConfiguration(Config config) {
             maxCacheAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
+            maxStaleAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_STALE_AGE, -1);
             maxCacheEntries = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
             hardwareRecompileLatency = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
             hardwareRecompileMinAge = config.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
@@ -192,7 +195,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             @Override
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                 String response = responseSource.getString(true);
-                onUrlDownloaded(url);
+                onUrlDownloaded(url, response);
                 return response;
             }
         };
@@ -211,6 +214,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         httpStringCache.set(new HttpObjectCache<String>( cacheConfigurationReference.get().maxCacheEntries,
                                                       cacheConfigurationReference.get().maxCacheAge,
+                                                      cacheConfigurationReference.get().maxStaleAge,
                                                       hcf,
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST,
@@ -328,16 +332,59 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
     /**
      * Report that a URL has just been downloaded.  If any previous schema with this URL was known, it and any
+     * schemas that make use of it may need to be recompiled before their next use.
+     *
+     * @param url  the URL for the schema to invalidate.  Must not be null.
+     * @param content the contents of the schema if available. May be null.
+     */
+    private void onUrlDownloaded( final String url,
+                                  final String content ) {
+        boolean valid = false;
+        Exception schemaException = null;
+        if ( content != null ) {
+            try {
+                XmlUtil.getSchemaTNS( content );
+                valid = true;
+            } catch ( XmlUtil.BadSchemaException e ) {
+                valid = false;
+                schemaException = e;
+            }
+        }
+
+        final boolean staleExpired = isStaleExpired( url, System.currentTimeMillis() );
+        if ( valid || staleExpired ) {
+            invalidateSchemaForUrl( url );
+        } else if ( schemaException != null ) {
+            logger.warning("Invalid schema downloaded -- not invalidating cache for URL '" + url + "', error is: " + ExceptionUtils.getMessage(schemaException));
+        }
+    }
+
+    /**
+     * Invalidate a schema. If any previous schema with this URL was known, it and any
      * schemas that make use of it will need to be recompiled before their next use.
      *
-     * @param url  the URL that was just successfully downloaded.  Must not be null.
+     * @param url  the URL for the schema to invalidate.  Must not be null.
      */
-    private void onUrlDownloaded(final String url) {
+    private void invalidateSchemaForUrl( final String url ) {
         final SchemaHandle old = schemasBySystemId.remove(url);
         if (old != null) {
             schemasRecentlySuperseded.put(url, 1);
             deferredCloseHandle(old);
         }
+    }
+
+    /**
+     * Is the schema for the given URL past the given stale expiry?
+     *
+     * @param url The URL for the schema to check.
+     * @param time The time to check for expiry.
+     * @return true if expired or the URL is not known.
+     */
+    private boolean isStaleExpired( final String url, final long time ) {
+        final SchemaHandle old = schemasBySystemId.get(url);
+
+        return old == null || (cacheConfigurationReference.get().maxStaleAge > -1 &&
+               (time - old.getCompiledSchema().getCreatedTime()) > cacheConfigurationReference.get().maxStaleAge);
     }
 
     private synchronized void deferredCloseHandle( final SchemaHandle handle ) {
@@ -444,8 +491,11 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 final String url = schema.getSystemId();
                 try {
                     getSchemaStringForUrl(url, url, true);
-                } catch (IOException e) {
-                    logger.warning("Unable to update remote schema from URL -- will keep using previous value: " + url);
+                } catch ( IOException e ) {
+                    invalidateSchemaForUrl( url );
+                    logger.log( Level.WARNING,
+                            "Error accessing schema for url '"+url+"': " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
                 }
             }
         }
@@ -609,17 +659,13 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
             return makeLsInput(url, schemaDoc);
 
         // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
-        final AbstractUrlObjectCache.FetchResult<String> result =
-                httpStringCache.get().fetchCached(url, HttpObjectCache.WAIT_LATEST);
-
-        schemaDoc = result.getUserObject();
-        if (schemaDoc != null)
-            return makeLsInput(url, schemaDoc);
-
-        // Check for errors we should report
-        final IOException e = result.getException();
-        if (e != null)
+        try {
+            schemaDoc = httpStringCache.get().resolveUrl(url);
+            if (schemaDoc != null)
+                return makeLsInput(url, schemaDoc);
+        } catch ( ParseException e ) {
             throw new CausedIOException("Unable to download remote schema " + describeResource(baseUrl, url) +  " : " + ExceptionUtils.getMessage(e), e);
+        }
 
         // Shouldn't happen
         throw new IOException("Unable to download remote schema " + describeResource(baseUrl, url));
@@ -727,14 +773,14 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
         if (schemaDoc == null) throw new NullPointerException("A schema must be provided");
         String old = globalSchemasByUrl.put(globalUrl, schemaDoc);
         if (old != null)
-            onUrlDownloaded(globalUrl);
+            invalidateSchemaForUrl(globalUrl);
     }
 
     @Override
     public void unregisterSchema(final String globalUrl) {
         String old = globalSchemasByUrl.remove(globalUrl);
         if (old != null)
-            onUrlDownloaded(globalUrl);
+            invalidateSchemaForUrl(globalUrl);
     }
 
     private String describeResource( final String baseURI, final String url ) {
@@ -936,7 +982,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                 Set<CompiledSchema> parents = new HashSet<CompiledSchema>();
                 getParents(url, parents);
                 for (CompiledSchema schema : parents) {
-                    if (!schema.isClosed()) onUrlDownloaded(schema.getSystemId());
+                    if (!schema.isClosed()) invalidateSchemaForUrl(schema.getSystemId());
                 }
             }
         }
@@ -1467,6 +1513,8 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
         vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 0 );
         vc.setMaximumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 1000000 );
+
+        vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_STALE_AGE, -1 );
 
         return vc;
     }

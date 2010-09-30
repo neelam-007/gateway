@@ -51,6 +51,8 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      *                                the least recently used objects as needed to keep the size below this limit.
      * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
      *                                when a request is issued, an If-Modified-Since: query will be issued to the URL.
+     * @param staleAge                if a cached object is more than this many milliseconds old then it will no
+     *                                longer be used when an error occurs.
      * @param httpClientFactory       factory that creates HTTP clients to fetch with.  Must not be null.
      * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
      *                                The returned object will be cached and returned to other fetchers of this URL
@@ -60,12 +62,14 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      */
     public HttpObjectCache(int maxCachedObjects,
                            long recheckAge,
+                           long staleAge,
                            GenericHttpClientFactory httpClientFactory,
                            UserObjectFactory<UT> userObjectFactory,
                            WaitMode defaultWaitMode,
                            String maxDownloadSizeProperty) {
         this(maxCachedObjects,
                 recheckAge,
+                staleAge,
                 httpClientFactory,
                 userObjectFactory,
                 defaultWaitMode,
@@ -80,6 +84,8 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      *                                the least recently used objects as needed to keep the size below this limit.
      * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
      *                                when a request is issued, an If-Modified-Since: query will be issued to the URL.
+     * @param staleAge                if a cached object is more than this many milliseconds old then it will no
+     *                                longer be used when an error occurs.
      * @param httpClientFactory       factory that creates HTTP clients to fetch with.  Must not be null.
      * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
      *                                The returned object will be cached and returned to other fetchers of this URL
@@ -91,12 +97,13 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      */
     public HttpObjectCache(int maxCachedObjects,
                            long recheckAge,
+                           long staleAge,
                            GenericHttpClientFactory httpClientFactory,
                            UserObjectFactory<UT> userObjectFactory,
                            WaitMode defaultWaitMode,
                            String maxDownloadSizeProperty,
                            int emergencyDownloadSize) {
-        super(recheckAge, defaultWaitMode);
+        super(recheckAge, staleAge ,defaultWaitMode);
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
         this.cache = maxCachedObjects <= 0 ? null : new LRUMap(maxCachedObjects);

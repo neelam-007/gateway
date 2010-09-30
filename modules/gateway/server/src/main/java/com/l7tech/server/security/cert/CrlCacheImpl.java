@@ -102,6 +102,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         this.httpObjectCache = new HttpObjectCache<X509CRL>(
                 httpObjectCacheSize,
                 maxCacheAge,
+                AbstractUrlObjectCache.STALE_CACHE_NO_EXPIRY,
                 httpClientFactory,
                 new CrlHttpObjectFactory(),
                 AbstractUrlObjectCache.WAIT_INITIAL,

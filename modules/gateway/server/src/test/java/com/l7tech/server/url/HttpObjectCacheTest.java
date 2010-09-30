@@ -16,6 +16,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
@@ -25,6 +26,7 @@ public class HttpObjectCacheTest {
     private static Logger log = Logger.getLogger(HttpObjectCacheTest.class.getName());
 
     private static final long TEST_POLL_AGE = 500; // in ms
+    private static final long TEST_POLL_STALE = -1; // in ms
     private static final long SHORT_DELAY = TEST_POLL_AGE / 5; // sleep that should give things time to happen, but avoid triggering poll_age
     private static final long POLL_DELAY = TEST_POLL_AGE * 2; // sleep that should cause POLL_AGE to expire
 
@@ -53,6 +55,157 @@ public class HttpObjectCacheTest {
 
         public int hashCode() {
             return (blat != null ? blat.hashCode() : 0);
+        }
+    }
+
+    @Test
+    public void testSingleThreadedNoStaleExpiry() throws Exception {
+        final String userObjStr = "Howza!";
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
+                responseSource.getBytes();
+                return new UserObj(userObjStr);
+            }
+        };
+
+        final boolean[] responseError = new boolean[]{ false };
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes()){
+            @Override
+            protected byte[] getResponseBody() throws IOException {
+                if ( responseError[0] ) {
+                    throw new IOException("IO ERROR!");
+                }
+                return super.getResponseBody();
+            }
+        };
+
+        final GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+        };
+
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        final HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(500,
+                        TEST_POLL_AGE,
+                        TEST_POLL_STALE,
+                        clientFactory,
+                        factory,
+                        WAIT_NEVER,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
+        httpObjectCache.clock = clock;
+
+        final String url = "http://blat/";
+
+        // Make sure we include a last modified header, although we'll just send garbage
+        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                                                                                     "blarglebliff")}));
+
+        hc.clearResponseCount();
+        UserObj result = httpObjectCache.resolveUrl( url );
+        assertTrue(hc.getResponseCount() == 1);
+        assertNotNull(result);
+        final UserObj firstUo = result;
+
+        // Wait long enough to trigger a poll, then try another request.
+        clock.sleep(POLL_DELAY, 0);
+        responseError[0] = true;
+        result = httpObjectCache.resolveUrl(url);
+        assertTrue(hc.getResponseCount() == 2);
+        assertNotNull(result);
+        assertTrue(result == firstUo); // must not have replaced the object
+    }
+
+    @Test
+    public void testSingleThreadedWithStaleExpiry() throws Exception {
+        final String userObjStr = "Howza!";
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            @Override
+            public UserObj createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
+                responseSource.getBytes();
+                return new UserObj(userObjStr);
+            }
+        };
+
+        final boolean[] responseError = new boolean[]{ false };
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes()){
+            @Override
+            protected byte[] getResponseBody() throws IOException {
+                if ( responseError[0] ) {
+                    throw new IOException("IO ERROR!");
+                }
+                return super.getResponseBody();
+            }
+        };
+
+        final GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            @Override
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+            @Override
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
+        };
+
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        final HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(500,
+                        TEST_POLL_AGE,
+                        TEST_POLL_AGE * 3,
+                        clientFactory,
+                        factory,
+                        WAIT_NEVER,
+                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                );
+        httpObjectCache.clock = clock;
+
+        final String url = "http://blat/";
+
+        // Make sure we include a last modified header, although we'll just send garbage
+        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                                                                                     "blarglebliff")}));
+
+        hc.clearResponseCount();
+        UserObj result = httpObjectCache.resolveUrl( url );
+        assertTrue(hc.getResponseCount() == 1);
+        assertNotNull(result);
+        final UserObj firstUo = result;
+
+        // Wait long enough to trigger a poll, then try another request.
+        clock.sleep(POLL_DELAY, 0);
+        responseError[0] = true;
+        result = httpObjectCache.resolveUrl(url);
+        assertTrue(hc.getResponseCount() == 2);
+        assertNotNull(result);
+        assertTrue(result == firstUo); // must not have replaced the object
+
+        // Wait long enough to trigger another poll, then try another request.
+        clock.sleep(POLL_DELAY, 0);
+        try {
+            httpObjectCache.resolveUrl(url);
+            fail("Expected IOException");
+        } catch ( IOException e ) {
+            // success
         }
     }
 
@@ -89,6 +242,7 @@ public class HttpObjectCacheTest {
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(500,
                         TEST_POLL_AGE,
+                        TEST_POLL_STALE,
                         clientFactory,
                         factory,
                         WAIT_NEVER,
@@ -181,6 +335,7 @@ public class HttpObjectCacheTest {
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(0,
                         TEST_POLL_AGE,
+                        TEST_POLL_STALE,
                         clientFactory,
                         factory,
                         WAIT_INITIAL,
@@ -388,6 +543,7 @@ public class HttpObjectCacheTest {
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(500,
                         TEST_POLL_AGE,
+                        TEST_POLL_STALE,
                         clientFactory,
                         factory,
                         WAIT_NEVER,
@@ -445,6 +601,7 @@ public class HttpObjectCacheTest {
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(0,
                         TEST_POLL_AGE,
+                        TEST_POLL_STALE,
                         clientFactory,
                         factory,
                         WAIT_INITIAL,
