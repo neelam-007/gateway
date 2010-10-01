@@ -84,7 +84,7 @@ public class BusinessServicePublisher implements Closeable {
      * @param previousEndpointPairs    Collection&lt;EndpointPair&gt; The collection of endpoint pairs which were used to
      *                                 previously publish the endpoint for the current service to an original service in UDDI. Can be null or empty. Only
      *                                 the endpoint URL is used here, the WSDL URL is not required. Used to find the applicable set of bindingTemplates
-     *                                 when reusing bindingKeys. This is only required to support the upgrade from Pandora to Maytag
+     *                                 when reusing bindingKeys. This is only required to support the upgrade from Pandora to Albacore.
      *                                 This is used to find existing bindingTemplates and to delete them when this publish is performing a republish.
      * @param allEndpointPairs         Collection&lt;EndpointPair&gt; Required. All endpoints to publish bindingTemplates for
      * @param publishedBindingKeys     Set &lt;String&gt; Can be null. The set of previously published bindingKeys for this service.
@@ -562,6 +562,8 @@ public class BusinessServicePublisher implements Closeable {
 
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "Problem publishing to UDDI: " + ExceptionUtils.getMessage(e));
+            //this may delete a bindingTemplate and tModels which existed from a previous publish. However if we are
+            //publishing then the are out of date so this is ok.
             for (Map.Entry<String, TModel> entry : tModelsToPublish.entrySet()) {
                 final String tModelKey = entry.getValue().getTModelKey();
                 if (tModelKey != null && !tModelKey.trim().isEmpty()) {
@@ -612,7 +614,7 @@ public class BusinessServicePublisher implements Closeable {
     //- PRIVATE
 
     /**
-     * Based on the prevoiusly published endpoints, find the list of applicable BindingTemplates which were published
+     * Based on the previously published endpoints, find the list of applicable BindingTemplates which were published
      * by a gateway
      *
      */
@@ -642,7 +644,7 @@ public class BusinessServicePublisher implements Closeable {
                 }
 
                 if (previousEndpointPairs == null) continue;
-                //Pandora -> Maytag support, in Pandora only a hostname was used to delete the bindingTemplate, keep in this support
+                //Pandora -> Albacore support, in Pandora only a hostname was used to delete the bindingTemplate, keep in this support
                 for (EndpointPair previousEndpointPair : previousEndpointPairs) {
                     String hostName = previousEndpointPair.getEndPointUrl();
                     if (hostName == null) continue;
@@ -810,6 +812,7 @@ public class BusinessServicePublisher implements Closeable {
             final String uniqueKey = getUniqueKeyForService(bs);
             wsdlServicesToPublish.put(uniqueKey, bs);
             tModelsForServiceToPublish.put(uniqueKey, serviceToModels.right);
+            addRegistrySpecifcMetaToBusinessService(registrySpecificMetaData, serviceToModels.left);
         }
 
         //find which services already exist, and reuse their serviceKeys if found
@@ -830,7 +833,7 @@ public class BusinessServicePublisher implements Closeable {
             if (wsdlServicesToPublish.containsKey(uniquePublishedSvcName)) {
                 final BusinessService businessService = wsdlServicesToPublish.get(uniquePublishedSvcName);
 
-                final Set<String> tModelsToKeep = transferKeys(businessService,
+                final Set<String> tModelsToKeep = synchronizeServices(businessService,
                         uddiPublishedService,
                         allEndpointPairs,
                         tModelsForServiceToPublish.get(uniquePublishedSvcName),
@@ -863,7 +866,7 @@ public class BusinessServicePublisher implements Closeable {
         }
 
         final Set<Pair<String, BusinessService>> newlyPublishedServices =
-                publishServicesToUDDI(Collections.unmodifiableCollection(wsdlServiceNameToDependentTModels), registrySpecificMetaData);
+                publishServicesToUDDI(Collections.unmodifiableCollection(wsdlServiceNameToDependentTModels));
 
         if (isOverwriteUpdate) {
             //obtain the set of bindingTemplates published
@@ -965,28 +968,54 @@ public class BusinessServicePublisher implements Closeable {
         return (nameSpace == null) ? serviceName : serviceName + "_" + nameSpace;
     }
 
-    //updates internal state of toPublish BusinessService and toPublishTModels
-    private Set<String> transferKeys(
+    /**
+     * Synchronize a BusinessService and it's dependent tModels with the same BusinessService and tModels which were
+     * previously published.
+     * This involves transferring the serviceKeys and tModelKeys from the published BusinessServices and tModels as well
+     * as well as categoryBag information. categoryBag information is only synchronized on the BusinessService and is
+     * not done for tModels. This could be implemented if required in the future.
+     *
+     * Following this operation, toPublish BusinessService's categoryBag will contain a union of it's categoryBag and
+     * the categoryBag from the same service 'published' from UDDI, with the caveat that any keyNames which differ
+     * between keyedReferences will favor the name from UDDI (when the keyedReference is not a general keywords reference).
+     *
+     * @param toPublish BusinessService being prepared for publishing
+     * @param published The same BusinessService, previously published, in it's current state from UDDI
+     * @param toPublishEndpoints all endpoints to publish for the service
+     * @param toPublishTModels all tModels the service being published depends on
+     * @param publishedTModels the tModels already published for this service
+     * @return Set&lt;String&gt; each String is a tModelKey, which belongs to a bindingTemplate, so should not be deleted
+     * when remove other bindings is configured.
+     */
+    private Set<String> synchronizeServices(
             final BusinessService toPublish,
             final BusinessService published,
             final Collection<EndpointPair> toPublishEndpoints,
-            Map<String, TModel> toPublishTModels,
-            Map<String, TModel> publishedTModels) {
+            final Map<String, TModel> toPublishTModels,
+            final Map<String, TModel> publishedTModels) {
 
         toPublish.setServiceKey(published.getServiceKey());
+        //maintain any meta data added by 3rd parties
+        final CategoryBag publishedCategoryBag = published.getCategoryBag();
+        if(publishedCategoryBag != null){//it should never be null as it's always required
+            //build set of existing references -
+            final CategoryBag toPublishCategoryBag = toPublish.getCategoryBag();//we always add this, never null.
+            synchronizeCategoryBags(toPublishCategoryBag, publishedCategoryBag);
+        }
 
         final Set<String> tModelsToKeep = new HashSet<String>();
 
-        if (published.getBindingTemplates() == null) return tModelsToKeep;
-        if (published.getBindingTemplates().getBindingTemplate() == null) return tModelsToKeep;
-        if (published.getBindingTemplates().getBindingTemplate().isEmpty()) return tModelsToKeep;
+        final BindingTemplates publishedTemplates = published.getBindingTemplates();
+        if (publishedTemplates == null) return tModelsToKeep;
+        if (publishedTemplates.getBindingTemplate() == null) return tModelsToKeep;
+        if (publishedTemplates.getBindingTemplate().isEmpty()) return tModelsToKeep;
 
         List<BindingTemplate> toPublishTemplates = toPublish.getBindingTemplates().getBindingTemplate();
 
         final Set<String> updateKeysSoFar = new HashSet<String>();
         for (BindingTemplate toPublishTemplate : toPublishTemplates) {
             tModelsToKeep.addAll(updateTemplate( toPublishTemplate,
-                    published.getBindingTemplates().getBindingTemplate(),
+                    publishedTemplates.getBindingTemplate(),
                     toPublishEndpoints,
                     toPublishTModels,
                     publishedTModels,
@@ -1001,7 +1030,7 @@ public class BusinessServicePublisher implements Closeable {
      * A template matches if it implements the same wsdl:port
      *
      * @param updateKeysSoFar Set&lt;String&gt; all keys used so far. Helps avoid the case where two endpoints in
-     * toPublishEndpoints have the same scheme, in which case we could accidently give two bindingTemplates the same
+     * toPublishEndpoints have the same scheme, in which case we could accidentally give two bindingTemplates the same
      * key. First in wins. Right now there is only http + https, but in theory there could be multiple of both
      * @return Set&lt;String&gt; each String is a tModelKey, which was updated, so should not be deleted by the caller
      */
@@ -1059,6 +1088,16 @@ public class BusinessServicePublisher implements Closeable {
 
             //we have a match, copy keys
             toPublishTemplate.setBindingKey(publishedTemplate.getBindingKey());
+            final CategoryBag publishedCategoryBag = publishedTemplate.getCategoryBag();
+            if(publishedCategoryBag != null){
+                CategoryBag toPublishCategoryBag = toPublishTemplate.getCategoryBag();
+                if(toPublishCategoryBag == null){
+                    toPublishCategoryBag = new CategoryBag();
+                    toPublishTemplate.setCategoryBag(toPublishCategoryBag);
+                }
+
+                synchronizeCategoryBags(toPublishCategoryBag, publishedCategoryBag);
+            }
             updateKeysSoFar.add(publishedTemplate.getBindingKey());
             //the toPublishTemplate already has the correct endpoint value
 
@@ -1074,8 +1113,7 @@ public class BusinessServicePublisher implements Closeable {
                     break;
                 }
             }
-            break;//to get here we have updated the bindingTemplate, no need to look further
-            //todo perhaps just update the map to point at the published models, which will preserve any existing categoryBag references
+            break;//bindingTemplate and associated tModels have been successfully updated.
         }
         return Collections.unmodifiableSet(tModelsToKeep);
     }
@@ -1139,8 +1177,6 @@ public class BusinessServicePublisher implements Closeable {
      * @param serviceNameToDependentTModels Collection of Pairs. Each Pair contains a BusinessService on it's left which
      *                                      will be published to UDDI. The right side is every tModel the BusinessService depends on. tModels are always
      *                                      published first. Each tModel must contain a non null tModelKey property, if it doesn't it will be ignored.
-     * @param registrySpecificMetaData      UDDIRegistrySpecificMetaData of UDDI Registry specific meta data which should
-     *                                      be published for Each BusinessService contained in serviceNameToDependentTModels. Not required. Only used if supplied.
      * @return Set of Pairs, where the left side is the serviceKey of a newly published BusinessService and the right side
      *         is the newly published BusinessService. This set is never null, but can be empty (i.e. only updates were done).
      *         Any BusinessServices which already existsed in UDDI will not be included in this set. Callers can use this returned
@@ -1148,8 +1184,8 @@ public class BusinessServicePublisher implements Closeable {
      * @throws UDDIException any problems updating / querying UDDI
      */
     private Set<Pair<String, BusinessService>> publishServicesToUDDI(
-            final Collection<Pair<BusinessService, Map<String, TModel>>> serviceNameToDependentTModels,
-            final UDDIRegistrySpecificMetaData registrySpecificMetaData) throws UDDIException {
+            final Collection<Pair<BusinessService, Map<String, TModel>>> serviceNameToDependentTModels)
+            throws UDDIException {
 
         final Set<Pair<String, BusinessService>> serviceKeysToNewlyPublishedServices = new HashSet<Pair<String, BusinessService>>();
 
@@ -1169,8 +1205,6 @@ public class BusinessServicePublisher implements Closeable {
             publishDependentTModels(dependentTModels, WSDL_BINDING, Collections.unmodifiableSet(serviceKeysToNewlyPublishedServices));
             UDDIUtilities.updateBusinessServiceReferences(serviceAndModels.left, Collections.unmodifiableMap(dependentTModels));
 
-            addRegistrySpecifcMetaToBusinessService(registrySpecificMetaData, serviceAndModels.left);
-
             final Pair<String, BusinessService> servicePair =
                     publishBusinessService(
                             serviceAndModels.left,
@@ -1184,6 +1218,13 @@ public class BusinessServicePublisher implements Closeable {
         return Collections.unmodifiableSet(serviceKeysToNewlyPublishedServices);
     }
 
+    /**
+     * This will blindly add any meta data found in registrySpecificMetaData to the BusinessService. Make sure any
+     * required synchronization of categoryBag data is done before this method is called.
+     *
+     * @param registrySpecificMetaData
+     * @param businessService
+     */
     private void addRegistrySpecifcMetaToBusinessService(final UDDIRegistrySpecificMetaData registrySpecificMetaData,
                                                          final BusinessService businessService) {
         if(registrySpecificMetaData == null) return;
@@ -1406,4 +1447,176 @@ public class BusinessServicePublisher implements Closeable {
         }
     }
 
+    /**
+     * Synchronize toPublishCategoryBag with publishedCategoryBag. Following this operation, toPublishCategoryBag will
+     * contain all references it contained before this operation was called (with the note that some keyNames may have
+     * been changed), as well as any references which were contained on the publishedCategoryBag which were not already
+     * present in toPublishCategoryBag.
+     *
+     * @param toPublishCategoryBag
+     * @param publishedCategoryBag
+     */
+    private void synchronizeCategoryBags(
+            final CategoryBag toPublishCategoryBag,
+            final CategoryBag publishedCategoryBag){
+        final List<KeyedReference> toPublishReferences = toPublishCategoryBag.getKeyedReference();
+        final List<KeyedReference> publishedReferences = publishedCategoryBag.getKeyedReference();
+
+        //synchronize keyNames used in keyReferences
+        synchronizeKeyNames(toPublishReferences, publishedReferences);
+
+        final Collection<KeyedReference> keyedRefDiff = getKeyedReferenceDiff(toPublishReferences, publishedReferences);
+        toPublishReferences.addAll(keyedRefDiff);
+
+        final List<KeyedReferenceGroup> publishedReferenceGroupList = publishedCategoryBag.getKeyedReferenceGroup();
+        if(!publishedReferenceGroupList.isEmpty()){//if it's empty there is nothing to synchronize
+            final List<KeyedReferenceGroup> toPublishReferenceGroupList = toPublishCategoryBag.getKeyedReferenceGroup();
+            synchronizeKeyedReferenceGroups(toPublishReferenceGroupList, publishedReferenceGroupList);
+        }
+    }
+
+    private void synchronizeKeyNames(
+            final Collection<KeyedReference> toPublishReferences,
+            final Collection<KeyedReference> publishedReferences){
+        synchronizeKeyNamesBeans(toPublishReferences, convertToBeans(publishedReferences));
+    }
+
+    private void synchronizeKeyNamesBeans(
+            final Collection<KeyedReference> toPublishReferences,
+            final Collection<UDDIClient.UDDIKeyedReference> refsToCompareTo){
+        final Map<UDDIClient.UDDIKeyedReference, KeyedReference> beanToKeyedRef =
+                new HashMap<UDDIClient.UDDIKeyedReference, KeyedReference>();
+        for (KeyedReference toPublishReference : toPublishReferences) {
+            final UDDIClient.UDDIKeyedReference uddiRef = new UDDIClient.UDDIKeyedReference(
+                    toPublishReference.getTModelKey(),
+                    toPublishReference.getKeyName(),
+                    toPublishReference.getKeyValue());
+            beanToKeyedRef.put(uddiRef, toPublishReference);
+        }
+
+        final Map<UDDIClient.UDDIKeyedReference, UDDIClient.UDDIKeyedReference> pubRefToPubRef =
+                new HashMap<UDDIClient.UDDIKeyedReference, UDDIClient.UDDIKeyedReference>();
+        for (UDDIClient.UDDIKeyedReference pubRef : refsToCompareTo) {
+            //allow the published reference to be look up with a bean with the same equality as it's self.
+            pubRefToPubRef.put(pubRef, pubRef);
+        }
+
+        for (UDDIClient.UDDIKeyedReference toPubRef : beanToKeyedRef.keySet()) {
+            if(!toPubRef.getKey().equals(UDDIClient.GENERAL_KEYWORDS) && refsToCompareTo.contains(toPubRef)){
+                //match, are the names the same?
+                final UDDIClient.UDDIKeyedReference publishedRef = pubRefToPubRef.get(toPubRef);//the equality is the same as the name is not part of equals
+                if(!(publishedRef.getName().equals(toPubRef.getName()))){
+                    final KeyedReference keyedReference = beanToKeyedRef.get(toPubRef);
+                    keyedReference.setKeyName(publishedRef.getName());
+                }
+            }
+        }
+    }
+
+    private List<UDDIClient.UDDIKeyedReference> convertToBeans(Collection<KeyedReference> references){
+        final List<UDDIClient.UDDIKeyedReference> refBeans = new ArrayList<UDDIClient.UDDIKeyedReference>();
+        for (KeyedReference toPublishReference : references) {
+            refBeans.add(new UDDIClient.UDDIKeyedReference(
+                    toPublishReference.getTModelKey(),
+                    toPublishReference.getKeyName(),
+                    toPublishReference.getKeyValue()));
+        }
+
+        return refBeans;
+    }
+
+    private void synchronizeKeyedReferenceGroups(
+            final Collection<KeyedReferenceGroup> toPublishGroups,
+            final Collection<KeyedReferenceGroup> publishedGroups) {
+
+        final Map<String, KeyedReferenceGroup> toPublishKeyToGroup = new HashMap<String, KeyedReferenceGroup>();
+        for (KeyedReferenceGroup toPublishGroup : toPublishGroups) {
+            toPublishKeyToGroup.put(toPublishGroup.getTModelKey(), toPublishGroup);
+        }
+
+        for (KeyedReferenceGroup publishedGroup : publishedGroups) {
+            if(!toPublishKeyToGroup.containsKey(publishedGroup.getTModelKey())){
+                final KeyedReferenceGroup newGroup = new KeyedReferenceGroup();
+                newGroup.setTModelKey(publishedGroup.getTModelKey());
+                final List<KeyedReference> keyedRefs = new ArrayList<KeyedReference>();
+                for (KeyedReference keyedReference : publishedGroup.getKeyedReference()) {
+                    final KeyedReference newRef = new KeyedReference();
+                    newRef.setTModelKey(keyedReference.getTModelKey());
+                    newRef.setKeyValue(keyedReference.getKeyValue());
+                    newRef.setKeyName(keyedReference.getKeyName());
+                    keyedRefs.add(newRef);
+                }
+                newGroup.getKeyedReference().addAll(keyedRefs);
+                toPublishGroups.add(newGroup);
+            } else {
+                //we need to sync the keyed references
+                final KeyedReferenceGroup toPublishGroup = toPublishKeyToGroup.get(publishedGroup.getTModelKey());
+                final Collection<KeyedReference> refDiff =
+                        getKeyedReferenceDiff(toPublishGroup.getKeyedReference(), publishedGroup.getKeyedReference());
+                toPublishGroup.getKeyedReference().addAll(refDiff);
+            }
+        }
+    }
+
+    /**
+     * Get the list of KeyedReferences from one List which are not contained in the other.
+     * <p/>
+     * From the List of published KeyedReferences (added by the SSG and possibly 3rd parties), get the list of
+     * references which should be published. The returned list has the following characteristics:
+     * <ul>
+     * <li>Returned list is the List of keyedReferences which exist in publishedReferences but not in toPublishReferences</li>
+     * <li>keyNames are not part of any comparison, unless the tModelKey is 'uddi:uddi.org:categorization:general_keywords'</li>
+     * <li>keyNames, when applicable, are compared in a case sensitive manner</li>
+     * <li>keyValues are compared in a case sensitive manner</li>
+     * </ul>
+     *
+     * @param toPublishReferences List of references the gateway will publish.
+     * @param publishedReferences List of references from UDDI. Find the references which are here and not in
+     *                            toPublishReferences
+     * @return the list of KeyedReferences to publish.
+     */
+    private Collection<KeyedReference> getKeyedReferenceDiff(
+            final List<KeyedReference> toPublishReferences,
+            final List<KeyedReference> publishedReferences) {
+
+        final List<UDDIClient.UDDIKeyedReference> awaitingPublication = convertToBeans(toPublishReferences);
+
+        final List<UDDIClient.UDDIKeyedReference> published = convertToBeans(publishedReferences);
+
+        //add missing references from the gateway
+        final List<UDDIClient.UDDIKeyedReference> diffRefs = getKeyedReferenceDiff(awaitingPublication, published);
+        final List<KeyedReference> diffKeyedRefs = new ArrayList<KeyedReference>();
+        for (UDDIClient.UDDIKeyedReference diffRef : diffRefs) {
+            final KeyedReference keyedReference = new KeyedReference();
+            keyedReference.setTModelKey(diffRef.getKey());
+            keyedReference.setKeyValue(diffRef.getValue());
+            keyedReference.setKeyName(diffRef.getName());
+            diffKeyedRefs.add(keyedReference);
+        }
+
+        return diffKeyedRefs;
+    }
+
+    /**
+     * Get the collection of UDDI.UDDIKeyedReferences which are missing from toPublish
+     * @param toPublish Collection of references to publish, this collection represents what the ssg knows about and
+     * wants to publish.
+     * @param published
+     * @return a collection of UDDI.UDDIKeyedReference which contains all references from toPublish and any references
+     * found in publishedKeys which do not exist in toPublish.
+     */
+    private List<UDDIClient.UDDIKeyedReference> getKeyedReferenceDiff(
+            Collection<UDDIClient.UDDIKeyedReference> toPublish,
+            Collection<UDDIClient.UDDIKeyedReference> published){
+
+        final List<UDDIClient.UDDIKeyedReference> diffList = new ArrayList<UDDIClient.UDDIKeyedReference>();
+
+        for (UDDIClient.UDDIKeyedReference publishedRef : published) {
+            if(!toPublish.contains(publishedRef)){
+                diffList.add(publishedRef);
+            }
+        }
+
+        return diffList;
+    }
 }

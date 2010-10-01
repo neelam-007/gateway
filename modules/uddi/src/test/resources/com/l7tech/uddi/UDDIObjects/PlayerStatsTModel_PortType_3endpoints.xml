@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" deleted="false" tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a05555">
-    <ns4:name>PlayerStatsWsdlPortType</ns4:name>
+    <ns4:name>PlayerStats</ns4:name>
     <ns4:description>wsdl:type representing portType</ns4:description>
     <ns4:overviewDoc>
         <ns4:overviewURL useType="wsdlInterface">http://irishman:8152/bug8147_playerstats.wsdl</ns4:overviewURL>
     </ns4:overviewDoc>
     <ns4:categoryBag>
-        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats/bug8147" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="portType" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
         <ns4:keyedReference keyValue="wsdlSpec" keyName="Specification for a Web Service described in WSDL" tModelKey="uddi:uddi.org:categorization:types"/>
     </ns4:categoryBag>

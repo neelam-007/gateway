@@ -6,7 +6,7 @@
         <ns4:overviewURL useType="wsdlInterface">http://irishman:8152/bug8147_playerstats.wsdl</ns4:overviewURL>
     </ns4:overviewDoc>
     <ns4:categoryBag>
-        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats/bug8147" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="binding" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
         <ns4:keyedReference keyValue="wsdlSpec" keyName="Specification for a Web Service described in WSDL" tModelKey="uddi:uddi.org:categorization:types"/>
         <ns4:keyedReference keyValue="uddi:e30d7d00-2234-11df-acce-251c32a0acbe" keyName="uddi.org:wsdl:portTypeReference" tModelKey="uddi:uddi.org:wsdl:portTypeReference"/>

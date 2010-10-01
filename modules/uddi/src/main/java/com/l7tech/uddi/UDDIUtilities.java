@@ -463,6 +463,28 @@ public class UDDIUtilities {
                 + wsdlPortBinding + "' binding");
     }
 
+    /**
+     * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
+     *
+     * @param tModel          the TModel to get the type for
+     * @param throwIfNotFound if true and the type of the tModel is not known, a runtime exception will be thrown
+     * @return TMODEL_TYPE the type of TModel
+     */
+    public static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
+        final CategoryBag categoryBag = tModel.getCategoryBag();
+        List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
+        for (KeyedReference keyedReference : keyedReferences) {
+            if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
+            final String keyValue = keyedReference.getKeyValue();
+            if (keyValue.equals("portType")) return TMODEL_TYPE.WSDL_PORT_TYPE;
+            if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
+            throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
+        }
+        if (throwIfNotFound)
+            throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
+        return null;
+    }
+
     public static class WsdlEndPointNotFoundException extends Exception {
         public WsdlEndPointNotFoundException(String message) {
             super(message);
@@ -644,28 +666,6 @@ public class UDDIUtilities {
                 throw new IllegalStateException("No tModel found for key: " + tii.getTModelKey());
             tii.setTModelKey(tModel.getTModelKey());
         }
-    }
-
-    /**
-     * Work out what wsdl element the tModel represents. Either wsdl:portType or wsdl:binding
-     *
-     * @param tModel          the TModel to get the type for
-     * @param throwIfNotFound if true and the type of the tModel is not known, a runtime exception will be thrown
-     * @return TMODEL_TYPE the type of TModel
-     */
-    static TMODEL_TYPE getTModelType(final TModel tModel, boolean throwIfNotFound) {
-        final CategoryBag categoryBag = tModel.getCategoryBag();
-        List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
-        for (KeyedReference keyedReference : keyedReferences) {
-            if (!keyedReference.getTModelKey().equalsIgnoreCase(WsdlToUDDIModelConverter.UDDI_WSDL_TYPES)) continue;
-            final String keyValue = keyedReference.getKeyValue();
-            if (keyValue.equals("portType")) return TMODEL_TYPE.WSDL_PORT_TYPE;
-            if (keyValue.equals("binding")) return TMODEL_TYPE.WSDL_BINDING;
-            throw new IllegalStateException("Type of TModel does not follow UDDI Technical Note: '" + keyValue + "'");
-        }
-        if (throwIfNotFound)
-            throw new IllegalStateException("TModel did not contain a KeyedReference of type " + WsdlToUDDIModelConverter.UDDI_WSDL_TYPES);
-        return null;
     }
 
     /**

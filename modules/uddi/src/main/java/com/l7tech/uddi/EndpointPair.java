@@ -9,7 +9,7 @@ import java.net.URL;
  * <p/>
  * EndpointPair is a Cluster / Gateway endpoint URL for a service and a WSDL URL for the same service.
  * A service may have more than one endpoint e.g. http + https, and the same for the WSDL
- * URL. The WSDL URL will be used by each tModel that each published bindingTemplate will reference, which is they
+ * URL. The WSDL URL will be used by each tModel that each published bindingTemplate will reference, which is why
  * these URLs are kept together.
  *
  *

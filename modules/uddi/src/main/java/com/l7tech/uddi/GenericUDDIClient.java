@@ -1646,13 +1646,11 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
      */
     @Override
     public void referencePolicy(final String serviceKey,
-                                final String serviceUrl,
                                 final String policyKey,
                                 final String policyUrl,
                                 final String description,
                                 final Boolean force) throws UDDIException {
         validateKey(serviceKey);
-        validateUrl(serviceUrl);
         validateKey(policyKey);
         validateKeyValue(policyUrl);
         validateDescription(description);
@@ -1663,8 +1661,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if (!localReference && !remoteReference)
             throw new UDDIException("No policy to attach.");
 
-        boolean isEndpoint = serviceUrl != null &&  serviceUrl.trim().length()>0;
-        
         String authToken = getAuthToken();
         ServiceDetail serviceDetail = getServiceDetail( serviceKey, authToken );
 
@@ -1725,16 +1721,6 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     serviceUpdated = true;
                     cbag.getKeyedReference().clear();
                     cbag.getKeyedReference().addAll(updated);
-                }
-            }
-
-            // Are we updating the endpoints?
-            if (isEndpoint) {
-                if (toUpdate.getBindingTemplates() != null && serviceUrl != null) {
-                    for (BindingTemplate bt : toUpdate.getBindingTemplates().getBindingTemplate()) {
-                        serviceUpdated = true;
-                        bt.setAccessPoint(buildAccessPoint("http", serviceUrl));
-                    }
                 }
             }
 

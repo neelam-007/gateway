@@ -30,6 +30,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     private Set<String> uniqueUrls = new HashSet<String>();
     private Set<String> uniqueWsdlUrls = new HashSet<String>();
     private Set<String> publishedBindingTemplateKeys = new HashSet<String>();
+    private List<BindingTemplate> publishedBindingTemplates = new ArrayList<BindingTemplate>();
     private boolean dontDeleteBindingTempaltes = false;
     private boolean isOverwrite = false;
 
@@ -136,6 +137,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         numPublishedBindingTemplates++;
         publishedBindingTemplateKeys.add(bindingTemplate.getBindingKey());
         uniqueUrls.add(bindingTemplate.getAccessPoint().getValue());
+        publishedBindingTemplates.add(bindingTemplate);
     }
 
     @Override
@@ -278,7 +280,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     }
 
     @Override
-    public void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException {
+    public void referencePolicy(String serviceKey, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException {
 
     }
 
@@ -403,5 +405,9 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     public int getNumTModelsPublished() {
         return numTModelsPublished;
+    }
+
+    public List<BindingTemplate> getPublishedBindingTemplates() {
+        return publishedBindingTemplates;
     }
 }

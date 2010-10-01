@@ -31,6 +31,9 @@
             </ns4:tModelInstanceDetails>
             <ns4:categoryBag>
                 <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+                <ns4:keyedReference keyName="KeyName1"
+                    keyValue="KeyValue2" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+
             </ns4:categoryBag>
         </ns4:bindingTemplate>
         <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a03333">
@@ -46,12 +49,17 @@
             </ns4:tModelInstanceDetails>
             <ns4:categoryBag>
                 <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
+                <ns4:keyedReferenceGroup tModelKey="uddi:centrasite.com:attributes:relationship">
+                    <ns4:keyedReference keyName="Contains"
+                        keyValue="uddi:made_up_key_value" tModelKey="uddi:made_up_key_not_general_keywords"/>
+                </ns4:keyedReferenceGroup>
+
             </ns4:categoryBag>
         </ns4:bindingTemplate>
     </ns4:bindingTemplates>
     <ns4:categoryBag>
-        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats/bug8147" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="service" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
-        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localName"/>
+        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localname"/>
     </ns4:categoryBag>
 </businessService>

@@ -20,8 +20,8 @@
         </ns4:bindingTemplate>
     </ns4:bindingTemplates>
     <ns4:categoryBag>
-        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats/bug8147" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
+        <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="service" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
-        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localName"/>
+        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localname"/>
     </ns4:categoryBag>
 </businessService>

@@ -37,7 +37,7 @@ public class BusinessServicePublisherTest {
         WsdlToUDDIModelConverter wsdlToUDDIModelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
         wsdlToUDDIModelConverter.convertWsdlToUDDIModel(Arrays.asList(endpointPair), "Layer7", Long.toString(serviceOid));
 
-        UDDIClient uddiClient = new TestUddiClient(true);
+        TestUddiClient uddiClient = new TestUddiClient(true);
 
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
@@ -59,6 +59,27 @@ public class BusinessServicePublisherTest {
         Assert.assertEquals("Invalid service key of service to delete found", "service key", deletePair.left.iterator().next());
         Assert.assertEquals("Incorrect number of services published", 1, deletePair.right.size());
 
+        //validate categoryBag info
+        final List<BusinessService> businessServiceList = uddiClient.getPublishedServices();
+        Assert.assertEquals("Incorrect number of services found", 2, businessServiceList.size());
+
+        final BusinessService pubService = businessServiceList.get(0);
+        final List<KeyedReference> references = pubService.getCategoryBag().getKeyedReference();
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:wsdl:types",references.get(0).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","service",references.get(0).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","",references.get(0).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:xml:localname",references.get(1).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","Warehouse",references.get(1).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","service local name",references.get(1).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:xml:namespace",references.get(2).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","http://warehouse.acme.com/ws",references.get(2).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","service namespace",references.get(2).getKeyName());
+
+        final List<KeyedReferenceGroup> groupRefs = pubService.getCategoryBag().getKeyedReferenceGroup();
+        Assert.assertEquals("Incorrect number of groups found", 0, groupRefs.size());
     }
 
     /**
@@ -614,7 +635,7 @@ public class BusinessServicePublisherTest {
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
                     "PlayerStatsWsdlPort",
                     "PlayerStatsSoapBinding",
-                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    "http://hugh:8081/axis/services/PlayerStats",
                     null,
                     Arrays.asList(endpointPair),
                     null,
@@ -642,7 +663,7 @@ public class BusinessServicePublisherTest {
     }
 
     /**
-     * Tests the updating of a previously published endpoint - upgrade from Pandora to Maytag
+     * Tests the updating of a previously published endpoint - upgrade from Pandora to Albacore
      * The published endpoint should be updated correctly and the existing bindingTemplate keys and tModel keys
      * reused
      * @throws Exception
@@ -694,7 +715,7 @@ public class BusinessServicePublisherTest {
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
                     "PlayerStatsWsdlPort",
                     "PlayerStatsSoapBinding",
-                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    "http://hugh:8081/axis/services/PlayerStats",
                     Arrays.asList(previousPair),
                     Arrays.asList(endpointPair, secureEndpointPair),
                     null,
@@ -723,7 +744,7 @@ public class BusinessServicePublisherTest {
     }
 
     /**
-     * Tests the updating of a previously published endpoint - from Maytag onwards. The existing BindingTemplate keys
+     * Tests the updating of a previously published endpoint - from Albacore onwards. The existing BindingTemplate keys
      * should be found by the bindingKey and not hostname and relative URL parts
      * The published endpoint should be updated correctly and the existing bindingTemplate keys and tModel keys
      * reused
@@ -775,7 +796,7 @@ public class BusinessServicePublisherTest {
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
                     "PlayerStatsWsdlPort",
                     "PlayerStatsSoapBinding",
-                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    "http://hugh:8081/axis/services/PlayerStats",
                     Arrays.asList(previousPair),
                     Arrays.asList(endpointPair, secureEndpointPair),
                     new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
@@ -854,7 +875,7 @@ public class BusinessServicePublisherTest {
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
                     "PlayerStatsWsdlPort",
                     "PlayerStatsSoapBinding",
-                    "http://hugh:8081/axis/services/PlayerStats/bug8147",
+                    "http://hugh:8081/axis/services/PlayerStats",
                     Arrays.asList(previousPair),
                     Arrays.asList(secureEndpointPair),
                     new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
@@ -887,13 +908,240 @@ public class BusinessServicePublisherTest {
 
     }
 
+    /**
+     * When the gateway needs to update a BusinessService which has already been published to UDDI, it needs to maintain
+     * any meta data added by 3rd parties. This meta data shows up as either keyedReferences or keyedReferenceGroups
+     * in the categoryBag attached to the BusinessService. The BusinessService it self will already have it's own meta
+     * data so only data which has been added by a 3rd party should be copied e.g. there should be no duplicate meta
+     * data in the categoryBag.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9180)
+    public void testBusinessServiceMetaDataPreservedOnRepublish() throws Exception{
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStats_Bug9180.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        final UDDIRegistrySpecificMetaData ssgSpecificData = new UDDIRegistrySpecificMetaData() {
+            @Override
+            public Collection<UDDIClient.UDDIKeyedReference> getBusinessServiceKeyedReferences() {
+                UDDIClient.UDDIKeyedReference ref = new UDDIClient.UDDIKeyedReference("Key1", "Name1", "Value1");
+                return Arrays.asList(ref);
+            }
+
+            @Override
+            public Collection<UDDIClient.UDDIKeyedReferenceGroup> getBusinessServiceKeyedReferenceGroups() {
+                UDDIClient.UDDIKeyedReference ref = new UDDIClient.UDDIKeyedReference("GroupKey1", "GroupName1", "GroupValue1");
+                //This group will collide with a group already in PlayerStats_Bug9180.xml, so the missing reference should be added
+                UDDIClient.UDDIKeyedReferenceGroup group =
+                        new UDDIClient.UDDIKeyedReferenceGroup("uddi:schemas.xmlsoap.org:localpolicyreference:2003_03",
+                                Arrays.asList(ref));
+
+                //This group should exist on it's own.
+                UDDIClient.UDDIKeyedReference refNoMerge = new UDDIClient.UDDIKeyedReference("NoMergeGroupKey1", "NoMergeGroupName1", "NoMergeGroupValue1");
+                //This group will collide with a group already in PlayerStats_Bug9180.xml, so the missing reference should be added
+                UDDIClient.UDDIKeyedReferenceGroup groupNoMerge =
+                        new UDDIClient.UDDIKeyedReferenceGroup("uddi:NoMerge.doesnotexist",
+                                Arrays.asList(refNoMerge));
+
+                return Arrays.asList(group, groupNoMerge);
+            }
+        };
+
+        final TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel));
+        final Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/PlayerStats.wsdl"));
+        final BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, 123132123, uddiClient);
+        final String gatewayWsdlUrl = "http://ssghost.l7tech.com:8080/123132123?wsdl";
+        final String gatewayURL = "http://ssghost.l7tech.com:8080/service/123132123";
+        final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        servicePublisher.publishServicesToUDDIRegistry("business key",
+                        Collections.<String>emptySet(), false, ssgSpecificData, Arrays.asList(endpointPair));
+
+        final List<BusinessService> list = uddiClient.getPublishedServices();
+        Assert.assertEquals("Only 1 service should have been published", 1, list.size());
+
+        final BusinessService publishedService = list.get(0);
+
+        //check how the meta data was merged - what was in UDDI and what was created by the SSG
+
+        final CategoryBag categoryBag = publishedService.getCategoryBag();
+        final List<KeyedReference> references = categoryBag.getKeyedReference();
+        Assert.assertEquals("Incorrect number of keyed references found", 5, references.size());
+
+        //Check each individual value that is expected
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:wsdl:types",references.get(0).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","service",references.get(0).getKeyValue());
+        //note: the keyname was changed in this keyed reference as it was found in UDDI with a different value.
+        Assert.assertEquals("Incorrect keyName found","uddi.org:wsdl:types",references.get(0).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:xml:localname",references.get(1).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","PlayerStatsService",references.get(1).getKeyValue());
+        //note: the keyname was changed in this keyed reference as it was found in UDDI with a different value.
+        Assert.assertEquals("Incorrect keyName found","uddi.org:xml:localname",references.get(1).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:xml:namespace",references.get(2).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","http://hugh:8081/axis/services/PlayerStats",references.get(2).getKeyValue());
+        //note: the keyname was changed in this keyed reference as it was found in UDDI with a different value.
+        Assert.assertEquals("Incorrect keyName found","uddi.org:xml:namespace",references.get(2).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","Key1",references.get(3).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","Value1",references.get(3).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","Name1",references.get(3).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:categorization:general_keywords",references.get(4).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","9180",references.get(4).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","BugNumber",references.get(4).getKeyName());
+
+        //Test that groups were correctly merged
+        final List<KeyedReferenceGroup> referenceGroupList = categoryBag.getKeyedReferenceGroup();
+        Assert.assertEquals("Incorrect number of groups found", 2, referenceGroupList.size());
+
+        final KeyedReferenceGroup group = referenceGroupList.get(0);
+        final List<KeyedReference> groupRefs = group.getKeyedReference();
+        Assert.assertEquals("Incorrect number of group keyed references found", 2, groupRefs.size());
+
+        Assert.assertEquals("Incorrect tModelKey found","GroupKey1",groupRefs.get(0).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","GroupValue1",groupRefs.get(0).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","GroupName1",groupRefs.get(0).getKeyName());
+
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:categorization:general_keywords",groupRefs.get(1).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","Bug9180",groupRefs.get(1).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","BugNumberAgain",groupRefs.get(1).getKeyName());
+
+        final KeyedReferenceGroup noMergeGroup = referenceGroupList.get(1);
+        final List<KeyedReference> noMergeRefs = noMergeGroup.getKeyedReference();
+        Assert.assertEquals("Incorrect number of group keyed references found", 1, noMergeRefs.size());
+
+        Assert.assertEquals("Incorrect tModelKey found","NoMergeGroupKey1",noMergeRefs.get(0).getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","NoMergeGroupValue1",noMergeRefs.get(0).getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","NoMergeGroupName1",noMergeRefs.get(0).getKeyName());
+
+        final BindingTemplate template = publishedService.getBindingTemplates().getBindingTemplate().get(0);
+        final CategoryBag bindingCatBag = template.getCategoryBag();
+        Assert.assertNotNull("categoryBag should be found on the bindingTemplate as it was synchronized", bindingCatBag);
+        final List<KeyedReference> refs = bindingCatBag.getKeyedReference();
+        Assert.assertEquals("Incorrect number of keyed references found on bindingTemplate", 1, refs.size());
+
+        final KeyedReference bindingRef = refs.get(0);
+        Assert.assertEquals("Incorrect tModelKey found","uddi:uddi.org:wsdl:types",bindingRef.getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found","port",bindingRef.getKeyValue());
+        Assert.assertEquals("Incorrect keyName found","uddi.org:wsdl:types",bindingRef.getKeyName());
+    }
+
+    /**
+     * See test testUpdatePublishOfEndpoint - this test case extends it by examining the categoryBags of the updated
+     * bindingTemplates.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9180)
+    public void testBindingMetaDataPreservedOnRepublish() throws Exception{
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        //this reflects the current state of trunk - there are no secure WSDL URLs currently published
+        EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_3endpoints.xml");
+        final TModel bindingTModel3 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_3endpoints.xml");
+        final TModel portTypeTModel3 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        EndpointPair previousPair = new EndpointPair();
+        previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
+
+        Set<String> bindingKeys;
+        try {
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
+            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            //going to test it's behaviour internally in TestUDDIClient and not any return value
+
+            servicePublisher.publishBindingTemplate(
+                    "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                    "PlayerStatsWsdlPort",
+                    "PlayerStatsSoapBinding",
+                    "http://hugh:8081/axis/services/PlayerStats",
+                    Arrays.asList(previousPair),
+                    Arrays.asList(endpointPair, secureEndpointPair),
+                    null,
+                    false);
+        } finally {
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
+            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+        }
+
+        final List<BindingTemplate> bindingTemplates = uddiClient.getPublishedBindingTemplates();
+        Assert.assertEquals("Incorrect number of binding templates published", 2, bindingTemplates.size());
+
+        //http binding
+        final BindingTemplate bt1 = bindingTemplates.get(0);
+        final List<KeyedReference> references = bt1.getCategoryBag().getKeyedReference();
+        Assert.assertEquals("Incorrect number of keyed references found", 2, references.size());
+        KeyedReference portTypeRef = references.get(0);
+        Assert.assertEquals("Incorrect tModelKey found", "uddi:uddi.org:wsdl:types", portTypeRef.getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found", "port", portTypeRef.getKeyValue());
+        Assert.assertEquals("Incorrect keyName found", "uddi.org:wsdl:types", portTypeRef.getKeyName());
+
+        final KeyedReference generalKeyRef = references.get(1);
+        Assert.assertEquals("Incorrect tModelKey found", "uddi:uddi.org:categorization:general_keywords", generalKeyRef.getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found", "KeyValue2", generalKeyRef.getKeyValue());
+        Assert.assertEquals("Incorrect keyName found", "KeyName1", generalKeyRef.getKeyName());
+
+        //https binding
+        final BindingTemplate bt2 = bindingTemplates.get(1);
+        final List<KeyedReference> bt2References = bt2.getCategoryBag().getKeyedReference();
+        Assert.assertEquals("Incorrect number of keyed references found", 1, bt2References.size());
+        portTypeRef = references.get(0);
+        Assert.assertEquals("Incorrect tModelKey found", "uddi:uddi.org:wsdl:types", portTypeRef.getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found", "port", portTypeRef.getKeyValue());
+        Assert.assertEquals("Incorrect keyName found", "uddi.org:wsdl:types", portTypeRef.getKeyName());
+
+        final List<KeyedReferenceGroup> refGroupList = bt2.getCategoryBag().getKeyedReferenceGroup();
+        Assert.assertEquals("Incorrect number of reference groups found", 1, refGroupList.size());
+
+        final KeyedReferenceGroup group = refGroupList.get(0);
+        Assert.assertEquals("Incorrect group tModelKeyFound", "uddi:centrasite.com:attributes:relationship", group.getTModelKey());
+
+        final List<KeyedReference> groupRefs = group.getKeyedReference();
+        Assert.assertEquals("Incorrect number of keyed reference in group found", 1, groupRefs.size());
+
+        final KeyedReference keyRefGroup = groupRefs.get(0);
+        Assert.assertEquals("Incorrect tModelKey found", "uddi:made_up_key_not_general_keywords", keyRefGroup.getTModelKey());
+        Assert.assertEquals("Incorrect keyValue found", "uddi:made_up_key_value", keyRefGroup.getKeyValue());
+        Assert.assertEquals("Incorrect keyName found", "Contains", keyRefGroup.getKeyName());
+    }
+
     private void testBindingTemplate(String gatewayWsdlUrl, String gatewayURL, String serviceKey, Pair<BindingTemplate, List<TModel>> bindingAndModels) {
         Map<String, TModel> keyToModel = new HashMap<String, TModel>();
         for (TModel model : bindingAndModels.right) {
             keyToModel.put(model.getTModelKey(), model);
         }
         BindingTemplate newTemplate = bindingAndModels.left;
-        //were interested to know that the any models the binding references are new, and are not accidently
+        //were interested to know that the any models the binding references are new, and are not accidentally
         //referencing models from the binding that was copied
 
         Assert.assertNotNull("Binding key should not be null", newTemplate.getBindingKey());

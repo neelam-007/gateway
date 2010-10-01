@@ -59,6 +59,10 @@ public abstract class UDDISupport {
     abstract protected String getSubscriptionUrl();
     abstract protected String getSecurityUrl();
 
+    protected void resetToken(){
+        authToken = null;
+    }
+
     protected String authToken() throws Exception {
         login = getUsername();
         String password = getPassword();
@@ -101,6 +105,7 @@ public abstract class UDDISupport {
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     protected Exception buildFaultException(final String contextMessage,
                                           final DispositionReportFaultMessage faultMessage) {
+        resetToken();
         Exception exception;
 
         if ( hasResult(faultMessage, 10150) ) {

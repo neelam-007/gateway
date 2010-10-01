@@ -120,7 +120,6 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
 
                             client.referencePolicy(
                                     businessService.getUddiServiceKey(),
-                                    null,
                                     tModelKey,
                                     null,
                                     desc,

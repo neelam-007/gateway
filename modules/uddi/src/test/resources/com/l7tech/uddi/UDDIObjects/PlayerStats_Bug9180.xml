@@ -1,33 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" businessKey="uddi:systinet.com:demo:it" serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe">
-    <ns4:name>PlayerStatsServiceBug8147</ns4:name>
+    <ns4:name>Layer7 PlayerStatsService 123132123</ns4:name>
     <ns4:description>wsdl:type representing service</ns4:description>
     <ns4:bindingTemplates>
         <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a0acbe">
             <ns4:description>wsdl:type representing port</ns4:description>
-            <ns4:accessPoint useType="endPoint">http://hugh:8081/axis/services/PlayerStats/bug8147</ns4:accessPoint>
+            <ns4:accessPoint useType="endPoint">http://theoriginalhost.l7tech.com:8080/service/3828382</ns4:accessPoint>
             <ns4:tModelInstanceDetails>
                 <ns4:tModelInstanceInfo tModelKey="uddi:e327e2d0-2234-11df-acce-251c32a0acbe">
                     <ns4:instanceDetails>
-                        <ns4:instanceParms>PlayerStatsWsdlPort</ns4:instanceParms>
+                        <ns4:instanceParms>PlayerStats</ns4:instanceParms>
                     </ns4:instanceDetails>
                 </ns4:tModelInstanceInfo>
                 <ns4:tModelInstanceInfo tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a0acbe"/>
-            </ns4:tModelInstanceDetails>
-            <ns4:categoryBag>
-                <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
-            </ns4:categoryBag>
-        </ns4:bindingTemplate>
-        <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a0acbd">
-            <ns4:description>wsdl:type representing port</ns4:description>
-            <ns4:accessPoint useType="endPoint">http://hugh:8081/axis/services/PlayerStats/bug8147</ns4:accessPoint>
-            <ns4:tModelInstanceDetails>
-                <ns4:tModelInstanceInfo tModelKey="uddi:e327e2d0-2234-11df-acce-251c32a0acff">
-                    <ns4:instanceDetails>
-                        <ns4:instanceParms>PlayerStatsWsdlPortNew</ns4:instanceParms>
-                    </ns4:instanceDetails>
-                </ns4:tModelInstanceInfo>
-                <ns4:tModelInstanceInfo tModelKey="uddi:e30d7d00-2234-11df-acce-251c32a0acgg"/>
             </ns4:tModelInstanceDetails>
             <ns4:categoryBag>
                 <ns4:keyedReference keyValue="port" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
@@ -37,6 +22,11 @@
     <ns4:categoryBag>
         <ns4:keyedReference keyValue="http://hugh:8081/axis/services/PlayerStats" keyName="uddi.org:xml:namespace" tModelKey="uddi:uddi.org:xml:namespace"/>
         <ns4:keyedReference keyValue="service" keyName="uddi.org:wsdl:types" tModelKey="uddi:uddi.org:wsdl:types"/>
-        <ns4:keyedReference keyValue="PlayerStatsServiceBug8147" keyName="uddi.org:xml:localName" tModelKey="uddi:uddi.org:xml:localname"/>
+        <ns4:keyedReference keyValue="PlayerStatsService" keyName="uddi.org:xml:localname" tModelKey="uddi:uddi.org:xml:localname"/>
+        <!-- Meta data added for testing bug 9180-->
+        <ns4:keyedReference keyName="BugNumber" keyValue="9180" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+        <ns4:keyedReferenceGroup tModelKey="uddi:schemas.xmlsoap.org:localpolicyreference:2003_03">
+            <ns4:keyedReference keyName="BugNumberAgain" keyValue="Bug9180" tModelKey="uddi:uddi.org:categorization:general_keywords"/>
+        </ns4:keyedReferenceGroup>
     </ns4:categoryBag>
 </businessService>

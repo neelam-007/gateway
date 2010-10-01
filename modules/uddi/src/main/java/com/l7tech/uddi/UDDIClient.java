@@ -1,7 +1,5 @@
 package com.l7tech.uddi;
 
-import com.l7tech.util.Triple;
-
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +18,7 @@ import java.util.Set;
  * @author darmstrong
  */
 public interface UDDIClient extends Closeable {
+    String GENERAL_KEYWORDS = "uddi:uddi.org:categorization:general_keywords";
 
     /**
      * Authenticate the credentials (if any)
@@ -299,7 +298,6 @@ public interface UDDIClient extends Closeable {
      * would only use one of these.</p>
      *
      * @param serviceKey The service to update
-     * @param serviceUrl the service endpoint URL (null for no change)
      * @param policyKey The key for the local policy to reference
      * @param policyUrl The URL for the remote policy to reference
      * @param description The reference description
@@ -307,7 +305,7 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException if an error occurs
      * @throws UDDIExistingReferenceException if force is not set and there is an existing (local or remote) reference
      */
-    void referencePolicy(String serviceKey, String serviceUrl, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
+    void referencePolicy(String serviceKey, String policyKey, String policyUrl, String description, Boolean force) throws UDDIException;
 
     /**
      * Remove the association of a policy and a service.
@@ -395,7 +393,7 @@ public interface UDDIClient extends Closeable {
     /**
      * Represents a UDDI KeyedReference.
      */
-    static final class UDDIKeyedReference extends Triple<String,String,String> {
+    static final class UDDIKeyedReference {
 
         /**
          * Create a new keyed reference with the given values.
@@ -407,20 +405,61 @@ public interface UDDIClient extends Closeable {
         public UDDIKeyedReference( final String key,
                                    final String name,
                                    final String value ) {
-            super( key, name, value );
+            if(key == null || key.trim().isEmpty()) throw new IllegalArgumentException("key cannot be null or empty");
+            if(value == null || value.trim().isEmpty()) throw new IllegalArgumentException("value cannot be null or empty");
+            if(key.equals(GENERAL_KEYWORDS) && (name == null || name.trim().isEmpty())){
+                //See http://www.uddi.org/pubs/uddi_v3.htm#_Ref8978058                
+                throw new IllegalArgumentException("If the keyedReference is a general keywords classification, then name cannot be null or empty");
+            }
+
+            this.tModelKey = key;
+            this.keyValue = value;
+            this.keyName = name;
         }
 
         public String getKey() {
-            return this.left;
+            return this.tModelKey;
         }
 
         public String getName() {
-            return this.middle;
+            return this.keyName;
         }
 
         public String getValue() {
-            return this.right;
+            return this.keyValue;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            UDDIKeyedReference that = (UDDIKeyedReference) o;
+
+            if (!keyValue.equals(that.keyValue)) return false;
+            if (!tModelKey.equals(that.tModelKey)) return false;
+
+            if(tModelKey.equals(GENERAL_KEYWORDS)){
+                if (keyName != null ? !keyName.equals(that.keyName) : that.keyName != null) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tModelKey.hashCode();
+            result = 31 * result + keyValue.hashCode();
+            if(tModelKey.equals(GENERAL_KEYWORDS)){
+                result = 31 * result + (keyName != null ? keyName.hashCode() : 0);
+            }
+
+            return result;
+        }
+
+        private final String tModelKey;
+        private final String keyValue;
+        private final String keyName;
+
     }
 
     static final class UDDIKeyedReferenceGroup{
