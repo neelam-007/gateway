@@ -145,7 +145,9 @@ public class DownloadedAuditRecordSignatureVerificator {
             if (!result && ENABLE_COMPAT_52) {
                 // Try again in compatibility mode with records signed using the format used for 5.2 and 5.3.
                 // Note that this needs to go all the way back to the raw record.
-                result = new AuditRecordCompatibilityVerifier52(cert).verifyAuditRecordSignature(signature, recordInExportedFormat);
+                try{
+                    result = new AuditRecordCompatibilityVerifier52(cert).verifyAuditRecordSignature(signature, recordInExportedFormat);
+                }catch(Exception e){/* intentionally ignore compatibility check errors, overwrites original error*/ };
             }
 
             return result;
