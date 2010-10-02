@@ -8,10 +8,9 @@ import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.security.cert.TrustedCert;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +25,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
@@ -408,4 +410,57 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
+
+
+    /**
+     * Retrieves all {@link SecurePassword} entity headers from the database.
+     *
+     * @return a {@link List} of {@link EntityHeader} instances, one per SecurePassword.
+     * @throws FindException if there was a server-side problem accessing the requested information
+     */
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+    @Secured(types=SECURE_PASSWORD,stereotype=FIND_ENTITIES)
+    List<SecurePassword> findAllSecurePasswords() throws FindException;
+
+    /**
+     * Save a new or updated SecurePassword.
+     *
+     * @param securePassword the new or updated SecurePassword to save.  Required.
+     *                       If this has the objectid {@link SecurePassword#DEFAULT_OID}, this will be saved as a new SecurePassword.
+     *                       Otherwise, it will attempt to update an existing password.
+     *                       Any encodedPassword field present in the securePassword will be ignored.  To set or change
+     *                       the actual raw password characters, use the {@link #setSecurePassword} method.
+     * @return the objectid of the securePassword instance that was saved or updated.
+     * @throws UpdateException if there is a problem updating an existing entity.
+     * @throws FindException if there is a problem locating an existing entity in order to update it.
+     * @throws SaveException if there is a problem saving a new entity.
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(types=SECURE_PASSWORD,stereotype=SAVE_OR_UPDATE)
+    long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException;
+
+    /**
+     * Set or update the password field for the specified SecurePassword objectid.
+     * As a side-effect, this will set the lastUpdate timestamp.
+     *
+     * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
+     * @param newPassword the new plaintext password to assign for this SecurePassword instance.  Required.
+     * @throws FindException if there is a problem locating the specified secure password.
+     * @throws UpdateException if there is a problem updating the secure password.
+     */
+    // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(types=SECURE_PASSWORD,stereotype=SET_PROPERTY_BY_ID,relevantArg=0)
+    void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException;
+
+    /**
+     * Destroy a SecurePassword instance.
+     *
+     * @param oid the objectid of the SecurePassword to delete.  Required.
+     * @throws FindException if there is a problem locating the specified secure password.
+     * @throws DeleteException if there is a problem deleting the SecurePassword.
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(types=SECURE_PASSWORD,stereotype=DELETE_BY_ID, relevantArg=0)
+    void deleteSecurePassword(long oid) throws DeleteException, FindException;
 }

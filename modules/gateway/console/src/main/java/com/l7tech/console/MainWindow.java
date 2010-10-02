@@ -126,6 +126,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageKerberosMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem managePrivateKeysMenuItem = null;
+    private JMenuItem manageSecurePasswordsMenuItem = null;
     private JMenuItem manageSsgConnectorsMenuItem = null;
     private JMenuItem manageJdbcConnectionsMenuItem = null;
     private JMenuItem revokeCertificatesMenuItem = null;
@@ -167,6 +168,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
+    private ManageSecurePasswordsAction manageSecurePasswordsAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
     private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
@@ -943,6 +945,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManagePrivateKeysMenuItem());
+            menu.add(getManageSecurePasswordsMenuItem());
             menu.add(getRevokeCertificatesMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
@@ -2060,6 +2063,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         return managePrivateKeysAction;
     }
 
+    private Action getManageSecurePasswordsAction() {
+        if (manageSecurePasswordsAction != null)
+            return manageSecurePasswordsAction;
+
+        manageSecurePasswordsAction = new ManageSecurePasswordsAction();
+        disableUntilLogin(manageSecurePasswordsAction);
+        return manageSecurePasswordsAction;
+    }
+
     private Action getRevokeCertificatesAction() {
         if (revokeCertificatesAction != null)
             return revokeCertificatesAction;
@@ -2304,6 +2316,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getMenuItemPreferences(false));
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManagePrivateKeysMenuItem());
+            menu.add(getManageSecurePasswordsMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageSsgConnectorsAction());
@@ -3251,6 +3264,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (managePrivateKeysMenuItem != null)
             return managePrivateKeysMenuItem;
         return managePrivateKeysMenuItem = new JMenuItem(getManagePrivateKeysAction());
+    }
+
+    public JMenuItem getManageSecurePasswordsMenuItem() {
+        if (manageSecurePasswordsMenuItem != null)
+            return manageSecurePasswordsMenuItem;
+        return manageSecurePasswordsMenuItem = new JMenuItem(getManageSecurePasswordsAction());
     }
 
     public JMenuItem getManageSsgConnectorsMenuItem() {

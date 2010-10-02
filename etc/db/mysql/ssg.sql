@@ -837,6 +837,20 @@ CREATE TABLE shared_keys (
   primary key(encodingid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Secure password storage
+DROP TABLE IF EXISTS secure_password;
+CREATE TABLE secure_password (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  description varchar(256),
+  usage_from_variable tinyint(1) NOT NULL DEFAULT 0,
+  encoded_password varchar(256) NOT NULL,
+  last_update bigint(20) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid),
+  UNIQUE(name)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- HTTP and HTTPS listeners and properties
 --
@@ -1383,6 +1397,12 @@ INSERT INTO rbac_permission VALUES (-1002,0,-1000,'CREATE',NULL,'UDDI_REGISTRY')
 INSERT INTO rbac_permission VALUES (-1003,0,-1000,'UPDATE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1004,0,-1000,'DELETE',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-1005,0,-1000,'READ',NULL,'SERVICE');
+
+INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete sny stored password.');
+INSERT INTO rbac_permission VALUES (-1051,0,-1050,'READ',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1053,0,-1050,'UPDATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');

@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.*;
@@ -34,6 +35,7 @@ import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -69,13 +71,15 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final SecurePasswordManager securePasswordManager;
     private ApplicationEventPublisher applicationEventPublisher;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 RevocationCheckPolicyManager revocationCheckPolicyManager,
                                 DefaultKey defaultKey,
                                 LicenseManager licenseManager,
-                                SsgKeyStoreManager ssgKeyStoreManager)
+                                SsgKeyStoreManager ssgKeyStoreManager,
+                                SecurePasswordManager securePasswordManager)
     {
         super(120 * 60);
         this.trustedCertManager = trustedCertManager;
@@ -95,6 +99,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         if (ssgKeyStoreManager == null)
             throw new IllegalArgumentException("SsgKeyStoreManager is required");
+        this.securePasswordManager = securePasswordManager;
+        if (securePasswordManager == null)
+            throw new IllegalArgumentException("securePasswordManager is required");
     }
 
     private void checkLicenseHeavy() {
@@ -687,6 +694,57 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         } finally {
             baos.close();
         }
+    }
+
+    @Override
+    public List<SecurePassword> findAllSecurePasswords() throws FindException {
+        List<SecurePassword> ret = new ArrayList<SecurePassword>();
+        Collection<SecurePassword> securePasswords = securePasswordManager.findAll();
+        for (SecurePassword securePassword : securePasswords) {
+            securePassword.setEncodedPassword(null); // blank password before returning
+            ret.add(securePassword);
+        }
+        return ret;
+    }
+
+    @Override
+    public long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
+        if (securePassword.getOid() == SecurePassword.DEFAULT_OID) {
+            return saveNewSecurePassword(securePassword);
+        } else {
+            return updateExistingSecurePassword(securePassword);
+        }
+    }
+
+    private long saveNewSecurePassword(SecurePassword securePassword) throws SaveException {
+        // Set initial placeholder encoded password
+        securePassword.setEncodedPassword("");
+        securePassword.setLastUpdate(0);
+        return securePasswordManager.save(securePassword);
+    }
+
+    private long updateExistingSecurePassword(SecurePassword securePassword) throws FindException, UpdateException {
+        // Preserve existing encoded password, ignoring any from client
+        final long oid = securePassword.getOid();
+        SecurePassword existing = securePasswordManager.findByPrimaryKey(oid);
+        if (existing == null) throw new ObjectNotFoundException();
+        securePassword.setEncodedPassword(existing.getEncodedPassword());
+        securePasswordManager.update(securePassword);
+        return oid;
+    }
+
+    @Override
+    public void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException {
+        SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+        if (existing == null) throw new ObjectNotFoundException();
+        existing.setEncodedPassword(securePasswordManager.encryptPassword(newPassword));
+        existing.setLastUpdate(System.currentTimeMillis());
+        securePasswordManager.update(existing);
+    }
+
+    @Override
+    public void deleteSecurePassword(long oid) throws DeleteException, FindException {
+        securePasswordManager.delete(oid);
     }
 
     private String getSubjectDN(SsgKeyEntry entry) {

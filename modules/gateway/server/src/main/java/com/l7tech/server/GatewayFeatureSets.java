@@ -82,6 +82,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_BRIDGE = "service:Bridge";
     public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
     public static final String SERVICE_KEYSTORE = "service:KeyStore"; // Ability to configure Private Keys
+    public static final String SERVICE_SECURE_PASSWORD = "service:SecurePassword"; // Ability to manage secure passwords
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
     public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
 
@@ -194,6 +195,10 @@ public class GatewayFeatureSets {
         GatewayFeatureSet keyStore =
         fsr("set:keyStore", "Ability to configure Private Keys",
             srv(SERVICE_KEYSTORE, "Ability to configure Private Keys"));
+
+        GatewayFeatureSet securePassword =
+        fsr("set:securePassword", "Ability to configure Secure Passwords",
+                srv(SERVICE_SECURE_PASSWORD, "Ability to configure Secure Passwords"));
 
         GatewayFeatureSet moduleLoader = srv(SERVICE_MODULELOADER, "Enables the assertion module loader (.AAR files)",
                 "Note: This feature set IS REQUIRED in order to use bundled and optional modular assertions, as well as post-release modular assertions.");
@@ -393,7 +398,8 @@ public class GatewayFeatureSets {
             fs(jmsBack),
             fs(emailFront),
             fs(trustStore),
-            fs(keyStore));
+            fs(keyStore),
+            fs(securePassword));
 
         GatewayFeatureSet routingAccel =
         fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
@@ -401,6 +407,7 @@ public class GatewayFeatureSets {
             fs(httpFront),
             fs(httpBack),
             fs(keyStore),
+            fs(securePassword),
             mass("assertion:HardcodedResponse"),
             mass("assertion:EchoRouting"));
 
@@ -409,6 +416,7 @@ public class GatewayFeatureSets {
             "Adds abiltity to configure Trusted Certificates",
             fs(routingAccel),
             fs(trustStore),
+            fs(securePassword),
             fs(keyStore));
 
         GatewayFeatureSet routingGateway =

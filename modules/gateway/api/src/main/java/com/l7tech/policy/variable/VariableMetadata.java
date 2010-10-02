@@ -128,6 +128,12 @@ public class VariableMetadata implements Serializable {
         return VARIABLE_NAME_PATTERN.matcher(name).matches();
     }
 
+    /**
+     * Check if the specified name is valid as a context variable name.
+     *
+     * @param name the name to examine.  Required.
+     * @return an error message describing why the specified name is not valid, or null if the name is valid.
+     */
     public static String validateName(String name) {
         try {
             assertNameIsValid(name);

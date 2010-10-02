@@ -1323,6 +1323,10 @@
         <constructor-arg ref="masterPasswordManager"/>
     </bean>
 
+    <bean id="securePasswordManager" class="com.l7tech.server.security.password.SecurePasswordManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="sharedKeyManager"/>
+    </bean>
+
     <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="applicationEventProxy"/>

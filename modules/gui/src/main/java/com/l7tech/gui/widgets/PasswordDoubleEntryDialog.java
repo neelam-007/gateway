@@ -37,23 +37,13 @@ public class PasswordDoubleEntryDialog extends JDialog {
     private JLabel capsMessage = new JLabel();
     private boolean singleInputOnly;
 
-    public PasswordDoubleEntryDialog(Frame owner, String title, boolean singleInputOnly) {
-        super(owner, title, true);
+    public PasswordDoubleEntryDialog(Window owner, String title, boolean singleInputOnly) {
+        super(owner, title, ModalityType.DOCUMENT_MODAL);
         init(singleInputOnly);
     }
 
-    public PasswordDoubleEntryDialog(Frame owner, String title) {
-        super(owner, title, true);
-        init(false);
-    }
-
-    public PasswordDoubleEntryDialog(Dialog owner, String title, boolean singleInputOnly) {
-        super(owner, title, true);
-        init(singleInputOnly);
-    }
-
-    public PasswordDoubleEntryDialog(Dialog owner, String title) {
-        super(owner, title, true);
+    public PasswordDoubleEntryDialog(Window owner, String title) {
+        super(owner, title, ModalityType.DOCUMENT_MODAL);
         init(false);
     }
 
@@ -261,14 +251,14 @@ public class PasswordDoubleEntryDialog extends JDialog {
      * @param title
      * @return The password the user typed, or null if the dialog was canceled.
      */
-    public static char[] getPassword(Frame parent, String title, boolean singleInputOnly) {
+    public static char[] getPassword(Window parent, String title, boolean singleInputOnly) {
         PasswordDoubleEntryDialog pd = new PasswordDoubleEntryDialog(parent, title, singleInputOnly);
         char[] word = pd.runPasswordPrompt();
         pd.dispose();
         return word;
     }
 
-    public static char[] getPassword(Frame parent, String title) {
+    public static char[] getPassword(Window parent, String title) {
         return getPassword(parent, title, false);
     }
 
