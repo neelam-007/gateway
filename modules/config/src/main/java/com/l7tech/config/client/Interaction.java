@@ -98,7 +98,7 @@ public abstract class Interaction implements Closeable {
             
             String read = fallbackReadLine( console, reader );
             exitOnQuit(read);             
-            if ( Pattern.matches(OptionType.BOOLEAN.getDefaultRegex(), read) ) {
+            if ( OptionType.BOOLEAN.matches(read) ) {
                 entered = true;
                 confirmed = 
                      read.toLowerCase().startsWith("t") || 

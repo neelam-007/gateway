@@ -49,7 +49,7 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
     public T parse( final String userInput ) throws ConfigurationException {
         T result;
 
-        if ( !Pattern.matches( type.getDefaultRegex(), userInput ) ) {
+        if ( !type.matches(userInput ) ) {
             throw new ConfigurationException( validationFailureMessage );
         }
 

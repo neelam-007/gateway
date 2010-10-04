@@ -11,8 +11,6 @@ import java.io.Writer;
 import java.text.Format;
 import java.text.ParseException;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Extension of Interaction with support for configuration.
@@ -81,12 +79,6 @@ public abstract class ConfigurationInteraction extends Interaction {
             print( ": " );
         }
 
-        String regex = option.getRegex();
-        if ( regex == null ) {
-            regex = option.getType().getDefaultRegex();
-        }
-        Pattern pattern = Pattern.compile(regex);
-
         boolean read = false;
         while ( !read ) {
             String value = option.getType().isHidden() ? 
@@ -110,8 +102,7 @@ public abstract class ConfigurationInteraction extends Interaction {
             }
 
             boolean set = false;
-            Matcher matcher = pattern.matcher(value);
-            if ( matcher.matches() && isValid(value, option) && (!option.isConfirmed() || doConfirmOption( option, value ))) {
+            if ( option.getType().matches(value) && isValid(value, option) && (!option.isConfirmed() || doConfirmOption( option, value ))) {
                 read = true;
                 ConfigurationBean<String> bean = new ConfigurationBean<String>();
                 bean.setId( option.getId() );

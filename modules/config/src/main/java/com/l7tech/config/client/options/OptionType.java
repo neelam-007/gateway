@@ -1,11 +1,16 @@
 package com.l7tech.config.client.options;
 
+import sun.net.util.IPAddressUtil;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.Format;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * Type for a configuration option.
@@ -24,9 +29,18 @@ public enum OptionType {
     HOSTNAME("^[a-zA-Z0-9][a-zA-Z0-9\\-\\_.]{0,254}"),
 
     /**
-     * A v4 IP address
+     * A IPv4 or IPv6 address
      */
-    IP_ADDRESS("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*|localhost)$", false, new WildcardIpFormat(), String.class),
+    IP_ADDRESS("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*|localhost)$", false, new WildcardIpFormat(), String.class) {
+        @Override
+        protected boolean nonRegexMatch(String input) {
+            // IPv4 regex failed, expect an IPv6 literal; prevent InetAddress.getByName from doing a lookup
+            try {
+                return input != null && input.length() > 0 && InetAddress.getByName("[" + input + "]") != null;
+            } catch (UnknownHostException e) {
+                return false;
+            }
+        }},
 
     /**
      * A password (should not be displayed in UI or recorded in logs)
@@ -69,15 +83,6 @@ public enum OptionType {
     TIMESTAMP("^[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$", false, new DateTimeFormat(), Date.class);
 
     /**
-     * The default validation regex for this option type.
-     *
-     * @return The validation regular expression.
-     */
-    public String getDefaultRegex() {
-        return defaultPattern;
-    }
-
-    /**
      * Get the Format associated with the type.
      *
      * @return The format or null if none.
@@ -103,12 +108,32 @@ public enum OptionType {
     public boolean isHidden() {
         return hidden;
     }
-    
+
+    /**
+     * @return true if the supplied input matches the expected format, false otherwise
+     */
+    public boolean matches(String input) {
+        boolean regexMatch = pattern != null && pattern.matcher(input).matches();
+        return regexMatch || nonRegexMatch(input);
+    }
+
+    // - PROTECTED
+
+    /**
+     * Should be overriden by types for applying an alternate (non-regex) logic for input matching,
+     * if the type was not configured with a regular expression or if the regular expression didn't match.
+     *
+     * @return true if the input matched the additional logic, false otherwise
+     */
+    protected boolean nonRegexMatch(String input) {
+        return false;
+    }
+
     //- PRIVATE
         
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-    private String defaultPattern;
+    private Pattern pattern;
     private Format format;
     private Class typeClass;
     private boolean hidden;
@@ -117,8 +142,9 @@ public enum OptionType {
         this( pattern, false, null, String.class );
     }
     
-    private OptionType( String pattern, boolean hidden, Format format, Class typeClass ) {
-        this.defaultPattern = pattern;
+    private OptionType( String patternString, boolean hidden, Format format, Class typeClass ) {
+        if (patternString != null)
+            pattern = Pattern.compile(patternString);
         this.hidden = hidden;
         this.format = format;
         this.typeClass = typeClass;
