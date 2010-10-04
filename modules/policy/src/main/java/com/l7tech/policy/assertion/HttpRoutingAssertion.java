@@ -444,7 +444,6 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
         vars.add(new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false));
         vars.add(new VariableMetadata(VAR_HTTP_ROUTING_URL, false, false, VAR_HTTP_ROUTING_URL, false));
-        vars.add(new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false));
         if (responseMsgDest != null) {
             vars.add(new VariableMetadata(responseMsgDest, false, false, responseMsgDest, true, DataType.MESSAGE));
         }

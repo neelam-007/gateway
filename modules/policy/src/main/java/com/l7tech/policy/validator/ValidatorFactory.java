@@ -144,6 +144,10 @@ class ValidatorFactory {
             decoratedValidator = new SequenceValidator( decoratedValidator, new VariableUseValidator(assertion) );
         }
 
+        if (assertion instanceof SetsVariables ) {
+            decoratedValidator = new SequenceValidator( decoratedValidator, new VariableSetValidator(assertion) );
+        }
+
         if ( assertion instanceof WssDecorationConfig ) {
             decoratedValidator = new SequenceValidator( decoratedValidator, new WssDecorationConfigAssertionValidator(assertion) );
         }
