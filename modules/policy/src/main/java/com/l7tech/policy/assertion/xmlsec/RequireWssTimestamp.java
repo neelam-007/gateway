@@ -65,14 +65,19 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
         this.signatureRequired = signatureRequired;
     }
 
-    public int getMaxExpiryMilliseconds() {
+    public long getMaxExpiryMilliseconds() {
         return maxExpiryMilliseconds;
     }
 
-    public void setMaxExpiryMilliseconds(int maxExpiryMilliseconds) {
+    public void setMaxExpiryMilliseconds(long maxExpiryMilliseconds) {
         this.maxExpiryMilliseconds = maxExpiryMilliseconds;
     }
 
+    @Deprecated
+    public void setMaxExpiryMilliseconds(int maxExpiryMilliseconds) {
+        this.maxExpiryMilliseconds = maxExpiryMilliseconds;
+    }
+    
     public TimeUnit getTimeUnit() {
         return timeUnit;
     }
@@ -167,7 +172,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     }
 
     private TimeUnit timeUnit = TimeUnit.MINUTES;
-    private int maxExpiryMilliseconds;
+    private long maxExpiryMilliseconds;
     private boolean signatureRequired = true;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private IdentityTarget identityTarget;

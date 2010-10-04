@@ -10,6 +10,7 @@ import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -35,6 +36,8 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
     private JRadioButton strRadio;
     private JRadioButton issuerSerialRadio;
     private JComboBox resolutionComboBox;
+
+    private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
 
     private final AddWssTimestamp assertion;
     private TimeUnit oldTimeUnit;
@@ -135,8 +138,16 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         Utilities.setEnabled(signingOptionsPanel, signatureRequiredCheckBox.isSelected());
     }
 
+    private void validateData() throws AssertionPropertiesOkCancelSupport.ValidationException {
+    int multiplier = ((TimeUnit)expiryTimeUnitCombo.getSelectedItem()).getMultiplier();
+        if ( !ValidationUtils.isValidDouble( expiryTimeField.getText().trim(), false, 0, MILLIS_100_YEARS  / multiplier )) {
+            throw new AssertionPropertiesOkCancelSupport.ValidationException(resources.getString("expiry.limit.error"));
+        }
+    }
+
     @Override
     protected void doUpdateModel() {
+        validateData();
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         if ( tu == null ) {
             tu = TimeUnit.MILLIS;            
@@ -144,7 +155,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         Double num = (Double)expiryTimeField.getValue();
         assertion.setResolution( (AddWssTimestamp.Resolution) resolutionComboBox.getSelectedItem() );
         assertion.setTimeUnit(tu);
-        assertion.setExpiryMilliseconds((int)(num * tu.getMultiplier()));
+        assertion.setExpiryMilliseconds((long)(num * tu.getMultiplier()));
         assertion.setSignatureRequired(signatureRequiredCheckBox.isSelected());
         if (bstRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.BST.getName());
@@ -153,7 +164,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         } else if (issuerSerialRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
         } else {
-            throw new IllegalStateException("Neither BST nor SKI selected");
+            throw new IllegalStateException(resources.getString("encrypt.selection.error"));
         }
     }
 

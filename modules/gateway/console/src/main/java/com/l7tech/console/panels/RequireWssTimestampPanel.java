@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -17,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
+import java.util.ResourceBundle;
 
 /**
  * @author alex
@@ -27,6 +29,10 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
     private JComboBox expiryTimeUnitCombo;
     private JCheckBox requireSignatureCheckBox;
     private TargetMessagePanel targetMessagePanel;
+
+    private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.l7tech.console.resources.RequireWssTimestampDialog");
+
+    private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
 
     private final RequireWssTimestamp assertion;
     private TimeUnit oldTimeUnit;
@@ -46,7 +52,7 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
         oldTimeUnit = timeUnit;
         comboModel.setSelectedItem(timeUnit);
         expiryTimeUnitCombo.setModel(comboModel);
-        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
+            final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum(Double.valueOf(0));
 
@@ -93,11 +99,20 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    private void validateData() throws AssertionPropertiesOkCancelSupport.ValidationException {
+        int multiplier = ((TimeUnit)expiryTimeUnitCombo.getSelectedItem()).getMultiplier();
+            if ( !ValidationUtils.isValidDouble( expiryTimeField.getText().trim(), false, 0, MILLIS_100_YEARS  / multiplier )) {
+                throw new AssertionPropertiesOkCancelSupport.ValidationException(resourceBundle.getString("expiry.limit.error"));
+            }
+        }
+
     protected void doUpdateModel() {
+        validateData();
+        
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         Double num = (Double)expiryTimeField.getValue();
         assertion.setTimeUnit(tu);
-        assertion.setMaxExpiryMilliseconds((int)(num.doubleValue() * tu.getMultiplier()));
+        assertion.setMaxExpiryMilliseconds((long)(num.doubleValue() * tu.getMultiplier()));
         assertion.setSignatureRequired(requireSignatureCheckBox.isSelected());
         targetMessagePanel.updateModel(assertion);
     }

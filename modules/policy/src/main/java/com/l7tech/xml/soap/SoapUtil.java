@@ -1190,12 +1190,15 @@ public class SoapUtil extends SoapConstants {
      * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
      * @return the timestamp element
      */
+    private static final long MILLIS_1_DAY =  86400L * 1000L;
+    private static final long MILLIS_1_YEAR = 365L * MILLIS_1_DAY;
+
     public static Element addTimestamp( final Element parent,
                                         final String wsuUri,
                                         final Date timestamp,
                                         final boolean millis,
                                         final long timestampNanos,
-                                        final int timeoutSec ) {
+                                        final long timeoutSec ) {
         Document message = parent.getOwnerDocument();
         Element timestampEl = message.createElementNS(wsuUri,
                                                       TIMESTAMP_EL_NAME);
@@ -1206,7 +1209,23 @@ public class SoapUtil extends SoapConstants {
         if (timestamp != null)
             now.setTime(timestamp);
         timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime(), millis, timestampNanos));
-        now.add(Calendar.MILLISECOND, timeoutSec != 0 ? timeoutSec : 300000);
+
+        if(timeoutSec == 0)
+        {                      
+            now.add(Calendar.MILLISECOND,  300000);
+        }
+        else
+        {
+            // todo year, days, ms
+            long years = timeoutSec/ MILLIS_1_YEAR;
+            long days = (timeoutSec - (years * MILLIS_1_YEAR)) / MILLIS_1_DAY;
+            long sec  = timeoutSec - (years * MILLIS_1_YEAR) - (days * MILLIS_1_DAY);
+
+            now.add(Calendar.YEAR, (int)years);
+            now.add(Calendar.DATE, (int)days);
+            now.add(Calendar.MILLISECOND, (int)sec);
+        }
+        
         timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime(), millis, -1));
         return timestampEl;
     }

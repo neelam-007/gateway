@@ -241,6 +241,32 @@ public class ValidationUtils {
         return valid;
     }
 
+        /**
+     * Check if an integer string is a valid long.
+     *
+     * @param doubleText The value as a string
+     * @param allowEmpty true to treat an empty string as valid
+     * @param min The minimum allowed value (inclusive)
+     * @param max The maximum allowed value (inclusive)
+     * @return True if a valid integer in the required range.
+     */
+    public static boolean isValidDouble(String doubleText, boolean allowEmpty, double min, double max) {
+        boolean valid = false;
+
+        if ( doubleText != null && doubleText.length() > 0 ) {
+            try {
+                double value = Double.parseDouble( doubleText );
+                valid = value >= min && value <= max;
+            } catch ( NumberFormatException nfe ) {
+                // so is invalid
+            }
+        } else {
+            valid = allowEmpty;
+        }
+
+        return valid;
+    }
+
     /**
      * Check if the given name is probably a valid XML name.
      *

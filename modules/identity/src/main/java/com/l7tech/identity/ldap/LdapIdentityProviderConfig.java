@@ -445,7 +445,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * @return The maximum age or null
      */
     @Transient
-    public Integer getGroupCacheMaxAge() {
+    public Long getGroupCacheMaxAge() {
         return getProperty(GROUP_CACHE_MAX_AGE);
     }
 
@@ -454,7 +454,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      *
      * @param maxAge The maximum age (null for default, 0 for no caching)
      */
-    public void setGroupCacheMaxAge( final Integer maxAge ) {
+    public void setGroupCacheMaxAge( final Long maxAge ) {
         setProperty(GROUP_CACHE_MAX_AGE, maxAge);
     }
 

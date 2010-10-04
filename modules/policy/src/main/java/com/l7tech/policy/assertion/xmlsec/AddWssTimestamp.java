@@ -82,13 +82,18 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     /**
      * Expiry time of the timestamp, always in milliseconds, regardless of {@link #getTimeUnit}.
      */
-    public int getExpiryMilliseconds() {
+    public long getExpiryMilliseconds() {
         return expiryMillis;
     }
 
     /**
      * Expiry time of the timestamp, always in milliseconds, regardless of {@link #getTimeUnit}.
      */
+    public void setExpiryMilliseconds(long expiryMillis) {
+        this.expiryMillis = expiryMillis;
+    }
+
+    @Deprecated
     public void setExpiryMilliseconds(int expiryMillis) {
         this.expiryMillis = expiryMillis;
     }
@@ -226,7 +231,7 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     /**
      * Expiry time of the timestamp, always in milliseconds, regardless of {@link #timeUnit}.
      */
-    private int expiryMillis;
+    private long expiryMillis;
 
     /**
      * TimeUnit remembered purely for GUI purposes (no impact on {@link #expiryMillis})

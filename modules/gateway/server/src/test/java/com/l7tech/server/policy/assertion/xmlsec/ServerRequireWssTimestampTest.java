@@ -41,6 +41,13 @@ public class ServerRequireWssTimestampTest {
         expect(AssertionStatus.BAD_REQUEST, makeSass(makeServerConfig(MILLIS_30_SEC, MILLIS_30_SEC)));
     }
 
+    @Test
+    public void testLongMaxExpirary() throws Exception {
+        ServerRequireWssTimestamp sass = makeSass(makeServerConfig(MILLIS_30_SEC, MILLIS_30_SEC));
+        sass.getAssertion().setMaxExpiryMilliseconds(MILLIS_50_YEARS);
+        expect(AssertionStatus.BAD_REQUEST, sass);
+    }
+
     private void expect(AssertionStatus expected, ServerAssertion sass) throws IOException, SAXException, PolicyAssertionException {
         final Message req = new Message();
         req.initialize(TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST));
@@ -57,7 +64,7 @@ public class ServerRequireWssTimestampTest {
         assertEquals(expected, result);
     }
 
-    private ServerAssertion makeSass(final ServerConfig serverConfig) {
+    private ServerRequireWssTimestamp makeSass(final ServerConfig serverConfig) {
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
         return new ServerRequireWssTimestamp(new RequireWssTimestamp(), new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
             put("securityTokenResolver", resolver);

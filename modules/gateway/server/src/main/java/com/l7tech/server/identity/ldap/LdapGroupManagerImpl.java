@@ -1076,6 +1076,16 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         return result;
     }
 
+    private long getConfigValue( final Long configValue, final long defaultValue ) {
+        long result = defaultValue;
+
+        if ( configValue != null ) {
+            result = configValue;
+        }
+
+        return result;
+    }
+
     private boolean groupNestingEnabled() {
         return groupMaxNesting != 1;
     }
@@ -1312,7 +1322,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private static final boolean compareMembershipCaseSensitively = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.compareMembersCaseSensitively", true );
 
     private static final int DEFAULT_GROUP_CACHE_SIZE = 0; // Zero for backwards compatibility
-    private static final int DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000;
+    private static final long DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000L;
     private static final int DEFAULT_GROUP_MAX_NESTING = 0; // Unlimited for backwards compatibility
 
     private LdapIdentityProviderConfig identityProviderConfig;
@@ -1322,6 +1332,6 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private LdapUtils.LdapTemplate ldapTemplate;
     private Cache groupCache;
     private int cacheSize = DEFAULT_GROUP_CACHE_SIZE;
-    private int cacheMaxAge = DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE;
+    private long cacheMaxAge = DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE;
     private int groupMaxNesting = DEFAULT_GROUP_MAX_NESTING;
 }

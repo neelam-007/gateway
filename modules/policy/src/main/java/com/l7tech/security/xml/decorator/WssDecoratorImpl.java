@@ -53,7 +53,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = SyspropUtil.getBoolean(PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false);
 
-    public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
+    public static final long TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
     private static final int OLD_DERIVED_KEY_LENGTH = SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultDerivedKeyLengthInBytes", 32);
 
@@ -126,7 +126,7 @@ public class WssDecoratorImpl implements WssDecorator {
             timestamp = DomUtils.findOnlyOneChildElementByName(securityHeader, c.nsf.getWsuNs(), SoapUtil.TIMESTAMP_EL_NAME);
         }
 
-        int timeoutMillis = dreq.getTimestampTimeoutMillis();
+        long timeoutMillis = dreq.getTimestampTimeoutMillis();
         if (timeoutMillis < 1)
             timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
         Boolean includeNanoSeconds = dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.DEFAULT ?

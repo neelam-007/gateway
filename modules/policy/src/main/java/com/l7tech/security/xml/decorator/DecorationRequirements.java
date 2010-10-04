@@ -434,14 +434,14 @@ public class DecorationRequirements {
     /**
      * @return overridden timestamp lifetime in milliseconds, or 0 if it will be allowed to default.
      */
-    public int getTimestampTimeoutMillis() {
+    public long getTimestampTimeoutMillis() {
         return timestampTimeoutMillis;
     }
 
     /**
      * @param timestampTimeoutMillis overridden timestamp lifetime in milliseconds, or 0 if it will be allowed to default.
      */
-    public void setTimestampTimeoutMillis(int timestampTimeoutMillis) {
+    public void setTimestampTimeoutMillis(long timestampTimeoutMillis) {
         this.timestampTimeoutMillis = timestampTimeoutMillis;
     }
 
@@ -785,7 +785,7 @@ public class DecorationRequirements {
     private boolean signPartHeaders = false;
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
-    private int timestampTimeoutMillis = 0;
+    private long timestampTimeoutMillis = 0;
     private TimestampResolution timestampResolution = TimestampResolution.DEFAULT;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
