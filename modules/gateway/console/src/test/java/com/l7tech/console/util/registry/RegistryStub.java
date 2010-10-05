@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
@@ -20,9 +21,9 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
@@ -118,7 +119,7 @@ public class RegistryStub extends Registry {
 
     @Override
     public TrustedCertAdmin getTrustedCertManager() {
-        return null;
+        return trustedCertAdmin;
     }
 
     /**
@@ -408,4 +409,5 @@ public class RegistryStub extends Registry {
     private ClusterStatusAdmin clusterStatusAdmin = new ClusterStatusAdminStub();
     private ConsoleLicenseManager licenseManager =  null;//new TestLicenseManager();
     private LogSinkAdmin logSinkAdmin = new LogSinkAdminStub();
+    private TrustedCertAdmin trustedCertAdmin = new TrustedCertAdminStub();
 }

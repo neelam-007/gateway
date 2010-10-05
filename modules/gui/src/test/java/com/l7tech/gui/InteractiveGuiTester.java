@@ -1,6 +1,9 @@
-package com.l7tech.test.util;
+package com.l7tech.gui;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.test.util.GuiTestException;
+import com.l7tech.test.util.GuiTestLauncher;
+import com.l7tech.test.util.GuiTestMethod;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
@@ -40,9 +43,10 @@ public class InteractiveGuiTester implements GuiTestLauncher {
 
     private static void showTestWindow(final Object testHolder, final Collection<Method> testMethods) throws GuiTestException {
         try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    final JFrame main = new JFrame("GuiCredentialManagerTest");
+                    final JFrame main = new JFrame("Interactive GUI Test");
                     main.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                     Container cp = main.getContentPane();
                     main.setLayout(new BoxLayout(cp, BoxLayout.Y_AXIS));
@@ -66,6 +70,14 @@ public class InteractiveGuiTester implements GuiTestLauncher {
         } catch (InterruptedException e) {
             throw new GuiTestException(e);
         } catch (InvocationTargetException e) {
+            throw new GuiTestException(e);
+        } catch (ClassNotFoundException e) {
+            throw new GuiTestException(e);
+        } catch (UnsupportedLookAndFeelException e) {
+            throw new GuiTestException(e);
+        } catch (InstantiationException e) {
+            throw new GuiTestException(e);
+        } catch (IllegalAccessException e) {
             throw new GuiTestException(e);
         }
     }

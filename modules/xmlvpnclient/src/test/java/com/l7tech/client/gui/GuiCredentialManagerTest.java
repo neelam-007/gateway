@@ -1,19 +1,18 @@
 package com.l7tech.client.gui;
 
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.test.util.GuiTestMethod;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.util.GuiTestLauncher;
+import com.l7tech.test.util.GuiTestMethod;
+import org.junit.Ignore;
 
 import javax.swing.*;
 import java.net.PasswordAuthentication;
 import java.util.ServiceLoader;
-
-import org.junit.Ignore;
 
 /**
  * Standalone test for GuiCredentialManager
