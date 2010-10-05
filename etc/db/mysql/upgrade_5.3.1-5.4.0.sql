@@ -37,6 +37,12 @@ CREATE TABLE secure_password (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Increase IP address string lengths to 39 to accommodate IPv6
+--
+ALTER TABLE audit_main MODIFY ip_address varchar(39) DEFAULT NULL;
+ALTER TABLE cluster_info MODIFY address varchar(39) NOT NULL;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

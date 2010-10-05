@@ -164,7 +164,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.sslHostName = sslHostName;
     }
 
-    @Column(name="ip_address", length=15)
+    @Column(name="ip_address", length=39)
     public String getIpAddress() {
         return ipAddress;
     }
