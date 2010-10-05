@@ -58,15 +58,15 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     /*
      * Build immutable properties for this assertion
      */
-    private Map<String, String> buildProperties(final EmailAlertAssertion emailAlertAssertion,
-                                                final long connectTimeout,
+    private Map<String, String> buildProperties(final long connectTimeout,
                                                 final long readTimeout,
                                                 final String port,
-                                                final String host) {
+                                                final String host,
+                                                final String fromAddress) {
         EmailAlertAssertion.Protocol protocol = assertion.getProtocol();
         String protoVal = protocol == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp";
         Map<String, String> props = new HashMap<String, String>();
-        props.put("mail.from", emailAlertAssertion.getSourceEmailAddress());
+        props.put("mail.from", fromAddress);
 
         // Transport config
         props.put("mail.transport.protocol", protoVal);
@@ -238,7 +238,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
 
 
         try {
-            final Map<String, String> propertyMap = buildProperties(assertion, connectTimeout, readTimeout, portNum, host);
+            final Map<String, String> propertyMap = buildProperties(connectTimeout, readTimeout, portNum, host, fromAddress.getAddress());
             final Session session = getSession(propertyMap);
             final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, auditor), auditor);
 
