@@ -1,5 +1,6 @@
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
@@ -24,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -33,6 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.processcontroller.ConfigService.DEFAULT_SSL_REMOTE_MANAGEMENT_PORT;
 
 /**
  * An embedded servlet container that the PC uses to host itself.
@@ -109,7 +114,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         sslConnector.setNeedClientAuth(false);
         server.addConnector(sslConnector);
 
-        if ( httpPort != 8765 || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress) && !"localhost".equals(httpIPAddress)) ) {
+        if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress) && !"localhost".equals(httpIPAddress)) ) {
             final SslSocketConnector localSslConnector = new SslSocketConnector() {
                 @Override
                 protected SSLServerSocketFactory createFactory() throws Exception {
@@ -118,7 +123,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
                 @Override
                 public int getPort() {
-                    return 8765;
+                    return DEFAULT_SSL_REMOTE_MANAGEMENT_PORT;
                 }
 
                 @Override
@@ -127,6 +132,31 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                 }
             };
             server.addConnector( localSslConnector );
+        }
+
+        if ( InetAddressUtil.isIpv6Enabled() ) {
+            InetAddress httpAddr = InetAddress.getByName(httpIPAddress);
+            if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT || ! (httpAddr instanceof Inet6Address) ||
+                 ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
+
+                final SslSocketConnector localSslConnector = new SslSocketConnector() {
+                    @Override
+                    protected SSLServerSocketFactory createFactory() throws Exception {
+                        return ctx.getServerSocketFactory();
+                    }
+
+                    @Override
+                    public int getPort() {
+                        return DEFAULT_SSL_REMOTE_MANAGEMENT_PORT;
+                    }
+
+                    @Override
+                    public String getHost() {
+                        return "::1";
+                    }
+                };
+                server.addConnector( localSslConnector );
+            }
         }
 
         final Context root = new Context(server, "/", Context.SESSIONS);

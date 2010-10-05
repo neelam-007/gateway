@@ -5,10 +5,10 @@
 
 package com.l7tech.common.io;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import com.l7tech.util.ExceptionUtils;
+
+import java.net.*;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -89,6 +89,15 @@ public class InetAddressUtil {
         }
 
         return false;
+    }
+
+    public static boolean isValidIpv6Address(String address) {
+        // prevent InetAddress.getByName from doing a lookup
+        try {
+            return address != null && address.length() > 0 && InetAddress.getByName("[" + address + "]") != null;
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
 
     /**
@@ -236,5 +245,49 @@ public class InetAddressUtil {
         }
 
         return isLocal;
+    }
+
+    public static boolean isIpv6Enabled() {
+        Enumeration<NetworkInterface> interfaces;
+        try {
+            interfaces = NetworkInterface.getNetworkInterfaces();
+        } catch (SocketException e) {
+            logger.log(Level.WARNING, "Error getting networkg interfaces: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        }
+
+        while(interfaces.hasMoreElements()) {
+            NetworkInterface netif = interfaces.nextElement();
+            Enumeration<InetAddress> addrs = netif.getInetAddresses();
+            while (addrs.hasMoreElements()) {
+                if(addrs.nextElement() instanceof Inet6Address) return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isLoopbackAddress(String ipAddress) {
+        if (! isValidIpAddress(ipAddress) && ! isValidIpv6Address(ipAddress))
+            return false;
+
+        try {
+            return InetAddress.getByName(ipAddress).isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            // shouldn't happen, we already made sure ipAddress is valid
+            return false;
+        }
+    }
+
+    public static boolean isAnyLocalAddress(String ipAddress) {
+        if (! isValidIpAddress(ipAddress) && ! isValidIpv6Address(ipAddress))
+            return false;
+
+        try {
+            return InetAddress.getByName(ipAddress).isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            // shouldn't happen, we already made sure ipAddress is valid
+            return false;
+        }
     }
 }

@@ -1,7 +1,5 @@
 package com.l7tech.config.client.options;
 
-import sun.net.util.IPAddressUtil;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.Format;

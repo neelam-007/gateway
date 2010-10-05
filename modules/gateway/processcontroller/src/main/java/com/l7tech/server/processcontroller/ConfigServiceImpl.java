@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.management.config.host.HostConfig;
@@ -137,7 +138,7 @@ public class ConfigServiceImpl implements ConfigService {
         if (! logFile.exists() && ! logFile.getParentFile().exists() || logFile.isDirectory())
             throw new IllegalStateException("Invalid patch log file configured: " + patchesLog);
 
-        this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, "8765"));
+        this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, Integer.toString(DEFAULT_SSL_REMOTE_MANAGEMENT_PORT)));
         this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, "127.0.0.1");
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
@@ -423,7 +424,10 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public String getApiEndpoint(ApiWebEndpoint endpoint) {
-        return "https://" + getSslIPAddress() + ":" + getSslPort() + SERVICES_CONTEXT_BASE_PATH + apiEndpointPaths.getProperty(endpoint.getPropName());
+        String address = getSslIPAddress();
+        if (InetAddressUtil.isValidIpv6Address(address))
+            address = "[" + address + "]";
+        return "https://" + address + ":" + getSslPort() + SERVICES_CONTEXT_BASE_PATH + apiEndpointPaths.getProperty(endpoint.getPropName());
     }
 
     @Override

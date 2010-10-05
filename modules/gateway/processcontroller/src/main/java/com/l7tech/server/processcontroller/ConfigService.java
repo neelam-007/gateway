@@ -44,6 +44,7 @@ public interface ConfigService {
     String DEFAULT_PATCHES_SUBDIR = "var/patches";
     String DEFAULT_PATCHES_LOGFILE = "var/logs/patches.log";
     String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.p12";
+    static final int DEFAULT_SSL_REMOTE_MANAGEMENT_PORT = 8765;
 
     public static final String PC_HOMEDIR_PROPERTY = "com.l7tech.server.processcontroller.homeDirectory";
 
