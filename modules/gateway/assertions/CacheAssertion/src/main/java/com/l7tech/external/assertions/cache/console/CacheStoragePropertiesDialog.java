@@ -16,7 +16,7 @@ import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 
 public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSupport<CacheStorageAssertion> {
-    private static ResourceBundle resourceBundle = ResourceBundle.getBundle(CacheLookupPropertiesDialog.class.getName());
+    private static ResourceBundle resourceBundle = ResourceBundle.getBundle(CacheStoragePropertiesDialog.class.getName());
 
     public static final String TITLE = resourceBundle.getString("cache.storage.properties.title");
     public static final long kMAX_ENTIRES = 1000000L;
