@@ -70,8 +70,8 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
             }
         });
 
-        validator.constrainTextFieldToBeNonEmpty("Cache ID", cacheIdField, null);
-        validator.constrainTextFieldToBeNonEmpty("Cache Entry Key", cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.id.field"), cacheIdField, null);
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
             @Override
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
@@ -80,12 +80,12 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange("Max Entries", maxEntriesField, 0, kMAX_ENTIRES);
-        validator.constrainTextFieldToNumberRange("Max Entry Age", maxEntryAgeField, 0, kMAX_ENTRY_AGE);
-        validator.constrainTextFieldToNumberRange("Max Entry Size", maxEntrySizeField, 0, kMAX_ENTRY_SIZE);
+        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entries.field"), maxEntriesField, 0, kMAX_ENTIRES);
+        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.age.field"), maxEntryAgeField, 0, kMAX_ENTRY_AGE);
+        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.size.field"), maxEntrySizeField, 0, kMAX_ENTRY_SIZE);
         Utilities.setEscKeyStrokeDisposes(this);
     }
-
+    
     private void onOK() {
         confirmed = true;
         dispose();
