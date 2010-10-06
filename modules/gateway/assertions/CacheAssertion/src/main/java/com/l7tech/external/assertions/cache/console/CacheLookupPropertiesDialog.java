@@ -66,8 +66,8 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
             }
         });
 
-        validator.constrainTextFieldToBeNonEmpty("Cache ID", cacheIdField, null);
-        validator.constrainTextFieldToBeNonEmpty("Cache Entry Key", cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.id.field"), cacheIdField, null);
+        validator.constrainTextFieldToBeNonEmpty(resourceBundle.getString("cache.key.field"), cacheKeyField, new InputValidator.ComponentValidationRule(cacheKeyField) {
             @Override
             public String getValidationError() {
                 String[] refs = Syntax.getReferencedNames(cacheKeyField.getText());
@@ -76,7 +76,7 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
                 return null;
             }
         });
-        validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, CacheStoragePropertiesDialog.kMAX_ENTRY_AGE);
+        validator.constrainTextFieldToNumberRange(resourceBundle.getString("max.entry.age.field"), maxAgeField, 0, CacheStoragePropertiesDialog.kMAX_ENTRY_AGE);
         validator.constrainTextField(contentTypeOverride, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
