@@ -5,8 +5,10 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -19,6 +21,7 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 
@@ -29,6 +32,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,6 +48,7 @@ public class ServerVariables {
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
     private static ClusterPropertyCache clusterPropertyCache;
+    private static SecurePasswordManager securePasswordManager;
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -460,6 +465,14 @@ public class ServerVariables {
 
         new Variable("trace", new DebugTraceGetter("trace")),
         new SettableVariable("trace.out", new DebugTraceGetter("trace"), new DebugTraceGetter("trace")),
+
+        new Variable(BuiltinVariables.PREFIX_SECURE_PASSWORD, new SelectingGetter(BuiltinVariables.PREFIX_SECURE_PASSWORD) {
+            @Override
+            protected Object getBaseObject(PolicyEnforcementContext context) {
+                // Return a placeholder so the correct selector can fire up.  (The PEC will not be required further and is not relevant.)
+                return new SecurePasswordLocatorContext();
+            }
+        }),
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
@@ -556,6 +569,15 @@ public class ServerVariables {
         if ( clusterPropertyCache == null ) {
             clusterPropertyCache = cache;
         }
+    }
+
+    public static SecurePasswordManager getSecurePasswordManager() {
+        return securePasswordManager;
+    }
+
+    public static void setSecurePasswordManager(SecurePasswordManager spm) {
+        if (securePasswordManager == null)
+            securePasswordManager = spm;
     }
 
     static {
@@ -834,4 +856,12 @@ public class ServerVariables {
         protected abstract Object getBaseObject( PolicyEnforcementContext context );
     }
 
+    static SecurePassword findSecurePasswordByName(String secpassName) throws FindException {
+        return securePasswordManager.findByUniqueName(secpassName);
+    }
+
+    static char[] getPlaintextPassword(SecurePassword securePassword) throws FindException, ParseException {
+        String encoded = securePassword.getEncodedPassword();
+        return encoded == null || encoded.length() < 1 ? null : securePasswordManager.decryptPassword(encoded);
+    }
 }

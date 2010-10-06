@@ -144,6 +144,8 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.PartInfoSelector",
         "com.l7tech.server.policy.variable.ArraySelector",
         "com.l7tech.server.policy.variable.DebugTraceVariableContextSelector",
+        "com.l7tech.server.policy.variable.SecurePasswordLocatorContextSelector",
+        "com.l7tech.server.policy.variable.SecurePasswordSelector",
     };
 
     private static final Map<Class, Selector<Object>> selectorMap = Collections.unmodifiableMap(new HashMap<Class, Selector<Object>>() {{

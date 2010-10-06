@@ -7,6 +7,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
@@ -34,11 +35,12 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
+import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.junit.Assert;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -49,6 +51,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -719,6 +723,44 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.policyExecutionAttempted}", "false");
         c.getOriginalContext().setPolicyExecutionAttempted(true);
         expandAndCheck(c, "${audit.policyExecutionAttempted}", "true");
+    }
+    
+    @Test
+    public void testSecurePasswordSelector() throws Exception {
+        SecurePassword test1 = new SecurePassword("test1");
+        test1.setOid(990);
+        test1.setDescription("Test Pass One");
+        test1.setEncodedPassword("FOOOO");
+        test1.setUsageFromVariable(true);
+
+        SecurePassword test2 = new SecurePassword("test2");
+        test2.setOid(991);
+        test2.setDescription("Test Pass Two");
+        test2.setEncodedPassword("BAAAAR");
+        test2.setUsageFromVariable(true);
+
+        SecurePasswordManager spm = new SecurePasswordManagerStub(test1, test2);
+        ServerVariables.setSecurePasswordManager(spm);
+
+        // Ensure usage from variables works as expected
+        final PolicyEnforcementContext c = context();
+        expandAndCheck(c, "${secpass.test1}", "test1");
+        expandAndCheck(c, "${secpass.test1.name}", "test1");
+        expandAndCheck(c, "${secpass.test1.description}", "Test Pass One");
+        expandAndCheck(c, "${secpass.test1.plaintext}", "foooo");
+
+        expandAndCheck(c, "${secpass.test2}", "test2");
+        expandAndCheck(c, "${secpass.test2.name}", "test2");
+        expandAndCheck(c, "${secpass.test2.description}", "Test Pass Two");
+        expandAndCheck(c, "${secpass.test2.plaintext}", "baaaar");
+
+        // Make sure usage from variable is respected
+        test2.setUsageFromVariable(false);
+
+        expandAndCheck(c, "${secpass.test2}", "");
+        expandAndCheck(c, "${secpass.test2.name}", "");
+        expandAndCheck(c, "${secpass.test2.description}", "");
+        expandAndCheck(c, "${secpass.test2.plaintext}", "");
     }
 
     private PolicyEnforcementContext context(){

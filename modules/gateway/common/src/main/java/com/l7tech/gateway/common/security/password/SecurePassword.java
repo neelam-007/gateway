@@ -29,6 +29,10 @@ public class SecurePassword extends NamedEntityImp {
         this.lastUpdate = new Date(lastUpdate);
     }
 
+    public SecurePassword(String name) {
+        this(name, new Date().getTime());
+    }
+
     @Column(name = "description", length = 256, nullable = true)
     public String getDescription() {
         return description;
