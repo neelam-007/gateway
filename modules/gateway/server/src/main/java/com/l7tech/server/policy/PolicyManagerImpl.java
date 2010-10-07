@@ -285,6 +285,9 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         // Read all JDBC Connections
         newRole.addEntityPermission(READ, JDBC_CONNECTION, null);
 
+        // Read all HTTP Configurations
+        newRole.addEntityPermission(READ, HTTP_CONFIGURATION, null);
+
         // Read this policy's folder ancestry
         newRole.addEntityFolderAncestryPermission(POLICY, policy.getId());
 

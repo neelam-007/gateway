@@ -1,8 +1,6 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -13,7 +11,6 @@ import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.LdapUrlObjectCache;
-import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
 import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
@@ -71,7 +68,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     protected static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize";
     protected static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
     
-    public CrlCacheImpl( final HttpClientFactory httpClientFactory,
+    public CrlCacheImpl( final GenericHttpClientFactory httpClientFactory,
                          final ServerConfig serverConfig,
                          final Timer cacheTimer ) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
@@ -255,6 +252,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         }
     }
 
+    @SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
     private X509CRL getCrlFromLdap(String url) throws IOException, CRLException {
         AbstractUrlObjectCache.FetchResult<LdapUrlObjectCache.LdapCacheEntry<X509CRL>> fr = ldapUrlObjectCache.fetchCached(url, AbstractUrlObjectCache.WAIT_INITIAL);
         String attrName;

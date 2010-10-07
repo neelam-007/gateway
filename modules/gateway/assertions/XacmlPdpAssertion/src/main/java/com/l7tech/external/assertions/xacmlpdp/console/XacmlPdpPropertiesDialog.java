@@ -8,6 +8,7 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
@@ -99,6 +100,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private JButton okButton;
     private JButton cancelButton;
     private JTextField urlToMonitorField;
+    private JButton manageHttpOptionsButton;
     private JPanel monitorUrlPolicyPanel;
     private JPanel preconfiguredPolicyPanel;
     private JComboBox policyLocationComboBox;
@@ -217,13 +219,13 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         fetchUrlButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final OkCancelDialog dlg = new OkCancelDialog(XacmlPdpPropertiesDialog.this, resources.getString( "xacml.url.label" ), true, new UrlPanel( resources.getString( "xacml.policy.url" ), null, false));
+                final OkCancelDialog<String> dlg = new OkCancelDialog<String>(XacmlPdpPropertiesDialog.this, resources.getString( "xacml.url.label" ), true, new UrlPanel( resources.getString( "xacml.policy.url" ), null));
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
                 DialogDisplayer.display(dlg, new Runnable() {
                     @Override
                     public void run() {
-                        String url = (String)dlg.getValue();
+                        String url = dlg.getValue();
                         if (url != null) {
                             readFromUrl(url);
                         }
@@ -231,6 +233,10 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 });
             }
         });
+
+        manageHttpOptionsButton.setAction( new ManageHttpConfigurationAction( this ) );
+        manageHttpOptionsButton.setText(resources.getString("manageHttpOptionsButton.label"));
+        manageHttpOptionsButton.setIcon(null);
 
         RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable(){
             @Override

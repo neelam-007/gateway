@@ -1,12 +1,12 @@
 package com.l7tech.server.service;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.url.HttpObjectCache;
-import com.l7tech.server.util.HttpClientFactory;
 import java.io.IOException;
 import java.net.*;
 
@@ -17,7 +17,7 @@ public class ServiceDocumentResolver {
 
     //- PUBLIC
 
-    public ServiceDocumentResolver( final HttpClientFactory httpClientFactory) {
+    public ServiceDocumentResolver( final GenericHttpClientFactory httpClientFactory ) {
         this.httpClientFactory = httpClientFactory;
     }
 
@@ -70,5 +70,5 @@ public class ServiceDocumentResolver {
 
     //- PRIVATE
     
-    private final HttpClientFactory httpClientFactory;
+    private final GenericHttpClientFactory httpClientFactory;
 }

@@ -183,7 +183,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageEmailListenersAction manageEmailListenersAction = null;
     private ConfigureFtpAuditArchiverAction configureFtpAuditArchiver = null;
     private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
-
+    private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -960,6 +960,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
+            menu.add(getManageHttpConfigurationAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -1993,6 +1994,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         manageUDDIRegistriesAction = new ManageUDDIRegistriesAction();
         disableUntilLogin(manageUDDIRegistriesAction);
         return manageUDDIRegistriesAction;
+    }
+
+    private Action getManageHttpConfigurationAction(){
+        if(manageHttpConfigurationAction != null) return manageHttpConfigurationAction;
+
+        manageHttpConfigurationAction = new ManageHttpConfigurationAction();
+        disableUntilLogin(manageHttpConfigurationAction);
+        return manageHttpConfigurationAction;
     }
 
     private Action getManageJdbcConnectionsAction() {

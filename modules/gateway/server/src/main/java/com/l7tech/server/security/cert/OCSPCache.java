@@ -1,12 +1,11 @@
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.util.HttpClientFactory;
-import com.l7tech.security.types.CertificateValidationResult;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.CertificateEncodingException;
@@ -32,7 +31,7 @@ public class OCSPCache {
      * @param httpClientFactory The HTTP client factory to use (must not be null)
      * @param serverConfig The server configuration to use (must not be null)
      */
-    public OCSPCache(final HttpClientFactory httpClientFactory,
+    public OCSPCache(final GenericHttpClientFactory httpClientFactory,
                      final ServerConfig serverConfig) {
         if (httpClientFactory==null) throw new IllegalArgumentException("httpClientFactory must not be null");
         if (serverConfig==null) throw new IllegalArgumentException("serverConfig must not be null");
@@ -61,8 +60,7 @@ public class OCSPCache {
                                                final X509Certificate certificate,
                                                final X509Certificate issuerCertificate,
                                                final OCSPClient.OCSPCertificateAuthorizer responseAuthorizer,
-                                               final Auditor auditor,
-                                               final CertificateValidationResult onNetworkFailure)
+                                               final Auditor auditor)
         throws OCSPClient.OCSPClientException
     {
 
@@ -139,7 +137,8 @@ public class OCSPCache {
     //- PRIVATE
 
     private static final int ONE_MINUTE = TimeUnit.MINUTES.getMultiplier();
-    private static final ThreadLocal<Set<OcspKey>> RECURSION_SET = new ThreadLocal() {
+    private static final ThreadLocal<Set<OcspKey>> RECURSION_SET = new ThreadLocal<Set<OcspKey>>() {
+        @Override
         protected Set<OcspKey> initialValue() {
             return new HashSet<OcspKey>();
         }
@@ -151,7 +150,7 @@ public class OCSPCache {
     private static final String PROP_USE_NONCE = "pkixOCSP.useNonce";
 
     private final Cache certValidationCache;
-    private final HttpClientFactory httpClientFactory;
+    private final GenericHttpClientFactory httpClientFactory;
     private final ServerConfig serverConfig;
 
     /**
@@ -163,8 +162,7 @@ public class OCSPCache {
         if ( responseExpiry <= 0 ) {
             expiry = getDefaultExpiry();
         } else {
-            long updateTime = responseExpiry;
-            long updatePeriod = updateTime - timeNow;
+            long updatePeriod = responseExpiry - timeNow;
 
             if ( updatePeriod > getMaxExpiry() ) {
                 expiry = getMaxExpiry();
@@ -243,6 +241,7 @@ public class OCSPCache {
             this.hashCode = Arrays.hashCode(encodedCertificate) + (13 * url.hashCode());
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;

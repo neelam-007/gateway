@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdminStub;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -369,6 +370,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public SchemaAdmin getSchemaAdmin() {
+        return null;
+    }
+
+    @Override
+    public ResourceAdmin getResourceAdmin() {
         return null;
     }
 

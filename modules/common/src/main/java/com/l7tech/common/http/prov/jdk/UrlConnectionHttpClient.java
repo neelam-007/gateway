@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.common.http.prov.jdk;
 
 import com.l7tech.common.http.*;
@@ -44,6 +41,12 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 throw new GenericHttpException("URLConnection was not an HttpURLConnection");
             final HttpURLConnection httpConn = (HttpURLConnection)conn;
             httpConn.setInstanceFollowRedirects(params.isFollowRedirects());
+            if ( params.getConnectionTimeout() >= 0 ) {
+                httpConn.setConnectTimeout( params.getConnectionTimeout() );
+            }
+            if ( params.getReadTimeout() >= 0 ) {
+                httpConn.setReadTimeout( params.getReadTimeout() );
+            }
             if (conn instanceof HttpsURLConnection) {
                 final HttpsURLConnection httpsConn;
                 httpsConn = (HttpsURLConnection)conn;
@@ -59,6 +62,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             if (method.needsRequestBody())
                 conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
+            conn.setUseCaches(false);
             conn.setDefaultUseCaches(false);
 
             // Set headers

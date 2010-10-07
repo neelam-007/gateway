@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
@@ -130,6 +131,12 @@ public abstract class Registry {
     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
     */
     abstract public SchemaAdmin getSchemaAdmin();
+
+    /**
+    * @return the resource admin. Never null.
+    * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+    */
+    abstract public ResourceAdmin getResourceAdmin();
 
     /**
      * @return the custome assertions registrar. Never null.
@@ -288,6 +295,11 @@ public abstract class Registry {
 
         @Override
         public SchemaAdmin getSchemaAdmin() {
+            return null;
+        }
+
+        @Override
+        public ResourceAdmin getResourceAdmin() {
             return null;
         }
 

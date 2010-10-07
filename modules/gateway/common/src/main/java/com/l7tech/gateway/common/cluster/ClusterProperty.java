@@ -54,6 +54,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         hiddenInGui.add("keyStore.luna.lunaSlotNum");
         hiddenInGui.add("security.jceProviderEngineName");
         hiddenInGui.add("interfaceTags");
+        hiddenInGui.add("ioHttpProxy");
     }
 
     public ClusterProperty() { }

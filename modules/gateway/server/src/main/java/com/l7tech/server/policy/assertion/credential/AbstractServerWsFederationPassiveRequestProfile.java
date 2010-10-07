@@ -17,17 +17,12 @@ import com.l7tech.security.xml.processor.WssProcessor;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,28 +35,20 @@ import java.util.logging.Logger;
 /**
  * Base class for WsFederation server assertions.
  */
-public abstract class AbstractServerWsFederationPassiveRequestProfile extends AbstractServerCachedSecurityTokenAssertion {
+public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends Assertion> extends AbstractServerCachedSecurityTokenAssertion<AT> {
 
     //- PROTECTED
 
     /**
      *
      */
-    protected AbstractServerWsFederationPassiveRequestProfile(Assertion assertion, String samlCacheKey, ApplicationContext springContext) {
+    protected AbstractServerWsFederationPassiveRequestProfile(AT assertion, String samlCacheKey, ApplicationContext springContext) {
         super(assertion, samlCacheKey);
 
         this.authCookieSet = new CopyOnWriteArraySet<String>();
         this.auditor = new Auditor(this, springContext, logger);
 
         try {
-            sslContext = SSLContext.getInstance("TLS");
-            final X509TrustManager trustManager = (X509TrustManager) springContext.getBean("trustManager");
-            hostnameVerifier = springContext.getBean("hostnameVerifier", HostnameVerifier.class);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
-            sslContext.getClientSessionContext().setSessionTimeout(timeout);
-            sslContext.init(null, new TrustManager[]{trustManager}, null);
-
             trogdor = new WssProcessorImpl();
 
             securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
@@ -98,14 +85,6 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         }
 
         return result;
-    }
-
-    /**
-     *
-     */
-    protected void initParams(GenericHttpRequestParams params) {
-        params.setSslSocketFactory(sslContext.getSocketFactory());
-        params.setHostnameVerifier(hostnameVerifier);
     }
 
     /**
@@ -189,12 +168,12 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected static class StopAndAuditException extends Exception {
 
-        public StopAndAuditException(AssertionMessages.M message) {
+        protected StopAndAuditException(AssertionMessages.M message) {
             super(message.getMessage());
             this.message = message;
         }
 
-        public StopAndAuditException(AssertionMessages.M message, Throwable throwable) {
+        protected StopAndAuditException(AssertionMessages.M message, Throwable throwable) {
             super(message.getMessage(), throwable);
             this.message = message;
         }
@@ -217,8 +196,6 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     private static final Logger logger = Logger.getLogger(AbstractServerWsFederationPassiveRequestProfile.class.getName());
 
     private final Auditor auditor;
-    private final SSLContext sslContext;
-    private final HostnameVerifier hostnameVerifier;
     private final WssProcessor trogdor;
     private final SecurityTokenResolver securityTokenResolver;
     private final Set<String> authCookieSet;
@@ -267,7 +244,6 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         try {
             URL endpoint = new URL(replyUrl);
             GenericHttpRequestParams params = new GenericHttpRequestParams(endpoint);
-            initParams(params);
 
             Set<HttpCookie> cookies = FederationPassiveClient.postFederationToken(httpClient, params, samlAssertion, contextUrl, false);
 

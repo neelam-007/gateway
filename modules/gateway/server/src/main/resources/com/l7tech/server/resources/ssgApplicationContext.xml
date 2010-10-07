@@ -331,6 +331,14 @@
                                 <value>otherTextualContentTypes</value>
                             </list>
                         </entry>
+                        <entry key="httpConfigurationCache">
+                            <list>
+                                <value>keyStoreDefaultSslKey</value>
+                                <value>keyStoreDefaultCaKey</value>
+                                <value>keyStoreSearchForAlias</value>
+                                <value>ioHttpProxy</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1233,6 +1241,8 @@
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="serviceManager" />
+                <ref bean="securePasswordManager" />
+                <ref bean="httpConfigurationManager" />
             </list>
         </property>
         <property name="timer">
@@ -1252,10 +1262,19 @@
         </constructor-arg>
     </bean>
 
-    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
-        <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="trustManager"/>
-        <constructor-arg ref="hostnameVerifier"/>
+    <bean id="httpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
+        <constructor-arg index="0" ref="httpConfigurationCache"/>
+        <constructor-arg index="1" value="true"/>
+    </bean>
+
+    <bean id="anonHttpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
+        <constructor-arg index="0" ref="httpConfigurationCache"/>
+        <constructor-arg index="1" value="false"/>
+    </bean>
+
+    <bean id="anonUrlHttpClientFactory" class="com.l7tech.server.globalresources.ConfiguredUrlConnectionHttpClientFactory">
+        <constructor-arg index="0" ref="httpConfigurationCache"/>
+        <constructor-arg index="1" value="false"/>
     </bean>
 
     <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
@@ -1824,6 +1843,28 @@
                 <ref bean="secureConversationContextManager"/>
                 <ref bean="kerberosSessionContextManager"/>
             </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="defaultHttpProxyManager" class="com.l7tech.server.globalresources.DefaultHttpProxyManager">
+        <constructor-arg index="0" ref="clusterPropertyManager"/>
+    </bean>
+
+    <bean id="httpConfigurationManager" class="com.l7tech.server.globalresources.HttpConfigurationManagerImpl" parent="hibernateBean"/>
+
+    <bean id="httpConfigurationCache" class="com.l7tech.server.globalresources.HttpConfigurationCache">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="defaultHttpProxyManager"/>
+        <constructor-arg index="2" ref="httpConfigurationManager"/>
+        <constructor-arg index="3" ref="securePasswordManager"/>
+        <constructor-arg index="4" ref="hostnameVerifier"/>
+        <constructor-arg index="5" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="6" ref="defaultKey"/>
+        <constructor-arg index="7">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="trustManager"/>
+                <constructor-arg value="javax.net.ssl.X509TrustManager"/>
+            </bean>
         </constructor-arg>
     </bean>
 

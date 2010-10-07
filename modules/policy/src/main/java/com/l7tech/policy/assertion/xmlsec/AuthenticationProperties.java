@@ -32,7 +32,7 @@ public class AuthenticationProperties implements Cloneable, Serializable {
     }
 
     public AuthenticationProperties() {
-        additionalFields = Collections.EMPTY_MAP;
+        additionalFields = Collections.emptyMap();
         setMethod(METHOD_BASIC);
     }
 
@@ -123,12 +123,12 @@ public class AuthenticationProperties implements Cloneable, Serializable {
         this.copyFormFields = copyFormFields;
     }
 
-    public Map getAdditionalFields() {
+    public Map<String,String> getAdditionalFields() {
         return Collections.unmodifiableMap(additionalFields);
     }
 
-    public void setAdditionalFields(Map additionalFields) {
-        this.additionalFields = new HashMap(additionalFields);
+    public void setAdditionalFields(Map<String,String> additionalFields) {
+        this.additionalFields = new HashMap<String,String>(additionalFields);
     }
 
     public static final class Method implements Cloneable, Serializable {
@@ -162,10 +162,12 @@ public class AuthenticationProperties implements Cloneable, Serializable {
         // This method is invoked reflectively by WspEnumTypeMapping
         public static EnumTranslator getEnumTranslator() {
             return new EnumTranslator() {
+                @Override
                 public String objectToString(Object in) {
                     return ((AuthenticationProperties.Method)in).getId();
                 }
 
+                @Override
                 public Object stringToObject(String in) {
                     return AuthenticationProperties.forKeyName(in);
                 }
@@ -191,6 +193,6 @@ public class AuthenticationProperties implements Cloneable, Serializable {
     private boolean redirectAfterSubmit;
     private boolean enableCookies;
     private boolean copyFormFields;
-    private Map additionalFields;
+    private Map<String,String> additionalFields;
 
 }

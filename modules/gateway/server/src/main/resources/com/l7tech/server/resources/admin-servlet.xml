@@ -52,6 +52,11 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
     </bean>
 
+    <bean name="/ResourceAdmin" parent="httpInvokerParent">
+        <property name="service" ref="resourceAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.resources.ResourceAdmin"/>
+    </bean>
+
     <bean name="/FtpAdmin" parent="httpInvokerParent">
         <property name="service" ref="ftpAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>

@@ -15,7 +15,6 @@ import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.util.HttpClientFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -169,7 +168,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
     }
 
     public SchemaManagerImpl( final Config config,
-                              final HttpClientFactory httpClientFactory,
+                              final GenericHttpClientFactory httpClientFactory,
                               final Timer timer ) {
         this( config, httpClientFactory, timer, TarariLoader.getSchemaHandler() );
     }

@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -19,7 +20,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.uddi.*;
-import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.uddi.UDDIInvalidKeyException;
@@ -65,7 +65,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                        final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager,
                                        final ServiceManager serviceManager,
                                        final ServiceDocumentManager serviceDocumentManager,
-                                       final HttpClientFactory httpClientFactory ) {
+                                       final GenericHttpClientFactory httpClientFactory ) {
         this.uddiRegistryManager = uddiRegistryManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistrySubscriptionManager = uddiRegistrySubscriptionManager;
@@ -146,7 +146,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final UDDIServiceControlRuntimeManager uddiServiceControlRuntimeManager;
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;
-    private final HttpClientFactory httpClientFactory;
+    private final GenericHttpClientFactory httpClientFactory;
     private final ServerConfig serverConfig;
 
     private static String describe( final UDDIRegistry uddiRegistry ) {
@@ -160,9 +160,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private final long registryOid;
         private final boolean expiredOnly;
 
-        public SubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
-                                  final long registryOid,
-                                  final boolean expiredOnly ) {
+        private SubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
+                                   final long registryOid,
+                                   final boolean expiredOnly ) {
             super( logger, null );
             this.factory = factory;
             this.registryOid = registryOid;
@@ -262,8 +262,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private final SubscriptionUDDITaskFactory factory;
         private final long registryOid;
 
-        public UnsubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
-                                    final long registryOid ) {
+        private UnsubscribeUDDITask( final SubscriptionUDDITaskFactory factory,
+                                     final long registryOid ) {
             this.factory = factory;
             this.registryOid = registryOid;
         }
@@ -426,8 +426,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private final String message;
         private final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        public SubscriptionNotificationUDDITask( final SubscriptionUDDITaskFactory factory,
-                                                 final String message ) {
+        private SubscriptionNotificationUDDITask( final SubscriptionUDDITaskFactory factory,
+                                                  final String message ) {
             super(logger,factory.uddiServiceControlManager);
             this.factory = factory;
             this.message = message;
@@ -497,7 +497,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private final SubscriptionUDDITaskFactory factory;
         private final long registryOid;
 
-        public UpdateAllMonitoredServicesUDDITask(SubscriptionUDDITaskFactory factory, long registryOid) {
+        private UpdateAllMonitoredServicesUDDITask(SubscriptionUDDITaskFactory factory, long registryOid) {
             this.factory = factory;
             this.registryOid = registryOid;
         }
@@ -536,11 +536,11 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         private final boolean isDeleted;
         private final boolean forceUpdate;
 
-        public BusinessServiceUpdateUDDITask(final SubscriptionUDDITaskFactory factory,
-                                             final String serviceKey,
-                                             final long registryOid,
-                                             final boolean deleted,
-                                             final boolean forceUpdate) {
+        private BusinessServiceUpdateUDDITask(final SubscriptionUDDITaskFactory factory,
+                                              final String serviceKey,
+                                              final long registryOid,
+                                              final boolean deleted,
+                                              final boolean forceUpdate) {
             this.factory = factory;
             this.serviceKey = serviceKey;
             this.registryOid = registryOid;

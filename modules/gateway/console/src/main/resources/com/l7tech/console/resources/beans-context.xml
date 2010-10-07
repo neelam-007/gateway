@@ -19,6 +19,7 @@
                 <ref bean="identityAdmin"/>
                 <ref bean="auditAdmin"/>
                 <ref bean="schemaAdmin"/>
+                <ref bean="resourceAdmin"/>
                 <ref bean="jmsAdmin"/>
                 <ref bean="jdbcAdmin"/>
                 <ref bean="ftpAdmin"/>
@@ -58,6 +59,11 @@
     <bean id="schemaAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/SchemaAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
+    </bean>
+
+    <bean id="resourceAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/ResourceAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.resources.ResourceAdmin"/>
     </bean>
 
     <bean id="jmsAdmin" parent="invokerCommon">

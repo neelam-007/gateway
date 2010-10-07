@@ -18,7 +18,6 @@ import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -784,7 +783,7 @@ public class RevocationCheckerFactory {
                         });
                     }
                 };
-                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor, onNetworkFailure);
+                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor);
                 result = status.getResult();
 
                 if (result == CertificateValidationResult.OK) {

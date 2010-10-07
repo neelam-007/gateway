@@ -252,6 +252,18 @@
         <constructor-arg ref="hostnameVerifier"/>
     </bean>
 
+    <bean id="anonHttpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="hostnameVerifier"/>
+    </bean>
+
+    <bean id="anonUrlHttpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="hostnameVerifier"/>
+    </bean>
+
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.TestingHttpClientFactory"/>

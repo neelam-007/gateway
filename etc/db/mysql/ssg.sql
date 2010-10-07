@@ -851,6 +851,34 @@ CREATE TABLE secure_password (
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS http_configuration;
+CREATE TABLE http_configuration (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  host varchar(128) NOT NULL,
+  port int(5) NOT NULL DEFAULT 0,
+  protocol varchar(8) DEFAULT NULL,
+  path varchar(4096) DEFAULT NULL,
+  username varchar(255) DEFAULT NULL,
+  password_oid bigint(20) DEFAULT NULL,
+  ntlm_host varchar(128) DEFAULT NULL,
+  ntlm_domain varchar(255) DEFAULT NULL,
+  tls_version varchar(8) DEFAULT NULL,
+  tls_key_use varchar(8) DEFAULT 'DEFAULT',
+  tls_keystore_oid bigint(20) NOT NULL DEFAULT 0,
+  tls_key_alias varchar(255) DEFAULT NULL,
+  timeout_connect int(10) NOT NULL DEFAULT -1,
+  timeout_read int(10) NOT NULL DEFAULT -1,
+  follow_redirects tinyint(1) NOT NULL DEFAULT 0,
+  proxy_use varchar(8) DEFAULT 'DEFAULT',
+  proxy_host varchar(128) DEFAULT NULL,
+  proxy_port int(5) NOT NULL DEFAULT 0,
+  proxy_username varchar(255) DEFAULT NULL,
+  proxy_password_oid bigint(20) DEFAULT NULL,
+  FOREIGN KEY (password_oid) REFERENCES secure_password (objectid),
+  FOREIGN KEY (proxy_password_oid) REFERENCES secure_password (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- HTTP and HTTPS listeners and properties
 --
@@ -1265,6 +1293,7 @@ INSERT INTO rbac_permission VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-355,0,-350,'READ',NULL,'SERVICE_TEMPLATE');
 INSERT INTO rbac_permission VALUES (-356,0,-350,'READ',NULL,'UDDI_REGISTRY');
 INSERT INTO rbac_permission VALUES (-357,0,-350,'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-358,0,-350,'READ',NULL,'HTTP_CONFIGURATION');
 
 INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -1305,6 +1334,7 @@ INSERT INTO rbac_permission VALUES (-435,0,-400,'UPDATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-436,0,-400,'DELETE',NULL,'UDDI_SERVICE_CONTROL');
 INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONTROL');
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
+INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');

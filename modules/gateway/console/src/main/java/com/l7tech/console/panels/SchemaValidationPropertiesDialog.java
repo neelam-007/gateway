@@ -8,6 +8,7 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -108,6 +109,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     // Widgets specific to MODE_SPECIFY_URL
     private JTextField specifyUrlField;
+    private JButton manageHttpOptionsButton;
     private JPanel globalURLTab;
 
     private JComboBox globalSchemaCombo;
@@ -270,6 +272,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 launchGlobalSchemasDlg();
             }
         });
+
+        manageHttpOptionsButton.setAction( new ManageHttpConfigurationAction( this ) );
+        manageHttpOptionsButton.setText(resources.getString("manageHttpOptionsButton.label"));
+        manageHttpOptionsButton.setIcon(null);
 
         readFromWsdlButton.setEnabled(fullSchemas != null && ! fullSchemas.isEmpty());
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");

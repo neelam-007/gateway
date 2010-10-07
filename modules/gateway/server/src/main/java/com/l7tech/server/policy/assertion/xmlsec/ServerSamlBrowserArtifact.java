@@ -1,12 +1,10 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -28,10 +26,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,32 +53,19 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     public ServerSamlBrowserArtifact(SamlBrowserArtifact assertion, ApplicationContext springContext) {
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
-        this.assertion = assertion;
         try {
             loginUrl = new URL(assertion.getSsoEndpointUrl());
         } catch (MalformedURLException e) {
             throw (IllegalArgumentException)new IllegalArgumentException("Invalid SAML browser profile URL: " +
                     assertion.getSsoEndpointUrl()).initCause(e);
         }
-        httpClient = new CommonsHttpClient(CommonsHttpClient.newConnectionManager());
-
-        try {
-           sslContext = SSLContext.getInstance("TLS");
-           final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
-           hostnameVerifier = springContext.getBean("hostnameVerifier", HostnameVerifier.class);
-           final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                  HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
-           sslContext.getClientSessionContext().setSessionTimeout(timeout);
-           sslContext.init(null, new TrustManager[]{trustManager}, null);
-       } catch (Exception e) {
-           auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
-           throw new RuntimeException(e);
-       }
+        httpClient = springContext.getBean( "anonHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient();
     }
 
     /**
      *
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         return doCheckRequest(context, true);
     }
@@ -102,15 +83,12 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
      * NEKO Config
      */
     private static final String NEKO_PROP_ELEMS = "http://cyberneko.org/html/properties/names/elems";
-    private static final Short NEKO_VALUE_LOWERCASE = new Short((short)2);
+    private static final Short NEKO_VALUE_LOWERCASE = 2;
 
     private final Auditor auditor;
-    private final SamlBrowserArtifact assertion;
     private final URL loginUrl;
 
     private final GenericHttpClient httpClient;
-    private final SSLContext sslContext;
-    private final HostnameVerifier hostnameVerifier;
 
     /**
      *
@@ -121,8 +99,6 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         HttpState state = new HttpState();
         httpState.setStateObject(state);
         GenericHttpRequestParams loginParams = new GenericHttpRequestParams(loginUrl, httpState);
-        loginParams.setSslSocketFactory(sslContext.getSocketFactory());
-        loginParams.setHostnameVerifier(hostnameVerifier);
         loginParams.setFollowRedirects(false);
 
         GenericHttpRequest loginRequest = null;
@@ -139,7 +115,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
             // created later if required.
             boolean usingCache = false;
-            final Collection inCookies = new HashSet();
+            final Collection<Cookie> inCookies = new HashSet<Cookie>();
 
             if (AuthenticationProperties.METHOD_BASIC.equals(ap.getMethod())) {
                 loginParams.setPasswordAuthentication(new PasswordAuthentication(creds.getLogin(), creds.getCredentials()));
@@ -206,7 +182,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
             int loginResponseStatus = loginResponse.getStatus();
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, "Artifact request to ''{0}'', completed with HTTP status code {1}",
-                        new Object[]{loginUrl, new Integer(loginResponseStatus)});
+                        new Object[]{loginUrl, loginResponseStatus });
             }
             if (loginResponseStatus == HttpConstants.STATUS_FOUND
               ||loginResponseStatus == HttpConstants.STATUS_SEE_OTHER) {
@@ -251,7 +227,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 else {
                     if(logger.isLoggable(Level.FINEST)) {
                         logger.log(Level.FINEST, "Unexpected HTTP status code ({0}), response body is: \n{1}",
-                                new Object[]{new Integer(loginResponseStatus), new String(IOUtils.slurpStream(loginResponse.getInputStream()))});
+                                new Object[]{loginResponseStatus, new String(IOUtils.slurpStream(loginResponse.getInputStream()))});
                     }
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_RESPONSE_NON_302);
                 }
@@ -270,10 +246,10 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     /**
      * Take prefixed cookies from incoming request, remove prefix and add to http state
      */
-    private boolean addCookies(PolicyEnforcementContext context, HttpState state, String cookieDomain, Collection added) {
+    private boolean addCookies(PolicyEnforcementContext context, HttpState state, String cookieDomain, Collection<Cookie> added) {
         boolean addedCookies = false;
-        Set<HttpCookie> cookies = context.getCookies();
-        for (HttpCookie cookie : cookies) {
+        final Set<HttpCookie> cookies = context.getCookies();
+        for ( final HttpCookie cookie : cookies ) {
             if (cookie.getCookieName().startsWith(COOKIE_PREFIX)) {
                 // Get and fixup HTTP Client cookie
                 Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);
@@ -306,7 +282,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
         Cookie[] cookies = state.getCookies();
 
-        Set<Cookie> newCookies = new LinkedHashSet(Arrays.asList(cookies));
+        Set<Cookie> newCookies = new LinkedHashSet<Cookie>(Arrays.asList(cookies));
         newCookies.removeAll(originalCookies);
 
         for (Cookie cookie : newCookies) {
@@ -333,8 +309,6 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         GenericHttpResponse loginFormResponse = null;
         try {
             GenericHttpRequestParams getLoginFormParams = new GenericHttpRequestParams(loginUrl, httpState);
-            getLoginFormParams.setSslSocketFactory(sslContext.getSocketFactory());
-            getLoginFormParams.setHostnameVerifier(hostnameVerifier);
             getLoginFormParams.setFollowRedirects(false);
             loginFormRequest = httpClient.createRequest(HttpMethod.GET, getLoginFormParams);
             loginFormResponse = loginFormRequest.getResponse();
@@ -386,7 +360,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
         boolean foundUsernameField = false;
         boolean foundPasswordField = false;
-        Map formPostParams = new HashMap();
+        Map<String,String> formPostParams = new HashMap<String,String>();
 
         // Parse form inputs (text, password, hidden and submit types only)
         if(autodetectRequired||copyFields) {

@@ -1,10 +1,10 @@
 package com.l7tech.server.policy.assertion.credential;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.security.token.*;
@@ -36,11 +36,8 @@ import java.util.logging.Logger;
 
 /**
  * Server implementation of the WS-Federation PRP (http://msdn.microsoft.com/ws/2003/07/ws-passive-profile/).
- *
- * @author $Author$
- * @version $Revision$
  */
-public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFederationPassiveRequestProfile {
+public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFederationPassiveRequestProfile<WsFederationPassiveTokenRequest> {
 
     //- PUBLIC
 
@@ -49,9 +46,8 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
      */
     public ServerWsFederationPassiveTokenRequest(WsFederationPassiveTokenRequest assertion, ApplicationContext springContext) {
         super(assertion, CACHE_SAML_KEY, springContext);
-        this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
-        this.httpClient = new UrlConnectionHttpClient();
+        this.httpClient = springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient();
 
         try {
             if (assertion.getIpStsUrl() == null) {
@@ -103,7 +99,6 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     private final Auditor auditor;
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
-    private final WsFederationPassiveTokenRequest assertion;
 
     /**
      *
@@ -172,7 +167,6 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             if (pass == null) throw new InvalidTokenException("Input token didn't contain a password");
 
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
-            initParams(params);
             params.setPasswordAuthentication(new PasswordAuthentication(username, pass));
 
             // replyUrl is the AUTH POST url not the routing url (could be the same thing)

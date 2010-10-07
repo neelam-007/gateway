@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.variable.Syntax;
@@ -19,6 +20,7 @@ public class MonitorUrlPanel extends JPanel {
     private JTextField urlField;
     private JLabel fetchUrlDescription;
     private JLabel urlToMonitorLabel;
+    private JButton manageHttpOptionsButton;
     private ResourceBundle resourceBundle;
 
     /**
@@ -42,6 +44,9 @@ public class MonitorUrlPanel extends JPanel {
 
         fetchUrlDescription.setText(resourceBundle.getString("fetchUrlTextBox.description"));
         urlToMonitorLabel.setText(resourceBundle.getString("fetchUrlTextBox.label"));
+        manageHttpOptionsButton.setAction( new ManageHttpConfigurationAction( this ) );
+        manageHttpOptionsButton.setText(resourceBundle.getString("manageHttpOptionsButton.label"));
+        manageHttpOptionsButton.setIcon(null);
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }

@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -58,6 +59,7 @@ public final class RegistryImpl extends Registry
     private JdbcAdmin jdbcAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private SchemaAdmin schemaAdmin;
+    private ResourceAdmin resourceAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AuditAdmin auditAdmin;
     private ClusterStatusAdmin clusterStatusAdmin;
@@ -201,6 +203,16 @@ public final class RegistryImpl extends Registry
         }
         schemaAdmin = adminContext.getSchemaAdmin();
         return schemaAdmin;
+    }
+
+    @Override
+    public synchronized ResourceAdmin getResourceAdmin() {
+        checkAdminContext();
+        if (resourceAdmin != null) {
+            return resourceAdmin;
+        }
+        resourceAdmin = adminContext.getResourceAdmin();
+        return resourceAdmin;
     }
 
     /**
@@ -401,6 +413,7 @@ public final class RegistryImpl extends Registry
         ftpAdmin = null;
         trustedCertAdmin = null;
         schemaAdmin = null;
+        resourceAdmin = null;
         customAssertionsRegistrar = null;
         auditAdmin = null;
         clusterStatusAdmin = null;

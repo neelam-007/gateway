@@ -21,11 +21,8 @@ import java.util.logging.Logger;
  *
  * <p>Presumably the expense of getting an new credential is greater than
  * the cache management overhead (e.g. credential fetched over the network)</p>
- *
- * @author $Author$
- * @version $Revision$
  */
-public abstract class AbstractServerCachedSecurityTokenAssertion extends AbstractServerAssertion implements ServerAssertion {
+public abstract class AbstractServerCachedSecurityTokenAssertion<AT extends Assertion> extends AbstractServerAssertion<AT> implements ServerAssertion<AT> {
 
     //- PROTECTED
 
@@ -35,7 +32,7 @@ public abstract class AbstractServerCachedSecurityTokenAssertion extends Abstrac
      *
      * @param cacheKey the unique key used to identify the token.
      */
-    protected AbstractServerCachedSecurityTokenAssertion(Assertion assertion, String cacheKey) {
+    protected AbstractServerCachedSecurityTokenAssertion(AT assertion, String cacheKey) {
         super(assertion);
         this.cacheKey = cacheKey;
     }
@@ -84,7 +81,7 @@ public abstract class AbstractServerCachedSecurityTokenAssertion extends Abstrac
      * @return the expiry time in millis
      */
     protected long getSamlAssertionExpiry(SamlAssertion samlAssertion) {
-        long expiry = 0;
+        long expiry;
         if(samlAssertion.getExpires()!=null) { // then use it less a bit (to allow for clock skew)
             expiry = samlAssertion.getExpires().getTimeInMillis() - EXPIRY_PRE_EXPIRE;
         }
@@ -98,6 +95,7 @@ public abstract class AbstractServerCachedSecurityTokenAssertion extends Abstrac
      * @param usernameToken the token
      * @return the expiry time in millis
      */
+    @SuppressWarnings({ "UnusedDeclaration" })
     protected long getUsernameTokenExpiry(UsernameToken usernameToken) {
         return getDefaultExpiry();
     }
@@ -118,16 +116,19 @@ public abstract class AbstractServerCachedSecurityTokenAssertion extends Abstrac
      */
     protected void addCacheInvalidator(final PolicyEnforcementContext pec) {
         pec.addRoutingResultListener(new RoutingResultListener() {
+            @Override
             public boolean reroute(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 return false;
             }
 
+            @Override
             public void routed(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 if(status!=HttpConstants.STATUS_OK) {
                     clearCache(pec);
                 }
             }
 
+            @Override
             public void failed(URL attemptedUrl, Throwable thrown, PolicyEnforcementContext context) {
                 clearCache(pec);
             }

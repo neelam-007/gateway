@@ -259,6 +259,12 @@
         <property name="serviceDocumentResolver" ref="serviceDocumentResolver"/>
     </bean>
 
+    <!-- resource admin implementation -->
+    <bean id="resourceAdmin" class="com.l7tech.server.globalresources.ResourceAdminImpl">
+        <constructor-arg index="0" ref="defaultHttpProxyManager"/>
+        <constructor-arg index="1" ref="httpConfigurationManager"/>
+    </bean>
+
     <!-- jms admin servant -->
     <bean id="jmsAdmin" class="com.l7tech.server.transport.jms.JmsAdminImpl">
         <constructor-arg ref="jmsConnectionManager"/>

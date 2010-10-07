@@ -24,13 +24,13 @@ public class EntityUtil {
      * @param defaultValue  a value to return if no relevant annotation could be found.
      * @return the maximum length of the specified property in characters.
      */
-    public static int getMaxFieldLength(Class<? extends Entity> entityClass, String propertyName, int defaultValue) {
+    public static int getMaxFieldLength(Class<?> entityClass, String propertyName, int defaultValue) {
         Integer len = getLengthFromProperty(entityClass, propertyName);
         if (len == null) len = getLengthFromGetter(entityClass, propertyName);
         return len == null ? defaultValue : len;
     }
 
-    private static Integer getLengthFromGetter(Class<? extends Entity> entityClass, String propertyName) {
+    private static Integer getLengthFromGetter(Class<?> entityClass, String propertyName) {
         try {
             char[] nameChars = propertyName.toCharArray();
             nameChars[0] = Character.toUpperCase(nameChars[0]);
@@ -41,7 +41,7 @@ public class EntityUtil {
         }
     }
 
-    private static Integer getLengthFromProperty(Class<? extends Entity> entityClass, String propertyName) {
+    private static Integer getLengthFromProperty(Class<?> entityClass, String propertyName) {
         try {
             return getLengthFromColumnAnnotation(entityClass.getField(propertyName));
         } catch (NoSuchFieldException e) {

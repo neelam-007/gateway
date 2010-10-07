@@ -288,6 +288,9 @@ public class ServiceManagerImp
         // Read all JDBC Connections
         newRole.addEntityPermission(READ, JDBC_CONNECTION, null);
 
+        // Read all HTTP Configurations
+        newRole.addEntityPermission(READ, HTTP_CONFIGURATION, null);
+
         // Read this service's folder ancestry
         newRole.addEntityFolderAncestryPermission(EntityType.SERVICE, service.getId());
 

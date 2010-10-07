@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -40,6 +34,9 @@ public class GenericHttpRequestParams {
     private boolean useExpectContinue = false;
     private boolean gzipEncode = false;
     private HttpVersion httpVersion = HttpVersion.HTTP_VERSION_1_1;
+    private int connectionTimeout = -1;
+    private int readTimeout = -1;
+    private boolean useDefaultProxy = false;
     // NOTE: Add any new fields to the copy constructor
 
     /**
@@ -86,6 +83,9 @@ public class GenericHttpRequestParams {
         useExpectContinue = template.useExpectContinue;
         gzipEncode = template.gzipEncode;
         httpVersion = template.httpVersion;
+        connectionTimeout = template.connectionTimeout;
+        readTimeout = template.readTimeout;
+        useDefaultProxy = template.useDefaultProxy;
     }
 
     public GenericHttpState getState() {
@@ -346,6 +346,45 @@ public class GenericHttpRequestParams {
      */
     public void setHttpVersion(final HttpVersion httpVersion) {
         this.httpVersion = httpVersion;
+    }
+
+    /**
+     * The connection timeout to use if possible.
+     *
+     * @return The timeout or -1 for not specified.
+     */
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout( final int connectionTimeout ) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    /**
+     * Get the read timeout to use if possible.
+     *
+     * @return The timeout or -1 if not specified.
+     */
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout( final int readTimeout ) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * Should the system default HTTP proxy be used?
+     *
+     * @return True if the default proxy is in use.
+     */
+    public boolean isUseDefaultProxy() {
+        return useDefaultProxy;
+    }
+
+    public void setUseDefaultProxy( final boolean useDefaultProxy ) {
+        this.useDefaultProxy = useDefaultProxy;
     }
 
     /**

@@ -247,6 +247,34 @@ public class InputValidator implements FocusListener {
                                                           final long min,
                                                           final long max)
     {
+        return constrainTextFieldToNumberRange( fieldName, comp, min, max, false );
+    }
+
+    /**
+     * Configures the specified text component to use a {@link com.l7tech.gui.NumberField} instance as its Document,
+     * and registers a validation rule that requires the specified text field to be a valid number in the specified range.
+     * <p/>
+     * If the field allows empty values then the text can be empty.
+     * <p/>
+     * The field will <b>not</b> be validated if it is disabled -- validation rules for disabled fields will always
+     * succeed.
+     * <p/>
+     * If this validator has been configured to disable an Ok button when invalid, the text component will also
+     * have a document change listener installed that triggers a call to validate().
+     *
+     * @param fieldName  the name of the field, for use in a generated error message.  Must not be null.
+     * @param comp  the component to validate.   Must not be null.
+     * @param min the minimum allowable value, inclusive
+     * @param max the maximum allowable value, inclusive
+     * @param allowEmpty true if an empty field value is permitted.
+     * @return the validation rule that was registered, so it can be removed later if desired.  Never null.
+     */
+    public ValidationRule constrainTextFieldToNumberRange(final String fieldName,
+                                                          final JTextComponent comp,
+                                                          final long min,
+                                                          final long max,
+                                                          final boolean allowEmpty )
+    {
         if (comp == null) throw new NullPointerException();
         int maxlen = Math.max(Long.toString(min).length(), Long.toString(max).length());
         comp.setDocument(new NumberField(maxlen + 1));
@@ -259,13 +287,17 @@ public class InputValidator implements FocusListener {
                     return null;
 
                 String val = comp.getText();
-                try {
-                    long ival = Long.parseLong(val);
-                    if (ival >= min && ival <= max) return null;
-                } catch (Exception e) {
-                    // fallthrough and return error message
+                if ( allowEmpty && val.isEmpty() ) {
+                    return null;
+                } else {
+                    try {
+                        long ival = Long.parseLong(val);
+                        if (ival >= min && ival <= max) return null;
+                    } catch (Exception e) {
+                        // fallthrough and return error message
+                    }
+                    return mess;
                 }
-                return mess;
             }
         };
 

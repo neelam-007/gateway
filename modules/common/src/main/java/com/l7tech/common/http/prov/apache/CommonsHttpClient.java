@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.common.http.prov.apache;
 
 import com.l7tech.common.http.*;
@@ -211,6 +208,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             final HostnameVerifier hostVerifier = params.getHostnameVerifier();
             if (sockFac != null) {
                 hconf = getHostConfig(targetUrl, sockFac, hostVerifier);
+                configureProxy( hconf, params.isUseDefaultProxy(), targetUrl );
             } else
                 hconf = null;
         } else
@@ -268,7 +266,10 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setVersion(useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        methodParams.setSoTimeout(timeout);
+        methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
+        if ( params.getConnectionTimeout() >= 0 ) {
+            clientParams.setConnectionManagerTimeout( params.getConnectionTimeout() );   
+        }
 
         final PasswordAuthentication pw = params.getPasswordAuthentication();
         final NtlmAuthentication ntlm = params.getNtlmAuthentication();
@@ -378,8 +379,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     if (hconf == null) {
                         HostConfiguration hc = new HostConfiguration(client.getHostConfiguration());
                         hc.setHost(targetUrl.getHost(), targetUrl.getPort());
-                        if (proxyHost != null)
-                            hc.setProxy(proxyHost, proxyPort);
+                        configureProxy( hc, params.isUseDefaultProxy(), targetUrl );
                         status = client.executeMethod(hc , method, state);
                     }
                     else {
@@ -467,6 +467,39 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 return target;
             }
         };
+    }
+
+    private void configureProxy( final HostConfiguration hc,
+                                 final boolean useDefaultProxy,
+                                 final URL url ) {
+        if ( proxyHost != null ) {
+            hc.setProxy(proxyHost, proxyPort);
+        } else if ( useDefaultProxy ) {
+            try {
+                final ProxySelector proxySelector = ProxySelector.getDefault();
+                if ( proxySelector != null ) {
+                    final List<Proxy> proxies = proxySelector.select( url.toURI() );
+                    if ( proxies != null ) {
+                        for ( final Proxy proxy : proxies ) {
+                            if ( proxy.type() == Proxy.Type.HTTP ) {
+                                final SocketAddress address = proxy.address();
+                                if ( !(address instanceof InetSocketAddress) ) continue;
+                                final InetSocketAddress inetAddress = (InetSocketAddress) address;
+                                if ( logger.isLoggable( Level.FINER )) {
+                                    logger.finer( "Selected proxy " + inetAddress.getHostName() + ":" + inetAddress.getPort() );
+                                }
+                                hc.setProxy( inetAddress.getHostName(), inetAddress.getPort() );
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch ( SecurityException e ) {
+                logger.log( Level.WARNING, "Permission denied accessing proxy selector.", ExceptionUtils.getDebugException(e) );
+            } catch ( URISyntaxException e ) {
+                logger.log( Level.WARNING, "Invalid URI '"+url+"' when accessing proxy selector.", ExceptionUtils.getDebugException(e) );
+            }
+        }
     }
 
     private String encodePathAndQuery( final String unencoded ) {
@@ -616,8 +649,6 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             }
         };
         hconf.setHost(httpHost);
-        if (proxyHost != null)
-            hconf.setProxy(proxyHost, proxyPort);
         return hconf;
     }
 

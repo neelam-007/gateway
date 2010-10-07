@@ -1,11 +1,9 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -68,6 +66,14 @@ public interface AdminContext {
     TrustedCertAdmin getTrustedCertAdmin() throws SecurityException;
 
     SchemaAdmin getSchemaAdmin() throws SecurityException;
+
+    /**
+     * Get the resource admininstration implementation.
+     *
+     * @return The resource administration implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    ResourceAdmin getResourceAdmin() throws SecurityException;
 
     /**
      * @return the custome assertions registrar

@@ -1,10 +1,10 @@
 package com.l7tech.server.policy.assertion.credential;
 
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.security.token.XmlSecurityToken;
@@ -32,23 +32,20 @@ import java.util.logging.Logger;
 
 /**
  * Server implementation of the WS-Federation PRP (http://msdn.microsoft.com/ws/2003/07/ws-passive-profile/).
- *
- * @author $Author$
- * @version $Revision$
  */
-public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFederationPassiveRequestProfile {
+public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFederationPassiveRequestProfile<WsFederationPassiveTokenExchange> {
 
     //- PUBLIC
 
     /**
      *
      */
-    public ServerWsFederationPassiveTokenExchange(WsFederationPassiveTokenExchange assertion, ApplicationContext springContext) {
+    public ServerWsFederationPassiveTokenExchange( final WsFederationPassiveTokenExchange assertion,
+                                                   final ApplicationContext springContext ) {
         super(assertion, CACHE_SAML_KEY, springContext);
 
-        this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
-        this.httpClient = new UrlConnectionHttpClient();
+        this.httpClient = springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient();
 
         try {
             if (assertion.getIpStsUrl() == null || assertion.getIpStsUrl().length()==0) {
@@ -72,7 +69,8 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
     /**
      *
      */
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         AssertionStatus result = AssertionStatus.FAILED;
 
         try {
@@ -101,7 +99,6 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
     private final Auditor auditor;
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
-    private final WsFederationPassiveTokenExchange assertion;
 
     /**
      * Return true if the given assertion is configured to authenticate
@@ -119,13 +116,12 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
         ProcessorResult wssProcResult = secKnob.getProcessorResult();
         if (wssProcResult != null) {
             XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
-            for (int i = 0; i < tokens.length; i++) {
-                XmlSecurityToken currentToken = tokens[i];
-                if (currentToken instanceof SamlAssertion) {
-                    if (token == null) {
+            for ( XmlSecurityToken currentToken : tokens ) {
+                if ( currentToken instanceof SamlAssertion ) {
+                    if ( token == null ) {
                         token = (SamlAssertion) currentToken;
                     } else {
-                        throw new StopAndAuditException(AssertionMessages.WSFEDPASS_MULTI_TOKENS);
+                        throw new StopAndAuditException( AssertionMessages.WSFEDPASS_MULTI_TOKENS );
                     }
                 }
             }
@@ -142,7 +138,6 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
 
         try {
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
-            initParams(params);
 
             XmlSecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContext(), false);
             if(token instanceof SamlAssertion) {

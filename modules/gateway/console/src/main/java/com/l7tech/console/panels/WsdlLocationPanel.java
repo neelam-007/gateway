@@ -5,6 +5,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
@@ -218,6 +219,7 @@ public class WsdlLocationPanel extends JPanel {
 
     private JButton uddiWsdlUrlBrowseButton;
     private JButton wsdlFileButton;
+    private JButton manageHttpOptionsButton;
     private JPanel mainPanel;
     private JLabel exampleFileLabel;
     private JLabel exampleUrlLabel;
@@ -287,6 +289,10 @@ public class WsdlLocationPanel extends JPanel {
                 selectFile();
             }
         });
+
+        manageHttpOptionsButton.setAction( new ManageHttpConfigurationAction( this ) );
+        manageHttpOptionsButton.setText("HTTP Options");
+        manageHttpOptionsButton.setIcon(null);
     }
 
     public WsdlPortInfo getWsdlPortInfo() {

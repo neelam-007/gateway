@@ -1,12 +1,8 @@
-/*
-* Copyright (C) 2004-2006 Layer 7 Technologies Inc.
-*/
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
@@ -29,7 +25,6 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -41,10 +36,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -53,22 +44,19 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurityTokenAssertion {
+public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurityTokenAssertion<WsTrustCredentialExchange> {
     private static final Logger logger = Logger.getLogger(ServerWsTrustCredentialExchange.class.getName());
     private static final String CACHE_SEC_TOKEN_KEY = ServerWsTrustCredentialExchange.class.getName() + ".TOKEN";
 
-    private final WsTrustCredentialExchange assertion;
     private final Auditor auditor;
-    private final SimpleHttpClient httpClient = new SimpleHttpClient(new UrlConnectionHttpClient());
+    private final SimpleHttpClient httpClient;
     private final URL tokenServiceUrl;
-    private final SSLContext sslContext;
-    private final HostnameVerifier hostnameVerifier;
     private final WssProcessor trogdor = new WssProcessorImpl();
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
         super(assertion, CACHE_SEC_TOKEN_KEY);
-        this.assertion = assertion;
+        this.httpClient = new SimpleHttpClient(springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient());
         this.auditor = new Auditor(this, springContext, logger);
         try {
             if (assertion.getTokenServiceUrl() != null)
@@ -82,14 +70,6 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         }
 
         try {
-            sslContext = SSLContext.getInstance("TLS");
-            final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
-            hostnameVerifier = springContext.getBean("hostnameVerifier", HostnameVerifier.class);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
-            sslContext.getClientSessionContext().setSessionTimeout(timeout);
-            sslContext.init(null, new TrustManager[]{trustManager}, null);
-
             securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
@@ -164,8 +144,6 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
                 params = new GenericHttpRequestParams(tokenServiceUrl);
                 params.setContentType(ContentTypeHeader.XML_DEFAULT);
-                params.setSslSocketFactory(sslContext.getSocketFactory());
-                params.setHostnameVerifier(hostnameVerifier);
 
                 params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader( SoapConstants.SOAPACTION, "\"\"") });
 

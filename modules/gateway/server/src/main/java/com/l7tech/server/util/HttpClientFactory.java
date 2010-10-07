@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -26,11 +24,17 @@ public class HttpClientFactory implements GenericHttpClientFactory {
     private final X509TrustManager trustManager;
     private final HostnameVerifier hostnameVerifier;
 
+    private static final String PROP_MAX_CONN_PER_HOST = HttpClientFactory.class.getName() + ".maxConnectionsPerHost";
+    private static final String PROP_MAX_TOTAL_CONN = HttpClientFactory.class.getName() + ".maxTotalConnections";
+
+    private static final int MAX_CONNECTIONS_PER_HOST = SyspropUtil.getInteger( PROP_MAX_CONN_PER_HOST, 100 );
+    private static final int MAX_CONNECTIONS = SyspropUtil.getInteger( PROP_MAX_TOTAL_CONN, 1000 );
+
     private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
     static {
         HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, 100);
-        params.setMaxTotalConnections(1000);
+        params.setMaxConnectionsPerHost( HostConfiguration.ANY_HOST_CONFIGURATION, MAX_CONNECTIONS_PER_HOST );
+        params.setMaxTotalConnections( MAX_CONNECTIONS );
     }
 
     public HttpClientFactory(final DefaultKey keystore,

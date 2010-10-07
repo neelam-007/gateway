@@ -81,6 +81,8 @@ public enum EntityType implements Comparable<EntityType> {
     VALUE_REFERENCE("Value Reference", true), // todo: better way to deal with mappable properties
 
     SECURE_PASSWORD("Secure Password", true),
+
+    HTTP_CONFIGURATION("HTTP Options", true),
     ;
 
     private final String name;
