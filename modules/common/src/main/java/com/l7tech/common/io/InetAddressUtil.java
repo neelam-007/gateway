@@ -22,8 +22,14 @@ public class InetAddressUtil {
     private static final Logger logger = Logger.getLogger(InetAddressUtil.class.getName());
 
     private static final InetAddress localHost;
-    public static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
-    static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
+
+    /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
+    private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
+    private static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+
+    private static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
+    private static final int NO_EXPLICIT_IPV6_PREFIX = 129;
+
 
     static {
         InetAddress lh;
@@ -115,7 +121,7 @@ public class InetAddressUtil {
 
     /**
      * Pack an IPv4 address into the least significant DWORD of a long.
-     * The final octet of the IPv4 address is mapped to the least significant byte of ht elong.
+     * The final octet of the IPv4 address is mapped to the least significant byte of the long.
      *
      * @param addr an IP address to pack into a long.  Must be an IPv4 address.
      * @return a long containing the packed IP address.
@@ -174,12 +180,23 @@ public class InetAddressUtil {
     /**
      * Check if the specified InetAddress matches the specified address pattern.
      *
-     * @param pattern a pattern in a form similar to "24", "24.0.0.0/8", or "24.0/8".  Required.
-     * @param addr  the address to check.
+     * @param pattern a pattern in a form similar to "24", "24.0.0.0/8", or "24.0/8",
+     *                or 22:, 22:/64, 22::/64. Required.
+     * @param addr  IPv4 or IPv6 address to check.
      * @return true if the specified address matches the specified pattern.
      */
     public static boolean patternMatchesAddress(String pattern, InetAddress addr) {
-        int numeric = (int) ipv4ToLong(addr);
+        if (addr instanceof Inet4Address) {
+            return patternMatchesAddress4(pattern, (Inet4Address) addr);
+        } else if (addr instanceof Inet6Address) {
+            return patternMatchesAddress6(pattern, (Inet6Address) addr);
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean patternMatchesAddress4(String pattern, Inet4Address addr4) {
+        int numeric = (int) ipv4ToLong(addr4);
 
         String[] addrAndMask = pattern.split("\\/", 2);
         byte[] pataddr = parseDottedDecimalPrefix(addrAndMask[0]);
@@ -201,6 +218,37 @@ public class InetAddressUtil {
 
         int patint = (int) ipv4ToLong(pataddr);
         return (numeric & netmask) == (patint & netmask);
+    }
+
+    private static boolean patternMatchesAddress6(String pattern, Inet6Address inet6Address) {
+        if (pattern == null) return false;
+
+        String patternAddress = getIpv6AddressForPattern(pattern);
+        if (patternAddress == null) return false;
+
+        String[] addrAndMask = pattern.split("/", 2);
+        int prefix = addrAndMask.length > 1 ? Integer.parseInt(addrAndMask[1]) : NO_EXPLICIT_IPV6_PREFIX;
+
+        try {
+            byte[] addrBytes = inet6Address.getAddress();
+            byte[] patternBytes = InetAddress.getByName("[" + patternAddress + "]").getAddress();
+            if (addrBytes == null || patternBytes == null || addrBytes.length != patternBytes.length )
+                return false;
+
+            for(int i = addrBytes.length-1; i>=0; i--) {
+                if (prefix == NO_EXPLICIT_IPV6_PREFIX && patternBytes[i] == 0 || prefix / 8 < i)
+                    continue;
+
+                byte currentByteMask = (byte) (255 << Math.max( (i+1) * 8 - prefix, 0 ));
+                if ( (addrBytes[i] & currentByteMask) != (patternBytes[i] & currentByteMask) )
+                    return false;
+            }
+            return true;
+
+        } catch (UnknownHostException e) {
+            logger.log(Level.WARNING, "Invalid network interface address pattern: " + pattern); // shouldn't happen
+            return false;
+        }
     }
 
     /**
@@ -289,5 +337,30 @@ public class InetAddressUtil {
             // shouldn't happen, we already made sure ipAddress is valid
             return false;
         }
+    }
+
+    public static boolean isValidIpv4Pattern(String pattern) {
+        return IPV4_PAT.matcher(pattern).matches();
+    }
+
+    public static boolean isValidIpv6Pattern(String pattern) {
+        return getIpv6AddressForPattern(pattern) != null;
+    }
+
+    private static String getIpv6AddressForPattern(String pattern) {
+        if (pattern == null || pattern.indexOf(':') == -1) return null;
+
+        String[] addrAndPrefix = pattern.split("/", 2);
+
+        try {
+            if (addrAndPrefix.length > 1) Integer.parseInt(addrAndPrefix[1]);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        if (InetAddressUtil.isValidIpv6Address(addrAndPrefix[0])) return pattern;
+
+        String patternAddress = addrAndPrefix[0] + (addrAndPrefix[0].charAt(addrAndPrefix[0].length()-1)==':' ? ":" : "::"); // fill with zeroes
+        return isValidIpv6Address(patternAddress) ? patternAddress + (addrAndPrefix.length > 1 ? "/" + addrAndPrefix[1] : "") : null;
     }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.util.TextUtils;
 
 import java.text.ParseException;
@@ -18,9 +19,6 @@ public class InterfaceTag {
 
     /** Pattern that matches a valid InterfaceTag name. */
     private static final Pattern NAME_PAT = Pattern.compile("[a-zA-Z_][a-zA-Z_0-9]*");
-
-    /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
-    private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
 
     /** Pattern that matches a single InterfaceTag in String format. */
     private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9.,/]*)\\)");
@@ -100,7 +98,7 @@ public class InterfaceTag {
     }
 
     public static boolean isValidPattern(String pattern) {
-        return pattern != null && IPV4_PAT.matcher(pattern).matches();
+        return pattern != null && (InetAddressUtil.isValidIpv4Pattern(pattern) || InetAddressUtil.isValidIpv6Pattern(pattern) );
     }
 
     @SuppressWarnings({"RedundantIfStatement"})

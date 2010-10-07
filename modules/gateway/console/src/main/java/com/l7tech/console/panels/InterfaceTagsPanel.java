@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.gateway.common.transport.InterfaceTag;
@@ -320,7 +321,8 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     }
                     final String pattern = option.toString();
                     if (!InterfaceTag.isValidPattern(pattern)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Address patterns should be in this format: 127.0.0/24",
+                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this,
+                            "Address patterns should be in this format: 127.0.0/24" + (InetAddressUtil.isIpv6Enabled() ? " or 2222::/64" :""),
                             "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE, null);
                     } else if (isDuplicateAddressPattern(pattern)) {
                         DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
