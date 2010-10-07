@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.server.cluster.ClusterInfoManager;
@@ -23,7 +20,6 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.server.util.HttpClientFactory;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -73,7 +69,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     private ClusterInfoManager _clusterInfoManager;
     private RoleManager _roleManager;
-    private HttpClientFactory _httpClientFactory;
+    private GenericHttpClientFactory _httpClientFactory;
     private File _ssgApplianceLibexecDir;
 
     @Override
@@ -102,7 +98,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         }
         _clusterInfoManager = (ClusterInfoManager)webApplicationContext.getBean("clusterInfoManager");
         _roleManager = (RoleManager)webApplicationContext.getBean("roleManager");
-        _httpClientFactory = (HttpClientFactory)webApplicationContext.getBean("internodeHttpClientFactory");
+        _httpClientFactory = (GenericHttpClientFactory)webApplicationContext.getBean("internodeHttpClientFactory");
 
         _ssgApplianceLibexecDir = new File(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_SSG_APPLIANCE_DIRECTORY) + File.separator + "libexec");
     }

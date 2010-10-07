@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.common.http.*;
@@ -26,7 +23,6 @@ import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -63,7 +59,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
     private WebApplicationContext _webApplicationContext;
     private ClusterInfoManager _clusterInfoManager;
     private RoleManager _roleManager;
-    private HttpClientFactory _httpClientFactory;
+    private GenericHttpClientFactory _httpClientFactory;
     private Auditor _auditor;
 
     @Override
@@ -86,7 +82,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         }
         _clusterInfoManager = (ClusterInfoManager) _webApplicationContext.getBean("clusterInfoManager");
         _roleManager = (RoleManager) _webApplicationContext.getBean("roleManager");
-        _httpClientFactory = (HttpClientFactory) _webApplicationContext.getBean("internodeHttpClientFactory");
+        _httpClientFactory = (GenericHttpClientFactory) _webApplicationContext.getBean("internodeHttpClientFactory");
 
         _auditor = new Auditor(this, _webApplicationContext, _logger);
     }
@@ -268,6 +264,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
 
             //We need to find the actual image, as it will have been given a unique name
             final File [] files = tmpDirectory.listFiles(new FilenameFilter() {
+                @Override
                 public boolean accept(File dir, String name) {
                     return name.endsWith(imageName);
                 }
