@@ -767,7 +767,11 @@ public class ServicePropertiesDialog extends JDialog {
 
         if (newWSDLUrl != null) {
             try {
-                subject.setWsdlUrl(newWSDLUrl.toLowerCase().startsWith("http:") || newWSDLUrl.toLowerCase().startsWith("file:")? newWSDLUrl : null);
+                subject.setWsdlUrl(
+                        newWSDLUrl.toLowerCase().startsWith("http:") ||
+                        newWSDLUrl.toLowerCase().startsWith("https:") ||
+                        newWSDLUrl.toLowerCase().startsWith("file:")
+                                ? newWSDLUrl : null);
             } catch (MalformedURLException e) {
                 throw new RuntimeException("Invalid URL", e);
             }
