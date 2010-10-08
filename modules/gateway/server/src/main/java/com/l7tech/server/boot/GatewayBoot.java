@@ -16,6 +16,7 @@ import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
+import com.mchange.v2.c3p0.impl.PoolBackedDataSourceBase;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.lang.reflect.Constructor;
@@ -196,35 +197,45 @@ public class GatewayBoot {
 
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
     private void spawnDbWarner() {
-        Thread dbcheck = new Thread("Database Check") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(DB_CHECK_DELAY * 1000L);
-                    if (destroyRequested.get())
-                        return;
-                    int connections = getNumDbConnections();
-                    if (connections >= 1) {
-                        logger.log(Level.FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
-                        return;
-                    }
+        if ( SyspropUtil.getBoolean(SYSPROP_STARTUPCHECKS, true) ) {
+            Thread dbcheck = new Thread("Database Check") {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(DB_CHECK_DELAY * 1000L);
+                        if (destroyRequested.get())
+                            return;
+                        int connections = getNumDbConnections();
+                        if (connections >= 1) {
+                            logger.log(Level.FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
+                            return;
+                        }
 
-                    logger.log(Level.SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
-                } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
+                        logger.log(Level.SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
+                    } catch (Throwable t) {
+                        logger.log(Level.SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
+                    }
                 }
-            }
-        };
-        dbcheck.setDaemon(true);
-        dbcheck.start();
+            };
+            dbcheck.setDaemon(true);
+            dbcheck.start();
+        }
     }
 
     private static int getNumDbConnections() throws SQLException {
         int connections = 0;
         //noinspection unchecked
         Set<PooledDataSource> pools = C3P0Registry.getPooledDataSources();
-        for ( PooledDataSource pool : pools )
-            connections += pool.getNumConnectionsAllUsers();
+        for ( PooledDataSource pool : pools ) {
+            if ( pool instanceof PoolBackedDataSourceBase ) {
+                // check initialized if possible, see bug 9207
+                if ( ((PoolBackedDataSourceBase)pool).getConnectionPoolDataSource() != null ) {
+                    connections += pool.getNumConnectionsAllUsers();
+                }
+            } else {
+                connections += pool.getNumConnectionsAllUsers();
+            }
+        }
         return connections;
     }
 
