@@ -123,6 +123,10 @@ public class HttpProxyPropertiesDialog extends OkCancelDialog<HttpProxyConfigura
                 if ( !ValidationUtils.isValidInteger( portTextField.getText().trim(), false, 1, 0xFFFF ) ) {
                     throw new IllegalStateException("Port is invalid (1-65535)");
                 }
+
+                if ( passwordComboBox.isEnabled() && passwordComboBox.getSelectedItem()==null ) {
+                    throw new IllegalStateException("Password is required when credentials are used.");
+                }
             }
 
             checkSyntax();

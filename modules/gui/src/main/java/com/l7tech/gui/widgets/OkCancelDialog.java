@@ -75,7 +75,7 @@ public class OkCancelDialog<V> extends JDialog {
                     validatedPanel.updateModel();
                 } catch (Throwable t) {
                     wasoked = false;
-                    DialogDisplayer.showMessageDialog(null, ExceptionUtils.getMessage(t), "Validation Warning", JOptionPane.WARNING_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(OkCancelDialog.this, ExceptionUtils.getMessage(t), "Validation Warning", JOptionPane.WARNING_MESSAGE, null);
                     return;
                 }
 
