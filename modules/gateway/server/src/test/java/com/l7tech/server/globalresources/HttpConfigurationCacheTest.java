@@ -201,7 +201,10 @@ public class HttpConfigurationCacheTest {
 
     @Test
     public void testHttpConfiguration() throws Exception {
-        final HttpConfiguration[] httpConfigurations = new HttpConfiguration[2];
+        final HttpProxyConfiguration defaultProxy = newHttpProxyConfiguration( "default-proxy-host", 8888, "default-proxy-user", 1 );
+        final HttpProxyConfiguration customProxy = newHttpProxyConfiguration( "custom-proxy-host", 99, "custom-proxy-user", 2 );
+
+        final HttpConfiguration[] httpConfigurations = new HttpConfiguration[3];
         httpConfigurations[0] = new HttpConfiguration();
         httpConfigurations[0].setOid( ++httpConfigurationCount );
         httpConfigurations[0].setHost( "host1" );
@@ -224,8 +227,13 @@ public class HttpConfigurationCacheTest {
         httpConfigurations[1].setFollowRedirects( false );
         httpConfigurations[1].setProxyUse( DEFAULT );
 
+        httpConfigurations[2] = new HttpConfiguration();
+        httpConfigurations[2].setOid( ++httpConfigurationCount );
+        httpConfigurations[2].setHost( "host3" );
+        httpConfigurations[2].setProxyUse( CUSTOM );
+        httpConfigurations[2].setProxyConfiguration( customProxy );
 
-        final HttpConfigurationCache cache = buildCache( null, httpConfigurations, null, null );
+        final HttpConfigurationCache cache = buildCache( defaultProxy, httpConfigurations, null, null );
 
         {
             final GenericHttpRequestParams parameters = new GenericHttpRequestParams( new URL("https://host1") );
@@ -237,7 +245,7 @@ public class HttpConfigurationCacheTest {
             assertEquals( "host1 connect timeout", 1000, parameters.getConnectionTimeout() );
             assertEquals( "host1 read timeout", 2000, parameters.getReadTimeout() );
             assertEquals( "host1 redirects", true, parameters.isFollowRedirects() );
-            assertEquals( "host1 default proxy", false, parameters.isUseDefaultProxy() );
+            assertNull( "host1 proxy host", parameters.getProxyHost() );
         }
         {
             final GenericHttpRequestParams parameters = new GenericHttpRequestParams( new URL("https://host2") );
@@ -251,7 +259,21 @@ public class HttpConfigurationCacheTest {
             assertEquals( "host2 connect timeout", -1, parameters.getConnectionTimeout() );
             assertEquals( "host2 read timeout", -1, parameters.getReadTimeout() );
             assertEquals( "host2 redirects", false, parameters.isFollowRedirects() );
-            assertEquals( "host2 default proxy", true, parameters.isUseDefaultProxy() );
+            assertEquals( "host2 proxy host", "default-proxy-host", parameters.getProxyHost() );
+            assertEquals( "host2 proxy port", 8888, parameters.getProxyPort() );
+            assertNotNull( "host2 proxy authentication", parameters.getProxyAuthentication() );
+            assertEquals( "host2 proxy username", "default-proxy-user", parameters.getProxyAuthentication().getUserName() );
+            assertEquals( "host2 proxy password", "test-password1", new String(parameters.getProxyAuthentication().getPassword()) );
+        }
+        {
+            final GenericHttpRequestParams parameters = new GenericHttpRequestParams( new URL("https://host3") );
+            cache.configure( parameters, true );
+            assertNull( "host3 credentials", parameters.getPasswordAuthentication() );
+            assertEquals( "host3 proxy host", "custom-proxy-host", parameters.getProxyHost() );
+            assertEquals( "host3 proxy port", 99, parameters.getProxyPort() );
+            assertNotNull( "host3 proxy authentication", parameters.getProxyAuthentication() );
+            assertEquals( "host3 proxy username", "custom-proxy-user", parameters.getProxyAuthentication().getUserName() );
+            assertEquals( "host3 proxy password", "test-password2", new String(parameters.getProxyAuthentication().getPassword()) );
         }
     }
 

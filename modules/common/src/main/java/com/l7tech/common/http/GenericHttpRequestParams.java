@@ -36,7 +36,9 @@ public class GenericHttpRequestParams {
     private HttpVersion httpVersion = HttpVersion.HTTP_VERSION_1_1;
     private int connectionTimeout = -1;
     private int readTimeout = -1;
-    private boolean useDefaultProxy = false;
+    private String proxyHost;
+    private int proxyPort;
+    private PasswordAuthentication proxyAuthentication;
     // NOTE: Add any new fields to the copy constructor
 
     /**
@@ -85,7 +87,9 @@ public class GenericHttpRequestParams {
         httpVersion = template.httpVersion;
         connectionTimeout = template.connectionTimeout;
         readTimeout = template.readTimeout;
-        useDefaultProxy = template.useDefaultProxy;
+        proxyHost = template.proxyHost;
+        proxyPort = template.proxyPort;
+        proxyAuthentication = template.proxyAuthentication;
     }
 
     public GenericHttpState getState() {
@@ -375,16 +379,42 @@ public class GenericHttpRequestParams {
     }
 
     /**
-     * Should the system default HTTP proxy be used?
+     * Get the HTTP proxy host to use.
      *
-     * @return True if the default proxy is in use.
+     * @return The proxy host or null.
      */
-    public boolean isUseDefaultProxy() {
-        return useDefaultProxy;
+    public String getProxyHost() {
+        return proxyHost;
     }
 
-    public void setUseDefaultProxy( final boolean useDefaultProxy ) {
-        this.useDefaultProxy = useDefaultProxy;
+    public void setProxyHost( final String proxyHost ) {
+        this.proxyHost = proxyHost;
+    }
+
+    /**
+     * Get the HTTP proxy port to use.
+     *
+     * @return The port or 0 for none.
+     */
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort( final int proxyPort ) {
+        this.proxyPort = proxyPort;
+    }
+
+    /**
+     * Get the HTTP proxy authentication to use.
+     *
+     * @return The authentication or null.
+     */
+    public PasswordAuthentication getProxyAuthentication() {
+        return proxyAuthentication;
+    }
+
+    public void setProxyAuthentication( final PasswordAuthentication proxyAuthentication ) {
+        this.proxyAuthentication = proxyAuthentication;
     }
 
     /**
@@ -453,5 +483,21 @@ public class GenericHttpRequestParams {
         }
         extraHeaders = keepers;
         return removed;
+    }
+
+    /**
+     * Resolve the GenericHttpRequestParams applicable for the given url.
+     *
+     * <p>Parameters may be resolved when an HTTP redirect occurs to obtain new
+     * configuration settings for the redirect URL.</p>
+     *
+     * <p>NOTE: The target url for the resolved parameters may not match the
+     * given url.</p>
+     *
+     * @param url The URL to resolve
+     * @return The params for the URL (which may be the current params)
+     */
+    public GenericHttpRequestParams resolve( final URL url ) {
+        return this;
     }
 }

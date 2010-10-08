@@ -37,6 +37,7 @@ import java.util.zip.GZIPOutputStream;
  */
 public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
+
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
     public static final String PROP_STALE_CHECKS = CommonsHttpClient.class.getName() + ".staleCheckCount";
@@ -51,6 +52,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final int DEFAULT_CONNECT_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000);
     public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000);
     public static final int DEFAULT_GZIP_STREAMING_THRESHOLD = Integer.MAX_VALUE;
+
+    private static final String PROTOCOL_HTTPS = "https";
+    private static final String PROTOCOL_HTTP = "http";
 
     private static HttpParams httpParams;
     private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
@@ -74,6 +78,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     private final HttpConnectionManager cman;
+    private final int connectionTimeout;
     private final int timeout;
     private final Object identity;
     private final boolean isBindingManager;
@@ -152,7 +157,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
      */
     CommonsHttpClient(String proxyHost, int proxyPort, String proxyUsername, String proxyPassword, HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
         this.cman = cman;
-        int connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
+        this.connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
@@ -200,25 +205,11 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             throws GenericHttpException
     {
         stampBindingIdentity();
-        final HostConfiguration hconf;
         final URL targetUrl = params.getTargetUrl();
-        final String targetProto = targetUrl.getProtocol();
-        if ("https".equals(targetProto)) {
-            final SSLSocketFactory sockFac = params.getSslSocketFactory();
-            final HostnameVerifier hostVerifier = params.getHostnameVerifier();
-            if (sockFac != null) {
-                hconf = getHostConfig(targetUrl, sockFac, hostVerifier);
-                configureProxy( hconf, params.isUseDefaultProxy(), targetUrl );
-            } else
-                hconf = null;
-        } else
-            hconf = null;
-
         final HttpClient client = new HttpClient(cman);
 
         final HttpClientParams clientParams = client.getParams();
         clientParams.setDefaults(getOrBuildCachingHttpParams(clientParams.getDefaults()));
-        clientParams.setAuthenticationPreemptive(false);
 
         final boolean useHttp1_0 = params.getHttpVersion() == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
 
@@ -236,8 +227,6 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
 
         final HttpState state = getHttpState(client, params);
-        if (proxyUsername != null && proxyUsername.length() > 0)
-            state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxyUsername, proxyPassword));
 
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
@@ -262,37 +251,12 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 throw new IllegalStateException("Method " + method + " not supported");
         }
 
-        httpMethod.setFollowRedirects(params.isFollowRedirects());
+        configureParameters( clientParams, state, httpMethod, params );
+
         final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setVersion(useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
-        methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
-        if ( params.getConnectionTimeout() >= 0 ) {
-            clientParams.setConnectionManagerTimeout( params.getConnectionTimeout() );   
-        }
-
-        final PasswordAuthentication pw = params.getPasswordAuthentication();
-        final NtlmAuthentication ntlm = params.getNtlmAuthentication();
-        if (ntlm != null) {
-            httpMethod.setDoAuthentication(true);
-            state.setCredentials(AuthScope.ANY,
-                new NTCredentials(
-                    ntlm.getUsername(),
-                    new String(ntlm.getPassword()),
-                    ntlm.getHost(),
-                    ntlm.getDomain()
-                )
-            );
-        } else if (pw != null) {
-            httpMethod.setDoAuthentication(true);
-            String username = pw.getUserName();
-            char[] password = pw.getPassword();
-            state.setCredentials(AuthScope.ANY,
-                                 new UsernamePasswordCredentials(username, new String(password)));
-            clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
-            clientParams.setCredentialCharset(SyspropUtil.getStringCached(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
-        }
-
+        
         final Long contentLen = params.getContentLength();
         if ( (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod) && contentLen != null) {
             if (contentLen > Integer.MAX_VALUE)
@@ -314,6 +278,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
         }
 
+        final HostConfiguration hconf = getHostConfig( targetUrl, params, clientParams, state, httpMethod );
         return new RerunnableHttpRequest() {
             private org.apache.commons.httpclient.HttpMethod method = httpMethod;
             private boolean requestEntitySet = false;
@@ -376,15 +341,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 final ContentTypeHeader contentType;
                 final Long contentLength;
                 try {
-                    if (hconf == null) {
-                        HostConfiguration hc = new HostConfiguration(client.getHostConfiguration());
-                        hc.setHost(targetUrl.getHost(), targetUrl.getPort());
-                        configureProxy( hc, params.isUseDefaultProxy(), targetUrl );
-                        status = client.executeMethod(hc , method, state);
-                    }
-                    else {
-                        status = client.executeMethod(hconf, method, state);
-                    }
+                    status = client.executeMethod(hconf, method, state);
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
@@ -469,36 +426,65 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         };
     }
 
-    private void configureProxy( final HostConfiguration hc,
-                                 final boolean useDefaultProxy,
-                                 final URL url ) {
-        if ( proxyHost != null ) {
-            hc.setProxy(proxyHost, proxyPort);
-        } else if ( useDefaultProxy ) {
-            try {
-                final ProxySelector proxySelector = ProxySelector.getDefault();
-                if ( proxySelector != null ) {
-                    final List<Proxy> proxies = proxySelector.select( url.toURI() );
-                    if ( proxies != null ) {
-                        for ( final Proxy proxy : proxies ) {
-                            if ( proxy.type() == Proxy.Type.HTTP ) {
-                                final SocketAddress address = proxy.address();
-                                if ( !(address instanceof InetSocketAddress) ) continue;
-                                final InetSocketAddress inetAddress = (InetSocketAddress) address;
-                                if ( logger.isLoggable( Level.FINER )) {
-                                    logger.finer( "Selected proxy " + inetAddress.getHostName() + ":" + inetAddress.getPort() );
-                                }
-                                hc.setProxy( inetAddress.getHostName(), inetAddress.getPort() );
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch ( SecurityException e ) {
-                logger.log( Level.WARNING, "Permission denied accessing proxy selector.", ExceptionUtils.getDebugException(e) );
-            } catch ( URISyntaxException e ) {
-                logger.log( Level.WARNING, "Invalid URI '"+url+"' when accessing proxy selector.", ExceptionUtils.getDebugException(e) );
+    /**
+     * Set configuration parameters that can vary by target URL.
+     */
+    private void configureParameters( final HttpClientParams clientParams,
+                                      final HttpState state,
+                                      final org.apache.commons.httpclient.HttpMethod httpMethod,
+                                      final GenericHttpRequestParams params ) {
+        if ( params.getProxyHost() != null ) {
+            final PasswordAuthentication proxyAuthentication = params.getProxyAuthentication();
+            if ( proxyAuthentication != null ) {
+                state.setProxyCredentials(
+                        new AuthScope( params.getProxyHost(), params.getProxyPort() ),
+                        new UsernamePasswordCredentials(proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword())));
             }
+        } else if (proxyUsername != null && proxyUsername.length() > 0) {
+            state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxyUsername, proxyPassword));
+        }
+
+        httpMethod.setFollowRedirects(params.isFollowRedirects());
+        final HttpMethodParams methodParams = httpMethod.getParams();
+        methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
+        clientParams.setConnectionManagerTimeout(params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout );
+
+        final PasswordAuthentication pw = params.getPasswordAuthentication();
+        final NtlmAuthentication ntlm = params.getNtlmAuthentication();
+        if (ntlm != null) {
+            httpMethod.setDoAuthentication(true);
+            state.setCredentials(AuthScope.ANY,
+                new NTCredentials(
+                    ntlm.getUsername(),
+                    new String(ntlm.getPassword()),
+                    ntlm.getHost(),
+                    ntlm.getDomain()
+                )
+            );
+            clientParams.setAuthenticationPreemptive(false);
+        } else if (pw != null) {
+            httpMethod.setDoAuthentication(true);
+            String username = pw.getUserName();
+            char[] password = pw.getPassword();
+            state.setCredentials(AuthScope.ANY,
+                                 new UsernamePasswordCredentials(username, new String(password)));
+            clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
+            clientParams.setCredentialCharset(SyspropUtil.getStringCached(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
+        } else {
+            httpMethod.setDoAuthentication(false);
+            state.clearCredentials();
+            clientParams.setAuthenticationPreemptive(false);
+        }
+    }
+
+    private void configureProxy( final HostConfiguration hc,
+                                 final GenericHttpRequestParams requestParameters ) {
+        if ( requestParameters.getProxyHost() != null ) {
+            hc.setProxy( requestParameters.getProxyHost(), requestParameters.getProxyPort() );
+        } else if ( proxyHost != null ) {
+            hc.setProxy( proxyHost, proxyPort );
+        } else {
+            hc.setProxyHost( null );
         }
     }
 
@@ -571,12 +557,62 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         return defaultParams;
     }
 
-    private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier) {
-        HostConfiguration hconf;
+    private HostConfiguration getHostConfig( final URL targetUrl,
+                                             final GenericHttpRequestParams params,
+                                             final HttpClientParams clientParams,
+                                             final HttpState state,
+                                             final org.apache.commons.httpclient.HttpMethod httpMethod ) {
+        final String urlProtocol = targetUrl.getProtocol();
+        final SSLSocketFactory socketFactory = params.getSslSocketFactory();
+        final HostnameVerifier hostVerifier = params.getHostnameVerifier();
+        final Protocol protocol = getProtocol( urlProtocol, socketFactory, hostVerifier );
+        final HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        final HostConfiguration hostConfiguration = new HostConfiguration(){
+            @Override
+            public void setHost( final org.apache.commons.httpclient.URI uri ) {
+                GenericHttpRequestParams resolvedParams;
+                try {
+                    resolvedParams = params.resolve( new URL(uri.toString()) );
+                } catch ( MalformedURLException e ) {
+                    logger.fine( "Unable to generate URL for '"+uri+"'" );
+                    resolvedParams = params;
+                }
+
+                configureParameters( clientParams, state, httpMethod, resolvedParams );
+                configureProxy( this, resolvedParams );
+
+                // This prevents our SSL settings being lost on redirects (bug 9063)
+                if ( PROTOCOL_HTTPS.equalsIgnoreCase( uri.getScheme() ) ) {
+                    final Protocol protocol = CommonsHttpClient.this.getProtocol( PROTOCOL_HTTPS, resolvedParams.getSslSocketFactory(), hostVerifier );
+                    try {
+                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), protocol ));
+                    } catch(URIException e) {
+                        // This is how HTTPClient handles this condition
+                        throw new IllegalArgumentException(e.toString());
+                    }
+                } else {
+                    super.setHost( uri );
+                }
+            }
+        };
+        hostConfiguration.setHost(httpHost);
+        configureProxy( hostConfiguration, params );
+        return hostConfiguration;
+    }
+
+    private Protocol getProtocol( final String urlProtocol,
+                                  final SSLSocketFactory socketFactory,
+                                  final HostnameVerifier hostVerifier ) {
+        return PROTOCOL_HTTPS.equalsIgnoreCase(urlProtocol) && socketFactory!=null ?
+                getProtocolBySocketFactory( socketFactory, hostVerifier ) :
+                Protocol.getProtocol( PROTOCOL_HTTP );
+    }
+
+    private Protocol getProtocolBySocketFactory( final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier ) {
         Protocol protocol = protoBySockFac.get(sockFac);
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
-            protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
+            protocol = new Protocol( PROTOCOL_HTTPS, (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
                 @Override
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return verify(sockFac.createSocket(socket, host, port, autoClose), host);
@@ -602,7 +638,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     try {
                         socket.connect(new InetSocketAddress(host, port), connectTimeout);
                     }
-                    catch(SocketTimeoutException ste) {
+                    catch( SocketTimeoutException ste) {
                         throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
                     }
 
@@ -610,7 +646,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
 
                 private Socket verify(Socket socket, String host) throws IOException {
-                    if (socket instanceof SSLSocket) {
+                    if (socket instanceof SSLSocket ) {
                         configureEnabledProtocolsAndCiphers((SSLSocket) socket);
 
                         if (hostVerifier != null) {
@@ -631,25 +667,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             }, 443);
             protoBySockFac.put(sockFac, protocol);
         }
-        final HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
-        hconf = new HostConfiguration(){
-            @Override
-            public void setHost( final org.apache.commons.httpclient.URI uri ) {
-                // This prevents our SSL settings being lost on redirects (bug 9063)
-                if ( "https".equalsIgnoreCase( uri.getScheme() ) ) {
-                    try {
-                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), httpHost.getProtocol() ));
-                    } catch(URIException e) {
-                        // This is how HTTPClient handles this condition
-                        throw new IllegalArgumentException(e.toString());
-                    }
-                } else {
-                    super.setHost( uri );
-                }
-            }
-        };
-        hconf.setHost(httpHost);
-        return hconf;
+        return protocol;
     }
 
     private void configureEnabledProtocolsAndCiphers(SSLSocket s) {
