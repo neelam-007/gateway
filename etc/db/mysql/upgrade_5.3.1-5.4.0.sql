@@ -36,6 +36,13 @@ CREATE TABLE secure_password (
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+
+INSERT INTO rbac_role VALUES (-1050,0,'Manage Secure Passwords', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete any stored password.');
+INSERT INTO rbac_permission VALUES (-1051,0,-1050,'READ',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1053,0,-1050,'UPDATE',NULL,'SECURE_PASSWORD');
+INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD');
+
 --
 -- Increase IP address string lengths to 39 to accommodate IPv6
 --
