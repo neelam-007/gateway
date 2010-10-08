@@ -69,7 +69,12 @@ public class HttpConfigurationManagerDialog extends JDialog {
                 TableUtil.column(getResourceString("table.column.proxy"),    40, 150,   400, new Functions.Unary<String,HttpConfiguration>(){
                     @Override
                     public String call( final HttpConfiguration httpConfiguration ) {
-                        return null;
+                        String proxy = null;
+                        final HttpProxyConfiguration proxyConfiguration = httpConfiguration.getProxyConfiguration();
+                        if ( proxyConfiguration != null && proxyConfiguration.getHost() != null ) {
+                            proxy = proxyConfiguration.getHost()+":"+proxyConfiguration.getPort();
+                        }
+                        return proxy;
                     }
                 }, String.class)
         );
