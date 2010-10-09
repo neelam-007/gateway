@@ -173,17 +173,17 @@ public final class ExpandVariables {
             return null;
         }
 
-        final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
-
         Object contextValue = vars.get(matchingName);
-        if (contextValue == null) {
-            String msg = handler.handleBadVariable(syntax.remainingName);
-            if (strict) throw new IllegalArgumentException(msg);
-            return null;
-        }
+        final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
 
         Selector.Selection selection;
         if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase().trim())) {
+            if (contextValue == null) {
+                String msg = handler.handleBadVariable(syntax.remainingName);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+
             // Get name suffix, it will be used to select a sub-value from the found object
             assert(syntax.remainingName.toLowerCase().startsWith(matchingName));
             final int len = matchingName.length();
