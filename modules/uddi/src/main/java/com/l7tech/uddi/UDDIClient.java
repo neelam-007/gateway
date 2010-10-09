@@ -208,6 +208,14 @@ public interface UDDIClient extends Closeable {
     void deleteBindingTemplate(final String bindingKey) throws UDDIException;
 
     /**
+     * Delete a bindingTemplate only. Does not delete any tModels it references.
+     * 
+     * @param bindingKey String bindingKey of the bindingTemplate to delete
+     * @throws UDDIException any problems deleting from UDDI
+     */
+    void deleteBindingTemplateOnly(final String bindingKey) throws UDDIException;
+
+    /**
      * Delete all bindingTemplates with a key in bindingKeys.
      *
      * The delete should be done in one call to UDDI

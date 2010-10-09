@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServiceUDDISettingsDialog extends JDialog {
+public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to PublishToUDDIDialog
     private static final Logger logger = Logger.getLogger(ServiceUDDISettingsDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServiceUDDISettingsDialog.class.getName());
     private static final String OPTION_ORIGINAL_BUSINESS_SERVICE = "Original Business Service";
@@ -63,6 +63,10 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private JComboBox policyServiceComboBox;
     private JCheckBox publishFullPolicyCheckBox;
     private JCheckBox inlinePolicyIncludesCheckBox;
+    private JButton manageMetaData;
+    private JCheckBox gifPublishCheckBox;
+    private JComboBox endPointTypeComboBox;
+    private JLabel endPointTypeLabel;
 
     private PublishedService service;
     private boolean canUpdate;
@@ -71,6 +75,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private Map<Long, Boolean> registryMetricsEnabled = new HashMap<Long,Boolean>();
     private UDDIProxiedServiceInfo uddiProxyServiceInfo;
     private UDDIServiceControl uddiServiceControl;
+    private UDDIRegistry originalServiceRegistry;
     private InputValidator publishWsdlValidators;
 
     private final static String businessEntityDefault = "<<None Selected>>";
@@ -87,6 +92,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
      * methods of disposing, this could be refactored.
      */
     private Runnable disposeSettingsDialogCallback;
+    private boolean isSystinet;
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -164,7 +170,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         });
 
-        RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
+        final RunOnChangeListener enableDisableChangeListener = new RunOnChangeListener( new Runnable(){
             @Override
             public void run() {
                 enableAndDisableComponents();
@@ -178,6 +184,8 @@ public class ServiceUDDISettingsDialog extends JDialog {
         metricsEnabledCheckBox.addActionListener( enableDisableChangeListener );
         publishPolicyCheckBox.addActionListener( enableDisableChangeListener );
         publishFullPolicyCheckBox.addActionListener( enableDisableChangeListener );
+        gifPublishCheckBox.addActionListener(enableDisableChangeListener);
+        removeExistingBindingsCheckBox.addActionListener(enableDisableChangeListener);
 
         disposeSettingsDialogCallback = new Runnable() {
             @Override
@@ -207,8 +215,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
 
         try {
             uddiServiceControl = getUDDIRegistryAdmin().getUDDIServiceControl(service.getOid());
+            if(uddiServiceControl != null){
+                originalServiceRegistry = getUDDIRegistryAdmin().findByPrimaryKey(uddiServiceControl.getUddiRegistryOid());
+            }
         } catch (FindException e) {
             uddiServiceControl = null;
+            originalServiceRegistry = null;
         }
 
         //Input validators
@@ -233,11 +245,20 @@ public class ServiceUDDISettingsDialog extends JDialog {
             }
         });
 
-        Utilities.setEscKeyStrokeDisposes(this);
+        endPointTypeComboBox.addItem(UDDIRegistryAdmin.EndpointScheme.HTTP);
+        endPointTypeComboBox.addItem(UDDIRegistryAdmin.EndpointScheme.HTTPS);
+
+        if (originalServiceRegistry != null) {
+            isSystinet = originalServiceRegistry.getUddiRegistryType().equals(UDDIRegistry.UDDIRegistryType.SYSTINET.toString());
+            gifPublishCheckBox.setVisible(isSystinet);
+            endPointTypeLabel.setVisible(isSystinet);
+            endPointTypeComboBox.setVisible(isSystinet);
+        }
 
         modelToView();
-        pack();        
         enableAndDisableComponents();
+        Utilities.setEscKeyStrokeDisposes(this);
+        pack();
     }
 
     /**
@@ -272,6 +293,23 @@ public class ServiceUDDISettingsDialog extends JDialog {
                 case ENDPOINT:
                     publishGatewayEndpointAsRadioButton.setSelected(true);
                     removeExistingBindingsCheckBox.setSelected(uddiProxyServiceInfo.isRemoveOtherBindings());
+
+                    if(uddiProxyServiceInfo != null){
+                        final Boolean isGif = uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.IS_GIF);
+                        if( isGif != null && isGif){
+                            gifPublishCheckBox.setSelected(true);
+                            UDDIRegistryAdmin.EndpointScheme gifEndpointScheme =
+                                    uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.GIF_SCHEME);
+                            if(gifEndpointScheme != null){
+                                endPointTypeComboBox.setSelectedItem(gifEndpointScheme);
+                            } else {
+                                endPointTypeComboBox.setSelectedIndex(-1);
+                            }
+
+                        } else {
+                            endPointTypeComboBox.setSelectedIndex(-1);
+                        }
+                    }
                     setLabelStatus(bindingTemplateStatusLabel);
                     break;
                 case OVERWRITE:
@@ -286,6 +324,12 @@ public class ServiceUDDISettingsDialog extends JDialog {
             dontPublishRadioButton.setSelected(true);
             uddiRegistriesComboBox.setSelectedIndex(-1);
             businessEntityNameLabel.setText(businessEntityDefault);
+            if (isSystinet) {
+                //some default behaviour to preference GIF when the registry is Systinet
+                //set when no publish has been done
+                gifPublishCheckBox.setSelected(true);
+            }
+
             clearStatusLabels(null);
         }
         
@@ -443,8 +487,30 @@ public class ServiceUDDISettingsDialog extends JDialog {
         //binding endpoint
         if(uddiServiceControl != null && uddiServiceControl.isUnderUddiControl()){
             removeExistingBindingsCheckBox.setEnabled(false);
+            manageMetaData.setEnabled(false);
+            gifPublishCheckBox.setEnabled(false);
+            endPointTypeLabel.setEnabled(false);
+            endPointTypeComboBox.setEnabled(false);
         }else{
             removeExistingBindingsCheckBox.setEnabled(enable);
+            final boolean isRemove = removeExistingBindingsCheckBox.isSelected();
+            if(isRemove){
+                gifPublishCheckBox.setEnabled(false);
+                endPointTypeLabel.setEnabled(false);
+                endPointTypeComboBox.setEnabled(false);
+            } else {
+                gifPublishCheckBox.setEnabled(enable);
+                final boolean gifSelected = gifPublishCheckBox.isSelected();
+                endPointTypeLabel.setEnabled(enable && gifSelected);
+                endPointTypeComboBox.setEnabled(enable && gifSelected);
+                if(gifSelected){
+                    removeExistingBindingsCheckBox.setEnabled(false);
+                    endPointTypeComboBox.setSelectedIndex(0);
+                } else {
+                    endPointTypeComboBox.setSelectedIndex(-1);
+                }
+            }
+            manageMetaData.setEnabled(enable);
         }
     }
 
@@ -457,7 +523,7 @@ public class ServiceUDDISettingsDialog extends JDialog {
      * Validate the view and update model if valid.
      *
      * Warning: See disposeSettingsDialogCallback javadoc. All logic here must support sequential SSM flow control
-     * and flow control in the applet which make suse of disposeSettingsDialogCallback
+     * and flow control in the applet which makes use of disposeSettingsDialogCallback
      * 
      * @return true if view is valid and can be converted to model, false otherwise
      */
@@ -636,23 +702,28 @@ public class ServiceUDDISettingsDialog extends JDialog {
     }
 
     private boolean doRemoveProxiedEndpoint(){
+        final boolean isGif = gifPublishCheckBox.isSelected();
         final boolean [] choice = new boolean[1];
         DialogDisplayer.showConfirmDialog(this,
-                                                   "Remove published Gateway endpoint from UDDI Registry?",
-                                                   "Confirm Removal from UDDI",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                "Remove published Gateway " + ((isGif) ? "GIF " : "") + "endpoint from UDDI Registry?",
+                "Confirm Removal from UDDI",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
                     @Override
                     public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
+                        if (option == JOptionPane.YES_OPTION) {
                             choice[0] = true;
                             UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                             try {
                                 uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway endpoint from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
+                                        "Task to remove Gateway " + ((isGif) ? "GIF " : "") +
+                                                "endpoint from UDDI created successful",
+                                        "Successful Task Creation",
+                                        JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
                             } catch (Exception ex) {
-                                final String msg = "Problem deleting pubished Gateway endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
+                                final String msg = "Problem deleting published Gateway " + ((isGif) ? "GIF " : "") +
+                                        "endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
                                 logger.log(Level.WARNING, msg);
                                 DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg
                                         , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
@@ -833,12 +904,13 @@ public class ServiceUDDISettingsDialog extends JDialog {
     private boolean publishEndpointToBusinessService() {
         final String msg;
         final int messageType;
+        final boolean isGif = gifPublishCheckBox.isSelected();
 
         if (removeExistingBindingsCheckBox.isSelected()) {
             msg = "Publish Gateway endpoint to owning BusinessService in UDDI? Remove existing bindings?";
             messageType = JOptionPane.WARNING_MESSAGE;
         } else {
-            msg = "Publish Gateway endpoint to owning BusinessService in UDDI?";
+            msg = "Publish Gateway " + ((isGif) ? "GIF " : "") + "endpoint to owning BusinessService in UDDI?";
             messageType = JOptionPane.QUESTION_MESSAGE;
         }
 
@@ -858,12 +930,21 @@ public class ServiceUDDISettingsDialog extends JDialog {
                                     choice[0] = true;
                                     UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                                     try {
-                                        uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected());
+                                        if(isGif){
+                                            uddiRegistryAdmin.publishGatewayEndpointGif(service,
+                                                    (UDDIRegistryAdmin.EndpointScheme) endPointTypeComboBox.getSelectedItem());
+                                        } else {
+                                            uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected());
+                                        }
 
                                         DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                                "Task to publish Gateway endpoint to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
+                                                "Task to publish Gateway " + ((isGif) ? "GIF " : "") +
+                                                        "endpoint to UDDI created successfully",
+                                                "Successful Task Creation",
+                                                JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
                                     } catch (Exception ex) {
-                                        final String msg = "Could not create publish gateway endpoint to UDDI task: " + ExceptionUtils.getMessage(ex);
+                                        final String msg = "Could not create publish gateway " + ((isGif) ? "GIF " : "")
+                                                + "endpoint to UDDI task: " + ExceptionUtils.getMessage(ex);
                                         logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
                                         DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
                                                 "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE, null);

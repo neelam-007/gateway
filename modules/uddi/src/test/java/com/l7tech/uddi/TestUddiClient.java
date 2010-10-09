@@ -31,6 +31,9 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     private Set<String> uniqueWsdlUrls = new HashSet<String>();
     private Set<String> publishedBindingTemplateKeys = new HashSet<String>();
     private List<BindingTemplate> publishedBindingTemplates = new ArrayList<BindingTemplate>();
+    private List<TModel> publishedTModels = new ArrayList<TModel>();
+    private List<String> deletedBindingTemplatesOnly = new ArrayList<String>();
+    private List<String> deletedTModelKeys = new ArrayList<String>();
     private boolean dontDeleteBindingTempaltes = false;
     private boolean isOverwrite = false;
 
@@ -98,6 +101,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
             }
         }
 
+        publishedTModels.add(tModelToPublish);        
         numTModelsPublished++;
     }
 
@@ -140,6 +144,13 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         publishedBindingTemplates.add(bindingTemplate);
     }
 
+    @Override
+    public void publishBindingTemplate(List<BindingTemplate> bindingTemplates) throws UDDIException {
+        for (BindingTemplate bindingTemplate : bindingTemplates) {
+            publishBindingTemplate(bindingTemplate);
+        }
+    }
+    
     @Override
     public void deleteBindingTemplateFromSingleService(Set<String> bindingKeys) throws UDDIException {
 
@@ -201,11 +212,13 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
     @Override
     public void deleteTModel(Set<String> tModelKeys) throws UDDIException {
         numTModelsDeleted += tModelKeys.size();
+        deletedTModelKeys.addAll(tModelKeys);
     }
 
     @Override
     public void deleteTModel(String tModelKey) throws UDDIException {
-
+        numTModelsDeleted++;
+        deletedTModelKeys.add(tModelKey);
     }
 
     @Override
@@ -214,7 +227,7 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         final List<BindingTemplate> templates = businessServiceForTest.getBindingTemplates().getBindingTemplate();
         BindingTemplate toRemove = null;
         for (BindingTemplate template : templates) {
-            if(template.getBindingKey() == bindingKey){
+            if (template.getBindingKey().equals(bindingKey)) {
                 toRemove = template;
             }
         }
@@ -222,6 +235,11 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
         if(toRemove == null) throw new IllegalStateException("bindingKey not found in test business service");
         if(!dontDeleteBindingTempaltes) templates.remove(toRemove);
         numBindingsDeleted++;
+    }
+
+    @Override
+    public void deleteBindingTemplateOnly(String bindingKey) throws UDDIException {
+        deletedBindingTemplatesOnly.add(bindingKey);
     }
 
     public int getNumBindingsDeleted() {
@@ -409,5 +427,17 @@ public class TestUddiClient implements UDDIClient, JaxWsUDDIClient{
 
     public List<BindingTemplate> getPublishedBindingTemplates() {
         return publishedBindingTemplates;
+    }
+
+    public List<TModel> getPublishedTModels(){
+        return publishedTModels;
+    }
+
+    public List<String> getDeletedBindingTemplatesOnly() {
+        return deletedBindingTemplatesOnly;
+    }
+
+    public List<String> getDeletedTModelKeys() {
+        return deletedTModelKeys;
     }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" serviceKey="uddi:ad3618e0-d229-11df-a331-7bda57c0a325" businessKey="uddi:55385ec0-c4d5-11df-a326-7bda57c0a325">
+    <ns4:name>ArtistRegistryService</ns4:name>
+    <ns4:description>wsdl:type representing service</ns4:description>
+    <ns4:bindingTemplates>
+        <ns4:bindingTemplate bindingKey="uddi:ad36b520-d229-11df-a331-7bda57c0a325" serviceKey="uddi:ad3618e0-d229-11df-a331-7bda57c0a325">
+            <ns4:description>wsdl:type representing port</ns4:description>
+            <ns4:accessPoint useType="http">http://soamoa.org:9292/artistRegistry</ns4:accessPoint>
+            <ns4:tModelInstanceDetails>
+                <ns4:tModelInstanceInfo tModelKey="uddi:acfedc40-d229-11df-a331-7bda57c0a325">
+                    <ns4:instanceDetails>
+                        <ns4:instanceParms>YessoTestWebServicesPort</ns4:instanceParms>
+                    </ns4:instanceDetails>
+                </ns4:tModelInstanceInfo>
+                <ns4:tModelInstanceInfo tModelKey="uddi:acdfe290-d229-11df-a331-7bda57c0a325"/>
+            </ns4:tModelInstanceDetails>
+            <ns4:categoryBag>
+                <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:types" keyName="uddi.org:wsdl:types" keyValue="port"/>
+            </ns4:categoryBag>
+        </ns4:bindingTemplate>
+    </ns4:bindingTemplates>
+    <ns4:categoryBag>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:xml:namespace" keyName="uddi.org:xml:namespace" keyValue="http://samples.soamoa.yesso.eu/"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:types" keyName="uddi.org:wsdl:types" keyValue="service"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:xml:localName" keyName="uddi.org:xml:localName" keyValue="ArtistRegistryService"/>
+    </ns4:categoryBag>
+</businessService>

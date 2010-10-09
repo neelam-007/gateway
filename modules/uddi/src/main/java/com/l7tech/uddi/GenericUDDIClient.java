@@ -63,6 +63,39 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         }
     }
 
+    @Override
+    public void publishBindingTemplate(final List<BindingTemplate> bindingTemplates) throws UDDIException {
+        if(bindingTemplates == null) throw new NullPointerException("bindingTemplates cannot be null");
+
+        final Set<String> prevBindingKeys = new HashSet<String>();
+        for (BindingTemplate bindingTemplate : bindingTemplates) {
+            final String key = bindingTemplate.getBindingKey();
+            if(key != null) prevBindingKeys.add(key);
+        }
+
+        SaveBinding saveBinding = new SaveBinding();
+        saveBinding.setAuthInfo(getAuthToken());
+        saveBinding.getBindingTemplate().addAll(bindingTemplates);
+        try {
+            BindingDetail bindingDetail = getPublishPort().saveBinding(saveBinding);
+            final List<BindingTemplate> publishedTemplates = bindingDetail.getBindingTemplate();
+            for (int i = 0, publishedTemplatesSize = publishedTemplates.size(); i < publishedTemplatesSize; i++) {
+                BindingTemplate publishedTemplate = publishedTemplates.get(i);
+                logger.log(Level.FINE, "Published" +
+                        ((prevBindingKeys.contains(publishedTemplate.getBindingKey())) ? " updated" : "") +
+                        " bindingTemplate with key: " + bindingDetail.getBindingTemplate().get(0).getBindingKey() +
+                        " with serviceKey: " + publishedTemplate.getServiceKey());
+
+                //same order of returned results is guaranteed by the UDDI spec
+                bindingTemplates.get(i).setBindingKey(publishedTemplate.getBindingKey());
+            }
+        } catch (DispositionReportFaultMessage drfm) {
+            throw buildFaultException("Error publishing binding template", drfm);
+        } catch (RuntimeException e) {
+            throw buildErrorException("Error publishing binding template", e);
+        }
+    }
+
     /**
      *
      */
@@ -375,6 +408,25 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         deleteSet.add(bindingKey);
         logger.log(Level.FINE, "Deleting bindingTemplate with key: " + bindingKey);
         deleteBindingTemplateFromSingleService(deleteSet);
+    }
+
+    @Override
+    public void deleteBindingTemplateOnly(final String bindingKey) throws UDDIException {
+        final DeleteBinding deleteBinding = new DeleteBinding();
+        deleteBinding.setAuthInfo(getAuthToken());
+        deleteBinding.getBindingKey().add(bindingKey);
+        try {
+            getPublishPort().deleteBinding(deleteBinding);
+        } catch (DispositionReportFaultMessage drfm) {
+            final UDDIException ex =  buildFaultException("Error getting binding template", drfm);
+            if(ex instanceof UDDIInvalidKeyException){
+                logger.log(Level.INFO, "No BindingTemplate found for bindingKey: " + bindingKey );
+            }
+            throw ex;
+
+        } catch (RuntimeException e){
+            throw buildErrorException("Problem looking up UDDI BindingTemplate with bindingKey: " + bindingKey, e);
+        }
     }
 
     @Override

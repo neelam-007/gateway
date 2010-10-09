@@ -27,6 +27,8 @@ import java.util.Collection;
 @Administrative
 public interface UDDIRegistryAdmin {
 
+    enum EndpointScheme {HTTP, HTTPS}
+    
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype= MethodStereotype.SAVE_OR_UPDATE)
     long saveUDDIRegistry(UDDIRegistry uddiRegistry) throws SaveException, UpdateException, FindException;
 
@@ -115,11 +117,14 @@ public interface UDDIRegistryAdmin {
             throws SaveException, FindException;
 
     /**
-     * Publish an endpoint to an existing service in UDDI
+     * Publish an endpoint to an existing service in UDDI.
      *
-     * Service must be logically under UDDI control
+     * Gateway must have a UDDIServiceControl record for the original service, so that we know where (which UDDI Registry,
+     * and which BusinessService) to add the endpoint to.
+     *
+     * Note: This method will never result in a GIF publish.
      * 
-     * @param publishedService PublishedService to publish a WSDL to UDDI for
+     * @param publishedService the PublishedService who's endpoint will be published to UDDI
      * @param removeOthers boolean if true, then all other bindingTemplates will be removed from the BusinessService
      * @throws com.l7tech.gateway.common.admin.UDDIRegistryAdmin.UDDIRegistryNotEnabledException
      * @throws com.l7tech.objectmodel.FindException
@@ -127,6 +132,19 @@ public interface UDDIRegistryAdmin {
      */
     @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
     void publishGatewayEndpoint(PublishedService publishedService, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException;
+
+    /**
+     * Publish an endpoint to an existing Service in UDDI following the GIF. (Governance Interoperability Framework).
+     *
+     * @param publishedService the PublishedService who's endpoint will be published to UDDI
+     * @param scheme what type of endpoint to publish HTTP or HTTPS
+     * @throws FindException
+     * @throws SaveException
+     * @throws UDDIRegistryNotEnabledException
+     */
+    @Secured(types = EntityType.SERVICE, stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 0)
+    void publishGatewayEndpointGif(PublishedService publishedService,
+                                   EndpointScheme scheme) throws FindException, SaveException, UDDIRegistryNotEnabledException;
 
     /**
      * Updated the UDDI with changes to a Published Service's WSDL

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -48,7 +49,10 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     /**
      * Key to get the Set<String> of all bindingKeys published. Only exists when the type is ENDPOINT
      */
-    public static final String ALL_BINDING_TEMPLATE_KEYS = "ALL_BINDING_TEMPLATE_KEYS";
+    public static final String ALL_BINDING_TEMPLATE_KEYS = "ALL_BINDING_TEMPLATE_KEYS";//DO NOT REFACTOR THEY ARE IN THE DB
+    public static final String FUNCTIONAL_ENDPOINT_KEY = "FUNCTIONAL_ENDPOINT_KEY";//DO NOT REFACTOR THEY ARE IN THE DB
+    public static final String GIF_SCHEME = "GIF_SCHEME";//DO NOT REFACTOR THEY ARE IN THE DB
+    public static final String IS_GIF = "IS_GIF";//DO NOT REFACTOR THEY ARE IN THE DB
 
     public enum PublishType{
         /**
@@ -84,6 +88,27 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
         info.setUddiBusinessName(uddiBusinessName);
         info.setWsdlHash(wsdlHash);
         info.setPublishType(publishType);
+        return info;
+    }
+
+    public static UDDIProxiedServiceInfo getGifEndPointPublishInfo(final long publishedServiceOid,
+                                                                final long uddiRegistryOid,
+                                                                final String uddiBusinessKey,
+                                                                final String uddiBusinessName,
+                                                                final String wsdlHash,
+                                                                final UDDIRegistryAdmin.EndpointScheme endpointScheme
+                                                                ) {
+
+        final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
+                publishedServiceOid,
+                uddiRegistryOid,
+                uddiBusinessKey,
+                uddiBusinessName,
+                wsdlHash,
+                PublishType.ENDPOINT);
+
+        info.setProperty(IS_GIF, Boolean.TRUE);
+        info.setProperty(GIF_SCHEME, endpointScheme);
         return info;
     }
 

@@ -7,6 +7,7 @@ import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 
 import java.util.*;
@@ -24,6 +25,14 @@ import java.io.IOException;
  */
 public class BusinessServicePublisher implements Closeable {
     private static final Logger logger = Logger.getLogger(BusinessServicePublisher.class.getName());
+    public static final String UDDI_SYSTINET_COM_MANAGEMENT_TYPE = "uddi:systinet.com:management:type";
+    public static final String UDDI_SYSTINET_COM_MANAGEMENT_PROXY_REFERENCE = "uddi:systinet.com:management:proxy-reference";
+    public static final String UDDI_SYSTINET_COM_MANAGEMENT_URL = "uddi:systinet.com:management:url";
+    public static final String FUNCTIONAL_ENDPOINT = "functionalEndpoint";
+    public static final String MANAGED_ENDPOINT = "managedEndpoint";
+    public static final String UDDI_SYSTINET_COM_MANAGEMENT_SYSTEM = "uddi:systinet.com:management:system";
+    public static final String UDDI_SYSTINET_COM_MANAGEMENT_STATE = "uddi:systinet.com:management:state";
+    public static final String SYSTINET_STATE_MANAGED = "managed";
 
     private Wsdl wsdl;
     private final UDDIClient uddiClient;
@@ -57,6 +66,24 @@ public class BusinessServicePublisher implements Closeable {
                                     final UDDIClient uddiClient) {
 
         this(uddiClient, wsdl, serviceOid);
+    }
+
+    /**
+     * Create a new BusinessServicePublisher.
+     *
+     * @param serviceOid services OID, which originates from the WSDL
+     * @param uddiCfg UDDIClientConfig for the UDDI Registry to publish to
+     */
+    public BusinessServicePublisher(final long serviceOid,
+                                    final UDDIClientConfig uddiCfg) {
+
+        this(buildUDDIClient(uddiCfg), serviceOid);
+    }
+
+    public BusinessServicePublisher(final long serviceOid,
+                                    final UDDIClient uddiClient) {
+
+        this(uddiClient, serviceOid);
     }
 
     /**
@@ -148,8 +175,253 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
+     * Publish a GIF endpoint to an existing service. This involves publishing a new bindingTemplate, giving it the
+     * bindingKey of the bindingTemplate it is proxying, then adding the required meta data to the new bindingTemplate
+     * (called the proxy endpoint) and to the original endpoint (called the functional endpoint).
+     *
+     * @param serviceKey key of the BusinessService to update
+     * @param wsdlPortName wsdl:port to model as a bindingTEmplate
+     * @param wsdlPortBinding wsdl:binding binding the wsdl:port implements
+     * @param wsdlPortBindingNamespace namespace of the wsdl:binding
+     * @param endpointPair the external gateway URL and WSDL URL for the GIF endpoint.
+     * @param publishedBindingKey may be null on first publish. The key of the 'proxy'. When not null this is the
+     * original bindingKey before the GIF publish was done.
+     * @param functionalBindingKey may be null on first publish. When not null this is the newly assigned bindingKey
+     * given to the original bindingTemplate after it was proxied.
+     * @param mgmtSystemKeyValue the name to use for GIF meta data C.2 - the name of the WSMS (Web Services Management System).
+     * Required.
+     * @return a pair, the lhs is the proxy bindingTemplates's bindingKey and the rhs is the functional
+     * bindingTemplate's bindingKey
+     * @throws UDDIException any exceptions updating UDDI.
+     */
+    public Pair<String, String> publishBindingTemplateGif(
+            final String serviceKey,
+            final String wsdlPortName,
+            final String wsdlPortBinding,
+            final String wsdlPortBindingNamespace,
+            final EndpointPair endpointPair,
+            final String publishedBindingKey,
+            final String functionalBindingKey,
+            final String mgmtSystemKeyValue) throws UDDIException {
+        if (serviceKey == null || serviceKey.trim().isEmpty())
+            throw new IllegalArgumentException("serviceKey cannot be null or empty");
+        if (wsdlPortName == null || wsdlPortName.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortName cannot be null or empty");
+        if (wsdlPortBinding == null || wsdlPortBinding.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortBinding cannot be null or empty");
+        if (wsdlPortBindingNamespace == null || wsdlPortBindingNamespace.trim().isEmpty())
+            throw new IllegalArgumentException("wsdlPortBindingNamespace cannot be null or empty");
+        if(mgmtSystemKeyValue == null || mgmtSystemKeyValue.trim().isEmpty())
+            throw new IllegalArgumentException("mgmtSystemKeyValue cannot be null or empty");
+
+        UDDIUtilities.validateAllEndpointPairs(Arrays.asList(endpointPair));
+
+
+        //Create the bindingTemplate structure
+        final Pair<List<BindingTemplate>, Map<String, TModel>> bindingToModels;
+        try {
+            bindingToModels = UDDIUtilities.createBindingTemplateFromWsdl(wsdl, wsdlPortName, wsdlPortBinding, wsdlPortBindingNamespace, Arrays.asList(endpointPair));
+        } catch (UDDIUtilities.PortNotFoundException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.NonSoapWsdlPortException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        } catch (WsdlToUDDIModelConverter.NonHttpBindingException e) {
+            throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
+        }
+
+        if(bindingToModels.left.size() != 1) throw new IllegalStateException("Only a single binding template should be created.");
+
+        //Get the service
+        final Set<String> serviceKeys = new HashSet<String>();
+        serviceKeys.add(serviceKey);
+
+        final UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(jaxWsUDDIClient);
+        final List<Pair<BusinessService, Map<String, TModel>>>
+                uddiServicesToDependentModels = serviceDownloader.getBusinessServiceModels(serviceKeys);
+
+        if (uddiServicesToDependentModels.isEmpty())
+            throw new UDDIException("Could not find BusinessService with serviceKey: " + serviceKey);
+
+        final Pair<BusinessService, Map<String, TModel>> serviceMapPair = uddiServicesToDependentModels.iterator().next();
+        final BusinessService businessService = serviceMapPair.left;
+        final Map<String, TModel> publishedTModels = serviceMapPair.right;
+
+        final List<BindingTemplate> bindingTemplates;
+        if (businessService.getBindingTemplates() != null) {
+            bindingTemplates = businessService.getBindingTemplates().getBindingTemplate();
+        } else {
+            bindingTemplates = Collections.emptyList();
+        }
+
+        //prepare our binding template with required meta data for GIF
+        final List<KeyedReference> keyedReferences = getProxyGifMetaData(endpointPair, mgmtSystemKeyValue);
+
+        final BindingTemplate toPublishTemplate = bindingToModels.left.get(0);
+        final Map<String, TModel> toPublishTModels = bindingToModels.right;
+        //we know these reference have not been added yet
+        if(toPublishTemplate.getCategoryBag() == null){
+            final CategoryBag cBag = new CategoryBag();
+            toPublishTemplate.setCategoryBag(cBag);
+        }
+        toPublishTemplate.getCategoryBag().getKeyedReference().addAll(keyedReferences);
+
+        BindingTemplate functionalTemplate = null;
+        final boolean updateFunctionalTemplate;
+        final boolean firstPublish;
+        //has this endpoint already been published?
+        if (publishedBindingKey != null) {
+            firstPublish = false;
+            BindingTemplate prevPublished = null;
+
+            //we must find the bindingTemplate
+            for (BindingTemplate publishedTemplate : bindingTemplates) {
+                if(publishedTemplate.getBindingKey().equals(publishedBindingKey)){
+                    prevPublished = publishedTemplate;
+                } else if (publishedTemplate.getBindingKey().equals(functionalBindingKey)){
+                    functionalTemplate = publishedTemplate;
+                }
+            }
+
+            if(prevPublished == null){
+                //cause publish to fail, will eventually fail out.
+                throw new UDDIException("Cannot find bindingTemplate previously published to UDDI with bindingKey #(" + publishedBindingKey +")");
+            }
+
+            if(functionalTemplate == null) {
+                throw new UDDIException("Cannot find the functionalTemplate with bindingKey #(" + functionalBindingKey + ").");
+            }
+
+            updateTemplate(
+                    toPublishTemplate,
+                    Arrays.asList(prevPublished),
+                    Arrays.asList(endpointPair),
+                    toPublishTModels,
+                    publishedTModels,
+                    new HashSet<String>());
+
+            //confirm the keys were transferred
+            if(toPublishTemplate.getBindingKey() == null) {
+                throw new UDDIException("Previously published bindingTemplate with key #(" + publishedBindingKey + ")" +
+                        "does not match the service's WSDL. Cannot update.");
+            }
+
+            //if this update was causes by a change that causes the external URL to change, then the URL keyedReference
+            //will need to be updated. The synchronizing in updateTemplate above will have brought over the old
+            //reference which has the old URL value, therefore we must remove it here
+            final List<KeyedReference> toPublishReferences = toPublishTemplate.getCategoryBag().getKeyedReference();
+            for (int i = toPublishReferences.size()-1; i >= 0; i--) {//revers to protect against compaction
+                KeyedReference toPublishReference = toPublishReferences.get(i);
+                if (toPublishReference.getTModelKey().equals(UDDI_SYSTINET_COM_MANAGEMENT_URL)) {
+                    if(!toPublishReference.getKeyValue().equals(endpointPair.getEndPointUrl())){
+                        toPublishReferences.remove(i);
+                    }
+                }
+            }
+
+            //manage D1 and D2 on functional endpoint
+            final List<KeyedReference> functionalRefs = getFunctionalEndPointMetaData(publishedBindingKey);
+
+            final List<UDDIClient.UDDIKeyedReference> requiredRefs = convertToBeans(functionalRefs);
+            final List<UDDIClient.UDDIKeyedReference> existingRefs = convertToBeans(functionalTemplate.getCategoryBag().getKeyedReference());
+
+            if(!existingRefs.containsAll(requiredRefs)){
+                //put refs D1 and D2 back on the functional endpoint if they have been removed
+                final CategoryBag cBag = new CategoryBag();
+                cBag.getKeyedReference().addAll(functionalRefs);
+                synchronizeCategoryBags(functionalTemplate.getCategoryBag(), cBag);
+                updateFunctionalTemplate = true;
+            }else {
+                updateFunctionalTemplate = false;
+            }
+        } else {
+            firstPublish = true;
+            //this is the first publish. The first publish there is no publishedBindingKey
+            //find the bindingTemplate we are going to proxy
+            //find the functional endpoint
+            final Triple<BindingTemplate, TModel, TModel> tModelTriple = findMatchingEndpointAndModels(bindingTemplates,
+                    toPublishTemplate, toPublishTModels, publishedTModels, false);
+            if(tModelTriple == null)
+                throw new UDDIException("The functional endpoint to proxy " +
+                        "could not be found in UDDI on BusinessService with serviceKey #(" + serviceKey + ")");
+
+            functionalTemplate = tModelTriple.left;
+
+            //record the bindingkey of the original bindingTemplate
+            final String originalBindingKey = functionalTemplate.getBindingKey();
+            //swap the keys
+            toPublishTemplate.setBindingKey(originalBindingKey);
+            functionalTemplate.setBindingKey(null);
+
+            //add the required meta data to functional endpoint
+            //manage D1 and D2 on functional endpoint
+            final List<KeyedReference> functionalRefs = getFunctionalEndPointMetaData(originalBindingKey);
+            functionalTemplate.getCategoryBag().getKeyedReference().addAll(functionalRefs);
+            updateFunctionalTemplate = true;
+
+        }
+
+        try {
+            //publish the wsdl:portType tModels first so we can update the binding tModel references to them
+            for (Map.Entry<String, TModel> entry : toPublishTModels.entrySet()) {
+                if (UDDIUtilities.getTModelType(entry.getValue(), true) != UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE)
+                    continue;
+                jaxWsUDDIClient.publishTModel(entry.getValue());
+            }
+
+            final List<TModel> allBindingTModels = new ArrayList<TModel>();
+            for (final TModel tModel : bindingToModels.right.values()) {
+                if (UDDIUtilities.getTModelType(tModel, true) != UDDIUtilities.TMODEL_TYPE.WSDL_BINDING) continue;
+                allBindingTModels.add(tModel);
+            }
+            if (allBindingTModels.isEmpty()) throw new IllegalStateException("No binding tModels were found");
+            UDDIUtilities.updateBindingTModelReferences(allBindingTModels, bindingToModels.right);
+
+            //now publish the binding tmodels after they have been updated
+            for (TModel bindingModel : allBindingTModels) {
+                jaxWsUDDIClient.publishTModel(bindingModel);
+            }
+
+            //Save all bindingTemplates together
+            final List<BindingTemplate> toSaveTemplates = new ArrayList<BindingTemplate>();
+            //publish update to the functional endpoint
+            if(updateFunctionalTemplate){
+                toSaveTemplates.add(functionalTemplate);
+            }
+
+            toPublishTemplate.setServiceKey(businessService.getServiceKey());
+            UDDIUtilities.updateBindingTemplateTModelReferences(toPublishTemplate, bindingToModels.right);
+            toSaveTemplates.add(toPublishTemplate);
+
+            jaxWsUDDIClient.publishBindingTemplate(toSaveTemplates);
+            //NO MORE UDDI OPERATIONS AFTER THIS POINT. ROLL BACK LOGIC ASSUMES BINDING TEMPLATES PUBLISH IS THE LAST INTERACTION
+            return new Pair<String, String>(toPublishTemplate.getBindingKey(), functionalTemplate.getBindingKey());
+
+        } catch (UDDIException e) {
+            logger.log(Level.WARNING, "Problem publishing to UDDI: " + ExceptionUtils.getMessage(e));
+            if (firstPublish) {
+                for (Map.Entry<String, TModel> entry : toPublishTModels.entrySet()) {
+                    final String tModelKey = entry.getValue().getTModelKey();
+                    if (tModelKey != null && !tModelKey.trim().isEmpty()) {
+                        handleTModelRollback(tModelKey);
+                    }
+                }
+
+                //do not roll back the bindingTemplate as it will delete the original bindingTemplate which 'we' do
+                //not own. tModels are the only thing to clean up as the bindingTemplate is the last publish, so
+                //either they were not attempted to be published or the publish failed.
+            }
+            //no else. If we have already published to UDDI, the data is possibly out of date but the publish will
+            //be reattempted. We have reused tModel keys so there is no clean up to do.
+
+            throw e;
+        }
+    }
+
+    /**
      * Delete all gateway endpoints contained by a BusinessService
-     * Delete bindingTemplates either with the Collection of previous end point pairs (to support Pandora->Maytag) or
+     * Delete bindingTemplates either with the Collection of previous end point pairs (to support Pandora->Albacore) or
      * preferably delete via the persisted bindingKeys in persistedBindingKeys
      * <p/>
      * If persistedBindingKeys is not supplied, then any bindingTemplate found in the BusinessService with the supplied
@@ -228,6 +500,93 @@ public class BusinessServicePublisher implements Closeable {
                 }
             }
         }
+    }
+
+    /**
+     * Best effort attempt to undo the GIF publish. The functional bindingTemplate is saved with the proxyBindingKey,
+     * this reverts it back to having it's original key. The GIF references D.1 and D.2 are also removed from the
+     * functional bindingTemplate before it is saved back to UDDI. After this save the proxy bindingTemplate has been
+     * removed and there are now 2 functional binding templates attached to the service. The old functional binding
+     * template is then deleted, followed by the tModels the proxy bindingTemplate used to reference.
+     *
+     * @param serviceKey BusinessService which contains the proxied GIF endpoint. Required.
+     * @param proxyBindingKey key of the proxied bindingTemplate. Required.
+     * @param functionalBindingKey key of the functional bindingTemplate. Required.
+     * @throws UDDIException thrown if any problems updating UDDI.
+     */
+    public void deleteGatewayGifBindingTemplates(final String serviceKey,
+                                                 final String proxyBindingKey,
+                                                 final String functionalBindingKey)
+            throws UDDIException {
+
+        if (serviceKey == null || serviceKey.trim().isEmpty())
+            throw new IllegalArgumentException("serviceKey cannot be null or empty");
+
+        if(proxyBindingKey == null || proxyBindingKey.trim().isEmpty()){
+            throw new IllegalArgumentException("proxyBindingKey cannot be null or empty");
+        }
+
+        if(functionalBindingKey == null || functionalBindingKey.trim().isEmpty()){
+            throw new IllegalArgumentException("functionalBindingKey cannot be null or empty");            
+        }
+
+        final BusinessService businessService = jaxWsUDDIClient.getBusinessService(serviceKey);
+
+        final BindingTemplates bindingTemplates = businessService.getBindingTemplates();
+        final Map<String, BindingTemplate> keyToTemplate = new HashMap<String, BindingTemplate>();
+        for (BindingTemplate template : bindingTemplates.getBindingTemplate()) {
+            keyToTemplate.put(template.getBindingKey(), template);
+        }
+
+        final BindingTemplate proxyTemplate = keyToTemplate.get(proxyBindingKey);
+        final BindingTemplate functionalTemplate = keyToTemplate.get(functionalBindingKey);
+
+        if (proxyTemplate == null) {
+            final String msg = "Cannot find the proxy GIF endpoint to delete with bindingKey #(" + proxyBindingKey + ")";
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg);
+        }
+
+        if (functionalTemplate == null) {
+            final String msg = "Cannot find the functional template with bindingKey #(" + functionalBindingKey + ")";
+            logger.log(Level.WARNING, msg);
+            throw new UDDIException(msg);
+        }
+
+        //fix the functional template - back to it's state before it was proxied
+        functionalTemplate.setBindingKey(proxyTemplate.getBindingKey());
+        final CategoryBag funcCatBag = functionalTemplate.getCategoryBag();
+        if (funcCatBag != null) {
+            final List<KeyedReference> refs = funcCatBag.getKeyedReference();
+            for (int i = refs.size() - 1; i >= 0; i--) { //protect against compaction
+                KeyedReference ref = refs.get(i);
+                final String refTModelKey = ref.getTModelKey();
+                final String keyValue = ref.getKeyValue();
+
+                if (refTModelKey.equals(UDDI_SYSTINET_COM_MANAGEMENT_TYPE) && keyValue.equals(FUNCTIONAL_ENDPOINT)) {
+                    refs.remove(i);
+                } else if (refTModelKey.equals(UDDI_SYSTINET_COM_MANAGEMENT_PROXY_REFERENCE)) {
+                    refs.remove(i);
+                }
+            }
+        }
+
+        //Record the set of tModels referenced from the proxy bindingTemplate as once we have saved the functional
+        //template with a new key the proxy reference is lost
+        final List<TModelInstanceInfo> tModelInstanceInfos = proxyTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
+        final Set<String> tModelsToDelete = new HashSet<String>();
+        for (TModelInstanceInfo tModelInstanceInfo : tModelInstanceInfos) {
+            //blindly add them all - we own this proxy bindingTemplate and it's about to be deleted so we can remove
+            //all tModels referenced
+            tModelsToDelete.add(tModelInstanceInfo.getTModelKey());
+        }
+
+        //save functional endpoint - this automatically removes the proxy as it's saved with the same bindingKey
+        jaxWsUDDIClient.publishBindingTemplate(functionalTemplate);
+        uddiClient.deleteTModel(tModelsToDelete);
+
+        //delete the old functional endpoint
+        uddiClient.deleteBindingTemplateOnly(functionalBindingKey);
     }
 
     /**
@@ -426,6 +785,28 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
+     * Create a new BusinessServicePublisher which does not require a WSDL. Many operations will not be available
+     * on a BusinessServicePublisher constructed like this.
+     *
+     * @param uddiClient UDDIClient for the UDDI Registry to publish to
+     * @param serviceOid services OID, which originates from the WSDL
+     */
+    protected BusinessServicePublisher(final UDDIClient uddiClient,
+                                       final long serviceOid
+    ) {
+        if(uddiClient == null) throw new NullPointerException("uddiClient cannot be null");
+
+        this.wsdl = null;
+        this.uddiClient = uddiClient;
+        this.serviceOid = serviceOid;
+        if( uddiClient instanceof JaxWsUDDIClient ){
+            jaxWsUDDIClient = (JaxWsUDDIClient) uddiClient;
+        }else{
+            throw new IllegalStateException( "JaxWsUDDIClient is required." );
+        }
+    }
+
+    /**
      *
      * @return A pair of List &lt;BindingTemplate&gt; and List &lt;TModel&gt;. The left side is the list of BindingTemplates
      * which were published to UDDI and the right side is their published dependent tModels. Not all may have just been
@@ -446,7 +827,6 @@ public class BusinessServicePublisher implements Closeable {
 
         if(publishedBindingKeys == null) publishedBindingKeys = new HashSet<String>();
 
-        UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
         final Pair<List<BindingTemplate>, Map<String, TModel>> bindingToModels;
         try {
             bindingToModels = UDDIUtilities.createBindingTemplateFromWsdl(wsdl, wsdlPortName, wsdlPortBinding, wsdlPortBindingNamespace, allEndpointPairs);
@@ -1026,6 +1406,77 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
+     * Find the BindingTemplate and it's dependent tModels from the Map applicableTemplates that matches the
+     * BindingTemplate toPublishTemplate which is about to be published.
+     * <p/>
+     *
+     * @param applicableTemplates The list of BindingTemplates to search through. It is up to the caller to make sure
+     * that these templates contain no duplicates, as the first match wins.
+     * @param toPublishTemplate
+     * @param toPublishTModels
+     * @param publishedTModels
+     * @param validateEndpoint if true, a match will only be found if the useType of the AccessPoint is 'endPoint' and
+     * if the current URL value has the same scheme (HTTP or HTTPS) as the bindingTemplate being published. This should
+     * always be true when looking for an endpoint the gateway published.
+     * @return
+     */
+    private Triple<BindingTemplate, TModel, TModel> findMatchingEndpointAndModels(
+            final List<BindingTemplate> applicableTemplates,
+            final BindingTemplate toPublishTemplate,
+            final Map<String, TModel> toPublishTModels,
+            final Map<String, TModel> publishedTModels,
+            final boolean validateEndpoint) {
+        final TModel toPublishWsdlPortType = getImplementedWsdlPortType(toPublishTemplate, toPublishTModels);
+        final Pair<TModel, String> toPublishBindingAndWsdlPort = getImplementedWsdlPortAndBinding(toPublishTemplate, toPublishTModels);
+
+        final String toPublishWsdlPort = toPublishBindingAndWsdlPort.right;
+        final String bindingNamespace = UDDIUtilities.extractNamespace(toPublishBindingAndWsdlPort.left);
+        final String bindingName = toPublishBindingAndWsdlPort.left.getName().getValue();
+        for (BindingTemplate publishedTemplate : applicableTemplates) {
+            final Pair<TModel, String> publishedBindingTModelAndWsdlPort = getImplementedWsdlPortAndBinding(publishedTemplate, publishedTModels);
+            if (publishedBindingTModelAndWsdlPort == null) continue;
+
+            //ignore non soap + http bindings - important for overwritten services
+            if (!isSoapAndHttpBinding(publishedBindingTModelAndWsdlPort.left)) continue;
+
+            final String publishedWsdlPort = publishedBindingTModelAndWsdlPort.right;
+            if (publishedWsdlPort == null) continue;
+
+            //check the wsdl:port s are the same
+            if (!publishedWsdlPort.equals(toPublishWsdlPort)) continue;
+
+            final String publishedBindingNamespace = UDDIUtilities.extractNamespace(publishedBindingTModelAndWsdlPort.left);
+            final String publishedBindingName = publishedBindingTModelAndWsdlPort.left.getName().getValue();
+
+            //check the binding implements the same wsdl:binding - name and namespace
+            if (!new Pair<String, String>(bindingNamespace, bindingName).equals(
+                    new Pair<String, String>(publishedBindingNamespace, publishedBindingName))) continue;
+
+            //check that the to publish and published bindings implement the same wsdl:portType
+            final TModel publishedWsdlPortTModel = getImplementedWsdlPortType(publishedTemplate, publishedTModels);
+            if (!toPublishWsdlPortType.getName().getValue().equals(publishedWsdlPortTModel.getName().getValue()))
+                continue;
+
+            if(validateEndpoint){
+                final String publishedUseType = publishedTemplate.getAccessPoint().getUseType();
+                if (publishedUseType == null || !publishedUseType.equals("endPoint")) continue;
+
+                final String publishEndpoint = toPublishTemplate.getAccessPoint().getValue();
+                final String publishedEndpoint = publishedTemplate.getAccessPoint().getValue();
+
+                if (EndpointPair.getScheme(publishEndpoint) != EndpointPair.getScheme(publishedEndpoint)) continue;
+            }
+
+            //found the bindingTemplate
+            return new Triple<BindingTemplate, TModel, TModel>(publishedTemplate,
+                    publishedBindingTModelAndWsdlPort.left,
+                    publishedWsdlPortTModel);
+        }
+
+        return null;
+    }
+
+    /**
      * See if a BindingTemplate being published is already published, in which case it's key can be reused.
      * A template matches if it implements the same wsdl:port
      *
@@ -1045,75 +1496,46 @@ public class BusinessServicePublisher implements Closeable {
 
         final Pair<TModel, String> toPublishBindingAndWsdlPort = getImplementedWsdlPortAndBinding(toPublishTemplate, toPublishTModels);
         //Any tModels which get updated will be returned in this set so they do not get deleted
+        if (toPublishBindingAndWsdlPort == null) return Collections.emptySet();
+
+        final Triple<BindingTemplate, TModel, TModel> modelTriple =
+                findMatchingEndpointAndModels(allPublishedTemplates, toPublishTemplate, toPublishTModels, publishedTModels, true);
+        if(modelTriple == null) return Collections.emptySet();
+
+        final BindingTemplate publishedTemplate = modelTriple.left;
+        final TModel publishedBindingTModel = modelTriple.middle;
+        final TModel publishedPortTypeTModel = modelTriple.right;
+        if(publishedTemplate == null) return Collections.emptySet();
+
+        //we have a match, copy keys
+        toPublishTemplate.setBindingKey(publishedTemplate.getBindingKey());
+        final CategoryBag publishedCategoryBag = publishedTemplate.getCategoryBag();
+        if(publishedCategoryBag != null){
+            CategoryBag toPublishCategoryBag = toPublishTemplate.getCategoryBag();
+            if(toPublishCategoryBag == null){
+                toPublishCategoryBag = new CategoryBag();
+                toPublishTemplate.setCategoryBag(toPublishCategoryBag);
+            }
+
+            synchronizeCategoryBags(toPublishCategoryBag, publishedCategoryBag);
+        }
+        updateKeysSoFar.add(publishedTemplate.getBindingKey());
+        //the toPublishTemplate already has the correct endpoint value
+
+        final String publishEndpoint = toPublishTemplate.getAccessPoint().getValue();
+
         final Set<String> tModelsToKeep = new HashSet<String>();
-        if (toPublishBindingAndWsdlPort == null) return tModelsToKeep;
-
-        final String toPublishWsdlPort = toPublishBindingAndWsdlPort.right;
-        final String bindingNamespace = UDDIUtilities.extractNamespace(toPublishBindingAndWsdlPort.left);
-        final String bindingName = toPublishBindingAndWsdlPort.left.getName().getValue();
-
-        for (BindingTemplate publishedTemplate : allPublishedTemplates) {
-            if(updateKeysSoFar.contains(publishedTemplate.getBindingKey())) continue;
-
-            final Pair<TModel, String> publishedBindingTModelAndWsdlPort = getImplementedWsdlPortAndBinding(publishedTemplate, publishedTModels);
-            if (publishedBindingTModelAndWsdlPort == null) continue;
-            
-            //ignore non soap + http bindings - important for overwritten services
-            if(!isSoapAndHttpBinding(publishedBindingTModelAndWsdlPort.left)) continue;
-            
-            final String publishedWsdlPort = publishedBindingTModelAndWsdlPort.right;
-            if (publishedWsdlPort == null) continue;
-
-            //check the wsdl:port s are the same
-            if (!publishedWsdlPort.equals(toPublishWsdlPort)) continue;
-
-            final String publishedBindingNamespace = UDDIUtilities.extractNamespace(publishedBindingTModelAndWsdlPort.left);
-            final String publishedBindingName = publishedBindingTModelAndWsdlPort.left.getName().getValue();
-
-            //check the binding implements the same wsdl:binding - name and namespace
-            if(!new Pair<String, String>(bindingNamespace, bindingName).equals(
-                    new Pair<String, String>(publishedBindingNamespace, publishedBindingName))) continue;
-
-            //check that the to publish and published bindings implement the same wsdl:portType
-            final TModel publishedWsdlPortTModel = getImplementedWsdlPortType(publishedTemplate, publishedTModels);
-            if(!toPublishWsdlPortType.getName().getValue().equals(publishedWsdlPortTModel.getName().getValue())) continue;
-
-            final String publishedUseType = publishedTemplate.getAccessPoint().getUseType();
-            if(publishedUseType == null || !publishedUseType.equals("endPoint")) continue;
-            
-            final String publishEndpoint = toPublishTemplate.getAccessPoint().getValue();
-            final String publishedEndpoint = publishedTemplate.getAccessPoint().getValue();
-
-            if (EndpointPair.getScheme(publishEndpoint) != EndpointPair.getScheme(publishedEndpoint)) continue;
-
-            //we have a match, copy keys
-            toPublishTemplate.setBindingKey(publishedTemplate.getBindingKey());
-            final CategoryBag publishedCategoryBag = publishedTemplate.getCategoryBag();
-            if(publishedCategoryBag != null){
-                CategoryBag toPublishCategoryBag = toPublishTemplate.getCategoryBag();
-                if(toPublishCategoryBag == null){
-                    toPublishCategoryBag = new CategoryBag();
-                    toPublishTemplate.setCategoryBag(toPublishCategoryBag);
-                }
-
-                synchronizeCategoryBags(toPublishCategoryBag, publishedCategoryBag);
+        //update the tModels
+        for (EndpointPair endpoint : toPublishEndpoints) {
+            if(endpoint.getEndPointUrl().equals(publishEndpoint)){
+                updateWsdlUrl(toPublishBindingAndWsdlPort.left, endpoint.getWsdlUrl());
+                toPublishBindingAndWsdlPort.left.setTModelKey(publishedBindingTModel.getTModelKey());
+                tModelsToKeep.add(publishedBindingTModel.getTModelKey());
+                updateWsdlUrl(toPublishWsdlPortType, endpoint.getWsdlUrl());
+                toPublishWsdlPortType.setTModelKey(publishedPortTypeTModel.getTModelKey());
+                tModelsToKeep.add(publishedPortTypeTModel.getTModelKey());
+                break;
             }
-            updateKeysSoFar.add(publishedTemplate.getBindingKey());
-            //the toPublishTemplate already has the correct endpoint value
-
-            //update the tModels
-            for (EndpointPair endpoint : toPublishEndpoints) {
-                if(endpoint.getEndPointUrl().equals(publishEndpoint)){
-                    updateWsdlUrl(toPublishBindingAndWsdlPort.left, endpoint.getWsdlUrl());
-                    toPublishBindingAndWsdlPort.left.setTModelKey(publishedBindingTModelAndWsdlPort.left.getTModelKey());
-                    tModelsToKeep.add(publishedBindingTModelAndWsdlPort.left.getTModelKey());
-                    updateWsdlUrl(toPublishWsdlPortType, endpoint.getWsdlUrl());
-                    toPublishWsdlPortType.setTModelKey(publishedWsdlPortTModel.getTModelKey());
-                    tModelsToKeep.add(publishedWsdlPortTModel.getTModelKey());
-                    break;
-                }
-            }
-            break;//bindingTemplate and associated tModels have been successfully updated.
         }
         return Collections.unmodifiableSet(tModelsToKeep);
     }
@@ -1618,5 +2040,47 @@ public class BusinessServicePublisher implements Closeable {
         }
 
         return diffList;
+    }
+
+    private List<KeyedReference> getProxyGifMetaData(EndpointPair endpointPair, String mgmtSystemKeyValue) {
+        final List<KeyedReference> keyedReferences = new ArrayList<KeyedReference>();
+        final KeyedReference managedEndpoint = new KeyedReference();
+        managedEndpoint.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_TYPE);
+        managedEndpoint.setKeyName("Management entity type");
+        managedEndpoint.setKeyValue(MANAGED_ENDPOINT);
+        keyedReferences.add(managedEndpoint);
+
+        final KeyedReference managementSystem = new KeyedReference();
+        managementSystem.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_SYSTEM);
+        managementSystem.setKeyName("Management System");
+        managementSystem.setKeyValue(mgmtSystemKeyValue);
+        keyedReferences.add(managementSystem);
+
+        final KeyedReference managementState = new KeyedReference();
+        managementState.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_STATE);
+        managementState.setKeyName("Governance state");
+        managementState.setKeyValue(SYSTINET_STATE_MANAGED);
+        keyedReferences.add(managementState);
+
+        final KeyedReference endPoint = new KeyedReference();
+        endPoint.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_URL);
+        endPoint.setKeyName("URL from AccessPoint");
+        endPoint.setKeyValue(endpointPair.getEndPointUrl());
+        keyedReferences.add(endPoint);
+        return keyedReferences;
+    }
+
+    private List<KeyedReference> getFunctionalEndPointMetaData(final String publishedBindingKey){
+        KeyedReference funcEndpoint = new KeyedReference();
+        funcEndpoint.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_TYPE);
+        funcEndpoint.setKeyName("Management entity type");
+        funcEndpoint.setKeyValue(FUNCTIONAL_ENDPOINT);
+
+        KeyedReference proxyRef = new KeyedReference();
+        proxyRef.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_PROXY_REFERENCE);
+        proxyRef.setKeyName("Proxy reference");
+        proxyRef.setKeyValue(publishedBindingKey);
+
+        return Arrays.asList(funcEndpoint, proxyRef);
     }
 }

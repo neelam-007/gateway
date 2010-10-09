@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.uddi.EndpointPair;
 import com.l7tech.uddi.WsdlPortInfoImpl;
 import com.l7tech.uddi.*;
@@ -80,6 +81,37 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         this.defaultResultRowsMax = resultRowsMax;
     }
 
+    /**
+     * Get a single cluster endpoint pair.
+     * @param scheme
+     * @param serviceOid
+     * @return
+     */
+    public EndpointPair getEndpointForScheme(final UDDIRegistryAdmin.EndpointScheme scheme,
+                                             final long serviceOid){
+        final Map<Long,String> connectorProtocols;
+        synchronized (activeConnectorProtocols) {
+            connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
+        }
+
+        switch (scheme){
+            case HTTP:
+                if(!connectorProtocols.values().contains("HTTP"))
+                    throw new IllegalStateException("Cannot get endpoint for HTTP as no HTTP listener is defined.");
+                return new EndpointPair(
+                        doGetExternalUrlForService(serviceOid, false),
+                        doGetExternalWsdlUrlForService(serviceOid, false));
+            case HTTPS:
+                if(!connectorProtocols.values().contains("HTTPS"))
+                    throw new IllegalStateException("Cannot get endpoint for HTTPS as no HTTPS listener is defined.");
+                return new EndpointPair(
+                        doGetExternalUrlForService(serviceOid, true),
+                        doGetExternalWsdlUrlForService(serviceOid, false));
+            default:
+                throw new IllegalStateException("Unknown scheme: " + scheme.toString());
+
+        }
+    }
     /**
      * For a cluster, this should return a pair for each configured http(s) listener configured on the cluster.
      *

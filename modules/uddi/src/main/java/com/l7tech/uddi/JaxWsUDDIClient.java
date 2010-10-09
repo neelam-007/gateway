@@ -49,7 +49,15 @@ interface JaxWsUDDIClient {
      * @param bindingTemplate BindingTemplate to save. It's bindingKey will be set after the save. Required
      * @throws UDDIException any UDDI problems
      */
-    public void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
+    void publishBindingTemplate(final BindingTemplate bindingTemplate) throws UDDIException;
+
+    /**
+     * Publish a list of BindingTemplates to UDDI. All BindingTemplates will be saved in the same publish operation.
+     *
+     * @param bindingTemplates
+     * @throws UDDIException
+     */
+    void publishBindingTemplate(final List<BindingTemplate> bindingTemplates) throws UDDIException;
 
     /**
      * Publish a tModel.

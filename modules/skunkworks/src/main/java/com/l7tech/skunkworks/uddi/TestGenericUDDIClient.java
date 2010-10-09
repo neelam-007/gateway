@@ -23,7 +23,6 @@ import java.util.logging.LogManager;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
-import java.util.logging.Logger;
 
 import junit.framework.Assert;
 
@@ -436,6 +435,375 @@ public class TestGenericUDDIClient {
 
     }
 
+    /**
+     * Publish according to GIF. In this test the proxied bindingTemplate reuses the tModels already published.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testCorrectPublishOfGifProxyBindingTemplate() throws Exception{
+        UDDIPolicyTool uddiSupport = new UDDIPolicyTool();
+
+        final BusinessService origService = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+        final BusinessService backup = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+
+        Throwable t = null;
+        try {
+            publishGifTemplate(origService, false, null, true);
+
+            SaveService saveService = new SaveService();
+            saveService.setAuthInfo(uddiSupport.authToken());
+            saveService.getBusinessService().add(origService);
+            uddiSupport.getPublishPort().saveService(saveService);
+
+        } catch (DispositionReportFaultMessage e) {
+            e.printStackTrace();
+            final List<Result> results = e.getFaultInfo().getResult();
+            for (Result result : results) {
+                System.out.println("Error: " + result.getErrInfo().getValue());
+            }
+
+            t = e;
+        } finally {
+//            Rollback changes
+            if(t == null){
+                SaveService saveService = new SaveService();
+                saveService.setAuthInfo(uddiSupport.authToken());
+                saveService.getBusinessService().add(backup);
+                uddiSupport.getPublishPort().saveService(saveService);
+            }
+        }
+    }
+
+    /**
+     * Publish according to GIF. In this test the proxied bindingTemplate publisheds new tModels, as this is what
+     * the SSG would do
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testCorrectPublishOfGifProxyBindingTemplateNewTModels() throws Exception{
+        UDDIPolicyTool uddiSupport = new UDDIPolicyTool();
+
+        final BusinessService origService = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+        final BusinessService backup = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+
+        Throwable t = null;
+        try {
+            publishGifTemplate(origService, true, uddiSupport, true);
+
+            SaveService saveService = new SaveService();
+            saveService.setAuthInfo(uddiSupport.authToken());
+            saveService.getBusinessService().add(origService);
+            uddiSupport.getPublishPort().saveService(saveService);
+
+        } catch (DispositionReportFaultMessage e) {
+            e.printStackTrace();
+            final List<Result> results = e.getFaultInfo().getResult();
+            for (Result result : results) {
+                System.out.println("Error: " + result.getErrInfo().getValue());
+            }
+
+            t = e;
+        } finally {
+//            Rollback changes
+            if(t == null){
+                SaveService saveService = new SaveService();
+                saveService.setAuthInfo(uddiSupport.authToken());
+                saveService.getBusinessService().add(backup);
+                uddiSupport.getPublishPort().saveService(saveService);
+            }
+        }
+    }
+
+    /**
+     * Publishes according to GIF but omits references to a WSMS as that requires an out of band publish and knowledge
+     * of the resulting serviceKey.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testSystinetNoOutOfBandInformation() throws Exception{
+        UDDIPolicyTool uddiSupport = new UDDIPolicyTool();
+
+        final BusinessService origService = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+        final BusinessService backup = getBusinessService(uddiSupport, "uddi:9cfc3550-e44e-11de-a428-25a7e540a3f8");
+
+        Throwable t = null;
+        try {
+            publishGifTemplate(origService, true, uddiSupport, false);
+
+            SaveService saveService = new SaveService();
+            saveService.setAuthInfo(uddiSupport.authToken());
+            saveService.getBusinessService().add(origService);
+            uddiSupport.getPublishPort().saveService(saveService);
+
+        } catch (DispositionReportFaultMessage e) {
+            e.printStackTrace();
+            final List<Result> results = e.getFaultInfo().getResult();
+            for (Result result : results) {
+                System.out.println("Error: " + result.getErrInfo().getValue());
+            }
+
+            t = e;
+        } finally {
+//            Rollback changes
+            if(t == null){
+                SaveService saveService = new SaveService();
+                saveService.setAuthInfo(uddiSupport.authToken());
+                saveService.getBusinessService().add(backup);
+                uddiSupport.getPublishPort().saveService(saveService);
+            }
+        }
+    }
+
+    @Test
+    public void testDeleteGifEndpoint() throws Exception{
+        UDDIPolicyTool uddiSupport = new UDDIPolicyTool();
+
+        final BusinessService origService = getBusinessService(uddiSupport, "uddi:b89ebbe0-d19f-11df-a330-7bda57c0a325");
+        final BusinessService backup = getBusinessService(uddiSupport, "uddi:b89ebbe0-d19f-11df-a330-7bda57c0a325");
+
+        Map<String, BindingTemplate> keyToTemplate = new HashMap<String, BindingTemplate>();
+        final List<BindingTemplate> templates = origService.getBindingTemplates().getBindingTemplate();
+        for (BindingTemplate template : templates) {
+            keyToTemplate.put(template.getBindingKey(), template);
+        }
+
+        Throwable t = null;
+        try {
+
+            final BindingTemplate proxyTemplate = keyToTemplate.get("uddi:b89f7f30-d19f-11df-a330-7bda57c0a325");
+            final BindingTemplate functionalTemplate = keyToTemplate.get("uddi:166bf2b0-d1a0-11df-a331-7bda57c0a325");
+
+            final String proxyKey = proxyTemplate.getBindingKey();
+
+            //give the functional back it's original key
+            functionalTemplate.setBindingKey(proxyKey);
+            //remove the added meta data
+            final List<KeyedReference> funcRefs = functionalTemplate.getCategoryBag().getKeyedReference();
+            for (int i = funcRefs.size() - 1; i >= 0; i--) {
+                KeyedReference funcRef = funcRefs.get(i);
+                final String modelKey = funcRef.getTModelKey();
+                if(modelKey.equals(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_TYPE) ||
+                        modelKey.equals(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_PROXY_REFERENCE)){
+                    funcRefs.remove(i);
+                }
+            }
+
+            //Save the functional key and see how UDDI looks
+
+            SaveBinding saveBinding = new SaveBinding();
+            saveBinding.setAuthInfo(uddiSupport.authToken());
+            saveBinding.getBindingTemplate().add(functionalTemplate);
+            uddiSupport.getPublishPort().saveBinding(saveBinding);
+
+            DeleteBinding deleteBinding = new DeleteBinding();
+            deleteBinding.setAuthInfo(uddiSupport.authToken());
+            deleteBinding.getBindingKey().add("uddi:166bf2b0-d1a0-11df-a331-7bda57c0a325");
+
+
+        } catch (DispositionReportFaultMessage e) {
+            e.printStackTrace();
+            final List<Result> results = e.getFaultInfo().getResult();
+            for (Result result : results) {
+                System.out.println("Error: " + result.getErrInfo().getValue());
+            }
+
+            t = e;
+        } finally {
+//            Rollback changes
+            if(t == null){
+                SaveService saveService = new SaveService();
+                saveService.setAuthInfo(uddiSupport.authToken());
+                saveService.getBusinessService().add(backup);
+                uddiSupport.getPublishPort().saveService(saveService);
+            }
+        }
+    }
+
+    private void publishGifTemplate(BusinessService origService, boolean publishNewTModels, UDDISupport uddiSupport, boolean publishWsmsServiceMetaData) throws Exception {
+        Assert.assertNotNull(origService);
+
+        //Get the binding to take over
+        final BindingTemplates bts = origService.getBindingTemplates();
+        BindingTemplate origTemplate = null;
+        for (BindingTemplate bt : bts.getBindingTemplate()) {
+            if(bt.getBindingKey().equals("uddi:9cfc8370-e44e-11de-a428-25a7e540a3f8")){
+                origTemplate = bt;
+                break;
+            }
+        }
+
+        //Create the new BindingTemplate
+        BindingTemplate proxy = new BindingTemplate();
+        //swap keys
+        final String origBindingKey = origTemplate.getBindingKey();
+        proxy.setBindingKey(origBindingKey);
+        proxy.setServiceKey(origTemplate.getServiceKey());
+        origTemplate.setBindingKey(null);
+        origService.getBindingTemplates().getBindingTemplate().add(proxy);
+
+        //Reuse tmodel instance info - as the related tModels can be reused
+        final String ssgURl = "https://irishman.l7tech.com:8443/service/28246017";
+        AccessPoint accessPoint = new AccessPoint();
+        accessPoint.setValue(ssgURl);
+        accessPoint.setUseType("endPoint");
+        proxy.setAccessPoint(accessPoint);
+
+        final TModelInstanceDetails modelInstanceDetails = origTemplate.getTModelInstanceDetails();
+        if (publishNewTModels) {
+            final List<TModelInstanceInfo> tModelInstanceInfo = modelInstanceDetails.getTModelInstanceInfo();
+            TModel portType = null;
+            TModel bindingType = null;
+
+            for (TModelInstanceInfo modelInstanceInfo : tModelInstanceInfo) {
+                final String tModelKey = modelInstanceInfo.getTModelKey();
+                GetTModelDetail getTModelDetail = new GetTModelDetail();
+                getTModelDetail.getTModelKey().add(tModelKey);
+                try {
+                    final TModelDetail modelDetail = uddiSupport.getInquirePort().getTModelDetail(getTModelDetail);
+                    final TModel model = modelDetail.getTModel().get(0);
+                    final UDDIUtilities.TMODEL_TYPE tModelType = UDDIUtilities.getTModelType(model, true);
+                    switch (tModelType) {
+                        case WSDL_BINDING:
+                            bindingType = model;
+                            break;
+                        case WSDL_PORT_TYPE:
+                            portType = model;
+                            break;
+                    }
+                } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+                    final List<Result> result = dispositionReportFaultMessage.getFaultInfo().getResult();
+                    for (Result result1 : result) {
+                        System.out.println("Error Info: " + result1.getErrInfo().getValue());
+                    }
+                    throw dispositionReportFaultMessage;
+                }
+            }
+
+            if (bindingType == null || portType == null) {
+                throw new IllegalStateException("bindingType and portType tModels must be found");
+            }
+
+            Map<String, TModel> oldKeyToModel = new HashMap<String, TModel>();
+            oldKeyToModel.put(portType.getTModelKey(), portType);
+            oldKeyToModel.put(bindingType.getTModelKey(), bindingType);
+
+            //publish the portType
+            portType.setTModelKey(null);
+            final String portTypeKey = saveTModel(uddiSupport, portType);
+            portType.setTModelKey(portTypeKey);
+
+            final List<KeyedReference> references = bindingType.getCategoryBag().getKeyedReference();
+            boolean found = false;
+            for (KeyedReference reference : references) {
+                if (reference.getTModelKey().equals("uddi:uddi.org:wsdl:portTypeReference")) {
+                    reference.setKeyValue(portTypeKey);
+                    found = true;
+                }
+            }
+            if (!found) throw new IllegalStateException("portTypeReference keyedReference not found");
+
+            bindingType.setTModelKey(null);
+            final String bindingKey = saveTModel(uddiSupport, bindingType);
+            bindingType.setTModelKey(bindingKey);
+
+            //Update the tmodel instance info's
+            for (TModelInstanceInfo modelInstanceInfo : tModelInstanceInfo) {
+                final String modelKey = modelInstanceInfo.getTModelKey();
+                final TModel model = oldKeyToModel.get(modelKey);
+                modelInstanceInfo.setTModelKey(model.getTModelKey());
+            }
+        }
+
+        proxy.setTModelInstanceDetails(modelInstanceDetails);
+        //Proxy required steps
+        final CategoryBag categoryBag = new CategoryBag();
+        proxy.setCategoryBag(categoryBag);
+        //add all existing keyed references
+        final List<KeyedReference> keyedReferences = categoryBag.getKeyedReference();
+        final List<KeyedReference> origReferences = origTemplate.getCategoryBag().getKeyedReference();
+        keyedReferences.addAll(origReferences);
+
+        KeyedReference managedEndpoint = new KeyedReference();
+        managedEndpoint.setTModelKey(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_TYPE);
+        managedEndpoint.setKeyName("Management entity type");
+        managedEndpoint.setKeyValue(BusinessServicePublisher.MANAGED_ENDPOINT);
+        keyedReferences.add(managedEndpoint);
+
+        KeyedReference managementSystem = new KeyedReference();
+        managementSystem.setTModelKey(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_SYSTEM);
+        managementSystem.setKeyName("Management System");
+        managementSystem.setKeyValue("Layer7 WSMS");
+        keyedReferences.add(managementSystem);
+
+        KeyedReference managementState = new KeyedReference();
+        managementState.setTModelKey(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_STATE);
+        managementState.setKeyName("Governance state");
+        managementState.setKeyValue("managed");
+        keyedReferences.add(managementState);
+
+        if(publishWsmsServiceMetaData){
+            KeyedReference serverReference = new KeyedReference();
+            serverReference.setTModelKey("uddi:systinet.com:management:server-reference");
+            serverReference.setKeyName("Reference to management server");
+            serverReference.setKeyValue("uddi:923c2ea0-c4d5-11df-a326-7bda57c0a325");
+            keyedReferences.add(serverReference);
+        }
+
+        KeyedReference endPoint = new KeyedReference();
+        endPoint.setTModelKey("uddi:systinet.com:management:url");
+        endPoint.setKeyName("URL from AccessPoint");
+        endPoint.setKeyValue(ssgURl);
+        keyedReferences.add(endPoint);
+
+        //functional endpoint required steps
+        KeyedReference funcEndpoint = new KeyedReference();
+        funcEndpoint.setTModelKey(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_TYPE);
+        funcEndpoint.setKeyName("Management entity type");
+        funcEndpoint.setKeyValue(BusinessServicePublisher.FUNCTIONAL_ENDPOINT);
+        origReferences.add(funcEndpoint);
+
+        KeyedReference proxyRef = new KeyedReference();
+        proxyRef.setTModelKey(BusinessServicePublisher.UDDI_SYSTINET_COM_MANAGEMENT_PROXY_REFERENCE);
+        proxyRef.setKeyName("Proxy reference");
+        proxyRef.setKeyValue(origBindingKey);
+        origReferences.add(proxyRef);
+    }
+
+    private String saveTModel(UDDISupport uddiSupport, TModel tModelToSave) throws Exception{
+        SaveTModel saveTModel = new SaveTModel();
+        saveTModel.setAuthInfo(uddiSupport.authToken());
+        saveTModel.getTModel().add(tModelToSave);
+        try {
+            final TModelDetail modelDetail = uddiSupport.getPublishPort().saveTModel(saveTModel);
+            final String portTypeKey = modelDetail.getTModel().get(0).getTModelKey();
+            return portTypeKey;
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            final List<Result> results = dispositionReportFaultMessage.getFaultInfo().getResult();
+            for (Result result : results) {
+                System.out.println("Error: " + result.getErrInfo().getValue());
+            }
+            throw new Exception("Could not publish tModel");
+        }
+
+    }
+
+    private BusinessService getBusinessService(UDDIPolicyTool uddiSupport, String serviceKey) throws Exception{
+        GetServiceDetail getServiceDetail = new GetServiceDetail();
+        getServiceDetail.getServiceKey().add(serviceKey);
+        try {
+            final ServiceDetail serviceDetail = uddiSupport.getInquirePort().getServiceDetail(getServiceDetail);
+            return serviceDetail.getBusinessService().get(0);
+        } catch (DispositionReportFaultMessage dispositionReportFaultMessage) {
+            final List<Result> result = dispositionReportFaultMessage.getFaultInfo().getResult();
+            for (Result result1 : result) {
+                System.out.println("Result: " + result1.getErrInfo().getValue());
+            }
+            throw dispositionReportFaultMessage;
+        }
+    }
 
     private static void initializeLogging() {
         final LogManager logManager = LogManager.getLogManager();
@@ -471,23 +839,23 @@ public class TestGenericUDDIClient {
 //                        "7layer",
 //                        PolicyAttachmentVersion.v1_2/*not important here*/, null, false){};
 
-        return new GenericUDDIClient("http://activesoa:53307/UddiRegistry/inquiry",
-                        "http://activesoa:53307/UddiRegistry/publish",
-                        null,
-                        "http://activesoa:53307/UddiRegistry/security",
-                        "administrator",
-                        "7layer",
-                        PolicyAttachmentVersion.v1_2/*not important here*/, null, false){};
-
-//        return new GenericUDDIClient("http://systinet.l7tech.com:8080/uddi/inquiry",
-//                        "http://systinet.l7tech.com:8080/uddi/publishing",
+//        return new GenericUDDIClient("http://activesoa:53307/UddiRegistry/inquiry",
+//                        "http://activesoa:53307/UddiRegistry/publish",
 //                        null,
-//                        "http://systinet.l7tech.com:8080/uddi/security",
-//                        "admin",
+//                        "http://activesoa:53307/UddiRegistry/security",
+//                        "administrator",
 //                        "7layer",
-//                        PolicyAttachmentVersion.v1_2/*not important here*/,
-//                        null,
-//                        true){};
+//                        PolicyAttachmentVersion.v1_2/*not important here*/, null, false){};
+
+        return new GenericUDDIClient("http://systinet.l7tech.com:8080/uddi/inquiry",
+                        "http://systinet.l7tech.com:8080/uddi/publishing",
+                        null,
+                        "http://systinet.l7tech.com:8080/uddi/security",
+                        "admin",
+                        "7layer",
+                        PolicyAttachmentVersion.v1_2/*not important here*/,
+                        null,
+                        true){};
 
 //        return new GenericUDDIClient("http://centrasiteuddi:53307/UddiRegistry/inquiry",
 //                        "http://centrasiteuddi:53307/UddiRegistry/publish",

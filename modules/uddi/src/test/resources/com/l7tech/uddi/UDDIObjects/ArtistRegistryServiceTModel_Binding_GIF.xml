@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" tModelKey="uddi:ef16ff47-c66e-4cd1-bb0c-f84846c8afd4">
+    <ns4:name>YessoTestWebServicesPortBinding</ns4:name>
+    <ns4:overviewDoc>
+        <ns4:description>the original WSDL document</ns4:description>
+        <ns4:overviewURL useType="wsdlInterface">http://ssghost:8080/3828382?wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:overviewDoc>
+        <ns4:description>Technical Note &quot;Using WSDL in a UDDI Registry, Version 2.0.2&quot;</ns4:description>
+        <ns4:overviewURL useType="text">http://www.oasis-open.org/committees/uddi-spec/doc/tn/uddi-spec-tc-tn-wsdl-v202-20040631.htm</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:categoryBag>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:types" keyValue="binding"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:porttypereference" keyName="portType reference" keyValue="uddi:5b3ffd40-b8ad-4965-9d51-292d6a966476"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:categorization:types" keyValue="wsdlSpec"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:xml:namespace" keyName="binding namespace" keyValue="http://samples.soamoa.yesso.eu/"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:categorization:protocol" keyName="SOAP protocol" keyValue="uddi:uddi.org:protocol:soap"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:categorization:transport" keyName="HTTP transport" keyValue="uddi:uddi.org:transport:http"/>
+    </ns4:categoryBag>
+</TModel>

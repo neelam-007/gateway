@@ -454,7 +454,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void publishGatewayEndpoint(PublishedService publishedService, boolean removeOthers) throws FindException, SaveException, UDDIRegistryNotEnabledException {
+    public void publishGatewayEndpoint(final PublishedService publishedService,
+                                       final boolean removeOthers)
+            throws FindException, SaveException, UDDIRegistryNotEnabledException {
         if(publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
 
         final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
@@ -480,6 +482,34 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
         //the save event is picked up by the UDDICoordinator, which does the UDDI work
+    }
+
+    @Override
+    public void publishGatewayEndpointGif(final PublishedService publishedService,
+                                          final EndpointScheme scheme)
+            throws FindException, SaveException, UDDIRegistryNotEnabledException {
+        if(publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
+
+        final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
+        if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
+
+        final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
+        if(serviceControl == null) throw new SaveException("PublishedService with id #("+ publishedService +") was not created from UDDI (record may have been deleted)");
+
+        final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
+        if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
+        throwIfGatewayNotEnabled(uddiRegistry);
+
+        final String wsdlHash = getWsdlHash(service);
+
+        final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getGifEndPointPublishInfo(service.getOid(),
+                uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
+                wsdlHash, scheme);
+
+        final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
+        final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
+        uddiPublishStatusManager.save(newStatus);
+        //the save event is picked up by the UDDICoordinator, which does the UDDI work.
     }
 
     @Override
@@ -569,7 +599,7 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         uddiPublishStatusManager.update(uddiPublishStatus);
     }
 
-    private void throwIfGatewayNotEnabled(UDDIRegistry uddiRegistry) throws UDDIRegistryNotEnabledException {
+    private void throwIfGatewayNotEnabled(UDDIRegistry uddiRegistry) throws UDDIRegistryNotEnabledException {//todo rename
         if(!uddiRegistry.isEnabled())
             throw new UDDIRegistryNotEnabledException("UDDIRegistry with id #(" + uddiRegistry.getOid() + ") is not enabled");
     }

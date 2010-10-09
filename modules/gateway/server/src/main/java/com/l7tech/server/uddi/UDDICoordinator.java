@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.uddi.*;
@@ -448,7 +449,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     }
 
     /**
-     * Goes thorugh all UDDIProxiedServiceInfo entities, and creates events to publish for events which are
+     * Goes through all UDDIProxiedServiceInfo entities, and creates events to publish for events which are
      * waiting to publish, or those which have either failed to publish or to delete
      *
      * Note: this will retry tasks which are in the 'PUBLISH' state.
@@ -498,8 +499,25 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(serviceInfo.getOid());
             if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED){
 
-                final Set<EndpointPair> allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
+                final Set<EndpointPair> allEndpointPairs;
+                final Boolean isGif = serviceInfo.getProperty(UDDIProxiedServiceInfo.IS_GIF);
+                if(isGif != null && isGif){
+                    UDDIRegistryAdmin.EndpointScheme endpointScheme = serviceInfo.getProperty(UDDIProxiedServiceInfo.GIF_SCHEME);
+                    if(endpointScheme == null){
+                        //should never happen if invariants of properties are maintained. Putting here to avoid a
+                        //null pointer in the off chance the db is corrupted or there is a programming error.
+                        logger.log(Level.WARNING, "Could not find endpoint type for GIF published endpoint for " +
+                                "published service #("+serviceInfo.getPublishedServiceOid()+"). ");
+                        continue;
+                    }
+                    final EndpointPair endPointPair = uddiHelper.getEndpointForScheme(endpointScheme, serviceInfo.getPublishedServiceOid());
+                    allEndpointPairs = new HashSet<EndpointPair>(Arrays.asList(endPointPair));
+                } else {
+                    allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
+                }
+
                 final Set<EndpointPair> persistedEndpoints = serviceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
+
                 if(!allEndpointPairs.equals(persistedEndpoints)){
                     logger.log(Level.INFO, "Setting service #(" + serviceInfo.getPublishedServiceOid()+") to republish to UDDI following change to external endpoints");
                     publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);

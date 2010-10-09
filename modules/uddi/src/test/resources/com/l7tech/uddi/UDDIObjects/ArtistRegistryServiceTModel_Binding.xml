@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TModel xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" tModelKey="uddi:acfedc40-d229-11df-a331-7bda57c0a325" deleted="false">
+    <ns4:name>YessoTestWebServicesPortBinding</ns4:name>
+    <ns4:description>wsdl:type representing binding</ns4:description>
+    <ns4:overviewDoc>
+        <ns4:overviewURL useType="wsdlInterface">http://irishman:8152/artistregistry.wsdl</ns4:overviewURL>
+    </ns4:overviewDoc>
+    <ns4:categoryBag>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:xml:namespace" keyName="uddi.org:xml:namespace" keyValue="http://samples.soamoa.yesso.eu/"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:types" keyName="uddi.org:wsdl:types" keyValue="binding"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:categorization:types" keyName="Specification for a Web Service described in WSDL" keyValue="wsdlSpec"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:portTypeReference" keyName="uddi.org:wsdl:portTypeReference" keyValue="uddi:acdfe290-d229-11df-a331-7bda57c0a325"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:categorization:protocol" keyName="uddi-org:wsdl:categorization:protocol" keyValue="uddi:uddi.org:protocol:soap"/>
+        <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:categorization:transport" keyName="uddi-org:wsdl:categorization:transport" keyValue="uddi:uddi.org:transport:http"/>
+    </ns4:categoryBag>
+</TModel>
