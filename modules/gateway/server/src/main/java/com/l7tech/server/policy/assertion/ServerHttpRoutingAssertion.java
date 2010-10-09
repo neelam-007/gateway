@@ -115,8 +115,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             protectedServiceUrl = null;
         }
 
+        hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        SignerInfo signerInfo;
+        SSLSocketFactory sslSocketFactory;
         try {
-            final SignerInfo signerInfo;
             signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);
 
             final KeyManager[] keyManagers;
@@ -131,16 +133,19 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
-            hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
             final int timeout = SyspropUtil.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
-            socketFactory = sslContext.getSocketFactory();
-            senderVouchesSignerInfo = signerInfo;
+            sslSocketFactory = sslContext.getSocketFactory();
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
-            throw new RuntimeException(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to initialize SSL context: " + ExceptionUtils.getMessage(e), null);
+            signerInfo = null;
+            sslSocketFactory = null;
         }
+        this.senderVouchesSignerInfo = signerInfo;
+        this.socketFactory = sslSocketFactory;
 
         httpClientFactory = makeHttpClientFactory();
 
