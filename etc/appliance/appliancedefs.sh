@@ -43,6 +43,9 @@ SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 NODE_OPTS="-Xmx${java_ram}k -Xss256k -XX:+UseParallelOldGC"
 [ "${jvmarch}" == "x86_64" ] && NODE_OPTS="$NODE_OPTS -XX:+UseCompressedOops"
 
+# Reserve ports 7001 and 7100 on the appliance
+NODE_OPTS="$NODE_OPTS -Dcom.l7tech.server.transport.reservedPorts=7001,7100"
+
 export SSG_JAVA_HOME
 export NODE_OPTS
 export PATH

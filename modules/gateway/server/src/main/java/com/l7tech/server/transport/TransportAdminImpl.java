@@ -1,5 +1,7 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
@@ -132,5 +134,10 @@ public class TransportAdminImpl implements TransportAdmin {
     @Override
     public TransportDescriptor[] getModularConnectorInfo() {
         return connectorManager.getTransportProtocols();
+    }
+
+    @Override
+    public PortRanges getReservedPorts() {
+        return connectorManager.getReservedPorts();
     }
 }

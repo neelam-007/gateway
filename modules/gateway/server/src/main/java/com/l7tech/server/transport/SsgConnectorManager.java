@@ -1,9 +1,13 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
+
+import java.util.Collection;
 
 /**
  * Interface that provides the ability to do CRUD operations on SsgConnector rows in the database.
@@ -46,4 +50,11 @@ public interface SsgConnectorManager extends EntityManager<SsgConnector, EntityH
      * @return an array of protocols, ie { "http", "https", "ftp", "ftps", "l7.raw.tcp", "l7.raw.udp" }.  Never null.
      */
     TransportDescriptor[] getTransportProtocols();
+
+    /**
+     * Get the list of port ranges that are reserved for system use and that cannot be bound by SsgConnector instances.
+     *
+     * @return a Collection of PortRange instances covering ports that are reserved for system use.  Never null, but may be empty.
+     */
+    PortRanges getReservedPorts();
 }

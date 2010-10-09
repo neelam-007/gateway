@@ -1,8 +1,9 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.Pair;
+
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -72,12 +73,14 @@ public class PortRange implements Serializable, PortOwner {
         return right == null || left == null || left.equals(right);
     }
 
+    @Override
     public boolean isPortUsed(int port, boolean udp, String otherDevice) {
         return udp == this.udp &&
                devicesOverlap(getDevice(), otherDevice) &&
                port >= portStart && port <= portEnd;
     }
 
+    @Override
     public boolean isOverlapping(PortRange other) {
         return isUdp() == other.isUdp() &&
                devicesOverlap(getDevice(), other.getDevice()) &&
@@ -85,6 +88,38 @@ public class PortRange implements Serializable, PortOwner {
                other.getPortStart() <= getPortEnd();
     }
 
+    @Override
+    public Pair<PortRange, PortRange> getFirstOverlappingPortRange(PortOwner owner) {
+        for (PortRange range : owner.getUsedPorts()) {
+            if (isOverlapping(range))
+                return new Pair<PortRange, PortRange>(this, range);
+        }
+        return null;
+    }
+
+    /**
+     * Utility method for checking for conflicts between a pair of PortOwner instances.
+     * <p/>
+     * Performance note: if one of the PortOwners is known to have an exceptionally fast (or constant) implementation
+     * of {@link com.l7tech.common.io.PortOwner#getUsedPorts()}, pass it as thisOwner if possible, as it is the one
+     * that is invoked in the inner loop.
+     *
+     * @param thisOwner  the left-hand owner, typically the proximate one.  Required.
+     * @param otherOwner the right-hand owner, typically the distal one.  Required.
+     * @return null if there are no conflicts; otherwise, a Pair describing the first conflict, with the left item being the range from the left-hand owner,
+     *         and the right item being the conflicting range from the right-hand owner.
+     */
+    public static Pair<PortRange, PortRange> getFirstOverlappingPortRange(PortOwner thisOwner, PortOwner otherOwner) {
+        for (PortRange otherRange : otherOwner.getUsedPorts()) {
+            for (PortRange thisRange : thisOwner.getUsedPorts()) {
+                if (thisRange.isOverlapping(otherRange))
+                    return new Pair<PortRange, PortRange>(thisRange, otherRange);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public List<PortRange> getUsedPorts() {
         return Arrays.asList(this);
     }
@@ -93,53 +128,7 @@ public class PortRange implements Serializable, PortOwner {
         return portStart == portEnd;
     }
 
-    /**
-     * Check if the specified port is in use by any of the specified port owners.
-     *
-     * @param owners the owners to check.  Required.
-     * @param port   the port to check.
-     * @param udp    whether the port to check is a UDP port.
-     * @param device the device to match, or null to match any device.
-     * @return true if the specified port is in use in the specified collection of owners.
-     */
-    public static boolean isPortUsed(Collection<? extends PortOwner> owners, int port, boolean udp, String device) {
-        for (PortOwner owner : owners) {
-            if (owner.isPortUsed(port, udp, device))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if any of the specified port owners have claimed any port in the specified range.
-     *
-     * @param owners  a list of port owners to check.  Required.
-     * @param range   a port range to check.  Required.
-     * @return true iff. any port owner claims any port from range
-     */
-    public static boolean isOverlapping(Collection<? extends PortOwner> owners, PortRange range) {
-        for (PortOwner owner : owners) {
-            if (owner.isOverlapping(range))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if any of the specified port owners have claimed any port in any of the specified ranges.
-     *
-     * @param owners  a list of port owners to check.  Required.
-     * @param ranges  a list of port ranges to check.  Required.
-     * @return true iff. any port owner claims any port from any range
-     */
-    public static boolean isOverlapping(Collection<? extends PortOwner> owners, Collection<? extends PortRange> ranges) {
-        for (PortRange range : ranges) {
-            if (isOverlapping(owners, range))
-                return true;
-        }
-        return false;
-    }
-
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -155,6 +144,7 @@ public class PortRange implements Serializable, PortOwner {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = portStart;
@@ -164,6 +154,7 @@ public class PortRange implements Serializable, PortOwner {
         return result;
     }
 
+    @Override
     public String toString() {
         return "[PortRange " + (udp ? "UDP " : "TCP ") + (device == null ? "" : device + " ") + portStart + "-" + portEnd + "]"; 
     }

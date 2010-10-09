@@ -1,6 +1,8 @@
 package com.l7tech.server.transport;
 
 import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -14,10 +16,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.FirewallUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -45,6 +44,7 @@ public class SsgConnectorManagerImpl
         implements SsgConnectorManager, InitializingBean, DisposableBean, PropertyChangeListener, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
+    private static final String PROP_RESERVED_PORTS = "com.l7tech.server.transport.reservedPorts";
 
     private final ServerConfig serverConfig;
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
@@ -222,6 +222,30 @@ public class SsgConnectorManagerImpl
             ret.add(pair.left);
         }
         return ret.toArray(new TransportDescriptor[ret.size()]);
+    }
+
+    @Override
+    public PortRanges getReservedPorts() {
+        Collection<PortRange> ret = new ArrayList<PortRange>();
+
+        String portsStr = SyspropUtil.getString(PROP_RESERVED_PORTS, null);
+        if (portsStr != null) {
+            String[] ranges = portsStr.split(",");
+            for (String range : ranges) {
+                String[] begend = range.split("\\-", 2);
+                if (begend.length > 0) {
+                    try {
+                        int low = Integer.parseInt(begend[0]);
+                        int high = begend.length < 2 ? low : Integer.parseInt(begend[1]);
+                        ret.add(new PortRange(low, high, false));
+                    } catch (IllegalArgumentException e) {
+                        logger.log(Level.WARNING, "Ignoring invalid range in " + PROP_RESERVED_PORTS);
+                    }
+                }
+            }
+        }
+
+        return new PortRanges(ret);
     }
 
     protected boolean looksLikeInterfaceTagName(String maybeTagname) {

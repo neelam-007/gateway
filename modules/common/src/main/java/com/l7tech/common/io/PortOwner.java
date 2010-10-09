@@ -1,5 +1,7 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.Pair;
+
 import java.util.List;
 
 /**
@@ -23,6 +25,14 @@ public interface PortOwner {
      * @return true if the specified range overlaps with this range.
      */
     boolean isOverlapping(PortRange range);
+
+    /**
+     * Check if any port in any of the specified PortOwner's ranges is claimed by this PortOwner.
+     *
+     * @param owner the other PortOwner to check against.  Required.
+     * @return null if there is no overlap.  Otherwise, a Pair describing the first conflict we saw, with this PortOwner's range as the left item and the other PortOwner's range as the right.
+     */
+    Pair<PortRange, PortRange> getFirstOverlappingPortRange(PortOwner owner);
 
     /**
      * Get all ports claimed by this PortOwner.

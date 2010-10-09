@@ -1,20 +1,16 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Triple;
 import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -42,14 +38,10 @@ public class SsgConnectorManagerWindow extends JDialog {
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
+    private PortRanges reservedPorts;
 
 
-    public SsgConnectorManagerWindow(Frame owner) {
-        super(owner, "Manage Listen Ports");
-        initialize();
-    }
-
-    public SsgConnectorManagerWindow(Dialog owner) {
+    public SsgConnectorManagerWindow(Window owner) {
         super(owner, "Manage Listen Ports");
         initialize();
     }
@@ -78,7 +70,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         connectorTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                reportConflicts();
                 enableOrDisableButtons();
             }
         });
@@ -122,13 +113,11 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         Utilities.setDoubleClickAction(connectorTable, propertiesButton);
 
+        reservedPorts = Registry.getDefault().getTransportAdmin().getReservedPorts();
+
         loadConnectors();
         pack();
         enableOrDisableButtons();
-    }
-
-    private void reportConflicts() {
-        conflictLabel.setText(connectorTable.getConflictString());
     }
 
     private void doRemove() {
@@ -250,34 +239,45 @@ public class SsgConnectorManagerWindow extends JDialog {
     private boolean warnAboutConflicts(SsgConnector connector) {
         if (connector == null) return false;
 
+        if (reservedPorts != null) {
+            Pair<PortRange, PortRange> conflict = connector.getFirstOverlappingPortRange(reservedPorts);
+            if (null != conflict) {
+                showConflictWarningDialog(conflict.left, conflict.right, "system reserved ports");
+                return true;
+            }
+        }
+
         ConnectorTableModel model = (ConnectorTableModel)connectorTable.getModel();
 
         Pair<PortRange, Pair<SsgConnector, PortRange>> conflict = model.conflictChecking(connector, true);
         if ( null != conflict ) {
-            String conflictMsgLeft = conflict.left.isSinglePort() ?
-                "Port " + conflict.left.getPortStart() :
-                "Port range [" + conflict.left.getPortStart() + ":" + conflict.left.getPortEnd() + "]";
-
-            String conflictMsgRight = conflict.left.isSinglePort() && conflict.right.right.isSinglePort() ? "connector: " + conflict.right.left.getName() :
-                ( conflict.right.right.isSinglePort() ?
-                "port " + conflict.right.right.getPortStart() :
-                "port range [" + conflict.right.right.getPortStart() + ":" + conflict.right.right.getPortEnd() + "]") +
-                " of connector: " + conflict.right.left.getName();
-
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "Port Conflict",
-                conflictMsgLeft + " conflicts with " + conflictMsgRight,
-                null);
-
+            SsgConnector theirConnector = conflict.right.left;
+            String theirName = "connector: " + theirConnector.getName();
+            showConflictWarningDialog(conflict.left, conflict.right.right, theirName);
             return true;
         } else {
             return false;
         }
     }
 
-    /**
-     *
-     */
+    private static void showConflictWarningDialog(PortRange ourRange, PortRange theirRange, String theirName) {
+
+        String conflictMsgLeft = ourRange.isSinglePort() ?
+            "Port " + ourRange.getPortStart() :
+            "Port range [" + ourRange.getPortStart() + ":" + ourRange.getPortEnd() + "]";
+
+        String conflictMsgRight = ourRange.isSinglePort() && theirRange.isSinglePort() ? theirName :
+            ( theirRange.isSinglePort() ?
+            "port " + theirRange.getPortStart() :
+            "port range [" + theirRange.getPortStart() + ":" + theirRange.getPortEnd() + "]") +
+            " of " + theirName;
+
+        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+            "Port Conflict",
+            conflictMsgLeft + " conflicts with " + conflictMsgRight,
+            null);
+    }
+
     private boolean warnAboutFeatures( final SsgConnector originalConnector, final SsgConnector editedConnector ) {
         boolean reedit = false;
 
@@ -319,18 +319,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         return warningMessage;
-    }
-
-    private static String explainConflict(Pair<PortRange, String> conflict) {
-        PortRange range = conflict.left;
-        String displayRange = range.getPortStart() == range.getPortEnd()
-                              ? "The port " + range.getPortStart()
-                              : "The port range from " + range.getPortStart() + " to " + range.getPortEnd();
-
-        String partition = conflict.right;
-        String displayPart = partition == null ? "" : " by the partition \"" + partition + "\"";
-
-        return displayRange + " conflicts with ports already in use" + displayPart + ".";
     }
 
     private void enableOrDisableButtons() {
@@ -380,7 +368,6 @@ public class SsgConnectorManagerWindow extends JDialog {
 
     private static class ConnectorTableRow {
         private final SsgConnector connector;
-        private Pair<PortRange, String> conflict;
 
         public ConnectorTableRow(SsgConnector connector) {
             this.connector = connector;
@@ -388,14 +375,6 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public SsgConnector getConnector() {
             return connector;
-        }
-
-        public Pair<PortRange, String> getConflict() {
-            return conflict;
-        }
-
-        public void setConflict(Pair<PortRange, String> conflict) {
-            this.conflict = conflict;
         }
 
         public Object getEnabled() {
@@ -465,21 +444,6 @@ public class SsgConnectorManagerWindow extends JDialog {
             else
                 getSelectionModel().clearSelection();
         }
-
-        public void flagConflict(Triple<Long, PortRange, String> conflict) {
-            model.flagConflict(conflict);
-        }
-
-        public String getConflictString() {
-            int rowIndex = getSelectedRow();
-            if (rowIndex < 0)
-                return " ";
-            ConnectorTableRow row = model.getRowAt(rowIndex);
-            Pair<PortRange, String> conflict = row.getConflict();
-            if (conflict == null)
-                return " ";
-            return explainConflict(conflict);
-        }
     }
 
     private static class ConnectorTableModel extends AbstractTableModel {
@@ -504,7 +468,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                 return new TableCellRenderer() {
                     private Color defFg;
                     private Color defSelFg;
-                    private Color conflictColor = new Color(128, 0, 0);
 
                     @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -518,14 +481,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                         }
 
                         Component ret = current.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                        boolean conflict = rows.get(row).getConflict() != null;
-
-                        if (isSelected) {
-                            ret.setForeground(conflict ? conflictColor : defSelFg);
-                        } else {
-                            ret.setForeground(conflict ? conflictColor : defFg);
-                        }
+                        ret.setForeground(isSelected ? defSelFg : defFg);
 
                         return ret;
                     }
@@ -643,14 +599,6 @@ public class SsgConnectorManagerWindow extends JDialog {
             return getRowMap().containsKey(oid) ? getRowMap().get(oid) : -1;
         }
 
-        public void flagConflict(Triple<Long, PortRange, String> conflict) {
-            final Long oid = conflict.left;
-            if (!getRowMap().containsKey(oid)) return;
-            int rowIndex = getRowMap().get(oid);
-            rows.get(rowIndex).setConflict(new Pair<PortRange, String>(conflict.middle, conflict.right));
-            fireTableRowsUpdated(rowIndex, rowIndex);
-        }
-
         /**
          * Check if there exists any port same as the port for the given connector and with the same interface.
          *
@@ -668,14 +616,9 @@ public class SsgConnectorManagerWindow extends JDialog {
                         continue;
 
                     SsgConnector maybeConflictingConnector = row.getConnector();
-                    final List<PortRange> usedPorts = maybeConflictingConnector.getUsedPorts();
-                    for (PortRange maybeConflictingRange : usedPorts) {
-                        for(PortRange range : connector.getUsedPorts()) {
-                            if (range.isOverlapping(maybeConflictingRange))
-                                return new Pair<PortRange, Pair<SsgConnector, PortRange>>(
-                                    range,
-                                    new Pair<SsgConnector, PortRange>(maybeConflictingConnector, maybeConflictingRange));
-                        }
+                    Pair<PortRange, PortRange> conflict = connector.getFirstOverlappingPortRange(maybeConflictingConnector);
+                    if (conflict != null) {
+                        return new Pair<PortRange, Pair<SsgConnector, PortRange>>(conflict.left, new Pair<SsgConnector, PortRange>(maybeConflictingConnector, conflict.right));
                     }
                 }
             }

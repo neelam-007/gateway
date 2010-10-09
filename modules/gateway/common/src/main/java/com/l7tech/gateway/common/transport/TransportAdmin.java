@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
@@ -120,5 +121,12 @@ public interface TransportAdmin {
      */
     @Transactional(readOnly=true)
     TransportDescriptor[] getModularConnectorInfo();
+
+    /**
+     * Get the list of port ranges that are reserved for system use and that cannot be bound by SsgConnector instances.
+     *
+     * @return a Collection of PortRange instances covering ports that are reserved for system use.  Never null, but may be empty.
+     */
+    PortRanges getReservedPorts();
 
 }

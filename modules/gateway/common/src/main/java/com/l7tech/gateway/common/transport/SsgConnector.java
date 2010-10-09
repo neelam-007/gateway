@@ -5,6 +5,7 @@ import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.hibernate.annotations.CollectionOfElements;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -610,6 +611,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             return true;
         final PortRange ourRange = getPortRange();
         return ourRange != null && range.isOverlapping(ourRange);
+    }
+
+    @Override
+    public Pair<PortRange, PortRange> getFirstOverlappingPortRange(PortOwner owner) {
+        return PortRange.getFirstOverlappingPortRange(this, owner);
     }
 
     @Override

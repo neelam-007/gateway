@@ -1,5 +1,7 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -45,6 +47,7 @@ import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 
 /**
@@ -260,6 +263,11 @@ public class RegistryStub extends Registry {
             @Override
             public TransportDescriptor[] getModularConnectorInfo() {
                 return new TransportDescriptor[0];
+            }
+
+            @Override
+            public PortRanges getReservedPorts() {
+                return new PortRanges(null);
             }
         };
     }
