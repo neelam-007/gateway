@@ -72,6 +72,7 @@ public class EditPolicyAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Active Policy Assertions";
     }
@@ -79,6 +80,7 @@ public class EditPolicyAction extends NodeAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return service ? "Edit Web service policy assertions" : " Edit policy assertions";
     }
@@ -86,6 +88,7 @@ public class EditPolicyAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/policy16.gif";
     }
@@ -97,6 +100,7 @@ public class EditPolicyAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode)node;
         try {
@@ -113,12 +117,14 @@ public class EditPolicyAction extends NodeAction {
             topComponents.unregisterComponent(PolicyTree.NAME);
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
+            Assertion startingAssertion = null;
             boolean startsDirty = false;
             try {
                 final Policy policy = policyNode.getPolicy();
                 if (policy != null && policy.isDisabled()) {
                     startsDirty = true;
-                    if (findStartingAssertion(policy) == null) {
+                    startingAssertion = findStartingAssertion(policy);
+                    if ( startingAssertion == null ) {
                         new HomeAction().actionPerformed(null);
                         return;
                     }
@@ -137,7 +143,9 @@ public class EditPolicyAction extends NodeAction {
                 return;
             }
 
+            final Assertion startingPolicyAssertion = startingAssertion;
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
+                @Override
                 public EntityWithPolicyNode getPolicyNode() {return policyNode;}
 
                 private Policy getPolicy() {
@@ -148,32 +156,39 @@ public class EditPolicyAction extends NodeAction {
                     }
                 }
 
+                @Override
                 public Assertion getRootAssertion() {
                     try {
-                        return getPolicy().getAssertion();
+                        return startingPolicyAssertion==null ? getPolicy().getAssertion() : startingPolicyAssertion;
                     } catch (Exception e) {
                         throw new RuntimeException("Unable to load policy", e); // Doctor, it hurts when I do this!
                     }
                 }
 
+                @Override
                 public String getName() {
                     return policyNode.getName();
                 }
 
+                @Override
                 public long getVersionNumber() {
                     return getPolicy().getVersionOrdinal();
                 }
 
+                @Override
                 public boolean isActive() {
                     return getPolicy().isVersionActive();
                 }
 
+                @Override
                 public void addPropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
                     policyNode.addPropertyChangeListener(servicePropertyChangeListener);
                 }
+                @Override
                 public void removePropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
                     policyNode.removePropertyChangeListener(servicePropertyChangeListener);
                 }
+                @Override
                 public boolean hasWriteAccess() {
                     try {
                         EntityWithPolicyNode pn = getPolicyNode();
@@ -234,6 +249,7 @@ public class EditPolicyAction extends NodeAction {
 
         // Sort more recent revisions to the top
         Collections.sort(versions, new Comparator<PolicyVersion>() {
+            @Override
             public int compare(PolicyVersion o1, PolicyVersion o2) {
                 return Long.valueOf(o2.getOrdinal()).compareTo(o1.getOrdinal());
             }
@@ -242,6 +258,7 @@ public class EditPolicyAction extends NodeAction {
         List<AssertionHaver> options = new ArrayList<AssertionHaver>();
 
         AssertionHaver startFromEmpty = new AssertionHaver() {
+            @Override
             public Assertion getAssertion() throws IOException, FindException {
                 return new AllAssertion(new ArrayList<Assertion>(Arrays.asList(new FalseAssertion())));
             }
@@ -261,6 +278,7 @@ public class EditPolicyAction extends NodeAction {
             final String displayString = ordinal + " " + date + name;
 
             options.add(new AssertionHaver() {
+                @Override
                 public Assertion getAssertion() throws IOException, FindException {
                     PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().
                             findPolicyVersionByPrimaryKey(policyVersion.getPolicyOid(), policyVersion.getOid());
