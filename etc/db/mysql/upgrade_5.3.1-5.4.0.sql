@@ -88,6 +88,44 @@ INSERT INTO cluster_properties
     values (-500400, 0, "upgrade.task.500400", "com.l7tech.server.upgrade.Upgrade531To54UpdateRoles");
 
 
+---
+--- Manage Private Keys role
+---
+INSERT INTO `rbac_role` VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the default SSL key and the default CA key.');
+INSERT INTO `rbac_permission` VALUES
+    (-1101,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (-1102,0,-1100,'DELETE',NULL,'SSG_KEY_ENTRY'),
+    (-1103,0,-1100,'READ',NULL,'CLUSTER_PROPERTY'),
+    (-1104,0,-1100,'READ',NULL,'SSG_KEY_ENTRY'),
+    (-1105,0,-1100,'READ',NULL,'CLUSTER_PROPERTY'),
+    (-1106,0,-1100,'UPDATE',NULL,'SSG_KEY_ENTRY'),
+    (-1107,0,-1100,'CREATE',NULL,'SSG_KEY_ENTRY'),
+    (-1108,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (-1109,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (-1110,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (-1111,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (-1112,0,-1100,'UPDATE',NULL,'SSG_KEYSTORE'),
+    (-1113,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (-1114,0,-1100,'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO `rbac_predicate` VALUES
+    (-1101,0,-1101),
+    (-1103,0,-1103),
+    (-1105,0,-1105),
+    (-1108,0,-1108),
+    (-1109,0,-1109),
+    (-1110,0,-1110),
+    (-1111,0,-1111),
+    (-1113,0,-1113);
+INSERT INTO `rbac_predicate_attribute` VALUES
+    (-1101,'name','keyStore.defaultSsl.alias'),
+    (-1103,'name','keyStore.defaultCa.alias'),
+    (-1105,'name','keyStore.defaultSsl.alias'),
+    (-1108,'name','keyStore.defaultCa.alias'),
+    (-1109,'name','keyStore.defaultSsl.alias'),
+    (-1110,'name','keyStore.defaultCa.alias'),
+    (-1111,'name','keyStore.defaultSsl.alias'),
+    (-1113,'name','keyStore.defaultCa.alias');
+
 --
 -- Reenable FK at very end of script
 --
