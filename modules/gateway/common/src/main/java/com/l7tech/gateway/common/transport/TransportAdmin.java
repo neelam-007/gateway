@@ -127,6 +127,7 @@ public interface TransportAdmin {
      *
      * @return a Collection of PortRange instances covering ports that are reserved for system use.  Never null, but may be empty.
      */
+    @Transactional(readOnly=true)
     PortRanges getReservedPorts();
 
 }
