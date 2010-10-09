@@ -173,8 +173,14 @@ public final class ExpandVariables {
             return null;
         }
 
-        Object contextValue = vars.get(matchingName);
         final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
+
+        Object contextValue = vars.get(matchingName);
+        if (contextValue == null) {
+            String msg = handler.handleBadVariable(syntax.remainingName);
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
+        }
 
         Selector.Selection selection;
         if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase().trim())) {
