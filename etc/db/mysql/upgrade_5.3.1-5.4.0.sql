@@ -88,9 +88,9 @@ INSERT INTO cluster_properties
     values (-500400, 0, "upgrade.task.500400", "com.l7tech.server.upgrade.Upgrade531To54UpdateRoles");
 
 
----
---- Manage Private Keys role
----
+--
+-- Manage Private Keys role
+--
 INSERT INTO `rbac_role` VALUES (-1100,1,'Manage Private Keys',NULL,NULL,NULL,'Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the default SSL key and the default CA key.');
 INSERT INTO `rbac_permission` VALUES
     (-1101,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
