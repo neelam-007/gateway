@@ -291,7 +291,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
     }
 
-    @SuppressWarnings({"deprecation"})
     private ClusterNodeInfo selfPopulateClusterDB(String nodeid, String macid) {
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         newClusterInfo.setAddress(getIPAddress(macid));
@@ -310,7 +309,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             try {
                 s = getSession();
                 old = s.getFlushMode();
-                s.setFlushMode(FlushMode.NEVER);
+                s.setFlushMode(FlushMode.MANUAL);
                 Query q = s.createQuery(HQL_FIND_BY_NAME);
                 q.setString(0, maybenodename);
                 hibResults = q.list();

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.util;
 
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -13,16 +10,17 @@ import java.sql.SQLException;
 /**
  * @author alex
  */
-public abstract class ReadOnlyHibernateCallback implements HibernateCallback {
-    public Object doInHibernate(Session session) throws HibernateException, SQLException {
+public abstract class ReadOnlyHibernateCallback<RT> implements HibernateCallback<RT> {
+    @Override
+    public RT doInHibernate(Session session) throws HibernateException, SQLException {
         FlushMode old = session.getFlushMode();
         try {
-            session.setFlushMode(FlushMode.NEVER);
+            session.setFlushMode(FlushMode.MANUAL);
             return doInHibernateReadOnly(session);
         } finally {
             session.setFlushMode(old);
         }
     }
 
-    protected abstract Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException;
+    protected abstract RT doInHibernateReadOnly(Session session) throws HibernateException, SQLException;
 }

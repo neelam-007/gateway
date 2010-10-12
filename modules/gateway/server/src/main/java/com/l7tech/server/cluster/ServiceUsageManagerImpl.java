@@ -27,7 +27,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Dec 22, 2003<br/>
- * $Id$<br/>
  *
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -53,6 +52,8 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
      * retrieves all service usage recorded in database
      * @return a collection filled with ServiceUsage objects
      */
+    @SuppressWarnings({ "unchecked" })
+    @Override
     @Transactional(readOnly=true)
     public Collection<ServiceUsage> getAll() throws FindException {
         Session session = null;
@@ -60,13 +61,13 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         try {
             session = getSession();
             old = session.getFlushMode();
-            session.setFlushMode(FlushMode.NEVER);
+            session.setFlushMode(FlushMode.MANUAL);
             List list = session.createQuery(HQL_FIND_ALL).list();
             Set<ServiceUsage> results = new HashSet<ServiceUsage>();
             results.addAll(list);
             return results;
         } catch (HibernateException e) {
-            String msg = "could not retreive service usage obj";
+            String msg = "could not retrieve service usage obj";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         } finally {
@@ -75,6 +76,8 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         }
     }
 
+    @SuppressWarnings({ "unchecked" })
+    @Override
     @Transactional(readOnly=true)
     public ServiceUsage[] findByNode(String nodeId) throws FindException {
         Session s = null;
@@ -82,11 +85,11 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         try {
             s = getSession();
             old = s.getFlushMode();
-            s.setFlushMode(FlushMode.NEVER);
+            s.setFlushMode(FlushMode.MANUAL);
             Query q = s.createQuery(HQL_FIND_BY_NODE);
             q.setString(0, nodeId);
             List results = q.list();
-            return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
+            return (ServiceUsage[])results.toArray(new ServiceUsage[results.size()]);
         } catch (HibernateException e) {
             throw new FindException("Couldn't retrieve ServiceUsage", e);
         } finally {
@@ -99,6 +102,8 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
      * Finds the ServiceUsage records for the given {@link com.l7tech.gateway.common.service.PublishedService} OID for all cluster nodes
      * @throws FindException
      */
+    @SuppressWarnings({ "unchecked" })
+    @Override
     @Transactional(readOnly=true)
     public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
         Session s = null;
@@ -106,11 +111,11 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         try {
             s = getSession();
             old = s.getFlushMode();
-            s.setFlushMode(FlushMode.NEVER);
+            s.setFlushMode(FlushMode.MANUAL);
             Query q = s.createQuery(HQL_FIND_BY_SERVICE);
             q.setLong(0, serviceOid);
             List results = q.list();
-            return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
+            return (ServiceUsage[])results.toArray(new ServiceUsage[results.size()]);
         } catch (HibernateException e) {
             throw new FindException("Couldn't retrieve ServiceUsage", e);
         } finally {
@@ -122,6 +127,7 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
     /**
      * updates service_usage table with new information
      */
+    @Override
     public void record(ServiceUsage data) throws UpdateException {
         try {
             getHibernateTemplate().save(data);
@@ -135,10 +141,12 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
     /**
      * clears the table of existing entries for this server
      */
+    @Override
     public void clear(final String nodeid) throws DeleteException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(final Session session) throws HibernateException, SQLException {
+            getHibernateTemplate().execute(new HibernateCallback<Void>() {
+                @Override
+                public Void doInHibernate(final Session session) throws HibernateException, SQLException {
                     // Use a bulk delete to ensure that a replicable SQL statement is run
                     // even if there is nothing in the table (see bug 4615)
                     session.createQuery( HQL_DELETE_BY_NODE )
@@ -152,5 +160,6 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         }
     }
 
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private final Logger logger = Logger.getLogger(getClass().getName());
 }
