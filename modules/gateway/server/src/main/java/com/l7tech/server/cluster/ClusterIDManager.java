@@ -148,7 +148,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
             for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
                 byte[] macAddr = networkInterface.getHardwareAddress();
                 if ( macAddr != null ) {
-                    if ( mac==null || mac.equals(formatMac(macAddr)) ) {
+                    if ( mac==null || mac.equalsIgnoreCase(formatMac(macAddr)) ) {
                         Collection<InetAddress> addresses = Collections.list(networkInterface.getInetAddresses());
                         if ( !addresses.isEmpty() ) {
                             ip = addresses.iterator().next().getHostAddress();

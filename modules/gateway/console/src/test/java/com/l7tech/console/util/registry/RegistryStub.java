@@ -1,6 +1,6 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.common.io.PortRange;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
 import com.l7tech.console.security.SecurityProvider;
@@ -268,6 +268,11 @@ public class RegistryStub extends Registry {
             @Override
             public PortRanges getReservedPorts() {
                 return new PortRanges(null);
+            }
+
+            @Override
+            public boolean isUseIpv6() {
+                return InetAddressUtil.isUseIpv6();
             }
         };
     }

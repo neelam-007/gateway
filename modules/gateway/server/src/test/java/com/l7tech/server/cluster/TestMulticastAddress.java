@@ -16,7 +16,7 @@ public class TestMulticastAddress {
     public void testAddressGeneration() throws Exception {
         boolean[] found = new boolean[256];
         for ( int i = 0; i < 10000; i++ ) {
-            String addr = ClusterBootProcess.generateMulticastAddress();
+            String addr = ClusterBootProcess.generateMulticastAddress4();
             InetAddress ia = InetAddress.getByName(addr);
             found[(ia.getAddress()[3] & 0xff)] = true;
         }

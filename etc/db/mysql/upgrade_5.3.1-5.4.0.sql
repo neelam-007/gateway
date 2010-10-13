@@ -48,6 +48,7 @@ INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'SECURE_PASSWORD
 --
 ALTER TABLE audit_main MODIFY ip_address varchar(39) DEFAULT NULL;
 ALTER TABLE cluster_info MODIFY address varchar(39) NOT NULL;
+ALTER TABLE cluster_info MODIFY multicast_address varchar(39) NOT NULL;
 
 --
 -- HTTP options support

@@ -156,7 +156,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
     /**
      * A multicast address for use in the DistributedMessageIdManager.
      */
-    @Column(name="multicast_address",length=16)
+    @Column(name="multicast_address",length=39)
     public String getMulticastAddress() {
         return multicastAddress;
     }

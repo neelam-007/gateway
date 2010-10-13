@@ -1,5 +1,6 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.DeleteException;
@@ -250,7 +251,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private static final String NODEID_COLUMN_NAME = "nodeIdentifier";
     private static final String NAME_COLUMN_NAME = "name";
 
-    private static Pattern ifconfigAddrPattern = Pattern.compile(".*inet addr:(\\d+\\.\\d+\\.\\d+\\.\\d+).*", Pattern.DOTALL);
+    private static Pattern ifconfigAddr4Pattern = Pattern.compile(".*inet addr:(\\d+\\.\\d+\\.\\d+\\.\\d+).*", Pattern.DOTALL);
+    private static Pattern ifconfigAddr6Pattern = Pattern.compile(".*inet6 addr: ([^/]+)/\\d+ Scope:(Global|Site|Compat)", Pattern.DOTALL);
 
     private static final String HQL_FIND_ALL =
             "from " + TABLE_NAME +
@@ -388,6 +390,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             logger.log(Level.FINE, "error getting ifconfig - must not be running on linux", e);
         }
 
+        Pattern ifconfigPattern = InetAddressUtil.isUseIpv6() ? ifconfigAddr6Pattern : ifconfigAddr4Pattern;
+
         // ifconfig output pattern
         //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
         //        inet addr:192.168.1.227  Bcast:192.168.1.255  Mask:255.255.255.0
@@ -401,7 +405,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         if (ifconfigOutput == null) return null;
         String[] splitted = ClusterIDManager.breakIntoLines(ifconfigOutput);
         for (String s : splitted) {
-            Matcher matchr = ifconfigAddrPattern.matcher(s);
+            Matcher matchr = ifconfigPattern.matcher(s);
             if (matchr.matches()) {
                 return matchr.group(1);
             }

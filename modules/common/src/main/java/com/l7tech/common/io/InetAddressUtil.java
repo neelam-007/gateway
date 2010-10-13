@@ -6,6 +6,7 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.net.*;
 import java.util.Enumeration;
@@ -97,12 +98,30 @@ public class InetAddressUtil {
         return false;
     }
 
+    /**
+     * @return true if the provided string is a valid IPv6 address, false otherwise
+     */
     public static boolean isValidIpv6Address(String address) {
+        return getIpv6Address(address) != null;
+    }
+
+    /**
+     * Parse the provided string into a Inet6Address, without performing any lookups.
+     *
+     * @return a Inet6Address or null if the provided string is not a valid IPv6 one.
+     *
+     */
+    public static Inet6Address getIpv6Address(String address) {
         // prevent InetAddress.getByName from doing a lookup
         try {
-            return address != null && address.length() > 0 && InetAddress.getByName("[" + address + "]") != null;
+            if (address != null && address.length() > 0) {
+                InetAddress ipv6 = InetAddress.getByName("[" + address + "]");
+                return ipv6 instanceof Inet6Address ? (Inet6Address) ipv6 : null;
+            } else {
+                return null;
+            }
         } catch (UnknownHostException e) {
-            return false;
+            return null;
         }
     }
 
@@ -315,6 +334,10 @@ public class InetAddressUtil {
         return false;
     }
 
+    public static boolean isUseIpv6() {
+        return InetAddressUtil.isIpv6Enabled() && ! SyspropUtil.getBoolean("java.net.preferIPv4Stack");
+    }
+
     public static boolean isLoopbackAddress(String ipAddress) {
         if (! isValidIpAddress(ipAddress) && ! isValidIpv6Address(ipAddress))
             return false;
@@ -347,7 +370,7 @@ public class InetAddressUtil {
         return getIpv6AddressForPattern(pattern) != null;
     }
 
-    private static String getIpv6AddressForPattern(String pattern) {
+    public static String getIpv6AddressForPattern(String pattern) {
         if (pattern == null || pattern.indexOf(':') == -1) return null;
 
         String[] addrAndPrefix = pattern.split("/", 2);
@@ -362,5 +385,22 @@ public class InetAddressUtil {
 
         String patternAddress = addrAndPrefix[0] + (addrAndPrefix[0].charAt(addrAndPrefix[0].length()-1)==':' ? ":" : "::"); // fill with zeroes
         return isValidIpv6Address(patternAddress) ? patternAddress + (addrAndPrefix.length > 1 ? "/" + addrAndPrefix[1] : "") : null;
+    }
+
+    public static byte[] getNetworkPrefix(Inet6Address ipv6addr, short prefixLength) {
+        byte[] addressBytes = ipv6addr.getAddress();
+        byte[] networkBytes = new byte[prefixLength/8 + ((prefixLength % 8) > 0 ? 1 : 0) ];
+
+        for(int i = 0; i < networkBytes.length; i++) {
+            networkBytes[i] = addressBytes[i];
+        }
+
+        // last byte
+        int lastByteMask = prefixLength % 8;
+        if (lastByteMask > 0) {
+            networkBytes[networkBytes.length -1] = (byte) (addressBytes[networkBytes.length -1] & (0xFF << (8-lastByteMask)) );
+        }
+
+        return networkBytes;
     }
 }

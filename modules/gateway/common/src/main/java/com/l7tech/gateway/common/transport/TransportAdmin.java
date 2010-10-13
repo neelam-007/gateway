@@ -130,4 +130,8 @@ public interface TransportAdmin {
     @Transactional(readOnly=true)
     PortRanges getReservedPorts();
 
+    /**
+     * @return true if IPv6 is enabled on the gateway
+     */
+    boolean isUseIpv6();
 }
