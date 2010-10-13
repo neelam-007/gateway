@@ -309,7 +309,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     "to an SSL server that uses this key as its SSL server certificate.\n\n" +
                     "Are you sure you wish the cluster to use this as the default SSL private key?",
                     "Unsuitable Default SSL Key",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
                         @Override
@@ -352,7 +352,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     "Some software will reject client certificates signed by this key." +
                     "\n\nAre you sure you want the cluster to use this as the default CA private key?",
                     "Unsuitable CA Certificate",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
                         @Override
@@ -376,7 +376,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 "Are you sure you wish to change the cluster default " + what + " private key?\n\n" +
                 "All cluster nodes will need to be restarted before the change will fully take effect.",
                 "Confirm New Cluster " + what + " Key",
-                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
                     @Override
