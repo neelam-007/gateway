@@ -86,7 +86,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         Set<String> vars = contextAssertion==null ?
                 SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
                 SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
-        _predecessorVariables = new TreeSet<String>(vars);
+        // convert all vars to lower
+         _predecessorVariables = new TreeSet<String>();
+        for(String var : vars)
+        {
+            _predecessorVariables.add(var.toLowerCase());    
+        }
+
 
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
@@ -339,7 +345,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         final java.util.List<String> badNames = new LinkedList<String>();
         for (String name : names) {
             if (BuiltinVariables.getMetadata(name) == null &&
-                Syntax.getMatchingName(name, _predecessorVariables, true, true) == null) {
+                Syntax.getMatchingName(name, _predecessorVariables, false, true) == null) {
                 badNames.add(name);
             }
         }
