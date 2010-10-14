@@ -137,6 +137,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @throws MalformedURLException if the URL cannot be parsed
      */
     public void setWsdlUrl(String wsdlUrl) throws MalformedURLException {
+        checkLocked();
         if (_wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl)) _wsdlXml = null;
         if (wsdlUrl != null && wsdlUrl.length() > 0) {
             new URL(wsdlUrl);
@@ -163,6 +164,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param wsdlXml the contents of the WSDL document for this service.
      */
     public synchronized void setWsdlXml(String wsdlXml) {
+        checkLocked();
         _wsdlXml = wsdlXml;
         _parsedWsdl.set(null);
         _soapVersion = null;
@@ -202,6 +204,11 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
  	 	        _soapVersion = SoapVersion.UNKNOWN;
  	 	    }
         return _soapVersion;
+    }
+
+    public void setSoapVersion(SoapVersion soapVersion) {
+        checkLocked();
+        _soapVersion = soapVersion;        
     }
 
     /**
@@ -340,6 +347,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setPolicy(Policy policy) {
+        checkLocked();
         this.policy = policy;
         if ( policy != null ) {
             policy.setFolder( folder );
@@ -351,6 +359,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setDisabled(boolean disabled) {
+        checkLocked();
         _disabled = disabled;
     }
 
@@ -393,6 +402,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param isSoap true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
     public void setSoap(boolean isSoap) {
+        checkLocked();
         this.soap = isSoap;
         if ( policy != null )
             policy.setSoap(isSoap);
@@ -413,6 +423,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param internal  flag value to set
      */
     public void setInternal(boolean internal) {
+        checkLocked();
         this.internal = internal;
     }
 
@@ -457,6 +468,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param routingUri the HTTP URI (the part of a URL after the hostname) for this service.
      */
     public void setRoutingUri(String routingUri) {
+        checkLocked();
         this.routingUri = routingUri;
     }
 
@@ -472,6 +484,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setDefaultRoutingUrl( final String defaultRoutingUrl ) {
+        checkLocked();
         this.defaultRoutingUrl = defaultRoutingUrl;
     }
 
@@ -512,6 +525,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param set a set of Strings such as "GET", "POST", "PUT".  Will be converted to all upper-case.
      */
     public void setHttpMethods(Set<HttpMethod> set) {
+        checkLocked();
         httpMethods = set;
     }
 
@@ -552,6 +566,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setLaxResolution(boolean laxResolution) {
+        checkLocked();
         this.laxResolution = laxResolution;
     }
 
@@ -560,6 +575,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setWssProcessingEnabled(boolean wssProcessingEnabled) {
+        checkLocked();
         this.wssProcessingEnabled = wssProcessingEnabled;
     }
 
@@ -568,6 +584,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     public void setTracingEnabled(boolean tracingEnabled) {
+        checkLocked();
         this.tracingEnabled = tracingEnabled;
     }
 
@@ -579,6 +596,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
     @Override
     public void setFolder(Folder folder) {
+        checkLocked();
         this.folder = folder;
         if ( policy != null ) {
             policy.setFolder( folder );

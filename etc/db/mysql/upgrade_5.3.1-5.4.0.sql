@@ -128,6 +128,11 @@ INSERT INTO `rbac_predicate_attribute` VALUES
     (-1113,'name','keyStore.defaultCa.alias');
 
 --
+-- Explicit SOAP version configuration
+--
+ALTER TABLE published_service ADD COLUMN soap_version VARCHAR(20) DEFAULT NULL;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

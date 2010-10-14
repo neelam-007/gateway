@@ -31,6 +31,7 @@ import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -110,6 +111,9 @@ public class ServicePropertiesDialog extends JDialog {
     private JLabel wsdlBindingNamespaceLabel;
     private JTextField wsdlBindingNamespaceTextField;
     private JCheckBox tracingCheckBox;
+    private JRadioButton soapVersionUnspecifiedButton;
+    private JRadioButton soapVersion11Button;
+    private JRadioButton soapVersion12Button;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -165,6 +169,18 @@ public class ServicePropertiesDialog extends JDialog {
             disableRadio.setSelected(true);
         } else {
             enableRadio.setSelected(true);
+        }
+
+        soapVersionUnspecifiedButton.setSelected(false);
+        soapVersion11Button.setSelected(false);
+        soapVersion12Button.setSelected(false);
+        SoapVersion soapVersion = subject.getSoapVersion();
+        if (SoapVersion.SOAP_1_1.equals(soapVersion)) {
+            soapVersion11Button.setSelected(true);
+        } else if (SoapVersion.SOAP_1_2.equals(soapVersion)) {
+            soapVersion12Button.setSelected(true);
+        } else {
+            soapVersionUnspecifiedButton.setSelected(true);
         }
 
         String hostname = TopComponents.getInstance().ssgURL().getHost();
@@ -789,6 +805,14 @@ public class ServicePropertiesDialog extends JDialog {
             subject.setDefaultRoutingUrl(originalServiceEndPoint);
         } else {
             subject.setDefaultRoutingUrl( null );
+        }
+
+        if (soapVersion11Button.isSelected()) {
+            subject.setSoapVersion(SoapVersion.SOAP_1_1);
+        } else if (soapVersion12Button.isSelected()) {
+            subject.setSoapVersion(SoapVersion.SOAP_1_2);
+        } else {
+            subject.setSoapVersion(SoapVersion.UNKNOWN);
         }
 
         //attempt to save the changes

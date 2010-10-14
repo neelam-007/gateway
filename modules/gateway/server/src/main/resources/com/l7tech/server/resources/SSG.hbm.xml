@@ -19,6 +19,10 @@
         <param name="enumClass">com.l7tech.common.http.HttpMethod</param>
     </typedef>
 
+    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="soap_version_type">
+        <param name="enumClass">com.l7tech.xml.soap.SoapVersion</param>
+    </typedef>
+
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -38,6 +42,7 @@
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>
         <property name="tracingEnabled" column="tracing" type="boolean"/>
+        <property name="soapVersion" column="soap_version" type="soap_version_type"/>
 
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>

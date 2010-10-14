@@ -215,7 +215,8 @@ class EntityPropertiesHelper {
             "laxResolution",
             "tracingEnabled",
             "oid",
-            "disabled"
+            "disabled",
+            "soapVersion"
         ) ) )
         .put( TrustedCert.class, Collections.unmodifiableCollection( Arrays.asList(
             "ski",
