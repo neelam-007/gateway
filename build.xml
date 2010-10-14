@@ -563,12 +563,17 @@
         <echo level="info">Building IDEA workspace.</echo>
         <property name="idea.teamcity.user" value="${user.name}"/>
         <copy file="etc/build/idea_workspace.xml" tofile="UneasyRooster.iws" overwrite="false"/>
+        <condition property="unix.entropy" value="-Djava.security.egd=file:/dev/./urandom">
+            <os family="unix" />
+        </condition>
+        <property name="unix.entropy" value=""/> <!--Set to empty string if not set -->
+
         <xslt in="UneasyRooster.iws" out="UneasyRooster.iws.tmp" style="etc/build/idea_workspace.xsl">
             <param name="idea.teamcity.server" expression="${idea.teamcity.server}" if="idea.teamcity.server"/>
             <param name="idea.teamcity.user" expression="${idea.teamcity.user}"/>
             <param name="idea.teamcity.password" expression="${idea.teamcity.password}" if="idea.teamcity.password"/>
             <param name="idea.teamcity.remember" expression="${idea.teamcity.remember}" if="idea.teamcity.remember"/>
-            <param name="idea.gateway.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.home=&quot;${dev.deploy.dir}/Gateway/node/default&quot; -Djava.net.preferIPv4Stack=true"/>
+            <param name="idea.gateway.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.home=&quot;${dev.deploy.dir}/Gateway/node/default&quot; -Djava.net.preferIPv4Stack=true ${unix.entropy}"/>
             <param name="idea.controller.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.log.console=true -Dcom.l7tech.gateway.home=../../Gateway"/>
             <param name="idea.configwiz.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.pcconfig.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Controller&quot;"/>
