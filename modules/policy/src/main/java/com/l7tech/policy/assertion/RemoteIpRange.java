@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import java.util.StringTokenizer;
-
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
@@ -21,27 +20,25 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 @ProcessesRequest
 public class RemoteIpRange extends Assertion implements UsesVariables {
 
+    // - PUBLIC
+
     public RemoteIpRange() {
-        startIp = "192.168.1.0";
-        networkMask = 24;
+        startIp = DEFAULT_START_IP;
+        networkMask = DEFAULT_NETWORK_PREFIX;
         allowRange = true;
     }
 
     /**
      * fully descriptive constructor
+     *
      * @param startIp the start ip address of the range specified by this assertion
-     * @param networkMask the network mask valid values are 0..32
+     * @param networkPrefix the network prefix; valid values are 0..32 for IPv4 address ranges, 0..64 for IPv6 address ranges
      * @param allowRange true if addresses is this range are authorised, false if they are unauthorized
      */
-    public RemoteIpRange(String startIp, int networkMask, boolean allowRange) {
-        if (!checkIPAddressFormat(startIp)) {
-            throw new IllegalArgumentException("invalid ip address " + startIp);
-        }
-        if (networkMask < 0 || networkMask > 32) {
-            throw new IllegalArgumentException("invalid network mask " + networkMask);
-        }
+    public RemoteIpRange(String startIp, int networkPrefix, boolean allowRange) {
+        validateRange(startIp, networkPrefix);
         this.startIp = startIp;
-        this.networkMask = networkMask;
+        this.networkMask = networkPrefix;
         this.allowRange = allowRange;
     }
 
@@ -56,9 +53,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * the start ip address of the range specified by this assertion
      */
     public void setStartIp(String startIp) {
-        if (!checkIPAddressFormat(startIp)) {
-            throw new IllegalArgumentException("invalid ip address " + startIp);
-        }
+        validateRange(startIp, this.networkMask);
         this.startIp = startIp;
     }
 
@@ -74,32 +69,14 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * @param networkMask valid values are 0..32
      */
     public void setNetworkMask(int networkMask) {
-        if (networkMask < 0 || networkMask > 32) {
-            throw new IllegalArgumentException("invalid network mask " + networkMask);
-        }
+        validateRange(this.startIp, networkMask);
         this.networkMask = networkMask;
     }
 
-    /**
-     * checks that the ip address passed is expressed in expected format (###.###.###.###)
-     */
-    public static boolean checkIPAddressFormat(String ipAdd) {
-        if (ipAdd == null) return false;
-        StringTokenizer st = new StringTokenizer(ipAdd, ".");
-        if (st.countTokens() == 4) {
-            while (st.hasMoreElements()) {
-                try {
-                    int ipBit = Integer.parseInt((String)st.nextElement());
-                    if ((MIN_IP_VALUE > ipBit) || (MAX_IP_VALUE < ipBit)) {
-                        return false;
-                    }
-                } catch (NumberFormatException e) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
+    public void setAddressRange(String address, Integer prefix) {
+        validateRange(address, prefix);
+        this.startIp = address;
+        this.networkMask = prefix;
     }
 
     /**
@@ -172,14 +149,6 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         return meta;
     }
 
-    private String startIp;
-    private int networkMask;
-    private boolean allowRange;
-    private String ipSourceContextVariable = null;
-
-    private final static int MIN_IP_VALUE = 0;
-    private final static int MAX_IP_VALUE = 255;
-
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
@@ -187,4 +156,37 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
             return new String[0];
         } else return new String[] {ipSourceContextVariable};
     }
+
+    // - PRIVATE
+
+    /**
+     * @throws IllegalArgumentException if the startIp/networkPrefix combination are not a valid IPv4 or IPv6 address range.
+     */
+    private static void validateRange(String startIp, int networkPrefix) {
+        String errMsg = null;
+        String pattern = startIp + "/" + Integer.toString(networkPrefix);
+
+        if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
+            if (networkPrefix < 0 || networkPrefix > IPV4_MAX_PREFIX)
+                errMsg = "Invalid IPv4 network prefix" + networkPrefix;
+        } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
+            if (networkPrefix < 0 || networkPrefix > IPV6_MAX_PREFIX)
+                errMsg = "Invalid IPv6 network prefix: " + networkPrefix;
+        } else {
+            errMsg = "Invalid IP address range: " + pattern;
+        }
+
+        if (errMsg != null)
+            throw new IllegalArgumentException(errMsg);
+    }
+
+    private static final String DEFAULT_START_IP = "192.168.1.0";
+    private static final int DEFAULT_NETWORK_PREFIX = 24;
+    private static final int IPV4_MAX_PREFIX = 32;
+    private static final int IPV6_MAX_PREFIX = 64;
+
+    private String startIp;
+    private int networkMask;
+    private boolean allowRange;
+    private String ipSourceContextVariable = null;
 }

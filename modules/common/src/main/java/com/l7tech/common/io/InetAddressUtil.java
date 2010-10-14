@@ -99,6 +99,20 @@ public class InetAddressUtil {
     }
 
     /**
+     * Non-throwing, no-lookup version of InetAddress.getByName()
+     *
+     * @param address the address string to parse into a InetAddress object
+     * @return the InetAddress, or null if the supplied address string is not a valid IPv4 or IPv6 address
+     */
+    public static InetAddress getAddress(String address) {
+        try {
+            return isValidIpAddress(address) ? Inet4Address.getByName(address):
+                   getIpv6Address(address);
+        } catch (UnknownHostException e) {
+            return null; // should not happen after isValid
+        }
+    }
+    /**
      * @return true if the provided string is a valid IPv6 address, false otherwise
      */
     public static boolean isValidIpv6Address(String address) {
@@ -205,13 +219,8 @@ public class InetAddressUtil {
      * @return true if the specified address matches the specified pattern.
      */
     public static boolean patternMatchesAddress(String pattern, InetAddress addr) {
-        if (addr instanceof Inet4Address) {
-            return patternMatchesAddress4(pattern, (Inet4Address) addr);
-        } else if (addr instanceof Inet6Address) {
-            return patternMatchesAddress6(pattern, (Inet6Address) addr);
-        } else {
-            return false;
-        }
+        return addr instanceof Inet4Address  ? patternMatchesAddress4(pattern, (Inet4Address) addr):
+               addr instanceof Inet6Address && patternMatchesAddress6(pattern, (Inet6Address) addr);
     }
 
     private static boolean patternMatchesAddress4(String pattern, Inet4Address addr4) {

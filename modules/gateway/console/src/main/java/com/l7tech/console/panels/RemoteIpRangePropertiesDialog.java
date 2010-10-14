@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.RemoteIpRange;
@@ -13,7 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -26,10 +26,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
     private JButton okButton;
     private JButton cancelButton;
     private JButton helpButton;
-    private JFormattedTextField add1;
-    private JFormattedTextField add2;
-    private JFormattedTextField add3;
-    private JFormattedTextField add4;
+    private JFormattedTextField address;
     private JFormattedTextField suffix;
     private JComboBox includeExcludeCombo;
     private JPanel mainPanel;
@@ -60,24 +57,18 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
         initResources();
         setContentPane(mainPanel);
         okButton.setEnabled( !readOnly );
-        Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
+        Utilities.equalizeButtonSizes(okButton, cancelButton, helpButton);
         Utilities.setEscKeyStrokeDisposes(this);
 
         includeExcludeCombo.setModel(new DefaultComboBoxModel(new String[] {
                                                           resources.getString("includeExcludeCombo.include"),
                                                           resources.getString("includeExcludeCombo.exclude")}));
 
-        NumberFormatter formatter = new NumberFormatter();
-        formatter.setMaximum(255);
-        formatter.setMinimum(0);
-        add1.setFormatterFactory(new DefaultFormatterFactory(formatter));
-        add2.setFormatterFactory(new DefaultFormatterFactory(formatter));
-        add3.setFormatterFactory(new DefaultFormatterFactory(formatter));
-        add4.setFormatterFactory(new DefaultFormatterFactory(formatter));
-        formatter = new NumberFormatter();
-        formatter.setMaximum(32);
-        formatter.setMinimum(1);
-        suffix.setFormatterFactory(new DefaultFormatterFactory(formatter));
+        suffix.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter() {{
+            setMinimum(1);
+            setMaximum(64);
+        }}
+        ));
 
         setCallbacks();
         setInitialValues();
@@ -101,36 +92,32 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                 return;
             }
         }
+
         // get rule
         int index = includeExcludeCombo.getSelectedIndex();
         // get address
-        String add1Str = add1.getText();
-        if (add1Str == null || add1Str.length() < 1) {
-            bark(resources.getString("error.badaddress"));
-            return;
-        }
-        String add2Str = add2.getText();
-        if (add2Str == null || add2Str.length() < 1) {
-            bark(resources.getString("error.badaddress"));
-            return;
-        }
-        String add3Str = add3.getText();
-        if (add3Str == null || add3Str.length() < 1) {
-            bark(resources.getString("error.badaddress"));
-            return;
-        }
-        String add4Str = add4.getText();
-        if (add4Str == null || add4Str.length() < 1) {
-            bark(resources.getString("error.badaddress"));
-            return;
-        }
-        String newaddress = add1Str + "." + add2Str + "." + add3Str + "." + add4Str;
-        // get mask
-        String suffixStr = suffix.getText();
-        if (suffixStr == null || suffixStr.length() < 1) {
+        String addressStr = address.getText();
+        // get prefix
+        Integer prefix;
+        try {
+            prefix = Integer.parseInt(suffix.getText());
+        } catch (NumberFormatException e) {
             bark(resources.getString("error.badmask"));
             return;
         }
+
+        boolean isIpv4 = InetAddressUtil.isValidIpAddress(addressStr);
+        boolean isIpv6 = InetAddressUtil.isValidIpv6Address(addressStr);
+        if ( ! isIpv4 && ! isIpv6 ) {
+            bark(resources.getString("error.badaddress"));
+            return;
+        }
+
+        if (isIpv4 && prefix > 32 || prefix > 64) {
+            bark(resources.getString("error.badmask"));
+            return;
+        }
+
         if (subject != null) {
             // all is good. record values and get out o here
             switch (index) {
@@ -141,8 +128,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                     subject.setAllowRange(false);
                     break;
             }
-            subject.setStartIp(newaddress);
-            subject.setNetworkMask(Integer.parseInt(suffixStr));
+            subject.setAddressRange(addressStr, prefix);
             subject.setIpSourceContextVariable(contextval);
             oked = true;
         }
@@ -162,11 +148,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             int index = subject.isAllowRange() ? 0 : 1;
             includeExcludeCombo.setSelectedIndex(index);
             includeExcludeCombo.setPreferredSize(new Dimension(100, 25));
-            int[] address = decomposeAddress(subject.getStartIp());
-            add1.setText("" + address[0]);
-            add2.setText("" + address[1]);
-            add3.setText("" + address[2]);
-            add4.setText("" + address[3]);
+            this.address.setText(subject.getStartIp());
             // bug 4796: any existing 0's should be changed to 32 when edited.
             if (subject.getNetworkMask() == 0) {
                 subject.setNetworkMask(32);
@@ -183,16 +165,6 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                 contextVarField.setText(subject.getIpSourceContextVariable());
             }
         }
-    }
-
-    private int[] decomposeAddress(String arg) {
-        StringTokenizer st = new StringTokenizer(arg, ".");
-        int[] output = new int[4];
-        output[0] = Integer.parseInt((String) st.nextElement());
-        output[1] = Integer.parseInt((String) st.nextElement());
-        output[2] = Integer.parseInt((String) st.nextElement());
-        output[3] = Integer.parseInt(((String) st.nextElement()).trim());
-        return output;
     }
 
     private void setCallbacks() {
