@@ -110,9 +110,6 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     @Override
     public void afterPropertiesSet() throws Exception {
         loadUDDIRegistries(false);
-        final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);
-        timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
-        timer.schedule(new CheckPublishedEndpointsTimerTask(this), maintenanceFrequency, maintenanceFrequency);
     }
 
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
@@ -205,6 +202,9 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
         } else if ( applicationEvent instanceof ReadyForMessages && clusterMaster.isMaster() ) {
             checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
+            final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);
+            timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
+            timer.schedule(new CheckPublishedEndpointsTimerTask(this), maintenanceFrequency, maintenanceFrequency);
         }
     }
 
