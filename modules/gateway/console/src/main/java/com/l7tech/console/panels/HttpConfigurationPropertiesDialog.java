@@ -16,6 +16,10 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -144,6 +148,19 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             }
         }, null, true ) );
 
+        pathTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased( final KeyEvent e ) {
+                updatePath();
+            }
+        });
+        pathTextField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost( final FocusEvent e ) {
+                updatePath();
+            }
+        });
+
         managePrivateKeysButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -181,6 +198,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     }
 
     private void doOk() {
+        updatePath();
         viewToModel( httpConfiguration );
         wasOk = true;
         dispose();
@@ -394,6 +412,18 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
     private int getProxyMaxLength( final String property, final int defaultValue ) {
         return EntityUtil.getMaxFieldLength( HttpProxyConfiguration.class, property, defaultValue );
+    }
+
+    /**
+     * Ensure path starts with a "/" if not empty.
+     */
+    private void updatePath() {
+        String path = pathTextField.getText();
+        if ( path != null && !path.isEmpty() && !path.startsWith("/") ) {
+            final int caret = pathTextField.getCaretPosition();
+            pathTextField.setText( "/" + path );
+            pathTextField.setCaretPosition( caret + 1 );
+        }
     }
 
     private void enableAndDisableComponents() {
