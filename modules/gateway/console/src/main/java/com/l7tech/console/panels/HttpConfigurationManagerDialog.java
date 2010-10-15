@@ -272,7 +272,17 @@ public class HttpConfigurationManagerDialog extends JDialog {
             final int modelRow = httpConfigurationTable.convertRowIndexToModel( selectedRow );
             final HttpConfiguration httpConfiguration = httpConfigurationTableModel.getRowObject( modelRow );
 
-            DialogDisplayer.showConfirmDialog( this, "Really delete HTTP options?", "Confirm Deletion", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
+            final String message = "Are you sure you want to remove the HTTP options matching \""+describe(httpConfiguration)+"\" ?";
+
+            final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), message);
+            final Object messageObject;
+            if(width > 600){
+                messageObject = Utilities.getTextDisplayComponent(message, 600, 100, -1, -1);
+            }else{
+                messageObject = message;
+            }
+
+            DialogDisplayer.showConfirmDialog( this, messageObject, "Confirm Deletion", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
                 @Override
                 public void reportResult( final int option ) {
                     if ( option == JOptionPane.OK_OPTION ) {
@@ -287,6 +297,47 @@ public class HttpConfigurationManagerDialog extends JDialog {
                 }
             } );
         }
+    }
+
+    /**
+     * Create a description of the host configuration general (match) settings.
+     *
+     * <p>If only the host is set then just show the name, else show
+     * a pseudo URL for the options.</p>
+     *
+     * @param httpConfiguration the configuration to describe.
+     * @return The description.
+     */
+    private String describe( final HttpConfiguration httpConfiguration ) {
+        final StringBuilder description = new StringBuilder();
+
+        if ( httpConfiguration.getPort()<=0 && httpConfiguration.getProtocol()==null && httpConfiguration.getPath()==null ) {
+            description.append( httpConfiguration.getHost() );
+        } else {
+            if ( httpConfiguration.getProtocol() == null ) {
+                description.append( "*" );
+            } else {
+                description.append( httpConfiguration.getProtocol().name().toLowerCase() );
+            }
+            description.append("://");
+            description.append( httpConfiguration.getHost() );
+            description.append(':');
+            if ( httpConfiguration.getPort()<=0 ) {
+                description.append( "*" );
+            } else {
+                description.append( httpConfiguration.getPort() );
+            }
+            if ( httpConfiguration.getPath() == null ) {
+                description.append( "/*" );
+            } else {
+                if ( !httpConfiguration.getPath().startsWith( "/" )) {
+                    description.append( '/' );                    
+                }
+                description.append( httpConfiguration.getPath() );
+            }
+        }
+
+        return description.toString();
     }
 
     private void doClose() {
