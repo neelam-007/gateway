@@ -24,6 +24,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle( HttpConfigurationPropertiesDialog.class.getName() );
 
+    private static final Object ANY = new Object(); // for use in models to represent "<ANY>"
+
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -126,18 +128,18 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         useSpecifiedHTTPProxyRadioButton.addActionListener( enableDisableListener );
         proxyUsernameTextField.getDocument().addDocumentListener( enableDisableListener );
 
-        protocolComboBox.setModel( new DefaultComboBoxModel( new HttpConfiguration.Protocol[]{ null, HttpConfiguration.Protocol.HTTP, HttpConfiguration.Protocol.HTTPS } ) );
-        protocolComboBox.setRenderer( new TextListCellRenderer<HttpConfiguration.Protocol>( new Functions.Unary<String,HttpConfiguration.Protocol>(){
+        protocolComboBox.setModel( new DefaultComboBoxModel( new Object[]{ ANY, HttpConfiguration.Protocol.HTTP, HttpConfiguration.Protocol.HTTPS } ) );
+        protocolComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
             @Override
-            public String call( final HttpConfiguration.Protocol protocol ) {
-                return protocol == null ? resources.getString("protocol.any") : protocol.name(); 
+            public String call( final Object protocol ) {
+                return protocol == ANY ? resources.getString("protocol.any") : ((HttpConfiguration.Protocol)protocol).name();
             }
         }, null, true ) );
-        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[]{null, "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"} ) );
-        tlsVersionComboBox.setRenderer( new TextListCellRenderer<String>( new Functions.Unary<String,String>(){
+        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new Object[]{ ANY, "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"} ) );
+        tlsVersionComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
             @Override
-            public String call( final String protocol ) {
-                return protocol == null ? resources.getString("tls-protocol.any") : resources.getString("tls-protocol." + protocol) ; 
+            public String call( final Object protocol ) {
+                return protocol == ANY ? resources.getString("tls-protocol.any") : resources.getString("tls-protocol." + protocol) ;
             }
         }, null, true ) );
 
@@ -215,7 +217,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private void modelToView( final HttpConfiguration httpConfiguration ) {
         setText( hostTextField, httpConfiguration.getHost() );
         setText( portTextField, httpConfiguration.getPort()>0 ? Integer.toString(httpConfiguration.getPort()) : "");
-        protocolComboBox.setSelectedItem( httpConfiguration.getProtocol() );       
+        protocolComboBox.setSelectedItem( httpConfiguration.getProtocol() );
+        if ( protocolComboBox.getSelectedItem()==null ) protocolComboBox.setSelectedIndex( 0 );
         setText( pathTextField, httpConfiguration.getPath() );
         setText( usernameTextField, httpConfiguration.getUsername() );
         if ( httpConfiguration.getPasswordOid()!=null )
@@ -224,6 +227,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         setText( ntlmHostTextField, httpConfiguration.getNtlmHost() );
 
         tlsVersionComboBox.setSelectedItem( httpConfiguration.getTlsVersion() );
+        if ( tlsVersionComboBox.getSelectedItem()==null ) tlsVersionComboBox.setSelectedIndex( 0 );
         switch ( httpConfiguration.getTlsKeyUse() ) {
             case DEFAULT:
                 useDefaultPrivateKeyRadioButton.setSelected( true );
@@ -282,7 +286,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         } else {
             httpConfiguration.setPort( Integer.parseInt( portTextField.getText() ) );
         }
-        httpConfiguration.setProtocol( (HttpConfiguration.Protocol) protocolComboBox.getSelectedItem() );
+        if ( protocolComboBox.getSelectedItem() == ANY ) {
+            httpConfiguration.setProtocol( null );
+        } else {
+            httpConfiguration.setProtocol( (HttpConfiguration.Protocol) protocolComboBox.getSelectedItem() );
+        }
         httpConfiguration.setPath( getText( pathTextField, true) );
 
         httpConfiguration.setUsername( getText( usernameTextField, true ) );
@@ -297,7 +305,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         httpConfiguration.setTlsKeystoreOid( 0 );
         httpConfiguration.setTlsKeystoreAlias( null );
         if ( tlsVersionComboBox.isEnabled() ) {
-            httpConfiguration.setTlsVersion( (String) tlsVersionComboBox.getSelectedItem() );
+            if ( tlsVersionComboBox.getSelectedItem() == ANY ) {
+                httpConfiguration.setTlsVersion( null );
+            } else {
+                httpConfiguration.setTlsVersion( (String) tlsVersionComboBox.getSelectedItem() );
+            }
             if ( useDefaultPrivateKeyRadioButton.isSelected() ) {
                 httpConfiguration.setTlsKeyUse( HttpConfiguration.Option.DEFAULT );
             } else if ( doNotUseAnyPrivateKeyRadioButton.isSelected() ) {
