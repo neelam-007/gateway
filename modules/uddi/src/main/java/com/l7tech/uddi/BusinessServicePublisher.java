@@ -380,12 +380,22 @@ public class BusinessServicePublisher implements Closeable {
             toPublishTemplate.setBindingKey(originalBindingKey);
             functionalTemplate.setBindingKey(null);
 
+            if(functionalTemplate.getCategoryBag() == null){
+                //functional should not be null, but protect against it. We know our to publish category bag is not null.
+                final CategoryBag newCatBag = new CategoryBag();
+                functionalTemplate.setCategoryBag(newCatBag);
+            }
+
+            //synchronize the functional template's keyed references with the proxy - to ensure it is returned from the same searches
+            //do this before adding D.1 and D.2 below as we don't want them on the proxy.
+            synchronizeCategoryBags(toPublishTemplate.getCategoryBag(), functionalTemplate.getCategoryBag());
+
             //add the required meta data to functional endpoint
             //manage D1 and D2 on functional endpoint
             final List<KeyedReference> functionalRefs = getFunctionalEndPointMetaData(originalBindingKey);
             functionalTemplate.getCategoryBag().getKeyedReference().addAll(functionalRefs);
+            
             updateFunctionalTemplate = true;
-
         }
 
         try {

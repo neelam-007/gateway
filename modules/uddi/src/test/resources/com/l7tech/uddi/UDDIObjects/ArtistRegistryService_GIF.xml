@@ -32,6 +32,7 @@
                 <ns4:tModelInstanceInfo tModelKey="uddi:5b3ffd40-b8ad-4965-9d51-292d6a966476"/>
             </ns4:tModelInstanceDetails>
             <ns4:categoryBag>
+                <ns4:keyedReference tModelKey="uddi:uddi.org:wsdl:types" keyName="uddi.org:wsdl:types" keyValue="port"/>
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:type" keyName="Management entity type" keyValue="managedEndpoint"/>
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:system" keyName="Management System" keyValue="Layer7 WSMS"/>
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:state" keyName="Governance state" keyValue="managed"/>

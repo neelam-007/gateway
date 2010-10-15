@@ -91,6 +91,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private Runnable disposeSettingsDialogCallback;
     private boolean isSystinet;
     private final Set<UDDIKeyedReference> keyedReferenceSet = new HashSet<UDDIKeyedReference>();
+    private UDDIRegistryAdmin.EndpointScheme gifEndpointScheme;
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -315,8 +316,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                         final Boolean isGif = uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.IS_GIF);
                         if( isGif != null && isGif){
                             gifPublishCheckBox.setSelected(true);
-                            UDDIRegistryAdmin.EndpointScheme gifEndpointScheme =
-                                    uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.GIF_SCHEME);
+                            gifEndpointScheme = uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.GIF_SCHEME);
                             if(gifEndpointScheme != null){
                                 endPointTypeComboBox.setSelectedItem(gifEndpointScheme);
                             } else {
@@ -526,7 +526,9 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                 endPointTypeComboBox.setEnabled(enable && gifSelected);
                 if(gifSelected){
                     removeExistingBindingsCheckBox.setEnabled(false);
-                    endPointTypeComboBox.setSelectedIndex(0);
+                    if(gifEndpointScheme == null){
+                        endPointTypeComboBox.setSelectedIndex(0);
+                    }
                 } else {
                     endPointTypeComboBox.setSelectedIndex(-1);
                 }

@@ -309,7 +309,7 @@ public class BusinessServicePublisherTest {
 
         //Validate all proxy meta data
         final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
-        validateProxyGifReferences(endpointPair, proxyReferences, 4);
+        validateProxyGifReferences(endpointPair, proxyReferences, 5);
 
         //the functional endPoint should have a new key
         Assert.assertNotNull("Functional endpoint should have a key", functionalTemplate.getBindingKey());
@@ -421,6 +421,11 @@ public class BusinessServicePublisherTest {
         Assert.assertNotNull("Missing reference", proxyRef);
         Assert.assertEquals("Incorrect value", proxyBindingKey, proxyRef.getKeyValue());
         Assert.assertEquals("Incorrect name", "Proxy reference", proxyRef.getKeyName());
+
+        final KeyedReference typeRef = functionalRefMap.get("uddi:uddi.org:wsdl:types");
+        Assert.assertNotNull("Missing reference", typeRef);
+        Assert.assertEquals("Incorrect value", "port", typeRef.getKeyValue());
+        Assert.assertEquals("Incorrect name", "uddi.org:wsdl:types", typeRef.getKeyName());
     }
 
     private void validateProxyGifReferences(EndpointPair endpointPair, List<KeyedReference> proxyReferences, int numExpected) {
@@ -450,6 +455,12 @@ public class BusinessServicePublisherTest {
         Assert.assertNotNull("Missing reference", endPointRef);
         Assert.assertEquals("Incorrect value", endpointPair.getEndPointUrl(), endPointRef.getKeyValue());
         Assert.assertEquals("Incorrect name", "URL from AccessPoint", endPointRef.getKeyName());
+
+        //this was copied from the functional reference on the first publish
+        final KeyedReference typeRef = proxyRefMap.get("uddi:uddi.org:wsdl:types");
+        Assert.assertNotNull("Missing reference", typeRef);
+        Assert.assertEquals("Incorrect value", "port", typeRef.getKeyValue());
+        Assert.assertEquals("Incorrect name", "uddi.org:wsdl:types", typeRef.getKeyName());
     }
 
     @BugNumber(8426)
@@ -571,9 +582,9 @@ public class BusinessServicePublisherTest {
 
         //test that there is only one url reference on the proxy - the old one should have been removed
         final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
-        Assert.assertEquals("Incorrect number of proxy references found", 5, proxyReferences.size());
+        Assert.assertEquals("Incorrect number of proxy references found", 6, proxyReferences.size());
 
-        validateProxyGifReferences(endpointPair, proxyReferences, 5);
+        validateProxyGifReferences(endpointPair, proxyReferences, 6);
 
         int numUrlRefsFound = 0;
         KeyedReference urlRef = new KeyedReference();
@@ -679,7 +690,7 @@ public class BusinessServicePublisherTest {
 
         //test that there is only one url reference on the proxy - the old one should have been removed
         final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
-        Assert.assertEquals("Incorrect number of proxy references found", 5, proxyReferences.size());
+        Assert.assertEquals("Incorrect number of proxy references found", 6, proxyReferences.size());
 
         //validate the keyed reference was updated
         final Set<UDDIKeyedReference> allRefs = convertToBeans(proxyReferences);
