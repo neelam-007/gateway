@@ -2341,6 +2341,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getConfigureFtpAuditArchiverAction());
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
+            menu.add(getManageHttpConfigurationAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
