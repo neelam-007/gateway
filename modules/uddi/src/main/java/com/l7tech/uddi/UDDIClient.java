@@ -18,7 +18,6 @@ import java.util.Set;
  * @author darmstrong
  */
 public interface UDDIClient extends Closeable {
-    String GENERAL_KEYWORDS = "uddi:uddi.org:categorization:general_keywords";
 
     /**
      * Authenticate the credentials (if any)
@@ -397,78 +396,6 @@ public interface UDDIClient extends Closeable {
      * @throws UDDIException If an error occurs
      */
     UDDISubscriptionResults pollSubscription( long startTime, long endTime, String subscriptionKey ) throws UDDIException;
-
-    /**
-     * Represents a UDDI KeyedReference.
-     */
-    static final class UDDIKeyedReference {
-
-        /**
-         * Create a new keyed reference with the given values.
-         *
-         * @param key The key (required and must not be empty)
-         * @param name The name (optional)
-         * @param value The value (required)
-         */
-        public UDDIKeyedReference( final String key,
-                                   final String name,
-                                   final String value ) {
-            if(key == null || key.trim().isEmpty()) throw new IllegalArgumentException("key cannot be null or empty");
-            if(value == null || value.trim().isEmpty()) throw new IllegalArgumentException("value cannot be null or empty");
-            if(key.equals(GENERAL_KEYWORDS) && (name == null || name.trim().isEmpty())){
-                //See http://www.uddi.org/pubs/uddi_v3.htm#_Ref8978058                
-                throw new IllegalArgumentException("If the keyedReference is a general keywords classification, then name cannot be null or empty");
-            }
-
-            this.tModelKey = key;
-            this.keyValue = value;
-            this.keyName = name;
-        }
-
-        public String getKey() {
-            return this.tModelKey;
-        }
-
-        public String getName() {
-            return this.keyName;
-        }
-
-        public String getValue() {
-            return this.keyValue;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            UDDIKeyedReference that = (UDDIKeyedReference) o;
-
-            if (!keyValue.equals(that.keyValue)) return false;
-            if (!tModelKey.equals(that.tModelKey)) return false;
-
-            if(tModelKey.equals(GENERAL_KEYWORDS)){
-                if (keyName != null ? !keyName.equals(that.keyName) : that.keyName != null) return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tModelKey.hashCode();
-            result = 31 * result + keyValue.hashCode();
-            if(tModelKey.equals(GENERAL_KEYWORDS)){
-                result = 31 * result + (keyName != null ? keyName.hashCode() : 0);
-            }
-
-            return result;
-        }
-
-        private final String tModelKey;
-        private final String keyValue;
-        private final String keyName;
-
-    }
 
     static final class UDDIKeyedReferenceGroup{
         private final String tModelKey;

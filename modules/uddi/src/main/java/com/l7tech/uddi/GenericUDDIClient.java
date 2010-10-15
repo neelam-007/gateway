@@ -46,7 +46,15 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         if(bindingTemplate == null) throw new NullPointerException("bindingTemplate cannot be null");
 
         final boolean isUpdate = bindingTemplate.getBindingKey() != null;
-        
+
+        //inspect the BindingTemplate in case of programming error. Any empty category bag will cause problems.
+        final CategoryBag categoryBag = bindingTemplate.getCategoryBag();
+        if(categoryBag != null){
+            if(categoryBag.getKeyedReference().isEmpty() && categoryBag.getKeyedReferenceGroup().isEmpty()){
+                //remove the category bag
+                bindingTemplate.setCategoryBag(null);
+            }
+        }
         SaveBinding saveBinding = new SaveBinding();
         saveBinding.setAuthInfo(getAuthToken());
         saveBinding.getBindingTemplate().add(bindingTemplate);
@@ -159,9 +167,9 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         for ( UDDIKeyedReference uddiKeyedReference : keyedReferences ) {
             cbag.getKeyedReference().add( buildKeyedReference(
-                uddiKeyedReference.getKey(),
-                uddiKeyedReference.getName(),
-                uddiKeyedReference.getValue() ) );
+                uddiKeyedReference.getTModelKey(),
+                uddiKeyedReference.getKeyName(),
+                uddiKeyedReference.getKeyValue() ) );
         }
 
         final UDDIPublicationPortType uddiPublicationPortType = getPublishPort();

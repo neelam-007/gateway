@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -205,7 +206,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
             final String startDate = dateFormat.format( new Date(metricsRequestContext.getPeriodStart()) );
             final String endDate = dateFormat.format( new Date(endTime) );
 
-            final Collection<UDDIClient.UDDIKeyedReference> references = new ArrayList<UDDIClient.UDDIKeyedReference>();
+            final Collection<UDDIKeyedReference> references = new ArrayList<UDDIKeyedReference>();
 
             for ( UDDITemplate.KeyedReferenceTemplate keyedReferenceTemplate : template.getMetricsKeyedReferences() ) {
                 String key = keyedReferenceTemplate.getKey();
@@ -217,7 +218,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 if ( value != null ) {
-                    references.add( new UDDIClient.UDDIKeyedReference( key, name, value) );
+                    references.add( new UDDIKeyedReference( key, name, value) );
                 }
             }
 

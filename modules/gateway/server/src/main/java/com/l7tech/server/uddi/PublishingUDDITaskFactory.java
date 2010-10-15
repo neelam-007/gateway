@@ -212,6 +212,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final Set<EndpointPair> persistedEndpoints = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);
                 //this will be null on first publish
                 final Set<String> publishedBindingKeys = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS);
+
+                final Set<UDDIKeyedReference> configKeyedReferences = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
+                final Set<UDDIKeyedReference> runtimeKeyedReferences = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_RUNTIME);
+
                 final Set<String> justPublishedBindingKeys;
 
                 BusinessServicePublisher businessServicePublisher = null;
@@ -230,8 +234,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             persistedEndpoints,
                             allEndpointPairs,
                             publishedBindingKeys,
-                            uddiProxiedServiceInfo.isRemoveOtherBindings()
-                    );
+                            uddiProxiedServiceInfo.isRemoveOtherBindings(),
+                            configKeyedReferences,
+                            runtimeKeyedReferences);
 
                 } catch (UDDIException e) {
                     PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
@@ -253,6 +258,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     if(publishedBindingKeys == null || !publishedBindingKeys.equals(justPublishedBindingKeys)){
                         uddiProxiedServiceInfo.setProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS, justPublishedBindingKeys);
                     }
+
+                    //ok if configKeyedReferences is null - property is removed.
+                    uddiProxiedServiceInfo.setProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_RUNTIME, configKeyedReferences);
 
                     factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
 
@@ -378,6 +386,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 final String functionalBindingKey;
                 final String proxyBindingKey;
                 BusinessServicePublisher businessServicePublisher = null;
+                final Set<UDDIKeyedReference> configKeyedReferences = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
                 try {
                     businessServicePublisher = new BusinessServicePublisher(
                         wsdl,
@@ -387,6 +396,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     // what is the name of the WSMS for the required reference C.2?
                     final String keyValue = ServerConfig.getInstance().getPropertyCached("uddi.systinet.gif.management.system");
 
+                    final Set<UDDIKeyedReference> runtimeKeyedReferences = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_RUNTIME);
                     //provides best effort commit / rollback for all UDDI interactions
                     final Pair<String, String> proxyFuncPair = businessServicePublisher.publishBindingTemplateGif(
                             serviceControl.getUddiServiceKey(),
@@ -396,7 +406,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             endPointPair,
                             publishedBindingKey,
                             functionalEndpointKey,
-                            keyValue);
+                            keyValue,
+                            configKeyedReferences,
+                            runtimeKeyedReferences);
                     proxyBindingKey = proxyFuncPair.left;
                     functionalBindingKey = proxyFuncPair.right;
 
@@ -425,6 +437,9 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         uddiProxiedServiceInfo.setProperty(UDDIProxiedServiceInfo.FUNCTIONAL_ENDPOINT_KEY, functionalBindingKey);
                     }
 
+                    //ok if configKeyedReferences is null - property is removed.
+                    uddiProxiedServiceInfo.setProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_RUNTIME, configKeyedReferences);
+                    
                     factory.uddiProxiedServiceInfoManager.update(uddiProxiedServiceInfo);
                 }
             } catch (ObjectModelException e) {
@@ -651,8 +666,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
         if (isActiveSOAVirtualService) {
             return new UDDIRegistrySpecificMetaData() {
                 @Override
-                public Collection<UDDIClient.UDDIKeyedReference> getBusinessServiceKeyedReferences() {
-                    final Collection<UDDIClient.UDDIKeyedReference> returnColl = new ArrayList<UDDIClient.UDDIKeyedReference>();
+                public Collection<UDDIKeyedReference> getBusinessServiceKeyedReferences() {
+                    final Collection<UDDIKeyedReference> returnColl = new ArrayList<UDDIKeyedReference>();
 
                     //download the tmodel key for active soa
                     final String virtualKey = uddiFactory.config.getProperty("uddi.centrasite.activesoa.virtual.service.tmodelkey", "uddi:9de0173b-5117-11de-8cf9-da0192ff3739");
@@ -670,8 +685,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         return null;
                     }
 
-                    final UDDIClient.UDDIKeyedReference kr =
-                            new UDDIClient.UDDIKeyedReference(virtualKey, null, "Virtual service");
+                    final UDDIKeyedReference kr =
+                            new UDDIKeyedReference(virtualKey, null, "Virtual service");
                     returnColl.add(kr);
                     return Collections.unmodifiableCollection(returnColl);
                 }
@@ -679,11 +694,11 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 @Override
                 public Collection<UDDIClient.UDDIKeyedReferenceGroup> getBusinessServiceKeyedReferenceGroups() {
                     final Collection<UDDIClient.UDDIKeyedReferenceGroup> returnColl = new ArrayList<UDDIClient.UDDIKeyedReferenceGroup>();
-                    final UDDIClient.UDDIKeyedReference kr =
-                            new UDDIClient.UDDIKeyedReference("uddi:uddi.org:categorization:general_keywords",
+                    final UDDIKeyedReference kr =
+                            new UDDIKeyedReference("uddi:uddi.org:categorization:general_keywords",
                                     "Contains", serviceControl.getUddiServiceKey());
 
-                    final Collection<UDDIClient.UDDIKeyedReference> allRefs = new ArrayList<UDDIClient.UDDIKeyedReference>();
+                    final Collection<UDDIKeyedReference> allRefs = new ArrayList<UDDIKeyedReference>();
                     allRefs.add(kr);
 
                     final UDDIClient.UDDIKeyedReferenceGroup krg =

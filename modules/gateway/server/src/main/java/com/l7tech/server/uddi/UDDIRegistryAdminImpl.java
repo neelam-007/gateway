@@ -235,33 +235,47 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
     }
 
     @Override
-    public void updateProxiedServiceOnly(UDDIProxiedServiceInfo proxiedServiceInfo) throws UpdateException, FindException {
+    public void updateProxiedServiceOnly(final UDDIProxiedServiceInfo proxiedServiceInfo) throws UpdateException, FindException {
         final UDDIProxiedServiceInfo original = uddiProxiedServiceInfoManager.findByPrimaryKey(proxiedServiceInfo.getOid());
-        if(original == null) throw new FindException("Could not find UDDIProxiedServiceInfo with id: " + proxiedServiceInfo);
+        if(original == null)
+            throw new FindException("Could not find UDDIProxiedServiceInfo #(" + proxiedServiceInfo.getOid() + ")");
 
-        proxiedServiceInfo.throwIfFinalPropertyModified(original);
+        //if any of the above fields have changed, then we will copy them onto the entity we just retrieved from the db
 
-        if(original.isUpdateProxyOnLocalChange() == proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
-           original.isMetricsEnabled() == proxiedServiceInfo.isMetricsEnabled() &&
-           original.isPublishWsPolicyEnabled() == proxiedServiceInfo.isPublishWsPolicyEnabled() &&
-           original.isPublishWsPolicyFull() == proxiedServiceInfo.isPublishWsPolicyFull() &&
-           original.isPublishWsPolicyInlined() == proxiedServiceInfo.isPublishWsPolicyInlined()) return;
+        boolean updateRequired = original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange() ||
+           original.isMetricsEnabled() != proxiedServiceInfo.isMetricsEnabled() ||
+           original.isPublishWsPolicyEnabled() != proxiedServiceInfo.isPublishWsPolicyEnabled() ||
+           original.isPublishWsPolicyFull() != proxiedServiceInfo.isPublishWsPolicyFull() ||
+           original.isPublishWsPolicyInlined() != proxiedServiceInfo.isPublishWsPolicyInlined();
 
-        //check if we should trigger a publish to UDDI, but only when the check box has been checked and is being saved since it was unchecked
-        if(proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
-                original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange()){
-            final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(proxiedServiceInfo.getOid());
-            if(publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED){
-                publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
-                uddiPublishStatusManager.update(publishStatus);
-                logger.log(Level.INFO, "Set gateway WSDL to update in UDDI as it will now be kept synchronized with the Gateway");
+        final boolean synchronizeWsdl = proxiedServiceInfo.isUpdateProxyOnLocalChange() &&
+                original.isUpdateProxyOnLocalChange() != proxiedServiceInfo.isUpdateProxyOnLocalChange();
+
+        final boolean refsAreDifferent =
+                original.areKeyedReferencesDifferent(
+                        proxiedServiceInfo.<Set<UDDIKeyedReference>>getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG));
+        updateRequired = updateRequired || refsAreDifferent;
+        final boolean isRepublishRequired = synchronizeWsdl || refsAreDifferent;
+
+        if (updateRequired) {
+            //this comparison must be done before the update to hibernate below, as otherwise hibernate synchronizes both objects
+            if (isRepublishRequired) {
+                //this causes a republish
+                final UDDIPublishStatus publishStatus = uddiPublishStatusManager.findByProxiedSerivceInfoOid(original.getOid());
+                if (publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISHED ||
+                        publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.PUBLISH_FAILED) {
+                    publishStatus.setPublishStatus(UDDIPublishStatus.PublishStatus.PUBLISH);
+                    uddiPublishStatusManager.update(publishStatus);
+                    if(synchronizeWsdl){
+                        logger.log(Level.INFO, "Set gateway WSDL to update in UDDI as it will now be kept synchronized with the Gateway");
+                    }
+                }
             }
+
+            //update the entity retrieved from the db
+            original.copyConfigModifiableProperties(proxiedServiceInfo);
+            uddiProxiedServiceInfoManager.update(original);
         }
-
-        //the above code must happen first, as hibernate is smart and will update the 'original' reference above
-        //once we save the incoming entity with the same identity
-        uddiProxiedServiceInfoManager.update(proxiedServiceInfo);
-
     }
 
     @Override
@@ -455,22 +469,26 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void publishGatewayEndpoint(final PublishedService publishedService,
-                                       final boolean removeOthers)
+                                       final boolean removeOthers,
+                                       final Map<String, Object> properties)
             throws FindException, SaveException, UDDIRegistryNotEnabledException {
-        if(publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
+        if (publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
 
         final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
-        if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
+        if (service == null)
+            throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
 
         final UDDIServiceControl serviceControl = uddiServiceControlManager.findByPublishedServiceOid(service.getOid());
-        if(serviceControl == null) throw new SaveException("PublishedService with id #("+ publishedService +") was not created from UDDI (record may have been deleted)");
+        if (serviceControl == null)
+            throw new SaveException("PublishedService with id #(" + publishedService + ") was not created from UDDI (record may have been deleted)");
 
         final UDDIRegistry uddiRegistry = uddiRegistryManager.findByPrimaryKey(serviceControl.getUddiRegistryOid());
-        if(uddiRegistry == null) throw new SaveException("UDDIRegistry with id #("+serviceControl.getUddiRegistryOid()+") was not found");
+        if (uddiRegistry == null)
+            throw new SaveException("UDDIRegistry with id #(" + serviceControl.getUddiRegistryOid() + ") was not found");
         throwIfGatewayNotEnabled(uddiRegistry);
 
-        if(serviceControl.isUnderUddiControl() && removeOthers)
-            throw new SaveException("Published service with id #("+ publishedService +") is not under UDDI control so cannot remove existing bindingTemplates");
+        if (serviceControl.isUnderUddiControl() && removeOthers)
+            throw new SaveException("Published service with id #(" + publishedService + ") is not under UDDI control so cannot remove existing bindingTemplates");
 
         final String wsdlHash = getWsdlHash(service);
 
@@ -478,6 +496,10 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
                 wsdlHash, removeOthers);
 
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            serviceInfo.setProperty(entry.getKey(), entry.getValue());
+        }
+        
         final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);
@@ -486,9 +508,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
     @Override
     public void publishGatewayEndpointGif(final PublishedService publishedService,
-                                          final EndpointScheme scheme)
-            throws FindException, SaveException, UDDIRegistryNotEnabledException {
-        if(publishedService == null) throw new NullPointerException("publishedServiceOid must not be null");
+                                          final Map<String, Object> properties) throws FindException, SaveException, UDDIRegistryNotEnabledException {
+        if(publishedService == null) throw new NullPointerException("publishedService must not be null");
+
+        if(properties == null) throw new NullPointerException("properties cannot be null");
+
+        final EndpointScheme scheme = (EndpointScheme) properties.get(UDDIProxiedServiceInfo.GIF_SCHEME);
+        if(scheme == null)
+            throw new IllegalArgumentException("properties is missing the '" + UDDIProxiedServiceInfo.GIF_SCHEME + "' property");
 
         final PublishedService service = serviceCache.getCachedService(publishedService.getOid());
         if(service == null) throw new SaveException("PublishedService with id #(" + publishedService + ") was not found");
@@ -504,8 +531,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
 
         final UDDIProxiedServiceInfo serviceInfo = UDDIProxiedServiceInfo.getGifEndPointPublishInfo(service.getOid(),
                 uddiRegistry.getOid(), serviceControl.getUddiBusinessKey(), serviceControl.getUddiBusinessName(),
-                wsdlHash, scheme);
+                wsdlHash);
 
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            serviceInfo.setProperty(entry.getKey(), entry.getValue());
+        }
         final long oid = uddiProxiedServiceInfoManager.save(serviceInfo);
         final UDDIPublishStatus newStatus = new UDDIPublishStatus(oid, UDDIPublishStatus.PublishStatus.PUBLISH);
         uddiPublishStatusManager.save(newStatus);

@@ -97,8 +97,11 @@ public class BusinessServicePublisher implements Closeable {
      * When a previously published BindingTemplate is no longer applicable, e.g. a listener was removed, then it will be
      * deleted from UDDI. publishedBindingKeys is the set of bindingTemplate keys which were published the last time
      * the gateway checked the UDDI Registry. It's possible that based on gateway configuration changes, that some of
-     * the previously published bindingTemplates are no longer required in UDDI. 
-     *
+     * the previously published bindingTemplates are no longer required in UDDI.
+     * <p/>
+     * What ever keyedReferences are included in configKeyedReferences will be attached to the categoryBag of each
+     * bindingTemplate published. Any references which exist in runtimeKeyedReferences but do not exist in
+     * configKeyedReferences will be removed from UDDI.
      * <p/>
      * See UDDIUtilities.validateAllEndpointPairs(allEndpointPairs) for validation of allEndpointPairs
      *
@@ -117,6 +120,8 @@ public class BusinessServicePublisher implements Closeable {
      * @param publishedBindingKeys     Set &lt;String&gt; Can be null. The set of previously published bindingKeys for this service.
      *                                 This is used to know when a bindingTemplate needs to be deleted e.g. after a listener was removed
      * @param removeOthers             boolean, if true all other endpoints will be removed
+     * @param configKeyedReferences    Set of UDDIKeyedReferences that are required to be published. Can be null when none need to be published.
+     * @param runtimeKeyedReferences   Set of UDDIKeyedReferences that were last published. Can be null when no references have been published.
      * @return Set&lt;String&gt; The set of BindingTemplate bindingKeys which were published for the supplied endpoints
      * @throws UDDIException any problems searching / updating / deleting from / to UDDI
      */
@@ -128,7 +133,9 @@ public class BusinessServicePublisher implements Closeable {
             final Collection<EndpointPair> previousEndpointPairs,
             final Collection<EndpointPair> allEndpointPairs,
             final Set<String> publishedBindingKeys,
-            final boolean removeOthers) throws UDDIException {
+            final boolean removeOthers,
+            final Set<UDDIKeyedReference> configKeyedReferences,
+            final Set<UDDIKeyedReference> runtimeKeyedReferences) throws UDDIException {
         if (serviceKey == null || serviceKey.trim().isEmpty())
             throw new IllegalArgumentException("serviceKey cannot be null or empty");
         if (wsdlPortName == null || wsdlPortName.trim().isEmpty())
@@ -147,7 +154,9 @@ public class BusinessServicePublisher implements Closeable {
                 allEndpointPairs,
                 previousEndpointPairs,
                 publishedBindingKeys,
-                removeOthers);
+                removeOthers,
+                configKeyedReferences,
+                runtimeKeyedReferences);
 
         final List<BindingTemplate> bindingTemplates = publishedTemplateAndModels.left;
         final Set<String> justPublishedBindingKeys = new HashSet<String>();
@@ -178,20 +187,26 @@ public class BusinessServicePublisher implements Closeable {
      * Publish a GIF endpoint to an existing service. This involves publishing a new bindingTemplate, giving it the
      * bindingKey of the bindingTemplate it is proxying, then adding the required meta data to the new bindingTemplate
      * (called the proxy endpoint) and to the original endpoint (called the functional endpoint).
+     * <p/>
+     * What ever keyedReferences are included in configKeyedReferences will be attached to the categoryBag of each
+     * bindingTemplate published. Any references which exist in runtimeKeyedReferences but do not exist in
+     * configKeyedReferences will be removed from UDDI.
      *
-     * @param serviceKey key of the BusinessService to update
-     * @param wsdlPortName wsdl:port to model as a bindingTEmplate
-     * @param wsdlPortBinding wsdl:binding binding the wsdl:port implements
+     * @param serviceKey               key of the BusinessService to update
+     * @param wsdlPortName             wsdl:port to model as a bindingTEmplate
+     * @param wsdlPortBinding          wsdl:binding binding the wsdl:port implements
      * @param wsdlPortBindingNamespace namespace of the wsdl:binding
-     * @param endpointPair the external gateway URL and WSDL URL for the GIF endpoint.
-     * @param publishedBindingKey may be null on first publish. The key of the 'proxy'. When not null this is the
-     * original bindingKey before the GIF publish was done.
-     * @param functionalBindingKey may be null on first publish. When not null this is the newly assigned bindingKey
-     * given to the original bindingTemplate after it was proxied.
-     * @param mgmtSystemKeyValue the name to use for GIF meta data C.2 - the name of the WSMS (Web Services Management System).
-     * Required.
+     * @param endpointPair             the external gateway URL and WSDL URL for the GIF endpoint.
+     * @param publishedBindingKey      may be null on first publish. The key of the 'proxy'. When not null this is the
+     *                                 original bindingKey before the GIF publish was done.
+     * @param functionalBindingKey     may be null on first publish. When not null this is the newly assigned bindingKey
+     *                                 given to the original bindingTemplate after it was proxied.
+     * @param mgmtSystemKeyValue       the name to use for GIF meta data C.2 - the name of the WSMS (Web Services Management System).
+     *                                 Required.
+     * @param configKeyedReferences    Set of UDDIKeyedReferences that are required to be published. Can be null when none need to be published.
+     * @param runtimeKeyedReferences   Set of UDDIKeyedReferences that were last published. Can be null when no references have been published.
      * @return a pair, the lhs is the proxy bindingTemplates's bindingKey and the rhs is the functional
-     * bindingTemplate's bindingKey
+     *         bindingTemplate's bindingKey
      * @throws UDDIException any exceptions updating UDDI.
      */
     public Pair<String, String> publishBindingTemplateGif(
@@ -202,7 +217,9 @@ public class BusinessServicePublisher implements Closeable {
             final EndpointPair endpointPair,
             final String publishedBindingKey,
             final String functionalBindingKey,
-            final String mgmtSystemKeyValue) throws UDDIException {
+            final String mgmtSystemKeyValue,
+            final Set<UDDIKeyedReference> configKeyedReferences,
+            final Set<UDDIKeyedReference> runtimeKeyedReferences) throws UDDIException {
         if (serviceKey == null || serviceKey.trim().isEmpty())
             throw new IllegalArgumentException("serviceKey cannot be null or empty");
         if (wsdlPortName == null || wsdlPortName.trim().isEmpty())
@@ -211,7 +228,7 @@ public class BusinessServicePublisher implements Closeable {
             throw new IllegalArgumentException("wsdlPortBinding cannot be null or empty");
         if (wsdlPortBindingNamespace == null || wsdlPortBindingNamespace.trim().isEmpty())
             throw new IllegalArgumentException("wsdlPortBindingNamespace cannot be null or empty");
-        if(mgmtSystemKeyValue == null || mgmtSystemKeyValue.trim().isEmpty())
+        if (mgmtSystemKeyValue == null || mgmtSystemKeyValue.trim().isEmpty())
             throw new IllegalArgumentException("mgmtSystemKeyValue cannot be null or empty");
 
         UDDIUtilities.validateAllEndpointPairs(Arrays.asList(endpointPair));
@@ -231,7 +248,8 @@ public class BusinessServicePublisher implements Closeable {
             throw new UDDIException(e.getMessage(), ExceptionUtils.getDebugException(e));
         }
 
-        if(bindingToModels.left.size() != 1) throw new IllegalStateException("Only a single binding template should be created.");
+        if (bindingToModels.left.size() != 1)
+            throw new IllegalStateException("Only a single binding template should be created.");
 
         //Get the service
         final Set<String> serviceKeys = new HashSet<String>();
@@ -256,16 +274,19 @@ public class BusinessServicePublisher implements Closeable {
         }
 
         //prepare our binding template with required meta data for GIF
-        final List<KeyedReference> keyedReferences = getProxyGifMetaData(endpointPair, mgmtSystemKeyValue);
+        final Set<UDDIKeyedReference> uddiKeyedReferences = getProxyGifMetaData(endpointPair, mgmtSystemKeyValue);
+        if (configKeyedReferences != null) {
+            uddiKeyedReferences.addAll(configKeyedReferences);
+        }
 
         final BindingTemplate toPublishTemplate = bindingToModels.left.get(0);
         final Map<String, TModel> toPublishTModels = bindingToModels.right;
         //we know these reference have not been added yet
-        if(toPublishTemplate.getCategoryBag() == null){
+        if (toPublishTemplate.getCategoryBag() == null) {
             final CategoryBag cBag = new CategoryBag();
             toPublishTemplate.setCategoryBag(cBag);
         }
-        toPublishTemplate.getCategoryBag().getKeyedReference().addAll(keyedReferences);
+        toPublishTemplate.getCategoryBag().getKeyedReference().addAll(convertFromBeans(uddiKeyedReferences));
 
         BindingTemplate functionalTemplate = null;
         final boolean updateFunctionalTemplate;
@@ -277,19 +298,19 @@ public class BusinessServicePublisher implements Closeable {
 
             //we must find the bindingTemplate
             for (BindingTemplate publishedTemplate : bindingTemplates) {
-                if(publishedTemplate.getBindingKey().equals(publishedBindingKey)){
+                if (publishedTemplate.getBindingKey().equals(publishedBindingKey)) {
                     prevPublished = publishedTemplate;
-                } else if (publishedTemplate.getBindingKey().equals(functionalBindingKey)){
+                } else if (publishedTemplate.getBindingKey().equals(functionalBindingKey)) {
                     functionalTemplate = publishedTemplate;
                 }
             }
 
-            if(prevPublished == null){
+            if (prevPublished == null) {
                 //cause publish to fail, will eventually fail out.
-                throw new UDDIException("Cannot find bindingTemplate previously published to UDDI with bindingKey #(" + publishedBindingKey +")");
+                throw new UDDIException("Cannot find bindingTemplate previously published to UDDI with bindingKey #(" + publishedBindingKey + ")");
             }
 
-            if(functionalTemplate == null) {
+            if (functionalTemplate == null) {
                 throw new UDDIException("Cannot find the functionalTemplate with bindingKey #(" + functionalBindingKey + ").");
             }
 
@@ -301,8 +322,13 @@ public class BusinessServicePublisher implements Closeable {
                     publishedTModels,
                     new HashSet<String>());
 
+            //clean up any required UDDI references
+            if (runtimeKeyedReferences != null) {
+                removeOldKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
+            }
+
             //confirm the keys were transferred
-            if(toPublishTemplate.getBindingKey() == null) {
+            if (toPublishTemplate.getBindingKey() == null) {
                 throw new UDDIException("Previously published bindingTemplate with key #(" + publishedBindingKey + ")" +
                         "does not match the service's WSDL. Cannot update.");
             }
@@ -311,10 +337,10 @@ public class BusinessServicePublisher implements Closeable {
             //will need to be updated. The synchronizing in updateTemplate above will have brought over the old
             //reference which has the old URL value, therefore we must remove it here
             final List<KeyedReference> toPublishReferences = toPublishTemplate.getCategoryBag().getKeyedReference();
-            for (int i = toPublishReferences.size()-1; i >= 0; i--) {//revers to protect against compaction
+            for (int i = toPublishReferences.size() - 1; i >= 0; i--) {//revers to protect against compaction
                 KeyedReference toPublishReference = toPublishReferences.get(i);
                 if (toPublishReference.getTModelKey().equals(UDDI_SYSTINET_COM_MANAGEMENT_URL)) {
-                    if(!toPublishReference.getKeyValue().equals(endpointPair.getEndPointUrl())){
+                    if (!toPublishReference.getKeyValue().equals(endpointPair.getEndPointUrl())) {
                         toPublishReferences.remove(i);
                     }
                 }
@@ -323,16 +349,16 @@ public class BusinessServicePublisher implements Closeable {
             //manage D1 and D2 on functional endpoint
             final List<KeyedReference> functionalRefs = getFunctionalEndPointMetaData(publishedBindingKey);
 
-            final List<UDDIClient.UDDIKeyedReference> requiredRefs = convertToBeans(functionalRefs);
-            final List<UDDIClient.UDDIKeyedReference> existingRefs = convertToBeans(functionalTemplate.getCategoryBag().getKeyedReference());
+            final List<UDDIKeyedReference> requiredRefs = convertToBeans(functionalRefs);
+            final List<UDDIKeyedReference> existingRefs = convertToBeans(functionalTemplate.getCategoryBag().getKeyedReference());
 
-            if(!existingRefs.containsAll(requiredRefs)){
+            if (!existingRefs.containsAll(requiredRefs)) {
                 //put refs D1 and D2 back on the functional endpoint if they have been removed
                 final CategoryBag cBag = new CategoryBag();
                 cBag.getKeyedReference().addAll(functionalRefs);
                 synchronizeCategoryBags(functionalTemplate.getCategoryBag(), cBag);
                 updateFunctionalTemplate = true;
-            }else {
+            } else {
                 updateFunctionalTemplate = false;
             }
         } else {
@@ -342,7 +368,7 @@ public class BusinessServicePublisher implements Closeable {
             //find the functional endpoint
             final Triple<BindingTemplate, TModel, TModel> tModelTriple = findMatchingEndpointAndModels(bindingTemplates,
                     toPublishTemplate, toPublishTModels, publishedTModels, false);
-            if(tModelTriple == null)
+            if (tModelTriple == null)
                 throw new UDDIException("The functional endpoint to proxy " +
                         "could not be found in UDDI on BusinessService with serviceKey #(" + serviceKey + ")");
 
@@ -386,7 +412,7 @@ public class BusinessServicePublisher implements Closeable {
             //Save all bindingTemplates together
             final List<BindingTemplate> toSaveTemplates = new ArrayList<BindingTemplate>();
             //publish update to the functional endpoint
-            if(updateFunctionalTemplate){
+            if (updateFunctionalTemplate) {
                 toSaveTemplates.add(functionalTemplate);
             }
 
@@ -820,9 +846,11 @@ public class BusinessServicePublisher implements Closeable {
             final String wsdlPortBinding,
             final String wsdlPortBindingNamespace,
             final Collection<EndpointPair> allEndpointPairs,
-            final Collection<EndpointPair> previousEndpointPairs, 
+            final Collection<EndpointPair> previousEndpointPairs,
             Set<String> publishedBindingKeys,
-            final boolean removeOthers)
+            final boolean removeOthers,
+            final Set<UDDIKeyedReference> configKeyedReferences,
+            final Set<UDDIKeyedReference> runtimeKeyedReferences)
             throws UDDIException {
 
         if(publishedBindingKeys == null) publishedBindingKeys = new HashSet<String>();
@@ -880,7 +908,7 @@ public class BusinessServicePublisher implements Closeable {
                 }
             }
         }else{
-            //fall back on Pandora method - try to match based on endpoint / hostname
+//            fall back on Pandora method - try to match based on endpoint / hostname
 //            deleteGatewayBindingTemplates(businessService, previousEndpointPairs);
             applicableTemplates.addAll(getApplicableBindingTemplates(businessService, previousEndpointPairs));
         }
@@ -889,12 +917,25 @@ public class BusinessServicePublisher implements Closeable {
         final Map<String, TModel> toPublishTModels = bindingToModels.right;
         final Set<String> updateKeysSoFar = new HashSet<String>();
         for (BindingTemplate toPublishTemplate : toPublishTemplates) {
+            if(configKeyedReferences != null && !configKeyedReferences.isEmpty()){
+                if(toPublishTemplate.getCategoryBag() == null){
+                    final CategoryBag catBag = new CategoryBag();
+                    toPublishTemplate.setCategoryBag(catBag);
+                }
+                toPublishTemplate.getCategoryBag().getKeyedReference().addAll(convertFromBeans(configKeyedReferences));
+            }
+            
             updateTemplate(toPublishTemplate,
                     applicableTemplates,
                     allEndpointPairs,
                     toPublishTModels,
                     publishedTModels,
                     updateKeysSoFar);
+
+            //clean up any required UDDI references
+            if (runtimeKeyedReferences != null) {
+                removeOldKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
+            }
         }
 
         final Map<String, TModel> tModelsToPublish = bindingToModels.right;
@@ -1655,13 +1696,13 @@ public class BusinessServicePublisher implements Closeable {
         //this 100% can never be null, as we should have correctly added keyed references to it previously
         if(categoryBag == null) throw new IllegalStateException("Attempt to publish a BusinessService with no categoryBag");
 
-        final Collection<UDDIClient.UDDIKeyedReference> referenceCollection = registrySpecificMetaData.getBusinessServiceKeyedReferences();
+        final Collection<UDDIKeyedReference> referenceCollection = registrySpecificMetaData.getBusinessServiceKeyedReferences();
         if(referenceCollection != null){
-            for(UDDIClient.UDDIKeyedReference kr: referenceCollection){
+            for(UDDIKeyedReference kr: referenceCollection){
                 final KeyedReference newRef = new KeyedReference();
-                newRef.setTModelKey(kr.getKey());
-                newRef.setKeyName(kr.getName());
-                newRef.setKeyValue(kr.getValue());
+                newRef.setTModelKey(kr.getTModelKey());
+                newRef.setKeyName(kr.getKeyName());
+                newRef.setKeyValue(kr.getKeyValue());
                 categoryBag.getKeyedReference().add(newRef);
             }
         }
@@ -1671,11 +1712,11 @@ public class BusinessServicePublisher implements Closeable {
             for(UDDIClient.UDDIKeyedReferenceGroup krg: keyedReferenceGroups){
                 final KeyedReferenceGroup newGroup = new KeyedReferenceGroup();
                 newGroup.setTModelKey(krg.getTModelKey());
-                for(UDDIClient.UDDIKeyedReference kr: krg.getKeyedReferences()){
+                for(UDDIKeyedReference kr: krg.getKeyedReferences()){
                     final KeyedReference newRef = new KeyedReference();
-                    newRef.setTModelKey(kr.getKey());
-                    newRef.setKeyName(kr.getName());
-                    newRef.setKeyValue(kr.getValue());
+                    newRef.setTModelKey(kr.getTModelKey());
+                    newRef.setKeyName(kr.getKeyName());
+                    newRef.setKeyValue(kr.getKeyValue());
                     newGroup.getKeyedReference().add(newRef);
                 }
                 categoryBag.getKeyedReferenceGroup().add(newGroup);
@@ -1905,40 +1946,54 @@ public class BusinessServicePublisher implements Closeable {
 
     private void synchronizeKeyNamesBeans(
             final Collection<KeyedReference> toPublishReferences,
-            final Collection<UDDIClient.UDDIKeyedReference> refsToCompareTo){
-        final Map<UDDIClient.UDDIKeyedReference, KeyedReference> beanToKeyedRef =
-                new HashMap<UDDIClient.UDDIKeyedReference, KeyedReference>();
+            final Collection<UDDIKeyedReference> refsToCompareTo){
+        final Map<UDDIKeyedReference, KeyedReference> beanToKeyedRef =
+                new HashMap<UDDIKeyedReference, KeyedReference>();
         for (KeyedReference toPublishReference : toPublishReferences) {
-            final UDDIClient.UDDIKeyedReference uddiRef = new UDDIClient.UDDIKeyedReference(
+            final UDDIKeyedReference uddiRef = new UDDIKeyedReference(
                     toPublishReference.getTModelKey(),
                     toPublishReference.getKeyName(),
                     toPublishReference.getKeyValue());
             beanToKeyedRef.put(uddiRef, toPublishReference);
         }
 
-        final Map<UDDIClient.UDDIKeyedReference, UDDIClient.UDDIKeyedReference> pubRefToPubRef =
-                new HashMap<UDDIClient.UDDIKeyedReference, UDDIClient.UDDIKeyedReference>();
-        for (UDDIClient.UDDIKeyedReference pubRef : refsToCompareTo) {
+        final Map<UDDIKeyedReference, UDDIKeyedReference> pubRefToPubRef =
+                new HashMap<UDDIKeyedReference, UDDIKeyedReference>();
+        for (UDDIKeyedReference pubRef : refsToCompareTo) {
             //allow the published reference to be look up with a bean with the same equality as it's self.
             pubRefToPubRef.put(pubRef, pubRef);
         }
 
-        for (UDDIClient.UDDIKeyedReference toPubRef : beanToKeyedRef.keySet()) {
-            if(!toPubRef.getKey().equals(UDDIClient.GENERAL_KEYWORDS) && refsToCompareTo.contains(toPubRef)){
+        for (UDDIKeyedReference toPubRef : beanToKeyedRef.keySet()) {
+            if(!toPubRef.getTModelKey().equals(UDDIKeyedReference.GENERAL_KEYWORDS) && refsToCompareTo.contains(toPubRef)){
                 //match, are the names the same?
-                final UDDIClient.UDDIKeyedReference publishedRef = pubRefToPubRef.get(toPubRef);//the equality is the same as the name is not part of equals
-                if(!(publishedRef.getName().equals(toPubRef.getName()))){
+                final UDDIKeyedReference publishedRef = pubRefToPubRef.get(toPubRef);//the equality is the same as the name is not part of equals
+                if(!(publishedRef.getKeyName().equals(toPubRef.getKeyName()))){
                     final KeyedReference keyedReference = beanToKeyedRef.get(toPubRef);
-                    keyedReference.setKeyName(publishedRef.getName());
+                    keyedReference.setKeyName(publishedRef.getKeyName());
                 }
             }
         }
     }
 
-    private List<UDDIClient.UDDIKeyedReference> convertToBeans(Collection<KeyedReference> references){
-        final List<UDDIClient.UDDIKeyedReference> refBeans = new ArrayList<UDDIClient.UDDIKeyedReference>();
+    private List<KeyedReference> convertFromBeans(Collection<UDDIKeyedReference> references){
+        final List<KeyedReference> returnList = new ArrayList<KeyedReference>();
+
+        for (UDDIKeyedReference reference : references) {
+            final KeyedReference newRef = new KeyedReference();
+            newRef.setTModelKey(reference.getTModelKey());
+            newRef.setKeyValue(reference.getKeyValue());
+            newRef.setKeyName(reference.getKeyName());
+            returnList.add(newRef);
+        }
+
+        return returnList;
+    }
+
+    private List<UDDIKeyedReference> convertToBeans(Collection<KeyedReference> references){
+        final List<UDDIKeyedReference> refBeans = new ArrayList<UDDIKeyedReference>();
         for (KeyedReference toPublishReference : references) {
-            refBeans.add(new UDDIClient.UDDIKeyedReference(
+            refBeans.add(new UDDIKeyedReference(
                     toPublishReference.getTModelKey(),
                     toPublishReference.getKeyName(),
                     toPublishReference.getKeyValue()));
@@ -2001,18 +2056,18 @@ public class BusinessServicePublisher implements Closeable {
             final List<KeyedReference> toPublishReferences,
             final List<KeyedReference> publishedReferences) {
 
-        final List<UDDIClient.UDDIKeyedReference> awaitingPublication = convertToBeans(toPublishReferences);
+        final List<UDDIKeyedReference> awaitingPublication = convertToBeans(toPublishReferences);
 
-        final List<UDDIClient.UDDIKeyedReference> published = convertToBeans(publishedReferences);
+        final List<UDDIKeyedReference> published = convertToBeans(publishedReferences);
 
         //add missing references from the gateway
-        final List<UDDIClient.UDDIKeyedReference> diffRefs = getKeyedReferenceDiff(awaitingPublication, published);
+        final List<UDDIKeyedReference> diffRefs = getKeyedReferenceDiff(awaitingPublication, published);
         final List<KeyedReference> diffKeyedRefs = new ArrayList<KeyedReference>();
-        for (UDDIClient.UDDIKeyedReference diffRef : diffRefs) {
+        for (UDDIKeyedReference diffRef : diffRefs) {
             final KeyedReference keyedReference = new KeyedReference();
-            keyedReference.setTModelKey(diffRef.getKey());
-            keyedReference.setKeyValue(diffRef.getValue());
-            keyedReference.setKeyName(diffRef.getName());
+            keyedReference.setTModelKey(diffRef.getTModelKey());
+            keyedReference.setKeyValue(diffRef.getKeyValue());
+            keyedReference.setKeyName(diffRef.getKeyName());
             diffKeyedRefs.add(keyedReference);
         }
 
@@ -2027,13 +2082,13 @@ public class BusinessServicePublisher implements Closeable {
      * @return a collection of UDDI.UDDIKeyedReference which contains all references from toPublish and any references
      * found in publishedKeys which do not exist in toPublish.
      */
-    private List<UDDIClient.UDDIKeyedReference> getKeyedReferenceDiff(
-            Collection<UDDIClient.UDDIKeyedReference> toPublish,
-            Collection<UDDIClient.UDDIKeyedReference> published){
+    private List<UDDIKeyedReference> getKeyedReferenceDiff(
+            Collection<UDDIKeyedReference> toPublish,
+            Collection<UDDIKeyedReference> published){
 
-        final List<UDDIClient.UDDIKeyedReference> diffList = new ArrayList<UDDIClient.UDDIKeyedReference>();
+        final List<UDDIKeyedReference> diffList = new ArrayList<UDDIKeyedReference>();
 
-        for (UDDIClient.UDDIKeyedReference publishedRef : published) {
+        for (UDDIKeyedReference publishedRef : published) {
             if(!toPublish.contains(publishedRef)){
                 diffList.add(publishedRef);
             }
@@ -2042,27 +2097,27 @@ public class BusinessServicePublisher implements Closeable {
         return diffList;
     }
 
-    private List<KeyedReference> getProxyGifMetaData(EndpointPair endpointPair, String mgmtSystemKeyValue) {
-        final List<KeyedReference> keyedReferences = new ArrayList<KeyedReference>();
-        final KeyedReference managedEndpoint = new KeyedReference();
+    private Set<UDDIKeyedReference> getProxyGifMetaData(EndpointPair endpointPair, String mgmtSystemKeyValue) {
+        final Set<UDDIKeyedReference> keyedReferences = new HashSet<UDDIKeyedReference>();
+        final UDDIKeyedReference managedEndpoint = new UDDIKeyedReference();
         managedEndpoint.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_TYPE);
         managedEndpoint.setKeyName("Management entity type");
         managedEndpoint.setKeyValue(MANAGED_ENDPOINT);
         keyedReferences.add(managedEndpoint);
 
-        final KeyedReference managementSystem = new KeyedReference();
+        final UDDIKeyedReference managementSystem = new UDDIKeyedReference();
         managementSystem.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_SYSTEM);
         managementSystem.setKeyName("Management System");
         managementSystem.setKeyValue(mgmtSystemKeyValue);
         keyedReferences.add(managementSystem);
 
-        final KeyedReference managementState = new KeyedReference();
+        final UDDIKeyedReference managementState = new UDDIKeyedReference();
         managementState.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_STATE);
         managementState.setKeyName("Governance state");
         managementState.setKeyValue(SYSTINET_STATE_MANAGED);
         keyedReferences.add(managementState);
 
-        final KeyedReference endPoint = new KeyedReference();
+        final UDDIKeyedReference endPoint = new UDDIKeyedReference();
         endPoint.setTModelKey(UDDI_SYSTINET_COM_MANAGEMENT_URL);
         endPoint.setKeyName("URL from AccessPoint");
         endPoint.setKeyValue(endpointPair.getEndPointUrl());
@@ -2082,5 +2137,17 @@ public class BusinessServicePublisher implements Closeable {
         proxyRef.setKeyValue(publishedBindingKey);
 
         return Arrays.asList(funcEndpoint, proxyRef);
+    }
+
+    private void removeOldKeyedReferences(Set<UDDIKeyedReference> configKeyedReferences, Set<UDDIKeyedReference> runtimeKeyedReferences, BindingTemplate toPublishTemplate) {
+        final List<KeyedReference> toPubRefs = toPublishTemplate.getCategoryBag().getKeyedReference();
+        final List<UDDIKeyedReference> refBeans = convertToBeans(toPubRefs);
+        for (UDDIKeyedReference runtimeRef : runtimeKeyedReferences) {
+            if (configKeyedReferences == null || !configKeyedReferences.contains(runtimeRef)) {
+                refBeans.remove(runtimeRef);
+            }
+        }
+        toPubRefs.clear();
+        toPubRefs.addAll(convertFromBeans(refBeans));
     }
 }

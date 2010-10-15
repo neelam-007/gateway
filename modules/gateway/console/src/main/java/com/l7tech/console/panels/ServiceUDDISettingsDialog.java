@@ -15,6 +15,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -23,11 +24,7 @@ import com.l7tech.uddi.UDDINamedEntity;
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
-import java.util.Map;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.ResourceBundle;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +90,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
      */
     private Runnable disposeSettingsDialogCallback;
     private boolean isSystinet;
+    private final Set<UDDIKeyedReference> keyedReferenceSet = new HashSet<UDDIKeyedReference>();
 
     public ServiceUDDISettingsDialog() {
         initialize();
@@ -167,6 +165,25 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                 } catch (FindException e1) {
                     showErrorMessage("Problem Searching UDDI", "Cannot search for BusinessEntities", e1, true);
                 }
+            }
+        });
+
+        manageMetaData.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final ManageMetaDataDialog metaDialog = new ManageMetaDataDialog(ServiceUDDISettingsDialog.this, keyedReferenceSet);
+                metaDialog.pack();
+                metaDialog.setModal(true);
+                metaDialog.setSize(600, 200);
+                DialogDisplayer.display(metaDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if(metaDialog.isWasOked()){
+                            keyedReferenceSet.clear();
+                            keyedReferenceSet.addAll(metaDialog.getKeyedReferences());
+                        }
+                    }
+                });
             }
         });
 
@@ -319,6 +336,10 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                     break;
             }
 
+            final Set<UDDIKeyedReference> configuredRefs = uddiProxyServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
+            if(configuredRefs != null){
+                keyedReferenceSet.addAll(configuredRefs);
+            }
         }else{
             //set other buttons values when implemented
             dontPublishRadioButton.setSelected(true);
@@ -510,7 +531,15 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                     endPointTypeComboBox.setSelectedIndex(-1);
                 }
             }
-            manageMetaData.setEnabled(enable);
+            if ( publishStatus != null &&
+                    publishStatus.getPublishStatus() != UDDIPublishStatus.PublishStatus.PUBLISHED &&
+                        publishStatus.getPublishStatus() != UDDIPublishStatus.PublishStatus.PUBLISH_FAILED &&
+                    publishGatewayEndpointAsRadioButton.isSelected()) {
+                    manageMetaData.setEnabled(false);
+            } else {
+                manageMetaData.setEnabled(publishGatewayEndpointAsRadioButton.isSelected());
+            }
+
         }
     }
 
@@ -553,23 +582,22 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                         uddiProxyServiceInfo.setPublishWsPolicyInlined( false );
                     }
 
-                    try {
-                        uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
-                    } catch (UpdateException e) {
-                        logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
-                        DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
-                                , "Problem updating", JOptionPane.ERROR_MESSAGE, null);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Problem finding UDDIProxiedService: " + e.getMessage());
-                        DialogDisplayer.showMessageDialog(this, "Problem finding UDDIProxiedService: " + e.getMessage()
-                                , "Problem finding", JOptionPane.ERROR_MESSAGE, null);
-                    }
+                    updateUddiProxiedServiceOnly(uddiRegistryAdmin);
                 }
             }
-        }else if(publishGatewayEndpointAsRadioButton.isSelected()){
-            if(uddiProxyServiceInfo == null){
+        }else if(publishGatewayEndpointAsRadioButton.isSelected()) {
+            if (uddiProxyServiceInfo == null) {
                 //publish for first time
                 return publishEndpointToBusinessService();
+            } else {
+                //check if the any meta data was modified
+                if(keyedReferenceSet != null){
+                    final boolean refsAreDifference = uddiProxyServiceInfo.areKeyedReferencesDifferent(keyedReferenceSet);
+                    if (refsAreDifference) {
+                        uddiProxyServiceInfo.setProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, keyedReferenceSet);
+                        updateUddiProxiedServiceOnly(uddiRegistryAdmin);
+                    }
+                }
             }
         }else if(overwriteExistingBusinessServiceWithRadioButton.isSelected()){
             if(uddiProxyServiceInfo == null){
@@ -591,17 +619,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                         uddiProxyServiceInfo.setPublishWsPolicyInlined( false );
                     }
 
-                    try {
-                        uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
-                    } catch (UpdateException e) {
-                        logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
-                        DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
-                                , "Problem updating", JOptionPane.ERROR_MESSAGE, null);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Problem finding UDDIProxiedService: " + e.getMessage());
-                        DialogDisplayer.showMessageDialog(this, "Problem finding UDDIProxiedService: " + e.getMessage()
-                                , "Problem finding", JOptionPane.ERROR_MESSAGE, null);
-                    }
+                    updateUddiProxiedServiceOnly(uddiRegistryAdmin);
                 }
             }
         } else if(dontPublishRadioButton.isSelected()){
@@ -659,6 +677,20 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         }
 
         return true;
+    }
+
+    private void updateUddiProxiedServiceOnly(UDDIRegistryAdmin uddiRegistryAdmin) {
+        try {
+            uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
+        } catch (UpdateException e) {
+            logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
+            DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
+                    , "Problem updating", JOptionPane.ERROR_MESSAGE, null);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Problem finding UDDIProxiedService: " + e.getMessage());
+            DialogDisplayer.showMessageDialog(this, "Problem finding UDDIProxiedService: " + e.getMessage()
+                    , "Problem finding", JOptionPane.ERROR_MESSAGE, null);
+        }
     }
 
     private boolean doShowDeleteWarningBeforeTakingAction(final Callable callable) {
@@ -930,11 +962,13 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                                     choice[0] = true;
                                     UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
                                     try {
+                                        final Map<String, Object> props = new HashMap<String, Object>();
+                                        props.put(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, keyedReferenceSet);//ok if null
                                         if(isGif){
-                                            uddiRegistryAdmin.publishGatewayEndpointGif(service,
-                                                    (UDDIRegistryAdmin.EndpointScheme) endPointTypeComboBox.getSelectedItem());
+                                            props.put(UDDIProxiedServiceInfo.GIF_SCHEME, endPointTypeComboBox.getSelectedItem());
+                                            uddiRegistryAdmin.publishGatewayEndpointGif(service, props);
                                         } else {
-                                            uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected());
+                                            uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected(), props);
                                         }
 
                                         DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,

@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
-import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -9,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.CascadeType;
 
+import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//todo UDDIProxiedServiceInfo contains both runtime and configuration data. Need to be refactored.
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  *
@@ -53,6 +52,19 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public static final String FUNCTIONAL_ENDPOINT_KEY = "FUNCTIONAL_ENDPOINT_KEY";//DO NOT REFACTOR THEY ARE IN THE DB
     public static final String GIF_SCHEME = "GIF_SCHEME";//DO NOT REFACTOR THEY ARE IN THE DB
     public static final String IS_GIF = "IS_GIF";//DO NOT REFACTOR THEY ARE IN THE DB
+
+    /**
+     * This represents what keyed references we need to publish. This will differ from the KEYED_REFERENCES_RUNTIME
+     * during an update and if an update publish fails, when modifications have been made by the user regarding what
+     * references to publish.
+     */
+    public static final String KEYED_REFERENCES_CONFIG = "KEYED_REFERENCES_CONFIG";//DO NOT REFACTOR THEY ARE IN THE DB
+
+    /**
+     * This value cannot be updated by a client. If it is is just ignored. This tracks what was published and enables
+     * the gateway to track when something we published needs to be removed as it is no longer required.
+     */
+    public static final String KEYED_REFERENCES_RUNTIME = "KEYED_REFERENCES_RUNTIME";//DO NOT REFACTOR THEY ARE IN THE DB
 
     public enum PublishType{
         /**
@@ -95,8 +107,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                                                                 final long uddiRegistryOid,
                                                                 final String uddiBusinessKey,
                                                                 final String uddiBusinessName,
-                                                                final String wsdlHash,
-                                                                final UDDIRegistryAdmin.EndpointScheme endpointScheme
+                                                                final String wsdlHash
                                                                 ) {
 
         final UDDIProxiedServiceInfo info = getUDDIProxiedServiceInfo(
@@ -108,7 +119,6 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
                 PublishType.ENDPOINT);
 
         info.setProperty(IS_GIF, Boolean.TRUE);
-        info.setProperty(GIF_SCHEME, endpointScheme);
         return info;
     }
 
@@ -170,26 +180,45 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     }
 
     /**
-     * Used to determine if 'this' UDDIProxiedService has had a property modified which should not be modified once
-     * the entity has been created based on application logic
+     * UDDIProxiedServiceInfo contains both runtime and config data. In lieu of refactoring this entity the current
+     * approach is to minimize areas where hibernate update collisions occur.
+     * //todo refactor out config versus runtime data if this scheme becomes too complicated. For now it can be managed.
+     * The follow properties are config mutable:
+     * updateProxyOnLocalChange
+     * metricsEnabled
+     * publishWsPolicyEnabled
+     * publishWsPolicyFull
+     * publishWsPolicyInlined
+     * UDDIProxiedServiceInfo.KEYED_REFERENCES
      *
-     * @param original UDDIProxiedService last known version of 'this' UDDIProxiedService used to compare what has
-     * changed in 'this'
+     * This method will set the above properties from the 'proxiedServiceInfo' instance onto 'this'.
+     * @param proxiedServiceInfo UDDIProxiedServiceInfo with modifications to persist.
      */
-    public void throwIfFinalPropertyModified(final UDDIProxiedServiceInfo original){
-        testProperty("business key", this.getUddiBusinessKey(), original.getUddiBusinessKey());
-        testProperty("business name", this.getUddiBusinessName(), original.getUddiBusinessName());
-        testProperty("registry oid", Long.toString(this.getUddiRegistryOid()), Long.toString(original.getUddiRegistryOid()));
-        testProperty("created from existing", Boolean.toString(this.isCreatedFromExistingService()), Boolean.toString(original.isCreatedFromExistingService()));
+    public void copyConfigModifiableProperties(final UDDIProxiedServiceInfo proxiedServiceInfo) {
+        this.setUpdateProxyOnLocalChange(proxiedServiceInfo.isUpdateProxyOnLocalChange());
+        this.setMetricsEnabled(proxiedServiceInfo.isMetricsEnabled());
+        this.setPublishWsPolicyEnabled(proxiedServiceInfo.isPublishWsPolicyEnabled());
+        this.setPublishWsPolicyFull(proxiedServiceInfo.isPublishWsPolicyFull());
+        this.setPublishWsPolicyInlined(proxiedServiceInfo.isPublishWsPolicyInlined());
+
+        final Set<UDDIKeyedReference> fromUiRefs = proxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
+        this.setProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, fromUiRefs);//ok if it's null, it just gets removed
     }
 
-    static void testProperty(final String propName, final String propValue, final String lastKnownValue){
-        if(propValue == null)
-            throw new IllegalStateException(propName + " property must be set");
-        //the service identifier is not allowed to be modified by client code once saved
-        if(!lastKnownValue.equals(propValue)){
-            throw new IllegalStateException("It is not possible to modify property " + propName);
+    public boolean areKeyedReferencesDifferent(final Set<UDDIKeyedReference> incomingRefs){
+        final Set<UDDIKeyedReference> origRefs = this.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
+
+        final boolean refsHaveChanged;
+
+        if (incomingRefs != null && origRefs != null) {
+            refsHaveChanged = !origRefs.containsAll(incomingRefs) || origRefs.size() != incomingRefs.size();
+        } else {
+            final boolean noIncoming = incomingRefs == null;
+            final boolean noOrig = origRefs == null;
+            refsHaveChanged = noIncoming != noOrig;
         }
+
+        return refsHaveChanged;
     }
 
     @Override
@@ -245,7 +274,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     }
 
     @Column(name = "created_from_existing", updatable = false)
-    public boolean isCreatedFromExistingService() {
+    public boolean isCreatedFromExistingService() {     //todo delete
         return createdFromExistingService;
     }
 

@@ -22,7 +22,7 @@ public interface UDDIRegistrySpecificMetaData {
      * @return Collection<UDDIClient.UDDIKeyedReference> each keyed reference contained in the collection should be
      * added to each business service published to UDDI. Can be null and empty.
      */
-    public Collection<UDDIClient.UDDIKeyedReference> getBusinessServiceKeyedReferences();
+    public Collection<UDDIKeyedReference> getBusinessServiceKeyedReferences();
 
     /**
      * Get the collection of KeyedReferenceGroups which should be added to each Business Service published to UDDI
