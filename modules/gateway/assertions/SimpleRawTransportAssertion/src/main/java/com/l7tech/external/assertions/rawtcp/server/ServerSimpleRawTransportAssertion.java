@@ -29,6 +29,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -106,7 +107,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
         InputStream inputStream = null;
         try {
             String targetHost = ExpandVariables.process(assertion.getTargetHost(), vars, auditor, true);
-            sock = socketFactory.createSocket(targetHost, assertion.getTargetPort());
+            sock = socketFactory.createSocket(InetAddress.getByName(targetHost), assertion.getTargetPort());
             sock.setSoTimeout(assertion.getWriteTimeoutMillis());
             inputStream = request == null
                     ? new EmptyInputStream()

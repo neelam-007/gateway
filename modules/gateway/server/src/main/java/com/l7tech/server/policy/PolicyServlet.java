@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.Policy;
 import com.l7tech.common.http.HttpConstants;
@@ -380,7 +381,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         String remote = req.getRemoteAddr();
         while (st.hasMoreTokens()) {
             String passthroughVal = st.nextToken();
-            if (remote.startsWith(passthroughVal)) {
+            if (InetAddressUtil.patternMatchesAddress(passthroughVal, InetAddressUtil.getAddress(remote))) {
                 logger.fine("remote ip " + remote + " was authorized by passthrough value " + passthroughVal);
                 return true;
             }
