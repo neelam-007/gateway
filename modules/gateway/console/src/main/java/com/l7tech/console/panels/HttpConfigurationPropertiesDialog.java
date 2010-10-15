@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -202,14 +203,27 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     }
 
     private void doManagePasswords() {
+        final SecurePasswordComboBox passwordComboBox = (SecurePasswordComboBox)this.passwordComboBox;
+        final SecurePassword password = passwordComboBox.getSelectedSecurePassword();
+
+        final SecurePasswordComboBox proxyPasswordComboBox = (SecurePasswordComboBox)this.proxyPasswordComboBox;
+        final SecurePassword proxyPassword = proxyPasswordComboBox.getSelectedSecurePassword();
+
         final SecurePasswordManagerWindow securePasswordManagerWindow = new SecurePasswordManagerWindow(this);
         securePasswordManagerWindow.pack();
         Utilities.centerOnParentWindow(securePasswordManagerWindow);
         DialogDisplayer.display(securePasswordManagerWindow, new Runnable() {
             @Override
             public void run() {
-                ((SecurePasswordComboBox)passwordComboBox).reloadPasswordList();
-                ((SecurePasswordComboBox)proxyPasswordComboBox).reloadPasswordList();
+                passwordComboBox.reloadPasswordList();
+                proxyPasswordComboBox.reloadPasswordList();
+
+                if ( password != null ) {
+                    passwordComboBox.setSelectedSecurePassword( password.getOid() );
+                }
+                if ( proxyPassword != null ) {
+                    proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getOid() );
+                }
             }
         });
     }
