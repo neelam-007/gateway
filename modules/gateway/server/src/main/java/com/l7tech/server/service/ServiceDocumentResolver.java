@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -65,6 +66,10 @@ public class ServiceDocumentResolver {
         }
 
         final SimpleHttpClient.SimpleHttpResponse httpResponse = simpleHttpClient.get(requestParams);
+        if ( httpResponse.getStatus() < HttpConstants.STATUS_OK || httpResponse.getStatus() >= HttpConstants.STATUS_MULTIPLE_CHOICES ) {
+            throw new IOException( "HTTP response failed with status " + httpResponse.getStatus() );
+        }
+        
         return httpResponse.getString();
     }
 
