@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -15,6 +9,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.util.ArrayList;
@@ -37,15 +33,31 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
 
         if (composite.getChildren().isEmpty()) throw new PolicyAssertionException(assertion, "Must have children");
 
-        ServerPolicyFactory pf = (ServerPolicyFactory)beanFactory.getBean("policyFactory");
-        Assertion child;
-        List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
-        for (Iterator i = composite.children(); i.hasNext();) {
-            child = (Assertion)i.next();
-            if (! child.isEnabled()) continue;
-            ServerAssertion sass = pf.compileSubtree(child);
-            if (sass != null)
-                result.add(sass);
+        final ServerPolicyFactory pf = (ServerPolicyFactory)beanFactory.getBean("policyFactory");
+
+        final List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
+        try {
+            for ( final Iterator<Assertion> i = composite.children(); i.hasNext(); ) {
+                final Assertion child = i.next();
+                if ( !child.isEnabled() ) continue;
+
+                final ServerAssertion sass = pf.compileSubtree(child);
+                if ( sass != null )
+                    result.add(sass);
+            }
+        } catch ( final Exception e ) {
+            // Close partially created policy
+            for ( final ServerAssertion serverAssertion : result ) {
+                ResourceUtils.closeQuietly( serverAssertion );
+            }
+
+            if ( e instanceof PolicyAssertionException ) {
+                throw (PolicyAssertionException) e;
+            } else if ( e instanceof LicenseException ) {
+                throw (LicenseException) e;
+            } else {
+                throw ExceptionUtils.wrap( e );
+            }
         }
         this.children = Collections.unmodifiableList(result);
     }
@@ -75,6 +87,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         }
     }
 
+    @Override
     public void close() {
         for (ServerAssertion child : children) {
             try {
