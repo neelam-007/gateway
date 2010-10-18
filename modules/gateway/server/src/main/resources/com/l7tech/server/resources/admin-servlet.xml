@@ -47,11 +47,6 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
     </bean>
 
-    <bean name="/SchemaAdmin" parent="httpInvokerParent">
-        <property name="service" ref="schemaAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
-    </bean>
-
     <bean name="/ResourceAdmin" parent="httpInvokerParent">
         <property name="service" ref="resourceAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.resources.ResourceAdmin"/>

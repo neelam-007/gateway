@@ -35,6 +35,7 @@ class ResourceHelper {
 
     //- PACKAGE
 
+    static final String DTD_TYPE = "dtd";
     static final String POLICY_TYPE = "policy";
     static final String POLICY_EXPORT_TYPE = "policyexport";
     static final String WSDL_TYPE = "wsdl";

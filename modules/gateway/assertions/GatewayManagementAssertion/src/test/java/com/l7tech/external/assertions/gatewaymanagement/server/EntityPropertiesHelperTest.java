@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.BeanUtils;
+import com.l7tech.util.Functions;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -10,6 +11,7 @@ import java.beans.PropertyDescriptor;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * 
@@ -62,8 +64,15 @@ public class EntityPropertiesHelperTest {
 
     private void dumpProperties( final Set<PropertyDescriptor> properties ) {
         System.out.println( "Properties are:" );
-        for ( PropertyDescriptor prop : properties ) {
-            System.out.println( prop.getName() );
+        final Set<String> names = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        names.addAll( Functions.map( properties, new Functions.Unary<String,PropertyDescriptor>(){
+            @Override
+            public String call( final PropertyDescriptor propertyDescriptor ) {
+                return propertyDescriptor.getName();
+            }
+        } ) );
+        for ( final String name : names ) {
+            System.out.println( name );
         }
     }
 }

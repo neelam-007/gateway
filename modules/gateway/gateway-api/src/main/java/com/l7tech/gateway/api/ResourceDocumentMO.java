@@ -21,6 +21,16 @@ import java.util.Map;
  * <p>The Accessor for resource documents supports read and write. Resource
  * documents can be accessed by identifier only.</p>
  *
+ * <p> The following properties can be set:
+ * <ul>
+ *   <li><code>description</code>: The description for the resource.</li>
+ *   <li><code>targetNamespace</code> (read only): The target namespace for the
+ *        resource if it is an XML Schema.</li>
+ *   <li><code>publicIdentifier</code>: The public identifier for the
+ *        resource if it is DTD.</li>
+ * </ul>
+ * </p>
+ *
  * @see ManagedObjectFactory#createResourceDocument()
  */
 @XmlRootElement(name="ResourceDocument")

@@ -17,7 +17,6 @@ import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -47,7 +46,6 @@ import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 
 /**
@@ -379,11 +377,6 @@ public class RegistryStub extends Registry {
     @Override
     public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
         return  null;
-    }
-
-    @Override
-    public SchemaAdmin getSchemaAdmin() {
-        return null;
     }
 
     @Override

@@ -1,11 +1,7 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.policy.PolicyManager;
@@ -25,18 +21,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.logging.Logger;
 import java.security.KeyStoreException;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(EntityFinderImpl.class.getName());
     private IdentityProviderFactory identityProviderFactory;
     private PolicyManager policyManager;
     private SsgKeyStoreManager keyStoreManager;
-    private SchemaEntryManager schemaEntryManager; // since not all entities are persistent
     private static final int MAX_RESULTS = 100;
 
     public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
@@ -51,10 +46,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         this.keyStoreManager = keyStoreManager;
     }
 
-    public void setSchemaEntryManager( final SchemaEntryManager schemaEntryManager ) {
-        this.schemaEntryManager = schemaEntryManager;
-    }
-
+    @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
@@ -62,18 +54,17 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         try {
             if (EntityType.SSG_KEY_ENTRY == type)
                 return findAllKeyHeaders();
-            else if (EntityType.SCHEMA_ENTRY == type)
-                return findAllSchemaEntryHeaders();
             //noinspection unchecked
-            else return (EntityHeaderSet<EntityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-                public Object doInHibernateReadOnly(Session session) throws HibernateException {
-                    Criteria crit = session.createCriteria(entityClass);
+            else return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<EntityHeaderSet<EntityHeader>>() {
+                @Override
+                public EntityHeaderSet<EntityHeader> doInHibernateReadOnly(Session session) throws HibernateException {
+                    Criteria criteria = session.createCriteria(entityClass);
                     ProjectionList pl = Projections.projectionList();
                     pl.add(Projections.property("oid"));
                     if (names) pl.add(Projections.property("name"));
-                    crit.setProjection(pl);
-                    crit.setMaxResults(MAX_RESULTS);
-                    List arrays = crit.list();
+                    criteria.setProjection(pl);
+                    criteria.setMaxResults(MAX_RESULTS);
+                    List arrays = criteria.list();
                     EntityHeaderSet<EntityHeader> headers = new EntityHeaderSet<EntityHeader>();
                     for (Iterator i = arrays.iterator(); i.hasNext();) {
                         Long oid;
@@ -117,10 +108,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         }
     }
 
-    private EntityHeaderSet<EntityHeader> findAllSchemaEntryHeaders() throws FindException  {
-        return new EntityHeaderSet<EntityHeader>(new LinkedHashSet<EntityHeader>(schemaEntryManager.findAllHeaders()));
-    }
-
+    @Override
     @Transactional(readOnly=true)
     public Entity find(EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
@@ -150,13 +138,13 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } catch (NumberFormatException e) {
                 return policyManager.findByGuid(id);
             }
-        } else if (EntityType.SCHEMA_ENTRY == header.getType()) {
-            return schemaEntryManager.findByPrimaryKey( header.getOid() );
         } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
     }
 
+    @SuppressWarnings({ "unchecked" })
+    @Override
     @Transactional(readOnly=true)
     public <ET extends Entity> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
         try {
@@ -178,13 +166,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 tempPk = pk;
             }
 
-            if ( tempPk instanceof Long && EntityType.SCHEMA_ENTRY == type) {
-                return (ET) schemaEntryManager.findByPrimaryKey( (Long) tempPk );
-            }
-
             final Serializable finalPk = tempPk;
             //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     //noinspection unchecked
                     return session.load(clazz, finalPk);
@@ -196,6 +181,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         }
     }
 
+    @Override
     @Transactional(readOnly = true)
     public EntityHeader findHeader( EntityType etype, Serializable pk) throws FindException {
         Entity e = find(etype.getEntityClass(), pk);

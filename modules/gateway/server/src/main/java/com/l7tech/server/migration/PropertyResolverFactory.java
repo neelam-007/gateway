@@ -14,12 +14,12 @@ import static com.l7tech.objectmodel.migration.PropertyResolver.Type.USERGROUP;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.VALUE_REFERENCE;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
-import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SCHEMA_ENTRY;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.RESOURCE_ENTRY;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.JDBC_CONNECTION;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
@@ -36,19 +36,19 @@ public class PropertyResolverFactory {
     private SsgKeyStoreManager keyManager;
     private ServiceDocumentManager serviceDocumentManager;
     private ClusterPropertyManager cpManager;
-    private SchemaEntryManager schemaManager;
+    private ResourceEntryManager resourceEntryManager;
     private ServerConfig serverConfig;
     private JdbcConnectionManager jdbcConnectionManager;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
     public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager,
-                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager, ServerConfig serverConfig, JdbcConnectionManager jdbcConnectionManager) {
+                                   ClusterPropertyManager cpManager, ResourceEntryManager resourceEntryManager, ServerConfig serverConfig, JdbcConnectionManager jdbcConnectionManager) {
         this.entityFinder = entityFinder;
         this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.cpManager = cpManager;
-        this.schemaManager = schemaManager;
+        this.resourceEntryManager = resourceEntryManager;
         this.serverConfig = serverConfig;
         this.jdbcConnectionManager = jdbcConnectionManager;
         initRegistry();
@@ -59,24 +59,28 @@ public class PropertyResolverFactory {
         addToRegistry(new DefaultEntityPropertyResolver(this, DEFAULT));
         addToRegistry(new ServiceDocumentResolver(this, SERVICE_DOCUMENT, serviceDocumentManager));
         addToRegistry(new AbstractOidPropertyResolver(this, SERVICE, entityFinder) {
+            @Override
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
         addToRegistry(new AbstractOidPropertyResolver(this, SERVICE_ALIAS, entityFinder) {
+            @Override
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
         addToRegistry(new PolicyPropertyResolver(this, POLICY));
         addToRegistry(new AbstractOidPropertyResolver(this, POLICY_ALIAS, entityFinder) {
+            @Override
             public EntityType getTargetType() { return EntityType.POLICY; }
         });
         addToRegistry(new AssertionPropertyResolver(this, ASSERTION));
         addToRegistry(new AbstractOidPropertyResolver(this, ID_PROVIDER_CONFIG, entityFinder) {
+            @Override
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });
         addToRegistry(new UserGroupResolver(this, USERGROUP));
         addToRegistry(new ValueReferencePropertyResolver(this, VALUE_REFERENCE));
         addToRegistry(new SsgKeyResolver(this, SSGKEY, keyManager));
         addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager, serverConfig));
-        addToRegistry(new SchemaEntryPropertyResolver(this, SCHEMA_ENTRY, schemaManager));
+        addToRegistry(new ResourceEntryPropertyResolver(this, RESOURCE_ENTRY, resourceEntryManager ));
         addToRegistry(new JdbcConnectionPropertyResolver(this, JDBC_CONNECTION, jdbcConnectionManager));
     }
 

@@ -12,9 +12,10 @@ import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.schema.FetchSchemaFailureException;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
+import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -269,7 +270,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         editGlobalXMLSchemasButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                launchGlobalSchemasDlg();
+                launchGlobalResourcesDlg();
             }
         });
 
@@ -403,10 +404,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         innerPanel.revalidate();
     }
 
-    private void launchGlobalSchemasDlg() {
-        GlobalSchemaDialog dlg = new GlobalSchemaDialog(this);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
+    private void launchGlobalResourcesDlg() {
+        GlobalResourcesDialog dlg = new GlobalResourcesDialog(this);
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
@@ -415,31 +414,30 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         });
     }
 
-    private SchemaAdmin getSchemaAdmin() {
+    private ResourceAdmin getResourceAdmin() {
         final Registry reg = Registry.getDefault();
         if ( reg == null ) {
             throw new RuntimeException("No access to registry. Cannot locate schema admin.");
         }
 
-        final SchemaAdmin schemaAdmin = reg.getSchemaAdmin();
-        if ( schemaAdmin == null ) {
+        final ResourceAdmin resourceAdmin = reg.getResourceAdmin();
+        if ( resourceAdmin == null ) {
             throw new RuntimeException("Unable to access schema admin.");
         }
 
-        return schemaAdmin;
+        return resourceAdmin;
     }
-
 
     private void reloadGlobalSchemaList() {
         try {
             //before we update the model we need to remember what was the old selection for global schema
             StringHolder previousItem = (StringHolder) globalSchemaCombo.getSelectedItem();
 
-            Collection<SchemaEntry> allSchemas = getSchemaAdmin().findAllSchemas();
+            Collection<ResourceEntryHeader> allSchemas = getResourceAdmin().findResourceHeadersByType(ResourceType.XML_SCHEMA);
             ArrayList<StringHolder> schemaNames = new ArrayList<StringHolder>();
             if (allSchemas != null) {
-                for ( final SchemaEntry schemaEntry : allSchemas ) {
-                    schemaNames.add(new StringHolder(schemaEntry.getName(), 128)); //128 is the old limit before it was extended to 4096
+                for ( final ResourceEntryHeader schemaEntry : allSchemas ) {
+                    schemaNames.add(new StringHolder(schemaEntry.getUri(), 128)); //128 is the old limit before it was extended to 4096
                 }
             }
             schemaNames.add( GLOBAL_SCHEMA_NOT_SET );
@@ -598,10 +596,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
 
             if (JOptionPane.showConfirmDialog(this, object, "Unresolved Schema Dependency", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
-                globalSchemaManager.pack();
-                Utilities.centerOnScreen(globalSchemaManager);
-                DialogDisplayer.display(globalSchemaManager);
+                GlobalResourcesDialog globalResourcesDialog = new GlobalResourcesDialog(this);
+                DialogDisplayer.display(globalResourcesDialog);
             }
             return true;
         }
@@ -646,7 +642,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         final String tns = schemaDoc.getDocumentElement().getAttribute("targetNamespace");
         for ( final Element dependencyElement : dependencyElements ) {
             try {
-                final Pair<String, String> result = fetchDependencySchema(tns, dependencyElement, getSchemaAdmin());
+                final Pair<String, String> result = fetchDependencySchema(tns, dependencyElement, getResourceAdmin());
                 if (result != null) {
                     // Recursively resolve the schemas dependencies.
                     resolveSchemaDependencies(result.left, XmlUtil.stringToDocument(result.right), seenSystemIds);
@@ -669,7 +665,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      *
      * @param schemaNamespace Namespace of the parent schema
      * @param dependencyEl the dependency element with attribute(s), schemaLocation and/or namespace.
-     * @param schemaAdmin the Schema Admin API
+     * @param resourceAdmin the Schema Admin API
      *
      * @return a result containing systemId and schemaContent of the dependency schema.
      *
@@ -678,7 +674,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      */
     private Pair<String, String> fetchDependencySchema( final String schemaNamespace,
                                                         final Element dependencyEl,
-                                                        final SchemaAdmin schemaAdmin ) throws FindException, FetchSchemaFailureException {
+                                                        final ResourceAdmin resourceAdmin ) throws FindException, FetchSchemaFailureException {
         final String dependencyLocation = dependencyEl.getAttribute("schemaLocation");
         final String dependencyNamespace = dependencyEl.hasAttribute( "namespace" ) ? dependencyEl.getAttribute("namespace") : null;
 
@@ -693,19 +689,17 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if ( !dependencyLocation.isEmpty() ) {
             attemptedFindByLocation = true;
             systemId = dependencyLocation;
-            Collection<SchemaEntry> entries = schemaAdmin.findByName(systemId);
-            if (entries != null) {
-                for ( final SchemaEntry entry : entries ) {
-                    if ( "import".equals( dependencyEl.getLocalName() ) ) { // namespace from import must match schema target namespace
-                        if ( (dependencyNamespace == null && !entry.hasTns()) || (dependencyNamespace != null && dependencyNamespace.equals( entry.getTns() )) ) {
-                            canUpdate = !entry.isSystem();
-                            dependencySchemaContent = entry.getSchema();
-                        }
-                    } else { // namespace from parent schema must match schema target namespace
-                        if ( !entry.hasTns() || entry.getTns().equals(schemaNamespace) ) {
-                            canUpdate = !entry.isSystem();
-                            dependencySchemaContent = entry.getSchema();
-                        }
+            ResourceEntry entry = resourceAdmin.findResourceEntryByUriAndType(systemId,ResourceType.XML_SCHEMA);
+            if ( entry != null ) {
+                String entryTns = entry.getResourceKey1();
+                boolean entryHasTns = entryTns!=null;
+                if ( "import".equals( dependencyEl.getLocalName() ) ) { // namespace from import must match schema target namespace
+                    if ( (dependencyNamespace == null && !entryHasTns) || (dependencyNamespace != null && dependencyNamespace.equals( entryTns )) ) {
+                        dependencySchemaContent = entry.getContent();
+                    }
+                } else { // namespace from parent schema must match schema target namespace
+                    if ( !entryHasTns || entryTns.equals(schemaNamespace) ) {
+                        dependencySchemaContent = entry.getContent();
                     }
                 }
             }
@@ -714,11 +708,14 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if ( dependencySchemaContent == null && "import".equals( dependencyEl.getLocalName() ) ) {
             attemptedFindByNamespace = true;
             if (systemId==null) systemId = generateURN(dependencyNamespace==null ? "" : dependencyNamespace);
-            Collection<SchemaEntry> entries = schemaAdmin.findByTNS(dependencyNamespace);
+            final Collection<ResourceEntryHeader> entries = resourceAdmin.findResourceHeadersByTargetNamespace(dependencyNamespace);
             if ( entries != null && !entries.isEmpty()) {
-                final SchemaEntry entry = entries.iterator().next();
-                canUpdate = !entry.isSystem() || !entry.getName().equals( systemId );
-                dependencySchemaContent = entry.getSchema();
+                final ResourceEntryHeader entryHeader = entries.iterator().next();
+                canUpdate = !entryHeader.getUri().equals( systemId );
+                final ResourceEntry entry = resourceAdmin.findResourceEntryByPrimaryKey( entryHeader.getOid() );
+                if ( entry != null ) {
+                    dependencySchemaContent = entry.getContent();
+                }
             }
         }
 
@@ -793,30 +790,27 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         // Get Schema Admin
-        SchemaAdmin schemaAdmin = getSchemaAdmin();
+        ResourceAdmin resourceAdmin = getResourceAdmin();
 
         // Check if the schema has been in the database, since it isn't able to save a duplicate schema with a same schema name.
-        List<SchemaEntry> entries;
+        ResourceEntry schemaEntry;
         try {
-            entries = (List<SchemaEntry>) schemaAdmin.findByName(systemId);
+            schemaEntry = resourceAdmin.findResourceEntryByUriAndType(systemId, ResourceType.XML_SCHEMA);
         } catch (FindException e) {
             throw new RuntimeException("Error trying to look for dependency schema in global schema");
         }
-        SchemaEntry schemaEntry;
-        if (entries.isEmpty()) {
-            schemaEntry = new SchemaEntry();
-        } else if (entries.size() != 1) {
-            throw new IllegalStateException("Schema name is a unique key in community_schemas.");
-        } else {
-            schemaEntry = entries.get(0);
+        if ( schemaEntry == null ) {
+            schemaEntry = new ResourceEntry();
+            schemaEntry.setType( ResourceType.XML_SCHEMA );
+            schemaEntry.setContentType( ResourceType.XML_SCHEMA.getMimeType() );
         }
 
         // Save or update it
-        schemaEntry.setName(systemId);
-        schemaEntry.setSchema(schemaContent);
-        schemaEntry.setTns(tns);
+        schemaEntry.setUri(systemId);
+        schemaEntry.setContent(schemaContent);
+        schemaEntry.setResourceKey1(tns);
         try {
-            schemaAdmin.saveSchemaEntry(schemaEntry);
+            resourceAdmin.saveResourceEntry(schemaEntry);
             return true;
         } catch (SaveException e) {
             logger.warning("Unable to save schema entry.");
@@ -834,6 +828,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             throw new RuntimeException("the combo has nothing selected?");
             // this shouldn't happen (unless bug)
         } else if (globalSchemaCombo.getSelectedItem().equals( GLOBAL_SCHEMA_NOT_SET )) {
+            displayError( resources.getString("error.noglobalschema"), null);
             return false;
         }
         final StringHolder selectedItem = (StringHolder) globalSchemaCombo.getSelectedItem();
@@ -1115,10 +1110,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return null;
         }
 
-        final SchemaAdmin schemaAdmin = getSchemaAdmin();
+        final ResourceAdmin resourceAdmin = getResourceAdmin();
         final String schemaXml;
         try {
-            schemaXml = schemaAdmin.resolveSchemaTarget(url);
+            schemaXml = resourceAdmin.resolveResource(url);
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
@@ -1259,5 +1254,16 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     /** @return true if the Ok button was pressed and the changes committed successfully. */
     public boolean isChangesCommitted() {
         return changesCommitted;
+    }
+
+    /**
+     * An exception thrown when a schema is failed to fetch.
+     *
+     * @author ghuang
+     */
+    private static class FetchSchemaFailureException extends Exception {
+        private FetchSchemaFailureException(String message) {
+            super(message);
+        }
     }
 }

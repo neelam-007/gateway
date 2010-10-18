@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     The Application Context contains the definitions that describe the SSG server side components.
-    Things such as identitiy managers, trust components, policy services token services etc. are defined
+    Things such as identity managers, trust components, policy services token services etc. are defined
     here.
     Admin Services are defined in adminContext.xml.
     Data Access (Hibernate, Transactions) is defined in dataAccessContext.xml.
@@ -889,9 +889,9 @@
         <constructor-arg ref="policyManager"/>
         <constructor-arg ref="policyPathBuilderFactory"/>
         <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
-        <property name="identityProviderFactory" ref='identityProviderFactory'/>
-        <property name="schemaEntryManager" ref='schemaEntryManager'/>
-        <property name="clientCertManager" ref='clientCertManager'/>
+        <property name="identityProviderFactory" ref="identityProviderFactory"/>
+        <property name="resourceEntryManager" ref="resourceEntryManager"/>
+        <property name="clientCertManager" ref="clientCertManager"/>
         <property name="entityFinder" ref="entityFinder"/>
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
         <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
@@ -1116,19 +1116,38 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl" depends-on="clusterPropertyManager">
+    <bean id="schemaConfiguration" class="com.l7tech.server.communityschemas.SchemaConfiguration" depends-on="clusterPropertyManager">
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="httpClientFactory"/>
-        <constructor-arg>
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="Schema cache maintenance"/>
-            </bean>
+    </bean>
+
+    <bean id="schemaMaintenanceTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="Schema cache maintenance"/>
+    </bean>
+
+    <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
+        <constructor-arg index="0" ref="schemaConfiguration"/>
+        <constructor-arg index="1" ref="schemaMaintenanceTimer"/>
+        <constructor-arg index="2">
+            <list>
+                <bean class="com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver">
+                    <constructor-arg index="0" ref="resourceEntryManager"/>
+                </bean>
+                <bean class="com.l7tech.server.communityschemas.HttpSchemaSourceResolver">
+                    <constructor-arg index="0" ref="schemaConfiguration"/>
+                    <constructor-arg index="1" ref="httpClientFactory"/>
+                </bean>
+            </list>
         </constructor-arg>
     </bean>
 
-    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="applicationEventProxy"/>
-        <property name="schemaManager" ref="schemaManager"/>
+    <bean id="schemaResourceManager" class="com.l7tech.server.globalresources.SchemaResourceManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="schemaMaintenanceTimer"/>
+        <constructor-arg index="2" ref="resourceEntryManager"/>
+        <constructor-arg index="3" ref="schemaManager"/>
+    </bean>
+
+    <bean id="resourceEntryManager" class="com.l7tech.server.globalresources.ResourceEntryManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="uddiTemplateManager" class="com.l7tech.server.uddi.UDDITemplateManager">
@@ -1222,7 +1241,7 @@
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
-                <ref bean="schemaEntryManager"/>
+                <ref bean="resourceEntryManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="clusterPropertyManager"/>
                 <ref bean="identityProviderConfigManager"/>
@@ -1283,7 +1302,6 @@
     </bean>
 
     <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
-        <!--<constructor-arg ref="identityProviderFactory"/>-->
         <property name="identityProviderFactory" ref="identityProviderFactory" />
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="policyManager" ref="policyManager"/>
@@ -1293,12 +1311,6 @@
                 <constructor-arg value="com.l7tech.server.security.keystore.SsgKeyStoreManager"/>
             </bean>
         </property>
-         <property name="schemaEntryManager">
-             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
-                 <constructor-arg value="schemaEntryManager"/>
-                 <constructor-arg value="com.l7tech.server.communityschemas.SchemaEntryManager"/>
-             </bean>
-         </property>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
@@ -1653,7 +1665,7 @@
               <ref bean="trustedEsmUserManager"/>
               <ref bean="auditRecordManager"/>
               <ref bean="clusterPropertyManager"/>
-              <ref bean="schemaEntryManager"/>
+              <ref bean="resourceEntryManager"/>
               <ref bean="folderManager"/>
               <ref bean="identityProviderConfigManager"/>
               <ref bean="revocationCheckPolicyManager"/>
@@ -1700,7 +1712,7 @@
       <constructor-arg ref="ssgKeyStoreManager"/>
       <constructor-arg ref="serviceDocumentManager"/>
       <constructor-arg ref="clusterPropertyManager"/>
-      <constructor-arg ref="schemaEntryManager"/>
+      <constructor-arg ref="resourceEntryManager"/>
       <constructor-arg ref="serverConfig"/>
       <constructor-arg ref="jdbcConnectionManager"/>
     </bean>

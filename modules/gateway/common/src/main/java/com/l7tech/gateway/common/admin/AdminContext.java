@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
@@ -64,8 +63,6 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     TrustedCertAdmin getTrustedCertAdmin() throws SecurityException;
-
-    SchemaAdmin getSchemaAdmin() throws SecurityException;
 
     /**
      * Get the resource admininstration implementation.

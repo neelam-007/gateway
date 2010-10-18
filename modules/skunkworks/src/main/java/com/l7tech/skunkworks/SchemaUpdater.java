@@ -56,7 +56,6 @@ public class SchemaUpdater {
         config.addAnnotatedClass(com.l7tech.gateway.common.cluster.ClusterNodeInfo.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.cluster.ClusterProperty.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.log.SinkConfiguration.class);
-        config.addAnnotatedClass(com.l7tech.gateway.common.schema.SchemaEntry.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.security.RevocationCheckPolicy.class);
         config.addAnnotatedClass(com.l7tech.security.cert.TrustedCert.class);
         config.addAnnotatedClass(com.l7tech.identity.cert.CertEntryRow.class);

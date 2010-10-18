@@ -35,7 +35,7 @@
                 <constructor-arg index="6" ref="jmsConnectionManager"/>
                 <constructor-arg index="7" ref="jmsEndpointManager"/>
                 <constructor-arg index="8" ref="policyManager"/>
-                <constructor-arg index="9" ref="schemaEntryManager"/>
+                <constructor-arg index="9" ref="resourceEntryManager"/>
                 <constructor-arg index="10" ref="ssgKeyStoreManager"/>
                 <constructor-arg index="11" ref="trustedCertManager"/>
             </bean>
@@ -58,7 +58,7 @@
                     <constructor-arg index="3" ref="clusterPropertyManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory" parent="entityResourceFactoryParent">
-                    <constructor-arg index="3" ref="schemaEntryManager"/>
+                    <constructor-arg index="3" ref="resourceEntryManager"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="folderManager"/>

@@ -4,7 +4,7 @@
  */
 package com.l7tech.server.upgrade;
 
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -16,10 +16,12 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 /**
- * Upgrade new name_hash column of community_schemas table for 5.2 to 5.3
+ * Upgrade new name_hash column of community_schemas table for 5.2 to 5.3.
+ *
+ * <p>This task is updated to work with ResourceEntries rather than
+ * SchemaEntries as of 5.4</p>
  */
 public class Upgrade52to53UpdateCommunitySchemas implements UpgradeTask {
     private ApplicationContext applicationContext;
@@ -33,15 +35,15 @@ public class Upgrade52to53UpdateCommunitySchemas implements UpgradeTask {
         //created when afterPropertiesSet() is called
         SessionFactory sessionFactory = getBean("sessionFactory", SessionFactory.class);
         try {
-            new HibernateTemplate(sessionFactory).execute( new HibernateCallback(){
+            new HibernateTemplate(sessionFactory).execute( new HibernateCallback<Void>(){
                 @Override
-                public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
+                public Void doInHibernate( final Session session ) throws HibernateException, SQLException {
                     // Client certificate DNs
-                    Criteria schemaCriteria = session.createCriteria(SchemaEntry.class);
+                    Criteria schemaCriteria = session.createCriteria(ResourceEntry.class);
                     for(Object schemaCriteriaObj: schemaCriteria.list()){
-                        if(schemaCriteriaObj instanceof SchemaEntry){
-                            SchemaEntry schemaEntry = (SchemaEntry) schemaCriteriaObj;
-                            schemaEntry.setName(schemaEntry.getName());
+                        if(schemaCriteriaObj instanceof ResourceEntry){
+                            ResourceEntry resourceEntry = (ResourceEntry) schemaCriteriaObj;
+                            resourceEntry.setUri(resourceEntry.getUri());
                         }
                     }
                     return null;

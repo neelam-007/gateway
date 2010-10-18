@@ -4,9 +4,10 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceDocumentMO;
-import com.l7tech.gateway.common.schema.SchemaEntry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.communityschemas.SchemaEntryManager;
+import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import static com.l7tech.gateway.common.resources.ResourceType.*;
+import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.ExceptionUtils;
@@ -23,27 +24,42 @@ import org.springframework.transaction.PlatformTransactionManager;
  * for the various resource types.</p>
  */                                                
 @ResourceFactory.ResourceType(type=ResourceDocumentMO.class)
-public class DocumentResourceFactory extends EntityManagerResourceFactory<ResourceDocumentMO, SchemaEntry, EntityHeader> {
+public class DocumentResourceFactory extends EntityManagerResourceFactory<ResourceDocumentMO, ResourceEntry, ResourceEntryHeader> {
 
     //- PUBLIC
 
     public DocumentResourceFactory( final RbacServices services,
                                     final SecurityFilter securityFilter,
                                     final PlatformTransactionManager transactionManager,
-                                    final SchemaEntryManager schemaEntryManager ) {
-        super( false, false, services, securityFilter, transactionManager, schemaEntryManager );
+                                    final ResourceEntryManager resourceEntryManager ) {
+        super( false, false, services, securityFilter, transactionManager, resourceEntryManager );
     }
 
     //- PROTECTED
 
     @Override
-    protected ResourceDocumentMO asResource( final SchemaEntry schemaEntry ) {
+    protected ResourceDocumentMO asResource( final ResourceEntry resourceEntry ) {
         final ResourceDocumentMO document = ManagedObjectFactory.createResourceDocument();
 
         final Resource resource = ManagedObjectFactory.createResource();
-        resource.setContent( schemaEntry.getSchema() );
-        resource.setSourceUrl( schemaEntry.getName() );
-        resource.setType( ResourceHelper.SCHEMA_TYPE );
+        resource.setContent( resourceEntry.getContent() );
+        resource.setSourceUrl( resourceEntry.getUri() );
+        document.setProperties( getProperties( resourceEntry, ResourceEntry.class ) );
+
+        switch ( resourceEntry.getType() ) {
+            case XML_SCHEMA:
+                resource.setType( ResourceHelper.SCHEMA_TYPE );
+                if ( resourceEntry.getResourceKey1() != null ) {
+                    document.getProperties().put( PROP_TARGET_NAMESPACE, resourceEntry.getResourceKey1() );
+                }
+                break;
+            case DTD:
+                resource.setType( ResourceHelper.DTD_TYPE );
+                if ( resourceEntry.getResourceKey1() != null ) {
+                    document.getProperties().put( PROP_PUBLIC_IDENTIFIER, resourceEntry.getResourceKey1() );
+                }
+                break;
+        }
 
         document.setResource( resource );
 
@@ -51,43 +67,73 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
     }
 
     @Override
-    protected SchemaEntry fromResource( final Object resource ) throws InvalidResourceException {
+    protected ResourceEntry fromResource( final Object resource ) throws InvalidResourceException {
         if ( !(resource instanceof ResourceDocumentMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected resource document");
 
         final ResourceDocumentMO resourceDocument = (ResourceDocumentMO) resource;
-        final SchemaEntry schemaEntry = new SchemaEntry();
+        final ResourceEntry resourceEntry = new ResourceEntry();
 
-        final Resource schemaResource = resourceDocument.getResource();
-        if ( schemaResource == null ) {
+        final Resource resourceResource = resourceDocument.getResource();
+        if ( resourceResource == null ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing resource");
-        } else if ( !ResourceHelper.SCHEMA_TYPE.equals( schemaResource.getType() ) ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "resource type '"+ResourceHelper.SCHEMA_TYPE+"', expected");
         }
 
-        schemaEntry.setName( trim(schemaResource.getSourceUrl()) ); // don't use asName, since this is a URL, not really a name
-        schemaEntry.setSchema( schemaResource.getContent() );
-        schemaEntry.setSystem( false ); // Ignored for updates, false when creating new schemas
-        schemaEntry.setTns( getTns(schemaResource.getContent()) );
+        resourceEntry.setUri( trim(resourceResource.getSourceUrl()) );
+        resourceEntry.setContent( resourceResource.getContent() );
 
-        return schemaEntry;
+        if ( ResourceHelper.DTD_TYPE.equals( resourceResource.getType() ) ) {
+            resourceEntry.setType( DTD );
+            resourceEntry.setContentType( DTD.getMimeType() );
+            if ( resourceDocument.getProperties() != null ) {
+                final Object publicIdentifier = resourceDocument.getProperties().get( PROP_PUBLIC_IDENTIFIER );
+                if ( publicIdentifier != null ) {
+                    if ( publicIdentifier instanceof String && !((String)publicIdentifier).trim().isEmpty() ) {
+                        resourceEntry.setResourceKey1( ((String) publicIdentifier).trim() );
+                    } else {
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES,
+                                "property '"+PROP_PUBLIC_IDENTIFIER+"', must be a valid public identifier.");
+                    }
+                }
+            }
+        } else if ( ResourceHelper.SCHEMA_TYPE.equals( resourceResource.getType() )) {
+            resourceEntry.setType( XML_SCHEMA );
+            resourceEntry.setContentType( XML_SCHEMA.getMimeType() );
+            resourceEntry.setResourceKey1( getTns(resourceResource.getContent()) );
+        } else {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES,
+                    "resource type '"+ResourceHelper.DTD_TYPE+"' or '"+ResourceHelper.SCHEMA_TYPE+"', expected");
+        }
+
+        setProperties( resourceEntry, resourceDocument.getProperties(), ResourceEntry.class );
+
+        return resourceEntry;
     }
 
     @Override
-    protected void updateEntity( final SchemaEntry oldEntity, final SchemaEntry newEntity ) throws InvalidResourceException {
-        if ( oldEntity.isSystem() && !ALLOW_SYSTEM_UPDATES ) {
-            throw new ResourceAccessException("Update of system XML Schema not permitted.");
+    protected void updateEntity( final ResourceEntry oldEntity, final ResourceEntry newEntity ) throws InvalidResourceException {
+        oldEntity.setUri( newEntity.getUri() );
+        oldEntity.setType( newEntity.getType() );
+        oldEntity.setContentType( newEntity.getContentType() );
+        oldEntity.setContent( newEntity.getContent() );
+        if ( newEntity.getDescription() != null ) {
+            if ( newEntity.getDescription().isEmpty() ) {
+                oldEntity.setDescription( null );
+            } else {
+                oldEntity.setDescription( newEntity.getDescription() );
+            }
         }
-
-        oldEntity.setName( newEntity.getName() );
-        oldEntity.setSchema( newEntity.getSchema() );
-        oldEntity.setTns( newEntity.getTns() );        
+        oldEntity.setResourceKey1( newEntity.getResourceKey1() );
+        oldEntity.setResourceKey2( newEntity.getResourceKey2() );
+        oldEntity.setResourceKey3( newEntity.getResourceKey3() );
     }
 
     //- PRIVATE
 
-    private static final Boolean ALLOW_SYSTEM_UPDATES = SyspropUtil.getBoolean( "com.l7tech.externa.assertions.gatewaymanagement.schemaSystemUpdatable", false );
     private static final Boolean TNS_REQUIRED = SyspropUtil.getBoolean( "com.l7tech.externa.assertions.gatewaymanagement.schemaTNSRequired", false );
+
+    private static final String PROP_PUBLIC_IDENTIFIER = "publicIdentifier";
+    private static final String PROP_TARGET_NAMESPACE = "targetNamespace";
 
     private String getTns( final String contents ) throws InvalidResourceException {
         String tns;

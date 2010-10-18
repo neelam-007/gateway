@@ -321,10 +321,10 @@ public class ApplicationContextTest  {
             if ( IGNORE_ENTITY_TYPES.contains( type ) ) continue; 
 
             Class<? extends Entity> clazz = type.getEntityClass();
-            Assert.assertNotNull( "EntityType class must not be null.", clazz );
+            Assert.assertNotNull( "EntityType class must not be null for " + type, clazz );
 
             EntityType foundType = EntityType.findTypeByEntity( clazz );
-            Assert.assertEquals(type, foundType);
+            Assert.assertEquals("EntityType type mismatch for " + type, type, foundType);
         }
     }
 

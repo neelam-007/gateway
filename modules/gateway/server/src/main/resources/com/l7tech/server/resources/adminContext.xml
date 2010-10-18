@@ -253,16 +253,14 @@
         </constructor-arg>
     </bean>
 
-    <!-- schema admin servant -->
-    <bean id="schemaAdmin" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
-        <property name="schemaEntryManager" ref="schemaEntryManager"/>
-        <property name="serviceDocumentResolver" ref="serviceDocumentResolver"/>
-    </bean>
-
     <!-- resource admin implementation -->
     <bean id="resourceAdmin" class="com.l7tech.server.globalresources.ResourceAdminImpl">
-        <constructor-arg index="0" ref="defaultHttpProxyManager"/>
-        <constructor-arg index="1" ref="httpConfigurationManager"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="resourceEntryManager"/>
+        <constructor-arg index="2" ref="defaultHttpProxyManager"/>
+        <constructor-arg index="3" ref="httpConfigurationManager"/>
+        <constructor-arg index="4" ref="serviceDocumentResolver"/>
+        <constructor-arg index="5" ref="schemaManager"/>
     </bean>
 
     <!-- jms admin servant -->

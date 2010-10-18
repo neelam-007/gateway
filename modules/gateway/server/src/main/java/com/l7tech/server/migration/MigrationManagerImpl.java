@@ -170,6 +170,11 @@ public class MigrationManagerImpl implements MigrationManager {
             customFilters.put("messageSource", header.getProperty("messageSource"));
             customFilters.putAll(filters);
             return customFilters;
+        } else if ( EntityType.RESOURCE_ENTRY == header.getType() && header.getExtraProperties().containsKey("resourceType") ) {
+            Map<String,String> customFilters = new HashMap<String, String>();
+            customFilters.put("type", header.getProperty("resourceType"));
+            customFilters.putAll(filters);
+            return customFilters;
         } else {
             return filters;
         }

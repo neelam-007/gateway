@@ -25,7 +25,7 @@ public interface PropertyResolver {
         VALUE_REFERENCE,
         SSGKEY,
         SERVER_VARIABLE,
-        SCHEMA_ENTRY,
+        RESOURCE_ENTRY,
         JDBC_CONNECTION,
     }
 

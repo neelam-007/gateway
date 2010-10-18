@@ -41,7 +41,6 @@ public enum EntityType implements Comparable<EntityType> {
     CLUSTER_PROPERTY("Cluster Property", true),
     CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true),
     SERVICE_USAGE("Service Usage Record", true),
-    SCHEMA_ENTRY("Schema Entry", true),
     METRICS_BIN("Service Metrics Bin", true),
 
     RBAC_ROLE("Access Control Role", true),
@@ -83,6 +82,7 @@ public enum EntityType implements Comparable<EntityType> {
     SECURE_PASSWORD("Secure Password", true),
 
     HTTP_CONFIGURATION("HTTP Options", true),
+    RESOURCE_ENTRY("Global Resource", true),
     ;
 
     private final String name;

@@ -29,8 +29,9 @@ public class SchemaManagerImplTest {
     public void testHttpFail() throws Exception {
         try {
             final SchemaManager manager = getTestSchemaManager( null );
-            manager.getSchemaByUrl( "http://bad" ).close();
+            manager.getSchemaByUri( "http://bad" ).close();
         } catch ( IOException ioe ) {
+            ioe.printStackTrace();
             assertTrue( "404 error", ioe.getMessage().contains( "404" ));
         }
     }
@@ -38,8 +39,8 @@ public class SchemaManagerImplTest {
     @Test(expected=SAXException.class)
     public void testParseFail() throws Exception {
         final SchemaManager manager = getTestSchemaManager( null );
-        manager.registerSchema( "http://bad/html.html", "<html><body>HTML content<br></body></html>" );
-        manager.getSchemaByUrl( "http://bad/html.html" ).close();
+        manager.registerSchema( "http://bad/html.html", null, "<html><body>HTML content<br></body></html>" );
+        manager.getSchemaByUri( "http://bad/html.html" ).close();
     }
 
     /**
@@ -49,8 +50,8 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledNoTargetNamespace() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
-        manager.getSchemaByUrl( "http://host/schema.xsd" ).close();
+        manager.registerSchema( "http://host/schema.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
+        manager.getSchemaByUri( "http://host/schema.xsd" ).close();
         assertTrue( "Hardware loaded", !hardwareSchemas.isEmpty() );
     }
 
@@ -61,9 +62,9 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledIncludeNoTNS() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
-        manager.registerSchema( "http://host/schema_parent.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUrl( "http://host/schema_parent.xsd" ).close();
+        manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
+        manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
+        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
@@ -79,9 +80,9 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledIncludeWithTNS() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_parent.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUrl( "http://host/schema_parent.xsd" ).close();
+        manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
+        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
@@ -98,11 +99,11 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledImportedAndIncluded() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_includer.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.registerSchema( "http://host/schema_importer.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test2\"><import schemaLocation=\"schema_child.xsd\" namespace=\"urn:test\"/></schema>" );
-        manager.getSchemaByUrl( "http://host/schema_includer.xsd" ).close();
-        manager.getSchemaByUrl( "http://host/schema_importer.xsd" ).close();
+        manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_includer.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
+        manager.registerSchema( "http://host/schema_importer.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test2\"><import schemaLocation=\"schema_child.xsd\" namespace=\"urn:test\"/></schema>" );
+        manager.getSchemaByUri( "http://host/schema_includer.xsd" ).close();
+        manager.getSchemaByUri( "http://host/schema_importer.xsd" ).close();
 
         assertTrue( "Not hardware loaded", hardwareSchemas.isEmpty() );
     }
@@ -114,19 +115,19 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledIncludesWithDuplicateTNS() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child1.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_child2.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_child3.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_child4.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_child5.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_parent.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\">\n" +
+        manager.registerSchema( "http://host/schema_child1.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_child2.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_child3.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_child4.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_child5.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\">\n" +
                 "<include schemaLocation=\"schema_child1.xsd\"/>\n" +
                 "<include schemaLocation=\"schema_child2.xsd\"/>\n" +
                 "<include schemaLocation=\"schema_child3.xsd\"/>\n" +
                 "<include schemaLocation=\"schema_child4.xsd\"/>\n" +
                 "<include schemaLocation=\"schema_child5.xsd\"/>\n" +
                 "</schema>" );
-        manager.getSchemaByUrl( "http://host/schema_parent.xsd" ).close();
+        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child 1", hardwareSchemas.get("http://host/schema_child1.xsd") );
@@ -150,15 +151,15 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledIncludesWithNoTNS() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child1.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
-        manager.registerSchema( "http://host/schema_child2.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
-        manager.registerSchema( "http://host/schema_child3.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
-        manager.registerSchema( "http://host/schema_parent1.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test1\"><include schemaLocation=\"schema_child1.xsd\"/></schema>" );
-        manager.registerSchema( "http://host/schema_parent2.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test2\"><include schemaLocation=\"schema_child2.xsd\"/></schema>" );
-        manager.registerSchema( "http://host/schema_parent3.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test3\"><include schemaLocation=\"schema_child3.xsd\"/></schema>" );
-        manager.getSchemaByUrl( "http://host/schema_parent1.xsd" ).close();
-        manager.getSchemaByUrl( "http://host/schema_parent2.xsd" ).close();
-        manager.getSchemaByUrl( "http://host/schema_parent3.xsd" ).close();
+        manager.registerSchema( "http://host/schema_child1.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
+        manager.registerSchema( "http://host/schema_child2.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
+        manager.registerSchema( "http://host/schema_child3.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" />" );
+        manager.registerSchema( "http://host/schema_parent1.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test1\"><include schemaLocation=\"schema_child1.xsd\"/></schema>" );
+        manager.registerSchema( "http://host/schema_parent2.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test2\"><include schemaLocation=\"schema_child2.xsd\"/></schema>" );
+        manager.registerSchema( "http://host/schema_parent3.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test3\"><include schemaLocation=\"schema_child3.xsd\"/></schema>" );
+        manager.getSchemaByUri( "http://host/schema_parent1.xsd" ).close();
+        manager.getSchemaByUri( "http://host/schema_parent2.xsd" ).close();
+        manager.getSchemaByUri( "http://host/schema_parent3.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child 1", hardwareSchemas.get("http://host/schema_child1.xsd") );
@@ -182,16 +183,15 @@ public class SchemaManagerImplTest {
     public void testHardwareEnabledRedefine() throws Exception {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
-        manager.registerSchema( "http://host/schema_child.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
-        manager.registerSchema( "http://host/schema_parent.xsd", "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><redefine schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUrl( "http://host/schema_parent.xsd" ).close();
+        manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
+        manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><redefine schemaLocation=\"schema_child.xsd\"/></schema>" );
+        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
         assertNotNull( "Hardware loaded parent", hardwareSchemas.get("http://host/schema_parent.xsd") );
         assertTrue( "Hardware child is include", hardwareSchemas.get("http://host/schema_child.xsd").isInclude() );
         assertFalse( "Hardware parent is include", hardwareSchemas.get("http://host/schema_parent.xsd").isInclude() );
-
     }
 
     private SchemaManager getTestSchemaManager( final Map<String,TarariSchemaSource> hardwareLoaded ) {
@@ -214,15 +214,19 @@ public class SchemaManagerImplTest {
         final TestingHttpClientFactory httpClientFactory = new TestingHttpClientFactory();
         httpClientFactory.setMockHttpClient( new MockGenericHttpClient( 404, new GenericHttpHeaders( new HttpHeader[0]), null, null, null ) );
 
+        final SchemaConfiguration schemaConfiguration = new SchemaConfiguration(new MockConfig(new Properties(){{ setProperty("schemaRecompileLatency", "0"); }}));
+
         return new SchemaManagerImpl(
-                new MockConfig(new Properties(){{ setProperty("schemaRecompileLatency", "0"); }}),
-                httpClientFactory,
+                schemaConfiguration,
                 new MockTimer(),
-                testSchemaHandler
+                testSchemaHandler,
+                new SchemaSourceResolver[]{
+                        new HttpSchemaSourceResolver( schemaConfiguration, httpClientFactory )
+                }
                 ){
             @Override
-            public SchemaHandle getSchemaByUrl( final String url ) throws IOException, SAXException {
-                final SchemaHandle handle = super.getSchemaByUrl( url );
+            public SchemaHandle getSchemaByUri( final String url ) throws IOException, SAXException {
+                final SchemaHandle handle = super.getSchemaByUri( url );
                 maybeRebuildHardwareCache(0);
                 return handle;
             }

@@ -34,23 +34,24 @@ public class ServiceDocumentResolver {
     public String resolveDocumentTarget(String url, ServiceAdmin.DownloadDocumentType docType, String modAssClusterProperty) throws IOException {
         final ServerConfig serverConfig = ServerConfig.getInstance();
 
+        final int defaultMaxSize = serverConfig.getIntProperty(ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
         final int maxSize;
         switch(docType){
             case SCHEMA:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, defaultMaxSize);
                 break;
             case WSDL:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_WSDL_MAX_DOWNLOAD_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_WSDL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
                 break;
             case XSL:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
                 break;
             case MOD_ASS:
                 if(modAssClusterProperty == null || modAssClusterProperty.trim().isEmpty()) throw new IllegalArgumentException("modAssClusterProperty cannot be null or empty");
-                maxSize = serverConfig.getIntProperty(ClusterProperty.asServerConfigPropertyName(modAssClusterProperty), HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                maxSize = serverConfig.getIntProperty(ClusterProperty.asServerConfigPropertyName(modAssClusterProperty), defaultMaxSize);
                 break;
             default:
-                maxSize = HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT;
+                maxSize = defaultMaxSize;
         }
 
         final SimpleHttpClient simpleHttpClient = new SimpleHttpClient(httpClientFactory.createHttpClient(), maxSize);

@@ -643,7 +643,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
     private final String clusterNodeId;
 
-    @Resource
+    @Resource(name="managedBackgroundTimer")
     private ManagedTimer timer;
 
     @Resource

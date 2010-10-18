@@ -53,7 +53,7 @@ public class ServerSchemaValidation
     private final String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
-    private final String globalSchemaID;
+    private final String globalSchemaUri;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
@@ -64,13 +64,14 @@ public class ServerSchemaValidation
         AssertionResourceInfo resourceInfo = assertion.getResourceInfo();
 
         if (resourceInfo instanceof GlobalResourceInfo) {
-            // no voodoo necessary, the community schemas are automatically loaded by the schema manager
-            globalSchemaID = ((GlobalResourceInfo)resourceInfo).getId();
+            // no voodoo necessary, global resource schemas are automatically loaded by the schema manager
+            globalSchemaUri = ((GlobalResourceInfo)resourceInfo).getId();
+            schemaManager.registerUri(globalSchemaUri);
             resourceGetter = null;
             registeredGlobalSchemaUrl = null;
             return;
         } else {
-            globalSchemaID = null;           
+            globalSchemaUri = null;
         }
 
         if (resourceInfo instanceof MessageUrlResourceInfo)
@@ -82,7 +83,7 @@ public class ServerSchemaValidation
             registeredGlobalSchemaUrl = "policy:assertion:schemaval:sa" +
                     System.identityHashCode(this) +
                     ":sd" + HexUtils.encodeBase64(HexUtils.getMd5Digest(schemaDoc.getBytes()), true);
-            schemaManager.registerSchema(registeredGlobalSchemaUrl, schemaDoc);
+            schemaManager.registerSchema(registeredGlobalSchemaUrl, null, schemaDoc);
 
             // Change the resource info -- the static resource is this statically-registered URL now, not the schema
             // document itself
@@ -182,14 +183,14 @@ public class ServerSchemaValidation
         try {
             XmlKnob xmlKnob = message.getXmlKnob();
 
-            if (globalSchemaID != null) {
+            if ( globalSchemaUri != null) {
                 try {
-                    ps = schemaManager.getSchemaByUrl(globalSchemaID);
+                    ps = schemaManager.getSchemaByUri( globalSchemaUri );
                 } catch (MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaID);
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaUri );
                     return AssertionStatus.SERVER_ERROR;
                 } catch (IOException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaID + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaUri + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
             } else {
@@ -199,7 +200,7 @@ public class ServerSchemaValidation
                     //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
                     //xmlKnob.getElementCursor() is not needed, but will be used if support for MessageUrlResourceInfo's are allowed in this server assertion.
                     schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-                    ps = schemaManager.getSchemaByUrl(schemaUrl);
+                    ps = schemaManager.getSchemaByUri(schemaUrl);
                 } catch (IOException e) {
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
@@ -287,6 +288,7 @@ public class ServerSchemaValidation
     public void close() {
         if (setClosed()) return;
         if (resourceGetter != null) resourceGetter.close();
+        if (globalSchemaUri != null) schemaManager.unregisterUri(globalSchemaUri);
         if (registeredGlobalSchemaUrl != null) schemaManager.unregisterSchema(registeredGlobalSchemaUrl);
     }
 }

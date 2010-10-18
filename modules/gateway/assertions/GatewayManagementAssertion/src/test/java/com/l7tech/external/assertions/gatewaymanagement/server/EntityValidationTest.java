@@ -1,7 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -505,50 +506,61 @@ public class EntityValidationTest {
     }
 
     @Test
-    public void testSchemaEntry() {
-        SchemaEntry schemaEntry = new SchemaEntry();
-        schemaEntry.setSchema( "<schema/>" );
-        schemaEntry.setTns( "urn:tns" );
+    public void testResourceEntry() {
+        ResourceEntry resourceEntry = new ResourceEntry();
+        resourceEntry.setUri( "http://someurl" );
+        resourceEntry.setType( ResourceType.XML_SCHEMA );
+        resourceEntry.setContentType( ResourceType.XML_SCHEMA.getMimeType() );
+        resourceEntry.setContent( "<schema/>" );
+        valid( resourceEntry, "basic resource entry" );        
 
-        // Test name not null
-        invalid( schemaEntry, "null name" );
+        //Test uri not null
+        resourceEntry.setUri( null );
+        invalid( resourceEntry, "null uri" );
+        resourceEntry.setUri( "http://someurl" );
 
-        schemaEntry.setName( "http://someurl" );
-        valid( schemaEntry, "basic schema entry" );
+        // Test uri length
+        resourceEntry.setUri( "" );
+        invalid( resourceEntry, "empty uri" );
 
-        // Test name length
-        schemaEntry.setName( "" );
-        invalid( schemaEntry, "empty name" );
+        resourceEntry.setUri( "a" );
+        valid( resourceEntry, "short uri" );
 
-        schemaEntry.setName( "a" );
-        valid( schemaEntry, "short name" );
+        resourceEntry.setUri( string(4096, 'a') );
+        valid( resourceEntry, "longest uri" );
 
-        schemaEntry.setName( string(4096, 'a') );
-        valid( schemaEntry, "longest name" );
+        resourceEntry.setUri( string(4097, 'a') );
+        invalid( resourceEntry, "long uri" );
 
-        schemaEntry.setName( string(4097, 'a') );
-        invalid( schemaEntry, "long name" );
+        resourceEntry.setUri( "http://someurl" );
 
-        schemaEntry.setName( "name" );
+        // Test description
+        resourceEntry.setDescription( "" );
+        valid( resourceEntry, "empty description" );
+
+        resourceEntry.setDescription( string(255, 'a') );
+        valid( resourceEntry, "longest description" );
+
+        resourceEntry.setDescription( string(256, 'a') );
+        invalid( resourceEntry, "long description" );
+
+        resourceEntry.setDescription( null );
 
         // Test tns
-        schemaEntry.setTns( null );
-        valid( schemaEntry, "null tns" );
+        resourceEntry.setResourceKey1( "" );
+        valid( resourceEntry, "empty tns" );
 
-        schemaEntry.setTns( "" );
-        valid( schemaEntry, "empty tns" );
+        resourceEntry.setResourceKey1( string(4096,'a') );
+        valid( resourceEntry, "longest tns" );
 
-        schemaEntry.setTns( string(128,'a') );
-        valid( schemaEntry, "longest tns" );
+        resourceEntry.setResourceKey1( string(4097,'a') );
+        invalid( resourceEntry, "long tns" );
 
-        schemaEntry.setTns( string(129,'a') );
-        invalid( schemaEntry, "long tns" );
+        resourceEntry.setResourceKey1( null );
 
-        schemaEntry.setTns( "urn:tns" );
-
-        // Test schema not null (DISABLED since the getter sets the value to non-null)
-        //schemaEntry.setSchema( null );
-        //invalid( schemaEntry, "null schema" );
+        // Test schema not null
+        resourceEntry.setContent( null );
+        invalid( resourceEntry, "null content" );
     }
 
     //- PRIVATE

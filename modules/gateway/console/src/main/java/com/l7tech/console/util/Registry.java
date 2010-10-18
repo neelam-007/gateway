@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.console.security.SecurityProvider;
@@ -125,12 +124,6 @@ public abstract class Registry {
     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
     */
     abstract public TrustedCertAdmin getTrustedCertManager();
-
-    /**
-    * @return the schema admin. Never null.
-    * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-    */
-    abstract public SchemaAdmin getSchemaAdmin();
 
     /**
     * @return the resource admin. Never null.
@@ -290,11 +283,6 @@ public abstract class Registry {
 
         @Override
         public TrustedCertAdmin getTrustedCertManager() {
-            return null;
-        }
-
-        @Override
-        public SchemaAdmin getSchemaAdmin() {
             return null;
         }
 

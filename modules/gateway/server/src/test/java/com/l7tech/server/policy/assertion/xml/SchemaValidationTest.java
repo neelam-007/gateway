@@ -153,7 +153,7 @@ public class SchemaValidationTest {
     @Ignore("Developer only test")
     public void testReutersUrlSchemaHttpObjectCache() throws Exception {
         SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
-        SchemaHandle handle = sm.getSchemaByUrl(REUTERS_SCHEMA_URL);
+        SchemaHandle handle = sm.getSchemaByUri(REUTERS_SCHEMA_URL);
         Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
         Message request = new Message(requestDoc);
 

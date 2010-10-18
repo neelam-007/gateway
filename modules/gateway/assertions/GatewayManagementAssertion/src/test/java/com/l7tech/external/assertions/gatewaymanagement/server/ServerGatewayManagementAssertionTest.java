@@ -5,7 +5,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
@@ -32,7 +33,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
-import com.l7tech.server.communityschemas.SchemaEntryManagerStub;
+import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
@@ -388,14 +389,31 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testCreateDTD() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/resources";
+        String payload =
+                "<ResourceDocument xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Resource sourceUrl=\"books2.dtd\" type=\"dtd\"><![CDATA[<!ELEMENT book ANY>]]></Resource>\n" +
+                "    <Properties>\n" +
+                "        <Property key=\"description\">\n" +
+                "            <StringValue>The books2 DTD.</StringValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"publicIdentifier\">\n" +
+                "            <StringValue>books2</StringValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "</ResourceDocument>";
+        doCreate( resourceUri, payload, "4", "5" );
+    }
+
+    @Test
     public void testCreateSchema() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/resources";
         String payload =
                 "<ResourceDocument xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
                 "    <Resource sourceUrl=\"books2.xsd\" type=\"xmlschema\">&lt;xs:schema targetNamespace=\"urn:books2\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"&gt;&lt;xs:element name=\"book\" type=\"xs:string\"/&gt;&lt;/xs:schema&gt;</Resource>\n" +
                 "</ResourceDocument>";
-        String expectedId = "3";
-        doCreate( resourceUri, payload, expectedId );
+        doCreate( resourceUri, payload, "4", "5" );
     }
 
     @Test
@@ -1326,9 +1344,10 @@ public class ServerGatewayManagementAssertionTest {
                 prop(1, "testProp1", "testValue1"),
                 prop(2, "testProp2", "testValue2"),
                 prop(3, "testProp3", "testValue3")));
-        beanFactory.addBean( "schemaEntryManager", new SchemaEntryManagerStub(
-                schema(1,"books.xsd", "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>"),
-                schema(2,"books_refd.xsd", "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>")) );
+        beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
+                resource(1,"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
+                resource(2,"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
+                resource(3,"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
                 folder(1, rootFolder, "Test Folder") ) );
@@ -1428,12 +1447,15 @@ public class ServerGatewayManagementAssertionTest {
         return new SsgKeyEntry( keystoreOid, alias, new X509Certificate[]{cert}, privateKey);
     }
 
-    private static SchemaEntry schema( final long oid, final String systemId, final String tns, final String schemaXml ) {
-        final SchemaEntry entry = new SchemaEntry();
+    private static ResourceEntry resource( final long oid, final String uri, final ResourceType type, final String key, final String content, final String desc ) {
+        final ResourceEntry entry = new ResourceEntry();
         entry.setOid( oid );
-        entry.setName( systemId );
-        entry.setTns( tns );
-        entry.setSchema( schemaXml );
+        entry.setUri( uri );
+        entry.setType( type );
+        entry.setContentType( type.getMimeType() );
+        entry.setResourceKey1( key );
+        entry.setContent( content );
+        entry.setDescription( desc );
         return entry;
     }
 

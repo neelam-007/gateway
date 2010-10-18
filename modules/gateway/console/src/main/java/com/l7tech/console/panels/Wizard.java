@@ -55,12 +55,15 @@ public class Wizard extends JDialog {
      * Creates new wizard
      */
     public Wizard(Frame parent, WizardStepPanel panel) {
-        super(parent, true);
-        initialize(panel);
+        this((Window) parent, panel);
     }
 
     public Wizard(Dialog parent, WizardStepPanel panel) {
-        super(parent, true);
+        this((Window) parent, panel);
+    }
+
+    public Wizard(Window parent, WizardStepPanel panel) {
+        super(parent, JDialog.DEFAULT_MODALITY_TYPE);
         initialize(panel);
     }
 

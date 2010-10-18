@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -128,6 +129,9 @@ class EntityPropertiesHelper {
             .put( "defaultRoutingUrl", null )
             .put( "wssProcessingEnabled", null )
             .unmodifiableMap() )
+        .put( ResourceEntry.class, MapBuilder.<String,String>builder()
+            .put( "description", null )
+            .unmodifiableMap() )
         .put( TrustedCert.class, MapBuilder.<String,String>builder()
             .put( "trustAnchor", null )
             .put( "trustedAsSamlAttestingEntity", null )
@@ -218,6 +222,20 @@ class EntityPropertiesHelper {
             "disabled",
             "soapVersion"
         ) ) )
+        .put( ResourceEntry.class, Collections.unmodifiableCollection( Arrays.asList(
+            "content",
+            "contentType",
+            "id",
+            "oid",
+            "resourceKey1",
+            "resourceKey2",
+            "resourceKey3",
+            "sourceUrl",
+            "type",
+            "uri",
+            "uriHash",
+            "version"
+        )))
         .put( TrustedCert.class, Collections.unmodifiableCollection( Arrays.asList(
             "ski",
             "certBase64",

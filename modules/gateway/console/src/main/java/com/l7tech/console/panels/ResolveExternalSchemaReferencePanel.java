@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.policy.exporter.ExternalSchemaReference;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -90,9 +90,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
             if (component instanceof Wizard) break;
             component = component.getParent();
         }
-        GlobalSchemaDialog dlg = new GlobalSchemaDialog((Wizard)component);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        GlobalResourcesDialog dlg = new GlobalResourcesDialog((Wizard)component);
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
@@ -105,24 +103,37 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
                 }
 
                 final Registry reg = Registry.getDefault();
-                if ( reg == null || reg.getSchemaAdmin() == null ) {
+                if ( reg == null || reg.getResourceAdmin() == null ) {
                     logger.warning("No access to registry. Cannot check fix.");
                     return;
                 }
 
                 boolean fixed;
+                String fixedUri = null;
                 try {
-                    fixed = !reg.getSchemaAdmin().findByName(foreignRef.getName()).isEmpty();
+                    fixed = reg.getResourceAdmin().findResourceHeaderByUriAndType(foreignRef.getName(), ResourceType.XML_SCHEMA) != null;
                     if (!fixed) {
-                        fixed = !reg.getSchemaAdmin().findByTNS(foreignRef.getTns()).isEmpty();
+                        final Collection<ResourceEntryHeader> headers = reg.getResourceAdmin().findResourceHeadersByTargetNamespace(foreignRef.getTns());
+                        if ( headers.size() == 1 ) {
+                            fixed = true;
+                            fixedUri = headers.iterator().next().getUri();
+                        }
                     }
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "cannot check fix", e);
                     throw new RuntimeException(e);
                 }
                 if ( fixed ) {
-                    if (removeRadio.isSelected()) asIsRadio.setSelected( true );
-                    referenceValidityLabel.setText( "(Valid reference)" );
+                    if ( removeRadio.isSelected() ) {
+                        if ( fixedUri != null && ((DefaultComboBoxModel)schemaSelectionComboBox.getModel()).getIndexOf( fixedUri ) >= 0) {
+                            manualSelectionRadioButton.setSelected( true );
+                            schemaSelectionComboBox.setSelectedItem( fixedUri );
+                            referenceValidityLabel.setText( "" ); // could be valid or invalid, depends on the assertion
+                        } else {
+                            asIsRadio.setSelected( true );
+                            referenceValidityLabel.setText( "(Valid reference)" );
+                        }
+                    }
                 } else {
                     referenceValidityLabel.setText( "(Invalid reference)" );
                 }
@@ -132,18 +143,18 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
     }
 
     private void loadSchemas() {
-        Collection<SchemaEntry> schemas;
+        Collection<ResourceEntryHeader> schemas;
         try {
             final Registry reg = Registry.getDefault();
-            if ( reg == null || reg.getSchemaAdmin() == null ) {
+            if ( reg == null || reg.getResourceAdmin() == null ) {
                 logger.warning("No access to registry. Cannot load schema options.");
                 return;
             }
 
             if ( foreignRef.getTns()==null ) {
-                schemas = reg.getSchemaAdmin().findAllSchemas();
+                schemas = reg.getResourceAdmin().findResourceHeadersByType(ResourceType.XML_SCHEMA);
             } else {
-                schemas = reg.getSchemaAdmin().findByTNS( foreignRef.getTns() );
+                schemas = reg.getResourceAdmin().findResourceHeadersByTargetNamespace( foreignRef.getTns() );
             }
         } catch ( FindException e ) {
             logger.log(Level.WARNING, "Error finding schema options.", e);
@@ -153,10 +164,10 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
             schemas = Collections.emptyList();
         }
 
-        java.util.List<String> names = Functions.map( schemas, new Functions.Unary<String,SchemaEntry>(){
+        java.util.List<String> names = Functions.map( schemas, new Functions.Unary<String,ResourceEntryHeader>(){
             @Override
-            public String call( final SchemaEntry schemaEntry ) {
-                return schemaEntry.getName();
+            public String call( final ResourceEntryHeader resourceEntryHeader ) {
+                return resourceEntryHeader.getUri();
             }
         } );
 

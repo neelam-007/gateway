@@ -3,6 +3,8 @@ package com.l7tech.server.policy.validator;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
@@ -28,7 +30,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.communityschemas.SchemaEntryManager;
+import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -93,7 +95,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     private JmsEndpointManager jmsEndpointManager;
     private IdentityProviderFactory identityProviderFactory;
-    private SchemaEntryManager schemaEntryManager;
+    private ResourceEntryManager resourceEntryManager;
     private ClientCertManager clientCertManager;
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
@@ -389,13 +391,13 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {
         // look for the presence of the schema
         String sId = globalResourceInfo.getId();
-        Collection res = null;
+        ResourceEntryHeader res = null;
         try {
-            res = schemaEntryManager.findByName(sId);
+            res = resourceEntryManager.findHeaderByUriAndType(sId, ResourceType.XML_SCHEMA);
         } catch (FindException e) {
             logger.log(Level.INFO, "error looking for schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-        return !(res == null || res.isEmpty());
+        return res != null;
     }
 
     private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
@@ -423,8 +425,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     final String schemaNamespace = dependencyElement.getAttribute("namespace");
                     final String schemaUrl = dependencyElement.getAttribute("schemaLocation");
                     try {
-                        if (schemaEntryManager.findByName(schemaUrl).isEmpty()) {
-                            if (!"import".equals(dependencyElement.getLocalName()) || schemaEntryManager.findByTNS(schemaNamespace).isEmpty()) {
+                        if (resourceEntryManager.findHeaderByUriAndType(schemaUrl, ResourceType.XML_SCHEMA) == null ) {
+                            if (!"import".equals(dependencyElement.getLocalName()) || resourceEntryManager.findHeadersByTNS(schemaNamespace).isEmpty()) {
                                 if (schemaUrl != null) {
                                     unresolvedImportsList.add(schemaUrl);
                                 } else {
@@ -617,8 +619,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 
-    public void setSchemaEntryManager(SchemaEntryManager schemaManager) {
-        this.schemaEntryManager = schemaManager;
+    public void setResourceEntryManager(ResourceEntryManager resourceEntryManager) {
+        this.resourceEntryManager = resourceEntryManager;
     }
 
     public void setClientCertManager(ClientCertManager clientCertManager) {
@@ -647,8 +649,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             throw new IllegalArgumentException("KeyStore Manager is required");
         }
 
-        if (schemaEntryManager == null) {
-            throw new IllegalArgumentException("SchemaEntry Manager is required");
+        if (resourceEntryManager == null) {
+            throw new IllegalArgumentException("Resource Entry Manager is required");
         }
 
         if (clientCertManager == null) {

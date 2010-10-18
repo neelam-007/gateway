@@ -88,7 +88,7 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         });
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.SCHEMA_ENTRY)
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.RESOURCE_ENTRY)
     @Override
     public AssertionResourceInfo getResourceInfo() {
         return resourceInfo;

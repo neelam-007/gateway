@@ -236,13 +236,17 @@
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
 
+    <bean id="schemaConfiguration" class="com.l7tech.server.communityschemas.SchemaConfiguration" depends-on="clusterPropertyManager">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
-        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="0" ref="schemaConfiguration"/>
         <constructor-arg index="1" >
-            <ref local="httpClientFactory"/>
-        </constructor-arg>
-        <constructor-arg index="2" >
             <null/>
+        </constructor-arg>
+        <constructor-arg index="2">
+            <list/>
         </constructor-arg>
     </bean>
 

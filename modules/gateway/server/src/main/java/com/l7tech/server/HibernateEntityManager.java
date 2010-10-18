@@ -502,7 +502,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Helper for implementing findHeaders in SearchableEntityProviders 
      */
-    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,String> filters, final boolean disjunction ) {
+    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,?> filters, final boolean disjunction ) {
         List<ET> entities = getHibernateTemplate().execute(new ReadOnlyHibernateCallback<List<ET>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
@@ -514,12 +514,17 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 if ( filters != null ) {
                     Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
                     for ( String filterProperty : filters.keySet() ) {
-                        String filter = filters.get(filterProperty);
+                        final Object filterObject = filters.get(filterProperty);
                         // todo: test based on the field's type
-                        if ("true".equalsIgnoreCase(filter) || "false".equalsIgnoreCase(filter)) {
-                            likeRestriction.add(Restrictions.eq( filterProperty, Boolean.parseBoolean(filter)));
+                        if ( filterObject instanceof String ) {
+                            final String filter = (String) filterObject;
+                            if ("true".equalsIgnoreCase(filter) || "false".equalsIgnoreCase(filter)) {
+                                likeRestriction.add(Restrictions.eq( filterProperty, Boolean.parseBoolean(filter)));
+                            } else {
+                                likeRestriction.add(Restrictions.like( filterProperty, filter.replace('*', '%').replace('?', '_')));
+                            }
                         } else {
-                            likeRestriction.add(Restrictions.like( filterProperty, filter.replace('*', '%').replace('?', '_')));
+                            likeRestriction.add( Restrictions.eq( filterProperty, filterObject ));   
                         }
                     }
 

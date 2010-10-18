@@ -70,10 +70,10 @@ public class ExternalSchemaReference extends ExternalReference {
         Element refEl = referencesParentElement.getOwnerDocument().createElement(TOPEL_NAME);
         setTypeAttribute( refEl );
         if (name != null) {
-            refEl.setAttribute(LOC_ATTR_NAME, name);
+            refEl.setAttributeNS(null, LOC_ATTR_NAME, name);
         }
         if (tns != null) {
-            refEl.setAttribute(TNS_ATTR_NAME, tns);
+            refEl.setAttributeNS(null, TNS_ATTR_NAME, tns);
         }
         referencesParentElement.appendChild(refEl);
     }
@@ -82,7 +82,7 @@ public class ExternalSchemaReference extends ExternalReference {
     boolean verifyReference() {
         // check that the schema is present on this target system
         try {
-            if (name == null || getFinder().findSchemaByName(name).isEmpty()) {
+            if (name == null || getFinder().findSchemaByName(name)==null) {
                 return tns != null && !getFinder().findSchemaByTNS(tns).isEmpty();
             }
         } catch (RuntimeException e) {

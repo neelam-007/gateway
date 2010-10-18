@@ -12,7 +12,6 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
@@ -44,7 +43,7 @@ import java.util.logging.Logger;
  */
 public final class RegistryImpl extends Registry
   implements ApplicationContextAware, ApplicationListener {
-    protected final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
+    private final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
 
     // When you add an admin interface don't forget to
     // add it to the reset method
@@ -58,7 +57,6 @@ public final class RegistryImpl extends Registry
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
     private TrustedCertAdmin trustedCertAdmin;
-    private SchemaAdmin schemaAdmin;
     private ResourceAdmin resourceAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AuditAdmin auditAdmin;
@@ -193,16 +191,6 @@ public final class RegistryImpl extends Registry
         }
         trustedCertAdmin = adminContext.getTrustedCertAdmin();
         return trustedCertAdmin;
-    }
-
-    @Override
-    public synchronized SchemaAdmin getSchemaAdmin() {
-        checkAdminContext();
-        if (schemaAdmin != null) {
-            return schemaAdmin;
-        }
-        schemaAdmin = adminContext.getSchemaAdmin();
-        return schemaAdmin;
     }
 
     @Override
@@ -412,7 +400,6 @@ public final class RegistryImpl extends Registry
         jdbcAdmin = null;
         ftpAdmin = null;
         trustedCertAdmin = null;
-        schemaAdmin = null;
         resourceAdmin = null;
         customAssertionsRegistrar = null;
         auditAdmin = null;

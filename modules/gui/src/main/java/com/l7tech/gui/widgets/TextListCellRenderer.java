@@ -2,6 +2,8 @@ package com.l7tech.gui.widgets;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 
 import com.l7tech.util.Functions;
 
@@ -74,6 +76,39 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
         final Dimension size = super.getPreferredSize();
         setText(text);
         return size;
+    }
+
+    public TableCellRenderer asTableCellRenderer(){
+        return new DefaultTableCellRenderer(){
+            @SuppressWarnings({ "unchecked" })
+            @Override
+            public Component getTableCellRendererComponent( final JTable table,
+                                                            final Object value,
+                                                            final boolean isSelected,
+                                                            final boolean hasFocus,
+                                                            final int row,
+                                                            final int column ) {
+                final Component component = super.getTableCellRendererComponent( table, value, isSelected, hasFocus, row, column );
+
+                if( component instanceof JLabel ) {
+                    final JLabel cell = (JLabel) component;
+                    String text = "";
+                    String tooltipText = null;
+
+                    if ( value != null || useAccessorForNull ) {
+                        text = accessorFunction.call((SO)value);
+                        tooltipText = tooltipAccessorFunction != null ?
+                                tooltipAccessorFunction.call((SO)value) :
+                                null;
+                    }
+
+                    cell.setText( text );
+                    cell.setToolTipText( tooltipText );
+                }
+
+                return component;
+            }
+        };
     }
 
     /**

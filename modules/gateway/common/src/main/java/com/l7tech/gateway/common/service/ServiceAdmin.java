@@ -39,7 +39,7 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
-    enum DownloadDocumentType {WSDL, SCHEMA, XSL, MOD_ASS}
+    enum DownloadDocumentType {WSDL, SCHEMA, XSL, UNKNOWN, MOD_ASS}
 
     /**
      * Retrieve all available published services.

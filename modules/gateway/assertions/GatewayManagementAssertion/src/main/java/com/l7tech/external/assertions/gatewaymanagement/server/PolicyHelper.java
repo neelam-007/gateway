@@ -13,7 +13,8 @@ import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -56,7 +57,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.communityschemas.SchemaEntryManager;
+import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -347,7 +348,7 @@ public class PolicyHelper {
         private final JmsConnectionManager jmsConnectionManager;
         private final JmsEndpointManager jmsEndpointManager;
         private final PolicyManager policyManager;
-        private final SchemaEntryManager schemaEntryManager;
+        private final ResourceEntryManager resourceEntryManager;
         private final SsgKeyStoreManager ssgKeyStoreManager;
         private final TrustedCertManager trustedCertManager;
 
@@ -360,7 +361,7 @@ public class PolicyHelper {
                                                final JmsConnectionManager jmsConnectionManager,
                                                final JmsEndpointManager jmsEndpointManager,
                                                final PolicyManager policyManager,
-                                               final SchemaEntryManager schemaEntryManager,
+                                               final ResourceEntryManager resourceEntryManager,
                                                final SsgKeyStoreManager ssgKeyStoreManager,
                                                final TrustedCertManager trustedCertManager ) {
             this.rbacServices = rbacServices;
@@ -372,7 +373,7 @@ public class PolicyHelper {
             this.jmsConnectionManager = jmsConnectionManager;
             this.jmsEndpointManager = jmsEndpointManager;
             this.policyManager = policyManager;
-            this.schemaEntryManager = schemaEntryManager;
+            this.resourceEntryManager = resourceEntryManager;
             this.ssgKeyStoreManager = ssgKeyStoreManager;
             this.trustedCertManager = trustedCertManager;    
         }
@@ -386,6 +387,19 @@ public class PolicyHelper {
 
             if ( entity != null && getUser() != null && rbacServices.isPermittedForEntity( getUser(), entity, OperationType.READ, null ) ) {
                 filtered = entity;
+            }
+
+            return filtered;
+        }
+
+        private <EH extends EntityHeader> EH filter( final EH entityHeader ) throws FindException {
+            EH filtered = null;
+
+            if ( entityHeader != null && getUser() != null ) {
+                Collection<EH> filteredCollection = securityFilter.filter( Collections.singleton( entityHeader ), getUser(), OperationType.READ, null );
+                if ( !filteredCollection.isEmpty() ) {
+                    filtered = entityHeader;
+                }
             }
 
             return filtered;
@@ -452,13 +466,13 @@ public class PolicyHelper {
         }
 
         @Override
-        public Collection<SchemaEntry> findSchemaByName( final String schemaName ) throws FindException {
-            return filter( schemaEntryManager.findByName( schemaName ) );
+        public ResourceEntryHeader findSchemaByName( final String schemaName ) throws FindException {
+            return filter( resourceEntryManager.findHeaderByUriAndType( schemaName, ResourceType.XML_SCHEMA ) );
         }
 
         @Override
-        public Collection<SchemaEntry> findSchemaByTNS( final String tns ) throws FindException {
-            return filter( schemaEntryManager.findByTNS( tns ) );
+        public Collection<ResourceEntryHeader> findSchemaByTNS( final String tns ) throws FindException {
+            return filter( resourceEntryManager.findHeadersByTNS( tns ) );
         }
 
         public JdbcConnection getJdbcConnectionById( final String id ) throws FindException {
@@ -748,15 +762,15 @@ public class PolicyHelper {
                     final String name = schemaReference.getName();
                     final String tns = schemaReference.getTns();
                     if ( name != null ) {
-                        Collection<SchemaEntry> schemas = referenceFinder.findSchemaByName( name );
-                        if ( schemas.size() == 1 ) {
-                            refId = schemas.iterator().next().getId();
+                        final ResourceEntryHeader resourceEntryHeader = referenceFinder.findSchemaByName( name );
+                        if ( resourceEntryHeader != null ) {
+                            refId = resourceEntryHeader.getStrId();
                         }
                     }
                     if ( refId == null && tns != null ) {
-                        Collection<SchemaEntry> schemas = referenceFinder.findSchemaByTNS( tns );
-                        if ( schemas.size() == 1 ) {
-                            refId = schemas.iterator().next().getId();
+                        Collection<ResourceEntryHeader> resourceEntryHeaders = referenceFinder.findSchemaByTNS( tns );
+                        if ( resourceEntryHeaders.size() == 1 ) {
+                            refId = resourceEntryHeaders.iterator().next().getStrId();
                         }
                     }
                 }

@@ -116,6 +116,16 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
         fireTableRowsInserted( rows.size()-1, rows.size()-1 );
     }
 
+    /**
+     * Get the row index of the specified object.
+     *
+     * @param row The row item
+     * @return The index or -1 if the item is not found.
+     */
+    public int getRowIndex( final RT row ) {
+        return  rows.indexOf( row );
+    }
+
     public void removeRowAt( final int modelRowIndex ) {
         if ( modelRowIndex > -1 && modelRowIndex < rows.size() ) {
             rows.remove( modelRowIndex );

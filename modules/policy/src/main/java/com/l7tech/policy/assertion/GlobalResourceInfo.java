@@ -16,10 +16,12 @@ import com.l7tech.policy.AssertionResourceInfo;
 public class GlobalResourceInfo extends AssertionResourceInfo {
     private String id;
 
+    @Override
     public AssertionResourceType getType() {
         return AssertionResourceType.GLOBAL_RESOURCE;
     }
 
+    @Override
     public String[] getUrlRegexes() {
         // The administrator provided this schema, so we'll trust any URLs he included in it, regardless
         // of what they appear to be pointed at.
@@ -27,16 +29,18 @@ public class GlobalResourceInfo extends AssertionResourceInfo {
     }
 
     /**
-     * In the case of a global schema, this refers to the name property (file name for example)
-     * @return the id used to retrieved the resource in the global source.
+     * In the case of a global resource, this refers to the URI property.
+     *
+     * @return the id (URI) used to retrieve the resource from global resources.
      */
     public String getId() {
         return id;
     }
 
     /**
-     * Set the id used to retrieved the resource in the global source
-     * @param id In the case of a global schema, this refers to the name property (file name for example)
+     * Set the id (URI) used to retrieve the resource from global resources.
+     *
+     * @param id the URI for the global resource.
      */
     public void setId(String id) {
         this.id = id;

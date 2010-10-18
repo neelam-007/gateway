@@ -10,11 +10,13 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 /**
  * Utility listener that runs the given Runnable whenever it receives a change event.
  */
-public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener {
+public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener, TableModelListener {
 
     //- PUBLIC
 
@@ -83,6 +85,14 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void valueChanged(ListSelectionEvent e) {
+        run();
+    }
+
+    /**
+     * @see TableModelListener
+     */
+    @Override
+    public void tableChanged( final TableModelEvent e ) {
         run();
     }
 

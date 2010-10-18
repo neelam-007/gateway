@@ -9,8 +9,9 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
-import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
@@ -102,15 +103,15 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     }
 
     @Override
-    public Collection<SchemaEntry> findSchemaByName( final String schemaName ) throws FindException {
-        SchemaAdmin schemaAdmin = admin(Registry.getDefault().getSchemaAdmin());
-        return schemaAdmin.findByName( schemaName );
+    public ResourceEntryHeader findSchemaByName( final String schemaName ) throws FindException {
+        ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
+        return resourceAdmin.findResourceHeaderByUriAndType( schemaName, ResourceType.XML_SCHEMA );
     }
 
     @Override
-    public Collection<SchemaEntry> findSchemaByTNS( final String tns ) throws FindException {
-        SchemaAdmin schemaAdmin = admin(Registry.getDefault().getSchemaAdmin());
-        return schemaAdmin.findByTNS( tns );
+    public Collection<ResourceEntryHeader> findSchemaByTNS( final String tns ) throws FindException {
+        ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
+        return resourceAdmin.findResourceHeadersByTargetNamespace( tns );
     }
 
     @Override

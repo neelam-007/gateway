@@ -3,6 +3,9 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -63,6 +66,9 @@ public final class EntityHeaderUtils {
             return new PolicyHeader((Policy)e);
         } else if (e instanceof PublishedService) {
             return new ServiceHeader((PublishedService)e);
+        } else if ( e instanceof ResourceEntry ) {
+            final ResourceEntry resourceEntry = (ResourceEntry) e;
+            return new ResourceEntryHeader(resourceEntry);
         } else if ( e instanceof ServiceDocument) {
             return new EntityHeader(e.getId(), SERVICE_DOCUMENT, ((ServiceDocument)e).getUri(), null);
         } else if (e instanceof Folder) {
@@ -152,6 +158,13 @@ public final class EntityHeaderUtils {
         } else if (header instanceof JmsEndpointHeader) {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
             externalEntityHeader.setProperty("messageSource", Boolean.toString(((JmsEndpointHeader)header).isIncoming()));
+        } else if (header instanceof ResourceEntryHeader) {
+            final ResourceEntryHeader resourceEntryHeader = (ResourceEntryHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header.getType(), header.getStrId(), resourceEntryHeader.getUri(), header.getDescription(), header.getVersion());
+            externalEntityHeader.setProperty("resourceType", resourceEntryHeader.getResourceType().name());
+            if (resourceEntryHeader.getResourceKey1()!=null) externalEntityHeader.setProperty("resourceKey1", resourceEntryHeader.getResourceKey1());
+            if (resourceEntryHeader.getResourceKey2()!=null) externalEntityHeader.setProperty("resourceKey2", resourceEntryHeader.getResourceKey2());
+            if (resourceEntryHeader.getResourceKey3()!=null) externalEntityHeader.setProperty("resourceKey3", resourceEntryHeader.getResourceKey3());
         } else {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
         }
@@ -196,6 +209,13 @@ public final class EntityHeaderUtils {
 
             case JMS_ENDPOINT:
                 header = new JmsEndpointHeader(eh.getStrId(), eh.getName(), eh.getDescription(), eh.getVersion(), Boolean.parseBoolean(eh.getProperty("messageSource")));
+                break;
+
+            case RESOURCE_ENTRY:
+                final String resourceTypeStr = eh.getProperty( "resourceType" );
+                if ( resourceTypeStr == null ) throw new IllegalArgumentException("Missing resource type");
+                final ResourceType resourceType = ResourceType.valueOf( resourceTypeStr );
+                header = new ResourceEntryHeader(eh.getStrId(), eh.getName(), eh.getDescription(), resourceType, eh.getProperty( "resourceKey1" ), eh.getProperty( "resourceKey2" ), eh.getProperty( "resourceKey3" ), eh.getVersion());
                 break;
 
             case VALUE_REFERENCE:

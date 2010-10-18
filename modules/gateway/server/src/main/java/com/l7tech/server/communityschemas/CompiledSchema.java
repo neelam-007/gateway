@@ -49,6 +49,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     private final String[] payloadElementNames;
     private final String systemId;
     private final String schemaDocument;
+    private final String schemaSourceResolverId;
     private final byte[] namespaceNormalizedSchemaDocument;
     private final SchemaManagerImpl manager;
     private final String tnsGen;
@@ -74,6 +75,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     CompiledSchema( final String targetNamespace,
                     final String systemId,
                     final String schemaDocument,
+                    final String schemaSourceResolverId,
                     final Element namespaceNormalizedSchemaDocument,
                     final Schema softwareSchema,
                     final SchemaManagerImpl manager,
@@ -82,9 +84,9 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
                     final boolean transientSchema,
                     final boolean fallback ) throws IOException
     {
-        if (softwareSchema == null ||
-                schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
-                imports == null || includes == null || manager == null || systemId == null)
+        if ( softwareSchema == null || schemaDocument == null || schemaSourceResolverId ==null ||
+             namespaceNormalizedSchemaDocument == null || imports == null || includes == null || manager == null ||
+             systemId == null )
             throw new NullPointerException();
 
         this.transientSchema = transientSchema;
@@ -92,6 +94,7 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
+        this.schemaSourceResolverId = schemaSourceResolverId;
         this.namespaceNormalizedSchemaDocument = XmlUtil.nodeToString( namespaceNormalizedSchemaDocument ).getBytes(Charsets.UTF8);
         this.manager = manager;
         this.imports = imports;
@@ -121,6 +124,19 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     }
 
     public boolean isTransientSchema() {
+        return transientSchema;
+    }
+
+    boolean isTransientlyReferencedSchema() {
+        boolean transientSchema = this.transientSchema;
+        
+        if ( transientSchema ) { // check that all usages are transient
+            for ( final CompiledSchema schema : getExports() ) {
+                transientSchema = schema.isTransientlyReferencedSchema();
+                if ( !transientSchema ) break;
+            }
+        }
+
         return transientSchema;
     }
 
@@ -477,6 +493,12 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         synchronized (this) {
             lastUsedTime = System.currentTimeMillis();
         }
+
+        for ( final SchemaHandle handle : dependencies.values() ) {
+            final CompiledSchema schema = handle.getTarget();
+            if (schema == null || schema.isClosed()) continue;
+            schema.setLastUsedTime();
+        }
     }
 
     synchronized long getLastUsedTime() {
@@ -485,5 +507,9 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     long getCreatedTime() {
         return createdTime;
+    }
+
+    String getSchemaSourceResolverId() {
+        return schemaSourceResolverId;
     }
 }
