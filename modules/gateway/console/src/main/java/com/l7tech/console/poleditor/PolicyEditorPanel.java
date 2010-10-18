@@ -41,9 +41,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -307,14 +309,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final Assertion assertion = getCurrentRoot().asAssertion();
         final boolean soap;
         final Wsdl wsdl;
+        final SoapVersion soapVersion;
         try {
             final PublishedService service = getPublishedService();
             if (service == null) {
                 wsdl = null;
                 soap = getPolicyNode().getPolicy().isSoap();
+                soapVersion = null;
             } else {
                 wsdl = service.parsedWsdl();
                 soap = service.isSoap();
+                soapVersion = service.getSoapVersion();
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to find policy", e);
@@ -332,7 +337,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdl, soap), licenseManager);
+                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdl, soap, soapVersion), licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
                 }
@@ -894,6 +899,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final String policyXml = WspWriter.getPolicyXml(assertion);
         final Wsdl wsdl;
         final boolean soap;
+        final SoapVersion soapVersion;
         final PolicyType type;
         final String internalTag;
         final PublishedService service;
@@ -903,11 +909,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             if (service == null) {
                 wsdl = null;
                 soap = getPolicyNode().getPolicy().isSoap();
+                soapVersion = null;
                 type = getPolicyNode().getPolicy().getType();
                 internalTag = getPolicyNode().getPolicy().getInternalTag();
             } else {
                 wsdl = service.parsedWsdl();
                 soap = service.isSoap();
+                soapVersion = service.getSoapVersion();
                 type = PolicyType.PRIVATE_SERVICE;
                 internalTag = null;
             }
@@ -924,7 +932,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdl, soap);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdl, soap, soapVersion);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
@@ -1011,14 +1019,23 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             appendToMessageArea("<i>Some assertion(s) disabled.</i>");
         }
         for (PolicyValidatorResult.Error pe : r.getErrors()) {
-            appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}", getValidateMessageIntro(pe), pe.getMessage()));
+            appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}{2}", getValidateMessageIntro(pe), pe.getMessage(), makeFixitLink(pe)));
         }
         for (PolicyValidatorResult.Warning pw : r.getWarnings()) {
-            appendToMessageArea(MessageFormat.format("{0} Warning: {1}", getValidateMessageIntro(pw), pw.getMessage()));
+            appendToMessageArea(MessageFormat.format("{0} Warning: {1}{2}", getValidateMessageIntro(pw), pw.getMessage(), makeFixitLink(pw)));
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
         }
+    }
+
+    private String makeFixitLink(PolicyValidatorResult.Message message) {
+        if (message.getRemedialActionClassname() == null)
+            return "";
+
+        return MessageFormat.format( " <a href=\"file://fixit/{1}?assertion=assertion#{0}\">Fix It</a>",
+                pathString(message.getAssertionOrdinal(), message.getAssertionIndexPath()),
+                message.getRemedialActionClassname());
     }
 
     private boolean containDisabledAssertion(Assertion assertion) {
@@ -1536,29 +1553,63 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
           public void hyperlinkUpdate(HyperlinkEvent e) {
               if (HyperlinkEvent.EventType.ACTIVATED != e.getEventType())
                   return;
-              URI uri = URI.create(e.getURL().toString());
+              final String uriStr = e.getURL().toString();
+              URI uri = URI.create(uriStr);
               String f = uri.getFragment();
               if (f == null) return;
+              java.util.List<Integer> path = new ArrayList<Integer>();
+              StringTokenizer strtok = new StringTokenizer(f, ",");
               try {
-                  java.util.List<Integer> path = new ArrayList<Integer>();
-                  StringTokenizer strtok = new StringTokenizer(f, ",");
                   while (strtok.hasMoreTokens()) {
                       path.add( Integer.parseInt( strtok.nextToken() ) );
                   }
-
-                  AssertionTreeNode an = getCurrentRoot().getAssertionByIndexPath( path.subList( 1, path.size() ) );
-                  if ( an != null ) {
-                      TreePath p = new TreePath(an.getPath());
-                      if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
-                          policyTree.expandPath(p);
-                      }
-                      policyTree.setSelectionPath(p);
-                  }
               } catch (NumberFormatException ex) {
-                  ex.printStackTrace();
+                  //noinspection ThrowableResultOfMethodCallIgnored
+                  log.log(Level.WARNING, "Unable to parse validator hyperlink: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                  return;
+              }
+
+              AssertionTreeNode an = getCurrentRoot().getAssertionByIndexPath( path.subList( 1, path.size() ) );
+              if ( an != null ) {
+                  TreePath p = new TreePath(an.getPath());
+                  if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
+                      policyTree.expandPath(p);
+                  }
+                  policyTree.setSelectionPath(p);
+
+                  if ("fixit".equals(uri.getHost())) {
+                      String classname = uri.getPath();
+                      if (classname.startsWith("/") && classname.length() > 1)
+                          classname = classname.substring(1);
+
+                      try {
+                          executeRemedialAction(classname, an);
+                      } catch (Exception ex) {
+                          //noinspection ThrowableResultOfMethodCallIgnored
+                          log.log(Level.WARNING, "Unable to execute remedial action: " + ExceptionUtils.getMessage(ex), ex);
+                      }
+                  }
               }
           }
-      };
+    };
+
+    private void executeRemedialAction(String classname, AssertionTreeNode an) throws Exception {
+        final Assertion ass = an.asAssertion();
+        ClassLoader cl = ass == null ? Thread.currentThread().getContextClassLoader() : ass.getClass().getClassLoader();
+
+        Class actionClass = cl.loadClass(classname);
+        if (Runnable.class.isAssignableFrom(actionClass)) {
+            ((Runnable)actionClass.newInstance()).run();
+        } else if (Callable.class.isAssignableFrom(actionClass)) {
+            ((Callable)actionClass.newInstance()).call();
+        } else if (Functions.UnaryVoid.class.isAssignableFrom(actionClass)) {
+            // Assume it is UnaryVoid<AssertionTreeNode>
+            //noinspection unchecked
+            ((Functions.UnaryVoid<AssertionTreeNode>)actionClass.newInstance()).call(an);
+        } else {
+            throw new IllegalArgumentException("Don't know how to invoke remedial action of type " + actionClass.getName());
+        }
+    }
 
     /**
      * Invoked when a component has been added to the container.

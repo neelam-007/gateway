@@ -1,25 +1,36 @@
 package com.l7tech.xml.soap;
 
 import javax.xml.soap.SOAPConstants;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: njordan
- * Date: 17-Jun-2008
- * Time: 10:52:13 PM
- * To change this template use File | Settings | File Templates.
+ * Represents a specific or unknown SOAP version.
  */
 public enum SoapVersion {
-    SOAP_1_1(SOAPConstants.SOAP_1_1_PROTOCOL, 1001),
-    SOAP_1_2(SOAPConstants.SOAP_1_2_PROTOCOL, 1002),
-    UNKNOWN(null, 0);
+    SOAP_1_1("SOAP 1.1", SOAPConstants.SOAP_1_1_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, 1001),
+    SOAP_1_2("SOAP 1.2", SOAPConstants.SOAP_1_2_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, 1002),
+    UNKNOWN("unspecified", null, null, 0);
 
     private final String protocol;
     private final int rank;
+    private final String namespaceUri;
+    private final String label;
 
-    private SoapVersion(final String protocol, final int rank ) {
+    private SoapVersion(final String label, final String protocol, final String namespaceUri, final int rank ) {
         this.protocol = protocol;
+        this.namespaceUri = namespaceUri;
         this.rank = rank;
+        this.label = label;
+    }
+
+    /**
+     * @return the friendly human-readable name of this SOAP version, e.g. "SOAP 1.1" or "unspecified".
+     */
+    public String getLabel() {
+        return label;
     }
 
     public String getProtocol() {
@@ -36,6 +47,21 @@ public enum SoapVersion {
         return version.rank < rank;        
     }
 
+    /**
+     * @return the envelope namespace URI for this SOAP version, or null for UNKNOWN version.
+     */
+    public String getNamespaceUri() {
+        return namespaceUri;
+    }
+
+    /**
+     * @return all known envelope namespace URIs except for the one used by this SOAP version.
+     *         Never null, but may be an empty set if the version is UNKNOWN.
+     */
+    public Set<String> getOtherNamespaceUris() {
+        return getOtherNamespaceUris(this);
+    }
+
     public static SoapVersion namespaceToSoapVersion(String namespace) {
         if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(namespace)) {
             return SOAP_1_2;
@@ -45,4 +71,17 @@ public enum SoapVersion {
             return UNKNOWN;
         }
     }
+
+    static Set<String> getOtherNamespaceUris(SoapVersion soapVersion) {
+        // For now, there's only two, so we'll just hardcode it
+        switch (soapVersion) {
+            case SOAP_1_1: return OTHER_THAN_SOAP_1_1;
+            case SOAP_1_2: return OTHER_THAN_SOAP_1_2;
+            default: return OTHER_THAN_UNKNOWN;
+        }
+    }
+
+    static final Set<String> OTHER_THAN_SOAP_1_1 = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SOAP_1_2.getNamespaceUri())));
+    static final Set<String> OTHER_THAN_SOAP_1_2 = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SOAP_1_1.getNamespaceUri())));
+    static final Set<String> OTHER_THAN_UNKNOWN = Collections.unmodifiableSet(Collections.<String>emptySet());
 }

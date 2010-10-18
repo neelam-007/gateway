@@ -27,7 +27,13 @@ public class MigrateNamespacesDialog extends JDialog {
     private JComboBox originalNamespaceComboBox;
     private JComboBox newNamespaceComboBox;
 
-    public MigrateNamespacesDialog(Window owner, final Collection<AssertionTreeNode> nodesToMigrate) {
+    // Some convenient URIs to make available in the combobox to save some typing
+    private static final String[] DEFAULT_NAMESPACE_URIS = new String[] {
+            SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,
+            SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE,
+    };
+
+    public MigrateNamespacesDialog(Window owner, final Collection<AssertionTreeNode> nodesToMigrate, String prepopulatedFromUri, String prepopulatedToUri) {
         super(owner, TITLE, ModalityType.DOCUMENT_MODAL);
         if (nodesToMigrate == null) throw new NullPointerException();
         setContentPane(contentPane);
@@ -37,14 +43,13 @@ public class MigrateNamespacesDialog extends JDialog {
 
         InputValidator inputValidator = new InputValidator(this, TITLE);
 
-        originalNamespaceComboBox.setModel(new DefaultComboBoxModel(new String[] {
-                SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,
-                SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE,
-        }));
-        newNamespaceComboBox.setModel(new DefaultComboBoxModel(new String[] {
-                SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE,
-                SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE,
-        }));
+        originalNamespaceComboBox.setModel(new DefaultComboBoxModel(DEFAULT_NAMESPACE_URIS));
+        newNamespaceComboBox.setModel(new DefaultComboBoxModel(DEFAULT_NAMESPACE_URIS));
+
+        if (prepopulatedFromUri != null)
+            originalNamespaceComboBox.setSelectedItem(prepopulatedFromUri);
+        if (prepopulatedToUri != null)
+            newNamespaceComboBox.setSelectedItem(prepopulatedToUri);
 
         inputValidator.attachToButton(buttonOK, new ActionListener() {
             public void actionPerformed(ActionEvent e) {

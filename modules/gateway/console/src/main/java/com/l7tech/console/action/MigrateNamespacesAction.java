@@ -41,7 +41,7 @@ public class MigrateNamespacesAction extends AbstractAction {
             }
         }
 
-        final MigrateNamespacesDialog dlg = new MigrateNamespacesDialog(TopComponents.getInstance().getTopParent(), selectedAssertionNodes);
+        final MigrateNamespacesDialog dlg = new MigrateNamespacesDialog(TopComponents.getInstance().getTopParent(), selectedAssertionNodes, null, null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, null);

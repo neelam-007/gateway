@@ -3,21 +3,19 @@
  */
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.AddIdentityAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.action.AddIdentityAssertionAction;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionServiceChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Composite Assertion policy nodes extend this node
@@ -61,16 +59,6 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion[] nass = node.asAssertions();
             for (Assertion assertion : nass) {
-                if(assertion instanceof AssertionServiceChangeListener) {
-                    try {
-                        if (getService() != null) {
-                            ((AssertionServiceChangeListener)assertion).updateSoapVersion(getService().getSoapVersion());
-                        }
-                    } catch(FindException e) {
-                        log.log(Level.WARNING, "Failed to update the parent service for the incoming assertion.");
-                    }
-                }
-                
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(assertion);
                 model.insertNodeInto(as, this, position);
             }

@@ -4,31 +4,32 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.panels.InformationDialog;
-import com.l7tech.console.util.*;
-import com.l7tech.gui.util.ClipboardActions;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.policy.Policy;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TransferableTreePath;
-import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.tree.TransferableTreePaths;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
+import com.l7tech.console.util.ArrowImage;
+import com.l7tech.console.util.PopUpMouseListener;
+import com.l7tech.console.util.Refreshable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.AssertionServiceChangeListener;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 
@@ -1597,18 +1598,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
             newChildren.add(((AssertionTreeNode)en.nextElement()).asAssertion());
         }
         SwingUtilities.invokeLater(doSelect);
-
-        for(Assertion newChild : newChildren) {
-            if(newChild instanceof AssertionServiceChangeListener) {
-                try {
-                    if (parent.getService() != null) {
-                        ((AssertionServiceChangeListener)newChild).updateSoapVersion(parent.getService().getSoapVersion());
-                    }
-                } catch(FindException exc) {
-                    log.warning("Failed to notify the new child assertion of the published service.");
-                }
-            }
-        }
 
         log.finer("set children " + newChildren);
         ca.setChildren(newChildren);

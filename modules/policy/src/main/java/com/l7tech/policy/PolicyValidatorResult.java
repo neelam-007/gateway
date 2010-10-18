@@ -177,18 +177,28 @@ public class PolicyValidatorResult implements Serializable {
         private final String message;
         private final Throwable throwable;
         private final int assertionPathOrder;
+        private final String remedialActionClassname;
 
-        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
+        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable, String remedialActionClassname) {
             if (message == null) throw new IllegalArgumentException();
             this.ordinal = ordinal;
             this.assertionIndexPath = new ArrayList<Integer>( assertionIndexPath );
             this.message = message;
             this.throwable = throwable;
             this.assertionPathOrder = apOrder;
+            this.remedialActionClassname = remedialActionClassname;
+        }
+
+        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
+            this( assertionIndexPath, ordinal, apOrder, message, throwable, null );
         }
 
         Message(Assertion assertion, int apOrder, String message, Throwable throwable) {
             this( buildIndexPath(assertion), assertion.getOrdinal(), apOrder, message, throwable);
+        }
+
+        public Message(Assertion assertion, int apOrder, String message, Throwable throwable, String remedialActionClassname) {
+            this( buildIndexPath(assertion), assertion.getOrdinal(), apOrder, message, throwable, remedialActionClassname);
         }
 
         public List<Integer> getAssertionIndexPath() {
@@ -209,6 +219,10 @@ public class PolicyValidatorResult implements Serializable {
 
         public int getAssertionPathOrder() {
             return assertionPathOrder;
+        }
+
+        public String getRemedialActionClassname() {
+            return remedialActionClassname;
         }
 
         @SuppressWarnings({"RedundantIfStatement"})
@@ -246,6 +260,10 @@ public class PolicyValidatorResult implements Serializable {
         public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
             super(error, ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
+
+        public Error(Assertion error, AssertionPath ap, String message, Throwable throwable, String remedialActionClassname) {
+            super(error, ap == null ? 0 : ap.getPathOrder(), message, throwable, remedialActionClassname);
+        }
     }
 
     public static class Warning extends Message implements Serializable {
@@ -259,6 +277,10 @@ public class PolicyValidatorResult implements Serializable {
 
         public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
             super(warning, ap == null ? 0 : ap.getPathOrder(), message, throwable);
+        }
+
+        public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable, String remedialActionClassname) {
+            super(warning, ap == null ? 0 : ap.getPathOrder(), message, throwable, remedialActionClassname);
         }
     }
 }

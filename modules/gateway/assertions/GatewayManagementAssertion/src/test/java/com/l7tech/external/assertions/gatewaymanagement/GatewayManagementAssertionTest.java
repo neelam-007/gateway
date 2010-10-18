@@ -22,7 +22,7 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true), result );
+        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true, null), result );
 
         assertEquals( "Validation warning present", 1, result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());
@@ -35,7 +35,7 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true), result );
+        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true, null), result );
 
         assertEquals( "Validation warning present", 2, result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());
