@@ -157,7 +157,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private PublishInternalServiceAction publishInternalServiceAction;
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
-    private MigrateNamespacesAction migrateNamespacesAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
