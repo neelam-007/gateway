@@ -236,7 +236,7 @@
                                 <value>auditLogFormatOtherDetail</value>
                             </list>
                         </entry>
-                        <entry key="schemaManager">
+                        <entry key="schemaConfiguration">
                             <list>
                                 <value>schemaMaxCacheEntries</value>
                                 <value>schemaMaxCacheAge</value>
