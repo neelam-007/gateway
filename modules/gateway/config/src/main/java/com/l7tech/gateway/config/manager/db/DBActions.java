@@ -4,6 +4,7 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SqlUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.server.management.config.node.DatabaseConfig;
@@ -189,7 +190,7 @@ public class DBActions {
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
-                    String[] statements = getCreateDbStatementsFromFile(upgradeInfo[1]);
+                    String[] statements = getStatementsFromFile(upgradeInfo[1]);
 
                     spammer = new ProgressTimerTask(ui);
 
@@ -880,7 +881,7 @@ public class DBActions {
 
     private void createTables( DatabaseConfig databaseConfig, String dbCreateScript ) throws SQLException, IOException {
         if ( dbCreateScript != null ) {
-            String[] sql = getCreateDbStatementsFromFile(dbCreateScript);
+            String[] sql = getStatementsFromFile(dbCreateScript);
             if ( sql != null ) {
                 logger.info( "Creating schema for " + databaseConfig.getName() + " database" );
 
@@ -925,25 +926,18 @@ public class DBActions {
         return new DBPermission(databaseConfig, hosts, doGrants).getStatements();
     }
 
-    private String[] getCreateDbStatementsFromFile(String dbCreateScript) throws IOException {
-        String []  stmts = null;
+    private String[] getStatementsFromFile( final String sqlScriptFilename ) throws IOException {
+        String[] statements;
+
         BufferedReader reader = null;
         try {
-            StringBuffer sb = new StringBuffer();
-
-            reader = new BufferedReader(new FileReader(dbCreateScript));
-            String temp;
-            while((temp = reader.readLine()) != null) {
-                if (!temp.startsWith("--") && !temp.equals("")) {
-                    sb.append(temp);
-                }
-            }
-            Pattern splitPattern = Pattern.compile(";");
-            stmts = splitPattern.split(sb.toString());
-        } finally{
-            ResourceUtils.closeQuietly(reader);
+            reader = new BufferedReader(new FileReader(sqlScriptFilename));
+            statements = SqlUtils.getStatementsFromReader( reader );
+        } finally {
+            ResourceUtils.closeQuietly( reader );
         }
-        return stmts;
+
+        return statements;
     }
 
     private String[] getDbCreateStatementsFromDb(Connection dbConn) throws SQLException {
