@@ -48,10 +48,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
+import javax.swing.event.*;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
@@ -121,6 +118,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
     private SecureAction hideShowCommentsAction;
+    private MigrateNamespacesAction migrateNamespacesAction;
 
     public interface PolicyEditorSubject {
         /**
@@ -2019,6 +2017,22 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
         };
+    }
+
+    public MigrateNamespacesAction getMigrateNamespacesAction() {
+        if (migrateNamespacesAction != null)
+            return migrateNamespacesAction;
+
+        migrateNamespacesAction = new MigrateNamespacesAction();
+
+        getPolicyTree().getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                migrateNamespacesAction.setEnabled(getPolicyTree().getSelectionCount() > 0);                
+            }
+        });
+
+        return migrateNamespacesAction;
     }
 
     public Action getImportAction() {

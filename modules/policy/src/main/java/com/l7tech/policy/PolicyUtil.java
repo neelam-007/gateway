@@ -1,17 +1,17 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility routines for working with policy assertion trees.
@@ -115,4 +115,53 @@ public class PolicyUtil {
         return routing;
     }
 
+    /**
+     * Invoke the specified visitor on the specified assertion and alll of its descendant assertions, in pre-order, including
+     * include targets (if Include, and a CurrentAssertionTranslator is available).
+     * <p/>
+     * If a CurrentAssertionTranslator is available, Include assertions may trigger an extra visit to the Include
+     * assertion itself prior to its target subtree being visited.
+     *
+     * @param assertion the root of the subtree of assertions to visit.  Required.
+     * @param visitor the visitor to invoke for each assertion.  Required.
+     */
+    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor) {
+        visitDescendantsAndSelf(assertion, visitor, CurrentAssertionTranslator.get());
+    }
+
+    /**
+     * Invoke the specified visitor on the specified assertion and all of its descendant assertions, in pre-order, including
+     * include targets (if Include, and a non-null assertionTranslator is provided).
+     * <p/>
+     * If an assertionTranslator is supplied, Include assertions may trigger an extra visit to the Include assertion
+     * itself before the root of its target subtree is (also) visited (followed by the target's descendants, if any).
+     *
+     * @param assertion the root of the subtree of assertions to visit.  Required.
+     * @param visitor the visitor to invoke for each assertion.  Required.
+     * @param assertionTranslator the assertion translator to use to process Include assertions within this assertion.  May be null, in which case
+     *                            only the Include assertions will be visited and not their targets.
+     */
+    public static void visitDescendantsAndSelf(final Assertion assertion, Functions.UnaryVoid<Assertion> visitor, AssertionTranslator assertionTranslator) {
+        Iterator<Assertion> it = assertion.preorderIterator();
+        while (it.hasNext()) {
+            Assertion kid = it.next();
+            if (kid == null || !kid.isEnabled())
+                continue;
+
+            visitor.call(kid);
+
+            if (assertionTranslator != null && kid instanceof Include) {
+                try {
+                    Assertion translated = assertionTranslator.translate(kid);
+                    if (translated != kid && translated.isEnabled())
+                        visitDescendantsAndSelf(translated, visitor, assertionTranslator);
+                } catch (PolicyAssertionException e) {
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "Error translating assertion: " + ExceptionUtils.getMessage(e), e);
+                } finally {
+                    assertionTranslator.translationFinished(assertion);
+                }
+            }
+        }
+    }
 }

@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.concall;
 
+import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.validator.AssertionValidatorSupport;
-import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.util.Functions;
 
 /**
@@ -14,7 +14,7 @@ public class ConcurrentAllAssertionValidator extends AssertionValidatorSupport<C
         super(assertion);
 
         // Check for children that don't belong within a ConcurrentAllAssertion
-        PolicyVariableUtils.visitDescendantsAndSelf(assertion, new Functions.UnaryVoid<com.l7tech.policy.assertion.Assertion>() {
+        PolicyUtil.visitDescendantsAndSelf(assertion, new Functions.UnaryVoid<com.l7tech.policy.assertion.Assertion>() {
             @Override
             public void call(Assertion assertion) {
                 if (Assertion.isRequest(assertion)) {

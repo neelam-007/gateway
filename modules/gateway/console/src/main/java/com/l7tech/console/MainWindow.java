@@ -157,6 +157,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private PublishInternalServiceAction publishInternalServiceAction;
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
+    private MigrateNamespacesAction migrateNamespacesAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
@@ -219,6 +220,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem exportMenuItem;
     private JMenuItem saveAndActivateMenuItem;
     private JMenuItem saveOnlyMenuItem;
+    private JMenuItem migrateNamespacesMenuItem;
     private boolean disconnected = false;
     private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
@@ -712,6 +714,20 @@ public class MainWindow extends JFrame implements SheetHolder {
         return saveOnlyMenuItem;
     }
 
+    private JMenuItem getMigrateNamespacesMenuItem() {
+        if (migrateNamespacesMenuItem != null)
+            return migrateNamespacesMenuItem;
+
+        JMenuItem ret = new JMenuItem("Migrate Namespaces");
+        ret.setEnabled(false);
+        int mnemonic = ret.getText().toCharArray()[0];
+        ret.setMnemonic(mnemonic);
+        ret.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        migrateNamespacesMenuItem = ret;
+
+        return ret;
+    }
+
     private BaseAction getCreatePolicyAction() {
         if (createPolicyAction == null) {
             createPolicyAction = new CreatePolicyAction();
@@ -750,6 +766,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getFindMenuItem());
             menu.add(getF3MenuItem());
             menu.add(getShiftF3MenuItem());
+
+            menu.add(getMigrateNamespacesMenuItem());
             
             editMenu = menu;
         }
@@ -2360,6 +2378,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getFindMenuItem());
             menu.add(getF3MenuItem());
             menu.add(getShiftF3MenuItem());
+            menu.add(getMigrateNamespacesMenuItem());
 
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, null);
@@ -3524,6 +3543,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSaveOnlyMenuItem().setEnabled(false);
         getExportMenuItem().setEnabled(false);
         getImportMenuItem().setEnabled(false);
+        getMigrateNamespacesMenuItem().setEnabled(false);
     }
 
     public void firePolicyEdit(PolicyEditorPanel policyPanel) {
@@ -3535,6 +3555,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getImportMenuItem().setAction(policyPanel.getImportAction());
         getShowAssertionCommentsMenuItem().setAction(policyPanel.getHideShowCommentAction(getShowAssertionCommentsMenuItem()));
         getShowAssertionLineNumbersMenuItem().setAction(policyPanel.getShowAssertionLineNumbersAction(getShowAssertionLineNumbersMenuItem()));
+        getMigrateNamespacesMenuItem().setAction(policyPanel.getMigrateNamespacesAction());
     }
 
     public void fireGlobalAction(final String actionName, final Component source){

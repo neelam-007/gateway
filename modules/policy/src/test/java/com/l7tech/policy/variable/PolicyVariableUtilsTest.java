@@ -1,118 +1,93 @@
 package com.l7tech.policy.variable;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.test.BugNumber;
-import com.l7tech.util.Functions;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
 public class PolicyVariableUtilsTest {
+    private Assertion root;
+    private Assertion before;
+    private Assertion middle;
+    private Assertion afterAll;
 
-    List<Assertion> visitOrder = new ArrayList<Assertion>();
-    Map<Assertion,Integer> visitCounts = new HashMap<Assertion,Integer>();
-
-    Assertion simplePolicy = new AllAssertion(Arrays.<Assertion>asList(
-            new FalseAssertion(),
-            new OneOrMoreAssertion(Arrays.asList(
-                    leafAssertion = new TrueAssertion(),
-                    new TrueAssertion()
-            ))
-    ));
-    Assertion leafAssertion;
-
-    // Include the same fragment twice, just to keep things interesting
-    Assertion includePolicy = new AllAssertion(Arrays.<Assertion>asList(
-            new TrueAssertion(),
-            new OneOrMoreAssertion(Arrays.asList(
-                    new TrueAssertion(),
-                    includeAssertion = new Include("asdf"),
-                    new FalseAssertion()
+    @Before
+    public void setUp() {
+        root = new AllAssertion(Arrays.asList(
+            new SetVariableAssertion("neverused", "neverusedval"),
+            new SetVariableAssertion("foo", "fooval"),
+            new AllAssertion(Arrays.asList(
+                before = new SetVariableAssertion("blah", "blahval ${foo}")
             )),
-            new Include("asdf")
-    ));
-    Assertion includeAssertion;
-
-    Map<Assertion,Integer> translateCount = new HashMap<Assertion, Integer>();
-    Map<Assertion,Integer> translationFinishedCount = new HashMap<Assertion, Integer>();
-    AssertionTranslator translator = new AssertionTranslator() {
-        @Override
-        public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
-            count(sourceAssertion, translateCount);
-            if (sourceAssertion instanceof Include) {
-                Include include = (Include) sourceAssertion;
-                if ("asdf".equals(include.getPolicyGuid()))
-                    return simplePolicy;
-            }
-            return sourceAssertion;
-        }
-
-        @Override
-        public void translationFinished(Assertion sourceAssertion) {
-            count(sourceAssertion, translationFinishedCount);
-        }
-    };
-
-    Functions.UnaryVoid<Assertion> visitor = new Functions.UnaryVoid<com.l7tech.policy.assertion.Assertion>() {
-        @Override
-        public void call(Assertion assertion) {
-            visitOrder.add(assertion);
-            count(assertion, visitCounts);
-        }
-    };
-
-    static void count(Assertion assertion, Map<Assertion, Integer> counter) {
-        if (!counter.containsKey(assertion))
-            counter.put(assertion, 1);
-        else
-            counter.put(assertion, counter.get(assertion) + 1);
+            middle = new SetVariableAssertion("asdf", "asdfval ${blah}"),
+            afterAll = new AllAssertion(Arrays.asList(
+                new SetVariableAssertion("qwer", "qwerval ${neverset}")
+            ))
+        ));
     }
 
     @Test
-    public void testVisitLeaf() throws Exception {
-        PolicyVariableUtils.visitDescendantsAndSelf(leafAssertion, visitor, translator);
-        assertEquals(1, visitOrder.size());
-        assertEquals(leafAssertion, visitOrder.get(0));
-        assertEquals("Leaf assertion shall have been visited exactly once", 1, (long)visitCounts.get(leafAssertion));
-    }
-
-    @BugNumber(9111)
-    @Test
-    public void testVisitDisabledLeaf() throws Exception {
-        leafAssertion.setEnabled(false);
-        PolicyVariableUtils.visitDescendantsAndSelf(leafAssertion, visitor, translator);
-        assertEquals("Disabled assertions shall not be visited", 0, visitOrder.size());
+    public void testGetVariablesSetByPredecessors() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessors(middle);
+        assertTrue(varsSet.containsKey("blah"));
+        assertFalse(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("qwer"));
+        assertFalse(varsSet.containsKey("neverset"));
     }
 
     @Test
-    public void testVisitSubtree() throws Exception {
-        PolicyVariableUtils.visitDescendantsAndSelf(simplePolicy, visitor, translator);
-        assertEquals(5, visitOrder.size());
-        assertEquals(simplePolicy, visitOrder.get(0));
-        assertEquals("Leaf assertion shall have been visited exactly once", 1, (long)visitCounts.get(leafAssertion));
+    public void testGetVariablesSetByPredecessorsAndSelf() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(middle);
+        assertTrue(varsSet.containsKey("blah"));
+        assertTrue(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("qwer"));
+        assertFalse(varsSet.containsKey("neverset"));
     }
 
     @Test
-    public void testVisitInclude() throws Exception {
-        PolicyVariableUtils.visitDescendantsAndSelf(includePolicy, visitor, translator);
-        assertEquals(17, visitOrder.size());
-        assertEquals(includePolicy, visitOrder.get(0));
-        assertEquals("Leaf assertion shall have been visited twice since its fragment was included twice", 2, (long)visitCounts.get(leafAssertion));
+    public void testGetVariablesSetByDescendantsAndSelf() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(afterAll);
+        assertTrue(varsSet.containsKey("qwer"));
+        assertFalse(varsSet.containsKey("blah"));
+        assertFalse(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("neverset"));
+
+        varsSet = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf(root);
+        assertTrue(varsSet.containsKey("qwer"));
+        assertTrue(varsSet.containsKey("blah"));
+        assertTrue(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("neverset"));
     }
 
     @Test
-    public void testVisitIncludeWithDisabledTarget() throws Exception {
-        simplePolicy.setEnabled(false);
-        PolicyVariableUtils.visitDescendantsAndSelf(includePolicy, visitor, translator);
-        assertNull("Children of disabled include target shall not have been visited", visitCounts.get(leafAssertion));
-        assertEquals(7, visitOrder.size());
+    public void testGetVariablesUsedBySuccessors() throws Exception {
+        Set<String> varsUsed = PolicyVariableUtils.getVariablesUsedBySuccessors(before);
+        assertTrue(varsUsed.contains("blah"));
+        assertTrue(varsUsed.contains("neverset"));
+        assertFalse(varsUsed.contains("qwer"));
+        assertFalse("Should not include variables used by self", varsUsed.contains("foo"));
+        assertFalse(varsUsed.contains("neverused"));
+    }
+
+    @Test
+    public void testGetVariablesUsedByDescendantsAndSelf() throws Exception {
+        Set<String> varsUsed = new HashSet<String>(Arrays.asList(PolicyVariableUtils.getVariablesUsedByDescendantsAndSelf(root)));
+        assertTrue(varsUsed.contains("blah"));
+        assertTrue(varsUsed.contains("neverset"));
+        assertTrue(varsUsed.contains("foo"));
+        assertFalse(varsUsed.contains("qwer"));
+        assertFalse(varsUsed.contains("neverused"));
     }
 }
