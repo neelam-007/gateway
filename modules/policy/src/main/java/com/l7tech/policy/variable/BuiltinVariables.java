@@ -189,6 +189,12 @@ public class BuiltinVariables {
         }
     }
 
+    /**
+     * Get meta data for the variable.
+     *
+     * @param name Should not include any variable syntax e.g. ${}.
+     * @return meta data if found, null otherwise
+     */
     public static VariableMetadata getMetadata(String name) {
         String newname = Syntax.getMatchingName(name, metadataByName.keySet());
         if (newname == null) return null;

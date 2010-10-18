@@ -60,7 +60,8 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
             final String targetVariable = targetVariableTextField.getText();
             message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(targetVariable));
             if (message == null) {
-                final VariableMetadata meta = BuiltinVariables.getMetadata(targetVariable);
+                final String fixedTargetVariable = VariablePrefixUtil.fixVariableName(targetVariable);
+                final VariableMetadata meta = BuiltinVariables.getMetadata(fixedTargetVariable);
                 if (meta != null) {
                     if(!meta.isSettable()) {
                         message = getPropertyValue("targetVariable") + " '" + targetVariable + "' is not settable.";
