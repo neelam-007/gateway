@@ -131,6 +131,10 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
 
         vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_MAX_STALE_AGE, -1 );
 
+        vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 1 );
+        vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 1 );
+        vc.setMinimumValue( ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 1000 );
+
         return vc;
     }
 

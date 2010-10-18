@@ -50,6 +50,8 @@ import java.util.regex.Pattern;
 public class SchemaManagerImpl implements ApplicationListener, SchemaManager, SchemaSourceResolver.SchemaInvalidationListener {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
+    private static final long minCleanupPeriod = SyspropUtil.getLong( "com.l7tech.server.schema.minCleanupPeriod", 5000L );
+
     /**
      * Validated schema configuration.
      */
@@ -192,7 +194,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 cacheCleanup();
             }
         };
-        maintenanceTimer.schedule(cacheCleanupTask, 4539, config.getMaxCacheAge() * 2 + 263);
+        maintenanceTimer.schedule(cacheCleanupTask, 4539, Math.min( minCleanupPeriod, config.getMaxCacheAge() * 2 + 263 ) );
 
         if (tarariSchemaHandler != null) {
             hardwareReloadTask = new SafeTimerTask() {
