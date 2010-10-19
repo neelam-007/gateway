@@ -59,6 +59,7 @@
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.DocumentResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="resourceEntryManager"/>
+                    <constructor-arg index="4"><null/></constructor-arg>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="folderManager"/>

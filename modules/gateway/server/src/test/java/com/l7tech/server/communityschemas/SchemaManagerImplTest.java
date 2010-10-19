@@ -2,19 +2,23 @@ package com.l7tech.server.communityschemas;
 
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.MockTimer;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -194,7 +198,22 @@ public class SchemaManagerImplTest {
         assertFalse( "Hardware parent is include", hardwareSchemas.get("http://host/schema_parent.xsd").isInclude() );
     }
 
-    private SchemaManager getTestSchemaManager( final Map<String,TarariSchemaSource> hardwareLoaded ) {
+    @Test
+    public void testEntityResolutionFailureRecognition() {
+        final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
+        final SchemaManagerImpl manager = getTestSchemaManager( hardwareSchemas );
+
+        try {
+            XmlUtil.parse( new InputSource(new StringReader("<!DOCTYPE schema SYSTEM \"http://www.w3.org/2001/XMLSchema.dtd\"><schema/>")), null );
+            fail("Should have entity resolution failure.");
+        } catch ( IOException e ) {
+            assertTrue( "Exception is resource not permitted : " + ExceptionUtils.getMessage( e ), manager.isResourceNotPermitted( e ) );
+        } catch ( SAXException e ) {
+            assertTrue( "Exception is resource not permitted : " + ExceptionUtils.getMessage( e ), manager.isResourceNotPermitted( e ) );
+        }
+    }
+
+    private SchemaManagerImpl getTestSchemaManager( final Map<String,TarariSchemaSource> hardwareLoaded ) {
         final TarariSchemaHandler testSchemaHandler = new TarariSchemaHandler() {
             @Override
             public Map<TarariSchemaSource, Exception> setHardwareSchemas( final HashMap<String, ? extends TarariSchemaSource> hardwareSchemas ) {
@@ -221,8 +240,9 @@ public class SchemaManagerImplTest {
                 new MockTimer(),
                 testSchemaHandler,
                 new SchemaSourceResolver[]{
-                        new HttpSchemaSourceResolver( schemaConfiguration, httpClientFactory )
-                }
+                        new HttpSchemaSourceResolver( schemaConfiguration, httpClientFactory, XmlUtil.getSafeEntityResolver() )
+                },
+                XmlUtil.getSafeEntityResolver()
                 ){
             @Override
             public SchemaHandle getSchemaByUri( final String url ) throws IOException, SAXException {

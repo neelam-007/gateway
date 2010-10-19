@@ -18,6 +18,7 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,9 +36,11 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
     //- PUBLIC
 
     public HttpSchemaSourceResolver( final SchemaConfiguration schemaConfiguration,
-                                     final GenericHttpClientFactory httpClientFactory ) {
+                                     final GenericHttpClientFactory httpClientFactory,
+                                     final EntityResolver entityResolver ) {
         this.schemaConfiguration = schemaConfiguration;
-        this.httpClientFactory = httpClientFactory;   
+        this.httpClientFactory = httpClientFactory;
+        this.entityResolver = entityResolver;
         updateConfiguration();
     }
 
@@ -100,6 +103,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
     private final AtomicReference<SchemaInvalidationListener> listenerRef = new AtomicReference<SchemaInvalidationListener>();
     private final SchemaConfiguration schemaConfiguration;
     private final GenericHttpClientFactory httpClientFactory;
+    private final EntityResolver entityResolver;
 
     /**
      * Shared cache for all remotely-loaded schema strings, system-wide.
@@ -142,7 +146,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
         Exception schemaException = null;
         if ( content != null ) {
             try {
-                XmlUtil.getSchemaTNS( content );
+                XmlUtil.getSchemaTNS( content, entityResolver );
             } catch ( XmlUtil.BadSchemaException e ) {
                 schemaException = e;
             }

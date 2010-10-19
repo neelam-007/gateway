@@ -247,6 +247,7 @@
                                 <value>schemaCacheMaxSchemaSize</value>
                                 <value>schemaSoftwareFallback</value>
                                 <value>schema.remoteResourceRegex</value>
+                                <value>schema.allowDoctype</value>
                             </list>
                         </entry>
                         <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
@@ -1124,20 +1125,24 @@
         <constructor-arg value="Schema cache maintenance"/>
     </bean>
 
+    <bean id="resourceEntrySchemaSourceResolver" class="com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver">
+        <constructor-arg index="0" ref="resourceEntryManager"/>
+    </bean>
+
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
         <constructor-arg index="0" ref="schemaConfiguration"/>
         <constructor-arg index="1" ref="schemaMaintenanceTimer"/>
         <constructor-arg index="2">
             <list>
-                <bean class="com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver">
-                    <constructor-arg index="0" ref="resourceEntryManager"/>
-                </bean>
+                <ref bean="resourceEntrySchemaSourceResolver"/>
                 <bean class="com.l7tech.server.communityschemas.HttpSchemaSourceResolver">
                     <constructor-arg index="0" ref="schemaConfiguration"/>
                     <constructor-arg index="1" ref="httpClientFactory"/>
+                    <constructor-arg index="2" ref="resourceEntrySchemaSourceResolver"/>  
                 </bean>
             </list>
         </constructor-arg>
+        <constructor-arg index="3" ref="resourceEntrySchemaSourceResolver"/>
     </bean>
 
     <bean id="schemaResourceManager" class="com.l7tech.server.globalresources.SchemaResourceManager">

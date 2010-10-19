@@ -146,6 +146,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_RSA_SIGNATURE_CACHE_MAX_ENTRIES = "rsaSignatureCacheMaxEntries";
 
     public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
+    public static final String PARAM_SCHEMA_ALLOW_DOCTYPE = "schema.allowDoctype";
 
     public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
     public static final String PARAM_KEYSTORE_DEFAULT_SSL_KEY = "keyStoreDefaultSslKey";

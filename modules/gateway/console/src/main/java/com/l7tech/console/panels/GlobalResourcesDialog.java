@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -336,12 +337,12 @@ public class GlobalResourcesDialog extends JDialog {
     }
 
     private void editEntry( final ResourceEntry entry, final boolean canEdit ) {
-        final ResourceEntryEditor dlg = new ResourceEntryEditor( this, entry, canEdit );
+        final ResourceEntryEditor dlg = new ResourceEntryEditor( this, entry, new ResourceAdminEntityResolver(resourceAdmin), canEdit );
 
         DialogDisplayer.display( dlg, new Runnable(){
             @Override
             public void run() {
-                if ( dlg.success ) {
+                if ( dlg.wasOk() ) {
                     boolean reload = false;
                     try {
                         resourceAdmin.saveResourceEntry( entry );

@@ -11,6 +11,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -44,6 +45,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -118,6 +121,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private TargetMessagePanel targetMessagePanel;
 
     // Other fields
+    private final EntityResolver schemaEntityResolver;
     private final boolean readOnly;
     private UIAccessibility uiAccessibility;
     private SchemaValidation schemaValidationAssertion;
@@ -158,6 +162,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } catch (FindException e) {
             throw new IllegalStateException("Service not found", e);
         }
+        this.schemaEntityResolver = new ResourceAdminEntityResolver(getResourceAdmin());
         this.readOnly = !node.canEdit();
         schemaValidationAssertion = assertion;
         this.inferredTargetMessageType = inferredTarget;
@@ -169,6 +174,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if (assertion == null) {
             throw new IllegalArgumentException("Schema Validation == null");
         }
+        this.schemaEntityResolver = new ResourceAdminEntityResolver(getResourceAdmin());
         this.readOnly = false;
         schemaValidationAssertion = assertion;
         this.service = service;
@@ -346,7 +352,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 String doc = sri.getDocument();
                 if (doc != null && doc.trim().length() > 0) {
                     XMLEditor editor = uiAccessibility.getEditor();
-                    editor.setText( reformatXml(doc));
+                    editor.setText(doc);
                     editor.setLineNumber(1);
                 }
             }
@@ -645,11 +651,13 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 final Pair<String, String> result = fetchDependencySchema(tns, dependencyElement, getResourceAdmin());
                 if (result != null) {
                     // Recursively resolve the schemas dependencies.
-                    resolveSchemaDependencies(result.left, XmlUtil.stringToDocument(result.right), seenSystemIds);
+                    resolveSchemaDependencies(result.left, parseSchema(result.left, result.right), seenSystemIds);
                 }
             } catch (FindException e) {
                 throw new RuntimeException("Error trying to look for dependency schema in global schema");
             } catch (SAXException e) {
+                throw new RuntimeException(e.getMessage());
+            } catch ( IOException e ) {
                 throw new RuntimeException(e.getMessage());
             }
         }
@@ -782,7 +790,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      */
     private boolean saveSchemaDependency( final String systemId, final String schemaContent ) throws XmlUtil.BadSchemaException {
         // Get current target namespace and check it and systemId
-        String tns = XmlUtil.getSchemaTNS(schemaContent);
+        String tns = XmlUtil.getSchemaTNS(schemaContent, schemaEntityResolver);
 
         if (systemId == null || systemId.trim().isEmpty()) {
             logger.warning("You must provide a system id (name) for this schemaContent to be referenced by another schemaContent.");
@@ -843,7 +851,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         String contents = uiAccessibility.getEditor().getText();
 
         try {
-            XmlUtil.getSchemaTNS(contents);
+            XmlUtil.getSchemaTNS(contents, schemaEntityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
             String errMsg = ExceptionUtils.getMessage(e);
@@ -856,12 +864,16 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return false;
         }
         try {
-            Document doc = XmlUtil.stringToDocument(contents);
+            Document doc = parseSchema(null, contents);
             if ( checkForUnresolvedDependencies(doc))
                 return false;
-        } catch (SAXException e) {
+        } catch ( IOException e ) {
             log.log(Level.WARNING, "issue with xml document", e);
-            displayError("The schema is not formatted properly. " + e.getMessage(), null);
+            displayError("Error processing schema : " + e.getMessage(), null);
+            return false;
+         } catch (SAXException e) {
+            log.log(Level.WARNING, "issue with xml document", e);
+            displayError("The schema is not formatted properly : " + e.getMessage(), null);
             return false;
         } catch (XmlUtil.BadSchemaException e) {
             String errMsg = "Error importing schema: " + ExceptionUtils.getMessage(e);
@@ -964,20 +976,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         return true;
     }
 
-    private Document stringToDoc(String str) {
-        Document doc;
-        try {
-            doc = XmlUtil.stringToDocument(str);
-        } catch (SAXException e) {
-            log.log(Level.WARNING, "cannot parse doc", e);
-            return null;
-        }
-        return doc;
-    }
-
-    private String reformatXml(String input) {
-        Document doc = stringToDoc(input);
-        return node2String(doc);
+    private Document parseSchema( final String schemaUri,
+                                  final String schemaText ) throws SAXException, IOException {
+        final InputSource inputSource = new InputSource( schemaUri );
+        inputSource.setCharacterStream( new StringReader( schemaText ) );
+        return XmlUtil.parse( inputSource, schemaEntityResolver );
     }
 
     private void cancel() {
@@ -991,12 +994,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private void readFromWsdl() {
-        Document wsdlDoc = getWsdlDocument();
-        if (wsdlDoc == null) {
-            displayError(resources.getString("error.nowsdl"), null);
-            return;
-        }
-
         final SelectWsdlSchemaDialog schemaFromWsdlChooser;
         try {
             schemaFromWsdlChooser = new SelectWsdlSchemaDialog(this, fullSchemas, inputSchemas, outputSchemas);
@@ -1027,8 +1024,19 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             displayError(resources.getString("error.noaccesstowsdl"), null);
             return null;
         }
-        String wsdl = service.getWsdlXml();
-        return wsdl==null ? null : stringToDoc(wsdl);
+
+        final String wsdl = service.getWsdlXml();
+        if ( wsdl != null ) {
+            try {
+                return XmlUtil.parse(wsdl);
+            } catch ( SAXException e ) {
+                log.log(Level.WARNING, "Error parsing service WSDL", e);
+            }
+        } else {
+            displayError(resources.getString("error.nowsdl"), null);
+        }
+        
+        return null;
     }
 
     private void readFromFile() {
@@ -1056,7 +1064,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         // try to get document
         Document doc;
         try {
-            doc = XmlUtil.parse(fis);
+            doc = XmlUtil.parse(new InputSource(fis), schemaEntityResolver );
         } catch (SAXException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
             log.log(Level.FINE, "cannot parse " + filename, e);
@@ -1126,17 +1134,21 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         final Document doc;
         try {
-            doc = XmlUtil.parse(schemaXml);
+            doc = parseSchema(null, schemaXml);
         } catch (SAXException e) {
             if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + url, null);
             log.log(Level.FINE, "cannot parse " + url, e);
             return null;
+        } catch ( IOException e ) {
+            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + url, null);
+            log.log(Level.FINE, "cannot process " + url, e);
+            return null;
         }
-        
+
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
-            return node2String(doc);
+            return schemaXml;
         } else {
             if (reportErrorEnabled) displayError(resources.getString("error.urlnoschema") + " " + url, null);
         }
@@ -1149,6 +1161,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      *
      * @param targetNamespace: the URI of the target namespace
      * @param reportErrorEnabled: a flag indicating if an error dialog pops up if some errors occur.
+     *
+     * TODO [steve] fix schema fetch (this only works if the schema is in the main WSDL)
      *
      * @return the schema XML content
      */

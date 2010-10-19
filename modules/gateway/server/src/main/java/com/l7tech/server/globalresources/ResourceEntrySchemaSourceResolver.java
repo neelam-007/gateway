@@ -11,8 +11,13 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.xml.sax.InputSource;
+import org.xml.sax.ext.EntityResolver2;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Schema source for global resources.
  */
-public class ResourceEntrySchemaSourceResolver implements ApplicationListener, SchemaSourceResolver {
+public class ResourceEntrySchemaSourceResolver implements ApplicationListener, EntityResolver2, SchemaSourceResolver {
 
     //- PUBLIC
 
@@ -95,6 +100,63 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, S
     }
 
     @Override
+    public InputSource getExternalSubset( final String name,
+                                          final String baseURI ) throws IOException {
+        return null;
+    }
+
+    @Override
+    public InputSource resolveEntity( final String name,
+                                      final String publicId,
+                                      final String baseURI,
+                                      final String systemId ) throws IOException {
+        InputSource inputSource = null;
+
+        try {
+            ResourceEntry entry = findByPublicIdentifier( publicId );
+
+            if ( entry == null ) {
+                // try by unresolved URI
+                entry = resourceEntryManager.findResourceByUriAndType( systemId, ResourceType.DTD );
+            }
+
+            if ( entry == null && baseURI != null ) {
+                // try by resolved URI
+                final URI uri = new URI( systemId );
+                if ( !uri.isAbsolute() ) {
+                    final URI base = new URI(baseURI);
+                    if ( base.isAbsolute() ) {
+                        entry = resourceEntryManager.findResourceByUriAndType( base.resolve( uri ).toString(), ResourceType.DTD );
+                    }
+                }
+            }
+
+            if ( entry != null ) {
+                inputSource = new InputSource();
+                inputSource.setSystemId( entry.getUri() );
+                inputSource.setCharacterStream( new StringReader( entry.getContent() ) );
+            }
+        } catch ( FindException e ) {
+            // The schema could be from another source, but we cannot be sure it
+            // is not a global resource so it seems safer to propagate the error
+            throw new CausedIOException( e );
+        } catch ( URISyntaxException e ) {
+            throw new CausedIOException( e );
+        }
+
+        return inputSource;
+    }
+
+    /**
+     * Entity resolver (should not be used)
+     */
+    @Override
+    public InputSource resolveEntity( final String publicId,
+                                      final String systemId ) throws IOException {
+        return resolveEntity("entity", publicId, systemId, systemId );
+    }
+
+    @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof EntityInvalidationEvent ) {
             final EntityInvalidationEvent invalidationEvent = (EntityInvalidationEvent) event;
@@ -130,6 +192,19 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, S
         }
 
         return schema;
+    }
+
+    private ResourceEntry findByPublicIdentifier( final String publicId ) throws FindException {
+        ResourceEntry resourceEntry = null;
+
+        if ( publicId != null ) {
+            final Collection<ResourceEntryHeader> headers = resourceEntryManager.findHeadersByPublicIdentifier( publicId );
+            if ( headers.size() == 1 ) {
+                resourceEntry = resourceEntryManager.findByHeader( headers.iterator().next() );
+            }
+        }
+
+        return resourceEntry;
     }
 
     /**

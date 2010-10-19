@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.util.Config;
@@ -128,7 +129,7 @@ public class ResourceAdminImpl implements ResourceAdmin {
 
     @Override
     public boolean allowSchemaDoctype() {
-        return config.getBooleanProperty( "schema.allowDoctype", false );
+        return config.getBooleanProperty( ServerConfig.PARAM_SCHEMA_ALLOW_DOCTYPE, false );
     }
 
     @Override

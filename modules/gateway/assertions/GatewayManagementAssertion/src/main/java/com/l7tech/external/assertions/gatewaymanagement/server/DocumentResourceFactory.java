@@ -13,6 +13,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.xml.sax.EntityResolver;
 
 /**
  * The DocumentResourceFactory is a general purpose resource factory.
@@ -31,8 +32,10 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
     public DocumentResourceFactory( final RbacServices services,
                                     final SecurityFilter securityFilter,
                                     final PlatformTransactionManager transactionManager,
-                                    final ResourceEntryManager resourceEntryManager ) {
+                                    final ResourceEntryManager resourceEntryManager,
+                                    final EntityResolver entityResolver ) {
         super( false, false, services, securityFilter, transactionManager, resourceEntryManager );
+        this.entityResolver = entityResolver;
     }
 
     //- PROTECTED
@@ -135,10 +138,12 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
     private static final String PROP_PUBLIC_IDENTIFIER = "publicIdentifier";
     private static final String PROP_TARGET_NAMESPACE = "targetNamespace";
 
+    private final EntityResolver entityResolver;
+
     private String getTns( final String contents ) throws InvalidResourceException {
         String tns;
         try {
-            tns = XmlUtil.getSchemaTNS(contents);
+            tns = XmlUtil.getSchemaTNS(contents, entityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid XML Schema '" + ExceptionUtils.getMessage(e) + "'");
         }

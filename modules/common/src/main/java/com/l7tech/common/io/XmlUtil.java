@@ -10,17 +10,24 @@ import org.w3c.dom.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.*;
+import org.xml.sax.ext.EntityResolver2;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.Location;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLReporter;
+import javax.xml.stream.XMLResolver;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -108,12 +115,26 @@ public class XmlUtil extends DomUtils {
         }
     };
 
-    private static final ThreadLocal documentBuilder = new ThreadLocal() {
+    private static final XMLReporter SILENT_REPORTER = new XMLReporter() {
+        @Override
+        public void report( final String message, final String errorType, final Object relatedInformation, final Location location ) throws XMLStreamException {
+            throw new XMLStreamException(message, location);
+        }
+    };
+
+    private static final XMLResolver FAILING_RESOLVER = new XMLResolver() {
+        @Override
+        public Object resolveEntity( final String publicID, final String systemID, final String baseURI, final String namespace ) throws XMLStreamException {
+            throw new XMLStreamException("External entity access forbidden '"+systemID+"' relative to '"+baseURI+"'.");
+        }
+    };
+
+    private static final ThreadLocal<DocumentBuilder> documentBuilder = new ThreadLocal<DocumentBuilder>() {
         private final DocumentBuilderFactory dbf =
                 configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), true );
 
         @Override
-        protected synchronized Object initialValue() {
+        protected synchronized DocumentBuilder initialValue() {
             try {
                 return configureDocumentBuilder( dbf.newDocumentBuilder() );
             } catch ( ParserConfigurationException e) {
@@ -121,12 +142,12 @@ public class XmlUtil extends DomUtils {
             }
         }
     };
-    private static final ThreadLocal documentBuilderAllowingDoctype = new ThreadLocal() {
+    private static final ThreadLocal<DocumentBuilder> documentBuilderAllowingDoctype = new ThreadLocal<DocumentBuilder>() {
         private final DocumentBuilderFactory dbfAllowingDoctype =
                 configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false );
 
         @Override
-        protected synchronized Object initialValue() {
+        protected synchronized DocumentBuilder initialValue() {
             try {
                 return configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
             } catch (ParserConfigurationException e) {
@@ -196,11 +217,17 @@ public class XmlUtil extends DomUtils {
     }
 
     private static DocumentBuilder getDocumentBuilder() {
-        return (DocumentBuilder)documentBuilder.get();
+        return documentBuilder.get();
     }
 
     private static DocumentBuilder getDocumentBuilderAllowingDoctype() {
-        return (DocumentBuilder)documentBuilderAllowingDoctype.get();
+        return getDocumentBuilderAllowingDoctype(XSS4J_SAFE_ENTITY_RESOLVER);
+    }
+
+    private static DocumentBuilder getDocumentBuilderAllowingDoctype( final EntityResolver entityResolver ) {
+        final DocumentBuilder builder = documentBuilderAllowingDoctype.get();
+        builder.setEntityResolver( entityResolver );
+        return builder;
     }
 
     /**
@@ -396,6 +423,31 @@ public class XmlUtil extends DomUtils {
         DocumentBuilder parser = allowDoctype
                 ? getDocumentBuilderAllowingDoctype()
                 : getDocumentBuilder();
+        return parser.parse(source);
+    }
+
+    /**
+     * Create an XML document from the given SAX InputSource.
+     *
+     * <p>This method allows a DOCTYPE in the document and will resolve any
+     * entities using the given resolver, but will not permit URL resolution by
+     * the parser. This means that any entity not resolved by the given
+     * resolver will cause a parse failure.</p>
+     *
+     * <p>WARNING: When checking that entities are resolved the character and
+     * byte streams may be accessed from the InputSource. This method is
+     * therefore not compatible with a resolver that opens new streams when
+     * these methods are invoked.</p>
+     *
+     * @param source the input source (required)
+     * @param entityResolver The entity resolver to use (required)
+     * @return the parsed DOM Document
+     * @throws java.io.IOException if an IO error occurs
+     * @throws org.xml.sax.SAXException if there is a parsing error
+     */
+    public static Document parse( final InputSource source,
+                                  final EntityResolver entityResolver ) throws IOException, SAXException {
+        final DocumentBuilder parser = getDocumentBuilderAllowingDoctype( safeResolver(entityResolver) );
         return parser.parse(source);
     }
 
@@ -640,6 +692,123 @@ public class XmlUtil extends DomUtils {
     }
 
     /**
+     * Get the encoding for an input source
+     *
+     * <p>This method is likely to be slow so should be tested if used where
+     * speed is important.</p>
+     *
+     * @param data The XML source
+     * @return The (detected or default) encoding.
+     */
+    public static String getEncoding( final byte[] data ) {
+        String xmlEncoding;
+        try {
+            final ByteOrderMarkInputStream byteOrderMarkIn = new ByteOrderMarkInputStream( new ByteArrayInputStream(data) );
+            xmlEncoding = getEncoding( new StreamSource( byteOrderMarkIn ) );
+            if ( byteOrderMarkIn.getEncoding() != null && "UTF-8".equalsIgnoreCase( xmlEncoding ) ) {
+                xmlEncoding = byteOrderMarkIn.getEncoding().name();
+            }
+        } catch ( IOException e ) {
+            // Try without BOM detection
+            xmlEncoding = getEncoding( new StreamSource( new ByteArrayInputStream(data) ) );
+        }
+
+        return xmlEncoding;
+    }
+
+    /**
+     * Get the encoding for an input source
+     *
+     * <p>This method is likely to be slow so should be tested if used where
+     * speed is important.</p>
+     *
+     * @param source The XML source
+     * @return The (detected or default) encoding.
+     */
+    public static String getEncoding( final Source source ) {
+        String encoding = null;
+
+        final XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setXMLReporter( SILENT_REPORTER );
+        xif.setXMLResolver( FAILING_RESOLVER );
+        XMLStreamReader reader = null;
+        try {
+            reader = xif.createXMLStreamReader( source );
+            while( reader.hasNext() ) {
+                final int eventType = reader.next();
+                if ( eventType == XMLStreamReader.START_DOCUMENT ||
+                     eventType == XMLStreamReader.START_ELEMENT ) {
+                    encoding = reader.getCharacterEncodingScheme();
+                    break;
+                }
+            }
+        } catch ( XMLStreamException e ) {
+            if ( reader != null ) {
+                encoding = reader.getCharacterEncodingScheme();
+            }
+        } finally {
+            ResourceUtils.closeQuietly( reader );
+        }
+
+        if ( encoding == null ) {
+            encoding = "UTF-8";
+        }
+
+        return encoding;
+    }
+
+    /**
+     * Get the QName of the document element.
+     *
+     * @param systemId The system identifier for the document (optional)
+     * @param text The xml document as text
+     * @param resolver The XML resolver to use for entity resolution (optional)
+     * @return The QName
+     * @throws SAXException if the document could not be parsed
+     */
+    public static QName getDocumentQName( final String systemId,
+                                          final String text,
+                                          final XMLResolver resolver ) throws SAXException {
+        final StreamSource source = new StreamSource( new StringReader(text) );
+        source.setSystemId( systemId );
+        return getDocumentQName( source, resolver );
+    }
+
+    /**
+     * Get the QName of the document element.
+     *
+     * @param source The xml document source
+     * @param resolver The XML resolver to use for entity resolution (optional)
+     * @return The QName
+     * @throws SAXException if the document could not be parsed
+     */
+    public static QName getDocumentQName( final Source source,
+                                          final XMLResolver resolver ) throws SAXException {
+        QName name = null;
+
+        final XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setXMLReporter( SILENT_REPORTER );
+        xif.setXMLResolver( resolver == null ? FAILING_RESOLVER : resolver );
+        XMLStreamReader reader = null;
+        try {
+            reader = xif.createXMLStreamReader( source );
+            while( reader.hasNext() ) {
+                final int eventType = reader.next();
+                if ( eventType == XMLStreamReader.START_ELEMENT ) {
+                    name = reader.getName();
+                    break;
+                }
+            }
+        } catch ( XMLStreamException e ) {
+            throw new SAXException(e);
+        } finally {
+            ResourceUtils.closeQuietly( reader );
+        }
+
+        return name;
+    }
+
+    /**
      * Get the targetNamespace from a Schema. This also does some validation on the entire schema.
      *
      * @param schemaSrc String schema xml
@@ -647,7 +816,8 @@ public class XmlUtil extends DomUtils {
      * @throws BadSchemaException if the schema is not valid
      */
     @SuppressWarnings({"unchecked", "ForLoopReplaceableByForEach"})
-    public static String getSchemaTNS(String schemaSrc) throws BadSchemaException {
+    public static String getSchemaTNS( final String schemaSrc,
+                                       final EntityResolver entityResolver ) throws BadSchemaException {
         if (schemaSrc == null) {
             throw new BadSchemaException("no xml");
         }
@@ -679,6 +849,7 @@ public class XmlUtil extends DomUtils {
             dbfAllowingDoctype.setSchema( getSchemaSchema() );
             final DocumentBuilder builder = configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
             builder.setErrorHandler( STRICT_ERROR_HANDLER );
+            builder.setEntityResolver( safeResolver( entityResolver ) );
             final Document schemaDocument = builder.parse(new InputSource(new StringReader(schemaSrc)));
 
             String tns = schemaDocument.getDocumentElement().getAttribute("targetNamespace");
@@ -808,6 +979,16 @@ public class XmlUtil extends DomUtils {
         serializeWithXss4j = b == null ? DEFAULT_SERIALIZE_WITH_XSS4J : b;
     }
 
+    private static EntityResolver safeResolver( final EntityResolver resolver ) {
+        if ( resolver == null ) {
+            return XSS4J_SAFE_ENTITY_RESOLVER;
+        } else if ( resolver instanceof EntityResolver2 ) {
+            return new SafeEntityResolver2( (EntityResolver2) resolver );
+        } else {
+            return new SafeEntityResolver( resolver );
+        }
+    }
+
     /**
      * Get a Schema for validating Schema documents.
      *
@@ -843,5 +1024,46 @@ public class XmlUtil extends DomUtils {
     public static class BadSchemaException extends Exception {
         public BadSchemaException(String s){super(s);}
         public BadSchemaException(Throwable e){super(e.getMessage(), e);}
+    }
+
+    private static class SafeEntityResolver implements EntityResolver {
+        private final EntityResolver entityResolver;
+
+        private SafeEntityResolver( final EntityResolver entityResolver ) {
+            this.entityResolver = entityResolver;
+        }
+
+        protected final InputSource checkResolved( final InputSource inputSource, final boolean permitNull, final String desc ) throws IOException {
+            if ( (!permitNull && inputSource == null) ||
+                 (inputSource != null && inputSource.getByteStream() == null && inputSource.getCharacterStream() == null) ) {
+                throw new IOException( "Could not resolve '" + desc + "'"  );
+            }
+
+            return inputSource;
+        }
+
+        @Override
+        public final InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
+            return checkResolved( entityResolver.resolveEntity( publicId, systemId ), false, systemId );
+        }
+    }
+
+    private static final class SafeEntityResolver2 extends SafeEntityResolver implements EntityResolver2 {
+        private final EntityResolver2 entityResolver;
+
+        private SafeEntityResolver2( final EntityResolver2 entityResolver ) {
+            super( entityResolver );
+            this.entityResolver = entityResolver;
+        }
+
+        @Override
+        public final InputSource getExternalSubset( final String name, final String baseURI ) throws SAXException, IOException {
+            return checkResolved( entityResolver.getExternalSubset( name, baseURI ), true, name );
+        }
+
+        @Override
+        public final InputSource resolveEntity( final String name, final String publicId, final String baseURI, final String systemId ) throws SAXException, IOException {
+            return checkResolved( entityResolver.resolveEntity( name, publicId, baseURI, systemId ), false, systemId );
+        }
     }
 }

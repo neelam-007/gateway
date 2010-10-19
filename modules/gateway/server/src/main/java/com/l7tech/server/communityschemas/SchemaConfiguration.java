@@ -60,6 +60,10 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
         return cacheConfigurationReference.get().softwareFallback;
     }
 
+    public boolean isAllowDoctype(){
+        return cacheConfigurationReference.get().allowDoctype;
+    }
+
     public Pattern getRemoteResourcePattern() {
         return remoteResourcePattern.get();
     }
@@ -147,6 +151,7 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
         private final int hardwareRecompileMaxAge;
         private final long maxSchemaSize;
         private final boolean softwareFallback;
+        private final boolean allowDoctype;
 
         CacheConfiguration( Config config) {
             maxCacheAge = config.getIntProperty( ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
@@ -159,6 +164,7 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
 
             // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
             softwareFallback = !("false".equals(config.getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK, "true")));
+            allowDoctype = config.getBooleanProperty( ServerConfig.PARAM_SCHEMA_ALLOW_DOCTYPE, false );
         }
     }
 

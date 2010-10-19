@@ -9,7 +9,7 @@ public class Charsets {
     public static final Charset DEFAULT = Charset.defaultCharset();
     public static final Charset ASCII = Charset.forName("ASCII");
     public static final Charset UTF8 = Charset.forName("UTF-8");
-    //public static final Charset UTF16 = Charset.forName("UTF-16"); // mandatory initial byte-order mark.  Seems to work everywhere, but commented out as it is not currently required.
+    public static final Charset UTF16 = Charset.forName("UTF-16"); // mandatory initial byte-order mark.  Seems to work everywhere, but commented out as it is not currently required.
     public static final Charset UTF16LE = Charset.forName("UTF-16LE");
     public static final Charset UTF16BE = Charset.forName("UTF-16BE");
     public static final Charset X_UTF16LE_BOM = Charset.forName("X-UTF-16LE-BOM");

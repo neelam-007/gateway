@@ -22,8 +22,11 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SchemaUtil;
+import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -36,6 +39,7 @@ import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,19 +69,26 @@ public class ResourceEntryEditor extends JDialog {
     private XMLContainer xmlContainer;
     private UIAccessibility uiAccessibility;
 
-    private ResourceEntry resourceEntry;
+    private final ResourceEntry resourceEntry;
+    private final EntityResolver entityResolver;
+    private final boolean canEdit;
     private boolean dataLoaded = false;
-    public boolean success = false;
-    private boolean canEdit;
+    private boolean success = false;
 
     public ResourceEntryEditor( final Window owner,
                                 final ResourceEntry resourceEntry,
+                                final EntityResolver entityResolver,
                                 final boolean canEditEntry ) {
         super( owner, JDialog.DEFAULT_MODALITY_TYPE );
         this.resourceEntry = resourceEntry;
+        this.entityResolver = entityResolver;
         this.canEdit = canEditEntry;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xml pad
+    }
+
+    public boolean wasOk() {
+        return success;
     }
 
     private void initialize() {
@@ -257,9 +268,14 @@ public class ResourceEntryEditor extends JDialog {
         if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
             Document doc;
             try {
-                doc = XmlUtil.parse(resourceContent);
+                doc = XmlUtil.parse(new InputSource(new StringReader(resourceContent)), entityResolver);
             } catch ( SAXException e) {
-                displayError("No XML at " + url, null);
+                displayError("Error parsing schema from " + TextUtils.truncateStringAtEnd( url, 128 ) + " :\n" +
+                        ExceptionUtils.getMessage( e ), null);
+                return;
+            } catch ( IOException e ) {
+                displayError("Error processing schema from " + TextUtils.truncateStringAtEnd( url, 128 ) + " :\n" +
+                        ExceptionUtils.getMessage( e ), null);
                 return;
             }
 
@@ -322,13 +338,13 @@ public class ResourceEntryEditor extends JDialog {
                 // try to get document
                 Document doc;
                 try {
-                    doc = XmlUtil.parse(fis);
+                    doc = XmlUtil.parse(new InputSource(fis), entityResolver);
                 } catch (SAXException e) {
-                    displayError("Error parsing schema from " + filename + " : " + ExceptionUtils.getMessage( e ), null);
+                    displayError("Error parsing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
                     logger.log(Level.FINE, "cannot parse " + filename, e);
                     return;
                 } catch (IOException e) {
-                    displayError("No XML at" + filename, null);
+                    displayError("Error processing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
                     logger.log(Level.FINE, "cannot parse " + filename, e);
                     return;
                 }
@@ -477,11 +493,11 @@ public class ResourceEntryEditor extends JDialog {
                                          final String contents ) {
         String tns;
         try {
-            tns = XmlUtil.getSchemaTNS(contents);
+            tns = XmlUtil.getSchemaTNS(contents, entityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             logger.log( Level.WARNING, "Error parsing schema", e);
-            JOptionPane.showMessageDialog(this, "This is not a legal xml schema: " + ExceptionUtils.getMessage(e),
-                                                "Illegal Schema",
+            JOptionPane.showMessageDialog(this, "This is not a valid xml schema: " + ExceptionUtils.getMessage(e),
+                                                "Invalid Schema",
                                                 JOptionPane.ERROR_MESSAGE);
             return false;
         }

@@ -22,6 +22,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -502,6 +503,32 @@ public class XmlUtilTest {
     public void testElementImplDoesNotOverrideEqualsOrHashCode() throws Exception {
         final Class<? extends Element> elementImplClass = XmlUtil.stringAsDocument("<foo/>").getDocumentElement().getClass();
         assertFalse(MethodUtil.isEqualsOrHashCodeOverridden(elementImplClass));
+    }
+
+    @Test
+    public void testGetEncoding() throws Exception {
+        final String testIso8859_1 = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?><a/>";
+        assertEquals( "Latin-1 detection", "iso-8859-1", XmlUtil.getEncoding( testIso8859_1.getBytes( Charsets.ISO8859 ) ));
+
+        final String testUtf8 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a/>";
+        assertEquals( "UTF-8 detection", "UTF-8", XmlUtil.getEncoding( testUtf8.getBytes( Charsets.UTF8 ) ));
+
+        final String testUtf16 = "<?xml version=\"1.0\" encoding=\"UTF-16\"?><a/>";
+        assertEquals( "UTF-16 detection BE", "UTF-16", XmlUtil.getEncoding( testUtf16.getBytes( Charsets.UTF16BE ) ));
+        assertEquals( "UTF-16 detection LE", "UTF-16", XmlUtil.getEncoding( testUtf16.getBytes( Charsets.UTF16LE ) ));
+
+        final String testUtf16Bom = "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><a/>";
+        assertEquals( "UTF-16 detection BOM", "UTF-16", XmlUtil.getEncoding( testUtf16.getBytes( Charsets.UTF16 ) )); //BOM added automatically
+        assertEquals( "UTF-16 detection BOM BE", "UTF-16", XmlUtil.getEncoding( testUtf16Bom.getBytes( Charsets.UTF16BE ) ));
+        assertEquals( "UTF-16 detection BOM LE", "UTF-16", XmlUtil.getEncoding( testUtf16Bom.getBytes( Charsets.UTF16LE ) ));
+
+        final String testUtf32 = "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-32\"?><a/>";
+        assertEquals( "UTF-32 detection BOM", "UTF-32", XmlUtil.getEncoding( testUtf32.getBytes( Charsets.UTF32 )) );
+        assertEquals( "UTF-32 detection BOM BE", "UTF-32", XmlUtil.getEncoding( testUtf32.getBytes( Charsets.UTF32BE ) ));
+        assertEquals( "UTF-32 detection BOM LE", "UTF-32", XmlUtil.getEncoding( testUtf32.getBytes( Charsets.UTF32LE ) ));
+
+        final String testDTD = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?><!ENTITY % simpleType \"simpleType\">";
+        assertEquals( "DTD Latin-1 detection", "iso-8859-1", XmlUtil.getEncoding( testDTD.getBytes( Charsets.ISO8859 ) ));
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =

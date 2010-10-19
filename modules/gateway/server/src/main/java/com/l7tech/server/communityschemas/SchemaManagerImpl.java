@@ -1,5 +1,6 @@
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.*;
 import com.l7tech.xml.DocumentReferenceProcessor;
@@ -17,13 +18,19 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.EntityResolver2;
 
 import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -31,6 +38,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -118,6 +126,11 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      */
     private final Map<SchemaHandle, Object> handlesNeedingClosed = new WeakHashMap<SchemaHandle, Object>();
 
+    /**
+     * The EntityResolver to use when parsing schema documents
+     */
+    private final AtomicReference<EntityResolver> entityResolverRef = new AtomicReference<EntityResolver>(XmlUtil.getSafeEntityResolver());
+
     /** Bean that handles Tarari hardware reloads for us, null if no Tarari. */
     private final TarariSchemaHandler tarariSchemaHandler;
 
@@ -125,6 +138,11 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * Sources for XML Schema documents.
      */
     private final Collection<SchemaSourceResolver> schemaSourceResolvers;
+
+    /**
+     * Entity resolver for use parsing schema documents (when doctypes are permitted)
+     */
+    private final EntityResolver schemaEntityResolver;
 
     private long lastHardwareRecompileTime = 0;
     private long lastSchemaEligibilityTime = 0;
@@ -149,14 +167,16 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
     public SchemaManagerImpl( final SchemaConfiguration config,
                               final Timer timer,
-                              final SchemaSourceResolver[] schemaSourceResolvers ) {
-        this( config, timer, TarariLoader.getSchemaHandler(), schemaSourceResolvers );
+                              final SchemaSourceResolver[] schemaSourceResolvers,
+                              final EntityResolver schemaEntityResolver ) {
+        this( config, timer, TarariLoader.getSchemaHandler(), schemaSourceResolvers, schemaEntityResolver );
     }
 
     SchemaManagerImpl( final SchemaConfiguration config,
                        Timer timer,
                        final TarariSchemaHandler tarariSchemaHandler,
-                       final SchemaSourceResolver[] schemaSourceResolvers ) {
+                       final SchemaSourceResolver[] schemaSourceResolvers,
+                       final EntityResolver schemaEntityResolver ) {
         if ( config == null ) throw new NullPointerException();
         this.config = config;
         this.tarariSchemaHandler = tarariSchemaHandler;
@@ -165,6 +185,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         schemaSourceResolverList.add( new RegisteredSchemaSourceResolver( registeredSchemasByUri, registeredSchemasByTargetNamespace ) );
         schemaSourceResolverList.addAll( Arrays.asList( schemaSourceResolvers ) );
         this.schemaSourceResolvers = Collections.unmodifiableCollection( schemaSourceResolverList );
+        this.schemaEntityResolver = schemaEntityResolver;
 
         if (timer == null)
             timer = new Timer("Schema cache maintenance", true);
@@ -195,6 +216,12 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             }
         };
         maintenanceTimer.schedule(cacheCleanupTask, 4539, Math.min( minCleanupPeriod, config.getMaxCacheAge() * 2 + 263 ) );
+
+        if ( config.isAllowDoctype() ) {
+            entityResolverRef.set( schemaEntityResolver );
+        } else {
+            entityResolverRef.set( XmlUtil.getSafeEntityResolver() );
+        }
 
         if (tarariSchemaHandler != null) {
             hardwareReloadTask = new SafeTimerTask() {
@@ -546,12 +573,81 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
     }
 
+    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
+    private LSInput resolveEntity( final String publicId,
+                                   final String systemId,
+                                   final String baseURI ) {
+        final EntityResolver resolver = entityResolverRef.get();
+
+        final LSInput input = new LSInputImpl();
+        try {
+            InputSource inputSource;
+            if ( resolver instanceof EntityResolver2 ) {
+                inputSource = ((EntityResolver2)resolver).resolveEntity( "[dtd]", publicId, baseURI, systemId );   
+            } else if ( baseURI != null ) {
+                inputSource = resolver.resolveEntity( publicId, computeEffectiveUrl( baseURI, systemId ) );
+            } else {
+                inputSource = resolver.resolveEntity( publicId, systemId );
+            }
+
+            if ( inputSource != null ) {
+                input.setPublicId( publicId );
+                input.setSystemId( inputSource.getSystemId() );
+                input.setEncoding( inputSource.getEncoding() );
+
+                final Reader characterStream = inputSource.getCharacterStream();
+                if ( characterStream != null ) {
+                    input.setCharacterStream( characterStream );
+                } else {
+                    final InputStream byteStream = inputSource.getByteStream();
+                    if ( byteStream != null ) {
+                        input.setByteStream( byteStream );
+                    } else {
+                        throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
+                    }
+                }
+            } else {
+                throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
+            }
+        } catch ( SAXException e ) {
+            if ( isResourceNotPermitted( e ) ) {
+                throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
+            } else {
+                input.setCharacterStream( new IOExceptionThrowingReader( new CausedIOException(e) ) );
+            }
+        } catch ( IOException e ) {
+            if ( isResourceNotPermitted( e ) ) {
+                throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
+            } else {
+                input.setCharacterStream( new IOExceptionThrowingReader( e ) );
+            }
+        }
+
+        return input;
+    }
+
+    protected boolean isResourceNotPermitted( final Exception e ) {
+        return (e instanceof IOException || e instanceof SAXException) &&
+                ExceptionUtils.getMessage( e ).startsWith("Document referred to an external entity with system id");
+    }
+
     /** @return an LSInput that contains StringData and a SystemId. */
     private LSInput makeLsInput( final SchemaSource schemaSource ) {
         final LSInput lsi =  new LSInputImpl();
         lsi.setSystemId( schemaSource.getUri() );
         lsi.setStringData( schemaSource.getContent() );
         return lsi;
+    }
+
+    private Source makeSource( final SchemaSource schemaSource ) {
+        return new StreamSource( new StringReader(schemaSource.getContent()), schemaSource.getUri() );
+    }
+
+    private InputSource makeInputSource( final SchemaSource schemaSource ) {
+        final InputSource inputSource = new InputSource();
+        inputSource.setSystemId( schemaSource.getUri() );
+        inputSource.setCharacterStream( new StringReader( schemaSource.getContent() ) );
+        return inputSource;
     }
 
     /**
@@ -870,33 +966,37 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                                            String systemId,
                                            String baseURI)
             {
-                try {
-                    if (systemId == null) {
-                        String resolvedSystemId = findUriForTargetNamespace( namespaceURI );
-                        if ( resolvedSystemId != null ) {
-                            systemId = resolvedSystemId;
-                        } else {
-                            throw new CausedIOException("No systemId, cannot resolve resource");
+                if ( XMLConstants.XML_DTD_NS_URI.equals( type )) {
+                    return resolveEntity( publicId, systemId, baseURI );
+                } else {
+                    try {
+                        if (systemId == null) {
+                            String resolvedSystemId = findUriForTargetNamespace( namespaceURI );
+                            if ( resolvedSystemId != null ) {
+                                systemId = resolvedSystemId;
+                            } else {
+                                throw new CausedIOException("No systemId, cannot resolve resource");
+                            }
                         }
+                        SchemaSource dependencySource = getSchemaStringForUri(baseURI, systemId, false, false);
+                        assert dependencySource != null;
+                        dependencies.add(dependencySource.getUri());
+                        return makeLsInput(dependencySource);
+                    } catch (IOException e) {
+                        throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                     }
-                    SchemaSource dependencySource = getSchemaStringForUri(baseURI, systemId, false, false);
-                    assert dependencySource != null;
-                    dependencies.add(dependencySource.getUri());
-                    return makeLsInput(dependencySource);
-                } catch (IOException e) {
-                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 }
             }
         };
         sf.setResourceResolver(resolver);
 
         try {
-            sf.newSchema(new StreamSource(new StringReader(source.getContent()), source.getUri())); // populates dependencies as side-effect
+            sf.newSchema(makeSource(source)); // populates dependencies as side-effect
             return dependencies;
         } catch (RuntimeException e) {
             UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
             if (exception != null) throw new CausedIOException(
-                    "Unable to resolve remote sub-schema for resource " + exception.getResourceDescription() +
+                    "Unable to resolve dependency for resource " + exception.getResourceDescription() +
                     " : " + ExceptionUtils.getMessage(exception.getCause()),
                     exception.getCause());
             throw e;
@@ -1019,7 +1119,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         // Re-parse, building up CompiledSchema instances as needed from the bottom up
         final SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
 
-        final Document schema = XmlUtil.stringToDocument(schemaDoc);
+        final Document schema = XmlUtil.parse(makeInputSource(source), entityResolverRef.get());
         final Set<String> includes = new HashSet<String>();
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
         schemaReferenceProcessor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
@@ -1044,17 +1144,19 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                                             final String publicId,
                                             final String systemId,
                                             final String baseURI) {
-                if ( !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(type) ) {
+                if ( XMLConstants.XML_DTD_NS_URI.equals( type )) {
+                    return resolveEntity( publicId, systemId, baseURI );
+                } else if ( !XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(type) ) {
                     throw new UnresolvableException(null, describeResource(baseURI, systemId, publicId, namespaceURI));
-                }
-
-                Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
-                try {
-                    return makeLsInput(resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
-                } catch (IOException e) {
-                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
-                } catch (SAXException e) {
-                    throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                } else {
+                    Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
+                    try {
+                        return makeLsInput(resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
+                    } catch (IOException e) {
+                        throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                    } catch (SAXException e) {
+                        throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
+                    }
                 }
             }
         };
@@ -1062,8 +1164,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
         boolean success = false;
         try {
-            final Schema softwareSchema = sf.newSchema(new StreamSource(new StringReader(schemaDoc), systemId));
-            final String tns = XmlUtil.getSchemaTNS(schemaDoc);
+            final Schema softwareSchema = sf.newSchema(makeSource(source));
+            final String tns = XmlUtil.getSchemaTNS(schemaDoc, entityResolverRef.get());
             final Element mangledElement = DomUtils.normalizeNamespaces(schema.getDocumentElement());
             final CompiledSchema newSchema =
                     new CompiledSchema(tns, systemId, schemaDoc, source.getResolverId(), mangledElement, softwareSchema, this,
@@ -1085,7 +1187,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         } catch (RuntimeException e) {
             UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
             if (exception != null) throw new CausedIOException(
-                    "Unable to resolve remote sub-schema for resource " + exception.getResourceDescription() +
+                    "Unable to resolve dependency for resource " + exception.getResourceDescription() +
                     " : " + ExceptionUtils.getMessage(exception.getCause()),
                     exception.getCause());
             throw e;

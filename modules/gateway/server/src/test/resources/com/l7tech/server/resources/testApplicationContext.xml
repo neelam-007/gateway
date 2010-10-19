@@ -248,6 +248,9 @@
         <constructor-arg index="2">
             <list/>
         </constructor-arg>
+        <constructor-arg index="3" >
+            <null/>
+        </constructor-arg>
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
