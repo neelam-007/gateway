@@ -47,6 +47,8 @@ public class GlobalResourcesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger( GlobalResourcesDialog.class.getName() );
     private static final ResourceBundle resourceBundle = ResourceBundle.getBundle( GlobalResourcesDialog.class.getName() );
 
+    private static final Object ANY = new Object();
+
     private JPanel mainPanel;
     private JButton addXmlSchemaButton;
     private JButton addDTDButton;
@@ -84,7 +86,7 @@ public class GlobalResourcesDialog extends JDialog {
             }
         };
 
-        final TextListCellRenderer<ResourceType> textRenderer = buildResourceTypeRenderer();
+        final TextListCellRenderer<Object> textRenderer = buildResourceTypeRenderer();
         resourcesTableModel = buildResourcesTableModel();
         resourcesTable.setModel( resourcesTableModel );
         resourcesTable.getTableHeader().setReorderingAllowed( false );
@@ -101,7 +103,7 @@ public class GlobalResourcesDialog extends JDialog {
 
         Utilities.setMaxLength( matchesTextField.getDocument(), 8192);
         typeComboBox.setModel( new DefaultComboBoxModel( ResourceType.values() ) );
-        ((DefaultComboBoxModel)typeComboBox.getModel()).insertElementAt( null, 0 );
+        ((DefaultComboBoxModel)typeComboBox.getModel()).insertElementAt( ANY, 0 );
         typeComboBox.setRenderer( textRenderer );
         typeComboBox.setSelectedIndex(0);
 
@@ -208,34 +210,34 @@ public class GlobalResourcesDialog extends JDialog {
         );
     }
 
-    static TextListCellRenderer<ResourceType> buildResourceTypeRenderer() {
-        return new TextListCellRenderer<ResourceType>(new Functions.Unary<String,ResourceType>(){
+    static TextListCellRenderer<Object> buildResourceTypeRenderer() {
+        return new TextListCellRenderer<Object>(new Functions.Unary<String,Object>(){
             @Override
-            public String call( final ResourceType resourceType ) {
+            public String call( final Object resourceType ) {
                 String label;
 
-                if ( resourceType == null ) {
+                if ( resourceType == ANY ) {
                      label = resourceBundle.getString( "label.resource-type-any" );
                 } else {
-                    label = getDisplayName( resourceType );
+                    label = getDisplayName( (ResourceType)resourceType );
                 }
 
                 return label;
             }
-        }, null, true );
+        } );
     }
 
     private RowFilter<SimpleTableModel<ResourceEntryHeader>, Integer> getFilter() {
         final String filterString = matchesTextField.getText();
         final Pattern pattern = filterString == null ? null : Pattern.compile(filterString, Pattern.CASE_INSENSITIVE);
-        final ResourceType resourceType = (ResourceType)typeComboBox.getSelectedItem();
+        final Object resourceType = typeComboBox.getSelectedItem();
 
         return new RowFilter<SimpleTableModel<ResourceEntryHeader>, Integer>() {
             @Override
             public boolean include(Entry<? extends SimpleTableModel<ResourceEntryHeader>, ? extends Integer> entry) {
                  boolean canBeShown = true;
 
-                if ( resourceType != null && resourceType != entry.getValue(2) ) {
+                if ( resourceType != ANY && resourceType != entry.getValue(2) ) {
                     canBeShown = false;
                 }
 
@@ -253,21 +255,21 @@ public class GlobalResourcesDialog extends JDialog {
     private String getFilterStatus() {
         String filterStatus = resourceBundle.getString( "label.filter-status.none" );
         final String filterString = matchesTextField.getText();
-        final ResourceType resourceType = (ResourceType)typeComboBox.getSelectedItem();
+        final Object resourceType = typeComboBox.getSelectedItem();
 
-        if ( filterString != null && !filterString.isEmpty() && resourceType != null ) {
+        if ( filterString != null && !filterString.isEmpty() && resourceType != ANY ) {
             filterStatus = MessageFormat.format(
                     resourceBundle.getString( "label.filter-status.resource-match" ),
-                    getDisplayName( resourceType ),
+                    getDisplayName( (ResourceType) resourceType ),
                     filterString );
         } else if ( filterString != null && !filterString.isEmpty() ) {
             filterStatus = MessageFormat.format(
                     resourceBundle.getString( "label.filter-status.match" ),
                     filterString );
-        } else if ( resourceType != null ) {
+        } else if ( resourceType != ANY ) {
             filterStatus = MessageFormat.format(
                     resourceBundle.getString( "label.filter-status.resource" ), 
-                    getDisplayName( resourceType ) );
+                    getDisplayName( (ResourceType) resourceType ) );
         }
 
         return filterStatus;
