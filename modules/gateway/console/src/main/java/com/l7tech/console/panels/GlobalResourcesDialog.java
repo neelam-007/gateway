@@ -87,6 +87,12 @@ public class GlobalResourcesDialog extends JDialog {
         };
 
         final TextListCellRenderer<Object> textRenderer = buildResourceTypeRenderer();
+        Utilities.setMaxLength( matchesTextField.getDocument(), 8192);
+        typeComboBox.setModel( new DefaultComboBoxModel( ResourceType.values() ) );
+        ((DefaultComboBoxModel)typeComboBox.getModel()).insertElementAt( ANY, 0 );
+        typeComboBox.setRenderer( textRenderer );
+        typeComboBox.setSelectedIndex(0);
+
         resourcesTableModel = buildResourcesTableModel();
         resourcesTable.setModel( resourcesTableModel );
         resourcesTable.getTableHeader().setReorderingAllowed( false );
@@ -100,12 +106,6 @@ public class GlobalResourcesDialog extends JDialog {
         rowSorter.setRowFilter( getFilter() );
 
         resourcesTable.getModel().addTableModelListener( enableDisableListener );
-
-        Utilities.setMaxLength( matchesTextField.getDocument(), 8192);
-        typeComboBox.setModel( new DefaultComboBoxModel( ResourceType.values() ) );
-        ((DefaultComboBoxModel)typeComboBox.getModel()).insertElementAt( ANY, 0 );
-        typeComboBox.setRenderer( textRenderer );
-        typeComboBox.setSelectedIndex(0);
 
         registerListeners();
 
@@ -335,7 +335,14 @@ public class GlobalResourcesDialog extends JDialog {
             return;
         }
 
-        editEntry( resourceEntry, flags.canUpdateSome() );
+        if ( resourceEntry != null ) {
+            editEntry( resourceEntry, flags.canUpdateSome() );
+        } else {
+            showErrorMessage( "Error Accessing Resource", "The selected resource is no longer available." );
+
+            // pickup all changes from gateway
+            loadResources();
+        }
     }
 
     private void editEntry( final ResourceEntry entry, final boolean canEdit ) {
