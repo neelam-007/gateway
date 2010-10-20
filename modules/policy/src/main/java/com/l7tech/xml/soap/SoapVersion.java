@@ -10,20 +10,22 @@ import java.util.Set;
  * Represents a specific or unknown SOAP version.
  */
 public enum SoapVersion {
-    SOAP_1_1("SOAP 1.1", SOAPConstants.SOAP_1_1_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, 1001),
-    SOAP_1_2("SOAP 1.2", SOAPConstants.SOAP_1_2_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, 1002),
-    UNKNOWN("unspecified", null, null, 0);
+    SOAP_1_1("SOAP 1.1", SOAPConstants.SOAP_1_1_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, 1001, "text/xml"),
+    SOAP_1_2("SOAP 1.2", SOAPConstants.SOAP_1_2_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, 1002, "application/soap+xml"),
+    UNKNOWN("unspecified", null, null, 0, null);
 
     private final String protocol;
     private final int rank;
     private final String namespaceUri;
     private final String label;
+    private final String contentType;
 
-    private SoapVersion(final String label, final String protocol, final String namespaceUri, final int rank ) {
+    private SoapVersion(final String label, final String protocol, final String namespaceUri, final int rank, final String contentType ) {
         this.protocol = protocol;
         this.namespaceUri = namespaceUri;
         this.rank = rank;
         this.label = label;
+        this.contentType = contentType;
     }
 
     /**
@@ -62,6 +64,13 @@ public enum SoapVersion {
         return getOtherNamespaceUris(this);
     }
 
+    /**
+     * @return the base content type required by this SOAP version (omitting any properties such as charset etc).
+     */
+    public String getContentType() {
+        return contentType;
+    }
+
     public static SoapVersion namespaceToSoapVersion(String namespace) {
         if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(namespace)) {
             return SOAP_1_2;
@@ -69,6 +78,23 @@ public enum SoapVersion {
             return SOAP_1_1;
         } else {
             return UNKNOWN;
+        }
+    }
+
+    /**
+     * Lookup a SoapVersion by its content type header.
+     *
+     * @param contentTypeBase a base content type, ie just "text/xml" or "application/soap+xml".  Required.
+     * @return the corresponding SoapVersion.  Never null, but may be UNKNOWN.
+     */
+    public static SoapVersion contentTypeToSoapVersion(String contentTypeBase) {
+        // For now, there's only two, so we'll just hardcode it
+        if ("text/xml".equalsIgnoreCase(contentTypeBase)) {
+            return SoapVersion.SOAP_1_1;
+        } else if ("application/soap+xml".equalsIgnoreCase(contentTypeBase)) {
+            return SoapVersion.SOAP_1_2;
+        } else {
+            return SoapVersion.UNKNOWN;
         }
     }
 
