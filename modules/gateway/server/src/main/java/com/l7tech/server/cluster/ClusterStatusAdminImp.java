@@ -35,6 +35,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
 import java.security.KeyStoreException;
@@ -363,7 +364,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public Object getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException {
+    public Serializable getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException {
         // Currently the only supported capability property, the Luna client PIN, is write-only
         if (!isKnownCapability(capability))
             throw new NoSuchCapabilityException();
@@ -371,7 +372,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public void putHardwareCapabilityProperty(String capability, String property, Object value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException {
+    public void putHardwareCapabilityProperty(String capability, String property, Serializable value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException {
         if (!isKnownCapability(capability))
             throw new NoSuchCapabilityException();
 

@@ -1,5 +1,6 @@
 package com.l7tech.common.io;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
  * Holds a GeneralName, as used for each component of an X.509 Subject Alternative Name GeneralNames sequence.
  * A GeneralName consists of a type tag and a value.
  */
-public class X509GeneralName {
+public class X509GeneralName implements Serializable {
     public enum Type {
         otherName(0),
         rfc822Name(1),

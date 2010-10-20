@@ -1,11 +1,13 @@
 package com.l7tech.common.io;
 
+import java.io.Serializable;
+
 /**
  * Parameters for generating a new key pair.
  * <p/>
  * Used for requests sent from the SSM since JCE spec classes are not serializable.
  */
-public class KeyGenParams {
+public class KeyGenParams implements Serializable {
     // Key generation
     private String algorithm;
     private int keySize;

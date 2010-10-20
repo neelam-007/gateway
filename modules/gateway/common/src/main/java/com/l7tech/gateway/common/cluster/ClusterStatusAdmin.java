@@ -7,18 +7,19 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
 import com.l7tech.util.CollectionUpdate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.security.KeyStoreException;
 import java.util.Collection;
 import java.util.Map;
-import java.security.KeyStoreException;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
+import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -393,7 +394,7 @@ public interface ClusterStatusAdmin {
      * @throws NoSuchPropertyException if the specified hardware capability does not have or does not allow read access to the specified property.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    Object getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException;
+    Serializable getHardwareCapabilityProperty(String capability, String property) throws NoSuchCapabilityException, NoSuchPropertyException;
 
     /**
      * Configure a property for a hardware capability of the node that receives this admin request.
@@ -407,7 +408,7 @@ public interface ClusterStatusAdmin {
      * @throws IllegalArgumentException  if the specified property value is not a valid setting for the specified property.
      */
     @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
-    void putHardwareCapabilityProperty(String capability, String property, Object value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException;
+    void putHardwareCapabilityProperty(String capability, String property, Serializable value) throws NoSuchCapabilityException, NoSuchPropertyException, ClassCastException, IllegalArgumentException;
 
     /**
      * Check if this Gateway node is capable of connecting to the specific hardware token type (identified
