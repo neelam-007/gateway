@@ -448,6 +448,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     public Long getGroupCacheMaxAge() {
         // convert from integer if necessary for backwards compatibility pre-5.4
         Object value = getProperty(GROUP_CACHE_MAX_AGE);
+        if (value == null) return null;
         return value instanceof Integer ? ((Integer)value).longValue() :  (Long)value;
     }
 
