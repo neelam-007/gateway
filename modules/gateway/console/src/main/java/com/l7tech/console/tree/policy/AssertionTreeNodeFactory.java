@@ -33,7 +33,7 @@ public class AssertionTreeNodeFactory {
 
     private static Map<Class<? extends Assertion>, Class<? extends AssertionTreeNode>> assertionMap = new HashMap<Class<? extends Assertion>, Class<? extends AssertionTreeNode>>();
 
-    // maping assertions to assertion tree nodes
+    // mapping assertions to assertion tree nodes
     static {
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
@@ -96,7 +96,7 @@ public class AssertionTreeNodeFactory {
      * The target class is searched for the constructor that accepts the assertion
      * as a parameter.
      * That is, the <code>AssertionTreeNode</code> subclass is searched for
-     * the constructor accepting the <code>Aseertion</code> parameter.
+     * the constructor accepting the <code>Assertion</code> parameter.
      * 
      * @param classNode the class that is a subclass of AssertionTreeNode
      * @param assertion the assertion constructor parameter
@@ -116,7 +116,7 @@ public class AssertionTreeNodeFactory {
     }
 
     /**
-     * special assertion tree node that describesd unknown assertion
+     * special assertion tree node that describes the unknown assertion
      */
     static class UnknownAssertionTreeNode<AT extends Assertion> extends LeafAssertionTreeNode<AT> {
         String name = null;

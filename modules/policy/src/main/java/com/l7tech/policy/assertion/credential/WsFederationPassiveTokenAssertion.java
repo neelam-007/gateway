@@ -83,6 +83,8 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EditWsFederationPassiveTokenRequestAction");
 
+        //AssertionMetadata.PALETTE_FOLDERS is deliberately NOT added. See AccessControlFolderNode for details.
+
         return meta;
     }
     
