@@ -42,6 +42,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
 
     public SecurityFilter getSecurityFilter() {
         return new SecurityFilter() {
+            @Override
             public <T> Collection<T> filter(Collection<T> entityCollection, User user, OperationType type, String operationName) throws FindException {
                 return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter" );
             }
@@ -106,6 +107,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
         }
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
         final Object target = methodInvocation.getThis();
@@ -309,12 +311,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 }
 
                 if (skip) {
-                    return rv;
+                    return unwrapHeader(rv, rv, check);
                 } else if (rv instanceof EntityHeader[]) {
                     EntityHeader[] array = (EntityHeader[]) rv;
                     List<EntityHeader> headers = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
-                    return headers.toArray(a0);
+                    return unwrapHeader(headers.toArray(a0), rv, check);
                 } else if (rv instanceof Entity[]) {
                     Entity[] array = (Entity[]) rv;
                     List<Entity> entities = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
@@ -349,6 +351,25 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                         new Object[]{check.operation.name(), ename, mname});
                 return rv;
         }
+    }
+
+    private Object unwrapHeader( final Object rv, final Object preFilter, final CheckInfo check ) {
+        Object result = rv;
+
+        // unwrap in case of HEADER
+        if ( CheckAfter.HEADER == check.getAfter() && rv instanceof EntityHeader[] && preFilter instanceof EntityHeader[] ) {
+            final EntityHeader[] header = (EntityHeader[]) rv;
+            final EntityHeader[] originalHeader = (EntityHeader[]) preFilter;
+            if ( header.length == 1 ) {
+                result = header[0];
+            } else if ( header.length == 0 && originalHeader.length == 1 ) { // not permitted, so throw
+                throw new PermissionDeniedException(check.operation, originalHeader[0].getType());
+            } else { // something went wrong
+                throw new IllegalStateException("Unable to unwrap header result.");
+            }
+        }
+
+        return result;
     }
 
     private void checkEntityAfter(CheckInfo check) {
