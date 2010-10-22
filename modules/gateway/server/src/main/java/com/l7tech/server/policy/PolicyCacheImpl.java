@@ -1154,7 +1154,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
 
             if (ass instanceof UsesVariables) {
-                String[] vars = ((UsesVariables) ass).getVariablesUsed();
+                String[] vars = PolicyVariableUtils.getVariablesUsedNoThrow((UsesVariables) ass);
                 if (vars != null) allVarsUsed.addAll(Arrays.asList(vars));
             }
 

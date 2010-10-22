@@ -282,18 +282,42 @@ public final class PolicyVariableUtils {
 
     /**
      * Wraps SetsVariables.getVariablesSet() with a version that catches VariableNameSyntaxException,
-     * logs it, and returns an empty array.
+     * logs, and returns an empty array.
      *
      * @param sv the SetsVariables to query.  Required.
-     * @return the variables set, or an empty array if VariableNameSyntaxExeption was thrown.
+     * @return the variables set, or an empty array if an exception was thrown (never null)
      */
-    public static VariableMetadata[] getVariablesSetNoThrow(SetsVariables sv) {
+    public static VariableMetadata[] getVariablesSetNoThrow( final SetsVariables sv ) {
         try {
-            return sv.getVariablesSet();
-        } catch (VariableNameSyntaxException vnse) {
-            logger.log(Level.WARNING, "Unable to get variables set on " + sv.getClass().getName() + ": " + ExceptionUtils.getMessage(vnse));
-            return new VariableMetadata[0];
+            final VariableMetadata[] set = sv.getVariablesSet();
+            if ( set != null ) {
+                return set;
+            }
+        } catch ( final VariableNameSyntaxException e ) {
+            logger.log(Level.WARNING, "Unable to get variables set on " + sv.getClass().getName() + ": " + ExceptionUtils.getMessage(e));
         }
+
+        return new VariableMetadata[0];
+    }
+
+    /**
+     * Wraps UsesVariables.getVariablesUsed() with a version that catches VariableNameSyntaxException,
+     * logs and returns an empty array.
+     *
+     * @param uv the UsesVariables to query. Required.
+     * @return The variables used, or an empty array if an exception was thrown (never null)
+     */
+    public static String[] getVariablesUsedNoThrow( final UsesVariables uv ) {
+        try {
+            final String[] used = uv.getVariablesUsed();
+            if ( used != null ) {
+                return used;
+            }
+        } catch ( final VariableNameSyntaxException e ) {
+            logger.log(Level.WARNING, "Unable to get variables used on " + uv.getClass().getName() + ": " + ExceptionUtils.getMessage(e));
+        }
+
+        return new String[0];
     }
 
     private PolicyVariableUtils() { }
