@@ -107,7 +107,7 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                     // fail
                 }
             }
-            if ( hostname != null && !InetAddressUtil.isValidIpAddress(hostname) ) {
+            if ( hostname != null && !InetAddressUtil.isValidIpAddress(hostname) || !InetAddressUtil.isValidIpv6Address(hostname) ) {
                 value = hostname;
             }
         }

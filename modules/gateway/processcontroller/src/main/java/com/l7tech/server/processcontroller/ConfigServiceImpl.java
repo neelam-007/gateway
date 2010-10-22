@@ -139,7 +139,7 @@ public class ConfigServiceImpl implements ConfigService {
             throw new IllegalStateException("Invalid patch log file configured: " + patchesLog);
 
         this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, Integer.toString(DEFAULT_SSL_REMOTE_MANAGEMENT_PORT)));
-        this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, "127.0.0.1");
+        this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, getDefaultSslIpAddress());
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
         this.trustedPatchCerts = readTrustedPatchCerts(hostProps);
@@ -162,6 +162,16 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         this.host = hostConfig;
+    }
+
+    private String getDefaultSslIpAddress() {
+        if (InetAddressUtil.isIpv4Enabled()) {
+            return "127.0.0.1";
+        } else if (InetAddressUtil.isIpv6Enabled()) {
+            return "::1";
+        } else {
+            throw new IllegalStateException("No IPv4 or IPv6 interfaces found, cannot start process controller.");
+        }
     }
 
     @PostConstruct

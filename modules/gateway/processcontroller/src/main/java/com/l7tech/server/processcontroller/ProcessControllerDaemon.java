@@ -13,6 +13,7 @@ import org.springframework.beans.factory.BeanCreationException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 import java.util.logging.ConsoleHandler;
@@ -72,7 +73,10 @@ public final class ProcessControllerDaemon {
             start();
         } catch ( BeanCreationException bce ) {
             if ( ExceptionUtils.causedBy( bce, BindException.class ) ) {
-                logger.severe("Process controller unable to bind listener, please ensure server ip address and port are valid and available and restart.");
+                logger.log(
+                    Level.SEVERE,
+                    "Process controller unable to bind listener, please ensure server ip address and port are valid and available and restart. " + ExceptionUtils.getMessage(bce),
+                    ExceptionUtils.getDebugException(bce));
                 System.exit(2);
             } else {
                 throw bce;

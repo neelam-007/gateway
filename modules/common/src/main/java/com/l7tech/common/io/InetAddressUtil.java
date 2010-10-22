@@ -63,6 +63,12 @@ public class InetAddressUtil {
         return localHost;
     }
 
+    /**
+     * Verifies if the provided string parameter is a valid IPv4 address.
+     *
+     * @param address the string to check
+     * @return true if the provided string is a valid IPv4 address, false otherwise.
+     */
     public static boolean isValidIpAddress(String address) {
 
         if (address == null) return false;
@@ -323,7 +329,15 @@ public class InetAddressUtil {
         return isLocal;
     }
 
+    public static boolean isIpv4Enabled() {
+        return hasInterfaceWithAddressType(Inet4Address.class);
+    }
+
     public static boolean isIpv6Enabled() {
+        return hasInterfaceWithAddressType(Inet6Address.class);
+    }
+
+    static boolean hasInterfaceWithAddressType(Class<? extends InetAddress> inetAddressType) {
         Enumeration<NetworkInterface> interfaces;
         try {
             interfaces = NetworkInterface.getNetworkInterfaces();
@@ -336,7 +350,7 @@ public class InetAddressUtil {
             NetworkInterface netif = interfaces.nextElement();
             Enumeration<InetAddress> addrs = netif.getInetAddresses();
             while (addrs.hasMoreElements()) {
-                if(addrs.nextElement() instanceof Inet6Address) return true;
+                if(addrs.nextElement().getClass().isAssignableFrom(inetAddressType)) return true;
             }
         }
 

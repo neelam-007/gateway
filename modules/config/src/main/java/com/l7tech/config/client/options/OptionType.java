@@ -24,7 +24,7 @@ public enum OptionType {
     /**
      * A host name
      */
-    HOSTNAME("^[a-zA-Z0-9][a-zA-Z0-9\\-\\_.]{0,254}"),
+    HOSTNAME("^[\\[a-zA-Z0-9][a-zA-Z0-9\\-\\_.:\\]]{0,254}"),
 
     /**
      * A IPv4 or IPv6 address
