@@ -24,7 +24,7 @@ import java.util.Collection;
 public interface ResourceAdmin {
 
     @Transactional(readOnly=true)
-    @Secured(stereotype= MethodStereotype.FIND_ENTITIES)
+    @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findAllResources() throws FindException;
 
     @Transactional(readOnly=true)
@@ -44,20 +44,23 @@ public interface ResourceAdmin {
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
     long saveResourceEntry(ResourceEntry resourceEntry) throws SaveException, UpdateException;
 
+    @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
+    void saveResourceEntryBag( final ResourceEntryBag resourceEntry ) throws SaveException, UpdateException;
+
     @Transactional(readOnly=true)
-    @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByType( ResourceType type ) throws FindException;
 
     @Transactional(readOnly=true)
-    @Secured(stereotype=MethodStereotype.FIND_ENTITY)
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     ResourceEntryHeader findResourceHeaderByUriAndType( String uri, ResourceType type ) throws FindException;
 
     @Transactional(readOnly=true)
-    @Secured(stereotype= MethodStereotype.FIND_ENTITIES)
+    @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByTargetNamespace( String targetNamespace ) throws FindException;
 
     @Transactional(readOnly=true)
-    @Secured(stereotype= MethodStereotype.FIND_ENTITIES)
+    @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByPublicIdentifier( String publicIdentifier ) throws FindException;
 
     @Transactional(readOnly=true)

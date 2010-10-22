@@ -27,7 +27,6 @@ import java.util.List;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Sep 17, 2004<br/>
- * $Id$<br/>
  */
 public class SelectWsdlSchemaDialog extends JDialog {
     private XMLContainer xmlContainer;
@@ -163,31 +162,37 @@ public class SelectWsdlSchemaDialog extends JDialog {
 
     private void setEventHandlers() {
         okbutton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
         });
         cancelbutton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
         allradio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
         requestradio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
         responseradio.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
         schemaselector.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
@@ -199,6 +204,7 @@ public class SelectWsdlSchemaDialog extends JDialog {
         if (node != null) {
             try {
                 okedSchema = XmlUtil.nodeToFormattedString(node);
+                okedSchemaNode = node;
             } catch (IOException e) {
                 // todo
             }
@@ -206,6 +212,7 @@ public class SelectWsdlSchemaDialog extends JDialog {
         SelectWsdlSchemaDialog.this.dispose();
     }
 
+    @Override
     public void dispose() {
         xmlContainer.dispose();
         super.dispose();
@@ -213,6 +220,10 @@ public class SelectWsdlSchemaDialog extends JDialog {
 
     public String getOkedSchema() {
         return okedSchema;
+    }
+
+    public Node getOkedSchemaNode() {
+        return okedSchemaNode;
     }
 
     private void cancel() {
@@ -230,6 +241,7 @@ public class SelectWsdlSchemaDialog extends JDialog {
     private List<Element> fullSchemas;
     private List<Element> inputSchemas;
     private List<Element> outputSchemas;
-    private String okedSchema = null;
+    private String okedSchema;
+    private Node okedSchemaNode;
 
 }

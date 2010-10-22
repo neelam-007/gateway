@@ -127,49 +127,18 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <grid id="c5b96" binding="specifyTab" layout-manager="GridLayoutManager" row-count="4" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                        <margin top="0" left="0" bottom="0" right="0"/>
+                      <grid id="c5b96" binding="specifyTab" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="8" left="8" bottom="8" right="8"/>
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <vspacer id="9fcf0">
-                            <constraints>
-                              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                                <minimum-size width="-1" height="8"/>
-                              </grid>
-                            </constraints>
-                          </vspacer>
-                          <vspacer id="1653c">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                                <minimum-size width="-1" height="8"/>
-                                <maximum-size width="-1" height="8"/>
-                              </grid>
-                            </constraints>
-                          </vspacer>
-                          <hspacer id="71b44">
-                            <constraints>
-                              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                                <minimum-size width="8" height="-1"/>
-                                <maximum-size width="8" height="-1"/>
-                              </grid>
-                            </constraints>
-                          </hspacer>
-                          <hspacer id="1b61f">
-                            <constraints>
-                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                                <minimum-size width="8" height="-1"/>
-                                <maximum-size width="8" height="-1"/>
-                              </grid>
-                            </constraints>
-                          </hspacer>
                           <xy id="c707d" binding="xmlDisplayPanel" layout-manager="XYLayout" hgap="-1" vgap="-1">
                             <margin top="0" left="0" bottom="0" right="0"/>
                             <constraints>
-                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties/>
                             <border type="none"/>
@@ -177,7 +146,7 @@
                           </xy>
                           <component id="e877b" class="javax.swing.JLabel">
                             <constraints>
-                              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text resource-bundle="com/l7tech/console/resources/SchemaValidationPropertiesDialog" key="xmldisplayPanel.name"/>
@@ -222,6 +191,23 @@
                               </component>
                             </children>
                           </grid>
+                          <component id="16686" class="javax.swing.JLabel">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <labelFor value="fa257"/>
+                              <text resource-bundle="com/l7tech/console/resources/SchemaValidationPropertiesDialog" key="specifySystemId.label"/>
+                            </properties>
+                          </component>
+                          <component id="fa257" class="javax.swing.JTextField" binding="specifySystemIdTextField">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                <preferred-size width="150" height="-1"/>
+                              </grid>
+                            </constraints>
+                            <properties/>
+                          </component>
                         </children>
                       </grid>
                     </children>
@@ -234,8 +220,8 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <grid id="7d922" binding="specifyUrlTab" layout-manager="GridLayoutManager" row-count="5" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                        <margin top="0" left="0" bottom="0" right="0"/>
+                      <grid id="7d922" binding="specifyUrlTab" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="8" left="8" bottom="8" right="8"/>
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -244,25 +230,17 @@
                         <children>
                           <vspacer id="fb6cf">
                             <constraints>
-                              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </vspacer>
-                          <hspacer id="f8368">
-                            <constraints>
-                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                                <minimum-size width="8" height="-1"/>
-                                <maximum-size width="8" height="-1"/>
-                              </grid>
-                            </constraints>
-                          </hspacer>
                           <hspacer id="b7888">
                             <constraints>
-                              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
                           <component id="cca1d" class="javax.swing.JLabel">
                             <constraints>
-                              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text resource-bundle="com/l7tech/console/resources/SchemaValidationPropertiesDialog" key="specifyUrlTextBox.label"/>
@@ -270,31 +248,15 @@
                           </component>
                           <component id="a8d08" class="javax.swing.JTextField" binding="specifyUrlField">
                             <constraints>
-                              <grid row="2" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                              <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                                 <preferred-size width="150" height="-1"/>
                               </grid>
                             </constraints>
                             <properties/>
                           </component>
-                          <hspacer id="91054">
-                            <constraints>
-                              <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                                <minimum-size width="8" height="-1"/>
-                                <maximum-size width="8" height="-1"/>
-                              </grid>
-                            </constraints>
-                          </hspacer>
-                          <vspacer id="d3e8">
-                            <constraints>
-                              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                                <minimum-size width="-1" height="8"/>
-                                <maximum-size width="-1" height="8"/>
-                              </grid>
-                            </constraints>
-                          </vspacer>
                           <component id="1a4b1" class="javax.swing.JLabel">
                             <constraints>
-                              <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="0" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text resource-bundle="com/l7tech/console/resources/SchemaValidationPropertiesDialog" key="specifyUrlTextBox.description"/>
@@ -302,7 +264,7 @@
                           </component>
                           <component id="866f1" class="javax.swing.JButton" binding="manageHttpOptionsButton">
                             <constraints>
-                              <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text resource-bundle="com/l7tech/console/resources/SchemaValidationPropertiesDialog" key="manageHttpOptionsButton.label"/>
@@ -321,7 +283,7 @@
                     <border type="none"/>
                     <children>
                       <grid id="51cc7" binding="globalURLTab" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                        <margin top="10" left="10" bottom="10" right="10"/>
+                        <margin top="8" left="8" bottom="8" right="8"/>
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                         </constraints>

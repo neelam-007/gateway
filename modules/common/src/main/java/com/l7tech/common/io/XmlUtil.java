@@ -809,6 +809,59 @@ public class XmlUtil extends DomUtils {
     }
 
     /**
+     * Get the targetNamespace from a Schema without parsing the entire document.
+     *
+     * <p>This does not ensure that the schema is valid.</p>
+     *
+     * @param schema The Schema content
+     * @return The targetNamespace (which may be null)
+     * @throws BadSchemaException If an error occurs while accessing the target namespace
+     */
+    public static String getSchemaTNS( final String schema ) throws BadSchemaException {
+        final StreamSource source = new StreamSource( new StringReader(schema) );
+        final XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setXMLReporter( SILENT_REPORTER );
+        xif.setXMLResolver( new XMLResolver(){
+            @Override
+            public Object resolveEntity( final String publicID,
+                                         final String systemID,
+                                         final String baseURI,
+                                         final String namespace ) throws XMLStreamException {
+                return new EmptyInputStream();
+            }
+        } );
+
+        final QName schemaQName = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI, "schema");
+        boolean sawSchemaElement = false;
+        String targetNamespace = null;
+        XMLStreamReader reader = null;
+        try {
+            reader = xif.createXMLStreamReader( source );
+            while( reader.hasNext() ) {
+                final int eventType = reader.next();
+                if ( eventType == XMLStreamReader.START_ELEMENT ) {
+                    if ( schemaQName.equals( reader.getName() ) ) {
+                        sawSchemaElement = true;
+                        targetNamespace = reader.getAttributeValue( null, "targetNamespace" );
+                    } else {
+                        break;
+                    }
+                }
+            }
+        } catch ( XMLStreamException e ) {
+            throw new BadSchemaException(e);
+        } finally {
+            ResourceUtils.closeQuietly( reader );
+        }
+
+        if ( !sawSchemaElement ) {
+            throw new BadSchemaException("Not an XML Schema.");   
+        }
+
+        return targetNamespace;
+    }
+
+    /**
      * Get the targetNamespace from a Schema. This also does some validation on the entire schema.
      *
      * @param schemaSrc String schema xml

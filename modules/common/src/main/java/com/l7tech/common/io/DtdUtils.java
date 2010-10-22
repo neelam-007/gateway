@@ -1,7 +1,6 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SAXParsingCompleteException;
 import com.l7tech.util.ValidationUtils;
@@ -14,6 +13,7 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
+import org.xml.sax.ext.EntityResolver2;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.IOException;
@@ -47,7 +47,7 @@ public class DtdUtils {
      */
     public static void processReferences( final String dtdSystemId,
                                           final String dtdContent,
-                                          final Functions.BinaryThrows<Pair<String,String>,String,String,IOException> resolver ) throws IOException, SAXException {
+                                          final Resolver resolver ) throws IOException, SAXException {
         final Map<EntityKey,EntityValue> resolvedEntities = new HashMap<EntityKey,EntityValue>();
         resolvedEntities.put( new EntityKey(null, dtdSystemId), new EntityValue(dtdSystemId, dtdContent) );
         processReferencesRecursively( dtdSystemId, dtdContent, resolver, resolvedEntities );
@@ -112,18 +112,18 @@ public class DtdUtils {
         return normalized;
     }
 
-    public interface Resolver extends Functions.BinaryThrows<Pair<String,String>,String,String,IOException>{
+    public interface Resolver {
 
         /**
          * Resolve a resource by system identifier.
          *
          * @param publicId The public identifier to resolve
+         * @param baseUri The baseUri of the parent document (may be null if system id is absolute)
          * @param systemId The system identifier to resolve
          * @return A pair of systemId/content for the resolved resource
          * @throws IOException If the identifier cannot be resolved
          */
-        @Override
-        Pair<String,String> call( String publicId, String systemId ) throws IOException;
+        Pair<String,String> call( String publicId, String baseUri, String systemId ) throws IOException;
     }
 
     //- PRIVATE
@@ -131,20 +131,25 @@ public class DtdUtils {
     private static void processReferencesRecursively(
             final String dtdSystemId,
             final String dtdContent,
-            final Functions.BinaryThrows<Pair<String,String>,String,String,IOException> resolver,
+            final Resolver resolver,
             final Map<EntityKey,EntityValue> resolvedEntities ) throws IOException, SAXException {
         final Set<EntityKey> references = new LinkedHashSet<EntityKey>();
         final XMLReader reader = getXMLReaderForDTD( references );
-        reader.setEntityResolver( new EntityResolver(){
+        reader.setEntityResolver( new EntityResolver2(){
             @Override
-            public InputSource resolveEntity( final String resolvePublicId,
-                                              final String resolveSystemId ) throws SAXException, IOException {
+            public InputSource getExternalSubset( final String name, final String baseURI ) throws SAXException, IOException {
+                return null;
+            }
+
+            @Override
+            public InputSource resolveEntity( final String name, final String publicId, final String baseUri, final String systemId ) throws SAXException, IOException {
                 final String entitySystemId;
                 final String entityContent;
 
-                if ( !dtdSystemId.equals( resolveSystemId )) {
-                    final EntityKey resolverKey = new EntityKey(resolvePublicId, resolveSystemId);
-                    final EntityValue entityValue = resolve( resolverKey, resolver, resolvedEntities );
+                if ( !dtdSystemId.equals( systemId )) {
+                    final EntityValue entityValue = resolve( publicId, baseUri, systemId, resolver );
+                    final EntityKey resolverKey = new EntityKey(publicId, entityValue.getSystemId());
+                    resolvedEntities.put( resolverKey, entityValue );
                     entitySystemId = entityValue.getSystemId();
                     entityContent = entityValue.getContent();
                 } else {
@@ -152,10 +157,16 @@ public class DtdUtils {
                     entityContent = dtdContent;
                 }
 
-                final InputSource inputSource = new InputSource();
-                inputSource.setSystemId( entitySystemId );
+                final InputSource inputSource = new InputSource( entitySystemId );
                 inputSource.setCharacterStream( new StringReader(entityContent) );
+
                 return inputSource;
+            }
+
+            @Override
+            public InputSource resolveEntity( final String publicId,
+                                              final String systemId ) throws SAXException, IOException {
+                return resolveEntity( null, publicId, null, systemId );
             }
         } );
 
@@ -168,7 +179,8 @@ public class DtdUtils {
         for ( final EntityKey reference : references ) {
             if ( !resolvedEntities.containsKey( reference ) ) {
                 // The entity was not resolve due to parsing so resolve manually
-                final EntityValue entityValue = resolve( reference, resolver, resolvedEntities );
+                final EntityValue entityValue = resolve( reference.getPublicId(), reference.getSystemId(), reference.getSystemId(), resolver );
+                resolvedEntities.put( reference, entityValue );
                 processReferencesRecursively(
                         entityValue.getSystemId(),
                         entityValue.getContent(),
@@ -178,16 +190,15 @@ public class DtdUtils {
         }
     }
 
-    private static EntityValue resolve( final EntityKey entityKey,
-                                        final Functions.BinaryThrows<Pair<String, String>, String, String, IOException> resolver,
-                                        final Map<EntityKey, EntityValue> resolvedEntities ) throws IOException {
-        final Pair<String,String> resolvedEntity = resolver.call( entityKey.getPublicId(),  entityKey.getSystemId() );
+    private static EntityValue resolve( final String publicId,
+                                        final String baseUri,
+                                        final String systemId,
+                                        final Resolver resolver ) throws IOException {
+        final Pair<String,String> resolvedEntity = resolver.call( publicId,  baseUri, systemId );
         if ( resolvedEntity == null ) {
-            throw new IOException("Unable to resolve entity '"+entityKey.getPublicId()+"'/'"+entityKey.getSystemId()+"'");
+            throw new IOException("Unable to resolve entity '"+publicId+"'/'"+systemId+"'");
         }
-        final EntityValue entityValue = new EntityValue(resolvedEntity.left, resolvedEntity.right);
-        resolvedEntities.put( entityKey, entityValue );
-        return entityValue;
+        return new EntityValue(resolvedEntity.left, resolvedEntity.right);
     }
 
     private static XMLReader getXMLReaderForDTD( final Set<EntityKey> references ) throws SAXException {

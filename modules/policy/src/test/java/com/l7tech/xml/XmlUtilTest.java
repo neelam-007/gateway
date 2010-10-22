@@ -22,7 +22,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.soap.SOAPConstants;
-import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +39,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class XmlUtilTest {
     private static final Logger logger = Logger.getLogger(XmlUtilTest.class.getName());
@@ -108,9 +106,9 @@ public class XmlUtilTest {
         assertNotNull(security);
 
         try {
-            Element firstSignature = DomUtils.findOnlyOneChildElementByName( security,
-                                                                          SoapUtil.DIGSIG_URI,
-                                                                          SoapUtil.SIGNATURE_EL_NAME );
+            DomUtils.findOnlyOneChildElementByName( security,
+                                                    SoapUtil.DIGSIG_URI,
+                                                    SoapUtil.SIGNATURE_EL_NAME );
             fail("Expected exception not thrown");
         } catch ( TooManyChildElementsException e ) {
             // Expected
@@ -529,6 +527,24 @@ public class XmlUtilTest {
 
         final String testDTD = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?><!ENTITY % simpleType \"simpleType\">";
         assertEquals( "DTD Latin-1 detection", "iso-8859-1", XmlUtil.getEncoding( testDTD.getBytes( Charsets.ISO8859 ) ));
+    }
+
+    @Test
+    public void testGetSchemaTNS() throws Exception {
+        assertEquals("TNS from schema in default namespace", "urn:tns", XmlUtil.getSchemaTNS( "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:tns\"/>" ) );
+        assertEquals("TNS from schema in prefixed namespace", "urn:tns", XmlUtil.getSchemaTNS( "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:tns\"/>" ) );
+        try {
+            XmlUtil.getSchemaTNS( "<x/>" );
+            fail("Expected exception for non schema content");
+        } catch ( XmlUtil.BadSchemaException e ) {
+            // expected
+        }
+        try {
+            XmlUtil.getSchemaTNS( "test" );
+            fail("Expected exception for non xml content");
+        } catch ( XmlUtil.BadSchemaException e ) {
+            // expected
+        }
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =

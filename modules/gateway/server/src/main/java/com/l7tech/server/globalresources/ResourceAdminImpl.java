@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.resources.ResourceEntryBag;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -68,6 +69,13 @@ public class ResourceAdminImpl implements ResourceAdmin {
         }
 
         return oid;
+    }
+
+    @Override
+    public void saveResourceEntryBag( final ResourceEntryBag resourceEntryBag ) throws SaveException, UpdateException {
+        for ( final ResourceEntry resourceEntry : resourceEntryBag ) {
+            saveResourceEntry( resourceEntry );
+        }
     }
 
     @Override

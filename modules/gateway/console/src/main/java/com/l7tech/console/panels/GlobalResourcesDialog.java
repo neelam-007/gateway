@@ -285,7 +285,7 @@ public class GlobalResourcesDialog extends JDialog {
 
     private void enableDisableComponents() {
         final int[] selectedRows = resourcesTable.getSelectedRows();
-        importButton.setEnabled( false );//TODO [steve] enable when completed// flags.canCreateSome() );
+        importButton.setEnabled( flags.canCreateSome() );
         addXmlSchemaButton.setEnabled( flags.canCreateSome() );
         addDTDButton.setEnabled( flags.canCreateSome() );
         editButton.setEnabled( selectedRows.length == 1 && flags.canUpdateSome() );
@@ -488,13 +488,12 @@ public class GlobalResourcesDialog extends JDialog {
     }
 
     private void doImport() {
-// TODO [steve] enable when completed
-//        DialogDisplayer.display( new GlobalResourceImportWizard( this, resourceAdmin ), new Runnable(){
-//            @Override
-//            public void run() {
-//                loadResources();
-//            }
-//        } );
+        DialogDisplayer.display( new GlobalResourceImportWizard( this, resourceAdmin ), new Runnable(){
+            @Override
+            public void run() {
+                loadResources();
+            }
+        } );
     }
 
     private void doAnalyze() {
