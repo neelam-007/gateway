@@ -109,7 +109,7 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
     private void updateRemoteResourceRegex() {
         final String regex = config.getProperty( ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX, ".*" );
         try {
-            final Pattern pattern = Pattern.compile( regex );
+            final Pattern pattern = Pattern.compile( regex.trim() );
             remoteResourcePattern.set( pattern );
             logger.config( "Using '"+ ServerConfig.PARAM_SCHEMA_REMOTE_URL_REGEX+"' value '"+regex+"'." );
         } catch ( final PatternSyntaxException pse ) {
