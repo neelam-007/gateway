@@ -227,4 +227,15 @@ public class SoapConstants {
 
     public static final IdAttributeConfig STRICT_WSS_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(STRICT_WSS_ID_ATTRIBUTE_QNAMES);
 
+    public static final String WSA_MSG_PROP_ACTION = "Action";
+    public static final String WSA_MSG_PROP_DESTINATION = "To";
+    public static final String WSA_MSG_PROP_SOURCE_ENDPOINT = "From";
+    public static final String WSA_MSG_PROP_MESSAGE_ID = "MessageID";
+    public static final String WSA_MSG_PROP_REPLY_TO = "ReplyTo";
+    public static final String WSA_MSG_PROP_FAULT_TO = "FaultTo";
+    public static final String WSA_MSG_PROP_RELATES_TO = "RelatesTo";
+    public static final String WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE = "RelationshipType";
+    public static final String WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE = "http://www.w3.org/2005/08/addressing/reply";
+
+
 }

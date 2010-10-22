@@ -119,33 +119,40 @@ class SoapFacet extends MessageFacet {
         }
     }
 
+    @Override
     public MessageKnob getKnob(Class c) {
         if (c == SoapKnob.class) {
             return new SoapKnob() {
 
+                @Override
                 public QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException {
                     return getSoapInfo().getPayloadNames();
                 }
 
+                @Override
                 public boolean isFault() throws SAXException, IOException, InvalidDocumentFormatException {
                     return gatherFaultDetail() != null;
                 }
 
+                @Override
                 public SoapFaultDetail getFaultDetail() throws InvalidDocumentFormatException, IOException, SAXException {
                     if (!isFault()) throw new IllegalStateException("Message is not a SOAP fault");
                     return faultDetail;
                 }
 
+                @Override
                 public void setFaultDetail(SoapFaultDetail faultDetail) {
                     if (faultDetail == null || faultDetail.getFaultActor() == null || faultDetail.getFaultActor().length() < 1)
                         throw new IllegalArgumentException("Fault detail is null or has a missing or empty fault actor");
                     SoapFacet.this.faultDetail = faultDetail;
                 }
 
+                @Override
                 public boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException {
                     return getSoapInfo().hasSecurityNode;
                 }
 
+                @Override
                 public void invalidate() {
                     // TODO invalidate faultDetail too? It's not connected to the message content anyway
                     soapInfo = null;
@@ -180,6 +187,11 @@ class SoapFacet extends MessageFacet {
                     if (faultDetail == null)
                        faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocumentReadOnly());
                     return faultDetail;
+                }
+
+                @Override
+                public SoapInfo getSoapInfo() {
+                    return soapInfo;
                 }
             };
         }

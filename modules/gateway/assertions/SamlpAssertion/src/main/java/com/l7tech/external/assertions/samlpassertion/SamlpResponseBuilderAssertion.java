@@ -18,7 +18,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
  */
-public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion implements PrivateKeyable{
+public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPrivateKeyable {
 
     public SamlVersion getSamlVersion() {
         return samlVersion;
@@ -223,36 +223,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
         return super.getVariablesSet();
     }
 
-    @Override
-    public boolean isUsesDefaultKeyStore() {
-        return privateKeyableSupport.isUsesDefaultKeyStore();
-    }
-
-    @Override
-    public void setUsesDefaultKeyStore(boolean usesDefault) {
-        privateKeyableSupport.setUsesDefaultKeyStore(usesDefault);
-    }
-
-    @Override
-    public long getNonDefaultKeystoreId() {
-        return privateKeyableSupport.getNonDefaultKeystoreId();
-    }
-
-    @Override
-    public void setNonDefaultKeystoreId(long nonDefaultId) {
-        privateKeyableSupport.setNonDefaultKeystoreId(nonDefaultId);
-    }
-
-    @Override
-    public String getKeyAlias() {
-        return privateKeyableSupport.getKeyAlias();
-    }
-
-    @Override
-    public void setKeyAlias(String keyid) {
-        privateKeyableSupport.setKeyAlias(keyid);
-    }
-
     // - PRIVATE
     private SamlVersion samlVersion = SamlVersion.SAML2;
     private boolean signResponse;
@@ -271,7 +241,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertion im
     private String responseAssertions;
     private String encryptedAssertions;
     private String responseExtensions;
-    private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";
 }

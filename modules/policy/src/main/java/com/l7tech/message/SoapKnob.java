@@ -73,6 +73,12 @@ public interface SoapKnob extends MessageKnob {
     void invalidate();
 
     /**
+     * Get the SoapInfo if available.
+     * @return Null if not available.
+     */
+    SoapInfo getSoapInfo();
+
+    /**
      * @return the SOAP version of this message.  Never null, but may be SoapVersion.UNKNOWN if the SOAP envelope namespace URI
      *         is not one of the standard URIs for SOAP 1.1 or SOAP 1.2.
      * @throws SAXException if the XML in the first part's InputStream is not well formed

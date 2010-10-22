@@ -417,11 +417,15 @@ public class SoapUtil extends SoapConstants {
      * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
      */
     public static String getOrCreateElementWsuId(Element node) throws InvalidDocumentFormatException {
+        return getOrCreateElementWsuId(node, 0);
+    }
+
+    public static String getOrCreateElementWsuId(Element node, int baseNumber) throws InvalidDocumentFormatException {
         String id = getElementWsuId(node);
         if (id != null)
             return id;
 
-        id = generateUniqueId(node.getLocalName(), 0);
+        id = generateUniqueId(node.getLocalName(), baseNumber);
         setWsuId(node, SoapConstants.WSU_NAMESPACE, id);
         return id;
     }

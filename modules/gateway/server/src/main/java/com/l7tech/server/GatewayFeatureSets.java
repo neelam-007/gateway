@@ -379,7 +379,8 @@ public class GatewayFeatureSets {
             ass(WsspAssertion.class),
             ass(HtmlFormDataAssertion.class),
             ass(CodeInjectionProtectionAssertion.class),
-            mass("assertion:WsAddressing"));
+            mass("assertion:WsAddressing"),
+            mass("assertion:AddWsAddressing"));
 
         GatewayFeatureSet validationGateway =
         fsr("set:Validation:Gateway", "SecureSpan Gateway message validation and transformation",
