@@ -6,18 +6,18 @@
 
 package com.l7tech.policy.assertion;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Data for an assertion that verifies whether a response matches a specified
@@ -37,17 +37,12 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
     protected String xmlMsgSrc;
 
     public ResponseXpathAssertion() {
-        super();
-        initDefaultXpath();
+        this(compatOrigDefaultXpathValue());
     }
 
     public ResponseXpathAssertion( XpathExpression xpath ) {
         super();
         setXpathExpression( xpath );
-    }
-
-    private void initDefaultXpath() {
-        setXpathExpression(new XpathExpression( SoapConstants.SOAP_ENVELOPE_XPATH, createDefaultNamespaceMap()));
     }
 
     protected String defaultVariablePrefix() {
@@ -120,6 +115,7 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Evaluate Response XPath Properties");
 
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<ResponseXpathAssertion>(ResponseXpathAssertion.class));
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put( AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"} );

@@ -4,12 +4,14 @@
 package com.l7tech.message;
 
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoftwareFallbackException;
 import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -27,6 +29,8 @@ import java.util.logging.Logger;
 class SoapFacet extends MessageFacet {
     private SoapFaultDetail faultDetail = null;
     private SoapInfo soapInfo;
+    private String envelopeNs;
+    private SoapVersion soapVersion;
 
     private static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
     private static final QName[] EMPTY_QNAMES = new QName[0];
@@ -106,12 +110,12 @@ class SoapFacet extends MessageFacet {
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
                 payloadNs = SoapUtil.getPayloadNames(document);
-                return new SoapInfo(true, soapAction, payloadNs != null ? payloadNs : EMPTY_QNAMES, hasSecurityNode);
+                return new SoapInfo(true, soapAction, payloadNs != null ? payloadNs : EMPTY_QNAMES, hasSecurityNode, document.getDocumentElement().getNamespaceURI());
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
             }
         } else {
-            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false);
+            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false, null);
         }
     }
 
@@ -145,6 +149,22 @@ class SoapFacet extends MessageFacet {
                 public void invalidate() {
                     // TODO invalidate faultDetail too? It's not connected to the message content anyway
                     soapInfo = null;
+                    soapVersion = null;
+                    envelopeNs = null;
+                }
+
+                @Override
+                public SoapVersion getSoapVersion() throws IOException, SAXException {
+                    if (soapVersion == null)
+                        lookupEnvUriAndVersion();
+                    return soapVersion;
+                }
+
+                @Override
+                public String getSoapEnvelopeUri() throws IOException, SAXException {
+                    if (envelopeNs == null)
+                        lookupEnvUriAndVersion();
+                    return envelopeNs;
                 }
 
                 /**
@@ -164,6 +184,18 @@ class SoapFacet extends MessageFacet {
             };
         }
         return super.getKnob(c);
+    }
+
+    private void lookupEnvUriAndVersion() throws IOException, SAXException {
+        XmlKnob xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
+        if (xmlKnob == null) {
+            // can't happen
+            throw new IllegalStateException("SoapKnob present on message with no XmlKnob");
+        }
+        ElementCursor cursor = xmlKnob.getElementCursor().duplicate();
+        cursor.moveToDocumentElement();
+        envelopeNs = cursor.getNamespaceUri();
+        soapVersion = SoapVersion.namespaceToSoapVersion(envelopeNs);
     }
 
     private SoapInfo getSoapInfo() throws NoSuchPartException, IOException, SAXException {

@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.Functions;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.xpath.XpathExpression;
 
 import java.util.*;
 
@@ -46,6 +48,11 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
     @Override
     public String getDefaultXpathExpressionString() {
         return "//ElementsThatShouldHaveBeenSigned";
+    }
+
+    @Override
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+        return null;
     }
 
     public String getVariablePrefix() {

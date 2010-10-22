@@ -19,7 +19,7 @@ import com.l7tech.objectmodel.EntityHeader;
  */
 public class WssEncryptElement extends XmlSecurityAssertionBase implements RequestIdentityTargetable, UsesEntities {
     public WssEncryptElement() {
-        this(XpathExpression.soapBodyXpathValue());
+        this(compatOrigDefaultXpathValue());
     }
 
     public WssEncryptElement(final XpathExpression xpath) {
@@ -114,6 +114,7 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Encrypt Element Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<WssEncryptElement>(WssEncryptElement.class));
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssConfidentiality");
         meta.put(AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"} );

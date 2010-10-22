@@ -1,39 +1,20 @@
 package com.l7tech.console.tree.policy.advice;
 
-import org.junit.Test;
-import org.junit.Assert;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.CommentAssertion;
-import com.l7tech.policy.assertion.SetVariableAssertion;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
-import com.l7tech.policy.assertion.HtmlFormDataAssertion;
-import com.l7tech.policy.assertion.HttpFormPost;
-import com.l7tech.policy.assertion.WsiSamlAssertion;
-import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
-import com.l7tech.policy.assertion.RemoteIpRange;
-import com.l7tech.policy.assertion.WsiBspAssertion;
-import com.l7tech.policy.assertion.TimeRange;
-import com.l7tech.policy.assertion.SimpleXpathAssertion;
-import com.l7tech.policy.assertion.InverseHttpFormPost;
-import com.l7tech.policy.assertion.AuditDetailAssertion;
-import com.l7tech.policy.assertion.RequestSizeLimit;
-import com.l7tech.policy.assertion.Operation;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.policy.assertion.Regex;
-import com.l7tech.policy.assertion.OversizedTextAssertion;
-import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  *
@@ -69,7 +50,7 @@ public class AdvicesTest {
             WsiSamlAssertion.class,
             HtmlFormDataAssertion.class,
             CodeInjectionProtectionAssertion.class,
-            SimpleXpathAssertion.class,
+            XpathBasedAssertion.class,
             MessageTargetable.class
             );
 

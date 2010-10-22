@@ -10,10 +10,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -553,8 +550,8 @@ public class PolicyService extends ApplicationObjectSupport {
         }
         if (!disableSecurityChecks) {
             final OneOrMoreAssertion signedBody = new OneOrMoreAssertion();
-            signedBody.addChild( new RequireWssSignedElement() );
-            signedBody.addChild( new RequireWssSignedElement( XpathExpression.soap12BodyXpathValue() ) );
+            signedBody.addChild( new RequireWssSignedElement( new XpathExpression("/s:Envelope/s:Body", "s", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE) ) );
+            signedBody.addChild( new RequireWssSignedElement( new XpathExpression("/s:Envelope/s:Body", "s", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE) ) );
             messageAll.addChild( signedBody );
             if ( fullSecurityChecks ) {
                 messageAll.addChild( new RequireWssSignedElement( new XpathExpression("/*[local-name()='Envelope']/*[local-name()='Header']/*[namespace-uri()='"+SoapUtil.L7_MESSAGEID_NAMESPACE+"']") ) );

@@ -2,24 +2,19 @@ package com.l7tech.external.assertions.mtom.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  *
@@ -69,7 +64,7 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
                                      final Functions.UnaryVoid<XpathExpression> callback ) {
         final XpathBasedAssertion holder = targetMessageType==TargetMessageType.RESPONSE ?
                 new ResponseXpathBasedAssertion() : new XpathBasedAssertion(){};
-        holder.setXpathExpression( xpathExpression != null ? xpathExpression : XpathExpression.soapBodyXpathValue() );
+        holder.setXpathExpression( xpathExpression != null ? xpathExpression : holder.createDefaultXpathExpression(true, null) );
         final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(parent, holder);
         JDialog dlg = ape.getDialog();
         dlg.setTitle(titlePrefix + " - XPath Expression");
@@ -82,7 +77,7 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
                 if (!ape.isConfirmed())
                     return;
                 if (callback != null)
-                    callback.call( pruneNamespaces(holder.getXpathExpression(), ape.getRequiredNamespaces()) );
+                    callback.call( pruneNamespaces(holder.getXpathExpression(), new HashMap<String,String>()) );
             }
         });
     }

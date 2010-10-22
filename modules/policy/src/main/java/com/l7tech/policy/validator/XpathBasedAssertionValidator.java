@@ -10,12 +10,15 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.NamespaceContext;
 import org.jaxen.UnresolvableException;
 import org.jaxen.VariableContext;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
 
+import java.text.ParseException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +34,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
     private static final String SOAP_NS_REMEDIAL_ACTION_CLASSNAME = "com.l7tech.console.action.XpathBasedAssertionSoapVersionMigrator";
 
     private final XpathBasedAssertion assertion;
+    private final Set<String> namespacePrefixesUsedByExpression;
     private String errString;
     private Throwable errThrowable;
 
@@ -40,6 +44,8 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
         if (assertion.getXpathExpression() != null)
             pattern = assertion.getXpathExpression().getExpression();
 
+        Set<String> usedPrefixes = null;
+
         if (pattern == null) {
             errString = "XPath pattern is missing";
             logger.info(errString);
@@ -47,6 +53,9 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
             try {
                 final Map namespaces = xpathBasedAssertion.namespaceMap();
                 DOMXPath xpath = new DOMXPath(pattern);
+
+                usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(pattern, true);
+
                 xpath.setFunctionContext(new XPathFunctionContext(false));
                 xpath.setNamespaceContext(new NamespaceContext(){
                     @Override
@@ -69,6 +78,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
                 errThrowable = e;
             }
         }
+        namespacePrefixesUsedByExpression = usedPrefixes;
     }
 
     @Override
@@ -78,7 +88,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
 
         SoapVersion soapVersion = pvc.getSoapVersion();
         if (soapVersion != null && soapVersion.getNamespaceUri() != null) {
-            SoapVersion unwantedSoapVersion = checkForUnwantedSoapVersion(assertion, soapVersion);
+            SoapVersion unwantedSoapVersion = checkForUnwantedSoapVersion(assertion, soapVersion, namespacePrefixesUsedByExpression);
             if (unwantedSoapVersion != null) {
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
                         String.format("This assertion contains an XPath that uses the %s envelope namespace URI, but the service is configured as using only %s.  The XPath will always fail.",
@@ -98,10 +108,23 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
      * @return null if this assertion does not appear to use any unexpected SOAP namespace URIs; otherwise, the first unexpected SOAP namespace URI used.
      */
     public static SoapVersion checkForUnwantedSoapVersion(XpathBasedAssertion assertion, SoapVersion expectedSoapVersion) {
+        return checkForUnwantedSoapVersion(assertion, expectedSoapVersion, null);
+    }
+
+    static SoapVersion checkForUnwantedSoapVersion(XpathBasedAssertion assertion, SoapVersion expectedSoapVersion, Set<String> usedPrefixes) {
         SoapVersion unwantedSoapVersion = null;
         XpathExpression xpath = assertion.getXpathExpression();
-        if (xpath != null) {
+        if (xpath != null && xpath.getExpression() != null) {
+            if (usedPrefixes == null) {
+                try {
+                    usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(xpath.getExpression(), true);
+                } catch (ParseException e) {
+                    usedPrefixes = Collections.emptySet();
+                }
+            }
+
             Map<String, String> nsmap = xpath.getNamespaces();
+            nsmap.keySet().retainAll(usedPrefixes);
             Set<String> valueSet = new HashSet<String>(nsmap.values());
 
             // Look for all SOAP namespace URIs other than the one the service is configured to use

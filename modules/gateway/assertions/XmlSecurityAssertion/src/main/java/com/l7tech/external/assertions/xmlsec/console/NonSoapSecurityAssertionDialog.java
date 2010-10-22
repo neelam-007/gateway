@@ -39,7 +39,9 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         editXpathButton.addActionListener(makeEditXpathAction());
         setXpathExpression(null);
         xpathExpressionLabel.setText("Element(s) to " + assertion.getVerb() + " XPath:");
-        defaultXpathExpression = assertion.getDefaultXpathExpression();
+
+        // Initial default is null (<Not Yet Set>); but the default we offer in the first opening of the "Config Xpath" dialog is the example Xpath
+        defaultXpathExpression = new XpathExpression(assertion.getDefaultXpathExpressionString(), assertion.getDefaultNamespaceMap());
         this.assertion = assertion;
     }
 
@@ -47,7 +49,8 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final XpathExpression oldAssertionXpath = assertion.getXpathExpression(); 
+                final XpathExpression oldAssertionXpath = assertion.getXpathExpression();
+                if (assertion.getXpathExpression() == null) assertion.setXpathExpression(defaultXpathExpression);
                 final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(NonSoapSecurityAssertionDialog.this, assertion);
                 JDialog dlg = ape.getDialog();
                 dlg.setTitle(getTitle() + " - XPath Expression");

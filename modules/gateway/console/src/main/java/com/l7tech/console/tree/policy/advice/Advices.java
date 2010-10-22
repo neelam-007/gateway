@@ -112,7 +112,7 @@ public class Advices {
                 put(WsiBspAssertion.class, ary(AddWsiBspAssertionAdvice.class));
                 put(WsiSamlAssertion.class, ary(AddWsiSamlAssertionAdvice.class));
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
-                put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
+                put(XpathBasedAssertion.class, ary(AddXPathAssertionAdvice.class));
                 put(MessageTargetable.class, ary(MessageTargetableAdvice.class));
             }};
 }

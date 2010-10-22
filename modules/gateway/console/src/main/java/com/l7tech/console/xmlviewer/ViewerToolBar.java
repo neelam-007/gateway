@@ -1,7 +1,8 @@
 package com.l7tech.console.xmlviewer;
 
-import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
+import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.util.Functions;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.dom4j.Element;
 
@@ -11,6 +12,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -25,9 +27,9 @@ public class ViewerToolBar extends JToolBar {
     private JTextField xpathField = null;
     private CollapseAllAction collapse = null;
     private ExpandAllAction expand = null;
-    private Map<String,String> namespaces;
+    private Functions.UnaryVoid<String> xpathBuiltListener = null;
 
-    public ViewerToolBar(ViewerProperties props, Viewer v) {
+    public ViewerToolBar(ViewerProperties props, Viewer v, final Functions.Nullary<Map<String, String>> namespaceMapFactory) {
         viewer = v;
         properties = props;
 
@@ -69,14 +71,29 @@ public class ViewerToolBar extends JToolBar {
 
                     if ( element != null ) {
                         final StringBuilder builder = new StringBuilder();
-                        buildPath(builder, namespaces, node.getElement());
+                        buildPath(builder, namespaceMapFactory == null ? new HashMap<String,String>() : namespaceMapFactory.call(), node.getElement());
                         xpathField.setText( builder.toString() );
                     } else {
                         xpathField.setText( null );
                     }
+                    if (xpathBuiltListener != null)
+                        xpathBuiltListener.call(xpathField.getText());
                 }
             }
         });
+    }
+
+    public Functions.UnaryVoid<String> getXpathBuiltListener() {
+        return xpathBuiltListener;
+    }
+
+    /**
+     * Set a single listener that will be notified when a new xpath expresion is built.
+     *
+     * @param xpathBuiltListener the new listener, or null.
+     */
+    public void setXpathBuiltListener(Functions.UnaryVoid<String> xpathBuiltListener) {
+        this.xpathBuiltListener = xpathBuiltListener;
     }
 
     /**
@@ -104,14 +121,6 @@ public class ViewerToolBar extends JToolBar {
      */
     public String getXPath() {
         return xpathField.getText();
-    }
-
-    public Map<String, String> getNamespaces() {
-        return namespaces;
-    }
-
-    public void setNamespaces( final Map<String, String> namespaces ) {
-        this.namespaces = namespaces;
     }
 
     private void buildPath( final StringBuilder builder,

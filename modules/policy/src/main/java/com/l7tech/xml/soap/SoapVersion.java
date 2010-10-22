@@ -10,21 +10,23 @@ import java.util.Set;
  * Represents a specific or unknown SOAP version.
  */
 public enum SoapVersion {
-    SOAP_1_1("SOAP 1.1", SOAPConstants.SOAP_1_1_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, 1001, "text/xml"),
-    SOAP_1_2("SOAP 1.2", SOAPConstants.SOAP_1_2_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, 1002, "application/soap+xml"),
-    UNKNOWN("unspecified", null, null, 0, null);
+    SOAP_1_1("SOAP 1.1", "1.1", SOAPConstants.SOAP_1_1_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, 1001, "text/xml"),
+    SOAP_1_2("SOAP 1.2", "1.2", SOAPConstants.SOAP_1_2_PROTOCOL, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, 1002, "application/soap+xml"),
+    UNKNOWN("unspecified", "", null, null, 0, null);
 
     private final String protocol;
     private final int rank;
     private final String namespaceUri;
     private final String label;
+    private final String versionNumber;
     private final String contentType;
 
-    private SoapVersion(final String label, final String protocol, final String namespaceUri, final int rank, final String contentType ) {
+    private SoapVersion(final String label, final String versionNumber, final String protocol, final String namespaceUri, final int rank, final String contentType ) {
         this.protocol = protocol;
         this.namespaceUri = namespaceUri;
         this.rank = rank;
         this.label = label;
+        this.versionNumber = versionNumber;
         this.contentType = contentType;
     }
 
@@ -71,6 +73,17 @@ public enum SoapVersion {
         return contentType;
     }
 
+    /**
+     * @return a version number string, such as "1.1", "1.2" or "".  Never null, but may be empty for {@link SoapVersion#UNKNOWN}.
+     */
+    public String getVersionNumber() {
+        return versionNumber;
+    }
+
+    /**
+     * @param namespace the namespace URI to look up.
+     * @return the SoapVersion that uses this namespace, or UNKNOWN if there was no match.
+     */
     public static SoapVersion namespaceToSoapVersion(String namespace) {
         if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(namespace)) {
             return SOAP_1_2;

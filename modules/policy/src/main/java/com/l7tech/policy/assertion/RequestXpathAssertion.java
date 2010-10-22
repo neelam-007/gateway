@@ -6,9 +6,8 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.SoapConstants;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.xml.xpath.XpathExpression;
 
 /**
  * Data for an assertion that verifies whether a request matches a specified
@@ -23,17 +22,12 @@ public class RequestXpathAssertion extends SimpleXpathAssertion {
     public static final String DEFAULT_VAR_PREFIX = "requestXpath";
 
     public RequestXpathAssertion() {
-        super();
-        initDefaultXpath();
+        this(compatOrigDefaultXpathValue());
     }
 
     public RequestXpathAssertion( XpathExpression xpath ) {
         super();
         setXpathExpression( xpath );
-    }
-
-    private void initDefaultXpath() {
-        setXpathExpression(new XpathExpression( SoapConstants.SOAP_ENVELOPE_XPATH, createDefaultNamespaceMap()));
     }
 
     protected String defaultVariablePrefix() {
@@ -63,6 +57,7 @@ public class RequestXpathAssertion extends SimpleXpathAssertion {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(AssertionMetadata.SHORT_NAME, "Evaluate Request XPath");
         meta.put(AssertionMetadata.DESCRIPTION, "The request must match a specified XPath pattern.");
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<RequestXpathAssertion>(RequestXpathAssertion.class));
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Evaluate Request XPath Properties");

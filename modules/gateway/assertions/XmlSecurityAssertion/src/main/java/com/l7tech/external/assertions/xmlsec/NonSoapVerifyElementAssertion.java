@@ -47,7 +47,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
 
     public NonSoapVerifyElementAssertion() {
         super(TargetMessageType.REQUEST, false);
-        setXpathExpression(getDefaultXpathExpression());
+        setXpathExpression(createDefaultXpathExpression(false, null));
     }
 
     public boolean isIgnoreKeyInfo() {

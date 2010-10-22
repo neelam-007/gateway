@@ -10,16 +10,14 @@ public class SoapConstants {
     public static final List<String> ENVELOPE_URIS;
     static {
         List<String> uris = new ArrayList<String>();
-        uris.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        uris.add(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        uris.add(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
         uris.add("http://www.w3.org/2001/06/soap-envelope");
         uris.add("http://www.w3.org/2001/09/soap-envelope");
-        uris.add("http://www.w3.org/2003/05/soap-envelope");
         uris.add("urn:schemas-xmlsoap-org:soap.v1");
         ENVELOPE_URIS = Collections.unmodifiableList( uris );
     }
 
-    public static final String SOAP_ENV_PREFIX = "soapenv";
-    public static final String SOAP_1_2_ENV_PREFIX = "s12";
     public static final String XMLNS = "xmlns";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";// Namespace constants
     public static final String SECURITY_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
@@ -182,20 +180,7 @@ public class SoapConstants {
     public static final String ROLE_VALUE_NONE = "http://www.w3.org/2003/05/soap-envelope/role/none";
     public static final String ROLE_VALUE_NEXT = "http://www.w3.org/2003/05/soap-envelope/role/next";
     public static final String ROLE_VALUE_ULTIMATE = "http://www.w3.org/2003/05/soap-envelope/role/ultimateReceiver";
-    /**
-     * soap envelope xpath '/soapenv:Envelope'
-     */
-    public static final String SOAP_ENVELOPE_XPATH = "/" + SOAP_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
-    public static final String SOAP_1_2_ENVELOPE_XPATH = "/" + SOAP_1_2_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
 
-    /**
-     * soap body xpath '/soapenv:Envelope/soapenv:Body'
-     */
-    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH + "/" + SOAP_ENV_PREFIX + ":Body";
-    /**
-     * soap header xpath '/soapenv:Envelope/soapenv:Header'
-     */
-    public static final String SOAP_HEADER_XPATH = SOAP_ENVELOPE_XPATH + "/" + SOAP_ENV_PREFIX + ":Header";
     public static final String C14N_EXCLUSIVE = "http://www.w3.org/2001/10/xml-exc-c14n#";
     public static final String C14N_EXCLUSIVEWC = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
 

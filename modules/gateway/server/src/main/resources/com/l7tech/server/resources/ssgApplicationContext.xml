@@ -561,6 +561,7 @@
                             <constructor-arg ref="auditorFactory"/>
                             <constructor-arg ref="serviceDocumentManager"/>
                         </bean>
+                        <bean class="com.l7tech.server.service.resolution.SoapVersionResolver"><constructor-arg ref="auditorFactory"/></bean>
                     </list>
                 </constructor-arg>
             </bean>

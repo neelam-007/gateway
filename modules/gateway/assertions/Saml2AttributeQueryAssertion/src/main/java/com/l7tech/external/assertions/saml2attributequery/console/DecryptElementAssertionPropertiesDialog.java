@@ -510,7 +510,7 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final NamespaceMapEditor nseditor = new NamespaceMapEditor(DecryptElementAssertionPropertiesDialog.this,
                         namespaces,
-                        requiredNamespaces);
+                        requiredNamespaces, null);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
                 DialogDisplayer.display(nseditor, new Runnable() {
@@ -708,7 +708,12 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument(msg);
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
-        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
+        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer, new Functions.Nullary<Map<String, String>>() {
+            @Override
+            public Map<String, String> call() {
+                return namespaces;
+            }
+        });
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);

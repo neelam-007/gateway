@@ -5,10 +5,8 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.InvalidXpathException;
 import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
-import static org.junit.Assert.*;
-
 import org.jaxen.saxpath.SAXPathException;
-import org.junit.*;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
 import javax.xml.soap.MessageFactory;
@@ -16,12 +14,10 @@ import javax.xml.soap.MimeHeaders;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.Collections;
+import java.text.ParseException;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -411,4 +407,35 @@ public class XpathUtilTest {
         String result = (String) evaluate( null, XpathUtil.literalExpression(value) );
         assertEquals( value, result );
     }
+
+    @Test
+    public void testGetNamespacesUsedByXpath() throws Exception {
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", false);
+        assertEquals(1, got.size());
+        assertTrue(got.contains("s"));
+    }
+
+    @Test
+    public void testGetNamespacesUsedByXpath_withQnameLiterals() throws Exception {
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\']", true);
+        assertEquals(2, got.size());
+        assertTrue(got.contains("s"));
+        assertTrue(got.contains("x"));
+    }
+
+    @Test
+    public void testGetNamespacesUsedByXpath_complex() throws Exception {
+        Set<String> got = XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\' and ack:myfunc()][@bloof = $vp:myvar]", true);
+        assertEquals(4, got.size());
+        assertTrue(got.contains("s"));
+        assertTrue(got.contains("x"));
+        assertTrue(got.contains("ack"));
+        assertTrue(got.contains("vp"));
+    }
+
+    @Test(expected = ParseException.class)
+    public void testGetNamespacesUsedByXpath_invalidXpath() throws Exception {
+        XpathUtil.getNamespacePrefixesUsedByXpath("/s:foo/s:bar[@blah=\'x:bleef\'", false);
+    }
+
 }

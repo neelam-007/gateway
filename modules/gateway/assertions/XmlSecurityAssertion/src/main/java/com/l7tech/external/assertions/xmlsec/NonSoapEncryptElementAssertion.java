@@ -4,6 +4,8 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.XencUtil;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.xpath.XpathExpression;
 
 /**
  * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -38,6 +40,11 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     @Override
     public String getDefaultXpathExpressionString() {
         return "//ElementsToEncrypt";
+    }
+
+    @Override
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+        return null;
     }
 
     @Override

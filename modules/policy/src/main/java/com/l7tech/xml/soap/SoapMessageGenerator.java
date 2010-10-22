@@ -40,10 +40,10 @@ public class SoapMessageGenerator {
 
     private static final String PREFIX_SCHEMA ="xsd";
     private static final String PREFIX_SCHEMA_INSTANCE ="xsi";
-    private static final String PREFIX_SOAP11 = "soapenv";
-    private static final String PREFIX_SOAP12 = "s12";
-    private static final String SOAP_1_1_TEMPLATE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Header/><soapenv:Body/></soapenv:Envelope>";
-    private static final String SOAP_1_2_TEMPLATE = "<s12:Envelope xmlns:s12=\"http://www.w3.org/2003/05/soap-envelope\"><s12:Header/><s12:Body/></s12:Envelope>";
+    private static final String PREFIX_SOAP11 = "s";
+    private static final String PREFIX_SOAP12 = "s";
+    public static final String SOAP_1_1_TEMPLATE = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Header/><s:Body/></s:Envelope>";
+    public static final String SOAP_1_2_TEMPLATE = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"><s:Header/><s:Body/></s:Envelope>";
 
     private MessageInputGenerator messageInputGenerator;
     private Wsdl.UrlGetter wsdlUrlGetter;

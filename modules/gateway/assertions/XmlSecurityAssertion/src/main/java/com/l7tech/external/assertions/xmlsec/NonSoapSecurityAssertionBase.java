@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.xmlsec;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import java.util.*;
@@ -68,15 +69,16 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
         return messageTargetableSupport.getTargetName();
     }
 
-    public XpathExpression getDefaultXpathExpression() {
-        return new XpathExpression(getDefaultXpathExpressionString(), getDefaultNamespaceMap());
-    }
-
     public Map<String, String> getDefaultNamespaceMap() {
         final HashMap<String, String> m = new HashMap<String, String>();
         m.put("xenc", "http://www.w3.org/2001/04/xmlenc#");
         m.put("ds", "http://www.w3.org/2000/09/xmldsig#");
         return m;
+    }
+
+    @Override
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+        return new XpathExpression(getDefaultXpathExpressionString(), getDefaultNamespaceMap());
     }
 
     public abstract String getDefaultXpathExpressionString();

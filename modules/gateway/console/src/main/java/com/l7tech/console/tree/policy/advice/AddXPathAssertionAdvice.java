@@ -1,37 +1,36 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SimpleXpathAssertion;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.util.SoapConstants;
-
-import java.util.HashMap;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.xml.soap.SoapVersion;
 
 /**
- * Things that happen when you drop an xpath assertion into a policy.
- * For non-soap services, the default path is "/" instead of soap envelope
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 28, 2007<br/>
+ * When an XPathBasedAssertion is added to a policy, check if its XpathExpression needs to be
+ * initialized with a default XPath expression.
  */
 public class AddXPathAssertionAdvice implements Advice {
     public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
-        if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SimpleXpathAssertion)) {
+        if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof XpathBasedAssertion)) {
             throw new IllegalArgumentException();
         }
-        SimpleXpathAssertion subject = (SimpleXpathAssertion)assertions[0];
-        if (pc.getService() != null && !pc.getService().isSoap()) {
-            // if this xpath has not been previously customized, then adjust default value
-            // see bzilla #3870
-            if ( SoapConstants.SOAP_ENVELOPE_XPATH.equals(subject.getXpathExpression().getExpression())) {
-                subject.setXpathExpression(new XpathExpression("/", new HashMap()));
-            }
+        XpathBasedAssertion subject = (XpathBasedAssertion)assertions[0];
+
+        if (subject.getXpathExpression() == null) {
+            // Assertion has not yet assigned a default XPath expression; initialize it now
+            Policy policy = pc.getPolicyFragment();
+            PublishedService service = pc.getService();
+            if (policy == null && service != null)
+                policy = service.getPolicy();
+
+            final boolean soap = policy != null && policy.isSoap();
+            final SoapVersion soapVersion = service == null ? null : service.getSoapVersion();
+            subject.setXpathExpression(subject.createDefaultXpathExpression(soap, soapVersion));
         }
+
         pc.proceed();
     }
 }

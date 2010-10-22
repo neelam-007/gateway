@@ -1,6 +1,7 @@
 package com.l7tech.xml.tarari;
 
 import com.l7tech.message.TarariMessageContextFactory;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -30,7 +31,7 @@ public class TarariXpathTest {
         gtc.compileAllXpaths();
 
         CompiledXpath xpFail = new XpathExpression("/thisIsSupposted/ToFail").compile();
-        CompiledXpath xpSucc = XpathExpression.soapBodyXpathValue().compile();
+        CompiledXpath xpSucc = XpathBasedAssertion.compatOrigDefaultXpathValue().compile();
 
         TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
         for (int i = 0; i < 1000; ++i) {

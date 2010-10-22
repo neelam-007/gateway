@@ -73,6 +73,8 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         NS_PREFIXES.put("http://www.w3.org/2001/XMLSchema", "xs");
     }
 
+    public static final String SOAP_ENV_PREFIX = "soapenv";
+
     NamespacePrefixMapper NAMESPACE_PREFIX_MAPPER = new NamespacePrefixMapper() {
         public String getPreferredPrefix(String namespaceUri, String suggestion, boolean requirePrefix) {
             if (NS_PREFIXES.containsKey(namespaceUri))
@@ -294,14 +296,14 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.newDocument();
 
-        Element envelope = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Envelope");
-        envelope.setAttribute(SoapUtil.XMLNS + ":" + SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        Element envelope = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Envelope");
+        envelope.setAttribute(SoapUtil.XMLNS + ":" + SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
         doc.appendChild(envelope);
 
-        Element header = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Header");
+        Element header = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Header");
         envelope.appendChild(header);
 
-        Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Body");
+        Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Body");
         envelope.appendChild(body);
 
         JAXBContext ctx = JAXBContext.newInstance("saml.v2.protocol:saml.v2.assertion:saml.support.ds", Saml2AttributeQuery.class.getClassLoader());
@@ -321,14 +323,14 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.newDocument();
 
-        Element envelope = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Envelope");
-        envelope.setAttribute(SoapUtil.XMLNS + ":" + SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        Element envelope = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Envelope");
+        envelope.setAttribute(SoapUtil.XMLNS + ":" + SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
         doc.appendChild(envelope);
 
-        Element header = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Header");
+        Element header = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Header");
         envelope.appendChild(header);
 
-        Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SoapUtil.SOAP_ENV_PREFIX + ":Body");
+        Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Body");
         envelope.appendChild(body);
 
         JAXBContext ctx = JAXBContext.newInstance("saml.v2.protocol:saml.v2.assertion:saml.support.ds", Saml2AttributeQuery.class.getClassLoader());

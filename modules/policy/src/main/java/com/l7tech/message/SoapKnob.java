@@ -3,9 +3,10 @@
  */
 package com.l7tech.message;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.SoapFaultDetail;
-import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.xml.soap.SoapVersion;
 import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
@@ -70,4 +71,22 @@ public interface SoapKnob extends MessageKnob {
      * Notify this SoapKnob that its caches need to be cleared
      */
     void invalidate();
+
+    /**
+     * @return the SOAP version of this message.  Never null, but may be SoapVersion.UNKNOWN if the SOAP envelope namespace URI
+     *         is not one of the standard URIs for SOAP 1.1 or SOAP 1.2.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if there is a problem reading from or writing to a stash
+     */
+    SoapVersion getSoapVersion() throws IOException, SAXException;
+
+    /**
+     * @return the namespace URI of the document element of this message.  Never null, and normally can never be empty
+     *         (unless the system is somehow configured to accept "" as a SOAP namespae URI).
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if there is a problem reading from or writing to a stash
+     */
+    String getSoapEnvelopeUri() throws IOException, SAXException;
 }

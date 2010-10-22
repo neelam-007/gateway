@@ -20,6 +20,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -74,6 +75,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String AUTH_USER_DN = "authenticateddn";
     private static final String AUTH_USER_DNS = "authenticateddns";
 
+    // NOTE: Variable names must be lower case
+    private static final String SOAP_ENVELOPE_URI = "soap.envelopens";
+    private static final String SOAP_VERSION = "soap.version";
+
     private static final Map<String, Functions.Unary<Object, TcpKnob>> TCP_FIELDS = Collections.unmodifiableMap(new HashMap<String, Functions.Unary<Object, TcpKnob>>() {{
         put(TCP_REMOTE_ADDRESS, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
         put(TCP_REMOTE_IP, Functions.propertyTransform(TcpKnob.class, "remoteAddress"));
@@ -123,6 +128,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = contentTypeSelector;
         } else if (lname.equals(MAINPART_CONTENT_TYPE)) {
             selector = mainPartContentTypeSelector;
+        } else if (SOAP_ENVELOPE_URI.equals(lname)) {
+            selector = soapEnvelopeSelector;
+        } else if (SOAP_VERSION.equals(lname)) {
+            selector = soapVersionSelector;
         } else if (lname.startsWith(PARTS_NAME)) {
             selector = partsSelector;
         } else if (lname.startsWith(WSS_PREFIX)) {
@@ -166,6 +175,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 "wss",
                 "tcp",
                 "ssl",
+                "soap",
                 SIZE_NAME,
                 CONTENT_TYPE,
                 AUTH_USER_PASSWORD,
@@ -542,6 +552,39 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             final HttpServletRequest httpServletRequest = hsRequestKnob.getHttpServletRequest();
             Object value = httpServletRequest.getAttribute(attributeName);
             return new Selection(value == null ? null : value.toString());
+        }
+    }
+
+    private static final MessageAttributeSelector soapVersionSelector = new SoapKnobSelector(true);
+    private static final MessageAttributeSelector soapEnvelopeSelector = new SoapKnobSelector(false);
+
+    private static class SoapKnobSelector implements MessageAttributeSelector {
+        private final boolean wantsVersion;
+
+        private SoapKnobSelector(boolean wantsVersion) {
+            this.wantsVersion = wantsVersion;
+        }
+
+        @Override
+        public Selection select(Message mess, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            try {
+                if (!mess.isSoap()) {
+                    handler.handleBadVariable("Message is not SOAP");
+                    return null;
+                }
+                SoapKnob soapKnob = mess.getSoapKnob();
+                return new Selection(wantsVersion ? soapKnob.getSoapVersion().getVersionNumber() : soapKnob.getSoapEnvelopeUri());
+
+            } catch (IOException e) {
+                handler.handleBadVariable("Unable to obtain SOAP info for message", e);
+                return null;
+            } catch (SAXException e) {
+                handler.handleBadVariable("Unable to obtain SOAP info for message", e);
+                return null;
+            } catch (MessageNotSoapException e) {
+                handler.handleBadVariable("Unable to obtain SOAP info for message", e);
+                return null;
+            }
         }
     }
 }

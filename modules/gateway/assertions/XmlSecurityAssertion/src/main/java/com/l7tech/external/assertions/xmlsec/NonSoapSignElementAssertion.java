@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
 import com.l7tech.policy.wsp.*;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.xpath.XpathExpression;
 
 import java.util.Arrays;
 
@@ -75,6 +77,11 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     @Override
     public String getDefaultXpathExpressionString() {
         return "//ElementsToSign";
+    }
+
+    @Override
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+        return null;
     }
 
     @Override

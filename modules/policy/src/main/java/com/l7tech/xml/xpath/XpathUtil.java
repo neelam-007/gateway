@@ -1,11 +1,13 @@
 package com.l7tech.xml.xpath;
 
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FullQName;
 import com.l7tech.util.SyspropUtil;
 import org.jaxen.JaxenException;
+import org.jaxen.JaxenHandler;
 import org.jaxen.NamespaceContext;
 import org.jaxen.SimpleNamespaceContext;
-import org.jaxen.JaxenHandler;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.saxpath.SAXPathException;
 import org.jaxen.saxpath.XPathHandler;
@@ -15,6 +17,7 @@ import org.w3c.dom.Element;
 
 import javax.xml.soap.*;
 import javax.xml.xpath.XPathExpressionException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,6 +85,57 @@ public class XpathUtil {
             return true;
         }
         return nodeUse[0];
+    }
+
+    /**
+     * Determine which namespace prefixes appear to be used by the specified XPath expression.
+     *
+     * @param expr the expression to examine.  Required.
+     * @param lookForQnameLiterals if true, we will include the prefix of anything that looks like it might be a qname literal
+     *                             that appears within a string literal.
+     * @return a set of prefixes which appear to be in use.  May be empty but never null.
+     * @throws ParseException if the expression does not parse.
+     */
+    public static Set<String> getNamespacePrefixesUsedByXpath(String expr, final boolean lookForQnameLiterals) throws ParseException {
+        final Set<String> ret = new HashSet<String>();
+        XPathHandler handler = new XPathHandlerAdapter() {
+            @Override
+            public void startFunction(String prefix, String localName) throws SAXPathException {
+                ret.add(prefix);
+            }
+
+            @Override
+            public void startNameStep(int axis, String prefix, String localName) throws SAXPathException {
+                ret.add(prefix);
+            }
+
+            @Override
+            public void variableReference(String prefix, String variableName) throws SAXPathException {
+                ret.add(prefix);
+            }
+
+            @Override
+            public void literal(String s) throws SAXPathException {
+                if (lookForQnameLiterals && DomUtils.isValidXmlQname(s)) {
+                    try {
+                        ret.add(FullQName.valueOf(s).getPrefix());
+                    } catch (ParseException e) {
+                        // can't happen
+                        throw new SAXPathException(e);
+                    }
+                }
+            }
+        };
+        XPathReader reader = new XPathReader();
+        reader.setXPathHandler(handler);
+        try {
+            reader.parse(expr);
+        } catch (SAXPathException e) {
+            throw (ParseException)new ParseException("Unable to parse XPath expression", 0).initCause(e);
+        }
+        ret.remove(null);
+        ret.remove("");
+        return ret;
     }
 
     /**

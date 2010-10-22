@@ -124,9 +124,10 @@ public class TarariMessageContextImpl implements TarariMessageContext {
                     }
                 }
             }
-            return new SoapInfo(true, soapAction, payloadNames.toArray(new QName[payloadNames.size()]), hasSecurityHeaders);
+            // TODO add high-performance fastxpath to extract SOAP envelope namespace URI, and then test it with Tarari
+            return new SoapInfo(true, soapAction, payloadNames.toArray(new QName[payloadNames.size()]), hasSecurityHeaders, null);
         } else {
-            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false);
+            return new SoapInfo(false, soapAction, EMPTY_QNAMES, false, null);
         }
     }
 

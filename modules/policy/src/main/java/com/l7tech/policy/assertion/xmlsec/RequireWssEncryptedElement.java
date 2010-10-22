@@ -19,7 +19,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
     public RequireWssEncryptedElement() {
-        this(XpathExpression.soapBodyXpathValue());
+        this(compatOrigDefaultXpathValue());
     }
 
     public RequireWssEncryptedElement(XpathExpression xpath) {
@@ -110,6 +110,7 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<RequireWssEncryptedElement>(RequireWssEncryptedElement.class));
         meta.put(CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality");
         meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/xmlencryption.gif");
         meta.put(USED_BY_CLIENT, Boolean.TRUE);

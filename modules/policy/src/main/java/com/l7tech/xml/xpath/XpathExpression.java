@@ -1,9 +1,7 @@
 package com.l7tech.xml.xpath;
 
-import com.l7tech.util.SoapConstants;
-
-import javax.xml.soap.SOAPConstants;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -21,26 +19,23 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     public XpathExpression() {}
 
     /**
-     * @return a standard xpath value that points to the soap body (standard for many xpath based assertions)
-     */
-    public static XpathExpression soapBodyXpathValue() {
-        return buildSoapBodyXpath( SOAPConstants.URI_NS_SOAP_ENVELOPE );
-    }
-
-    /**
-     * @return a standard xpath value that points to the soap body (standard for many xpath based assertions)
-     */
-    public static XpathExpression soap12BodyXpathValue() {
-        return buildSoapBodyXpath( SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE );
-    }
-
-    /**
      * Construct the XPath expression with no namespaces
      *
      * @param expression the XPath expression
      */
     public XpathExpression(String expression) {
         this(expression, null);
+    }
+
+    /**
+     * Convenience constructor for an XPath expression that up to one unique namespace prefix.  
+     *
+     * @param expression  an expression that may use up to one unique namespace prefix, or null.
+     * @param customPrefix   custom namespace prefix to declare, or null.
+     * @param customNsUri    custom namespace URI to declare, or null.
+     */
+    public XpathExpression(String expression, String customPrefix, String customNsUri) {
+        this(expression, makeMap(customPrefix, customNsUri));
     }
 
     /**
@@ -117,18 +112,23 @@ public class XpathExpression extends CompilableXpath implements Serializable {
         return result;
     }
 
+    /**
+     * Utility method to create a namespace Map for a single namespace.
+     *
+     * @param customPrefix  prefix, or null to return a null map.
+     * @param customNsUri   namespace URI, or null to return a null map.
+     * @return a new Map, or null if one of the arguments was null.
+     */
+    public static Map<String, String> makeMap(String customPrefix, String customNsUri) {
+        if (customNsUri == null || customPrefix == null)
+            return null;
+        Map<String, String> ret = new HashMap<String,String>();
+        ret.put(customPrefix, customNsUri);
+        return ret;
+    }
+
     //- PRIVATE
 
     private String expression;
-    private Map<String, String> namespaces = new LinkedHashMap<String, String>();    
-
-    private static XpathExpression buildSoapBodyXpath( final String soapNs ) {
-        XpathExpression xpath = new XpathExpression();
-        xpath.setExpression( SoapConstants.SOAP_BODY_XPATH);
-        Map<String, String> nss = new LinkedHashMap<String, String>();
-        nss.put( SoapConstants.SOAP_ENV_PREFIX, soapNs );
-        xpath.setNamespaces(nss);
-        return xpath;
-    }
-       
+    private Map<String, String> namespaces = new LinkedHashMap<String, String>();
 }

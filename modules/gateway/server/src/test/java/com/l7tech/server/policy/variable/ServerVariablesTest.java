@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -46,6 +47,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
@@ -761,6 +763,21 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${secpass.test2.name}", "");
         expandAndCheck(c, "${secpass.test2.description}", "");
         expandAndCheck(c, "${secpass.test2.plaintext}", "");
+    }
+    
+    @Test
+    public void testSoapKnobContextVariables() throws Exception {
+        final PolicyEnforcementContext c = context();
+        expandAndCheck(c, "${request.soap.version}", "");
+        expandAndCheck(c, "${request.soap.envElopeNs}", "");
+        expandAndCheck(c, "${response.soap.version}", "");
+        expandAndCheck(c, "${response.soap.envElopeNs}", "");
+        c.getRequest().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        c.getResponse().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_S12));
+        expandAndCheck(c, "${request.soap.version}", "1.1");
+        expandAndCheck(c, "${request.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        expandAndCheck(c, "${response.soap.version}", "1.2");
+        expandAndCheck(c, "${response.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
     }
 
     private PolicyEnforcementContext context(){

@@ -1,22 +1,23 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.table.TableModel;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
-import java.awt.event.*;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * A dialog that lets the administrator specify a list of namespaces with corresponding
@@ -39,9 +40,11 @@ public class NamespaceMapEditor extends JDialog {
     private JButton okButton;
     private JButton helpButton;
     private JButton cancelButton;
+    private JButton removeAllUnusedButton;
 
     private TreeMap<String,String> namespaceMap = new TreeMap<String,String>();
     private Map<String,String> forbiddenNamespaces;
+    private Functions.Nullary<Set<String>> unusedDeclarationsGetter;
     boolean cancelled = false;
 
     /**
@@ -49,21 +52,12 @@ public class NamespaceMapEditor extends JDialog {
      * @param owner the requesting dlg owner
      * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
      * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
+     * @param unusedDeclarationsGetter a callback that will lazily return a list of prefixes of all namespace declarations that do not appear to be required currently.
+     *                                 If a non-null unusedDeclarationsGetter is provided, the "Remove Unused" button will be shown.
      */
-    public NamespaceMapEditor(Dialog owner, Map<String, String> predefinedNamespaces, Map<String, String> forcedNamespaces) {
-        super(owner, true);
-        initialize(predefinedNamespaces, forcedNamespaces);
-    }
-
-    /**
-     * Construct a dialog that lets the user edit a map of namespace/prefixes
-     * @param owner the requesting frame owner
-     * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
-     * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
-     */
-    public NamespaceMapEditor(Frame owner, Map<String, String> predefinedNamespaces, Map<String, String> forcedNamespaces) {
-        super(owner, true);
-        initialize(predefinedNamespaces, forcedNamespaces);
+    public NamespaceMapEditor(Window owner, Map<String, String> predefinedNamespaces, Map<String, String> forcedNamespaces, Functions.Nullary<Set<String>> unusedDeclarationsGetter) {
+        super(owner, ModalityType.DOCUMENT_MODAL);
+        initialize(predefinedNamespaces, forcedNamespaces, unusedDeclarationsGetter);
     }
 
     /**
@@ -74,7 +68,9 @@ public class NamespaceMapEditor extends JDialog {
         return new HashMap<String, String>(namespaceMap);
     }
 
-    private void initialize(Map<String, String> predefinedNamespaces, Map<String, String> forcedNamespaces) {
+    private void initialize(Map<String, String> predefinedNamespaces, Map<String, String> forcedNamespaces, Functions.Nullary<Set<String>> unusedDeclarationsGetter) {
+        this.unusedDeclarationsGetter = unusedDeclarationsGetter;
+        removeAllUnusedButton.setVisible(unusedDeclarationsGetter != null);
         if (predefinedNamespaces != null) {
             namespaceMap.putAll(predefinedNamespaces);
         }
@@ -115,6 +111,7 @@ public class NamespaceMapEditor extends JDialog {
             }
         };
         namespacesTable.setModel(model);
+        namespacesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         // render rows that cannot be edited with different font from ones that can be removed
         if (forbiddenNamespaces != null) {
@@ -174,6 +171,13 @@ public class NamespaceMapEditor extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 remove();
+            }
+        });
+
+        removeAllUnusedButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                removeAllUnused();
             }
         });
 
@@ -335,14 +339,28 @@ public class NamespaceMapEditor extends JDialog {
             namespaceMap.remove(namespacesTable.getModel().getValueAt(selectedRow, 0));
             ((AbstractTableModel) namespacesTable.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
         }
-        if ((selectedRow - 1) >= 0) {
-            --selectedRow;
-        } else {
-            if (namespacesTable.getModel().getRowCount() > 0) selectedRow = 0;
-            else selectedRow = -1;
+        selectAsCloseAsPossibleToRowNumber(selectedRow - 1);
+    }
+
+    private void removeAllUnused() {
+        int selectedRow = namespacesTable.getSelectedRow();
+
+        Set<String> unusedPrefixes = unusedDeclarationsGetter.call();
+        for (String unusedPrefix : unusedPrefixes) {
+            namespaceMap.remove(unusedPrefix);
         }
-        if (selectedRow >= 0) {
-            namespacesTable.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
+        ((AbstractTableModel)namespacesTable.getModel()).fireTableDataChanged();
+
+        selectAsCloseAsPossibleToRowNumber(selectedRow);
+    }
+
+    private void selectAsCloseAsPossibleToRowNumber(int row) {
+        if (row >= namespacesTable.getModel().getRowCount())
+            row = namespacesTable.getModel().getRowCount() - 1;
+        if (row < 0) {
+            namespacesTable.getSelectionModel().clearSelection();
+        } else {
+            namespacesTable.getSelectionModel().setSelectionInterval(row, row);
         }
         enableRemoveBasedOnSelection();
     }
@@ -370,7 +388,7 @@ public class NamespaceMapEditor extends JDialog {
         Map<String, String> forbiddenNamespaces = new HashMap<String, String>();
         forbiddenNamespaces.put("soap","http://schemas.xmlsoap.org/soap/envelope/");
         forbiddenNamespaces.put("targetNamespace", "http://warehouse.acme.com/ws");
-        NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, initialValues, forbiddenNamespaces);
+        NamespaceMapEditor blah = new NamespaceMapEditor(null, initialValues, forbiddenNamespaces, null);
         blah.pack();
         blah.setVisible(true);
         System.exit(0);

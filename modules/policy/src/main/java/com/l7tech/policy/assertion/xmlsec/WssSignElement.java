@@ -21,7 +21,7 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     //- PUBLIC
 
     public WssSignElement() {
-        this(XpathExpression.soapBodyXpathValue());
+        this(compatOrigDefaultXpathValue());
     }
 
     public WssSignElement(XpathExpression xpath) {
@@ -116,6 +116,7 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
         meta.put(PROPERTIES_ACTION_NAME, "Sign Element Properties");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<WssSignElement>(WssSignElement.class));
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity");
         meta.put(CLIENT_ASSERTION_TARGETS, new String[]{"response"});

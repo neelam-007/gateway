@@ -1126,8 +1126,8 @@ public class Wsdl implements Serializable {
         }
 
         if (!soapenv) {
-            if (result.get( SoapConstants.SOAP_ENV_PREFIX) == null)
-                result.put( SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
+            if (result.get( "s") == null)
+                result.put( "s", SOAPConstants.URI_NS_SOAP_ENVELOPE);
             else if (!result.containsValue(SOAPConstants.URI_NS_SOAP_ENVELOPE))
                 result.put(TEMP + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         }

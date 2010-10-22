@@ -167,7 +167,6 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         checkLocked();
         _wsdlXml = wsdlXml;
         _parsedWsdl.set(null);
-        _soapVersion = null;
     }
 
     private static SoapVersion guessSoapVersionFromWsdl(Wsdl wsdl) {

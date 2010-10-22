@@ -22,7 +22,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
 
     public NonSoapDecryptElementAssertion() {
         super(TargetMessageType.REQUEST, true);
-        setXpathExpression(getDefaultXpathExpression());
+        setXpathExpression(createDefaultXpathExpression(false, null));
     }
 
     public String getVariablePrefix() {

@@ -19,13 +19,15 @@ public class SoapInfo {
      * @param soapAction the SOAPAction value from the transport layer, if any.  May be null.
      * @param payloadNsUris  list of payload namespace URIs.  May be empty, but must not be null.  Must not contain nulls or empty strings.
      * @param hasSecurityNode true if this message is soap and contains at least one wsse:Security soap header.
+     * @param envelopeNamespaceUri the envelope namespace URI, or null if this information is not known (or the message isn't SOAP).
      */
-    public SoapInfo(boolean soap, String soapAction, QName[] payloadNsUris, boolean hasSecurityNode) {
+    public SoapInfo(boolean soap, String soapAction, QName[] payloadNsUris, boolean hasSecurityNode, String envelopeNamespaceUri) {
         if (payloadNsUris == null) throw new NullPointerException("payloadNsUris is required");
         this.soap = soap;
         this.soapAction = soapAction;
         this.payloadNames = payloadNsUris;
         this.hasSecurityNode = hasSecurityNode;
+        this.envelopeNamespaceUri = envelopeNamespaceUri;
     }
 
     public boolean isSoap() {
@@ -45,8 +47,13 @@ public class SoapInfo {
         return soapAction;
     }
 
+    public String getEnvelopeNamespaceUri() {
+        return envelopeNamespaceUri;
+    }
+
     final String soapAction;
     final boolean soap;
     final QName[] payloadNames;
     final boolean hasSecurityNode;
+    final String envelopeNamespaceUri;
 }

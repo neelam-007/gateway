@@ -168,7 +168,7 @@ public class WspUpgradeUtilFrom21 {
                 if (expath.getNamespaces() != null)
                     seenNamespaceMap = expath.getNamespaces();
 
-                boolean expathIsSoapenv = SoapConstants.SOAP_ENVELOPE_XPATH.equals(expath.getExpression());
+                boolean expathIsSoapenv = "/soapenv:Envelope".equals(expath.getExpression());
                 if (expathIsSoapenv) {
                     if (pxref.target == null)
                         isCredentialSource = true;
@@ -192,7 +192,7 @@ public class WspUpgradeUtilFrom21 {
                         // Bug #1310: Head off attempts to encrypt the entire envelope.
                         // In version 2.1, sign+encrypt /soapenv:Envelope actually
                         // meant to encrypt the Body and sign the Envelope.
-                        elementEncryptionAss.setXpathExpression(new XpathExpression( SoapConstants.SOAP_BODY_XPATH,
+                        elementEncryptionAss.setXpathExpression(new XpathExpression("/soapenv:Envelope/soapenv:Body",
                                                                                     expath.getNamespaces()));
                     } else
                         elementEncryptionAss.setXpathExpression(expath);

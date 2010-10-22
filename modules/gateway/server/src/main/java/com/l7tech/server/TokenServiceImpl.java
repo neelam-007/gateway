@@ -359,8 +359,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             msgLvlBranch.addChild( RequireWssTimestamp.newInstance() );
         }
         OneOrMoreAssertion signedBody = new OneOrMoreAssertion();
-        signedBody.addChild(new RequireWssSignedElement());
-        signedBody.addChild(new RequireWssSignedElement( XpathExpression.soap12BodyXpathValue() ));
+        signedBody.addChild(new RequireWssSignedElement( new XpathExpression("/s:Envelope/s:Body", "s", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE) ));
+        signedBody.addChild(new RequireWssSignedElement( new XpathExpression("/s:Envelope/s:Body", "s", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE) ));
         msgLvlBranch.addChild(signedBody);
 
         AllAssertion sslBranch = new AllAssertion();

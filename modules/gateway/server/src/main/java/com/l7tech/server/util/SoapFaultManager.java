@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -17,33 +16,28 @@ import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.policy.assertion.ServerAssertionUtils;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Config;
-import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.security.xml.decorator.DecoratorException;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.xml.SecurityActor;
-import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityContextToken;
-import com.l7tech.security.token.EncryptedKey;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.xml.SecurityActor;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.*;
+import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -56,14 +50,14 @@ import org.xml.sax.SAXException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -505,16 +499,14 @@ public class SoapFaultManager implements ApplicationContextAware {
         try {
             final Message request = pec.getRequest();
             if (request.isSoap()) {
-                final XmlKnob xmlKnob = request.getXmlKnob();
-                final ElementCursor cursor = xmlKnob.getElementCursor();
-                cursor.moveToDocumentElement();
-                String docNs = cursor.getNamespaceUri();
-                return SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(docNs);
+                return SoapVersion.SOAP_1_2.equals(request.getSoapKnob().getSoapVersion());
             }
             // Fall through and guess based on service
         } catch (IOException e) {
             // Fall through and guess based on service
         } catch (SAXException e) {
+            // Fall through and guess based on service
+        } catch (MessageNotSoapException e) {
             // Fall through and guess based on service
         }
 

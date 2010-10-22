@@ -36,7 +36,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public static final String VAR_TOKEN_ATTRIBUTES = "token.attributes";
 
     public RequireWssSignedElement() {
-        this(XpathExpression.soapBodyXpathValue());
+        this(compatOrigDefaultXpathValue());
     }
 
     public RequireWssSignedElement(XpathExpression xpath) {
@@ -163,6 +163,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Signed Element Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new XpathBasedAssertionFactory<RequireWssSignedElement>(RequireWssSignedElement.class));
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssSignedElement>(){
             @Override

@@ -39,7 +39,6 @@ import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.SupportedSignatureMethods;
@@ -48,6 +47,7 @@ import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
 import org.dom4j.Document;
@@ -55,7 +55,9 @@ import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.saxpath.SAXPathException;
-import org.w3c.dom.*;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -105,7 +107,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private SoapMessageGenerator.Message[] soapMessages;
     private String blankMessage = "<empty />";
     private Map<String, String> namespaces = new HashMap<String, String>();
-    private Map<String, String> requiredNamespaces = new HashMap<String, String>();
+    private Map<String, String> allOperationNamespaces = new HashMap<String, String>();
     private Viewer messageViewer;
     private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
@@ -186,9 +188,19 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
     };
 
-    private static final String DEFAULT_SOAP_MESSAGE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org" +
-            "/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/" +
-            "XMLSchema-instance\"><soapenv:Header></soapenv:Header><soapenv:Body></soapenv:Body></soapenv:Envelope>";
+    // It is OK to silently redeclare a SOAP 1.1 prefix as SOAP 1.2 and vice versa when automatically generating an XPath
+    // in response to a click on an element within a sample message.
+    private static final Map<String, Set<String>> SUBSTITUTABLE_NAMESPACES;
+    static {
+        Set<String> soaps = new HashSet<String>();
+        soaps.add(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        soaps.add(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        soaps = Collections.unmodifiableSet(soaps);
+        Map<String, Set<String>> subs = new HashMap<String, Set<String>>();
+        subs.put(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, soaps);
+        subs.put(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, soaps);
+        SUBSTITUTABLE_NAMESPACES = Collections.unmodifiableMap(subs);
+    }
 
     /**
      * @param owner this panel owner
@@ -226,10 +238,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         this.assertion = assertion;
     }
 
-    public Map<String,String> getRequiredNamespaces() {
-        return Collections.unmodifiableMap( requiredNamespaces );
-    }
-
     @Override
     public boolean isConfirmed() {
         return wasOk;
@@ -250,10 +258,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         this.assertion = assertion;
         if (assertion.getXpathExpression() != null) {
-            //noinspection unchecked
-            namespaces = assertion.getXpathExpression().getNamespaces();
-        } else {
-            namespaces = new HashMap<String,String>();
+            final Map<String, String> nsmap = assertion.getXpathExpression().getNamespaces();
+            if (nsmap != null)
+                namespaces.putAll(nsmap);
         }
         isEncryption = assertion instanceof RequireWssEncryptedElement ||
                 assertion instanceof WssEncryptElement;
@@ -313,11 +320,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                     } else {
                         soapMessages = sg.generateResponses(serviceWsdl);
                     }
-                    if (soapMessages.length > 0)
-                        initializeBlankMessage(soapMessages[0]);
-                    for (SoapMessageGenerator.Message soapRequest : soapMessages) {
-                        //noinspection unchecked
-                        requiredNamespaces.putAll(XpathUtil.getNamespaces(soapRequest.getSOAPMessage()));
+                    if (soapMessages.length > 0) {
+                        // Try to find a message that matches the service's SOAP version for the default
+                        SoapVersion soapVersion = serviceNode.getEntity().getSoapVersion();
+                        if (soapVersion != null && soapVersion.getNamespaceUri() != null) {
+                            for (SoapMessageGenerator.Message soapMessage : soapMessages) {
+                                if (soapVersion.getNamespaceUri().equals(soapMessage.getSOAPMessage().getSOAPPart().getEnvelope().getNamespaceURI())) {
+                                    initializeBlankMessage(soapMessage);
+                                    allOperationNamespaces.putAll(XpathUtil.getNamespaces(soapMessage.getSOAPMessage()));
+                                    break;
+                                }
+                            }
+                        } else {
+                            initializeBlankMessage(soapMessages[0]);
+                            allOperationNamespaces.putAll(XpathUtil.getNamespaces(soapMessages[0].getSOAPMessage()));
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -328,21 +345,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 // policyNode is gurranteed not to be null, since it's been set up in the method construct(...).
                 Policy policy = policyNode.getPolicy();
                 if (policy.isSoap()) {
-                    blankMessage = DEFAULT_SOAP_MESSAGE;
+                    blankMessage = SoapMessageGenerator.SOAP_1_1_TEMPLATE;
                 }
             } catch (FindException e) {
                 throw new RuntimeException("Couldn't find the policy", e);
-            }
-        }
-
-        requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
-        requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
-        requiredNamespaces.put(SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
-        requiredNamespaces.put(SoapConstants.SOAP_1_2_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-
-        for ( String prefix : requiredNamespaces.keySet() ) {
-            if ( !namespaces.containsKey(prefix) ) {
-                namespaces.put( prefix, requiredNamespaces.get(prefix) );
             }
         }
 
@@ -353,7 +359,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         if (assertion.getXpathExpression() != null) {
             initialvalue = assertion.getXpathExpression().getExpression();
         }
-        messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
         messageViewerToolBar.getxpathField().setText(initialvalue);
 
         populateSampleMessages(null, 0);
@@ -574,7 +579,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 final NamespaceMapEditor namespaceMapEditor = new NamespaceMapEditor(
                         XpathBasedAssertionPropertiesDialog.this,
                         namespaces,
-                        Collections.unmodifiableMap(new HashMap<String,String>(requiredNamespaces)));
+                        null,
+                        new Functions.Nullary<Set<String>>() {
+                            @Override
+                            public Set<String> call() {
+                                return findUnusedDeclarations(namespaces);
+                            }
+                        });
                 namespaceMapEditor.pack();
                 Utilities.centerOnScreen(namespaceMapEditor);
                 DialogDisplayer.display(namespaceMapEditor, new Runnable() {
@@ -585,7 +596,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             namespaces = newMap;
 
                             // update feedback for new namespaces
-                            messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
                             JTextField xpathTextField = messageViewerToolBar.getxpathField();
                             xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
                         }
@@ -1029,7 +1039,28 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument(msg);
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false, "Copy Sample Message");
-        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
+        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer, new Functions.Nullary<Map<String, String>>() {
+            @Override
+            public Map<String, String> call() {
+                return getNamespacesWithOperationNamespaces();
+            }
+        });
+        messageViewerToolBar.setXpathBuiltListener(new Functions.UnaryVoid<String>() {
+            @Override
+            public void call(String newExpression) {
+                // A node has been clicked on to generate a sample XPath.
+                // We'll take this as permission to commit any pending automatically-collected namespace declarations.
+                // If possible, we'll try to add only the new declarations that ended up being used by the generated XPath.
+                Map<String,String> toAdd = new HashMap<String,String>(allOperationNamespaces);
+                try {
+                    Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(newExpression, true);
+                    toAdd.keySet().retainAll(usedPrefixes);
+                } catch (ParseException e) {
+                    // Fallthrough and just add them all, to be safe
+                }
+                namespaces.putAll(toAdd);
+            }
+        });
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
@@ -1139,6 +1170,29 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     };
 
     /**
+     * Find prefixes of namespace declarations which do not appear to be visibly used by the current xpath expression.
+     *
+     * @param namespaces the namespace map to prune.
+     * @return a set of prefixes that do not appear to be in use in the current expression.  Never null.  May be empty
+     *         if the expression is not currently parseable.
+     */
+    private Set<String> findUnusedDeclarations(Map<String, String> namespaces) {
+        JTextField xpathTextField = messageViewerToolBar.getxpathField();
+        String xpath = xpathTextField.getText();
+
+        try {
+            Set<String> used = XpathUtil.getNamespacePrefixesUsedByXpath(xpath, true);
+            Set<String> declared = new HashSet<String>(namespaces.keySet());
+            declared.removeAll(used);
+            return declared;
+
+        } catch (ParseException e) {
+            log.log(Level.INFO, "Unable to parse expression: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return Collections.emptySet();
+        }
+    }
+
+    /**
      * Display soap message into the message viewer
      *
      * @throws RuntimeException wrapping the originasl exception
@@ -1166,21 +1220,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         try {
             org.w3c.dom.Document doc;
             try {
+                allOperationNamespaces.clear();
                 doc = XmlUtil.stringToDocument(soapMessage);
                 Map<String,String> docns = DomUtils.findAllNamespaces(doc.getDocumentElement());
                 for ( final Map.Entry<String,String> prefixNSEntry : docns.entrySet() ) {
-                    final String prefix = prefixNSEntry.getKey();
+                    String prefix = prefixNSEntry.getKey();
                     final String uri = prefixNSEntry.getValue();
-                    if (!namespaces.containsValue(uri)) {
-                        if ( !namespaces.containsKey(prefix)) {
-                            namespaces.put(prefix, uri);
-                        } else {
-                            for ( int i=0; i<1000; i++ ) {
-                                String generatedPrefix = prefix + i;
-                                if ( !namespaces.containsKey(generatedPrefix) ) {
-                                    namespaces.put(generatedPrefix, uri);
-                                    break;
-                                }
+                    prefix = getPreferredPrefixForNsUri(uri, prefix);
+                    if ( !namespaces.containsKey(prefix) || (!allOperationNamespaces.containsKey(prefix) && isSubstitutable(uri, namespaces.get(prefix)))) {
+                        allOperationNamespaces.put(prefix, uri);
+                    } else {
+                        for ( int i=0; i<1000; i++ ) {
+                            String generatedPrefix = prefix + i;
+                            if ( !namespaces.containsKey(generatedPrefix) ) {
+                                allOperationNamespaces.put(generatedPrefix, uri);
+                                break;
                             }
                         }
                     }
@@ -1188,13 +1242,31 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             } catch (Exception e) {
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
-            messageViewerToolBar.setNamespaces(Collections.unmodifiableMap( namespaces ));
             JTextField xpathTextField = messageViewerToolBar.getxpathField();
             xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
             exchangerDocument.load(soapMessage);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Check if it is OK to automatically substitute one NS URI for another if they both want to use the same prefix.
+     *
+     * @param uri the URI we want to add to the namespace map at its preferred prefix.
+     * @param uri2  the URI of the namespace that is already present in the map under the prefix we want to use.
+     * @return true iff. it is OK to just replace uri with uri2 instead of declaring a new entry.
+     */
+    private boolean isSubstitutable(String uri, String uri2) {
+        Set<String> subs = SUBSTITUTABLE_NAMESPACES.get(uri);
+        return subs != null && subs.contains(uri2);
+    }
+
+    private String getPreferredPrefixForNsUri(String uri, String origPrefix) {
+        return SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE.equals(uri) ||
+               SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(uri)
+                        ? "s"
+                        : origPrefix;
     }
 
     private SoapMessageGenerator.Message forOperation(BindingOperation bop) {
@@ -1219,39 +1291,13 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         @Override
         public void textEntryPaused(JTextComponent component, long msecs) {
             final JTextField xpathField = (JTextField)component;
-            XpathFeedBack feedBack = getFeedBackMessage(namespaces, xpathField);
+            XpathFeedBack feedBack = getFeedBackMessage(getNamespacesWithOperationNamespaces(), xpathField);
             processFeedBack(feedBack, xpathField);
         }
 
         @Override
         public void textEntryResumed(JTextComponent component) {
-//                final JTextField xpathField = (JTextField)component;
-//                XpathFeedBack feedBack = getFeedBackMessage(xpathField);
-//                processFeedBack(feedBack, xpathField);
         }
-
-        /*private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
-            String xpath = xpathField.getText();
-            if (xpath == null) return XpathFeedBack.EMPTY;
-            xpath = xpath.trim();
-            if (xpath.length() < 1) return XpathFeedBack.EMPTY;
-            if (isEncryption && xpath.equals("/soapenv:Envelope")) {
-                return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
-            }
-            try {
-                testEvaluator.evaluate(xpath);
-                return XpathFeedBack.OK;
-            } catch (XPathSyntaxException e) {
-                log.log(Level.FINE, e.getMessage(), e);
-                return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
-            } catch (JaxenException e) {
-                log.log(Level.FINE, e.getMessage(), e);
-                return new XpathFeedBack(-1, xpath, e.getMessage(), e.getMessage());
-            } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
-                log.log(Level.WARNING, e.getMessage(), e);
-                return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
-            }
-        }*/
 
         private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
             if (!showHardwareAccelStatus) {
@@ -1275,27 +1321,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
                 speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
             } else {
-//                hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (reason: " +
-//                  hardwareFeedBack.getShortMessage() + "); it  will be " +
-//                  "processed in the software layer instead.");
-//                hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
                 hardwareAccelStatusLabel.setText("");
                 hardwareAccelStatusLabel.setToolTipText(null);
                 speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
                 speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
-
-                // Squiggles and detailed parse error messages are disabled for now
-                //noinspection ConstantConditions
-                if (false && xpathField instanceof SquigglyField) {
-                    SquigglyField squigglyField = (SquigglyField)xpathField;
-                    int pos = hardwareFeedBack.errorPosition;
-                    if (pos >= 0)
-                        squigglyField.setRange(pos - 1, pos + 1);
-                    else
-                        squigglyField.setAll();
-                    squigglyField.setStraight();
-                    squigglyField.setColor(Color.BLUE);
-                }
             }
         }
 
@@ -1341,12 +1370,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
     };
 
+    private Map<String, String> getNamespacesWithOperationNamespaces() {
+        Map<String, String> namespacesWithAuto = new HashMap<String, String>(namespaces);
+        namespacesWithAuto.putAll(allOperationNamespaces);
+        return namespacesWithAuto;
+    }
+
     private XpathFeedBack getFeedBackMessage(Map nsMap, JTextField xpathField) {
         String xpath = xpathField.getText();
         if (xpath == null) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
         xpath = xpath.trim();
         if (xpath.length() < 1) return new XpathFeedBack(-1, null, XpathFeedBack.EMPTY_MSG, XpathFeedBack.EMPTY_MSG);
-        if (isEncryption && xpath.equals("/soapenv:Envelope")) {
+        if (isEncryption && (xpath.equals("/soapenv:Envelope") || xpath.equals("/s:Envelope"))) {
             return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
         }
         try {

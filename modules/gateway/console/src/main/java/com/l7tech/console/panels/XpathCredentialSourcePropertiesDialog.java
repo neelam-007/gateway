@@ -3,17 +3,15 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
-import javax.xml.soap.SOAPConstants;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,10 +37,6 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
     private JButton editPasswordXPathButton;
     private Map<String,String> loginNamespaces;
     private Map<String,String> passwordNamespaces;
-
-    public XpathCredentialSource getXpathCredsAssertion() {
-        return xpathCredsAssertion;
-    }
 
     public XpathCredentialSourcePropertiesDialog(XpathCredentialSource assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, assertion, modal);
@@ -107,14 +101,6 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         }
         if ( namespaces == null ) {
             namespaces = new HashMap<String,String>();
-        }
-
-        // ensure standard namespaces are available
-        if(!namespaces.containsKey(SoapConstants.SOAP_ENV_PREFIX)) {
-            namespaces.put(SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
-        }
-        if(!namespaces.containsKey(SoapConstants.SOAP_1_2_ENV_PREFIX)) {
-            namespaces.put(SoapConstants.SOAP_1_2_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
         }
 
         return namespaces;

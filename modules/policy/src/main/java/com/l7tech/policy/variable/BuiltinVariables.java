@@ -120,6 +120,8 @@ public class BuiltinVariables {
         new VariableMetadata("request.soap.operationname", false, false, "request.soap.operation", false),
         new VariableMetadata("request.soap.namespace", false, false, null, false),
         new VariableMetadata("request.soap.urn", false, false, "request.soap.namespace", false),
+        new VariableMetadata("request.soap.envelopens", false, false, null, false, DataType.STRING),
+        new VariableMetadata("request.soap.version", false, false, null, false, DataType.STRING),
         new VariableMetadata("requestId", false, false, null, false),
         new VariableMetadata("routingStatus", false, false, null, false),
         new VariableMetadata("request.elapsedTime", false, false, null, false, DataType.INTEGER),
@@ -168,6 +170,7 @@ public class BuiltinVariables {
         new VariableMetadata("response.authenticatedusers", true, false, null, false),
         new VariableMetadata("response.authenticateddn", true, false, null, false),
         new VariableMetadata("response.authenticateddns", true, false, null, false),
+        new VariableMetadata("response.soap", true, false, null, false),
 
         new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
 
