@@ -9,6 +9,7 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.*;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
@@ -230,26 +231,31 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
-        final org.apache.commons.httpclient.HttpMethod httpMethod;
-        switch (method) {
-            case POST:
-                httpMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile()));
-                break;
-            case GET:
-                httpMethod = new GetMethod(encodePathAndQuery(targetUrl.getFile()));
-                break;
-            case PUT:
-                httpMethod = new PutMethod(encodePathAndQuery(targetUrl.getFile()));
-                break;
-            case DELETE:
-                httpMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile()));
-                break;
-            case HEAD:
-                httpMethod = new HeadMethod(encodePathAndQuery(targetUrl.getFile()));
-                break;
-            default:
-                throw new IllegalStateException("Method " + method + " not supported");
+        org.apache.commons.httpclient.HttpMethod clientMethod;
+        try {
+            switch (method) {
+                case POST:
+                    clientMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile()));
+                    break;
+                case GET:
+                    clientMethod = new GetMethod(encodePathAndQuery(targetUrl.getFile()));
+                    break;
+                case PUT:
+                    clientMethod = new PutMethod(encodePathAndQuery(targetUrl.getFile()));
+                    break;
+                case DELETE:
+                    clientMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile()));
+                    break;
+                case HEAD:
+                    clientMethod = new HeadMethod(encodePathAndQuery(targetUrl.getFile()));
+                    break;
+                default:
+                    throw new IllegalStateException("Method " + method + " not supported");
+            }
+        } catch ( IllegalArgumentException e ) {
+            clientMethod = new ExceptionMethod( e );
         }
+        final org.apache.commons.httpclient.HttpMethod httpMethod = clientMethod;
 
         configureParameters( clientParams, state, httpMethod, params );
 
@@ -347,9 +353,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
                 } catch (IOException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response from " + getTarget(method) + ": " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (NumberFormatException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response from " + getTarget(method) + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(method, " from ") + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
@@ -414,12 +420,13 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
 
-            private String getTarget( final org.apache.commons.httpclient.HttpMethod method ) {
-                String target = null;
+            private String getTargetDescription( final org.apache.commons.httpclient.HttpMethod method,
+                                                 final String prefix ) {
+                String target = "";
                 try {
-                    target = method.getURI().toString();
+                    target = prefix + method.getURI().toString();
                 } catch ( URIException e1) {
-                    logger.log( Level.WARNING, "cannot get URI", e1);
+                    // unknown target
                 }
                 return target;
             }
@@ -819,6 +826,29 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             } else {
                 requestContentLength = uncompressedContentLength == null ? -1 : uncompressedContentLength;
             }
+        }
+    }
+
+    private static final class ExceptionMethod extends HttpMethodBase {
+        private final Exception exception;
+
+        private ExceptionMethod( final Exception exception ) {
+            this.exception = exception;
+        }
+
+        @Override
+        public String getName() {
+            return "ERROR";
+        }
+
+        @Override
+        public int execute( final HttpState state, final HttpConnection conn ) throws IOException {
+            throw new IOException(exception);
+        }
+
+        @Override
+        public URI getURI() throws URIException {
+            throw (URIException) new URIException(ExceptionUtils.getMessage(exception)).initCause( exception );
         }
     }
 }
