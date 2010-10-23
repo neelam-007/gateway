@@ -323,11 +323,11 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                         throw new RuntimeException("Invalid component to accept field value.");
                     }
 
-                    boolean hasContextVariableWrapperInValueComponent = Syntax.getReferencedNames(textInValueComponent).length > 0;
+                    boolean hasContextVariableWrapperInValueComponent = Syntax.getReferencedNames(textInValueComponent, false).length > 0;
                     if (! hasContextVariableWrapperInValueComponent) {
                         // Althought this text doesn't have the "${}" wrapper, the value in multipleAttributeConfig does
                         // have the wrapper, so we need to remove the wrapper before updating the value.
-                        String[] contextVariables = Syntax.getReferencedNames(multipleAttributeConfig.getField(fieldName).getValue());
+                        String[] contextVariables = Syntax.getReferencedNames(multipleAttributeConfig.getField(fieldName).getValue(), false);
                         if (contextVariables.length > 1) {
                             throw new IllegalArgumentException("AttributeValue must be a reference to exactly one context variable.");
                         } else if (contextVariables.length == 1) {
@@ -350,7 +350,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         for (XacmlRequestBuilderAssertion.MultipleAttributeConfig.Field field : multipleAttributeConfig.getFields().values()) {
             if (CONTEXT_VARIABLE == field.getType()) {
-                String[] varStrings = Syntax.getReferencedNames(field.getValue());
+                String[] varStrings = Syntax.getReferencedNames(field.getValue(), false);
                 if (varStrings.length != 1 || ! field.getValue().equals("${" + varStrings[0] + "}")) {
                     //if more than one variable is returned, or the variable is indexed which was removed by
                     //Syntax.getReferencedNames
@@ -422,7 +422,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 if (issueInstant != null) {
                     issueInstant = issueInstant.trim();
                     // if is is a blank or consists of context variable(s), then ignore validation.
-                    if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
+                    if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant, false).length > 0) return true;
 
                     // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ss[Z]"
                     try {

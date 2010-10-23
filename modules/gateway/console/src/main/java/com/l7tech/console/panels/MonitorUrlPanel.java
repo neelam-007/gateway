@@ -54,7 +54,7 @@ public class MonitorUrlPanel extends JPanel {
     public String check() {
         String url = urlField.getText();
         if (url != null && !url.trim().isEmpty() ) {
-            if ( Syntax.getReferencedNames( url ).length==0 &&
+            if ( Syntax.getReferencedNames( url, false ).length==0 &&
                  !ValidationUtils.isValidUrl(url.trim()) ) {
                 return resourceBundle.getString("error.badurl");
             }

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.variable;
 
 import org.apache.xml.serialize.OutputFormat;
@@ -101,21 +98,44 @@ public abstract class Syntax {
      *
      * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
+     * @throws IllegalArgumentException if the given string is null
+     * @throws VariableNameSyntaxException If an error occurs
      */
     public static String[] getReferencedNames(final String s) {
         if (s == null) throw new IllegalArgumentException();
+        return getReferencedNames( s, true );
+    }
 
+
+    /**
+     * This will return the entire string contained within each set of ${...} in the String s. The variables names
+     * may not exist and variables referenced like ${variablename.mainpart} will be returned as variablename.mainpart.
+     * <p/>
+     * There is no special behaviour for variables referenced which use selectors
+     *
+     * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
+     * @param strict when strict processing is enabled runtime exceptions will be thrown on error.
+     * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
+     * @throws VariableNameSyntaxException If strict and an error occurs
+     */
+    public static String[] getReferencedNames(final String s, final boolean strict) {
         final List<String> vars = new ArrayList<String>();
-        final Matcher matcher = regexPattern.matcher(s);
-        while (matcher.find()) {
-            final int count = matcher.groupCount();
-            if (count != 1) {
-                throw new IllegalStateException("Expecting 1 matching group, received: " + count);
-            }
-            String var = matcher.group(1);
-            if (var != null) {
-                var = var.trim();
-                vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
+        if ( s != null ) {
+            final Matcher matcher = regexPattern.matcher(s);
+            while (matcher.find()) {
+                final int count = matcher.groupCount();
+                if (count != 1) {
+                    throw new IllegalStateException("Expecting 1 matching group, received: " + count);
+                }
+                String var = matcher.group(1);
+                if (var != null) {
+                    var = var.trim();
+                    try {
+                        vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
+                    } catch ( VariableNameSyntaxException e ) {
+                        if ( strict ) throw e;
+                    }
+                }
             }
         }
         return vars.toArray(new String[vars.size()]);

@@ -786,7 +786,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return false;
         }
 
-        if ( Syntax.getReferencedNames( url ).length==0 &&
+        if ( Syntax.getReferencedNames( url, false ).length==0 &&
              !ValidationUtils.isValidUrl(url.trim()) ) {
             displayError(resources.getString("error.badurl"), null);
             return false;

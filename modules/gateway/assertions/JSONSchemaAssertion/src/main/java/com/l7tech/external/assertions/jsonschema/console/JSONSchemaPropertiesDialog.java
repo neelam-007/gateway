@@ -61,7 +61,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 throw new ValidationException(message);
             }
 
-            final boolean referencesVariables = Syntax.getReferencedNames(jsonSchemaText).length > 0;
+            final boolean referencesVariables = Syntax.getReferencedNames(jsonSchemaText, false).length > 0;
             if(!referencesVariables){
                 //only validate the json if no variables are referenced
                 validateJsonSchema(jsonSchemaText);

@@ -196,7 +196,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         ipListPanel.setContextVariableValidator(new Functions.Unary<Boolean, String>() {
             @Override
             public Boolean call(String s) {
-                String[] res = Syntax.getReferencedNames(s);
+                String[] res = Syntax.getReferencedNames(s,false);
                 return res != null && res.length > 0;
             }
         });

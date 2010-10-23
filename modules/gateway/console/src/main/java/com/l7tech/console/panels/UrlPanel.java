@@ -121,7 +121,7 @@ public class UrlPanel extends ValidatedPanel<String> {
         protected String getSemanticError( final String model ) {
             if (model == null || model.length() == 0) return null;
             // if the URL contains context variable, you just can't check semantic
-            String[] tmp = Syntax.getReferencedNames(model);
+            String[] tmp = Syntax.getReferencedNames(model, false);
             if (tmp != null && tmp.length > 0) {
                 return null;
             }
@@ -146,7 +146,7 @@ public class UrlPanel extends ValidatedPanel<String> {
                 else return "empty URL";
             }
             // if the URL contains context variable, you just can't check syntax
-            String[] tmp = Syntax.getReferencedNames(model);
+            String[] tmp = Syntax.getReferencedNames(model, false);
             if (tmp != null && tmp.length > 0) {
                 return null;
             }

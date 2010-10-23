@@ -112,7 +112,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
             if (issueInstant != null) {
                 issueInstant = issueInstant.trim();
                 // if is is a blank or consists of context variable(s), then ignore validation.
-                if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant).length > 0) return true;
+                if (issueInstant.isEmpty() || Syntax.getReferencedNames(issueInstant, false).length > 0) return true;
 
                 // Check if it is a valid datetime with a format "yyyy-MM-dd'T'HH:mm:ss[Z]"
                 try {
