@@ -131,8 +131,12 @@ public class ValidationUtils {
         if (present) {
             try {
                 URL test = new URL(urlText);
-                String host = test.getHost();
-                ok = host!=null && host.length()>0 && urlText.indexOf(' ') < 0;
+                if ( !"file".equalsIgnoreCase(test.getProtocol()) ) {
+                    String host = test.getHost();
+                    ok = host!=null && host.length()>0 && urlText.indexOf(' ') < 0;
+                } else {
+                    ok = true; // file URLs do not need a host
+                }
             } catch (MalformedURLException e) {
                 // so is invalid
             }
