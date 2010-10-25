@@ -130,7 +130,7 @@ INSERT INTO `rbac_predicate_attribute` VALUES
 --
 -- Explicit SOAP version configuration
 --
-ALTER TABLE published_service ADD COLUMN soap_version VARCHAR(20) DEFAULT NULL;
+ALTER TABLE published_service ADD COLUMN soap_version VARCHAR(20) DEFAULT 'UNKNOWN';
 
 --
 --

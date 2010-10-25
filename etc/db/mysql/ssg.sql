@@ -176,7 +176,7 @@ CREATE TABLE published_service (
   wss_processing TINYINT(1) NOT NULL DEFAULT 1,
   tracing TINYINT(1) NOT NULL DEFAULT 0,
   folder_oid bigint(20),
-  soap_version VARCHAR(20) DEFAULT NULL,
+  soap_version VARCHAR(20) DEFAULT 'UNKNOWN',
   PRIMARY KEY (objectid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL
