@@ -48,11 +48,18 @@ public class URIResourceDocument implements ResourceDocument {
             throw new IOException( "Unable to resolve path '" + path + "', no resolver available.");
         }
 
+        final ResourceDocument resolved;
         try {
-            return new URIResourceDocument(uri.resolve( path ), resolver);
+            final String resolvedUri = uri.resolve( path ).toString();
+            resolved = resolver.resolveByUri( uri.resolve( path ).toString() );
+            if ( resolved == null ) {
+                throw new IOException("Resource not found for URI '"+resolvedUri+"'");
+            }
         } catch ( IllegalArgumentException e ) {
             throw new IOException( "Unable to resolve path '" + path + "', due to : " + ExceptionUtils.getMessage( e ));
         }
+        
+        return resolved;
     }
 
     @Override

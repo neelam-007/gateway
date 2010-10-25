@@ -27,9 +27,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -322,6 +324,113 @@ class GlobalResourceImportContext {
         return new ResourceHolder( resourceDocument, null, null, null );
     }
 
+    static Set<DependencySummary> getDependencies( final DependencyScope scope,
+                                                   final ResourceHolder resourceHolder,
+                                                   final Collection<ResourceHolder> resourceHolders ) {
+        final Set<DependencySummary> dependencies = new TreeSet<DependencySummary>();
+
+        final Functions.Binary<Collection<ResourceHolder>,ResourceHolder,Collection<ResourceHolder>> resolver =
+                new Functions.Binary<Collection<ResourceHolder>,ResourceHolder,Collection<ResourceHolder>>(){
+                    @Override
+                    public Collection<ResourceHolder> call( final ResourceHolder resourceHolder, final Collection<ResourceHolder> resourceHolders ) {
+                        Collection<ResourceHolder> dependencies = new ArrayList<ResourceHolder>();
+
+                        for ( final String dependencyUri : resourceHolder.getDependencies() ) {
+                            final ResourceHolder dependency = findResourceHolderByUri( resourceHolders, dependencyUri );
+                            if ( dependency != null ) {
+                                dependencies.add( dependency );
+                            }
+                        }
+
+                        return dependencies;
+                    }
+                };
+
+        resolveRecursive( dependencies, true, scope!=DependencyScope.DIRECT, resourceHolder, resourceHolders, resolver );
+        filterByDependencyScope( scope, dependencies );
+
+        return dependencies;
+    }
+
+    static Set<DependencySummary> getDependants( final DependencyScope scope,
+                                                 final ResourceHolder resourceHolder,
+                                                 final Collection<ResourceHolder> resourceHolders ) {
+        final Set<DependencySummary> dependants = new TreeSet<DependencySummary>();
+
+        final Functions.Binary<Collection<ResourceHolder>,ResourceHolder,Collection<ResourceHolder>> resolver =
+                new Functions.Binary<Collection<ResourceHolder>,ResourceHolder,Collection<ResourceHolder>>(){
+                    @Override
+                    public Collection<ResourceHolder> call( final ResourceHolder resourceHolder, final Collection<ResourceHolder> resourceHolders ) {
+                        Collection<ResourceHolder> dependants = new ArrayList<ResourceHolder>();
+
+                        for ( final ResourceHolder holder : resourceHolders ) {
+                            for ( final String dependencyUri : holder.getDependencies() ) {
+                                if ( dependencyUri.equals( resourceHolder.getSystemId() ) ) {
+                                    dependants.add( holder );
+                                    break;
+                                }
+                            }
+                        }
+
+                        return dependants;
+                    }
+                };
+
+        resolveRecursive( dependants, true, scope!=DependencyScope.DIRECT, resourceHolder, resourceHolders, resolver );
+        filterByDependencyScope( scope, dependants );
+
+        return dependants;
+    }
+
+    static void resolveRecursive( final Set<DependencySummary> values,
+                                  final boolean isDirect,
+                                  final boolean recursive,
+                                  final ResourceHolder resourceHolder,
+                                  final Collection<ResourceHolder> resourceHolders,
+                                  final Functions.Binary<Collection<ResourceHolder>,ResourceHolder,Collection<ResourceHolder>> resolver ) {
+        final Collection<ResourceHolder> toProcess = new ArrayList<ResourceHolder>();
+        for ( final ResourceHolder resolved : resolver.call( resourceHolder, resourceHolders ) ) {
+            if ( values.add( new DependencySummary(resolved.getSystemId(), !isDirect) ) && recursive ) {
+                toProcess.add( resolved );
+            }
+        }
+
+        // resolve transitive after direct dependencies in case any dependency
+        // is both direct and transitive (in which case we currently show only
+        // the direct dependency)
+        for ( final ResourceHolder holderToProcess : toProcess ) {
+            resolveRecursive( values, false, true, holderToProcess, resourceHolders, resolver );
+        }
+    }
+
+    static void filterByDependencyScope( final DependencyScope scope,
+                                         final Set<DependencySummary> dependencySummaries ) {
+        if ( scope != DependencyScope.ALL ) {
+            final boolean transitiveMatch = scope==DependencyScope.TRANSITIVE;
+
+            for ( final Iterator<DependencySummary> summaryIterator = dependencySummaries.iterator() ; summaryIterator.hasNext(); ) {
+                final DependencySummary summary = summaryIterator.next();
+                if ( summary.isTransitive()!=transitiveMatch ) {
+                    summaryIterator.remove();
+                }
+            }
+        }
+    }
+
+    static ResourceHolder findResourceHolderByUri( final Collection<ResourceHolder> resourceHolders,
+                                                   final String dependencyUri ) {
+        ResourceHolder resourceHolder = null;
+
+        for ( final ResourceHolder holder : resourceHolders ) {
+            if ( dependencyUri.equals( holder.getSystemId() ) ) {
+                resourceHolder = holder;
+                break;
+            }
+        }
+
+        return resourceHolder;
+    }
+
     static ResourceDocumentResolver buildDownloadingResolver( final ResourceAdmin resourceAdmin ) {
         return new ResourceDocumentResolverSupport(){
             private final Collection<String> schemes = Collections.unmodifiableCollection( Arrays.asList( "http", "https") );
@@ -579,6 +688,59 @@ class GlobalResourceImportContext {
         public EnumSet<ImportChoice> getImportChoices() {
             return choices;
         }
+    }
+
+    protected static class DependencySummary implements Comparable<DependencySummary> {
+        private final String uri;
+        private final boolean transitive;
+
+        protected DependencySummary( final String uri,
+                                     final boolean transitive ) {
+            if ( uri == null ) throw new IllegalArgumentException( "uri is required" );
+            this.uri = uri;
+            this.transitive = transitive;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public boolean isTransitive() {
+            return transitive;
+        }
+
+        public String toString() {
+            return uri;
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final DependencySummary that = (DependencySummary) o;
+
+            if ( !uri.equals( that.uri ) ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return uri.hashCode();
+        }
+
+        @Override
+        public int compareTo( final DependencySummary other ) {
+            return uri.compareTo( other.uri );
+        }
+    }
+
+    protected enum DependencyScope {
+        ALL,
+        DIRECT,
+        TRANSITIVE
     }
 
     //- PRIVATE

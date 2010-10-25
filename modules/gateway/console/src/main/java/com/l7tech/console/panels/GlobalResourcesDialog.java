@@ -290,7 +290,7 @@ public class GlobalResourcesDialog extends JDialog {
         addDTDButton.setEnabled( flags.canCreateSome() );
         editButton.setEnabled( selectedRows.length == 1 && flags.canUpdateSome() );
         removeButton.setEnabled( selectedRows.length > 0 && flags.canDeleteSome() );
-        analyzeButton.setEnabled( false );//TODO [steve] enable when completed// selectedRows.length > 0 );
+        analyzeButton.setEnabled( selectedRows.length > 0 );
     }
 
     private void loadResources() {
@@ -488,7 +488,14 @@ public class GlobalResourcesDialog extends JDialog {
     }
 
     private void doImport() {
-        DialogDisplayer.display( new GlobalResourceImportWizard( this, resourceAdmin ), new Runnable(){
+        int[] selectedRows = resourcesTable.getSelectedRows();
+
+        final java.util.List<ResourceEntryHeader> initialImportSources = new ArrayList<ResourceEntryHeader>();
+        for ( final int selectedRow : selectedRows ) {
+            initialImportSources.add( resourcesTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow )) );
+        }
+
+        DialogDisplayer.display( new GlobalResourceImportWizard( this, initialImportSources, resourceAdmin ), new Runnable(){
             @Override
             public void run() {
                 loadResources();
@@ -497,20 +504,19 @@ public class GlobalResourcesDialog extends JDialog {
     }
 
     private void doAnalyze() {
-// TODO [steve] enable when completed
-//        int[] selectedRows = resourcesTable.getSelectedRows();
-//
-//        final java.util.List<ResourceEntryHeader> toAnalyze = new ArrayList<ResourceEntryHeader>();
-//        for ( final int selectedRow : selectedRows ) {
-//            toAnalyze.add( resourcesTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow )) );
-//        }
-//
-//        DialogDisplayer.display( new GlobalResourcesAnalyze( this, resourceAdmin, toAnalyze ), new Runnable(){
-//            @Override
-//            public void run() {
-//                loadResources();
-//            }
-//        } );
+        int[] selectedRows = resourcesTable.getSelectedRows();
+
+        final java.util.List<ResourceEntryHeader> toAnalyze = new ArrayList<ResourceEntryHeader>();
+        for ( final int selectedRow : selectedRows ) {
+            toAnalyze.add( resourcesTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow )) );
+        }
+
+        DialogDisplayer.display( new GlobalResourcesAnalyze( this, resourceAdmin, toAnalyze ), new Runnable(){
+            @Override
+            public void run() {
+                loadResources();
+            }
+        } );
     }
 
     private void createUIComponents() {

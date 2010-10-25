@@ -23,16 +23,27 @@ public class FileResourceDocument implements ResourceDocument {
     @Override
     public ResourceDocument relative( final String path,
                                       final ResourceDocumentResolver resolver ) throws IOException {
+        final ResourceDocument resolved;
+
         try {
-            final URI resolved = file.toURI().resolve(path);
+            final URI resolvedUri = file.toURI().resolve(path);
             if ( resolver == null ) {
-                return new FileResourceDocument( new File( resolved ) );
+                resolved = new FileResourceDocument( new File( resolvedUri ) );
             } else {
-                return new URIResourceDocument( resolved, resolver );
+                try {
+                    resolved = resolver.resolveByUri( resolvedUri.toString() );
+                    if ( resolved == null ) {
+                        throw new IOException("Resource not found for URI '"+resolvedUri+"'");
+                    }
+                } catch ( IllegalArgumentException e ) {
+                    throw new IOException( "Unable to resolve path '" + path + "', due to : " + ExceptionUtils.getMessage( e ));
+                }
             }
         } catch ( IllegalArgumentException e ) {
             throw new IOException( "Unable to resolve path '" + path + "', due to : " + ExceptionUtils.getMessage( e ));
         }
+
+        return resolved;
     }
 
     @Override

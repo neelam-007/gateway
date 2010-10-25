@@ -12,6 +12,7 @@ import static com.l7tech.console.panels.GlobalResourceImportContext.*;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryBag;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 
 import com.l7tech.gui.SimpleTableModel;
@@ -61,6 +62,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +73,15 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
     //- PUBLIC
 
+    /**
+     * Create an import wizard with optional starting resources.
+     *
+     * @param parent The parent window (optional)
+     * @param initialSources The initial set of resources to import (optional)
+     * @param resourceAdmin The resource admin to use (required)
+     */
     public GlobalResourceImportWizard( final Window parent,
+                                       final Collection<ResourceEntryHeader> initialSources,
                                        final ResourceAdmin resourceAdmin ) {
         super( parent, new GlobalResourceImportSearchStep( new GlobalResourceImportOptionsStep( new GlobalResourceImportResultsStep( null ) ) ) );
         wizardInput = new GlobalResourceImportContext();
@@ -82,6 +92,22 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final Functions.Ternary<ImportChoice,ImportOption,ImportChoice,String> choiceResolver = buildChoiceResolver( parent, wizardInput );
         wizardInput.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, wizardInput.buildSmartResourceEntryResolver( ResourceType.XML_SCHEMA, resourceAdmin, newResourceResolvers, choiceResolver ));
         wizardInput.setResourceDocumentResolverForType( ResourceType.DTD, wizardInput.buildSmartResourceEntryResolver( ResourceType.DTD, resourceAdmin, newResourceResolvers, choiceResolver ));
+
+        if ( initialSources != null ) {
+            final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
+            for ( final ResourceEntryHeader header : initialSources ) {
+                try {
+                    inputSources.add( wizardInput.newResourceInputSource( asUri(header.getUri()), header.getResourceType() ) );
+                } catch ( IOException e ) {
+                    showErrorMessage(
+                        parent,
+                        "Error Processing Resource",
+                        "Error processing resource '"+TextUtils.truncStringMiddleExact(header.getUri(),80)+"':\n" + ExceptionUtils.getMessage( e ) );
+                }
+            }
+            wizardInput.setResourceInputSources( inputSources );
+        }
+
         init();
     }
                        
@@ -191,6 +217,27 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         }
     }
 
+    public static Collection<ResourceHolder> resolveDependencies( final Window parent,
+                                                                  final Set<String> uriStrings,
+                                                                  final ResourceAdmin resourceAdmin ) {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin ) );
+
+        final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
+        for ( final String uriString : uriStrings ) {
+            try {
+                inputSources.add( context.newResourceInputSource( asUri(uriString), (ResourceType)null ) );
+            } catch ( IOException e ) {
+                showErrorMessage(
+                    parent,
+                    "Error Loading Dependencies",
+                    "Error processing resource '"+TextUtils.truncStringMiddleExact(uriString,80)+"':\n" + ExceptionUtils.getMessage( e ) );
+            }
+        }
+
+        return processResources( context, inputSources ).values();
+    }
+
     //- PROTECTED
 
     protected static final ResourceBundle resources = ResourceBundle.getBundle( GlobalResourceImportWizard.class.getName() );
@@ -294,6 +341,24 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 title,
                 JOptionPane.ERROR_MESSAGE,
                 null);
+    }
+
+    protected static class DependencySummaryListCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent( final JList list,
+                                                       final Object value,
+                                                       final int index,
+                                                       final boolean isSelected,
+                                                       final boolean cellHasFocus ) {
+            final Component component =
+                    super.getListCellRendererComponent( list, value, index, isSelected, cellHasFocus );
+
+            if ( value instanceof DependencySummary && ((DependencySummary)value).isTransitive() ) {
+                component.setFont( component.getFont().deriveFont( Font.ITALIC ) );
+            }
+
+            return component;
+        }
     }
 
     //- PRIVATE
@@ -522,6 +587,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     final ResourceDocument dependencyDocument = absoluteLocation ?
                             context.newResourceInputSource( asUri(dependency.uri), dependency.resourceType ).asResourceDocument():
                             resourceDocument.relative( dependency.uri, context.getResourceDocumentResolverForType(dependency.resourceType) );
+
+                    // TODO [steve] if this is a new resource, check if we have an existing resource with the same target namespace and have the user pick one
                     if ( dependencyDocument.exists() ) {
                         resourceHolder.addDependency( dependencyDocument.getUri().toString() );
 
@@ -684,6 +751,9 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         //TODO [steve] which is it? missing or invalid resource
                         break;
                 }
+
+                //TODO [steve] display resource entry description?
+
                 messageBuilder.append( "<br/><br/>" );
                 messageBuilder.append( TextUtils.truncStringMiddleExact( resourceDetail, 80 ) );
                 messageBuilder.append( "<br/><br/>" );
@@ -882,6 +952,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             getContentPane().add(panel, BorderLayout.CENTER);
 
             pack();
+            setMinimumSize( getContentPane().getMinimumSize() );
             Utilities.setEscKeyStrokeDisposes( this );
             Utilities.centerOnParentWindow( this );
         }
