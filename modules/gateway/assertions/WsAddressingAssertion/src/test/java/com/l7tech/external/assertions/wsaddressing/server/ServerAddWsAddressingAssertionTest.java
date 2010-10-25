@@ -52,7 +52,7 @@ public class ServerAddWsAddressingAssertionTest {
         final ServerAddWsAddressingAssertion serverAssertion =
                 new ServerAddWsAddressingAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(soapMsg);
+        final PolicyEnforcementContext context = getContext(soapMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
@@ -70,7 +70,7 @@ public class ServerAddWsAddressingAssertionTest {
         Assert.assertNotSame("Id should have been added.", "", actionId.trim());
     }
 
-    @BugNumber(9264)
+    @BugNumber(9268)
     @Test
     public void testNoSoapHeaderPresent() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
@@ -91,9 +91,117 @@ public class ServerAddWsAddressingAssertionTest {
         final ServerAddWsAddressingAssertion serverAssertion =
                 new ServerAddWsAddressingAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(warehouseResponse);
+        final PolicyEnforcementContext context = getContext(warehouseResponse, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+    }
+
+    /**
+     * If there is no SOAPAction associated with the target message, and the assertion's action is set to <<auto>>
+     * then the assertion should fail.
+     * 
+     * @throws Exception
+     */
+    @BugNumber(9270)
+    @Test
+    public void testAutoSoapActionHandledCorrectly() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+        assertion.setAction(AddWsAddressingAssertion.ACTION_AUTOMATIC);
+        assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
+        assertion.setMessageId(SoapUtil.generateUniqueUri("MessageId-", true));
+        assertion.setDestination("http://hugh/ACMEWarehouseWS/Service1.asmx");
+
+        final String ssgHost = "http://ssghost.com";
+        assertion.setSourceEndpoint(ssgHost);
+        assertion.setReplyEndpoint(ssgHost);
+        assertion.setFaultEndpoint(ssgHost);
+        final String relatesToMsgsId = SoapUtil.generateUniqueUri("MessageId", true);
+        assertion.setRelatesToMessageId(relatesToMsgsId);
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(warehouseResponse, null);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be FAILED", AssertionStatus.FAILED, status);
+    }
+
+    /**
+     * If the target message has a soap action and the assertion is configured with a non auto action, then at runtime
+     * they must match.
+     * @throws Exception
+     */
+    @Test
+    public void testAutoSoapActionMismatch() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+        assertion.setAction("http://warehouse.acme.com/ws/listProducts");
+        assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
+        assertion.setMessageId(SoapUtil.generateUniqueUri("MessageId-", true));
+        assertion.setDestination("http://hugh/ACMEWarehouseWS/Service1.asmx");
+
+        final String ssgHost = "http://ssghost.com";
+        assertion.setSourceEndpoint(ssgHost);
+        assertion.setReplyEndpoint(ssgHost);
+        assertion.setFaultEndpoint(ssgHost);
+        final String relatesToMsgsId = SoapUtil.generateUniqueUri("MessageId", true);
+        assertion.setRelatesToMessageId(relatesToMsgsId);
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(warehouseResponse, "http://warehouse.acme.com/ws/listProducts_WONTMATCH");
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be FAILED", AssertionStatus.FAILED, status);
+    }
+
+    /**
+     * If the Action property is configured to be <<auto>> then it should obtain the value of the SOAPAction from the
+     * associated target message when it is available.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testAutoSoapActionUsedCorrectly() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+        assertion.setAction(AddWsAddressingAssertion.ACTION_AUTOMATIC);
+        assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
+        assertion.setMessageId(SoapUtil.generateUniqueUri("MessageId-", true));
+        assertion.setDestination("http://hugh/ACMEWarehouseWS/Service1.asmx");
+
+        final String ssgHost = "http://ssghost.com";
+        assertion.setSourceEndpoint(ssgHost);
+        assertion.setReplyEndpoint(ssgHost);
+        assertion.setFaultEndpoint(ssgHost);
+        final String relatesToMsgsId = SoapUtil.generateUniqueUri("MessageId", true);
+        assertion.setRelatesToMessageId(relatesToMsgsId);
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final String soapAction = "http://warehouse.acme.com/ws/listProducts";
+        final PolicyEnforcementContext context = getContext(warehouseResponse, soapAction);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message request = context.getRequest();
+
+        //validate request
+        final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
+        final Element headerEl = SoapUtil.getHeaderElement(requestDoc);
+        System.out.println(XmlUtil.nodeToFormattedString(headerEl));
+
+        final Element actionEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, assertion.getWsaNamespaceUri(), SoapConstants.WSA_MSG_PROP_ACTION);
+        Assert.assertNotNull("Action should have been found", actionEl);
+
+        Assert.assertEquals("SOAPAction should have been added as the value of the Actiomn element",
+                soapAction, actionEl.getTextContent());
     }
 
     @Ignore
@@ -120,7 +228,7 @@ public class ServerAddWsAddressingAssertionTest {
         Assert.fail("Implement me");
     }
 
-    private PolicyEnforcementContext getContext(String messageContent) throws IOException, SAXException {
+    private PolicyEnforcementContext getContext(String messageContent, final String soapAction) throws IOException, SAXException {
 
         Message request = new Message(XmlUtil.parse(messageContent));
         Message response = new Message();
@@ -132,7 +240,15 @@ public class ServerAddWsAddressingAssertionTest {
 
         PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest){
+            @Override
+            public String getSoapAction() throws IOException {
+                if(soapAction != null){
+                    return soapAction;
+                }
+                return super.getSoapAction();
+            }
+        });
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
 
         return policyEnforcementContext;
