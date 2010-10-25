@@ -405,6 +405,14 @@ public class ServerVariablesTest {
         expandAndCheck(context, "${request.http.parameter.invalid}", "");
     }
 
+    @Test
+    public void testHttpHeader() throws Exception {
+        PolicyEnforcementContext context = contextHttp();
+
+        expandAndCheck(context,"${request.http.headernames}" ,
+               HttpConstants.HEADER_CONTENT_TYPE +", "+  HttpConstants.HEADER_CONNECTION +", "+  HttpConstants.HEADER_COOKIE);
+    }
+
     @BugNumber(8428)
     @Test
     public void testRequestHttpParameters() throws Exception {
@@ -798,6 +806,12 @@ public class ServerVariablesTest {
         mockRequest.setParameter( "single", "1" );
         mockRequest.setParameter( "multi", new String[]{"1","2","3","4","5"} );
         mockRequest.setQueryString( "single=1&multi=1&multi=2&multi=3&multi=4&multi=5" );
+
+
+        mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+
 
         context.getRequest().attachHttpRequestKnob( new HttpServletRequestKnob( mockRequest ) );
 

@@ -85,11 +85,6 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
     String getHeaderSingleValue(String name) throws IOException;
 
     /**
-     * @return an array of the names of all the headers in the request, or an empty array if there are none. Never null.
-     */
-    String[] getHeaderNames();
-
-    /**
      * Get the client certificate that was presented along with this request, if any.
      *
      * @return the X509Certificate chain that was presented in the SSL handshake,

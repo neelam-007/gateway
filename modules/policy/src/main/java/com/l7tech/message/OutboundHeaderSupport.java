@@ -62,6 +62,16 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
     }
 
     @Override
+    public String[] getHeaderNames() {
+        ArrayList<String> tmp = new ArrayList<String>();
+        for (Pair<String,Object> pair : headersToSend) {
+            tmp.add(pair.left);
+        }
+
+        return tmp.toArray(new String[tmp.size()]); 
+    }
+
+    @Override
     public boolean containsHeader(String name) {
         for (Pair<String, Object> pair : headersToSend) {
             if (name.equals(pair.left)) return true;

@@ -51,6 +51,19 @@ public class HttpInboundResponseFacet implements HttpInboundResponseKnob, Closea
     }
 
     @Override
+    public String[] getHeaderNames() {
+        initHeaders();
+        if (headers == null)
+            return EMPTY_STRING_ARRAY;
+
+        List<String> ret = new ArrayList<String>();
+        for (HttpHeader header : headers) {
+                ret.add(header.getName());
+        }
+        return ret.toArray(new String[ret.size()]);
+    }
+
+    @Override
     public boolean containsHeader(String name) {
         initHeaders();
         if (headers == null)

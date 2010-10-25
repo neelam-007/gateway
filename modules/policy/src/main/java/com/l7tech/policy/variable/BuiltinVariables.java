@@ -20,6 +20,9 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_JMS_MSG_PROP = "request.jms.property";
     public static final String PREFIX_RESPONSE_JMS_MSG_PROP = "response.jms.property";
 
+    public static final String PREFIX_REQUEST_JMS_MSG_PROP_NAMES = "request.jms.propertynames";
+    public static final String PREFIX_RESPONSE_JMS_MSG_PROP_NAMES = "response.jms.propertynames";
+
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE = "service";
@@ -142,6 +145,9 @@ public class BuiltinVariables {
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP, true, false, null, false),
+
+        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP_NAMES, true, false, null, false),
+        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP_NAMES, true, false, null, false),
 
         new VariableMetadata("response.http.status", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),

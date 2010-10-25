@@ -44,6 +44,11 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
     }
 
     @Override
+    public String[] getHeaderNames() {
+        return headerSupport.getHeaderNames( );
+    }
+
+    @Override
     public boolean containsHeader( final String name ) {
         return headerSupport.containsHeader( name );
     }

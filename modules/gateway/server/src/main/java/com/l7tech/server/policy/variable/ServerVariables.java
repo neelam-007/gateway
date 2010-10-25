@@ -310,6 +310,36 @@ public class ServerVariables {
             }
         }),
 
+        new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP_NAMES;
+                if (!name.startsWith(prefix)) {
+                    logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                    return null;
+                }
+                Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
+                return keys;
+            }
+        }),
+
+        new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP_NAMES;
+                if (!name.startsWith(prefix)) {
+                    logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                    return null;
+                }
+                Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
+                return keys;
+            }
+        }),
+
         new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
