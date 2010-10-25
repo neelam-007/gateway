@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Assert;
@@ -51,7 +52,7 @@ public class ServerAddWsAddressingAssertionTest {
         final ServerAddWsAddressingAssertion serverAssertion =
                 new ServerAddWsAddressingAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext();
+        final PolicyEnforcementContext context = getContext(soapMsg);
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
@@ -67,6 +68,32 @@ public class ServerAddWsAddressingAssertionTest {
         Assert.assertNotNull("Action should have been found", actionEl);
         final String actionId = actionEl.getAttributeNS(SoapConstants.WSU_NAMESPACE, "Id");
         Assert.assertNotSame("Id should have been added.", "", actionId.trim());
+    }
+
+    @BugNumber(9264)
+    @Test
+    public void testNoSoapHeaderPresent() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+        assertion.setAction("http://warehouse.acme.com/ws/listProducts");
+        assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
+        assertion.setMessageId(SoapUtil.generateUniqueUri("MessageId-", true));
+        assertion.setDestination("http://hugh/ACMEWarehouseWS/Service1.asmx");
+
+        final String ssgHost = "http://ssghost.com";
+        assertion.setSourceEndpoint(ssgHost);
+        assertion.setReplyEndpoint(ssgHost);
+        assertion.setFaultEndpoint(ssgHost);
+        final String relatesToMsgsId = SoapUtil.generateUniqueUri("MessageId", true);
+        assertion.setRelatesToMessageId(relatesToMsgsId);
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(warehouseResponse);
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
     }
 
     @Ignore
@@ -93,9 +120,9 @@ public class ServerAddWsAddressingAssertionTest {
         Assert.fail("Implement me");
     }
 
-    private PolicyEnforcementContext getContext() throws IOException, SAXException {
+    private PolicyEnforcementContext getContext(String messageContent) throws IOException, SAXException {
 
-        Message request = new Message(XmlUtil.parse(soapMsg));
+        Message request = new Message(XmlUtil.parse(messageContent));
         Message response = new Message();
 
         MockServletContext servletContext = new MockServletContext();
@@ -122,4 +149,51 @@ public class ServerAddWsAddressingAssertionTest {
             "        </tns:listProducts>\n" +
             "    </s:Body>\n" +
             "</s:Envelope>";
+
+    private static final String warehouseResponse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
+            "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "    <soap:Body>\n" +
+            "        <listProductsResponse xmlns=\"http://warehouse.acme.com/ws\">\n" +
+            "            <listProductsResult>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>White board</productName>\n" +
+            "                    <productId>111111113</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Wall Clock</productName>\n" +
+            "                    <productId>111111112</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>PhoneBook</productName>\n" +
+            "                    <productId>111111111</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Civic</productName>\n" +
+            "                    <productId>111111119</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>BMW</productName>\n" +
+            "                    <productId>111111118</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Camcorder</productName>\n" +
+            "                    <productId>111111117</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Plasma TV</productName>\n" +
+            "                    <productId>111111116</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Speakers</productName>\n" +
+            "                    <productId>111111115</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "                <ProductListHeader>\n" +
+            "                    <productName>Digital camera</productName>\n" +
+            "                    <productId>111111114</productId>\n" +
+            "                </ProductListHeader>\n" +
+            "            </listProductsResult>\n" +
+            "        </listProductsResponse>\n" +
+            "    </soap:Body>\n" +
+            "</soap:Envelope>";
 }

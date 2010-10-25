@@ -52,7 +52,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         final Element header;
         final SoapInfo soapInfo;
         try {
-            header = SoapUtil.getHeaderElement(soapmsg);
+            header = SoapUtil.getOrMakeHeader(soapmsg);
             final SoapKnob soapKnob = targetMessage.getSoapKnob();
             soapInfo = soapKnob.getSoapInfo();
         } catch (Exception e) {
@@ -139,10 +139,6 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         private InvalidRuntimeValueException(String message, Throwable cause) {
             super(message, cause);
         }
-
-        private InvalidRuntimeValueException(String message) {
-            super(message);
-        }
     }
 
 
@@ -151,11 +147,10 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
      *
      * @param vars Available context variables
      * @param maybeAVariable String. Must not be null and must not be the empty string
-     * @param strict boolean true if the resolved value cannot be the empty string
-     * @return
+     * @return resolved String.
      * @throws InvalidRuntimeValueException
      */
-    private String getStringVariable(final Map<String, Object> vars, String maybeAVariable, boolean strict)
+    private String getStringVariable(final Map<String, Object> vars, String maybeAVariable)
             throws InvalidRuntimeValueException{
         //explicitly checking as exception throw below should only happen for the case when a string resolves to nothing.
         if(maybeAVariable == null || maybeAVariable.trim().isEmpty()) throw new IllegalArgumentException("maybeAVariable must be non null and not empty");
@@ -170,9 +165,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         }
 
         final boolean isEmpty = value.trim().isEmpty();
-        if(isEmpty && strict) {
-            throw new InvalidRuntimeValueException("Value for field '" + maybeAVariable + "'resolved to nothing.");
-        } else if (isEmpty) {
+        if (isEmpty) {
             logger.log(Level.INFO, "Value for field '" + maybeAVariable + "' resolved to nothing.");
         }
         return value;
@@ -195,10 +188,10 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
 
         if(isEndPointReference){
             final Element addressElement = XmlUtil.createAndAppendElementNS(newHeaderEl, "Address", wsaNs, "wsa");
-            final String value = getStringVariable(vars, propertyValue, false);
+            final String value = getStringVariable(vars, propertyValue);
             addressElement.setTextContent(value);
         } else {
-            final String value = getStringVariable(vars, propertyValue, false);
+            final String value = getStringVariable(vars, propertyValue);
             newHeaderEl.setTextContent(value);
         }
 
