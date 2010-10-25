@@ -4,9 +4,14 @@
  */
 package com.l7tech.external.assertions.wsaddressing;
 
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.security.xml.KeyReference;
 
 public class AddWsAddressingAssertion extends MessageTargetableAssertion implements WssDecorationConfig {
@@ -150,6 +155,8 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion impleme
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Add WS-Addressing Properties");
 
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, AddWsAddressingAssertionValidator.class.getName());
+
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
@@ -160,6 +167,39 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion impleme
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
         return meta;
+    }
+
+    public static class AddWsAddressingAssertionValidator implements AssertionValidator {
+        public AddWsAddressingAssertionValidator(AddWsAddressingAssertion assertion) {
+            this.assertion = assertion;
+        }
+
+        @Override
+        public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
+            if(!assertion.isSignMessageProperties()) return;
+            
+            final Assertion[] assertionPaths = path.getPath();
+            boolean seenDecoration = false;
+            for (Assertion pathAssertion : assertionPaths) {
+                if(!pathAssertion.isEnabled()) continue;
+
+                if(pathAssertion instanceof WsSecurity){
+                    WsSecurity wsAssertion = (WsSecurity) pathAssertion;
+                    if(wsAssertion.getTargetName().equals(assertion.getTargetName())){
+                        seenDecoration = true;
+                    }
+                }
+            }
+
+            if(!seenDecoration ){
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                        "The configured WS-Addressing message addressing properties will not be signed unless " +
+                                "an \"Apply WS-Security\" assertion is added to the policy and configured with the same message target.", null));
+            }
+
+        }
+
+        private final AddWsAddressingAssertion assertion;
     }
 
     //- PRIVATE
