@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -28,10 +29,11 @@ public class ServerAddWssSecurityToken extends ServerAddWssSignature<AddWssSecur
     }
 
     @Override
-    protected int addDecorationRequirements( final PolicyEnforcementContext context,
-                                             final AuthenticationContext authContext,
-                                             final Document soapmsg,
-                                             final DecorationRequirements wssReq) throws PolicyAssertionException {
+    protected int addDecorationRequirements(final PolicyEnforcementContext context,
+                                            final AuthenticationContext authContext,
+                                            final Document soapmsg,
+                                            final DecorationRequirements wssReq,
+                                            final Message targetMessage) throws PolicyAssertionException {
         if (assertion.getTokenType() == SecurityTokenType.WSS_USERNAME) {
             // For backwards compatibility we are taking credentials from the default context
             // we may want to make this configurable at some point

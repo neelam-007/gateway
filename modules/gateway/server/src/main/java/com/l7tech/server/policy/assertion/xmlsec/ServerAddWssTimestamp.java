@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.message.Message;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
@@ -24,10 +25,11 @@ public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp
     }
 
     @Override
-    protected int addDecorationRequirements( final PolicyEnforcementContext context,
-                                             final AuthenticationContext authContext,
-                                             final Document soapmsg,
-                                             final DecorationRequirements wssReq ) throws PolicyAssertionException {
+    protected int addDecorationRequirements(final PolicyEnforcementContext context,
+                                            final AuthenticationContext authContext,
+                                            final Document soapmsg,
+                                            final DecorationRequirements wssReq,
+                                            final Message targetMessage) throws PolicyAssertionException {
         int signElements = 0;
         if (assertion.isSignatureRequired()) {
             wssReq.setSignTimestamp();

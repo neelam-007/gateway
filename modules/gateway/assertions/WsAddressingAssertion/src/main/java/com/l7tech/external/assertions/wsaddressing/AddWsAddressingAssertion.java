@@ -5,8 +5,11 @@
 package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.security.xml.KeyReference;
 
-public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateKeyable {
+public class AddWsAddressingAssertion extends MessageTargetableAssertion implements WssDecorationConfig {
 
     public static final String ACTION_AUTOMATIC = "<<auto>>";
 
@@ -88,6 +91,47 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateK
     }
 
     @Override
+    public String getKeyReference() {
+        return keyReference;
+    }
+
+    @Override
+    public void setKeyReference(String keyReference) {
+        this.keyReference = keyReference;
+    }
+
+    @Override
+    public boolean isProtectTokens() {
+        return protectTokens;
+    }
+
+    @Override
+    public void setProtectTokens(boolean protectTokens) {
+        this.protectTokens = protectTokens;
+    }
+
+    @Override
+    public String getDigestAlgorithmName() {
+        return this.digestAlgorithmName;
+    }
+
+    @Override
+    public void setDigestAlgorithmName(String digestAlgorithmName) {
+        this.digestAlgorithmName = digestAlgorithmName;
+    }
+
+    @Override
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    @Override
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+        this.recipientContext = recipientContext;
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -143,6 +187,10 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateK
     private String relatesToMessageId;
     private String wsaNamespaceUri;
     private boolean signMessageProperties;
+    private boolean protectTokens;
+    private String digestAlgorithmName;
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private String keyReference = KeyReference.BST.getName();
 
     private static final String META_INITIALIZED = AddWsAddressingAssertion.class.getName() + ".metadataInitialized";
 

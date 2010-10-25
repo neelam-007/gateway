@@ -105,15 +105,15 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             securityKnob = message.getSecurityKnob();
             soapmsg = xmlKnob.getDocumentReadOnly();
         } catch (SAXException e) {
-            String msg = "cannot get an xml document from the response to sign";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
+            String msg = "cannot get an xml document from the " + messageDescription + " to sign";
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
             return AssertionStatus.SERVER_ERROR;
         }
 
 
         DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
 
-        int howMany = addDecorationRequirements(context, authContext, soapmsg, wssReq);
+        int howMany = addDecorationRequirements(context, authContext, soapmsg, wssReq, message);
         if (howMany < 0) {
             return AssertionStatus.FAILED;
         } else if (howMany == 0) {
@@ -197,13 +197,14 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
      * @param authContext  the AuthenticationContext.  Required.
      * @param soapmsg  the message that is to be decorated.  Required.
      * @param wssReq   the existing decoration requirements, to which the new signature requirements should be added.  Required.
+     * @param targetMessage the target message for this assertion. Never null.
      * @return the number of elements selected for signing, zero if no elements were selected, or -1 if the assertion
      *          should fail (subclass is expected to have logged the reason already)
      * @throws com.l7tech.policy.assertion.PolicyAssertionException if the signature requirements cannot be added due to
      *                                                              a misconfigured assertion (for example, if it is
      *                                                              XPath based and the XPath is invalid)
      */
-    protected abstract int addDecorationRequirements(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq)
+    protected abstract int addDecorationRequirements(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq, Message targetMessage)
         throws PolicyAssertionException;
 
     @Override

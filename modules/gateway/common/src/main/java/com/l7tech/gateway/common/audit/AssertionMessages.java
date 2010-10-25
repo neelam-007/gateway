@@ -744,7 +744,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLP_PROCREQ_SIGNING_ERROR = m(9233, Level.WARNING, "Signature validation failure: ''{0}''.");
     public static final M SAMLP_1_1_PROCREQ_PROFILE_VIOLATION = m(9234, Level.WARNING, "SAML 1.1 Web SSO profile rule violation: {0}.");
 
-    public static final M ADD_WS_ADDRESSING_TARGET_NOT_SOAP = m(9260, Level.WARNING, "Target message is not SOAP. Cannot add WS-Addressing.");
+    public static final M ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH = m(9260, Level.WARNING, "Target message's SOAPAction ''{0}'' does not match assertion's configured SOAPAction ''{1}''.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
@@ -45,10 +46,11 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
      *         none, or <code>-1</code> if the assertion should fail.
      */
     @Override
-    protected int addDecorationRequirements( final PolicyEnforcementContext context,
-                                             final AuthenticationContext authContext,
-                                             final Document soapmsg,
-                                             final DecorationRequirements wssReq)
+    protected int addDecorationRequirements(final PolicyEnforcementContext context,
+                                            final AuthenticationContext authContext,
+                                            final Document soapmsg,
+                                            final DecorationRequirements wssReq,
+                                            final Message targetMessage)
             throws PolicyAssertionException
     {
         List selectedElements;
