@@ -67,65 +67,65 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
             return -1;
         } 
 
-        String wsaNs = assertion.getWsaNamespaceUri();
-        if (wsaNs == null || wsaNs.trim().isEmpty()) wsaNs = SoapUtil.WSA_NAMESPACE;
-
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
-
-        String action = assertion.getAction();
-
-        final boolean hasSoapAction = soapInfo != null && soapInfo.getSoapAction() != null;
-        if (action.equals(AddWsAddressingAssertion.ACTION_AUTOMATIC)) {
-            if (!hasSoapAction) {
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
-                return -1;
-            }
-            action = soapInfo.getSoapAction();
-        } else if (hasSoapAction) {
-            final String soapAction = soapInfo.getSoapAction();
-            if(!soapAction.equals(action)){
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH, soapAction, action);
-                return -1;
-            }
-        }
-
         final List<Element> elementsToSign = new ArrayList<Element>();
         try {
-            int elementNumber = 0;
-            final String resolvedAction = resolveProperty(action, vars);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+            
+            String wsaNs = assertion.getWsaNamespaceUri();
+            if (wsaNs == null || wsaNs.trim().isEmpty()) wsaNs = SoapUtil.WSA_NAMESPACE_10;
+            else wsaNs = resolveProperty(wsaNs, vars);
+
+            String resolvedAction = resolveProperty(assertion.getAction(), vars);
             if(resolvedAction == null){
                 auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED);
                 return -1;
             }
-            elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, action, elementNumber++, false));
 
-            final String messageId = assertion.getMessageId();
-            if(resolveProperty(messageId, vars) != null){
+            final boolean hasSoapAction = soapInfo != null && soapInfo.getSoapAction() != null;
+            if (resolvedAction.equals(AddWsAddressingAssertion.ACTION_AUTOMATIC)) {
+                if (!hasSoapAction) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
+                    return -1;
+                }
+                resolvedAction = soapInfo.getSoapAction();
+            } else if (hasSoapAction) {
+                final String soapAction = soapInfo.getSoapAction();
+                if(!soapAction.equals(resolvedAction)){
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH, soapAction, resolvedAction);
+                    return -1;
+                }
+            }
+
+            int elementNumber = 0;
+            elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, resolvedAction, elementNumber++, false));
+
+            final String messageId = resolveProperty(assertion.getMessageId(), vars);
+            if(messageId != null){
                 elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, messageId, elementNumber++, false));
             }
 
-            final String destination = assertion.getDestination();
-            if(resolveProperty(destination, vars) != null){
+            final String destination = resolveProperty(assertion.getDestination(), vars);
+            if(destination != null){
                 elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false));
             }
 
-            final String from = assertion.getSourceEndpoint();
-            if(resolveProperty(from, vars) != null){
+            final String from = resolveProperty(assertion.getSourceEndpoint(), vars);
+            if(from != null){
                 elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true));
             }
 
-            final String replyTo = assertion.getReplyEndpoint();
-            if(resolveProperty(replyTo, vars) != null){
+            final String replyTo = resolveProperty(assertion.getReplyEndpoint(), vars);
+            if(replyTo != null){
                 elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true));
             }
 
-            final String faultTo = assertion.getFaultEndpoint();
-            if(resolveProperty(faultTo, vars) != null){
+            final String faultTo = resolveProperty(assertion.getFaultEndpoint(), vars);
+            if(faultTo != null){
                 elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true));
             }
 
-            final String relatesMsgId = assertion.getRelatesToMessageId();
-            if(resolveProperty(relatesMsgId, vars) != null){
+            final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), vars);
+            if(relatesMsgId != null){
                 final Element relatesToEl =
                         addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_RELATES_TO, relatesMsgId, elementNumber++, false);
                 final String prefix = DomUtils.getOrCreatePrefixForNamespace(relatesToEl, wsaNs, "wsa");

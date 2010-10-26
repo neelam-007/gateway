@@ -200,19 +200,134 @@ public class ServerAddWsAddressingAssertionTest {
                 XmlUtil.findExactlyOneChildElementByName(headerEl, assertion.getWsaNamespaceUri(), SoapConstants.WSA_MSG_PROP_ACTION);
         Assert.assertNotNull("Action should have been found", actionEl);
 
-        Assert.assertEquals("SOAPAction should have been added as the value of the Actiomn element",
+        Assert.assertEquals("SOAPAction should have been added as the value of the Action element",
                 soapAction, actionEl.getTextContent());
+    }
+
+    @Test
+    public void testMessageProperties_Variables() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+        final String actionVar = "action";
+        final String namespaceVar = "namespace";
+        final String msgIdVar = "msgId";
+        final String destVar = "destination";
+        final String fromVar = "from";
+        final String replyVar = "reply";
+        final String faultVar = "fault";
+        final String relatesMsgIdVar = "relatesMsgId";
+
+        final String action = "http://warehouse.acme.com/ws/listProducts";
+        final String namespace = SoapConstants.WSA_NAMESPACE_10;
+        final String msgId = SoapUtil.generateUniqueUri("MessageId-", true);
+        final String destination = "http://hugh/ACMEWarehouseWS/Service1.asmx";
+        final String ssgHost = "http://ssghost.com";
+        final String relatesToMsgsId = SoapUtil.generateUniqueUri("MessageId", true);
+
+        assertion.setAction("${" + actionVar + "}");
+        assertion.setWsaNamespaceUri("${" + namespaceVar + "}");
+        assertion.setMessageId("${" + msgIdVar + "}");
+        assertion.setDestination("${" + destVar + "}");
+        assertion.setSourceEndpoint("${" + fromVar + "}");
+        assertion.setReplyEndpoint("${" + replyVar + "}");
+        assertion.setFaultEndpoint("${" + faultVar + "}");
+        assertion.setRelatesToMessageId("${" + relatesMsgIdVar + "}");
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final String soapAction = "http://warehouse.acme.com/ws/listProducts";
+        final PolicyEnforcementContext context = getContext(soapMsg, soapAction);
+        context.setVariable(actionVar, action);
+        context.setVariable(namespaceVar, namespace);
+        context.setVariable(msgIdVar, msgId);
+        context.setVariable(destVar, destination);
+        context.setVariable(fromVar, ssgHost + "/from");
+        context.setVariable(replyVar, ssgHost + "/reply");
+        context.setVariable(faultVar, ssgHost + "/fault");
+        context.setVariable(relatesMsgIdVar, relatesToMsgsId);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message request = context.getRequest();
+
+        //validate request
+        final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
+        final Element headerEl = SoapUtil.getHeaderElement(requestDoc);
+        System.out.println(XmlUtil.nodeToFormattedString(headerEl));
+
+        final Element actionEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_ACTION);
+        Assert.assertNotNull("Action should have been found", actionEl);
+        validateIdAttribute(actionEl);
+        validateNamespace(actionEl, namespace);
+        Assert.assertEquals("Incorrect element value", action, actionEl.getTextContent());
+
+        final Element msgIdEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_MESSAGE_ID);
+        Assert.assertNotNull("MessageId should have been found", msgIdEl);
+        validateIdAttribute(msgIdEl);
+        validateNamespace(msgIdEl, namespace);
+        Assert.assertEquals("Incorrect element value", msgId, msgIdEl.getTextContent());
+        
+        final Element destEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_DESTINATION);
+        Assert.assertNotNull("Destination should have been found", destEl);
+        validateIdAttribute(destEl);
+        validateNamespace(destEl, namespace);
+        Assert.assertEquals("Incorrect element value", destination, destEl.getTextContent());
+
+        final Element sourceEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT);
+        Assert.assertNotNull("From should have been found", sourceEl);
+        validateIdAttribute(sourceEl);
+        validateNamespace(sourceEl, namespace);
+        Assert.assertEquals("Incorrect element value", ssgHost + "/from", sourceEl.getTextContent());
+
+        final Element replyToEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_REPLY_TO);
+        Assert.assertNotNull("ReplyTo should have been found", replyToEl);
+        validateIdAttribute(replyToEl);
+        validateNamespace(replyToEl, namespace);
+        Assert.assertEquals("Incorrect element value", ssgHost + "/reply", replyToEl.getTextContent());
+
+        final Element faultToEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_FAULT_TO);
+        Assert.assertNotNull("FaultTo should have been found", faultToEl);
+        validateIdAttribute(faultToEl);
+        validateNamespace(faultToEl, namespace);
+        Assert.assertEquals("Incorrect element value", ssgHost + "/fault", faultToEl.getTextContent());
+
+        final Element relatesToMsgEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_RELATES_TO);
+        Assert.assertNotNull("RelatesTo MsgId should have been found", relatesToMsgEl);
+        validateIdAttribute(relatesToMsgEl);
+        final String relatesToAttributeValue =
+                relatesToMsgEl.getAttributeNS(SoapConstants.WSA_NAMESPACE_10, SoapConstants.WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE);
+        Assert.assertTrue("Relates to attribute should have been added.", !relatesToAttributeValue.trim().isEmpty());
+        Assert.assertEquals("Incorrect relationship type value found", SoapConstants.WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE,
+                relatesToAttributeValue);
+
+        validateNamespace(relatesToMsgEl, namespace);
+        Assert.assertEquals("Incorrect element value", relatesToMsgsId, relatesToMsgEl.getTextContent());
+
+    }
+
+    private void validateNamespace(Element element, String namespace){
+        final String foundNs = element.getNamespaceURI();
+        Assert.assertEquals("Incorrect namespace found", namespace, foundNs);
+    }
+
+    private void validateIdAttribute(Element element) {
+        final String actionId = element.getAttributeNS(SoapConstants.WSU_NAMESPACE, "Id");
+        Assert.assertTrue("Id attribute should have been added.", !actionId.trim().isEmpty());
     }
 
     @Ignore
     @Test
     public void testMessageProperties_NoVariables_WithRelatesTo() throws Exception{
-        Assert.fail("Implement me");
-    }
-
-    @Ignore
-    @Test
-    public void testMessageProperties_Variables() throws Exception{
         Assert.fail("Implement me");
     }
 
