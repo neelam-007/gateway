@@ -204,6 +204,7 @@ public class ServerAddWsAddressingAssertionTest {
                 soapAction, actionEl.getTextContent());
     }
 
+    @BugNumber(9282)
     @Test
     public void testMessageProperties_Variables() throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
@@ -312,17 +313,40 @@ public class ServerAddWsAddressingAssertionTest {
 
         validateNamespace(relatesToMsgEl, namespace);
         Assert.assertEquals("Incorrect element value", relatesToMsgsId, relatesToMsgEl.getTextContent());
-
     }
 
-    private void validateNamespace(Element element, String namespace){
-        final String foundNs = element.getNamespaceURI();
-        Assert.assertEquals("Incorrect namespace found", namespace, foundNs);
-    }
+    @BugNumber(9284)
+    @Test
+    public void testMessageProperties_VariablesDefaultNamespace() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
-    private void validateIdAttribute(Element element) {
-        final String actionId = element.getAttributeNS(SoapConstants.WSU_NAMESPACE, "Id");
-        Assert.assertTrue("Id attribute should have been added.", !actionId.trim().isEmpty());
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+
+        final String action = "http://warehouse.acme.com/ws/listProducts";
+        final String namespace = SoapConstants.WSA_NAMESPACE_10;
+
+        assertion.setAction(action);
+        assertion.setWsaNamespaceUri("${doesnotexist}");
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(soapMsg, null);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message request = context.getRequest();
+
+        //validate request
+        final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
+        final Element headerEl = SoapUtil.getHeaderElement(requestDoc);
+        System.out.println(XmlUtil.nodeToFormattedString(headerEl));
+
+        //get out any value and validate the default namespace was used when the context variable configured resolved to nothing
+        final Element actionEl =
+                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_ACTION);
+        validateNamespace(actionEl, SoapConstants.WSA_NAMESPACE_10);
     }
 
     @Ignore
@@ -370,6 +394,18 @@ public class ServerAddWsAddressingAssertionTest {
 
     }
 
+    // - PRIVATE
+
+    private void validateNamespace(Element element, String namespace){
+        final String foundNs = element.getNamespaceURI();
+        Assert.assertEquals("Incorrect namespace found", namespace, foundNs);
+    }
+
+    private void validateIdAttribute(Element element) {
+        final String actionId = element.getAttributeNS(SoapConstants.WSU_NAMESPACE, "Id");
+        Assert.assertTrue("Id attribute should have been added.", !actionId.trim().isEmpty());
+    }
+    
     private static final String soapMsg = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"\n" +
             "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +

@@ -69,6 +69,8 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         final String namespace = assertion.getWsaNamespaceUri();
         if(namespace != null){
             namespaceComboBox.getEditor().setItem(namespace);
+        } else {
+            namespaceComboBox.setSelectedItem(AddWsAddressingAssertion.DEFAULT_NAMESPACE);
         }
 
         signMessageAddressingPropertiesCheckBox.setSelected(assertion.isSignMessageProperties());
@@ -76,13 +78,13 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
 
     @Override
     public AddWsAddressingAssertion getData(AddWsAddressingAssertion assertion) {
-        final Object actionObj = actionComboBox.getEditor().getItem();
+        final String action = actionComboBox.getEditor().getItem().toString().trim();
 
-        if(actionObj == null){
-            throw new ValidationException("No action selected");
+        if(action.isEmpty()){
+            throw new ValidationException("Action is required.");
         }
 
-        assertion.setAction(actionObj.toString().trim());
+        assertion.setAction(action);
         assertion.setMessageId(messageIdTextField.getText().trim());
         assertion.setDestination(toComboBox.getEditor().getItem().toString().trim());
         assertion.setSourceEndpoint(fromComboBox.getEditor().getItem().toString().trim());
@@ -126,7 +128,7 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         faultToComboBox.setSelectedIndex(-1);
 
         namespaceComboBox.setModel(new DefaultComboBoxModel(
-                new Object[]{SoapConstants.WSA_NAMESPACE, SoapConstants.WSA_NAMESPACE2, SoapConstants.WSA_NAMESPACE_10}));
+                new Object[]{SoapConstants.WSA_NAMESPACE_10, SoapConstants.WSA_NAMESPACE2, SoapConstants.WSA_NAMESPACE}));
         namespaceComboBox.setSelectedIndex(-1);
     }
 

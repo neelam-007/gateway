@@ -71,9 +71,11 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         try {
             final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
             
-            String wsaNs = assertion.getWsaNamespaceUri();
-            if (wsaNs == null || wsaNs.trim().isEmpty()) wsaNs = SoapUtil.WSA_NAMESPACE_10;
-            else wsaNs = resolveProperty(wsaNs, vars);
+            String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
+            if(wsaNs == null) {
+                wsaNs = AddWsAddressingAssertion.DEFAULT_NAMESPACE;
+                logger.log(Level.INFO, "No namespace value found for WS-Addressing. Using default value of " + AddWsAddressingAssertion.DEFAULT_NAMESPACE);
+            }
 
             String resolvedAction = resolveProperty(assertion.getAction(), vars);
             if(resolvedAction == null){

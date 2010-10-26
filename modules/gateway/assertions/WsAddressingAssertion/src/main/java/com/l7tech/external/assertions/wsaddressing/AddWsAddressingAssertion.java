@@ -14,6 +14,7 @@ import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.KeyReference;
+import com.l7tech.util.SoapConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +23,7 @@ import java.util.List;
 public class AddWsAddressingAssertion extends MessageTargetableAssertion implements WssDecorationConfig {
 
     public static final String ACTION_AUTOMATIC = "<<auto>>";
+    public static final String DEFAULT_NAMESPACE = SoapConstants.WSA_NAMESPACE_10;
 
     @Override
     public String[] getVariablesUsed() {
