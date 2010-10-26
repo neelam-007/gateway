@@ -12,7 +12,12 @@ import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.KeyReference;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class AddWsAddressingAssertion extends MessageTargetableAssertion implements WssDecorationConfig {
 
@@ -20,7 +25,24 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion impleme
 
     @Override
     public String[] getVariablesUsed() {
-        return super.getVariablesUsed();
+
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append(getWsaNamespaceUri());
+        sb.append(getAction());
+        sb.append(getMessageId());
+        sb.append(getDestination());
+        sb.append(getSourceEndpoint());
+        sb.append(getReplyEndpoint());
+        sb.append(getFaultEndpoint());
+        sb.append(getRelatesToMessageId());
+
+        final String[] strings = Syntax.getReferencedNames(sb.toString());
+        List<String> allVars = new ArrayList<String>();
+        allVars.addAll(Arrays.asList(strings));
+        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
+
+        return allVars.toArray(new String[allVars.size()]);
     }
 
     public String getAction() {
