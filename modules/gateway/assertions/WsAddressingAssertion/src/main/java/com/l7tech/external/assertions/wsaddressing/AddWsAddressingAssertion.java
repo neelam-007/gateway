@@ -4,6 +4,9 @@
  */
 package com.l7tech.external.assertions.wsaddressing;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
@@ -20,11 +23,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+
 public class AddWsAddressingAssertion extends MessageTargetableAssertion implements WssDecorationConfig {
 
     public static final String ACTION_AUTOMATIC = "<<auto>>";
     public static final String DEFAULT_NAMESPACE = SoapConstants.WSA_NAMESPACE_10;
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
 
