@@ -30,7 +30,9 @@ public class ServerEmailAlertAssertionTest {
 
         eaa.setSmtpHost("${host}");
         eaa.setSmtpPort("${port}");
+        eaa.setAuthenticate(true);
         eaa.setAuthPassword("${pwd}");
+        eaa.setContextVarPassword(true);
         eaa.setAuthUsername("${user}");
         eaa.setBase64message("Message with ${var}.");
         eaa.setTargetCCEmailAddress("${ccAddress}");

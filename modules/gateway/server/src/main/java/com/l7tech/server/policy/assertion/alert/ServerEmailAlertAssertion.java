@@ -154,8 +154,12 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
 
         host = ExpandVariables.process(host, variableMap, auditor);
         portNum = ExpandVariables.process(portNum, variableMap, auditor);
-        userName = ExpandVariables.process(userName, variableMap, auditor);
-        pwd = ExpandVariables.process(pwd, variableMap, auditor);
+        if(assertion.isAuthenticate())
+        {
+            userName = ExpandVariables.process(userName, variableMap, auditor);
+            if(assertion.isContextVarPassword())
+                pwd = ExpandVariables.process(pwd, variableMap, auditor);
+        }
         subject = ExpandVariables.process(subject, variableMap, auditor);
 
         //get the recipients populated
@@ -193,14 +197,17 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             return AssertionStatus.FAILED;
         }
 
-        if(userName==null || userName.equals("")){
-            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_USER);
-            return AssertionStatus.FAILED;
-        }
+        if(assertion.isAuthenticate())
+        {
+            if(userName==null || userName.equals("")){
+                auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_USER);
+                return AssertionStatus.FAILED;
+            }
 
-        if(pwd==null || pwd.equals("")){
-            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PWD);
-            return AssertionStatus.FAILED;
+            if(pwd==null || pwd.equals("")){
+                auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_PWD);
+                return AssertionStatus.FAILED;
+            }
         }
 
         if(assertion.isTestBean()){

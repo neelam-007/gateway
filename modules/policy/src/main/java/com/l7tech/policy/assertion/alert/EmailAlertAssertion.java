@@ -41,6 +41,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String base64message = "";
     private Protocol protocol = Protocol.PLAIN;
     private boolean authenticate = false;
+    private boolean contextVarPassword = false;
     private String authUsername;
     private String authPassword;
     private boolean isTestBean = false;
@@ -121,6 +122,11 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.smtpPort = smtpPort;
     }
 
+    @Deprecated
+    public void setSmtpPort(int smtpPort) {
+        this.smtpPort = Integer.toString(smtpPort);
+    }
+
     public String getSubject() {
         return subject;
     }
@@ -173,6 +179,14 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 
     public void setAuthenticate(boolean authenticate) {
         this.authenticate = authenticate;
+    }
+
+    public boolean isContextVarPassword() {
+        return contextVarPassword;
+    }
+
+    public void setContextVarPassword(boolean contextVarPassword) {
+        this.contextVarPassword = contextVarPassword;
     }
 
     public String getAuthUsername() {
@@ -278,7 +292,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
             }
         }
 
-        if (this.authPassword != null){
+        if (contextVarPassword && this.authPassword != null){
             pwdRefNames = Syntax.getReferencedNames(this.authPassword);
             if(pwdRefNames!=null){
                 list.addAll(Arrays.asList(pwdRefNames));

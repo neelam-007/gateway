@@ -7,7 +7,7 @@
 package com.l7tech.console.panels;
 
 import static com.l7tech.policy.assertion.alert.EmailAlertAssertion.Protocol;
-import com.l7tech.gui.NumberField;
+
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -22,6 +23,8 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
 /**
@@ -47,10 +50,12 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
     private JTextField bccAddressesField;
     private JCheckBox authenticateCheckBox;
     private JButton sendTestEmailButton;
+    private JCheckBox contextVarPasswordCheckBox;
 
     private final boolean readOnly;
     private final EmailAlertAssertion assertion;
     private boolean confirmed = false;
+    private char echoChar;
 
     /**
      * Creates a new EmailAlertPropertiesDialog object backed by the provided EmailAlertAssertion object.
@@ -131,6 +136,16 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
                                 //collect email config and email content information
                                 final EmailAlertAssertion eaa = new EmailAlertAssertion();
                                 viewToModel(eaa);
+                                
+                                // check if using context variables
+                                if(usesContextVars(eaa))
+                                {
+                                   DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                                                 "Unable to send email containing context variable",
+                                                 "Email Test",
+                                                 JOptionPane.ERROR_MESSAGE, null);
+                                   return;
+                                }
 
                                 //execute email test
                                 Registry.getDefault().getEmailAdmin().testSendEmail(eaa);
@@ -190,8 +205,17 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
-//        portField.setDocument(new NumberField(6));
-//        validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
+        echoChar = authPasswordField.getEchoChar();
+        contextVarPasswordCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (contextVarPasswordCheckBox.isSelected()) {
+                    authPasswordField.setText("");
+                }
+                authPasswordField.enableInputMethods(contextVarPasswordCheckBox.isSelected());
+                authPasswordField.setEchoChar(contextVarPasswordCheckBox.isSelected() ? (char)0 : echoChar);
+            }
+        });
 
         pack();
         Utilities.centerOnScreen(this);
@@ -216,6 +240,20 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         messageField.getDocument().addDocumentListener(dl);
     }
 
+    private boolean usesContextVars(EmailAlertAssertion eaa) {
+        if(Syntax.getReferencedNames(eaa.getSmtpHost()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSmtpPort()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetEmailAddress()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetCCEmailAddress()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetBCCEmailAddress()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSubject()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.messageString()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSourceEmailAddress()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getAuthUsername()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getAuthPassword()).length > 0  ) return true;
+        return false;
+    }
+
     /**
      * Sets the fields to the values from the EmailAlertAssertion object.
      * @param assertion
@@ -231,6 +269,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         messageField.setText(assertion.messageString());
         fromAddressField.setText(assertion.getSourceEmailAddress());
         authenticateCheckBox.setSelected(assertion.isAuthenticate());
+        contextVarPasswordCheckBox.setSelected(assertion.isContextVarPassword());
         authUsernameField.setText(assertion.getAuthUsername());
         authPasswordField.setText(assertion.getAuthPassword());
     }
@@ -254,9 +293,11 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         if (authenticate) {
             assertion.setAuthUsername(authUsernameField.getText());
             assertion.setAuthPassword(new String(authPasswordField.getPassword()));
+            assertion.setContextVarPassword(contextVarPasswordCheckBox.isSelected());
         } else {
             assertion.setAuthUsername(null);
             assertion.setAuthPassword(null);
+            assertion.setContextVarPassword(false);
         }
     }
 
@@ -284,15 +325,13 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         if (toAddressesField.getText().length() < 1) ok = false;
         if (hostField.getText().length() < 1) ok = false;
         if (fromAddressField.getText().length() < 1) ok = false;
-//        if (!isValidInt(portField.getText())) ok = false;
-//        int port = safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT);
-//        if (port < 1 || port > 65535) ok = false;
         if (authenticateCheckBox.isSelected() && authUsernameField.getText().length() == 0) ok = false;
 
         authUsernameLabel.setEnabled(authenticateCheckBox.isSelected());
         authUsernameField.setEnabled(authenticateCheckBox.isSelected());
         authPasswordLabel.setEnabled(authenticateCheckBox.isSelected());
         authPasswordField.setEnabled(authenticateCheckBox.isSelected());
+        contextVarPasswordCheckBox.setEnabled(authenticateCheckBox.isSelected());
 
         okButton.setEnabled(!readOnly && ok);
     }
