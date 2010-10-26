@@ -177,6 +177,8 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion impleme
         @Override
         public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if(!assertion.isSignMessageProperties()) return;
+
+            if(Assertion.isResponse(assertion)) return;
             
             final Assertion[] assertionPaths = path.getPath();
             boolean seenDecoration = false;
