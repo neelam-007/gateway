@@ -114,9 +114,10 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
 
         actionComboBox.setModel(new DefaultComboBoxModel(new Object[]{AddWsAddressingAssertion.ACTION_AUTOMATIC}));
         actionComboBox.setSelectedIndex(-1);
-        final Object[] addressItems = {SoapConstants.WSA_ANONYMOUS_ADDRESS, SoapConstants.WSA_NO_ADDRESS};
-        toComboBox.setModel(new DefaultComboBoxModel(addressItems));
+        toComboBox.setModel(new DefaultComboBoxModel(new Object[]{SoapConstants.WSA_ANONYMOUS_ADDRESS}));
         toComboBox.setSelectedIndex(-1);
+
+        final Object[] addressItems = {SoapConstants.WSA_ANONYMOUS_ADDRESS, SoapConstants.WSA_NO_ADDRESS};        
         fromComboBox.setModel(new DefaultComboBoxModel(addressItems));
         fromComboBox.setSelectedIndex(-1);
         replyToAddress.setModel(new DefaultComboBoxModel(addressItems));
