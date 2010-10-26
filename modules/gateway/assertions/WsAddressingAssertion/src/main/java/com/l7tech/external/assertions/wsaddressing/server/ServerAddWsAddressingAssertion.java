@@ -44,6 +44,11 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
     }
 
     @Override
+    public boolean hasDecorationRequirements() {
+        return assertion.isSignMessageProperties();
+    }
+
+    @Override
     protected int addDecorationRequirements(final PolicyEnforcementContext context,
                                             final AuthenticationContext authContext,
                                             final Document soapmsg,
@@ -52,9 +57,10 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         final Element header;
         final SoapInfo soapInfo;
         try {
-            header = SoapUtil.getOrMakeHeader(soapmsg);
             final SoapKnob soapKnob = targetMessage.getSoapKnob();
             soapInfo = soapKnob.getSoapInfo();
+            final Document writeDoc = targetMessage.getXmlKnob().getDocumentWritable();
+            header = SoapUtil.getOrMakeHeader(writeDoc);
         } catch (Exception e) {
             String msg = "Cannot get XML document from target message: " + ExceptionUtils.getMessage(e);
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));

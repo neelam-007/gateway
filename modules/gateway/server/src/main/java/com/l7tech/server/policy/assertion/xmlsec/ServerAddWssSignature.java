@@ -38,7 +38,10 @@ import java.security.KeyStoreException;
 import java.util.logging.Logger;
 
 /**
- * Server assertion for Signing
+ * Server assertion for Signing.
+ *
+ * This abstract class accommodates subclasses which may require signing sometimes, but not all times based on the
+ * subclasses target assertions configuration.
  *
  * @author alex
  */
@@ -67,7 +70,11 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         }
     }
 
-    // despite the name of this method, i'm actually working on the response document here
+    /**
+     * This assertion is message targetable. By default it will be applied to the response if there are any
+     * decoration requirements added. Otherwise an assertion like 'Apply WS-Security' is required for any
+     * decoration requirements added to be applied.
+     */
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
@@ -111,7 +118,12 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         }
 
 
-        DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
+        final DecorationRequirements wssReq;
+        if(hasDecorationRequirements()){
+            wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
+        } else {
+            wssReq = new DecorationRequirements();
+        }
 
         int howMany = addDecorationRequirements(context, authContext, soapmsg, wssReq, message);
         if (howMany < 0) {
@@ -191,13 +203,31 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
     }
 
     /**
+     * If this method returns true, then any decoration requirements added via addDecorationRequirements will be
+     * added to the target message. Override if a subclass wants to control when it needs to decorate based on it's
+     * configuration.
+     *
+     * @return true when decoration requirements should be incorporated with the target message.
+     */
+    public boolean hasDecorationRequirements(){
+        return true;
+    }
+
+    /**
      * Configure the decoration requirements for this signature.
+     *
+     * This class provides the functionality to correctly apply these decoration requirements to the target message.
+     * Some subclasses may want this functionality but not in all cases depending on the assertions configuration.
+     * For those cases the logic that would normally go into checkRequest() can go into this method, following the
+     * contract for return codes and logging, and use hasDecorationRequirements() as the means for signaling when the
+     * decoration requirements are actually needed.
      *
      * @param context  the PolicyEnforcementContext.  Required.
      * @param authContext  the AuthenticationContext.  Required.
-     * @param soapmsg  the message that is to be decorated.  Required.
+     * @param soapmsg  the message that is to be decorated. This Document is NOT WRITEABLE. If written to the changes will
+     * be persisted so long as decoration requirements are added and hasDecorationRequirements() returns true. Required.
      * @param wssReq   the existing decoration requirements, to which the new signature requirements should be added.  Required.
-     * @param targetMessage the target message for this assertion. Never null.
+     * @param targetMessage the target message for this assertion. Never null. Allows a writeable document to be obtained.
      * @return the number of elements selected for signing, zero if no elements were selected, or -1 if the assertion
      *          should fail (subclass is expected to have logged the reason already)
      * @throws com.l7tech.policy.assertion.PolicyAssertionException if the signature requirements cannot be added due to
