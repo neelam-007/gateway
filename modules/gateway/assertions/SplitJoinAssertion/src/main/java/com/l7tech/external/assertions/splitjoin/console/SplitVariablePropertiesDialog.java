@@ -26,7 +26,8 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
 
         assertion.setInputVariable(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
         assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getText()));
-        assertion.setSplitPattern(splitPatternTextField.getText());//do not modify what the user entered        
+        assertion.setSplitPattern(splitPatternTextField.getText());//do not modify what the user entered
+        assertion.setSplitPatternRegEx(regularExpressionCheckBox.isSelected());
 
         return assertion;
     }
@@ -47,6 +48,8 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
         if (splitPattern != null) {//do not check for empty, it is ok
             splitPatternTextField.setText(splitPattern);
         }
+
+        regularExpressionCheckBox.setSelected(assertion.isSplitPatternRegEx());
     }
 
     @Override
@@ -100,5 +103,6 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
     private JTextField sourceVariableTextField;
     private JTextField targetVariableTextField;
     private JTextField splitPatternTextField;
+    private JCheckBox regularExpressionCheckBox;
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(SplitVariablePropertiesDialog.class.getName());
 }

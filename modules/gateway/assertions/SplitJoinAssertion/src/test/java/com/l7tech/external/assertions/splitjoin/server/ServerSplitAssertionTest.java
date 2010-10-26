@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.splitjoin.server;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.TextUtils;
 import com.l7tech.external.assertions.splitjoin.SplitAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -64,6 +64,43 @@ public class ServerSplitAssertionTest {
         Assert.assertEquals(outs.get(0), b1);
         Assert.assertEquals(outs.get(1), b2);
         Assert.assertEquals(outs.get(2), b3);
+    }
+
+    @BugNumber(9286)
+    @Test
+    public void testSplit_NoRegex() throws Exception {
+        assertion.setSplitPattern(".");
+        assertion.setSplitPatternRegEx(false);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        context.setVariable(inputVariable, "one.two.three");
+        AssertionStatus result = ssa.checkRequest(context);
+
+        Assert.assertEquals(result, AssertionStatus.NONE);
+        Object outputObj = context.getVariable(outputVariable);
+        Assert.assertTrue(outputObj instanceof List);
+        List outs = (List) outputObj;
+        for (Object outObj : outs)
+            Assert.assertTrue(outObj instanceof String);
+        Assert.assertEquals(outs.size(), 3);
+    }
+
+    @BugNumber(9286)
+    @Test
+    public void testSplit_NoRegex_Identity() throws Exception {
+        assertion.setSplitPattern(".");
+        assertion.setSplitPatternRegEx(false);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        context.setVariable(inputVariable, "onetwothree");
+        AssertionStatus result = ssa.checkRequest(context);
+
+        Assert.assertEquals(result, AssertionStatus.NONE);
+        Object outputObj = context.getVariable(outputVariable);
+        Assert.assertTrue(outputObj instanceof List);
+        List outs = (List) outputObj;
+        for (Object outObj : outs)
+            Assert.assertTrue(outObj instanceof String);
+        Assert.assertEquals(outs.size(), 1);
+        Assert.assertEquals(outs.get(0), "onetwothree");
     }
 
     @Test

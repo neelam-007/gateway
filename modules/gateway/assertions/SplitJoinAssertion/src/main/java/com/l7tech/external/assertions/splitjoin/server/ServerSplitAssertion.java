@@ -29,6 +29,7 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
 
     private final Auditor auditor;
     private final Pattern pattern;
+    private final String literalSplitPattern;
 
     public ServerSplitAssertion(SplitAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -36,7 +37,13 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
         //noinspection ThisEscapedInObjectConstruction
         this.auditor = context == null ? new LogOnlyAuditor(logger) : new Auditor(this, context, logger);
         try {
-            pattern = Pattern.compile(assertion.getSplitPattern());
+            if(assertion.isSplitPatternRegEx()){
+                pattern = Pattern.compile(assertion.getSplitPattern());
+                literalSplitPattern = null;
+            } else {
+                pattern = null;
+                literalSplitPattern = Pattern.quote(assertion.getSplitPattern());
+            }
         } catch (PatternSyntaxException pse) {
             throw new PolicyAssertionException(assertion, "Invalid regex split pattern: " + ExceptionUtils.getMessage(pse));
         }
@@ -50,8 +57,14 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
                 auditor.logAndAudit(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, new String[]{assertion.getInputVariable(), value.getClass().getName()} );
                 return AssertionStatus.FAILED;
             }
-            //pattern.split will return the input in the case of no match
-            final String[] output = pattern.split(value.toString());
+
+            final String[] output;
+            if(assertion.isSplitPatternRegEx()){
+                //pattern.split will return the input in the case of no match
+                output = pattern.split(value.toString());
+            } else {
+                output = value.toString().split(literalSplitPattern);
+            }
             context.setVariable(assertion.getOutputVariable(), Arrays.asList(output));
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {

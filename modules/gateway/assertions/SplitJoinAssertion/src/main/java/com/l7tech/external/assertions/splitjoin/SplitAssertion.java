@@ -37,6 +37,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
      */
     private String inputVariable;
     private String outputVariable;
+    private boolean isSplitPatternRegEx = true;//true by default for backwards compatibility
 
     public String getSplitPattern() {
         return splitPattern;
@@ -60,6 +61,14 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
 
     public void setOutputVariable(String outputVariable) {
         this.outputVariable = outputVariable;
+    }
+
+    public boolean isSplitPatternRegEx() {
+        return isSplitPatternRegEx;
+    }
+
+    public void setSplitPatternRegEx(boolean splitPatternRegEx) {
+        isSplitPatternRegEx = splitPatternRegEx;
     }
 
     @Override
