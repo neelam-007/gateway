@@ -91,7 +91,7 @@ public class CaptureProperty extends JDialog {
                         descField.setCaretPosition(0);
 
                         // Get and set value
-                        String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
+                        String initialValue = propertyDescriptor == null? "Layer7 Gateway" : propertyDescriptor.getDefaultValue();
                         String currentValue = getCurrentPropValue((String) keyComboBox.getSelectedItem());
                         valueField.setText(currentValue == null? initialValue : currentValue);
                     }
