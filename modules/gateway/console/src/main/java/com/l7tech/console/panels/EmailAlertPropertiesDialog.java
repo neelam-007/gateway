@@ -250,7 +250,7 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         if(Syntax.getReferencedNames(eaa.messageString()).length > 0  ) return true;
         if(Syntax.getReferencedNames(eaa.getSourceEmailAddress()).length > 0  ) return true;
         if(Syntax.getReferencedNames(eaa.getAuthUsername()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getAuthPassword()).length > 0  ) return true;
+        if(contextVarPasswordCheckBox.isSelected() && Syntax.getReferencedNames(eaa.getAuthPassword()).length > 0  ) return true;
         return false;
     }
 
