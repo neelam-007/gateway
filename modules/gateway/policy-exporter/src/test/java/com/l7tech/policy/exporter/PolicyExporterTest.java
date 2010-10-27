@@ -132,7 +132,7 @@ public class PolicyExporterTest {
         JmsRoutingAssertion jrass = new JmsRoutingAssertion();
         jrass.setEndpointName("blah");
         jrass.setEndpointOid((long) 25);
-        jrass.setResponseTimeout(55);
+        jrass.setResponseTimeout("55");
         root.addChild(jrass);
 
         // PrivatekeyReference

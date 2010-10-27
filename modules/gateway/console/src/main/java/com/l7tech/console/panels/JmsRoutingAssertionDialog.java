@@ -17,6 +17,7 @@ import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
@@ -252,8 +253,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextField(jmsResponseTimeout, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                String uiResponseTimeout = jmsResponseTimeout.getText();
-                String errMsg = "The value for the response timeout must be a valid positive number or empty.";
+                String uiResponseTimeout = jmsResponseTimeout.getText().trim();
+                String errMsg = "The value for the response timeout must be a valid positive number, contain one context variable, or empty.";
                 try {
                     if (! uiResponseTimeout.isEmpty()) {
                         int timeout = Integer.parseInt(uiResponseTimeout);
@@ -262,7 +263,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                         }
                     }
                 } catch (NumberFormatException e) {
-                    return errMsg;
+                    //check if context var instead
+                    String[] vars = Syntax.getReferencedNames(uiResponseTimeout);
+                    if(vars.length == 1 &&  uiResponseTimeout.equals("${"+vars[0]+"}"))
+                        return null;
+                    else
+                    {
+                        return errMsg;
+                    }
                 }
                 return null;
             }
@@ -396,9 +404,9 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
-                    assertion.setResponseTimeout(Integer.valueOf(responseTimeoutOverride));
+                    assertion.setResponseTimeout(responseTimeoutOverride);
                 } else {
-                    assertion.setResponseTimeout(-1);
+                    assertion.setResponseTimeout(null);
                 }
 
                 fireEventAssertionChanged(assertion);
@@ -609,8 +617,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
         responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
-        int responseTimeoutOverride = assertion.getResponseTimeout();
-        jmsResponseTimeout.setText(responseTimeoutOverride >=0 ? String.valueOf(responseTimeoutOverride) : "");
+        jmsResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
     }
 
     /**

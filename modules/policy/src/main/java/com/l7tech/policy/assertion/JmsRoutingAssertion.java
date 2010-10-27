@@ -42,7 +42,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     /**
-     * The name of the {@link JmsEndpoint}.
+     * The name of the { JmsEndpoint}
      * @return the name of this endpoint if known, for cosmetic purposes only. 
      */
     public String getEndpointName() {
@@ -50,7 +50,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     /**
-     * The name of the {@link JmsEndpoint}.
+     * The name of the { JmsEndpoint}.
      * @param endpointName the name of this endpoint if known, for cosmetic purposes only.
      */
     public void setEndpointName(String endpointName) {
@@ -61,10 +61,10 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link #DEFAULT_TIMEOUT}.
+     * Defaults to {ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT}.
      * @return the response timeout (in milliseconds)
      */
-    public int getResponseTimeout() {
+    public String getResponseTimeout() {
         return responseTimeout;
     }
 
@@ -72,11 +72,17 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link #DEFAULT_TIMEOUT}.
+     * Defaults to {ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT}.
      * @param responseTimeout the response timeout (in milliseconds)
      */
-    public void setResponseTimeout( int responseTimeout ) {
+    public void setResponseTimeout( String responseTimeout ) {
         this.responseTimeout = responseTimeout;
+    }
+
+    @Deprecated
+    public void setResponseTimeout (int responseTimeout)
+    {
+        this.responseTimeout = Integer.toString(responseTimeout);
     }
 
     /**
@@ -197,6 +203,10 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
             if (dynamicVars != null && !dynamicVars.equals(""))
                 vars.addAll(Arrays.asList(Syntax.getReferencedNames(dynamicVars)));
         }
+
+        if (responseTimeout != null) {
+            vars.addAll(Arrays.asList(Syntax.getReferencedNames(responseTimeout)));
+        }
         vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
         return vars.toArray(new String[vars.size()]);
     }
@@ -224,7 +234,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
     private Long endpointOid = null;
     private String endpointName = null;
-    private int responseTimeout = -1;
+    private String responseTimeout = null;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
     private JmsDynamicProperties dynamicJmsRoutingProperties;
