@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import java.util.Set;
 import java.util.Arrays;
 
+import com.l7tech.util.TimeUnit;
 import org.hibernate.annotations.Proxy;
 
 /**
@@ -461,6 +462,23 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(GROUP_CACHE_MAX_AGE, maxAge);
     }
 
+
+    @Transient
+    public TimeUnit getGroupCacheMaxAgeUnit() {        
+        Object value = getProperty(GROUP_CACHE_MAX_AGE_UNIT);
+        if (value == null) return TimeUnit.MINUTES;
+        return TimeUnit.fromAbbreviation((String)value);        
+    }
+
+    /**
+     * Set the maximum age in milliseconds for cached group information.
+     *
+     * @param maxAgeUnit The maximum age unit
+     */
+    public void setGroupCacheMaxAgeUnit( final TimeUnit maxAgeUnit ) {
+        setProperty(GROUP_CACHE_MAX_AGE_UNIT, maxAgeUnit.getAbbreviation());
+    }
+
     /**
      * Get the group maximum nesting depth.
      *
@@ -524,6 +542,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String RETURNING_ATTRIBUTES = "returningAttributes";    
     private static final String GROUP_CACHE_SIZE = "groupCacheSize";
     private static final String GROUP_CACHE_MAX_AGE = "groupCacheMaxAge";
+    private static final String GROUP_CACHE_MAX_AGE_UNIT = "groupCacheMaxAgeUnit";
     private static final String GROUP_MAX_NESTING = "groupMaxNesting";
     private static final String GROUP_MEMBERSHIP_CASE_INSENSITIVE = "groupMembershipCaseInsensitive";
 }
