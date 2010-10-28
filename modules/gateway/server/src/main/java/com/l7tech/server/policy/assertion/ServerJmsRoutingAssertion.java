@@ -378,7 +378,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         try {
                             timeout = Integer.parseInt(timeoutStr);
                             if (timeout <= 0){
-                                timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                                timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT,emergencyTimeoutDefault);
                                 logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                             }
                         } catch (NumberFormatException e) {
@@ -389,9 +389,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         timeoutStr = ExpandVariables.process(timeoutStr,context.getVariableMap( assertion.getVariablesUsed(), auditor),auditor);
                         try {
                             timeout = Integer.parseInt(timeoutStr);
-
                             if (timeout <= 0){
-                                timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                                timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT,emergencyTimeoutDefault);
                                 logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                             }
                         } catch (NumberFormatException e) {
