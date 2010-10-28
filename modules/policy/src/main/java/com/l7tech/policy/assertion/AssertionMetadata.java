@@ -11,6 +11,10 @@ package com.l7tech.policy.assertion;
 public interface AssertionMetadata {
     /**
      * String.  Base name of this assertion, ie "OneOrMore".
+     * <p/>
+     * This is used for constructing other default names, including default classnames, and so should
+     * be a valid classname fragment.
+     * <p/>
      * Defaults to assertion classname with the package name and any trailing "Assertion" removed.
      */
     String BASE_NAME = "baseName";
