@@ -411,6 +411,14 @@ public class ServerVariablesTest {
 
         expandAndCheck(context,"${request.http.headernames}" ,
                HttpConstants.HEADER_CONTENT_TYPE +", "+  HttpConstants.HEADER_CONNECTION +", "+  HttpConstants.HEADER_COOKIE);
+
+        expandAndCheck(context,"${request.http.allheadervalues[0]}" ,
+               HttpConstants.HEADER_CONTENT_TYPE +':'+ ContentTypeHeader.XML_DEFAULT.getFullValue());
+
+        expandAndCheck(context,"${request.http.allheadervalues[1]}" ,
+               HttpConstants.HEADER_CONNECTION +':'+ ContentTypeHeader.XML_DEFAULT.getFullValue()+", "+ ContentTypeHeader.TEXT_DEFAULT.getFullValue());
+
+
     }
 
     @BugNumber(8428)
@@ -809,7 +817,7 @@ public class ServerVariablesTest {
 
 
         mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
-        mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         mockRequest.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
 
 

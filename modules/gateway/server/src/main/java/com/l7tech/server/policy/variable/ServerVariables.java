@@ -13,10 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.*;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -310,12 +307,12 @@ public class ServerVariables {
             }
         }),
 
-        new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
+        new Variable(BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
                 final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
                 if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP_NAMES;
+                final String prefix = BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES;
                 if (!name.startsWith(prefix)) {
                     logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                     return null;
@@ -325,12 +322,12 @@ public class ServerVariables {
             }
         }),
 
-        new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
+        new Variable(BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
                 final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
                 if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP_NAMES;
+                final String prefix = BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES;
                 if (!name.startsWith(prefix)) {
                     logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                     return null;
@@ -339,6 +336,38 @@ public class ServerVariables {
                 return keys;
             }
         }),
+
+        new Variable(BuiltinVariables.REQUEST_JMS_MSG_ALL_PROP_VALS, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                ArrayList<String> values = new ArrayList<String> ();
+                final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                final char delimiter = ':';
+                for(String key :jmsKnob.getJmsMsgPropMap().keySet())
+                {
+                    values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString() );
+                }
+                return values.toArray();
+            }
+        }), 
+        new Variable(BuiltinVariables.RESPONSE_JMS_MSG_ALL_PROP_VALS, new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
+                if (jmsKnob == null) return null;
+                ArrayList<String> values = new ArrayList<String> ();
+                final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                final char delimiter = ':';
+                for(String key :jmsKnob.getJmsMsgPropMap().keySet())
+                {
+                    values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString() );
+                }
+                return values.toArray();
+            }
+        }),
+
 
         new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
             @Override

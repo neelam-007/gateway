@@ -37,7 +37,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     // NOTE: Variable names must be lower case
     private static final String HTTP_HEADER_PREFIX = "http.header.";
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
-    private static final String HTTP_ALLHEADERNAMES_PREFIX = "http.headernames";
+    private static final String HTTP_HEADERNAMES = "http.headernames";
+    private static final String HTTP_ALLHEADERVALUES = "http.allheadervalues";
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
     private static final String PARTS_NAME = "parts";
@@ -115,8 +116,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = singleHeaderSelector;
         else if (lname.startsWith(HTTP_HEADERVALUES_PREFIX))
             selector = multiHeaderSelector;
-        else if (lname.startsWith(HTTP_ALLHEADERNAMES_PREFIX))
-            selector = allHeaderSelector;
+        else if (lname.startsWith(HTTP_HEADERNAMES))
+            selector = headerNamesSelector;
+        else if (lname.startsWith(HTTP_ALLHEADERVALUES))
+            selector = allHeaderValuesSelector;
         else if (STATUS_NAME.equals(lname)) {
             selector = statusSelector;
         } else if (SIZE_NAME.equals(lname)) {
@@ -479,11 +482,10 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         return index < 1 || index > candidates.size() ? null : candidates.get(index - 1).getCertificate();
     }
 
-    private static final MessageAttributeSelector allHeaderSelector = new MessageAttributeSelector() {
+    private static final MessageAttributeSelector headerNamesSelector = new MessageAttributeSelector() {
         @Override
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             boolean sawHeaderHaver = false;
-            final String lname = name.substring(HTTP_ALLHEADERNAMES_PREFIX.length());
             for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
                 HasHeaders hrk = context.getKnob(headerKnob);
                 if (hrk != null) {
@@ -493,7 +495,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                 }
             }
              if (sawHeaderHaver) {
-                String msg = handler.handleBadVariable(lname + " header was empty");
+                String msg = handler.handleBadVariable("Headers are empty");
                 if (strict) throw new IllegalArgumentException(msg);
                 return null;
             } else {
@@ -505,6 +507,38 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     };
 
 
+    private static final MessageAttributeSelector allHeaderValuesSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            boolean sawHeaderHaver = false;
+            for (Class<? extends HasHeaders> headerKnob : headerHaverKnobClasses) {
+                HasHeaders hrk = context.getKnob(headerKnob);
+                if (hrk != null) {
+                    sawHeaderHaver = true;
+                    String[] headers = hrk.getHeaderNames();
+                    ArrayList <String> values = new ArrayList<String>();
+                    final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                    final char delimiter = ':';
+                    for(String header : headers)
+                    {
+                        String [] vals = hrk.getHeaderValues(header);
+                        String valStr = vals.length > 0 ? syntax.format(vals, Syntax.getFormatter( vals[0] ), handler, strict) : "";
+                        values.add(header+delimiter+valStr) ;
+                    }
+                    return new Selection(values.toArray());
+                }
+            }
+             if (sawHeaderHaver) {
+                String msg = handler.handleBadVariable( "Headers are empty");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            } else {
+                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+        }
+    };
     private static final HeaderSelector singleHeaderSelector = new HeaderSelector(HTTP_HEADER_PREFIX, false);
     private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX, true);
 
