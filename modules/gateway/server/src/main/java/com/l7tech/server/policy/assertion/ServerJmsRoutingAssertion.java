@@ -376,26 +376,26 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
                     else  {
                         try {
-
-                            if(Integer.getInteger(timeoutStr) == null)
-                            {
-                                // try resolving context var
-                                timeoutStr = ExpandVariables.process(timeoutStr,context.getVariableMap( assertion.getVariablesUsed(), auditor),auditor);
-                                timeout = Integer.parseInt(timeoutStr);
-                                if (timeout <= 0){
-                                    timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
-                                    logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
-                                }
-                            }
-                            else
-                            {                               
-                                timeout = Integer.parseInt(timeoutStr);
-                                if (timeout <= 0){
-                                    timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
-                                    logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
-                                }
+                            timeout = Integer.parseInt(timeoutStr);
+                            if (timeout <= 0){
+                                timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                                logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                             }
                         } catch (NumberFormatException e) {
+                            // do nothing 
+                        }
+
+                        // try resolving context var
+                        timeoutStr = ExpandVariables.process(timeoutStr,context.getVariableMap( assertion.getVariablesUsed(), auditor),auditor);
+                        try {
+                            timeout = Integer.parseInt(timeoutStr);
+
+                            if (timeout <= 0){
+                                timeout = Integer.parseInt(serverConfig.getClusterPropertyDefaults().get(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                                logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
+                            }
+                        } catch (NumberFormatException e) {
+
                             timeout = emergencyTimeoutDefault;
                             logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
