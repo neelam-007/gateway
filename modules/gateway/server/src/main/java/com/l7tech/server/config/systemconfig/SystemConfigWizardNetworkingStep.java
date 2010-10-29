@@ -387,7 +387,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
                     stringAddresses.add(strAddress);
                 }
             }
-            currentFirstAddress = stringAddresses.get(0);
+            if (! stringAddresses.isEmpty())
+                currentFirstAddress = stringAddresses.get(0);
         }
 
         boolean isValid;
