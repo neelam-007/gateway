@@ -113,8 +113,8 @@ public class GlobalResourcesDialog extends JDialog {
         setMinimumSize( getContentPane().getMinimumSize() );        
         Utilities.setDoubleClickAction( resourcesTable, editButton );
         Utilities.centerOnParentWindow( this );
+        Utilities.setEnterAction( matchesTextField, filterButton );
         Utilities.setEscAction( this, closeButton );
-        getRootPane().setDefaultButton( closeButton );
         Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         enableDisableComponents();
         loadResources();

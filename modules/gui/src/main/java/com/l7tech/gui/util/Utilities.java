@@ -441,6 +441,30 @@ public class Utilities {
     }
 
     /**
+     * Update the input map of the component so the ENTER keystroke invokes the passed action.
+     *
+     * @param component the component
+     * @param button the dialog button to invoke on Enter key
+     */
+    public static void setEnterAction(final JComponent component, final JButton button) {
+        setEnterAction( component, getDispatchingActionListener(button, button.getActionListeners()) );
+    }
+
+    /**
+     * Update the input map of the component so the ENTER keystroke invokes the passed action.
+     *
+     * @param component the component
+     * @param action the dialog action to invoke on Enter key
+     */
+    public static void setEnterAction(final JComponent component, final Action action) {
+        final KeyStroke enterKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(enterKeyStroke, "enter-key-action");
+        component.getInputMap(JComponent.WHEN_FOCUSED).put(enterKeyStroke, "enter-key-action");
+        component.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enterKeyStroke, "enter-key-action");
+        component.getActionMap().put("enter-key-action", action);
+    }
+
+    /**
      * Update the input map of the JFrame's <code>JLayeredPane</code> so
      * the ESC keystroke invokes the passed action.
      *
