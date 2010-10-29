@@ -150,7 +150,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             boolean missingDependencies = false;
             try {
                 //TODO [steve] only process one level of dependency, no need to traverse the entire tree
-                processResource( context, mainResource, type, new HashMap<String,ResourceHolder>() );
+                processResource( context, mainResource, type, true, new HashMap<String,ResourceHolder>() );
             } catch( IOException e ) {
                 missingDependencies = true;
             } catch ( SAXException e ) {
@@ -265,7 +265,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             ResourceDocument resourceDocument = null;
             try {
                 resourceDocument = resourceInputSource.asResourceDocument();
-                processResource( context, resourceDocument, null, processedResources );
+                processResource( context, resourceDocument, null, true, processedResources );
             } catch ( SAXException e ) {
                 handleResourceError( context, resourceInputSource.getUri(), resourceDocument, e, processedResources );
             } catch ( IOException e ) {
@@ -590,6 +590,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     private static void processResource( final GlobalResourceImportContext context,
                                          final ResourceDocument resourceDocument,
                                          final ResourceType resourceType,  // resource type if known, else null
+                                         final boolean processDependencies,
                                          final Map<String, ResourceHolder> processedResources ) throws SAXException, IOException {
 
         final URI resourceUri = resourceDocument.getUri();
@@ -615,10 +616,11 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                             new DefaultHandler2(){
                                 @Override
                                 public InputSource resolveEntity( final String name, final String publicId, final String baseURI, final String systemId ) throws SAXException, IOException {
+                                    //TODO [steve] this is not correct, it will miss some non-parsed external entities
                                     final Pair<String,String> resolved =
                                             GlobalResourceImportWizard.resolveEntity( context, baseURI, systemId, publicId, processedResources, dependencies );
                                     final InputSource entitySource = new InputSource( resolved.left );
-                                    entitySource.setCharacterStream( new StringReader(content) );
+                                    entitySource.setCharacterStream( new StringReader( resolved.right ) );
                                     return entitySource;
                                 }
                             } );
@@ -639,7 +641,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     break;
                 case DTD:
                     processedResources.put( resourceUriStr, context.newDTDResourceHolder(resourceDocument, null, null) ); // put early to prevent circular processing
-                    DtdUtils.processReferences( resourceUriStr, content, new DtdUtils.Resolver(){
+                    if (processDependencies) DtdUtils.processReferences( resourceUriStr, content, new DtdUtils.Resolver(){
                         @Override
                         public Pair<String, String> call( final String publicId, final String baseUri, final String systemId ) throws IOException {
                             try {
@@ -686,7 +688,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         }
 
                         // Recursively resolve the schemas dependencies.
-                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, processedResources );
+                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, true, processedResources );
                         continue;
                     }
                 } else if ( dependency.uri != null && !dependency.uri.isEmpty() ) {
@@ -705,7 +707,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         }
 
                         // Recursively resolve the dependencies.
-                        processResource( context, dependencyDocument, null, processedResources );
+                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, true, processedResources );
                         continue;
                     }
                 }
@@ -791,25 +793,35 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         // resolve
         if ( entity == null ) {
-            final ResourceDocument dtdResourceDocument;
-            if ( publicId != null ) {
-                dtdResourceDocument = context.getResourceDocumentResolverForType(ResourceType.DTD).resolveByPublicId( absoluteSystemId.toString(), publicId );
-            } else {
-                dtdResourceDocument = context.newResourceInputSource( absoluteSystemId, ResourceType.DTD ).asResourceDocument();
-            }
+            final ResourceDocument dtdResourceDocument = resolveDtdResourceDocument( context, publicId, absoluteSystemId );
 
             if ( dtdResourceDocument != null ) {
                 entity = new Pair<String,String>( dtdResourceDocument.getUri().toString(), dtdResourceDocument.getContent());
                 if ( dependencies != null ) {
                     dependencies.add( DependencyInfo.fromResourceDocument( ResourceType.DTD, dtdResourceDocument ) );
                 }
-                processResource( context, dtdResourceDocument, ResourceType.DTD, processedResources );
+
+                processResource( context, dtdResourceDocument, ResourceType.DTD, false, processedResources );
             } else {
                 throw new IOException("Resource not found for resource "+describe( baseURI, systemId, publicId, false, null ));
             }
         }
 
         return entity;
+    }
+
+    private static ResourceDocument resolveDtdResourceDocument( final GlobalResourceImportContext context,
+                                                                final String publicId,
+                                                                final URI absoluteSystemId ) throws IOException {
+        final ResourceDocument dtdResourceDocument;
+        
+        if ( publicId != null ) {
+            dtdResourceDocument = context.getResourceDocumentResolverForType(ResourceType.DTD).resolveByPublicId( absoluteSystemId.toString(), publicId );
+        } else {
+            dtdResourceDocument = context.newResourceInputSource( absoluteSystemId, ResourceType.DTD ).asResourceDocument();
+        }
+
+        return dtdResourceDocument;
     }
 
     private static URI resolveUri( final String baseUri, final String uri ) throws IOException {
@@ -852,6 +864,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         @Override
                         public Object resolveEntity( final String publicID, final String systemID, final String baseURI, final String namespace ) throws XMLStreamException {
                             try {
+                                //TODO [steve] this is not correct, it will miss some non-parsed external entities
                                 final Pair<String,String> resolved = GlobalResourceImportWizard.resolveEntity( context, baseURI, systemID, publicID, processedResources, dependencies );
                                 return new ByteArrayInputStream( resolved.right.getBytes( Charsets.UTF8 ));
                             } catch ( SAXException e ) {

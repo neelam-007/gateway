@@ -53,11 +53,11 @@ import java.util.logging.Logger;
 /**
  * Global resource analysis dialog.
  */
-public class GlobalResourcesAnalyze extends JDialog {
+public class GlobalResourcesAnalyzeDialog extends JDialog {
 
-    private static final Logger logger = Logger.getLogger( GlobalResourcesAnalyze.class.getName() );
+    private static final Logger logger = Logger.getLogger( GlobalResourcesAnalyzeDialog.class.getName() );
 
-    private static final ResourceBundle resources = ResourceBundle.getBundle( GlobalResourcesAnalyze.class.getName() );
+    private static final ResourceBundle resources = ResourceBundle.getBundle( GlobalResourcesAnalyzeDialog.class.getName() );
     private static final ResourceBundle resourcesWizard = ResourceBundle.getBundle( GlobalResourceImportWizard.class.getName() );
 
     private JPanel mainPanel;
@@ -83,9 +83,9 @@ public class GlobalResourcesAnalyze extends JDialog {
     private SimpleTableModel<ResourceHolder> resourceHolderTableModel;
     private Collection<ResourceHolder> defaultResources = Collections.emptyList();
 
-    public GlobalResourcesAnalyze( final Window parent,
-                                   final ResourceAdmin resourceAdmin,
-                                   final Collection<ResourceEntryHeader> resourceHeaders ) {
+    public GlobalResourcesAnalyzeDialog( final Window parent,
+                                         final ResourceAdmin resourceAdmin,
+                                         final Collection<ResourceEntryHeader> resourceHeaders ) {
         super( parent, JDialog.DEFAULT_MODALITY_TYPE );
         this.resourceAdmin = resourceAdmin;
         this.resourceHeaders = resourceHeaders;
@@ -172,7 +172,7 @@ public class GlobalResourcesAnalyze extends JDialog {
         helpButton.addActionListener( new ActionListener(){
             @Override
             public void actionPerformed( final ActionEvent e ) {
-                Actions.invokeHelp( GlobalResourcesAnalyze.this);
+                Actions.invokeHelp( GlobalResourcesAnalyzeDialog.this );
             }
         } );
         closeButton.addActionListener( new ActionListener(){

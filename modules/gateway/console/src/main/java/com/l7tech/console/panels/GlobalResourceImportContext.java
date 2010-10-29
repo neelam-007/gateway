@@ -434,7 +434,11 @@ class GlobalResourceImportContext {
     ResourceHolder newDTDResourceHolder( final ResourceDocument resourceDocument,
                                          final String publicId,
                                          final Throwable error ) {
-        return new ResourceHolder( resourceDocument, ResourceType.DTD, publicId, error );
+        String resourcePublicId = publicId;
+        if ( resourceDocument instanceof ResourceEntryResourceDocument  ) {
+            resourcePublicId = ((ResourceEntryResourceDocument)resourceDocument).resourceEntryHeader.getResourceKey1();
+        }
+        return new ResourceHolder( resourceDocument, ResourceType.DTD, resourcePublicId, error );
     }
 
     ResourceHolder newResourceHolder( final ResourceDocument resourceDocument  ) {

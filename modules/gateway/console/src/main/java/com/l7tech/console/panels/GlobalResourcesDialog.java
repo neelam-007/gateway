@@ -511,7 +511,7 @@ public class GlobalResourcesDialog extends JDialog {
             toAnalyze.add( resourcesTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow )) );
         }
 
-        DialogDisplayer.display( new GlobalResourcesAnalyze( this, resourceAdmin, toAnalyze ), new Runnable(){
+        DialogDisplayer.display( new GlobalResourcesAnalyzeDialog( this, resourceAdmin, toAnalyze ), new Runnable(){
             @Override
             public void run() {
                 loadResources();
