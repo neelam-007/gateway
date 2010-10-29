@@ -161,7 +161,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             if ( missingDependencies ) {
                 final int choice = JOptionPane.showOptionDialog(
                         parent,
-                        "Do you want to import the schemas dependencies as global resources?",
+                        "Do you want to import the schema's dependencies as global resources?",
                         "Import Global Resources?",
                         JOptionPane.YES_NO_CANCEL_OPTION,
                         JOptionPane.QUESTION_MESSAGE,
@@ -496,7 +496,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         final JPanel displayPanel = new JPanel();
         displayPanel.setLayout( new BorderLayout( 4, 4) );
-        displayPanel.add( new JLabel("Do you want to import the schemas dependencies as global resources?"), BorderLayout.NORTH );
+        displayPanel.add( new JLabel("Do you want to import the schema's dependencies as global resources?"), BorderLayout.NORTH );
         displayPanel.add( tableScrollPane, BorderLayout.CENTER );
         displayPanel.add( buttonPanel, BorderLayout.EAST );
         displayPanel.add( new JLabel("Total Resources: " + resourceHolders.size()), BorderLayout.SOUTH );
