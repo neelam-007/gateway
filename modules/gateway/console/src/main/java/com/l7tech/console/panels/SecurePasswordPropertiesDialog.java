@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
@@ -43,6 +44,8 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
         this.securePassword = securePassword;
 
+        newRecord = securePassword.getOid() == SecurePassword.DEFAULT_OID;
+
         buttonCancel.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -55,13 +58,24 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         inputValidator.attachToButton(buttonOK, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                viewToModel();
-                confirmed = true;
-                dispose();
+                char[] passToSave = newRecord ? passwordField.getPassword() : enteredPassword;
+                if (passToSave != null && passToSave.length < 1) {
+                    DialogDisplayer.showConfirmDialog(buttonOK,
+                            "The password will be empty.  Save it anyway?",
+                            "Save Empty Password?",
+                            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                                @Override
+                                public void reportResult(int option) {
+                                    if (JOptionPane.YES_OPTION == option) {
+                                        doConfirm();
+                                    }
+                                }
+                            });
+                } else {
+                    doConfirm();
+                }
             }
         });
-
-        newRecord = securePassword.getOid() == SecurePassword.DEFAULT_OID;
 
         if (newRecord) {
             lastUpdateLabel.setVisible(false);
@@ -83,8 +97,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                 return VariableMetadata.validateName(nameField.getText());
             }
         });
-        inputValidator.constrainTextFieldToBeNonEmpty("password", passwordField, null);
-        inputValidator.constrainTextFieldToBeNonEmpty("confirmed password", confirmPasswordField, new InputValidator.ValidationRule() {
+        inputValidator.constrainTextField(confirmPasswordField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
                 if (new String(confirmPasswordField.getPassword()).equals(new String(passwordField.getPassword())))
@@ -105,6 +118,12 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         });
 
         modelToView();
+    }
+
+    private void doConfirm() {
+        viewToModel();
+        confirmed = true;
+        dispose();
     }
 
     private void modelToView() {
