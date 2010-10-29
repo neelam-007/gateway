@@ -1,32 +1,29 @@
 package com.l7tech.server.security.cert;
 
-import org.junit.Test;
-import org.junit.Assert;
-import org.bouncycastle.ocsp.OCSPResp;
-import org.bouncycastle.ocsp.BasicOCSPResp;
-import org.bouncycastle.ocsp.OCSPRespGenerator;
-import org.bouncycastle.ocsp.BasicOCSPRespGenerator;
-import org.bouncycastle.ocsp.RespID;
-import org.bouncycastle.ocsp.CertificateID;
-import org.bouncycastle.ocsp.CertificateStatus;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.security.types.CertificateValidationResult;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.TestDocuments;
+import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.util.Pair;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.ocsp.*;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Vector;
 
@@ -39,7 +36,16 @@ public class OCSPClientTest {
     public void testOcspClientBasic() throws Exception {
         final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
 
-        OCSPClient client = bulidClientWithMockResponse( subjectCert, null, null );
+        OCSPClient client = bulidClientWithMockResponse( subjectCert, null, null, false );
+        OCSPClient.OCSPStatus status = client.getRevocationStatus( subjectCert, false, true );
+        Assert.assertEquals( "Not revoked", CertificateValidationResult.OK, status.getResult() );
+    }
+
+    @Test(expected = OCSPClient.OCSPClientException.class)
+    public void testOcspClientInvalidResponseSignature() throws Exception {
+        final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
+
+        OCSPClient client = bulidClientWithMockResponse( subjectCert, null, null, true );
         OCSPClient.OCSPStatus status = client.getRevocationStatus( subjectCert, false, true );
         Assert.assertEquals( "Not revoked", CertificateValidationResult.OK, status.getResult() );
     }
@@ -48,7 +54,7 @@ public class OCSPClientTest {
     public void testOcspClientNonce() throws Exception {
         final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
 
-        OCSPClient client = bulidClientWithMockResponse( subjectCert, new byte[]{ 1,2,3,4,5,6,7,8 }, new byte[]{ 1,2,3,4,5,6,7,8 } );
+        OCSPClient client = bulidClientWithMockResponse( subjectCert, new byte[]{ 1,2,3,4,5,6,7,8 }, new byte[]{ 1,2,3,4,5,6,7,8 }, false );
         OCSPClient.OCSPStatus status = client.getRevocationStatus( subjectCert, true, true );
         Assert.assertEquals( "Not revoked", CertificateValidationResult.OK, status.getResult() );
     }
@@ -57,16 +63,19 @@ public class OCSPClientTest {
     public void testOcspClientNonceFailure() throws Exception {
         final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
 
-        OCSPClient client = bulidClientWithMockResponse( subjectCert, new byte[]{ 1,2,3,4,5,6,7,8 }, new byte[]{ 1,2,3,4,5,6,7,9 } );
+        OCSPClient client = bulidClientWithMockResponse( subjectCert, new byte[]{ 1,2,3,4,5,6,7,8 }, new byte[]{ 1,2,3,4,5,6,7,9 }, false );
         client.getRevocationStatus( subjectCert, true, true );
         Assert.fail( "Expected nonce mismatch exception." );
     }
 
     private OCSPClient bulidClientWithMockResponse( final X509Certificate subjectCert,
                                                     final byte[] responseNonceBytes,
-                                                    final byte[] requestNonceBytes ) throws Exception {
-        final PrivateKey issuerKey = TestDocuments.getWssInteropBobKey();
-        final X509Certificate issuerCert = TestDocuments.getWssInteropBobCert();
+                                                    final byte[] requestNonceBytes,
+                                                    boolean breakResponseSignature ) throws Exception
+    {
+        Pair<X509Certificate, PrivateKey> ik = makeIssuerCert();
+        final PrivateKey issuerKey = ik.right;
+        final X509Certificate issuerCert = ik.left;
 
         String sha1rsaprovider = Signature.getInstance("SHA1WithRSA").getProvider().getName();
         BasicOCSPRespGenerator responseGenerator = new BasicOCSPRespGenerator( new RespID( issuerCert.getSubjectX500Principal() ) );
@@ -83,6 +92,8 @@ public class OCSPClientTest {
         OCSPRespGenerator respGen = new OCSPRespGenerator();
         OCSPResp resp = respGen.generate( 0, response );
         byte[] body = resp.getEncoded();
+        if (breakResponseSignature)
+            body[body.length / 3]++;
 
         HttpHeader[] responseHeaders = new HttpHeader[]{
                 new GenericHttpHeader("Content-Type", "application/octet-stream"),
@@ -111,5 +122,9 @@ public class OCSPClientTest {
         } else {
             return new OCSPClient( mockClient, "http://mocked/ocspresponder", issuerCert, authorizer );
         }
+    }
+
+    private Pair<X509Certificate, PrivateKey> makeIssuerCert() throws GeneralSecurityException {
+        return new TestCertificateGenerator().extKeyUsage(true, Arrays.asList(KeyPurposeId.id_kp_OCSPSigning.getId())).generateWithKey();
     }
 }

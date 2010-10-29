@@ -2,45 +2,32 @@ package com.l7tech.server.security.cert;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.util.HexUtils;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERInputStream;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ocsp.CertID;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.ocsp.*;
-import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.PrincipalUtil;
+import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.ocsp.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.GeneralSecurityException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.MessageDigest;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
  * OCSP client implementation using Bouncy Castle.
@@ -548,6 +535,8 @@ public class OCSPClient {
                 Signature signature = Signature.getInstance(sigAlg);
                 signature.initVerify(signer);
                 signature.update(signedData);
+                if (!signature.verify(sig))
+                    throw new OCSPClientException("OCSP response signature was not valid.");
             } else if ( requireSignature ) {
                 throw new OCSPClientException("OCSP response not signed and signature is required.");
             }
