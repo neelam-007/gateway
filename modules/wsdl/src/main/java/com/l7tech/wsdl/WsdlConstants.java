@@ -8,6 +8,7 @@ public class WsdlConstants {
     public static final String NAMESPACE_WSDL = "http://schemas.xmlsoap.org/wsdl/";
     public static final String NAMESPACE_WSDL_SOAP_1_1 = "http://schemas.xmlsoap.org/wsdl/soap/";
     public static final String NAMESPACE_WSDL_SOAP_1_2 = "http://schemas.xmlsoap.org/wsdl/soap12/";
+    public static final String NAMESPACE_WSDL_HTTP = "http://schemas.xmlsoap.org/wsdl/http/";
 
     public static final String ELEMENT_ADDRESS = "address";
     public static final String ELEMENT_BINDING = "binding";

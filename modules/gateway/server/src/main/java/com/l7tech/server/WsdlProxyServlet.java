@@ -32,7 +32,7 @@ import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.*;
-import static com.l7tech.wsdl.WsdlConstants.*;
+import com.l7tech.wsdl.WsdlUtil;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -50,10 +50,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
+
+import static com.l7tech.wsdl.WsdlConstants.*;
 
 
 /**
@@ -538,28 +541,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                                        final URL newURL,
                                        final Long serviceId ) {
         final String location = newURL.toString();
-        final NodeList portList = wsdl.getElementsByTagNameNS( NAMESPACE_WSDL, ELEMENT_PORT );
+        final boolean[] updatedAddress = {false};
 
-        boolean updatedAddress = false;
-        for (int i = 0; i < portList.getLength(); i++) {
-            final Element portElement = (Element)portList.item(i);
-            final List<Element> addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_1, ELEMENT_ADDRESS );
-
-            // change the location attribute with new URL
-            for ( final Element address : addresses ) {
-                updatedAddress = true;
-                address.setAttribute( ATTR_LOCATION, location);
+        WsdlUtil.rewriteAddressLocations(wsdl, new WsdlUtil.LocationBuilder() {
+            @Override
+            public String buildLocation(Element address) throws MalformedURLException {
+                updatedAddress[0] = true;
+                return location;
             }
+        });
 
-            // and for soap12
-            final List<Element> soap12Addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_2, ELEMENT_ADDRESS );
-            for ( final Element address : soap12Addresses ) {
-                updatedAddress = true;
-                address.setAttribute( ATTR_LOCATION, location);
-            }
-        }
-
-        if ( !updatedAddress && serviceId != null ) {
+        if ( !updatedAddress[0] && serviceId != null ) {
             final byte[] serviceRandom = serviceId.toString().getBytes();
             addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_1, "soap", serviceRandom );
             addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_2, "soap12", serviceRandom );

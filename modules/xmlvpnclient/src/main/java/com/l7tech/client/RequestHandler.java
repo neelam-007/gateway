@@ -1,16 +1,11 @@
 package com.l7tech.client;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.ParameterizedString;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.util.IOUtils;
+import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
@@ -29,8 +24,10 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.util.*;
-import static com.l7tech.wsdl.WsdlConstants.*;
-import com.l7tech.xml.*;
+import com.l7tech.wsdl.WsdlUtil;
+import com.l7tech.xml.DocumentReferenceProcessor;
+import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.SoapFaultDetailImpl;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -39,11 +36,7 @@ import org.mortbay.jetty.HttpException;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
 import org.mortbay.jetty.handler.AbstractHandler;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
@@ -54,12 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.PasswordAuthentication;
-import java.net.Socket;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -67,6 +55,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static com.l7tech.wsdl.WsdlConstants.*;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -616,30 +606,18 @@ public class RequestHandler extends AbstractHandler {
                                           final String oidStr,
                                           final Map<String,String[]> queryParameters ) throws HttpException {
         try {
-            long oid = Long.parseLong(oidStr);
+            final long oid = Long.parseLong(oidStr);
             final Document wsdlDoc = WsdlProxy.obtainWsdlForService(ssg, oid, queryParameters);
 
             // Rewrite WSDL and Schema references
             rewriteReferences( request, ssg, oidStr, wsdlDoc );
 
-            // Rewrite the wsdl URL
-            final int port = request.getLocalPort();
-            final NodeList portList = wsdlDoc.getElementsByTagNameNS( NAMESPACE_WSDL, ELEMENT_PORT );
-            for (int i = 0; i < portList.getLength(); i++) {
-                final Element portElement = (Element)portList.item(i);
-                final List<Element> addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_1, ELEMENT_ADDRESS );
-
-                // change the location attribute with new URL
-                for ( final Element address : addresses ) {
-                    address.setAttribute( ATTR_LOCATION, buildLocation( request, ssg, port, oid, address.getAttribute(ATTR_LOCATION) ));
+            // Rewrite the wsdl URLs
+            WsdlUtil.rewriteAddressLocations(wsdlDoc, new WsdlUtil.LocationBuilder() {
+                public String buildLocation(Element address) throws MalformedURLException {
+                    return RequestHandler.this.buildLocation(request.getLocalName(), ssg.getLocalEndpoint(), request.getLocalPort(), oid, address.getAttribute(ATTR_LOCATION));
                 }
-
-                // and for soap12
-                final List<Element> soap12Addresses = XmlUtil.findChildElementsByName(portElement, NAMESPACE_WSDL_SOAP_1_2, ELEMENT_ADDRESS );
-                for ( final Element address : soap12Addresses ) {
-                    address.setAttribute( ATTR_LOCATION, buildLocation( request, ssg, port, oid, address.getAttribute(ATTR_LOCATION) ));
-                }
-            }
+            });
 
             response.addHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             XmlUtil.nodeToOutputStream( wsdlDoc, response.getOutputStream() );
@@ -656,7 +634,7 @@ public class RequestHandler extends AbstractHandler {
         }
     }
 
-    /**
+    /*
      * Rewrite WSDL and Schema references to download via the XVC
      *
      * <p>Only references that would be to the Gateway are rewritten, any
@@ -696,36 +674,36 @@ public class RequestHandler extends AbstractHandler {
         } );
     }
 
-    /**
+    /*
      * Build the location to use for service consumption.
      *
      * <p>If the Gateway service is published with a resolution path then that
-     * is used, else a path is constructed for the service identifier.</p> 
+     * is used, else a path is constructed for the service identifier.</p>
      */
-    private String buildLocation( final Request request,
-                                  final Ssg ssg,
+    private String buildLocation( final String host,
+                                  final String localEndpoint,
                                   final int port,
                                   final long oid,
                                   final String existingLocation ) throws MalformedURLException {
         URL newUrl = null;
 
         final String protocol = "http";
-        final String host =request.getLocalName();
         try {
             if ( existingLocation != null ) {
                 final URI existingUri = new URI(existingLocation);
                 if ( !SecureSpanConstants.SSG_FILE.equals( existingUri.getPath() )) {
-                    newUrl = new URL(protocol, host, port, "/" + ssg.getLocalEndpoint() + existingUri.getPath());
+                    newUrl = new URL(protocol, host, port, "/" + localEndpoint + existingUri.getPath());
                 }
             }
         } catch ( URISyntaxException e ) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             log.log(Level.WARNING,
                     "Error processing location '"+existingLocation+"' when rewriting WSDL references.",
                     ExceptionUtils.getDebugException( e) );
         }
 
         if ( newUrl == null ) {
-            newUrl = new URL(protocol, host, port,  "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+            newUrl = new URL(protocol, host, port,  "/" + localEndpoint + "/service/" + oid);
         }
 
         return newUrl.toString();
