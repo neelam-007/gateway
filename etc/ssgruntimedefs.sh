@@ -3,7 +3,7 @@
 
 default_java_opts="-server "
 
-if grep "^NETWORKING_IPV6=yes" /etc/sysconfig/network > /dev/null
+if [ ! -f /etc/sysconfig/network ] || [ grep "^NETWORKING_IPV6=yes" /etc/sysconfig/network 1>/dev/null 2>&1 ]
 then
   default_java_opts="$default_java_opts -Djava.net.preferIPv4Stack=false "
 else
