@@ -63,6 +63,7 @@ public class GlobalResourcesDialog extends JDialog {
     private JTextField matchesTextField;
     private JComboBox typeComboBox;
     private JLabel filterStatusLabel;
+    private JLabel displayedAndTotalResourcesLabel;
 
     private final ResourceAdmin resourceAdmin;
     private final PermissionFlags flags;
@@ -118,6 +119,7 @@ public class GlobalResourcesDialog extends JDialog {
         Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         enableDisableComponents();
         loadResources();
+        updateSummaryDisplay();        
     }
 
     private void registerListeners() {
@@ -313,6 +315,11 @@ public class GlobalResourcesDialog extends JDialog {
                 "Global Resources Filtering",
                 "Invalid syntax for the regular expression, \"" + matchesTextField.getText() + "\"" );
         }
+        updateSummaryDisplay();
+    }
+
+    private void updateSummaryDisplay() {
+        displayedAndTotalResourcesLabel.setText( resourcesTable.getRowCount() + " / " + resourcesTableModel.getRowCount() );
     }
 
     private void doAdd( final ResourceType resourceType ) {
