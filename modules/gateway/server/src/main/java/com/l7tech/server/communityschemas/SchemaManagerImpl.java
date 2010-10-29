@@ -32,10 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -553,7 +551,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
         // Not a local schema, try to resolve a remote schema
         if ( !remoteOk ) {
-            validateRemoteSchemaUrl( uri );
+            validateRemoteSchemaUrl( uri ); //TODO [steve] prevent remote references from persistent schemas.
         }
         for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
             if ( source.isRemote() ) {
@@ -1022,35 +1020,20 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * @param relative  URL that may be relative to base (ie, "blo/bletch.xsd") or may be absolute.  Must not be null.
      * @return  the effective URL when relative is evaluated relative to base.  Never null.
      * @throws NullPointerException if either base or relative is null.
-     * @throws MalformedURLException if base is not an absolute URL,
-     *                                   or is absolute but uses a protocol other than "http" or "https"
-     * @throws MalformedURLException if relative is absolute and uses an unknown protocol
+     * @throws IOException if either URI in invalid.
      */
-    private String computeEffectiveUrl( final String base, final String relative ) throws MalformedURLException {
+    private String computeEffectiveUrl( final String base,
+                                        final String relative ) throws IOException {
         if (base == null || relative == null) throw new NullPointerException();
 
-        // First check if the "relative" uri is in fact absolute, in which case we avoid
-        // parsing the base as a URL in case it is relative.
         try {
             final URI relativeUri = new URI(relative);
-            if (relativeUri.isAbsolute()) {
-                final String scheme = relativeUri.getScheme();
-                if (!scheme.equals("http") && !scheme.equals("https"))
-                    throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
-                return relativeUri.toURL().toExternalForm();
-            }
+            final URI baseUrl = new URI(base);
+            return baseUrl.resolve( relativeUri ).toString();
         }
-        catch(URISyntaxException use) {
-            // we'll find out below ...
+        catch(URISyntaxException e) {
+            throw new IOException( e );
         }
-
-        final URL baseUrl = new URL(base);
-
-        final String protocol = baseUrl.getProtocol();
-        if (!protocol.equals("http") && !protocol.equals("https"))
-            throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
-
-        return new URL(baseUrl, relative).toExternalForm();
     }
 
     /**

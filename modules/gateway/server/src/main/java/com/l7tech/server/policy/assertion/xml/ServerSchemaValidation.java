@@ -80,9 +80,17 @@ public class ServerSchemaValidation
         if (resourceInfo instanceof StaticResourceInfo) {
             StaticResourceInfo ri = (StaticResourceInfo)resourceInfo;
             String schemaDoc = ri.getDocument();
-            registeredGlobalSchemaUrl = "policy:assertion:schemaval:sa" +
+            String schemaUri = ri.getOriginalUrl();
+            String registeredGlobalSchemaUniqueId = "policy:assertion:schemaval:sa" +
                     System.identityHashCode(this) +
                     ":sd" + HexUtils.encodeBase64(HexUtils.getMd5Digest(schemaDoc.getBytes()), true);
+            if ( schemaUri == null ) {
+                registeredGlobalSchemaUrl = registeredGlobalSchemaUniqueId;    
+            } else { // add the unique id as a fragment or part of the fragment
+                String sep = schemaUri.contains( "#" ) ? "_" : "#";
+                registeredGlobalSchemaUrl = schemaUri + sep + registeredGlobalSchemaUniqueId;
+            }
+
             schemaManager.registerSchema(registeredGlobalSchemaUrl, null, schemaDoc);
 
             // Change the resource info -- the static resource is this statically-registered URL now, not the schema
