@@ -119,6 +119,9 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
      * @param type The type of the resource
      * @param content The content of the resource
      * @param confirmed True if the import of dependencies is confirmed
+     * @param resourceAdmin The resource admin to use
+     * @param additionalResolvers Additional resolvers to use for imported resources
+     * @param updatedContentCallback Callback for modification of the main schema content
      * @return true if the import completed successfully (false if cancelled).
      */
     public static boolean importDependencies( final Window parent,
@@ -127,7 +130,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                               final String content,
                                               final boolean confirmed,
                                               final ResourceAdmin resourceAdmin,
-                                              final Collection<ResourceDocumentResolver> additionalResolvers ) {
+                                              final Collection<ResourceDocumentResolver> additionalResolvers,
+                                              final Functions.UnaryVoid<String> updatedContentCallback ) {
         final GlobalResourceImportContext context = new GlobalResourceImportContext();
         context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
 
@@ -150,7 +154,12 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             boolean missingDependencies = false;
             try {
                 //TODO [steve] only process one level of dependency, no need to traverse the entire tree
-                processResource( context, mainResource, type, true, new HashMap<String,ResourceHolder>() );
+                final Map<String,ResourceHolder> processed = new HashMap<String,ResourceHolder>();
+                processResource( context, mainResource, type, true, processed);
+                if ( processed.get(uriString) != null && processed.get(uriString).isPersist() ) {
+                    // treat as missing since a relative URI had to be updated to resolve the dependency
+                    missingDependencies = true;
+                }
             } catch( IOException e ) {
                 missingDependencies = true;
             } catch ( SAXException e ) {
@@ -204,10 +213,22 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             }
         }
 
-        processedResources.remove( uriString ); // don't import the original resource, only its dependencies.
+        final ResourceHolder holder = processedResources.remove( uriString ); // don't import the original resource, only its dependencies.
 
         // 4) Show summary and save if desired
         final int choice = confirmResourceSave( parent, processedResources.values() );
+        if ( choice == JOptionPane.YES_OPTION ||
+             choice == JOptionPane.NO_OPTION ) {
+            // callback with updated content unless import is cancelled
+            if ( holder != null && holder.isPersist() ) {
+                try {
+                    updatedContentCallback.call( holder.getContent() );
+                } catch ( IOException e ) {
+                    // not expected since the content must be available
+                    logger.log( Level.WARNING, "Error updating imported schema content.", e );
+                }
+            }
+        }
         if ( choice == JOptionPane.YES_OPTION ) {
             try {
                 saveResources( processedResources.values() );

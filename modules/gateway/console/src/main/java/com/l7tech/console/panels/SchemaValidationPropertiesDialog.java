@@ -631,7 +631,15 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     schemaDoc,
                     true,
                     getResourceAdmin(),
-                    resolvers );
+                    resolvers,
+                    new Functions.UnaryVoid<String>(){
+                        @Override
+                        public void call( final String content ) {
+                            if ( !schemaDoc.equals(content) ) {
+                                setEditorText( content );
+                            }
+                        }
+                    } );
             } else if ( choice == JOptionPane.NO_OPTION  ) {
                 DialogDisplayer.display(new GlobalResourcesDialog(this));
             }
@@ -698,7 +706,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         }
 
-        if ( entryHeader == null && dependencyNamespaceSet ) {
+        // Only resolve by targetNamespace if there is no schemaLocation
+        // If there is a schemaLocation but it does not match a global schema we want
+        // to fix the reference.
+        if ( entryHeader == null && dependencyLocation.isEmpty() && dependencyNamespaceSet ) {
             final Collection<ResourceEntryHeader> entries = resourceAdmin.findResourceHeadersByTargetNamespace(dependencyNamespace);
             if ( entries != null && !entries.isEmpty()) {
                 entryHeader = entries.iterator().next();
@@ -1087,6 +1098,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private void importSchemaContent( final String uri,
                                       final String content,
                                       final Collection<ResourceDocumentResolver> resolvers ) {
+
+        final String[] contentHolder = new String[]{ content };
         final boolean update = GlobalResourceImportWizard.importDependencies(
                 this,
                 uri!=null ? uri : "urn:uuid:" + UUID.randomUUID().toString(),
@@ -1094,7 +1107,13 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 content,
                 false,
                 getResourceAdmin(),
-                resolvers );
+                resolvers,
+                new Functions.UnaryVoid<String>(){
+                    @Override
+                    public void call( final String content ) {
+                        contentHolder[0] = content;
+                    }
+                });
 
         if ( update ) {
             if ( uri == null ) {
@@ -1103,7 +1122,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 specifySystemIdTextField.setText( uri );
                 specifySystemIdTextField.setCaretPosition( 0 );
             }
-            setEditorText( content );
+            setEditorText( contentHolder[0] );
         }
     }
 
