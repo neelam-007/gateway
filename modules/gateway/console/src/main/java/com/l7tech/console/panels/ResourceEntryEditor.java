@@ -313,9 +313,23 @@ public class ResourceEntryEditor extends JDialog {
         return SchemaUtil.isSchema( doc );
     }
 
-    private void displayError(String msg, String title) {
+    private void displayError( final String msg,
+                               String title) {
         if (title == null) title = "Error";
-        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
+
+        final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
+        final Object messageObject;
+        if(width > 600){
+            messageObject = Utilities.getTextDisplayComponent(msg, 600, 100, -1, -1);
+        }else{
+            messageObject = msg;
+        }
+
+        JOptionPane.showMessageDialog(
+                this,
+                messageObject,
+                title,
+                JOptionPane.ERROR_MESSAGE);
     }
 
     private void uploadFromFile() {
@@ -416,9 +430,7 @@ public class ResourceEntryEditor extends JDialog {
             // Validate system identifier
             final String systemId = systemIdTextField.getText();
             if (systemId == null || systemId.trim().length() < 1) {
-                JOptionPane.showMessageDialog(this, "You must enter a System ID for the resource.",
-                                                    "Invalid Resource",
-                                                    JOptionPane.ERROR_MESSAGE);
+                displayError( "You must enter a System ID for the resource.", "Invalid Resource" );
                 return;
             }
 
@@ -439,10 +451,7 @@ public class ResourceEntryEditor extends JDialog {
                     }
                 }
             } catch ( URISyntaxException e ) {
-                JOptionPane.showMessageDialog(this, "Invalid System ID:\n" +
-                                                    ExceptionUtils.getMessage( e ),
-                                                    "Invalid Resource",
-                                                    JOptionPane.ERROR_MESSAGE);
+                displayError( "Invalid System ID:\n" + ExceptionUtils.getMessage( e ), "Invalid Resource" );
                 return;
             }
 
@@ -474,10 +483,9 @@ public class ResourceEntryEditor extends JDialog {
         }
         if ( publicId != null &&
              !ValidationUtils.isValidCharacters( publicId, DtdUtils.PUBLIC_ID_CHARACTERS ) ) {
-            JOptionPane.showMessageDialog(this, "The Public ID must contain only the following characters:\n" +
-                                                "a-z A-Z 0-9 - ' ( ) + , . / : = ? ; ! * # @ $ _ %",
-                                                "Invalid Resource",
-                                                JOptionPane.ERROR_MESSAGE);
+            displayError( "The Public ID must contain only the following characters:\n" +
+                          "a-z A-Z 0-9 - ' ( ) + , . / : = ? ; ! * # @ $ _ %",
+                          "Invalid Resource" );
             valid = false;
         }
 
@@ -500,9 +508,8 @@ public class ResourceEntryEditor extends JDialog {
             tns = XmlUtil.getSchemaTNS(contents, entityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             logger.log( Level.WARNING, "Error parsing schema", e);
-            JOptionPane.showMessageDialog(this, "This is not a valid xml schema: " + ExceptionUtils.getMessage(e),
-                                                "Invalid Schema",
-                                                JOptionPane.ERROR_MESSAGE);
+            displayError( "This is not a valid xml schema: " + ExceptionUtils.getMessage(e),
+                          "Invalid Schema" );
             return false;
         }
 
