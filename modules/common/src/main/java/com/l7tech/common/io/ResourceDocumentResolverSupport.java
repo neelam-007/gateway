@@ -16,18 +16,18 @@ public class ResourceDocumentResolverSupport implements ResourceDocumentResolver
     //- PUBLIC
     
     @Override
-    public ResourceDocument resolveByPublicId( final String publicId ) throws IOException {
-        return null;
-    }
-
-    @Override
     public ResourceDocument resolveByUri( final String uri ) throws IOException {
         return null;
     }
 
     @Override
-    public ResourceDocument resolveByTargetNamespace( final String targetNamespace ) throws IOException {
-        return null;
+    public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
+        return uri==null ? null : resolveByUri( uri );
+    }
+
+    @Override
+    public ResourceDocument resolveByPublicId( final String uri, final String publicId ) throws IOException {
+        return uri==null ? null : resolveByUri( uri );
     }
 
     //- PROTECTED

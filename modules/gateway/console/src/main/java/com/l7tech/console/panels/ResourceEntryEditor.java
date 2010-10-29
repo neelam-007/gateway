@@ -65,12 +65,14 @@ public class ResourceEntryEditor extends JDialog {
     private JLabel publicIdLabel;
     private JTextArea contentTextArea;
     private JTextField descriptionTextField;
+    private JLabel descriptionLabel;
 
     private XMLContainer xmlContainer;
     private UIAccessibility uiAccessibility;
 
     private final ResourceEntry resourceEntry;
     private final EntityResolver entityResolver;
+    private final boolean contentOnly;
     private final boolean canEdit;
     private boolean dataLoaded = false;
     private boolean success = false;
@@ -78,10 +80,12 @@ public class ResourceEntryEditor extends JDialog {
     public ResourceEntryEditor( final Window owner,
                                 final ResourceEntry resourceEntry,
                                 final EntityResolver entityResolver,
+                                final boolean contentOnly,
                                 final boolean canEditEntry ) {
         super( owner, JDialog.DEFAULT_MODALITY_TYPE );
         this.resourceEntry = resourceEntry;
         this.entityResolver = entityResolver;
+        this.contentOnly = contentOnly;
         this.canEdit = canEditEntry;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xml pad
@@ -93,7 +97,7 @@ public class ResourceEntryEditor extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle(canEdit?"Edit Global Resource":"View Global Resource");
+        setTitle(canEdit?"Edit Resource":"View Resource");
 
         if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
             // set xml view
@@ -526,8 +530,20 @@ public class ResourceEntryEditor extends JDialog {
     }
 
     private void enableDisableComponents() {
+        if ( contentOnly ) {
+            publicIdLabel.setVisible( false );
+            publicIdTextField.setVisible( false );
+            descriptionLabel.setVisible( false );
+            descriptionTextField.setVisible( false );
+        } else {
+            publicIdTextField.setEditable(canEdit);
+            descriptionTextField.setEditable(canEdit);
+
+            boolean enablePublicId = resourceEntry.getType() == ResourceType.DTD;
+            publicIdTextField.setVisible(enablePublicId);
+            publicIdLabel.setVisible(enablePublicId);
+        }
         systemIdTextField.setEditable(canEdit);
-        publicIdTextField.setEditable(canEdit);
         uploadFromFileBut.setEnabled(canEdit);
         uploadFromURLBut.setEnabled(canEdit);
 
@@ -537,8 +553,6 @@ public class ResourceEntryEditor extends JDialog {
             contentTextArea.setEditable(canEdit);
         }
 
-        boolean enablePublicId = resourceEntry.getType() == ResourceType.DTD;
-        publicIdTextField.setVisible(enablePublicId);
-        publicIdLabel.setVisible(enablePublicId);
+        okButton.setEnabled( canEdit );
     }
 }

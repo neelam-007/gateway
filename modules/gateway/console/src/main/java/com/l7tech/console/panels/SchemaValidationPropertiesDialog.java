@@ -1229,7 +1229,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         @Override
-        public ResourceDocument resolveByTargetNamespace( final String targetNamespace ) throws IOException {
+        public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
             ResourceDocument resourceDocument = null;
 
             Element element = null;

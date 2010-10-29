@@ -4,6 +4,7 @@ import com.l7tech.common.io.ResourceDocument;
 import com.l7tech.common.io.ResourceDocumentResolver;
 import com.l7tech.common.io.ResourceDocumentResolverSupport;
 import com.l7tech.common.io.URIResourceDocument;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import static com.l7tech.console.panels.GlobalResourceImportContext.ImportChoice.*;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
@@ -12,9 +13,10 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,11 +123,11 @@ class GlobalResourceImportContext {
     }
     
     public static final class ResourceHolder {
-        private final ResourceDocument resourceDocument;
+        private ResourceDocument resourceDocument;
         private final ResourceType resourceType;
         private final String detail;
-        private final Throwable error;
-        private final Set<String> dependencies = new HashSet<String>();
+        private Throwable error;
+        private final Set<Pair<String,String>> dependencies = new HashSet<Pair<String,String>>();
 
         private ResourceHolder( final ResourceDocument resourceDocument,
                                 final ResourceType resourceType,
@@ -146,10 +148,12 @@ class GlobalResourceImportContext {
             return error;
         }
 
+        public void setError( final Throwable error ){
+            this.error = error;
+        }
+
         /**
-         * Should this resource holder be persist.
-         *
-         * @return
+         * Should this resource holder be persisted.
          */
         public boolean isPersist() {
             boolean persist = !isError();
@@ -159,6 +163,19 @@ class GlobalResourceImportContext {
             }
 
             return persist;
+        }
+
+        /**
+         * Is this a new resource.
+         */
+        public boolean isNew() {
+            boolean newResource = true;
+
+            if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
+                newResource = false;
+            }
+
+            return newResource;
         }
 
         public String getStatus() {
@@ -181,6 +198,60 @@ class GlobalResourceImportContext {
 
         public String getSystemId() {
             return resourceDocument.getUri().toString();
+        }
+
+        public void setSystemId( final URI systemId ) {
+            if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
+                if ( isPersist() ) {
+                    ((ResourceEntryResourceDocument)resourceDocument).updateUri( systemId );
+                }
+            } else if ( resourceDocument.available() ){
+                try {
+                    resourceDocument = new URIResourceDocument( systemId, resourceDocument.getContent(), null );
+                } catch ( IOException ioe ) {
+                    throw new IllegalStateException( "Content should be available", ioe );
+                }
+            } else {
+                // fail later on access if the content is required
+                resourceDocument = new URIResourceDocument( systemId, null, null );
+            }
+        }
+
+        /**
+         * Get the description for the resource.
+         *
+         * @return The description (may be empty, never null)
+         */
+        public String getDescription() {
+            String description = null;
+            
+            if (  resourceDocument instanceof ResourceEntryResourceDocument ) {
+                description = ((ResourceEntryResourceDocument)resourceDocument).resourceEntryHeader.getDescription();
+            }
+
+            if ( description == null ) {
+                description = "";
+            }
+
+            return description;
+        }
+
+        public String getPublicId() {
+            return getDetailForType( ResourceType.DTD );
+        }
+
+        public String getTargetNamespace() {
+            return getDetailForType( ResourceType.XML_SCHEMA );
+        }
+
+        private String getDetailForType( final ResourceType type ) {
+            String detail = null;
+
+            if ( type == resourceType ) {
+                detail = this.detail;                
+            }
+
+            return detail;
         }
 
         public String getDetails() {
@@ -206,16 +277,51 @@ class GlobalResourceImportContext {
             return resourceDocument.getContent();
         }
 
+        public void setContent( final String content ) {
+            if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
+                if ( isPersist() ) {
+                    ((ResourceEntryResourceDocument)resourceDocument).updateContent( content );
+                }
+            } else {
+                resourceDocument = new URIResourceDocument( resourceDocument.getUri(), content, null );
+            }
+        }
+
         public boolean isXml() {
             return resourceType != null && ContentTypeHeader.create( resourceType.getMimeType() ).isXml();
         }
 
-        public void addDependency( final String uri ) {
-            dependencies.add( uri );
+        /**
+         * Add a dependency.
+         *
+         * @param uri The uri reference in the format used by the resource (may be null)
+         * @param absoluteUri The absolute URI for the dependency.
+         */
+        public void addDependency( final String uri, final String absoluteUri ) {
+            dependencies.add( new Pair<String,String>( uri, absoluteUri ) );
         }
 
-        public Set<String> getDependencies() {
+        /**
+         * Get the dependencies for this resources.
+         * 
+         * @return The set of distinct uri (may be null) / absolute uri dependency pairs.
+         */
+        public Set<Pair<String,String>> getDependencies() {
             return Collections.unmodifiableSet( dependencies );
+        }
+
+        public void setDependencies( final Set<Pair<String,String>> dependencies ) {
+            this.dependencies.clear();
+            this.dependencies.addAll( dependencies );
+        }
+
+        public Set<String> getAbsoluteDependencies() {
+            return Collections.unmodifiableSet( new HashSet<String>( Functions.map( dependencies, new Functions.Unary<String,Pair<String,String>>(){
+                @Override
+                public String call( final Pair<String, String> uriAndAbsoluteUri ) {
+                    return uriAndAbsoluteUri.right;
+                }
+            } )) );
         }
 
         public ResourceDocument asResourceDocument() {
@@ -223,7 +329,7 @@ class GlobalResourceImportContext {
         }
 
         public ResourceEntry asResourceEntry() throws IOException {
-            if ( resourceType == null || isError() ) throw new CausedIOException("Cannot create resource entry");
+            if ( resourceType == null || isError() ) throw new IOException("Cannot create resource entry");
 
             final ResourceEntry resourceEntry;
             if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
@@ -238,6 +344,12 @@ class GlobalResourceImportContext {
             }
 
             return resourceEntry;
+        }
+
+        public void updateContentFrom( final ResourceDocument update ) throws IOException {
+            if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
+                ((ResourceEntryResourceDocument)resourceDocument).updateContentFrom( update );
+            }
         }
     }
 
@@ -282,17 +394,22 @@ class GlobalResourceImportContext {
         this.processedResources = new HashMap<String, ResourceHolder>( processedResources );        
     }
 
-    public Map<ImportOption, ImportChoice> getImportOptions() {
+    Map<ImportOption, ImportChoice> getImportOptions() {
         return Collections.unmodifiableMap( importOptions );
     }
 
-    public void setImportOptions( final Map<ImportOption, ImportChoice> importOptions ) {
+    void setImportOptions( final Map<ImportOption, ImportChoice> importOptions ) {
         this.importOptions = new HashMap<ImportOption, ImportChoice>( importOptions );
     }
 
     ResourceDocument newResourceDocument( final String uri,
                                           final String content ) throws IOException {
         return new URIResourceDocument( asUri(uri), content, null );
+    }
+
+    static ResourceDocument newResourceDocument( final ResourceEntryHeader resourceEntryHeader,
+                                                 final ResourceEntry resourceEntry ) throws IOException {
+        return new ResourceEntryResourceDocument( resourceEntryHeader, resourceEntry );
     }
 
     ResourceInputSource newResourceInputSource( final File file ) {
@@ -324,6 +441,75 @@ class GlobalResourceImportContext {
         return new ResourceHolder( resourceDocument, null, null, null );
     }
 
+    static ResourceHolder newResourceHolder( final ResourceDocument resourceDocument, 
+                                             final ResourceType resourceType ) {
+        String detail = null;
+        if ( resourceDocument instanceof ResourceEntryResourceDocument  ) {
+            detail = ((ResourceEntryResourceDocument)resourceDocument).resourceEntryHeader.getResourceKey1();    
+        }
+        return new ResourceHolder( resourceDocument, resourceType, detail, null );
+    }
+
+    static URI relativizeUri( final URI baseUri, final URI uri ) {
+        int dirs = 0;
+        String relativePath = "";
+
+        if ( isPathProcessableUri( baseUri ) &&
+             isPathProcessableUri( uri ) &&
+             baseUri.getScheme().equals( uri.getScheme() ) &&
+             ((baseUri.getRawUserInfo()==null && uri.getRawUserInfo()==null) || (baseUri.getRawUserInfo()!=null && baseUri.getRawUserInfo().equals( uri.getRawUserInfo() ))) &&
+             ((baseUri.getHost()==null && uri.getHost()==null) || (baseUri.getHost()!=null && baseUri.getHost().equals( uri.getHost() ) ) ) &&
+             baseUri.getPort() == uri.getPort()) {
+            final String basePath = baseUri.getRawPath();
+            final String path = uri.getRawPath();
+
+            int dirIndex = basePath.lastIndexOf( '/' );
+            while ( dirIndex >= 0 && !path.startsWith(basePath.substring( 0, dirIndex+1 )) && (dirIndex = basePath.lastIndexOf( '/', dirIndex-1 )) > 0 ) {
+                dirs++;
+                relativePath += "../";
+            }
+        }
+
+        return URI.create( relativePath + getBaseUri( baseUri, dirs ).relativize( uri ).toString() );
+    }
+
+    /**
+     * Trim the last path component for a file/http/https uri
+     *
+     * <p>>The returned URI is suitable for use with <code>relativize</code></p>
+     */
+    static URI getBaseUri( final URI uri,
+                           final int dirStripCount ) {
+        URI baseUri = uri;
+
+        if ( isPathProcessableUri( uri ) ) {
+            String path = uri.getRawPath();
+
+            int index = path.length()+1;
+            for ( int i=0; i<=dirStripCount; i++ ) {
+                if ( index < 0 ) break;
+                index = path.lastIndexOf('/', index-1);
+            }
+
+            if ( index >= 0) {
+                try {
+                    baseUri = new URI( uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), uri.getPort(), uri.getRawPath().substring( 0, index ), null, null );
+                } catch ( URISyntaxException e ) {
+                    logger.log( Level.WARNING, "Error generating base URI", e );
+                }
+            }
+        }
+
+        return baseUri;
+    }
+
+    static boolean isPathProcessableUri( final URI uri ) {
+        return uri.isAbsolute() && uri.getRawPath() != null &&
+                ( uri.getScheme().equalsIgnoreCase( "file" ) ||
+                  uri.getScheme().equalsIgnoreCase( "http" ) ||
+                  uri.getScheme().equalsIgnoreCase( "https" ) );
+    }
+
     static Set<DependencySummary> getDependencies( final DependencyScope scope,
                                                    final ResourceHolder resourceHolder,
                                                    final Collection<ResourceHolder> resourceHolders ) {
@@ -335,7 +521,7 @@ class GlobalResourceImportContext {
                     public Collection<ResourceHolder> call( final ResourceHolder resourceHolder, final Collection<ResourceHolder> resourceHolders ) {
                         Collection<ResourceHolder> dependencies = new ArrayList<ResourceHolder>();
 
-                        for ( final String dependencyUri : resourceHolder.getDependencies() ) {
+                        for ( final String dependencyUri : resourceHolder.getAbsoluteDependencies() ) {
                             final ResourceHolder dependency = findResourceHolderByUri( resourceHolders, dependencyUri );
                             if ( dependency != null ) {
                                 dependencies.add( dependency );
@@ -364,7 +550,7 @@ class GlobalResourceImportContext {
                         Collection<ResourceHolder> dependants = new ArrayList<ResourceHolder>();
 
                         for ( final ResourceHolder holder : resourceHolders ) {
-                            for ( final String dependencyUri : holder.getDependencies() ) {
+                            for ( final String dependencyUri : holder.getAbsoluteDependencies() ) {
                                 if ( dependencyUri.equals( resourceHolder.getSystemId() ) ) {
                                     dependants.add( holder );
                                     break;
@@ -447,11 +633,12 @@ class GlobalResourceImportContext {
         };
     }
 
-    static ResourceDocumentResolver buildResourceEntryResolver( final ResourceAdmin resourceAdmin ) {
+    static ResourceDocumentResolver buildResourceEntryResolver( final ResourceAdmin resourceAdmin,
+                                                                final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entrySelector ) {
         return new ResourceDocumentResolverSupport(){
             @Override
             public ResourceDocument resolveByUri( final String uri ) throws IOException {
-                return resolveHeaders( new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
+                return resolveHeaders( uri, new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
                     @Override
                     public Collection<ResourceEntryHeader> call() throws ObjectModelException {
                         final ResourceEntryHeader header = resourceAdmin.findResourceHeaderByUriAndType( uri, null );
@@ -461,8 +648,8 @@ class GlobalResourceImportContext {
             }
 
             @Override
-            public ResourceDocument resolveByPublicId( final String publicId ) throws IOException {
-                return resolveHeaders( new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
+            public ResourceDocument resolveByPublicId( final String uri, final String publicId ) throws IOException {
+                return resolveHeaders( uri, new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
                     @Override
                     public Collection<ResourceEntryHeader> call() throws ObjectModelException {
                         return resourceAdmin.findResourceHeadersByPublicIdentifier( publicId );
@@ -471,8 +658,8 @@ class GlobalResourceImportContext {
             }
 
             @Override
-            public ResourceDocument resolveByTargetNamespace( final String targetNamespace ) throws IOException {
-                return resolveHeaders( new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
+            public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
+                return resolveHeaders( uri, new Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException>(){
                     @Override
                     public Collection<ResourceEntryHeader> call() throws ObjectModelException {
                         return resourceAdmin.findResourceHeadersByTargetNamespace( targetNamespace ); 
@@ -480,7 +667,8 @@ class GlobalResourceImportContext {
                 } );
             }
 
-            private ResourceDocument resolveHeaders( final Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException> resolver ) throws IOException {
+            private ResourceDocument resolveHeaders( final String uri,
+                                                     final Functions.NullaryThrows<Collection<ResourceEntryHeader>, ObjectModelException> resolver ) throws IOException {
                 ResourceDocument resourceDocument = null;
 
                 try {
@@ -488,7 +676,22 @@ class GlobalResourceImportContext {
                     if ( headers != null ) {
                         if ( headers.size() == 1 ) {
                             resourceDocument = new ResourceEntryResourceDocument( headers.iterator().next(), resourceAdmin );
+                        } else if ( uri != null ) {
+                            for ( final ResourceEntryHeader resourceEntryHeader : headers ) {
+                                if ( uri.equals( resourceEntryHeader.getUri() ) ) {
+                                    resourceDocument = new ResourceEntryResourceDocument( resourceEntryHeader, resourceAdmin );
+                                    break;
+                                }
+                            }
                         }
+
+                        if ( headers.size() > 1 && resourceDocument == null && entrySelector != null ) {
+                            final ResourceEntryHeader selectedHeader = entrySelector.call( headers );
+                            if ( selectedHeader != null ) {
+                                resourceDocument = new ResourceEntryResourceDocument( selectedHeader, resourceAdmin );
+                            }
+                        }
+
                     }
                 } catch ( ObjectModelException e ) {
                     throw new IOException( e );
@@ -499,15 +702,96 @@ class GlobalResourceImportContext {
         };
     }
 
-    ResourceDocumentResolver buildSmartResourceEntryResolver( final ResourceType type,
-                                                              final ResourceAdmin resourceAdmin,
-                                                              final Collection<ResourceDocumentResolver> externalResolvers,
-                                                              final Functions.Ternary<ImportChoice,ImportOption,ImportChoice,String> choiceResolver ) {
+    static ResourceDocumentResolver buildManualResolver( final ResourceTherapist manualResourceTherapist,
+                                                         final ChoiceSelector choiceSelector ) {
+        return new ResourceDocumentResolverSupport() {
+            @Override
+            public ResourceDocument resolveByPublicId( final String uri, final String publicId ) throws IOException {
+                return resolveManually( ResourceType.DTD, uri, publicId, false,null );
+            }
+
+            @Override
+            public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
+                return resolveManually( ResourceType.XML_SCHEMA, uri, null, true, targetNamespace );
+            }
+
+            @Override
+            public ResourceDocument resolveByUri( final String uri ) throws IOException {
+                ResourceType resolvedResourceType = null;
+                for ( final ResourceType type : ResourceType.values() ) {
+                    if ( uri.toLowerCase().endsWith( "." + type.getFilenameSuffix() )) {
+                        resolvedResourceType = type;
+                        break;
+                    }
+                }
+
+                return resolveManually( resolvedResourceType, uri, null, false, null );
+            }
+
+            private ResourceDocument resolveManually( final ResourceType resourceType,
+                                                      final String systemId,
+                                                      final String publicId,
+                                                      final boolean hasTargetNamespace,
+                                                      final String targetNamespace ) throws IOException {
+                final StringBuilder identificationBuilder = new StringBuilder();
+
+                boolean first = true;
+                if ( systemId != null && !systemId.isEmpty() ) {
+                    identificationBuilder.append( "URI: " );
+                    identificationBuilder.append( TextUtils.truncStringMiddleExact( systemId, 80 ) );
+                    first = false;
+                }
+
+                if ( publicId != null && !publicId.isEmpty() ) {
+                    if (!first) identificationBuilder.append("\n");
+                    identificationBuilder.append( "Public ID: " );
+                    identificationBuilder.append( TextUtils.truncStringMiddleExact( publicId, 80 ) );
+                    first = false;
+                }
+
+                if ( hasTargetNamespace ) {
+                    if (!first) identificationBuilder.append("\n");
+                    identificationBuilder.append( "Target Namespace: " );
+                    if ( targetNamespace != null ) {
+                        identificationBuilder.append( TextUtils.truncStringMiddleExact( targetNamespace, 80 ) );
+                    } else {
+                        identificationBuilder.append( "<no namespace>" );
+                    }
+                }
+
+                final String resourceIdentification = identificationBuilder.toString();
+                final ImportChoice choice = choiceSelector.selectChoice( ImportOption.MISSING_RESOURCE, "missing", ImportChoice.SKIP, resourceIdentification, systemId, null );
+                final ResourceDocument resourceDocument;
+
+                switch ( choice ) {
+                    case IMPORT:
+                        resourceDocument = manualResourceTherapist.consult( resourceType, resourceIdentification, null, null );
+                        break;
+                    case SKIP:
+                        throw new IOException("Missing resource skipped.");
+                    default:
+                        resourceDocument = null;
+                        break;
+                }
+
+                return resourceDocument;
+            }
+        };        
+    }
+
+    ResourceDocumentResolver buildSmartResolver( final ResourceType type,
+                                                 final ResourceAdmin resourceAdmin,
+                                                 final Collection<ResourceDocumentResolver> externalResolvers,
+                                                 final ChoiceSelector selector,
+                                                 final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector,
+                                                 final ResourceTherapist resourceTherapist ) {
         // Build an import option aware resolver
         return new ResourceDocumentResolverSupport(){
             private final ResourceType resourceType = type;
-            private final ResourceDocumentResolver resourceEntityResolver = buildResourceEntryResolver( resourceAdmin );
+            private final ResourceDocumentResolver resourceEntityResolver = buildResourceEntryResolver( resourceAdmin, entitySelector );
             private final ResourceDocumentResolver externalResolver = GlobalResourceImportContext.this.getResolver( externalResolvers );
+            private final ChoiceSelector choiceSelector = selector;
+            private final ResourceTherapist manualResourceTherapist = resourceTherapist;
 
             @Override
             public ResourceDocument resolveByUri( final String uri ) throws IOException {
@@ -519,33 +803,24 @@ class GlobalResourceImportContext {
                     try {
                         external = externalResolver.resolveByUri( uri );
                     } catch ( IOException ioe ) {
-                        if ( internal == null ) throw ioe;
-                        logger.log( Level.WARNING, "Error resolving external resource for URI '"+uri+"', using internal resource.", ExceptionUtils.getDebugException(ioe));
+                        external = doInvalid( null, null, uri, ioe );
                     }
                 }
 
-                ResourceDocument resolved = resolveResource( ImportOption.CONFLICTING_URI, internal, external, uri );
-                if ( resolved == null ) {
-                    //TODO [steve] handle missing resource
-                } else if ( resolved == external && resourceType == ResourceType.XML_SCHEMA ) {
-                    //TODO [steve] check for and handle invalid resource
-                }
-
-                return resolved;
+                return resolveResource( ImportOption.CONFLICTING_URI, internal, external, null );
             }
 
             @Override
-            public ResourceDocument resolveByPublicId( final String publicId ) throws IOException {
+            public ResourceDocument resolveByPublicId( final String uri, final String publicId ) throws IOException {
                 ImportChoice choice = importOptions.get( ImportOption.CONFLICTING_PUBLIC_ID );
-                final ResourceDocument internal = resourceEntityResolver.resolveByPublicId( publicId );
+                final ResourceDocument internal = resourceEntityResolver.resolveByPublicId( uri, publicId );
 
                 ResourceDocument external = null;
                 if ( internal == null || choice != ImportChoice.EXISTING ) {
                     try {
-                        external = externalResolver.resolveByPublicId( publicId );
+                        external = externalResolver.resolveByPublicId( uri, publicId );
                     } catch ( IOException ioe ) {
-                        if ( internal == null ) throw ioe;
-                        logger.log( Level.WARNING, "Error resolving external resource for Public ID '"+publicId+"', using internal resource.", ExceptionUtils.getDebugException(ioe));
+                        external = doInvalid( ResourceType.DTD, "Public ID: " + TextUtils.truncStringMiddleExact( publicId, 80 ), uri, ioe );
                     }
                 }
 
@@ -553,31 +828,60 @@ class GlobalResourceImportContext {
             }
 
             @Override
-            public ResourceDocument resolveByTargetNamespace( final String targetNamespace ) throws IOException {
+            public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
                 ImportChoice choice = importOptions.get( ImportOption.CONFLICTING_TARGET_NAMESPACE );
-                final ResourceDocument internal = resourceEntityResolver.resolveByTargetNamespace( targetNamespace );
+                ResourceDocument internal = resourceEntityResolver.resolveByTargetNamespace( uri, targetNamespace );
 
                 ResourceDocument external = null;
                 if ( internal == null || choice != ImportChoice.EXISTING ) {
                     try {
-                        external = externalResolver.resolveByTargetNamespace( targetNamespace );
+                        external = externalResolver.resolveByTargetNamespace( uri, targetNamespace );
                     } catch ( IOException ioe ) {
-                        if ( internal == null ) throw ioe;
-                        logger.log( Level.WARNING, "Error resolving external resource for namespace '"+targetNamespace+"', using internal resource.", ExceptionUtils.getDebugException(ioe));
+                        external = doInvalid( ResourceType.XML_SCHEMA, "URI: " + TextUtils.truncStringMiddleExact( targetNamespace, 80 ), uri, ioe );
                     }
+                }
+
+                if ( internal != null && external != null && !internal.getUri().equals( external.getUri() ) && targetNamespace==null ) {
+                    // If the targetNamespace is null and it is not a URI conflict then ignore the internal resource
+                    // it is expected that there may be many resources without namespaces (since included/redefined schemas
+                    // can omit a targetNamespace)
+                    internal = null;
                 }
 
                 return resolveResource( ImportOption.CONFLICTING_TARGET_NAMESPACE, internal, external, targetNamespace );
             }
 
-            private ResourceDocument resolveResource( final ImportOption option,
+            private ResourceDocument doInvalid( final ResourceType resourceType,
+                                                final String detail,
+                                                final String uri,
+                                                final IOException error ) throws IOException {
+                ResourceDocument resolved = null;
+
+                final ImportChoice invalidResourceChoice = getChoice( ImportOption.MISSING_RESOURCE, "invalid", ImportChoice.SKIP, detail, uri, null );
+                switch ( invalidResourceChoice ) {
+                    case IMPORT:
+                        String fullDetail = detail != null ? detail : "URI: " +  TextUtils.truncStringMiddleExact( uri, 80 );
+                        resolved = manualResourceTherapist.consult(resourceType, fullDetail, resolved, ExceptionUtils.getMessage(error) );
+                        break;
+                    case SKIP:
+                        throw new IOException("Invalid resource skipped ("+ExceptionUtils.getMessage( error )+")", error);
+                }
+
+                return resolved;
+            }
+
+            private ResourceDocument resolveResource( ImportOption option,
                                                       final ResourceDocument internal,
                                                       final ResourceDocument external,
-                                                      final String resourceDetail ) throws IOException {
+                                                      final String conflictDetail ) throws IOException {
                 final ImportChoice choice;
-                final ResourceDocument resolved;
+                ResourceDocument resolved;
                 if ( internal != null && external != null ) {
-                    choice = getChoice( option, ImportChoice.EXISTING, resourceDetail );
+                    if ( internal.getUri().equals( external.getUri() )) {
+                        option = ImportOption.CONFLICTING_URI;    
+                    }
+
+                    choice = getChoice( option, null, ImportChoice.EXISTING, conflictDetail, internal.getUri().toString(), getDescription(internal) );
                     switch ( choice ) {
                         case UPDATE_ALL:
                             resolved = internal;
@@ -606,21 +910,89 @@ class GlobalResourceImportContext {
                     resolved = external;
                 }
 
+                if ( resolved != null && resolved == external && resourceType == ResourceType.XML_SCHEMA ) {
+                    try {
+                        XmlUtil.getSchemaTNS( resolved.getContent(), null ); //TODO [steve] entity resolver
+                    } catch ( XmlUtil.BadSchemaException e ) {
+                        final String fullDetail;
+                        switch ( option ) {
+                            case CONFLICTING_URI:
+                                fullDetail = "URI: " + TextUtils.truncStringMiddleExact( conflictDetail, 80 );
+                                break;
+                            case CONFLICTING_TARGET_NAMESPACE:
+                                fullDetail = "Target Namespace: " + TextUtils.truncStringMiddleExact( conflictDetail, 80 );
+                                break;
+                            default:
+                                fullDetail = conflictDetail;
+                                break;
+                        }
+                        final ImportChoice invalidResourceChoice = getChoice( ImportOption.MISSING_RESOURCE, "invalid", ImportChoice.SKIP, fullDetail, resolved.getUri().toString(), getDescription(resolved) );
+                        switch ( invalidResourceChoice ) {
+                            case IMPORT:
+                                resolved = manualResourceTherapist.consult( ResourceType.XML_SCHEMA, fullDetail, resolved, ExceptionUtils.getMessage(e) );
+                                break;
+                            case SKIP:
+                                throw new IOException("Invalid resource skipped.", e);
+                        }
+                    }
+                }
+
                 return resolved;
             }
 
             private ImportChoice getChoice( final ImportOption option,
+                                            final String optionDetail,
                                             final ImportChoice defaultChoice,
-                                            final String resourceDetail ) {
-                ImportChoice choice = importOptions.get( option );
-
-                if ( choice == NONE ) {
-                    choice = choiceResolver.call( option, defaultChoice, resourceDetail );
-                }
-
-                return choice;
+                                            final String conflictDetail,
+                                            final String resourceUri,
+                                            final String resourceDescription ) {
+                return choiceSelector.selectChoice( option, optionDetail, defaultChoice, conflictDetail, resourceUri, resourceDescription );
             }
         };
+    }
+
+    /**
+     * Interface for fixing missing or invalid resources.
+     */
+    protected interface ResourceTherapist {
+
+        /**
+         * Find or fix the resource for the given details.
+         *
+         * @param resourceType The resource type if known (optional)
+         * @param resourceDescription A description of the resource (required)
+         * @param invalidResource The invalid resource if any (optional)
+         * @param invalidDetail The reason the resource is invalid (optional)
+         * @return
+         */
+        ResourceDocument consult( ResourceType resourceType,
+                                  String resourceDescription,
+                                  ResourceDocument invalidResource,
+                                  String invalidDetail );
+    }
+
+    /**
+     * Interface for selection of import choices.
+     */
+    protected interface ChoiceSelector {
+
+        /**
+         * Select an import choice for the given option.
+         *
+         * @param option The option for which a choice is required (required)
+         * @param optionDetail The detail for the option (optional)
+         * @param defaultChoice The default choice to use (required)
+         * @param conflictDetail Identifying information for the resource (optional)
+         * @param resourceUri Identifying information for the resource (optional)
+         * @param resourceDescription A description of the resource (optional)
+         * @return The selected choice (not null)
+         */
+        ImportChoice selectChoice( ImportOption option,
+                                   String optionDetail,
+                                   ImportChoice defaultChoice,
+                                   String conflictDetail,
+                                   String resourceUri,
+                                   String resourceDescription );
     }
 
     /**
@@ -633,7 +1005,7 @@ class GlobalResourceImportContext {
         NONE,
 
         /**
-         * Use the existing dependency
+         * Use an existing dependency
          */
         EXISTING,
 
@@ -660,6 +1032,16 @@ class GlobalResourceImportContext {
 
     protected enum ImportOption {
         /**
+         * Option for a dependency with a target namespace that matches multiple existing resources.
+         */
+        AMBIGUOUS_TARGET_NAMESPACE( EnumSet.of( EXISTING, IMPORT, SKIP ) ),
+
+        /**
+         * Option for a dependency with a public identifier that matches multiple existing resources.
+         */
+        AMBIGUOUS_PUBLIC_ID( EnumSet.of( EXISTING, IMPORT, SKIP ) ),
+
+        /**
          * Option for a dependency with a URI that matches an existing resource.
          */
         CONFLICTING_URI( EnumSet.of( EXISTING, UPDATE_ALL, SKIP ) ),
@@ -670,7 +1052,7 @@ class GlobalResourceImportContext {
         CONFLICTING_TARGET_NAMESPACE( EnumSet.of( EXISTING, UPDATE_CONTENT, UPDATE_ALL, IMPORT, SKIP ) ),
 
         /**
-         * Option for a dependency with a target namespace that matches an existing resource.
+         * Option for a dependency with a public identifier that matches an existing resource.
          */
         CONFLICTING_PUBLIC_ID( EnumSet.of( EXISTING, UPDATE_CONTENT, UPDATE_ALL, IMPORT, SKIP ) ),
 
@@ -766,11 +1148,23 @@ class GlobalResourceImportContext {
         return resolver;
     }
 
+    private static String getDescription( final ResourceDocument resourceDocument ) {
+        String description = null;
+
+        if ( resourceDocument instanceof ResourceEntryResourceDocument ) {
+            final ResourceEntryResourceDocument resourceEntryResourceDocument =
+                    (ResourceEntryResourceDocument) resourceDocument;
+            description = resourceEntryResourceDocument.resourceEntryHeader.getDescription();
+        }
+
+        return description;
+    }
+
     private static URI asUri( final String uri ) throws IOException {
         try {
             return new URI(uri);
         } catch ( URISyntaxException e ) {
-            throw new CausedIOException( e );
+            throw new IOException( e );
         }
     }
 
@@ -798,6 +1192,14 @@ class GlobalResourceImportContext {
             this.resourceAdmin = resourceAdmin;
         }
 
+        private ResourceEntryResourceDocument( final ResourceEntryHeader resourceEntryHeader,
+                                               final ResourceEntry resourceEntry ) throws IOException {
+            this.uri = asUri(resourceEntryHeader.getUri());
+            this.resourceEntryHeader = resourceEntryHeader;
+            this.resourceEntry = resourceEntry;
+            this.resourceAdmin = null;
+        }
+
         @Override
         public boolean available() {
             return resourceEntry != null;
@@ -814,11 +1216,11 @@ class GlobalResourceImportContext {
                 try {
                     resourceEntry = resourceAdmin.findResourceEntryByPrimaryKey( resourceEntryHeader.getOid() );
                 } catch ( FindException e ) {
-                    throw new CausedIOException(e);
+                    throw new IOException(e);
                 }
 
                 if ( resourceEntry == null ) {
-                    throw new CausedIOException("Global resource no longer available '"+resourceEntryHeader.getUri()+"'");
+                    throw new IOException("Global resource no longer available '"+resourceEntryHeader.getUri()+"'");
                 }
 
                 updateResourceEntry();
@@ -866,7 +1268,16 @@ class GlobalResourceImportContext {
         }
 
         public void updateContentFrom( final ResourceDocument resourceDocument ) throws IOException {
-            this.updatedContent = resourceDocument.getContent();
+            updateContent( resourceDocument.getContent() );
+        }
+
+        public void updateUri( final URI uri ) {
+            this.uri = uri;
+            updateResourceEntry();
+        }
+
+        public void updateContent( final String content ) {
+            this.updatedContent = content;
             updateResourceEntry();
         }
 
@@ -906,11 +1317,11 @@ class GlobalResourceImportContext {
         }
 
         @Override
-        public ResourceDocument resolveByPublicId( final String publicId ) throws IOException {
+        public ResourceDocument resolveByPublicId( final String uri, final String publicId ) throws IOException {
             ResourceDocument resourceDocument = null;
 
             for ( final ResourceDocumentResolver resolver : resolvers ) {
-                resourceDocument = resolver.resolveByPublicId( publicId );
+                resourceDocument = resolver.resolveByPublicId( uri, publicId );
                 if ( resourceDocument != null ) break;
             }
 
@@ -918,11 +1329,11 @@ class GlobalResourceImportContext {
         }
 
         @Override
-        public ResourceDocument resolveByTargetNamespace( final String targetNamespace ) throws IOException {
+        public ResourceDocument resolveByTargetNamespace( final String uri, final String targetNamespace ) throws IOException {
             ResourceDocument resourceDocument = null;
 
             for ( final ResourceDocumentResolver resolver : resolvers ) {
-                resourceDocument = resolver.resolveByTargetNamespace( targetNamespace );
+                resourceDocument = resolver.resolveByTargetNamespace( uri, targetNamespace );
                 if ( resourceDocument != null ) break;
             }
 

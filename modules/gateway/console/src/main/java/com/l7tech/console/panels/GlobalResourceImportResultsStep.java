@@ -2,16 +2,28 @@ package com.l7tech.console.panels;
 
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
 import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
+
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
+import com.l7tech.xml.DocumentReferenceProcessor;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -20,10 +32,15 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +53,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
     private JTable resourcesTable;
     private JButton removeButton;
     private JTextField systemIdTextField;
+    private JTextField descriptionTextField;
     private JTextField statusTextField;
     private JTextPane statusDetailTextPane;
     private JComboBox dependenciesComboBox;
@@ -53,6 +71,11 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
     GlobalResourceImportResultsStep( final GlobalResourceImportWizardStepPanel next ) {
         super( "results-step", next );
         init();
+    }
+
+    @Override
+    public boolean canFinish() {
+        return getPersistCount() > 0;
     }
 
     private void init() {
@@ -83,12 +106,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             @Override
             public void tableChanged( final TableModelEvent e ) {
                 resourcesTotalLabel.setText( Integer.toString( resourceHolderTableModel.getRowCount()) );
-                resourcesFailedLabel.setText( Integer.toString( Functions.reduce( resourceHolderTableModel.getRows(), 0, new Functions.Binary<Integer,Integer,ResourceHolder>(){
-                    @Override
-                    public Integer call( final Integer integer, final ResourceHolder resourceHolder ) {
-                        return integer + (resourceHolder.isError() ? 1 : 0);
-                    }
-                } )) );
+                resourcesFailedLabel.setText( Integer.toString( getErrorCount() ) );
                 enableAndDisableComponents();
             }
         } );
@@ -129,6 +147,13 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             @Override
             public void actionPerformed( final ActionEvent e ) {
                 doRemove();
+            }
+        } );
+
+        updateButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                doUpdate();
             }
         } );
 
@@ -175,10 +200,268 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         }
     }
 
+    private void doUpdate() {
+        final java.util.List<URI> resourceUris = new ArrayList<URI>( getNewResourceUris() );
+        Collections.sort( resourceUris );
+
+        final JPanel systemIdPanel = new JPanel();
+        systemIdPanel.setLayout( new BoxLayout( systemIdPanel, BoxLayout.Y_AXIS ) );
+
+        final JLabel optionLabel = new JLabel( "Enter the current and updated System Identifier prefixes:" );
+        optionLabel.setAlignmentX( JComponent.LEFT_ALIGNMENT );
+        systemIdPanel.add( optionLabel );
+
+        final JComboBox currentUriComboBox = new JComboBox();
+        currentUriComboBox.setAlignmentX( JComponent.LEFT_ALIGNMENT );
+        currentUriComboBox.setEditable( true );
+        currentUriComboBox.setModel( new DefaultComboBoxModel( resourceUris.toArray() ) );
+
+        systemIdPanel.add( Box.createVerticalStrut( 4 ) );
+        systemIdPanel.add( currentUriComboBox );
+        systemIdPanel.add( Box.createVerticalStrut( 4 ) );
+
+        final JTextField targetUriTextField = new JTextField();
+        targetUriTextField.setAlignmentX( JComponent.LEFT_ALIGNMENT );
+
+        systemIdPanel.add( targetUriTextField );
+        systemIdPanel.add( Box.createVerticalStrut( 4 ) );
+
+        while ( true ) {
+            final int choice = JOptionPane.showOptionDialog(
+                    this,
+                    systemIdPanel,
+                    "Update System Identifiers",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[]{"Update","Cancel"},
+                    "Cancel" );
+
+            if ( choice == JOptionPane.OK_OPTION ) {
+                final String fromUri = currentUriComboBox.getSelectedItem().toString().trim();
+                final String toUri = targetUriTextField.getText().trim();
+
+                if ( !fromUri.isEmpty() && !toUri.isEmpty() ) {
+                    updateNewResourceUris( fromUri, toUri );
+                    break;
+                } else {
+                    GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Current and updated System Identifiers are required." );
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    private void updateNewResourceUris( final String uriPrefix,
+                                        final String replacementUri ) {
+        final ResourceAdmin resourceAdmin = getWizard().getResourceAdmin();
+
+
+        // Ensure no uri conflicts or invalid uris
+        final Map<String,URI> newUris = new HashMap<String,URI>();
+        try {
+            for ( final ResourceHolder resourceHolder : resourceHolderTableModel.getRows() ) {
+                if ( resourceHolder.isPersist() && resourceHolder.isNew() && resourceHolder.getSystemId().startsWith( uriPrefix )) {
+                    final URI newUri = asUri(replacementUri + resourceHolder.getSystemId().substring( uriPrefix.length() ) );
+                    if ( !newUri.isAbsolute() ) {
+                        throw new IOException( "System identifiers must be absolute (relative identifiers not permitted)" );    
+                    }
+                    newUris.put( resourceHolder.getSystemId(), newUri );
+                }
+            }
+        } catch ( IOException e ) {
+            GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Unable to generate updated system identifiers:\n" + ExceptionUtils.getMessage(e));
+            return;
+        }
+
+        String conflictUri = null;
+        try {
+            for ( final URI uri : newUris.values() ) {
+                if ( resourceAdmin.findResourceHeaderByUriAndType( uri.toString(), null ) != null ) {
+                    conflictUri = uri.toString();
+                    break;
+                }
+            }
+        } catch ( FindException e ) {
+            GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Error checking for resource system identifier conflicts:\n" + ExceptionUtils.getMessage(e));
+            return;
+        }
+
+        if ( conflictUri != null ) {
+            GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Updated system identifier conflicts with an existing resource:\n" + TextUtils.truncStringMiddleExact( conflictUri, 80 ));
+        } else {
+            // Build updated content first, fix any references to the updated system identifiers
+            final Collection<ResourceHolder> resourceHolders = resourceHolderTableModel.getRows();
+            final Map<String,Pair<String,Set<Pair<String,String>>>> currentUriToUpdatedInfo;
+            try {
+                currentUriToUpdatedInfo = buildUpdateMap( uriPrefix, replacementUri, resourceHolders );
+            } catch ( IOException e ) {
+                GlobalResourceImportWizard.showErrorMessage( this, "Update Error", ExceptionUtils.getMessage(e));
+                return;
+            }
+
+            for ( final ResourceHolder resourceHolder : resourceHolders ) {
+                final String currentUri = resourceHolder.getSystemId();
+
+                final URI newUri = newUris.get( currentUri );
+                if ( newUri != null ) {
+                    resourceHolder.setSystemId( newUri );
+                }
+
+                final Pair<String,Set<Pair<String,String>>> updateInfo = currentUriToUpdatedInfo.get( currentUri );
+                if ( updateInfo != null ) {
+                    if ( updateInfo.left != null ) {
+                        resourceHolder.setContent( updateInfo.left );
+                    }
+                    if ( updateInfo.right != null ) {
+                        resourceHolder.setDependencies( updateInfo.right );
+                    }
+                }
+            }
+
+            resourceHolderTableModel.fireTableDataChanged();
+        }
+    }
+
+    /**
+     * Build a map of current resource URI to updated content / dependencies.
+     */
+    private Map<String,Pair<String,Set<Pair<String,String>>>> buildUpdateMap( final String uriPrefix,
+                                                                              final String replacementUri,
+                                                                              final Collection<ResourceHolder> resourceHolders ) throws IOException {
+        final Map<String,Pair<String,Set<Pair<String,String>>>> currentUriToUpdateInfo = new HashMap<String,Pair<String,Set<Pair<String,String>>>>();
+        for ( final ResourceHolder resourceHolder : resourceHolders ) {
+            boolean dependenciesUpdated = false;
+            final Map<String,String> dependencyChanges = new HashMap<String,String>();
+            final Set<Pair<String,String>> updatedDependencies = new HashSet<Pair<String,String>>();
+            for ( final Pair<String,String> dependencyUriPair : resourceHolder.getDependencies() ) {
+                if ( dependencyUriPair.left==null ) {
+                    updatedDependencies.add( dependencyUriPair );
+                    continue; // reference by namespace only, etc
+                }
+
+                String newDependencyUri = dependencyUriPair.left;
+                String newAbsoluteDependencyUri = dependencyUriPair.right;
+                final boolean prefixMatch = dependencyUriPair.right.startsWith( uriPrefix );
+                if ( prefixMatch ) {
+                    final String updatedBaseUri = resourceHolder.getSystemId().startsWith( uriPrefix ) ?
+                            replacementUri + resourceHolder.getSystemId().substring( uriPrefix.length() ) :
+                            resourceHolder.getSystemId();
+                    final String updatedDependencyUri = replacementUri + dependencyUriPair.right.substring( uriPrefix.length() );
+                    final URI newRelativeUri = relativizeUri(asUri(updatedBaseUri), asUri(updatedDependencyUri));
+                    if ( !newRelativeUri.equals( asUri(dependencyUriPair.left).normalize() ) ) {
+                        // ensure this dependency type can be updated
+                        final ResourceHolder dependencyHolder =
+                                GlobalResourceImportContext.findResourceHolderByUri( resourceHolders, dependencyUriPair.right );
+                        if ( dependencyHolder==null || dependencyHolder.getType() != ResourceType.XML_SCHEMA ) {
+                            throw new IOException( "Cannot update system identifiers due to missing or non-updatable resource:\n"+TextUtils.truncStringMiddleExact(dependencyUriPair.right,80));
+                        }
+
+                        newDependencyUri = newRelativeUri.toString();
+                        newAbsoluteDependencyUri = updatedDependencyUri;
+                        dependencyChanges.put( dependencyUriPair.left, newDependencyUri );
+                        dependenciesUpdated = true;
+                    } else if ( !dependencyUriPair.right.equals( updatedDependencyUri ) ) {
+                        newAbsoluteDependencyUri = updatedDependencyUri;
+                        dependenciesUpdated = true;
+                    }
+                }
+
+                updatedDependencies.add( new Pair<String,String>( newDependencyUri, newAbsoluteDependencyUri ) );
+            }
+
+            String contentUpdate = null;
+            if ( !dependencyChanges.isEmpty() ) {
+                if ( resourceHolder.isPersist() ) {
+                    try {
+                        final InputSource source = new InputSource( resourceHolder.getSystemId() );
+                        source.setCharacterStream( new StringReader( resourceHolder.getContent() ) );
+                        final Document schemaDocument = XmlUtil.parse( source, null ); // TODO [steve] entity resolver
+                        final DocumentReferenceProcessor schemaProcessor = DocumentReferenceProcessor.schemaProcessor();
+                        schemaProcessor.processDocumentReferences( schemaDocument, new DocumentReferenceProcessor.ReferenceCustomizer(){
+                            @Override
+                            public String customize( final Document document,
+                                                     final Node node,
+                                                     final String documentUrl,
+                                                     final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                                String updatedLocation = null;
+                                if ( node instanceof Element ) {
+                                    final Element referenceElement = (Element) node;
+                                    if ( referenceElement.hasAttributeNS( null, "schemaLocation" ) ) {
+                                        final String location = referenceElement.getAttributeNS( null, "schemaLocation" );
+                                        updatedLocation = dependencyChanges.get( location );
+                                    }
+                                }
+                                return updatedLocation;
+                            }
+                        } );
+
+                        contentUpdate = XmlUtil.nodeToString( schemaDocument ); // TODO [steve] preserve doctype
+                    } catch ( SAXException e ) {
+                        throw new IOException("Error updating references for resource:\n"+TextUtils.truncStringMiddleExact(resourceHolder.getSystemId(), 80)+"\n"+ExceptionUtils.getMessage(e));
+                    } catch ( IOException e ) {
+                        throw new IOException("Error updating references for resource:\n"+TextUtils.truncStringMiddleExact(resourceHolder.getSystemId(), 80)+"\n"+ExceptionUtils.getMessage(e));
+                    }
+                } else { // Fail, we're not creating/updating this resource so can't change the content
+                    throw new IOException("Cannot update references for resource:\n"+TextUtils.truncStringMiddleExact(resourceHolder.getSystemId(), 80));
+                }
+            }
+
+            if ( contentUpdate != null || dependenciesUpdated ) {
+                currentUriToUpdateInfo.put( resourceHolder.getSystemId(), new Pair<String,Set<Pair<String,String>>>( contentUpdate, updatedDependencies ) );
+            }
+        }
+
+        return currentUriToUpdateInfo;
+    }
+
+    private URI asUri( final String uri ) throws IOException {
+        try {
+            return new URI( uri );
+        } catch ( URISyntaxException e ) {
+            throw new IOException( "Cannot process invalid URI "+TextUtils.truncStringMiddleExact(uri, 80) + ": " + ExceptionUtils.getMessage(e), e );
+        }
+    }
+
+    private int getErrorCount() {
+        return Functions.reduce( resourceHolderTableModel.getRows(), 0, new Functions.Binary<Integer,Integer, ResourceHolder>(){
+            @Override
+            public Integer call( final Integer integer, final ResourceHolder resourceHolder ) {
+                return integer + (resourceHolder.isError() ? 1 : 0);
+            }
+        } );
+    }
+
+    private int getPersistCount() {
+        return Functions.reduce( resourceHolderTableModel.getRows(), 0, new Functions.Binary<Integer,Integer, ResourceHolder>(){
+            @Override
+            public Integer call( final Integer integer, final ResourceHolder resourceHolder ) {
+                return integer + (resourceHolder.isPersist() ? 1 : 0);
+            }
+        } );
+    }
+
+    private int getNewCount() {
+        return getNewResourceUris().size();
+    }
+
+    private Set<URI> getNewResourceUris() {
+        return Functions.reduce( resourceHolderTableModel.getRows(), new HashSet<URI>(), new Functions.Binary<Set<URI>,Set<URI>, ResourceHolder>(){
+            @Override
+            public Set<URI> call( final Set<URI> resourceUris, final ResourceHolder resourceHolder ) {
+                if ( resourceHolder.isPersist() && resourceHolder.isNew() ) {
+                    resourceUris.add( resourceHolder.asResourceDocument().getUri() );
+                }
+                return resourceUris;
+            }
+        } );
+    }
+
     private void enableAndDisableComponents() {
         viewButton.setEnabled( resourcesTable.getSelectedRowCount() == 1 );
         removeButton.setEnabled( resourcesTable.getSelectedRowCount() > 0 );
-        updateButton.setEnabled( false ); // TODO [steve] implement update of system identifiers (http -> local, change local prefixes)
+        updateButton.setEnabled( getNewCount() > 0 );
     }
 
     private void showDetails() {
@@ -188,6 +471,8 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             final ResourceHolder resourceHolder = resourceHolderTableModel.getRowObject( modelRow );
             systemIdTextField.setText( resourceHolder.getSystemId() );
             systemIdTextField.setCaretPosition( 0 );
+            descriptionTextField.setText( resourceHolder.getDescription() );
+            descriptionTextField.setCaretPosition( 0 );
             statusTextField.setText( resourceHolder.getStatus() );
             statusTextField.setCaretPosition( 0 );
             statusDetailTextPane.setText( resourceHolder.isError() ? ExceptionUtils.getMessage(resourceHolder.getError()) : "" );
@@ -197,6 +482,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             dependantsList.setModel( asListModel( getDependants( scope, resourceHolder, resourceHolderTableModel.getRows() ) ) );
         } else {
             systemIdTextField.setText( "" );
+            descriptionTextField.setText( "" );
             statusTextField.setText( "" );
             statusDetailTextPane.setText( "" );
             dependenciesList.setModel( new DefaultListModel() );

@@ -105,15 +105,6 @@ public class DtdUtilsTest {
         }
     }
 
-    /**
-     * Test that the encoding in a DTD is respected.
-     *
-     * //TODO [steve] implement DTD encoding test
-     */
-//    @Test
-//    public void testTextDeclInDTD() {
-//    }
-
     @Test
     public void testPublicIdentifierNormalization() {
         assertEquals( "Leading space removed", "test", DtdUtils.normalizePublicId( " test" ) );

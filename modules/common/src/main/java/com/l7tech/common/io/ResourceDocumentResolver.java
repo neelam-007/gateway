@@ -19,18 +19,20 @@ public interface ResourceDocumentResolver {
     /**
      * Resolve an XML Schema resource by target namespace.
      *
+     * @param uri The URI for the document (may be null)
      * @param targetNamespace The targetNamespace to resolved (may be null)
      * @return the schema resource or null.
      * @throws IOException If an error occurs.
      */
-    ResourceDocument resolveByTargetNamespace( String targetNamespace ) throws IOException;
+    ResourceDocument resolveByTargetNamespace( String uri, String targetNamespace ) throws IOException;
 
     /**
      * Resolve a resource by its public identifier.
      *
+     * @param uri The URI for the document (may be null)
      * @param publicId the public identifier for the resource.
      * @eturn the resource or null.
      * @throws IOException If an error occurs.
      */
-    ResourceDocument resolveByPublicId( String publicId ) throws IOException;
+    ResourceDocument resolveByPublicId( String uri, String publicId ) throws IOException;
 }

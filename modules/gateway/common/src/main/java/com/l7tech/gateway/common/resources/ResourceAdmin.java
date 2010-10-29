@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.resources;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.ConstraintViolationException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -24,7 +23,7 @@ import java.util.Collection;
 public interface ResourceAdmin {
 
     @Transactional(readOnly=true)
-    @Secured(stereotype= MethodStereotype.FIND_HEADERS)
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findAllResources() throws FindException;
 
     @Transactional(readOnly=true)
@@ -62,6 +61,12 @@ public interface ResourceAdmin {
     @Transactional(readOnly=true)
     @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByPublicIdentifier( String publicIdentifier ) throws FindException;
+
+    @Transactional(readOnly=true)
+    Collection<ResourceEntryHeader> findDefaultResources() throws FindException;
+
+    @Transactional(readOnly=true)
+    ResourceEntry findDefaultResourceByUri( final String uri ) throws FindException;
 
     @Transactional(readOnly=true)
     int countRegisteredSchemas( Collection<Long> resourceOids ) throws FindException;

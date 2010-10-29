@@ -346,7 +346,7 @@ public class GlobalResourcesDialog extends JDialog {
     }
 
     private void editEntry( final ResourceEntry entry, final boolean canEdit ) {
-        final ResourceEntryEditor dlg = new ResourceEntryEditor( this, entry, new ResourceAdminEntityResolver(resourceAdmin), canEdit );
+        final ResourceEntryEditor dlg = new ResourceEntryEditor( this, entry, new ResourceAdminEntityResolver(resourceAdmin), false, canEdit );
 
         DialogDisplayer.display( dlg, new Runnable(){
             @Override

@@ -261,6 +261,15 @@
         <constructor-arg index="3" ref="httpConfigurationManager"/>
         <constructor-arg index="4" ref="serviceDocumentResolver"/>
         <constructor-arg index="5" ref="schemaManager"/>
+        <constructor-arg index="6">
+            <map>
+                <entry key="SOAP_1_1.xsd" value="http://schemas.xmlsoap.org/soap/envelope/|http://schemas.xmlsoap.org/soap/envelope/"/>
+                <entry key="SOAP_1_2.xsd" value="http://www.w3.org/2003/05/soap-envelope/|http://www.w3.org/2003/05/soap-envelope"/>
+                <entry key="/com/l7tech/common/resources/xml.xsd" value="http://www.w3.org/2001/xml.xsd|http://www.w3.org/XML/1998/namespace"/>
+                <entry key="/com/l7tech/common/resources/datatypes.dtd" value="http://www.w3.org/2001/datatypes.dtd|datatypes"/>
+                <entry key="/com/l7tech/common/resources/XMLSchema.dtd" value="http://www.w3.org/2001/XMLSchema.dtd|-//W3C//DTD XMLSCHEMA 200102//EN"/>
+            </map>
+        </constructor-arg>
     </bean>
 
     <!-- jms admin servant -->

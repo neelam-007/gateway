@@ -15,11 +15,19 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.service.ServiceDocumentResolver;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Resource administration implementation
@@ -33,13 +41,15 @@ public class ResourceAdminImpl implements ResourceAdmin {
                               final DefaultHttpProxyManager defaultHttpProxyManager,
                               final HttpConfigurationManager httpConfigurationManager,
                               final ServiceDocumentResolver serviceDocumentResolver,
-                              final SchemaManager schemaManager ) {
+                              final SchemaManager schemaManager,
+                              final Map<String,String> defaultResourceMap ) {
         this.config = config;
         this.resourceEntryManager = resourceEntryManager;
         this.defaultHttpProxyManager = defaultHttpProxyManager;
         this.httpConfigurationManager = httpConfigurationManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
         this.schemaManager = schemaManager;
+        this.defaultResources = buildDefaultResources( defaultResourceMap );
     }
 
     @Override
@@ -112,6 +122,49 @@ public class ResourceAdminImpl implements ResourceAdmin {
     @Override
     public Collection<ResourceEntryHeader> findResourceHeadersByPublicIdentifier( final String publicIdentifier ) throws FindException {
         return resourceEntryManager.findHeadersByPublicIdentifier( publicIdentifier );
+    }
+
+    @Override
+    public ResourceEntry findDefaultResourceByUri( final String uri ) throws FindException {
+        ResourceEntry resourceEntry = null;
+
+        for ( final Map.Entry<String,ResourceEntryHeader> defaultResourceEntry : defaultResources.entrySet() ) {
+            final ResourceEntryHeader resourceEntryHeader = defaultResourceEntry.getValue();
+            if ( resourceEntryHeader.getUri().equals( uri ) ) {
+                InputStream resourceIn = null;
+                try {
+                    resourceIn = ResourceAdminImpl.class.getResourceAsStream(defaultResourceEntry.getKey());
+                    if ( resourceIn == null ) {
+                        logger.warning( "Default resource not found '"+defaultResourceEntry.getKey()+"'." );
+                        continue;
+                    }
+
+                    final byte[] resourceContent =
+                            IOUtils.slurpStream( resourceIn, 1024*1024 );
+                    
+                    resourceEntry = new ResourceEntry();
+                    resourceEntry.setType( resourceEntryHeader.getResourceType() );
+                    resourceEntry.setContentType( resourceEntryHeader.getResourceType().getMimeType() );
+                    resourceEntry.setUri( resourceEntryHeader.getUri() );
+                    resourceEntry.setContent( new String( resourceContent, Charsets.UTF8 ) );
+                    resourceEntry.setResourceKey1( resourceEntryHeader.getResourceKey1() );
+                    resourceEntry.setResourceKey2( resourceEntryHeader.getResourceKey2() );
+                    resourceEntry.setResourceKey3( resourceEntryHeader.getResourceKey3() );
+                } catch ( IOException e ) {
+                    throw new FindException("Error loading resource", e);
+                } finally {
+                    ResourceUtils.closeQuietly( resourceIn );
+                }
+                break;
+            }
+        }
+
+        return resourceEntry;
+    }
+
+    @Override
+    public Collection<ResourceEntryHeader> findDefaultResources() throws FindException {
+        return new ArrayList<ResourceEntryHeader>(defaultResources.values());
     }
 
     @Override
@@ -206,10 +259,54 @@ public class ResourceAdminImpl implements ResourceAdmin {
     
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger( ResourceAdminImpl.class.getName() );
+
     private final Config config;
     private final ResourceEntryManager resourceEntryManager;
     private final DefaultHttpProxyManager defaultHttpProxyManager;
     private final HttpConfigurationManager httpConfigurationManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
     private final SchemaManager schemaManager;
+    private final Map<String,ResourceEntryHeader> defaultResources;
+
+    /**
+     *
+     */
+    private static Map<String,ResourceEntryHeader> buildDefaultResources( final Map<String,String> defaultResourceMap ) {
+        final Map<String,ResourceEntryHeader> resourceMap = new HashMap<String,ResourceEntryHeader>();
+
+        for ( final Map.Entry<String,String> defaultResourceEntry : defaultResourceMap.entrySet() ) {
+            ResourceType headerType = null;
+            for ( final ResourceType type : ResourceType.values() ) {
+                if ( defaultResourceEntry.getKey().endsWith( type.getFilenameSuffix() ) ) {
+                    headerType = type;
+                    break;
+                }
+            }
+
+            if ( headerType == null ) {
+                logger.warning( "Cannot determine type for default resource '"+defaultResourceEntry.getKey()+"'." );
+                continue;
+            }
+
+            final String[] uriAndRefKey1 = defaultResourceEntry.getValue().split( "\\|" );
+            if ( uriAndRefKey1.length > 2 ) {
+                logger.warning( "Unexpected number of values for resource '"+defaultResourceEntry.getKey()+"'." );
+            }
+
+            final ResourceEntryHeader header = new ResourceEntryHeader(
+                    Long.toString(ResourceEntry.DEFAULT_OID),
+                    uriAndRefKey1[0],
+                    null,
+                    headerType,
+                    uriAndRefKey1.length > 1 ? uriAndRefKey1[1] : null,
+                    null,
+                    null,
+                    0 );
+
+            resourceMap.put( defaultResourceEntry.getKey(), header );
+        }
+
+        return Collections.unmodifiableMap( resourceMap );
+    }
 }
