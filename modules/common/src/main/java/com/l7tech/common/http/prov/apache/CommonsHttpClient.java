@@ -440,14 +440,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                                       final HttpState state,
                                       final org.apache.commons.httpclient.HttpMethod httpMethod,
                                       final GenericHttpRequestParams params ) {
+        boolean proxyConfigured = false;
         if ( params.getProxyHost() != null ) {
             final PasswordAuthentication proxyAuthentication = params.getProxyAuthentication();
             if ( proxyAuthentication != null ) {
+                proxyConfigured = true;
                 state.setProxyCredentials(
                         new AuthScope( params.getProxyHost(), params.getProxyPort() ),
                         new UsernamePasswordCredentials(proxyAuthentication.getUserName(), new String(proxyAuthentication.getPassword())));
             }
         } else if (proxyUsername != null && proxyUsername.length() > 0) {
+            proxyConfigured = true;
             state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxyUsername, proxyPassword));
         }
 
@@ -477,7 +480,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                                  new UsernamePasswordCredentials(username, new String(password)));
             clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
             clientParams.setCredentialCharset(SyspropUtil.getStringCached(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
-        } else {
+        } else if ( !proxyConfigured ) {
             httpMethod.setDoAuthentication(false);
             state.clearCredentials();
             clientParams.setAuthenticationPreemptive(false);
