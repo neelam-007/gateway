@@ -111,6 +111,8 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             }
         }
 
+        // just in case there's html tags in the display text
+        displayText = TextUtils.escapeHtmlSpecialCharacters(displayText);
         builder.append(displayText);
 
         if (hasRight) {
@@ -130,7 +132,7 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         }
 
         if (decorateComment) builder.append("</html>");
-        
+
         return builder.toString();
     }
 
