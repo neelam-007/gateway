@@ -43,7 +43,10 @@ class CryptoJWrapper {
 
     private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
             new Pair<String,String>( "CertificateFactory", "X.509" ),
-            new Pair<String,String>( "KeyStore", "PKCS12" )
+            new Pair<String,String>( "KeyStore", "PKCS12" ),
+            new Pair<String,String>( "CertPathBuilder", "PKIX" ),
+            new Pair<String,String>( "CertPathValidator", "PKIX" ),
+            new Pair<String,String>( "CertStore", "Collection" )
     ));
 
     final ClassLoader cl;
