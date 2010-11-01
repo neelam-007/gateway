@@ -124,6 +124,8 @@ public class GenerateCertificate {
         put("countriesOfCitizenship", new CountriesOfCitizenshipOption("countryCode\tInclude SubjectDirectoryAttributes ext including country code (may be repeated)"));
         put("certificatePolicies",  new CertificatePolicyOption("certificatePolicy\tInclude certificate policy (may be repeated)"));
         put("subjectAltName",       new SubjectAlternativeNamePolicyOption("hostnameOrIp\tSubject Alternative Name hostname pattern or IP address (may be repeated)"));
+        put("ocspUrl",              new OcspUrlOption("url\tIncludes an AuthorityInfoAccess extension containing the specified OCSP URL (may be repeated)"));
+        put("ocspUrlCritical",      new MethodOption("false\tWhether an AuthorityInfoAccess extension should be marked as Critical (default=false)", "ocspUrlCritical", 1));
     }};
 
     //
@@ -203,6 +205,10 @@ public class GenerateCertificate {
         }
     }
 
+    public void ocspUrlCritical(String crit) {
+        this.generator.getCertGenParams().setAuthorityInfoAccessCritical(Boolean.valueOf(crit));
+    }
+
     public void outfile(String outputPath, String kspass) {
         this.outputPath = outputPath;
         this.outputPassword = kspass;
@@ -241,6 +247,26 @@ public class GenerateCertificate {
 
     private static String list(Set<String> tojoin) {
         return ("\n   \t    " + TextUtils.join("\n   \t    ", tojoin));
+    }
+
+    private static class OcspUrlOption extends Option {
+        protected OcspUrlOption(String desc) {
+            super(desc);
+        }
+
+        @Override
+        void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
+            String url = remainingArgs.next();
+            remainingArgs.remove();
+
+            CertGenParams params = target.generator.getCertGenParams();
+            List<String> urls = params.getAuthorityInfoAccessOcspUrls();
+            if (urls == null)
+                urls = new ArrayList<String>();
+            urls.add(url);
+            params.setIncludeAuthorityInfoAccess(true);
+            params.setAuthorityInfoAccessOcspUrls(urls);
+        }
     }
 
     private static class ExtKeyUsageOption extends Option {

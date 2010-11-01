@@ -56,6 +56,11 @@ public class CertGenParams implements Serializable {
     private boolean subjectAlternativeNameCritical;
     private List<X509GeneralName> subjectAlternativeNames;
 
+    // AuthorityInfoAccess (OCSP responder URLs)
+    private boolean includeAuthorityInfoAccess;
+    private boolean authorityInfoAccessCritical;
+    private List<String> authorityInfoAccessOcspUrls;
+
     public CertGenParams() {
     }
 
@@ -303,9 +308,36 @@ public class CertGenParams implements Serializable {
         this.subjectAlternativeNameCritical = subjectAlternativeNameCritical;
     }
 
+    public boolean isIncludeAuthorityInfoAccess() {
+        return includeAuthorityInfoAccess;
+    }
+
+    public void setIncludeAuthorityInfoAccess(boolean includeAuthorityInfoAccess) {
+        this.includeAuthorityInfoAccess = includeAuthorityInfoAccess;
+    }
+
+    public boolean isAuthorityInfoAccessCritical() {
+        return authorityInfoAccessCritical;
+    }
+
+    public void setAuthorityInfoAccessCritical(boolean authorityInfoAccessCritical) {
+        this.authorityInfoAccessCritical = authorityInfoAccessCritical;
+    }
+
+    public List<String> getAuthorityInfoAccessOcspUrls() {
+        return authorityInfoAccessOcspUrls;
+    }
+
+    public void setAuthorityInfoAccessOcspUrls(List<String> authorityInfoAccessOcspUrls) {
+        this.authorityInfoAccessOcspUrls = authorityInfoAccessOcspUrls;
+    }
+
     /**
      * Disable all extensions.
-     * This currently disables inclusion of a SKI, AKI, basic constraints, key usage, and extended key usage.
+     * <p/>
+     * This currently disables inclusion of a SKI, AKI, basic constraints, key usage, extended key usage,
+     * and authority info access.
+     * <p/>
      * In the future, if further extensions are supported by CertGenParams, this method will disable them as well.
      *
      * @return this CertGenParams object itself, for chaining.
@@ -316,6 +348,7 @@ public class CertGenParams implements Serializable {
         includeBasicConstraints = false;
         includeKeyUsage = false;
         includeExtendedKeyUsage = false;
+        includeAuthorityInfoAccess = false;
         return this;
     }
 

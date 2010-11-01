@@ -105,6 +105,10 @@ public class ParamsCertificateGenerator {
         if (c.isIncludeSubjectAlternativeName())
             certgen.addExtension(X509Extensions.SubjectAlternativeName, c.isSubjectAlternativeNameCritical(), createSubjectAlternativeName(c.getSubjectAlternativeNames()));
 
+        if (c.isIncludeAuthorityInfoAccess()) {
+            certgen.addExtension(X509Extensions.AuthorityInfoAccess, c.isAuthorityInfoAccessCritical(), createAuthorityInfoAccess(c.getAuthorityInfoAccessOcspUrls()));
+        }
+
         try {
             Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
             return prov == null
@@ -200,6 +204,14 @@ public class ParamsCertificateGenerator {
         });
 
         return new GeneralNames(new DERSequence(generalNames.toArray(new ASN1Encodable[generalNames.size()])));
+    }
+
+    private DEREncodable createAuthorityInfoAccess(List<String> authorityInfoAccessUrls) {
+        List<AccessDescription> accessDescriptions = new ArrayList<AccessDescription>();
+        for (String url : authorityInfoAccessUrls) {
+            accessDescriptions.add(new AccessDescription(AccessDescription.id_ad_ocsp, new GeneralName(GeneralName.uniformResourceIdentifier, url)));
+        }
+        return new AuthorityInformationAccess(new DERSequence(accessDescriptions.toArray(new AccessDescription[accessDescriptions.size()])));
     }
 
     /**
