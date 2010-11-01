@@ -194,7 +194,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                     ClusterProperty cp = (ClusterProperty) source;
                     if (cp.getName().equals("cluster.hostname") ||
                             cp.getName().equals("cluster.httpPort") ||
-                            cp.getName().equals("cluster.httpsport")) {
+                            cp.getName().equals("cluster.httpsPort")) {
                             timer.schedule(new CheckPublishedEndpointsTimerTask(this), 0);
                     }
                 }
