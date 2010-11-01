@@ -4,6 +4,7 @@ import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -150,7 +151,8 @@ public class AssociatedLogsTable extends JTable {
                     comp.setToolTipText(null);
                 } else {
                     if (messageText.length() < 4096) {
-                        comp.setToolTipText("<html><pre>" + messageText + "</pre</html>");//sanitize in case messageText contains html?
+                        //sanitize in case messageText contains html
+                        comp.setToolTipText("<html><pre>" + TextUtils.escapeHtmlSpecialCharacters(messageText) + "</pre></html>");
                     }
                 }
 
