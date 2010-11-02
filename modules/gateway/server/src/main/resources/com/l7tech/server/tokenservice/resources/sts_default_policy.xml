@@ -7,7 +7,7 @@
             <OID>-2</OID>
             <Name>Internal Identity Provider</Name>
             <Props>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gCjxqYXZhIHZlcnNpb249IjEu&#xd;
-Ni4wXzE4IiBjbGFzcz0iamF2YS5iZWFucy5YTUxEZWNvZGVyIj4gCiA8b2JqZWN0IGNsYXNzPSJq&#xd;
+Ni4wXzE3IiBjbGFzcz0iamF2YS5iZWFucy5YTUxEZWNvZGVyIj4gCiA8b2JqZWN0IGNsYXNzPSJq&#xd;
 YXZhLnV0aWwuSGFzaE1hcCI+IAogIDx2b2lkIG1ldGhvZD0icHV0Ij4gCiAgIDxzdHJpbmc+YWRt&#xd;
 aW5FbmFibGVkPC9zdHJpbmc+IAogICA8Ym9vbGVhbj50cnVlPC9ib29sZWFuPiAKICA8L3ZvaWQ+&#xd;
 IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
@@ -101,8 +101,8 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                 <wsp:All wsp:Usage="Required">
                     <L7p:SslAssertion/>
                     <wsp:OneOrMore wsp:Usage="Required">
-                        <L7p:HttpBasic/>
                         <L7p:HttpDigest/>
+                        <L7p:HttpBasic/>
                         <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
                             <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#UsernameToken</wsse:TokenType>
                             <L7p:Properties/>
