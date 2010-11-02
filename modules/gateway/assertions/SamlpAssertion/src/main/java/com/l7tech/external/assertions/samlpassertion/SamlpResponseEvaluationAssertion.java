@@ -161,7 +161,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         this.keyId = keyid;
     }
 
-    final static String baseName = "Evaluate SAML Protocol Message";
+    final static String baseName = "Evaluate SAML Protocol Response";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SamlpResponseEvaluationAssertion>(){
         @Override
