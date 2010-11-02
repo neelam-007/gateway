@@ -280,9 +280,11 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         int multiplier = ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier();
 
         maxAgeGreater100Years = !ValidationUtils.isValidDouble( groupCacheHierarchyMaxAgeTextField.getText(), false, 0, MILLIS_100_YEARS / multiplier  );
-        if ( !ValidationUtils.isValidInteger( groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE ) ||
+        boolean groupCacheSize = !ValidationUtils.isValidInteger(groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE);
+        boolean nesting = !ValidationUtils.isValidInteger(groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE);
+        if ( groupCacheSize ||
              maxAgeGreater100Years ||
-             !ValidationUtils.isValidInteger( groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE ) ) {
+                nesting) {
             valid = false;
         }
 
@@ -361,6 +363,8 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
             listModel.clear();
             listModel.addAll( attributes );
         }
+
+        validateComponents();
     }
 
     private void storeProviderConfig( final LdapIdentityProviderConfig config ) {
