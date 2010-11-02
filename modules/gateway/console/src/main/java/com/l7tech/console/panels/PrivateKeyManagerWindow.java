@@ -718,6 +718,9 @@ public class PrivateKeyManagerWindow extends JDialog {
                     } else if (gotmess != null && (pos = gotmess.indexOf("NoSuchAlgorithmException:")) >= 0) {
                         // More friendly error message for another common, foreseeable problem (Bug #7648)
                         mess = "Unable to generate key pair: " + gotmess.substring(pos + 25);
+                    } else if (gotmess != null && (pos = gotmess.indexOf("Strong RSA key pair generation")) >= 0) {
+                        // More friendly error message for another common, foreseeable problem (Bug #9198)
+                        mess = "Unable to generate key pair: " + gotmess.substring(pos);
                     } else {
                         mess = "Key generation failed: " + result.throwableClassname + ": " + gotmess;
                     }
