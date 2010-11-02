@@ -41,12 +41,12 @@ public class RstSoapMessageProcessor {
     public final static String HAS_REQUEST_SECURITY_TOKEN = "has_request_security_token_element";
     public final static String TOKEN_TYPE = "rst_token_type";
     public final static String HAS_REQUEST_TYPE = "has_rst_request_type";
+    public final static String REQUEST_TYPE = "rst_request_type";
     public final static String HAS_CANCEL_TARGET = "has_cancel_target";
     public final static String HAS_SECURITY_TOKEN_REFERENCE = "has_security_token_reference";
     public final static String HAS_REFERENCE = "has_reference";
     public final static String REFERENCE_ATTR_URI = "reference_attribute_uri";
     public final static String REFERENCE_ATTR_VALUE_TYPE = "reference_attribute_value_type";
-    public final static String REQUEST_TYPE = "rst_request_type";
     public final static String HAS_ENTROPY = "has_entropy_element";
     public final static String HAS_BINARY_SECRET = "has_binary_secret_element";
     public final static String BINARY_SECRET_ATTR_TYPE = "binary_secret_type";
@@ -175,7 +175,7 @@ public class RstSoapMessageProcessor {
         try {
             rstEl = DomUtils.findExactlyOneChildElementByName(body, parameters.get(WST_NS), SoapConstants.WST_REQUESTSECURITYTOKEN);
         } catch (InvalidDocumentFormatException e) {
-            reportAndLogError("The wst:RequestSecurityToken element is not well-formatted.", e, parameters);
+            reportAndLogError("The RequestSecurityToken element is not well-formatted.", e, parameters);
             return parameters;
         }
 
@@ -254,7 +254,7 @@ public class RstSoapMessageProcessor {
                     parameters.put(KEY_SIZE, DomUtils.getTextValue(keySizeEl));
                 }
             } catch (InvalidDocumentFormatException e) {
-                reportAndLogError("The '" + elementName + "' element is not well-formatted in the SOAP message.", e, parameters);
+                reportAndLogError("The " + elementName + " element is not well-formatted in the SOAP message.", e, parameters);
                 return parameters;
             }
         } else {

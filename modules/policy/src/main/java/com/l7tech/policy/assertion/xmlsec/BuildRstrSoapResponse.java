@@ -31,12 +31,14 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     private static final String META_INITIALIZED = BuildRstrSoapResponse.class.getName() + ".metadataInitialized";
 
     private boolean responseForIssuance = true; // Default: true.  "false" means the response for Cancellation.
+    private boolean includeAppliesTo;
     private boolean includeLifetime;
     private boolean includeAttachedRef;
     private boolean includeUnattachedRef;
     private boolean includeKeySize;
 
     private String tokenIssued; // It is a context variable.
+    private String addressOfEPR; // The address attribute of the endpoint reference
     private long lifetime = DEFAULT_LIFETIME; // Unit: milliseconds.
     private TimeUnit timeUnit = TimeUnit.MINUTES;
     private int keySize = AUTOMATIC_KEY_SIZE; // Unit: bits. Default set as automatic key size.
@@ -50,6 +52,14 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
 
     public void setResponseForIssuance(boolean responseForIssuance) {
         this.responseForIssuance = responseForIssuance;
+    }
+
+    public boolean isIncludeAppliesTo() {
+        return includeAppliesTo;
+    }
+
+    public void setIncludeAppliesTo(boolean includeAppliesTo) {
+        this.includeAppliesTo = includeAppliesTo;
     }
 
     public boolean isIncludeLifetime() {
@@ -90,6 +100,14 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
 
     public void setTokenIssued(String tokenIssued) {
         this.tokenIssued = tokenIssued;
+    }
+
+    public String getAddressOfEPR() {
+        return addressOfEPR;
+    }
+
+    public void setAddressOfEPR(String addressOfEPR) {
+        this.addressOfEPR = addressOfEPR;
     }
 
     // Unit: milliseconds.
@@ -174,6 +192,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames((variablePrefix == null? "" : variablePrefix) + (tokenIssued == null? "":tokenIssued));
+        return Syntax.getReferencedNames((variablePrefix == null? "" : variablePrefix) + (tokenIssued == null? "" : tokenIssued) + (addressOfEPR == null? "" : addressOfEPR));
     }
 }

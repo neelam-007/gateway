@@ -114,9 +114,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 AssertionStatus status = getTokenInfo(context, tokenInfo);
 
                 if (status != AssertionStatus.NONE) return status;
-                rstrXml = generateRstrElement(message, rstParameters, tokenInfo);
+                rstrXml = generateRstrElement(context, message, rstParameters, tokenInfo);
             } else {
-                rstrXml = generateRstrElement(message, rstParameters, null); // no need of token info
+                rstrXml = generateRstrElement(context, message, rstParameters, null); // no need of token info
             }
         } catch (NoSuchSessionException e) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session.does.not.exist", e.getMessage());
@@ -262,12 +262,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
     /**
      * Generate a RequestSecurityTokenResponse element
+     * @param context
      * @param targetMessage
      * @param parameters
      * @param tokenInfo
      * @return
      */
-    private String generateRstrElement(Message targetMessage, Map<String, String> parameters, Map<String, String> tokenInfo) throws NoSuchSessionException, SessionExpiredException {
+    private String generateRstrElement(PolicyEnforcementContext context,
+                                       Message targetMessage,
+                                       Map<String, String> parameters,
+                                       Map<String, String> tokenInfo) throws NoSuchSessionException, SessionExpiredException {
         StringBuilder rstrBuilder = new StringBuilder();
 
         // Build RequestSecurityTokenResponse
@@ -304,6 +308,25 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             .append("<wst:RequestedSecurityToken>\n")
             .append(securityTokenXml).append("\n")
             .append("</wst:RequestedSecurityToken>\n");
+
+        // Build AppliesTo
+        String address = assertion.getAddressOfEPR();
+        String addressContent = ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor);
+
+        if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
+            String wsaNS = parameters.get(RstSoapMessageProcessor.WSA_NS);  // The WS-Addressing namespace must not be null.  It has been checked in doCheckRequest.
+            String wspNS = parameters.get(RstSoapMessageProcessor.WSP_NS);
+            if (wspNS == null || wspNS.trim().isEmpty()) {
+                wspNS = SoapConstants.WSP_NAMESPACE2;
+            }
+
+            rstrBuilder
+                .append("<wsp:AppliesTo xmlns:wsp=\"").append(wspNS).append("\" xmlns:wsa=\"").append(wsaNS).append("\">\n")
+                .append("<wsa:EndpointReference>\n")
+                .append("<wsa:Address>").append(addressContent).append("</wsa:Address>\n")
+                .append("</wsa:EndpointReference>\n")
+                .append("</wsp:AppliesTo>\n");
+        }
 
         // Get the type of the token issued
         boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));

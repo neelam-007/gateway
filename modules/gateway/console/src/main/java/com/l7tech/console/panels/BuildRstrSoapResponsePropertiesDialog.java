@@ -34,6 +34,8 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     private JCheckBox keySizeCheckBox;
     private JComboBox keySizeComboBox;
     private JTextField varPrefixTextField;
+    private JCheckBox appliesToCheckBox;
+    private JTextField addressTextField;
 
     private static final String AUTOMATIC_KEYSIZE_ITEM = "Automatic";
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
@@ -91,6 +93,8 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 enableOrDisableOkButton();
             }
         });
+        
+        tokenIssuedTextField.setDocument(new MaxLengthDocument(128));
         tokenIssuedTextField.getDocument().addDocumentListener(validationListener);
 
         responseForIssuanceRadioButton.addActionListener(new ActionListener() {
@@ -110,6 +114,17 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 enableOrDisableOkButton();
             }
         });
+
+        appliesToCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addressTextField.setEnabled(appliesToCheckBox.isSelected());
+                enableOrDisableOkButton();
+            }
+        });;
+
+        addressTextField.setDocument(new MaxLengthDocument(128));
+        addressTextField.getDocument().addDocumentListener(validationListener);
 
         lifetimeCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -162,6 +177,8 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(10));
         ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(validationListener);
 
+        varPrefixTextField.setDocument(new MaxLengthDocument(128));
+
         modelToView();
     }
 
@@ -169,6 +186,10 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         rstrConfigPanel.setEnabled(enabled);
 
         tokenIssuedTextField.setEnabled(enabled);
+
+        appliesToCheckBox.setEnabled(enabled);
+        addressTextField.setEnabled(appliesToCheckBox.isSelected() && enabled);
+        
         attachedRefCheckBox.setEnabled(enabled);
         unattachedRefCheckBox.setEnabled(enabled);
 
@@ -201,6 +222,10 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         // Continue to set RSTR configuration since the response-for-issuance radio button is selected
         tokenIssuedTextField.setText(assertion.getTokenIssued());
 
+        appliesToCheckBox.setSelected(assertion.isIncludeAppliesTo());
+        addressTextField.setEnabled(assertion.isIncludeAppliesTo());
+        addressTextField.setText(assertion.getAddressOfEPR());
+
         attachedRefCheckBox.setSelected(assertion.isIncludeAttachedRef());
         unattachedRefCheckBox.setSelected(assertion.isIncludeUnattachedRef());
 
@@ -209,8 +234,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         lifetimeTextField.setEnabled(assertion.isIncludeLifetime());
         lifetimeUnitComboBox.setEnabled(assertion.isIncludeLifetime());
 
-        // Set their values first.  Note: determine their enabled or disabled status below later.  The reason why setting
-        // values first is because we want to see what values these components have even though they are disabled.
+        // Always display their values even thought their fields are disabled.
         TimeUnit timeUnit = assertion.getTimeUnit();
         Double lifetime = (double) assertion.getLifetime();
         lifetimeTextField.setValue(lifetime / timeUnit.getMultiplier());
@@ -219,7 +243,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
 
         keySizeCheckBox.setSelected(assertion.isIncludeKeySize());
         keySizeComboBox.setEnabled(assertion.isIncludeKeySize());
-
         if (assertion.getKeySize() == BuildRstrSoapResponse.AUTOMATIC_KEY_SIZE) {
             keySizeComboBox.setSelectedItem(AUTOMATIC_KEYSIZE_ITEM);
         } else {
@@ -237,6 +260,14 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         if (responseForIssuanceRadioButton.isSelected()) {
             assertion.setTokenIssued(tokenIssuedTextField.getText());
 
+            assertion.setIncludeAppliesTo(appliesToCheckBox.isSelected());
+            if (appliesToCheckBox.isSelected()) {
+                assertion.setAddressOfEPR(addressTextField.getText());
+            }
+           
+            assertion.setIncludeAttachedRef(attachedRefCheckBox.isSelected());
+            assertion.setIncludeUnattachedRef(unattachedRefCheckBox.isSelected());
+
             assertion.setIncludeLifetime(lifetimeCheckBox.isSelected());
             if (lifetimeCheckBox.isSelected()) {
                 TimeUnit timeUnit = (TimeUnit) lifetimeUnitComboBox.getSelectedItem();
@@ -244,9 +275,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 assertion.setTimeUnit(timeUnit);
                 assertion.setLifetime((long)(lifetime * timeUnit.getMultiplier()));
             }
-
-            assertion.setIncludeAttachedRef(attachedRefCheckBox.isSelected());
-            assertion.setIncludeUnattachedRef(unattachedRefCheckBox.isSelected());
 
             assertion.setIncludeKeySize(keySizeCheckBox.isSelected());
             if (keySizeCheckBox.isSelected()) {
@@ -270,14 +298,22 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         if (responseForCancelRadioButton.isSelected()) {
             okButton.setEnabled(true);
             return;
-        }
-        // Else if the response is for token issuance, then check the following each component.
+        } // Else if the response is for token issuance, then check the following each component.
 
         // Check token variable
         String tokenIssued = tokenIssuedTextField.getText();
         if (tokenIssued == null || tokenIssued.trim().isEmpty()) {
             okButton.setEnabled(false);
             return;
+        }
+
+        // Check AppliesTo
+        if (appliesToCheckBox.isSelected()) {
+            String address = addressTextField.getText();
+            if (address == null || address.trim().isEmpty()) {
+                okButton.setEnabled(false);
+                return;
+            }
         }
 
         // Check Lifetime
