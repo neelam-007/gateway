@@ -310,22 +310,26 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             .append("</wst:RequestedSecurityToken>\n");
 
         // Build AppliesTo
-        String address = assertion.getAddressOfEPR();
-        String addressContent = ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor);
+        if (assertion.isIncludeAppliesTo()) {
+            String address = assertion.getAddressOfEPR();
+            if (address != null) {
+                String addressContent = ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor);
 
-        if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
-            String wsaNS = parameters.get(RstSoapMessageProcessor.WSA_NS);  // The WS-Addressing namespace must not be null.  It has been checked in doCheckRequest.
-            String wspNS = parameters.get(RstSoapMessageProcessor.WSP_NS);
-            if (wspNS == null || wspNS.trim().isEmpty()) {
-                wspNS = SoapConstants.WSP_NAMESPACE2;
+                if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
+                    String wsaNS = parameters.get(RstSoapMessageProcessor.WSA_NS);  // The WS-Addressing namespace must not be null.  It has been checked in doCheckRequest.
+                    String wspNS = parameters.get(RstSoapMessageProcessor.WSP_NS);
+                    if (wspNS == null || wspNS.trim().isEmpty()) {
+                        wspNS = SoapConstants.WSP_NAMESPACE2;
+                    }
+
+                    rstrBuilder
+                        .append("<wsp:AppliesTo xmlns:wsp=\"").append(wspNS).append("\" xmlns:wsa=\"").append(wsaNS).append("\">\n")
+                        .append("<wsa:EndpointReference>\n")
+                        .append("<wsa:Address>").append(addressContent).append("</wsa:Address>\n")
+                        .append("</wsa:EndpointReference>\n")
+                        .append("</wsp:AppliesTo>\n");
+                }
             }
-
-            rstrBuilder
-                .append("<wsp:AppliesTo xmlns:wsp=\"").append(wspNS).append("\" xmlns:wsa=\"").append(wsaNS).append("\">\n")
-                .append("<wsa:EndpointReference>\n")
-                .append("<wsa:Address>").append(addressContent).append("</wsa:Address>\n")
-                .append("</wsa:EndpointReference>\n")
-                .append("</wsp:AppliesTo>\n");
         }
 
         // Get the type of the token issued
