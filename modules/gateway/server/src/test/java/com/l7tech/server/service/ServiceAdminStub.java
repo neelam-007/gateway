@@ -350,6 +350,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
+    public ServiceTemplate createSecurityTokenServiceTemplate(String wsTrustNamespace) {
+        return null;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return asyncSupport.getJobStatus(jobId);
     }

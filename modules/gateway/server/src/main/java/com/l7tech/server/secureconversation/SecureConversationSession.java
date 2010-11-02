@@ -40,6 +40,22 @@ public class SecureConversationSession implements SecurityContext {
         return sharedSecret;
     }
 
+    public byte[] getClientEntropy() {
+        return clientEntropy;
+    }
+
+    public void setClientEntropy(byte[] clientEntropy) {
+        this.clientEntropy = clientEntropy;
+    }
+
+    public int getKeySize() {
+        return keySize;
+    }
+
+    public void setKeySize(int keySize) {
+        this.keySize = keySize;
+    }
+
     @Override
     public SecurityToken getSecurityToken() {
         return credentials!=null ? credentials.getSecurityToken() : null;
@@ -79,6 +95,8 @@ public class SecureConversationSession implements SecurityContext {
 
     private final String identifier;
     private final byte[] sharedSecret;
+    private byte[] clientEntropy;
+    private int keySize;
     private final long expiration;
     private final long creation;
     private final User usedBy;

@@ -227,6 +227,7 @@
         <constructor-arg ref="serviceDocumentResolver"/>
         <constructor-arg ref="uddiRegistryAdmin"/>
         <constructor-arg ref="uddiServiceWsdlUpdateChecker"/>
+        <constructor-arg ref="securityTokenServiceTemplateRegistry"/>
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">

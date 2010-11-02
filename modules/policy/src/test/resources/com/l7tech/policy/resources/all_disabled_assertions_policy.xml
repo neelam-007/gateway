@@ -290,6 +290,15 @@
         <L7p:WsSecurity>
             <L7p:Enabled booleanValue="false"/>
         </L7p:WsSecurity>
+        <L7p:CreateSecurityContextToken>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:CreateSecurityContextToken>
+        <L7p:CancelSecurityContext>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:CancelSecurityContext>
+        <L7p:BuildRstrSoapResponse>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:BuildRstrSoapResponse>
         <L7p:RemoveElement>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RemoveElement>

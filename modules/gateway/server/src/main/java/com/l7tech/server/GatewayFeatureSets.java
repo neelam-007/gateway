@@ -343,6 +343,9 @@ public class GatewayFeatureSets {
             ass(RequireWssTimestamp.class),
             ass(AddWssSecurityToken.class),
             ass(WsSecurity.class),
+            ass(CreateSecurityContextToken.class),
+            ass(CancelSecurityContext.class),
+            ass(BuildRstrSoapResponse.class),
             ass(WssVersionAssertion.class),
             ass(AddWssUsernameToken.class),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));

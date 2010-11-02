@@ -26,6 +26,20 @@ public class SoapConstants {
     public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE5 = "http://schemas.xmlsoap.org/ws/2003/06/secext";
     public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";//public static final String OLD_SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
+    public static final List<String> WS_SECURITY_NAMESPACE_LIST = Arrays.asList(new String[] {
+        SECURITY_NAMESPACE,
+        SECURITY_NAMESPACE2,
+        SECURITY_NAMESPACE3,
+        SECURITY_NAMESPACE4,
+        SECURITY_NAMESPACE5,
+        SECURITY11_NAMESPACE,
+    });
+
+    public static final String WSSE_SECURITY_TOKEN_REFERENCE = "SecurityTokenReference";
+    public static final String WSSE_REFERENCE = "Reference";
+    public static final String WSSE_REFERENCE_ATTR_URI = "URI";
+    public static final String WSSE_REFERENCE_ATTR_VALUE_TYPE = "ValueType";
+
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
@@ -33,26 +47,121 @@ public class SoapConstants {
     public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";
     public static final String WSSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String WSSC_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/sc";
+    public static final String WSSC_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512";
     public static final String[] WSSC_NAMESPACE_ARRAY = {
         WSSC_NAMESPACE,
         WSSC_NAMESPACE2,
+        WSSC_NAMESPACE3,
     };
-    public static final String WST_NAMESPACE  = "http://schemas.xmlsoap.org/ws/2004/04/trust";
+
+    public static final String WSC_RST_SCT_ACTION = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/RST/SCT";
+    public static final String WSC_RST_SCT_ACTION2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/SCT";
+    public static final String WSC_RST_SCT_ACTION3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/SCT";
+    public static final List<String> WSC_RST_SCT_ACTION_LIST = Arrays.asList(new String[] {
+        WSC_RST_SCT_ACTION,
+        WSC_RST_SCT_ACTION2,
+        WSC_RST_SCT_ACTION3,
+    });
+
+    public static final String WSC_RSTR_SCT_ACTION = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/RSTR/SCT";
+    public static final String WSC_RSTR_SCT_ACTION2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/RSTR/SCT";
+    public static final String WSC_RSTR_SCT_ACTION3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTR/SCT";
+    public static final List<String> WSC_RSTR_SCT_ACTION_LIST = Arrays.asList(new String[] {
+        WSC_RSTR_SCT_ACTION,
+        WSC_RSTR_SCT_ACTION2,
+        WSC_RSTR_SCT_ACTION3,
+    });
+
+    public static final String WSC_RST_SCT_TOKEN_TYPE ="http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
+    public static final String WSC_RST_SCT_TOKEN_TYPE2 ="http://schemas.xmlsoap.org/ws/2005/02/sc/sct";
+    public static final String WSC_RST_SCT_TOKEN_TYPE3 ="http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/sct";
+    public static final List<String> WSC_RST_SCT_TOKEN_TYPE_LIST = Arrays.asList(new String[] {
+        WSC_RST_SCT_TOKEN_TYPE,
+        WSC_RST_SCT_TOKEN_TYPE2,
+        WSC_RST_SCT_TOKEN_TYPE3,
+    });
+
+    public static final String WSC_RST_CANCEL_ACTION = "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/SCT/Cancel";
+    public static final String WSC_RST_CANCEL_ACTION2 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/SCT/Cancel";
+    public static final List<String> WSC_RST_CANCEL_ACTION_LIST = Arrays.asList(new String[] {
+        WSC_RST_CANCEL_ACTION,
+        WSC_RST_CANCEL_ACTION2,
+    });
+
+    public static final String WSC_RSTR_CANCEL_ACTION = "http://schemas.xmlsoap.org/ws/2005/02/trust/RSTR/SCT/Cancel";
+    public static final String WSC_RSTR_CANCEL_ACTION2 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTR/SCT/Cancel";
+    public static final List<String> WSC_RSTR_CANCEL_ACTION_LIST = Arrays.asList(new String[] {
+        WSC_RSTR_CANCEL_ACTION,
+        WSC_RSTR_CANCEL_ACTION2,
+    });
+
+    public static final String WST_NAMESPACE1 = "http://schemas.xmlsoap.org/ws/2004/04/trust";
+
     public static final String WST_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/trust"; // FIM
+    public static final String WST_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512";
+    public static final String WST_NAMESPACE4 = "http://docs.oasis-open.org/ws-sx/ws-trust/200802";
     public static final String[] WST_NAMESPACE_ARRAY = {
-        WST_NAMESPACE,
+        WST_NAMESPACE1,
         WST_NAMESPACE2,   // Seen in Tivoli Fim example messages
+        WST_NAMESPACE3,
+        WST_NAMESPACE4,
     };
+
+    public static final String WST_RST_ISSUE_ACTION = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/RST/Issue";
+    public static final String WST_RST_ISSUE_ACTION2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue";
+    public static final String WST_RST_ISSUE_ACTION3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue";
+    public static final List<String> WST_RST_ISSUE_ACTION_LIST = Arrays.asList(new String[] {
+        WST_RST_ISSUE_ACTION,
+        WST_RST_ISSUE_ACTION2,
+        WST_RST_ISSUE_ACTION3,
+    });
+
+    public static final String WST_RSTR_ISSUE_ACTION = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/RSTR/Issue";
+    public static final String WST_RSTR_ISSUE_ACTION2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/RSTR/Issue";
+    public static final String WST_RSTR_ISSUE_ACTION3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RSTR/Issue";
+    public static final List<String> WST_RSTR_ISSUE_ACTION_LIST = Arrays.asList(new String[] {
+        WST_RSTR_ISSUE_ACTION,
+        WST_RSTR_ISSUE_ACTION2,
+        WST_RSTR_ISSUE_ACTION3,
+    });
+
+    public static final String WST_RST_ISSUE_REQUEST_TYPE = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue";
+    public static final String WST_RST_ISSUE_REQUEST_TYPE2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/Issue";
+    public static final String WST_RST_ISSUE_REQUEST_TYPE3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue";
+    public static final List<String> WST_RST_ISSUE_REQUEST_TYPE_LIST = Arrays.asList(new String[] {
+        WST_RST_ISSUE_REQUEST_TYPE,
+        WST_RST_ISSUE_REQUEST_TYPE2,
+        WST_RST_ISSUE_REQUEST_TYPE3,
+    });
+
+    public static final String WST_RST_CANCEL_REQUEST_TYPE = "http://schemas.xmlsoap.org/ws/2005/02/trust/Cancel";
+    public static final String WST_RST_CANCEL_REQUEST_TYPE2 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Cancel";
+    public static final List<String> WST_RST_CANCEL_REQUEST_TYPE_LIST = Arrays.asList(new String[] {
+        WST_RST_CANCEL_REQUEST_TYPE,
+        WST_RST_CANCEL_REQUEST_TYPE2,
+    });
+    
     public static final String WST_REQUESTSECURITYTOKEN = "RequestSecurityToken";
     public static final String WST_TOKENTYPE = "TokenType";
     public static final String WST_REQUESTTYPE = "RequestType";
+    public static final String WST_CANCELTARGET = "CancelTarget";
+    public static final String ENTROPY = "Entropy";
+    public static final String BINARY_SECRET = "BinarySecret";
+    public static final String BINARY_SECRET_ATTR_TYPE ="Type";
+    public static final String KEY_SIZE = "KeySize";
+    
     public static final String WSX_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/mex";
     public static final String WSP_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/policy";
     public static final String WSP_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/09/policy"; // FIM
+    public static final String WSP_NAMESPACE3 = "http://www.w3.org/ns/ws-policy";
     public static final String[] WSP_NAMESPACE_ARRAY = {
         WSP_NAMESPACE,
         WSP_NAMESPACE2,    // Seen in Tivoli Fim example messages
+        WSP_NAMESPACE3,
     };
+
+    public static final String WSA_ACTION = "Action";
+
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
     public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM
     public static final String WSA_NAMESPACE_10 = "http://www.w3.org/2005/08/addressing";
@@ -161,6 +270,14 @@ public class SoapConstants {
         VALUETYPE_SAML_ASSERTIONID2, // SAML 1.1 assertion id ref (STP 1.0 and 1.1)
         VALUETYPE_SAML_ASSERTIONID3, // SAML 2.0 assertion id ref (STP 1.1)
     };
+    
+    public static final String SAML_NAMESPACE = "urn:oasis:names:tc:SAML:1.0:assertion";   // SAML 1.1
+    public static final String SAML_NAMESPACE2 = "urn:oasis:names:tc:SAML:2.0:assertion";  // SAML 2.0
+    public static final List<String> SAML_NAMESPACE_LIST = Arrays.asList(new String[] {
+        SAML_NAMESPACE,
+        SAML_NAMESPACE2,
+    });
+
     public static final String VALUETYPE_DERIVEDKEY = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk";
     public static final String VALUETYPE_DERIVEDKEY2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/dk";
     public static final String VALUETYPE_SECURECONV = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
@@ -184,7 +301,6 @@ public class SoapConstants {
     public static final String C14N_EXCLUSIVE = "http://www.w3.org/2001/10/xml-exc-c14n#";
     public static final String C14N_EXCLUSIVEWC = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
 
-
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
 
@@ -203,7 +319,6 @@ public class SoapConstants {
 
     public static final IdAttributeConfig DEFAULT_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(DEFAULT_ID_ATTRIBUTE_QNAMES);
 
-
     /**
      * An ID attribute configuration that does not recognize SAML assertions or local ID attributes.
      */
@@ -216,7 +331,6 @@ public class SoapConstants {
     }});
 
     public static final IdAttributeConfig NOSAML_ID_ATTRIBUTE_CONFIG = IdAttributeConfig.makeIdAttributeConfig(NOSAML_ID_ATTRIBUTE_QNAMES);
-
 
     /**
      * A strict configuration that only recognizes wsu:Id (with the final wsu namespace) attributes.  
@@ -237,5 +351,5 @@ public class SoapConstants {
     public static final String WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE = "RelationshipType";
     public static final String WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE = "http://www.w3.org/2005/08/addressing/reply";
 
-
+    public static final String P_SHA1_ALG_URI = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1";
 }

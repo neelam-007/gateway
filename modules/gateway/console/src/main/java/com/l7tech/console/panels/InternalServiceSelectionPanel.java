@@ -1,10 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
+import com.l7tech.util.SoapConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,15 +17,20 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.logging.Logger;
 
 /**
  *
  * User: Mike
  */
 public class InternalServiceSelectionPanel extends WizardStepPanel {
+    private static final Logger logger = Logger.getLogger(InternalServiceSelectionPanel.class.getName());
+
     private JComboBox servicesChooser;
     private JTextField serviceUri;
     private JPanel mainPanel;
+    private JComboBox wstNsComboBox;
+    private JPanel wstNsPanel;
 
     public InternalServiceSelectionPanel() {
         this(null,true);
@@ -64,14 +72,43 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
             public void keyTyped(KeyEvent e) {}
         });
 
+        wstNsPanel.setVisible(false);
+        wstNsComboBox.setModel(new DefaultComboBoxModel(SoapConstants.WST_NAMESPACE_ARRAY));
+        wstNsComboBox.setSelectedIndex(3); // The last one, WS-Trust v1.4.
+        wstNsComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final ServiceAdmin serviceAdmin = getServiceAdmin();
+                if (serviceAdmin == null) return;
+
+                ServiceTemplate newTemplate = serviceAdmin.createSecurityTokenServiceTemplate((String) wstNsComboBox.getSelectedItem());
+                ServiceTemplate selectedTemplate  = (ServiceTemplate) servicesChooser.getSelectedItem();
+
+                DefaultComboBoxModel model = (DefaultComboBoxModel) servicesChooser.getModel();
+                model.removeElement(selectedTemplate);
+                model.addElement(newTemplate);
+                model.setSelectedItem(newTemplate);
+            }
+        });
+
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);        
+    }
+
+    private ServiceAdmin getServiceAdmin() {
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent()) {
+            logger.warning("Cannot get Service Admin due to no Admin Context present.");
+            return null;
+        }
+        return reg.getServiceManager();
     }
 
     private void updateTemplateFields(Object selectedItem) {
         if (selectedItem instanceof ServiceTemplate) {
             ServiceTemplate theTemplate = (ServiceTemplate) selectedItem;
             serviceUri.setText(theTemplate.getDefaultUriPrefix());
+            wstNsPanel.setVisible("Security Token Service".equals(theTemplate.getName()));  // If the template is not a STS, then set wstNsPanel as invisible.
         }
     }
 

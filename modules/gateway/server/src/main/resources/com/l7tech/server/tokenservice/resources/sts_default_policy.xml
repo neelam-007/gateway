@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<exp:Export Version="3.0"
+    xmlns:L7p="http://www.layer7tech.com/ws/policy"
+    xmlns:exp="http://www.layer7tech.com/ws/policy/export" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <exp:References>
+        <IDProviderReference RefType="com.l7tech.console.policy.exporter.IdProviderReference">
+            <OID>-2</OID>
+            <Name>Internal Identity Provider</Name>
+            <Props>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gCjxqYXZhIHZlcnNpb249IjEu&#xd;
+Ni4wXzE4IiBjbGFzcz0iamF2YS5iZWFucy5YTUxEZWNvZGVyIj4gCiA8b2JqZWN0IGNsYXNzPSJq&#xd;
+YXZhLnV0aWwuSGFzaE1hcCI+IAogIDx2b2lkIG1ldGhvZD0icHV0Ij4gCiAgIDxzdHJpbmc+YWRt&#xd;
+aW5FbmFibGVkPC9zdHJpbmc+IAogICA8Ym9vbGVhbj50cnVlPC9ib29sZWFuPiAKICA8L3ZvaWQ+&#xd;
+IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
+            <TypeVal>1</TypeVal>
+        </IDProviderReference>
+    </exp:References>
+    <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+        <wsp:All wsp:Usage="Required">
+            <L7p:AuditAssertion/>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <wsp:OneOrMore wsp:Usage="Required">
+                        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+                            <L7p:Properties/>
+                        </wsse:SecurityToken>
+                        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
+                            <L7p:SamlParams>
+                                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                                    <L7p:AuthenticationMethods stringArrayValue="included">
+                                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:X509-PKI"/>
+                                    </L7p:AuthenticationMethods>
+                                </L7p:AuthenticationStatement>
+                                <L7p:NameFormats stringArrayValue="included">
+                                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                                </L7p:NameFormats>
+                                <L7p:NameQualifier stringValue=""/>
+
+                                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                                <L7p:SubjectConfirmationDataCheckAddress booleanValue="true"/>
+                                <L7p:SubjectConfirmations stringArrayValue="included">
+                                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                                </L7p:SubjectConfirmations>
+                                <L7p:Version boxedIntegerValue="0"/>
+                            </L7p:SamlParams>
+                        </wsse:SecurityToken>
+                        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsse:TokenType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct</wsse:TokenType>
+                            <L7p:Properties/>
+                        </wsse:SecurityToken>
+                    </wsp:OneOrMore>
+                    <L7p:RequireWssTimestamp>
+                        <L7p:MaxExpiryMilliseconds longValue="3600000"/>
+                    </L7p:RequireWssTimestamp>
+                    <wsp:OneOrMore wsp:Usage="Required">
+                        <L7p:RequireWssSignedElement>
+                            <L7p:AcceptedDigestAlgorithms stringArrayValue="included">
+                                <L7p:item stringValue="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmldsig-more#sha384"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha512"/>
+                            </L7p:AcceptedDigestAlgorithms>
+                            <L7p:XpathExpression xpathExpressionValue="included">
+                                <L7p:Expression stringValue="/s11:Envelope/s11:Body"/>
+                                <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s11"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                    </L7p:entry>
+                                </L7p:Namespaces>
+                            </L7p:XpathExpression>
+                        </L7p:RequireWssSignedElement>
+                        <L7p:RequireWssSignedElement>
+                            <L7p:AcceptedDigestAlgorithms stringArrayValue="included">
+                                <L7p:item stringValue="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmldsig-more#sha384"/>
+                                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#sha512"/>
+                            </L7p:AcceptedDigestAlgorithms>
+                            <L7p:XpathExpression xpathExpressionValue="included">
+                                <L7p:Expression stringValue="/s12:Envelope/s12:Body"/>
+                                <L7p:Namespaces mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="s12"/>
+                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                                    </L7p:entry>
+                                </L7p:Namespaces>
+                            </L7p:XpathExpression>
+                        </L7p:RequireWssSignedElement>
+                    </wsp:OneOrMore>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Credentials Over Message"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:SslAssertion/>
+                    <wsp:OneOrMore wsp:Usage="Required">
+                        <L7p:HttpBasic/>
+                        <L7p:HttpDigest/>
+                        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#UsernameToken</wsse:TokenType>
+                            <L7p:Properties/>
+                        </wsse:SecurityToken>
+                        <L7p:SslAssertion>
+                            <L7p:RequireClientAuthentication booleanValue="true"/>
+                        </L7p:SslAssertion>
+                    </wsp:OneOrMore>
+                    <L7p:SpecificUser>
+                        <L7p:IdentityProviderOid longValue="-2"/>
+                        <L7p:UserLogin stringValue="admin"/>
+                        <L7p:UserName stringValue="admin"/>
+                        <L7p:UserUid stringValue="3"/>
+                    </L7p:SpecificUser>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Credentials Over SSL Transport"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="Autentication Mechanism"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <L7p:WsAddressing>
+                <L7p:AssertionComment assertionComment="included">
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="WS-Addressing Action Retrieving"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:AssertionComment>
+                <L7p:EnableOtherNamespace stringValue="http://schemas.xmlsoap.org/ws/2004/03/addressing"/>
+                <L7p:EnableWsAddressing200408 booleanValue="true"/>
+                <L7p:VariablePrefix stringValue="rst"/>
+            </L7p:WsAddressing>
+            <wsp:OneOrMore wsp:Usage="Required">
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Operator operatorNull="null"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item dataType="included">
+                                <L7p:Type variableDataType="string"/>
+                            </L7p:item>
+                            <L7p:item binary="included">
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="RST/Issue"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:SamlIssuer>
+                        <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                            <L7p:AuthenticationMethods stringArrayValue="included"/>
+                            <L7p:IncludeAuthenticationContextDeclaration booleanValue="false"/>
+                        </L7p:AuthenticationStatement>
+                        <L7p:NameQualifier stringValue=""/>
+                        <L7p:Version boxedIntegerValue="2"/>
+                    </L7p:SamlIssuer>
+                    <L7p:BuildRstrSoapResponse>
+                        <L7p:IncludeAttachedRef booleanValue="true"/>
+                        <L7p:IncludeUnattachedRef booleanValue="true"/>
+                        <L7p:TokenIssued stringValue="${issuedSamlAssertion}"/>
+                    </L7p:BuildRstrSoapResponse>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="SAML Token Issuance"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Operator operatorNull="null"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item dataType="included">
+                                <L7p:Type variableDataType="string"/>
+                            </L7p:item>
+                            <L7p:item binary="included">
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="RST/SCT"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:CreateSecurityContextToken/>
+                    <L7p:BuildRstrSoapResponse>
+                        <L7p:IncludeAttachedRef booleanValue="true"/>
+                        <L7p:IncludeKeySize booleanValue="true"/>
+                        <L7p:IncludeLifetime booleanValue="true"/>
+                        <L7p:IncludeUnattachedRef booleanValue="true"/>
+                        <L7p:KeySize intValue="256"/>
+                        <L7p:Lifetime longValue="6000000"/>
+                        <L7p:TokenIssued stringValue="${sctBuilder.issuedSCT}"/>
+                    </L7p:BuildRstrSoapResponse>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="SecurityContextToken Issuance"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Operator operatorNull="null"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item dataType="included">
+                                <L7p:Type variableDataType="string"/>
+                            </L7p:item>
+                            <L7p:item binary="included">
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="RST/SCT/Cancel"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:CancelSecurityContext/>
+                    <L7p:BuildRstrSoapResponse>
+                        <L7p:ResponseForIssuance booleanValue="false"/>
+                    </L7p:BuildRstrSoapResponse>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Security Context Cancellation"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:FalseAssertion/>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Other Requests"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="RST Request Execution"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:OneOrMore>
+            <wsp:All wsp:Usage="Required">
+                <L7p:AddWsAddressing>
+                    <L7p:Action stringValue="${responseBuilder.rstrWsaAction}"/>
+                    <L7p:Destination stringValue=""/>
+                    <L7p:FaultEndpoint stringValue=""/>
+                    <L7p:MessageId stringValue="1e3c1503-217f-4128-b1aa-58fa1a9f180b"/>
+                    <L7p:OtherTargetMessageVariable stringValue="responseBuilder.rstrResponse"/>
+                    <L7p:RelatesToMessageId stringValue=""/>
+                    <L7p:ReplyEndpoint stringValue=""/>
+                    <L7p:SourceEndpoint stringValue=""/>
+                    <L7p:Target target="OTHER"/>
+                    <L7p:WsaNamespaceUri stringValue="${responseBuilder.wsaNamespace}"/>
+                </L7p:AddWsAddressing>
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="Add more decoration requirements in this branch"/>
+                </L7p:CommentAssertion>
+                <L7p:assertionComment>
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="RSTR Response Decoration:"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:assertionComment>
+            </wsp:All>
+            <L7p:HardcodedResponse>
+                <L7p:AssertionComment assertionComment="included">
+                    <L7p:Properties mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="LEFT.COMMENT"/>
+                            <L7p:value stringValue="RSTR Response Message Template"/>
+                        </L7p:entry>
+                    </L7p:Properties>
+                </L7p:AssertionComment>
+                <L7p:Base64ResponseBody stringValue="JHtyZXNwb25zZUJ1aWxkZXIucnN0clJlc3BvbnNlLm1haW5wYXJ0fQ=="/>
+            </L7p:HardcodedResponse>
+        </wsp:All>
+    </wsp:Policy>
+</exp:Export>

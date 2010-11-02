@@ -69,8 +69,32 @@ public class SecureConversationContextManager implements SecurityContextFinder {
                 sessions.remove(identifier);
             }
         }
-
+        // Comment: if output is null, it cannot tell if the session does not exist or is expired.
         return output;
+    }
+
+    public boolean isExpiredSession(String identifier) throws NoSuchSessionException {
+        synchronized( sessions ) {
+            // Get session
+            SecureConversationSession session = (SecureConversationSession) sessions.get(identifier);
+
+            // Check if it exits or not
+            if (session == null) throw new NoSuchSessionException("The session (identifier = " + identifier + ") does not exist.");
+
+            // Check if it is expired
+            return session.getExpiration() <= System.currentTimeMillis();
+        }
+    }
+
+    public void cancelSession(String identifier) throws NoSuchSessionException, SessionExpiredException {
+        // Check session first
+        if (isExpiredSession(identifier)) {
+            throw new SessionExpiredException("The session (identifier = " + identifier + ") is expired.");
+        }
+
+        synchronized (sessions) {
+            sessions.remove(identifier);
+        }
     }
 
     /**
@@ -95,21 +119,37 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws DuplicateSessionException {
+        // make up a new session identifier and shared secret (using some random generator)
+        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
+        return createContextForUser(newSessionIdentifier, sessionOwner, credentials, namespace, getDefaultSessionDuration());
+    }
+
+    /**
+     * Creates a new session and saves it
+     * @param sessionIdentifier: either a new session id or an identifier matching to a security context token
+     * @param sessionOwner
+     * @param credentials
+     * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
+     * @return the newly created session
+     */
+    public SecureConversationSession createContextForUser(String sessionIdentifier, User sessionOwner, LoginCredentials credentials, String namespace, long sessionDuration) throws DuplicateSessionException {
+        if (sessionDuration <= 0) {
+            throw new IllegalArgumentException("Session duration must be greater than zero.");
+        }
         final byte[] sharedSecret;
         if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
             sharedSecret = generateNewSecret(32);
         } else {
             sharedSecret = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
         }
-        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
-        // make up a new session identifier and shared secret (using some random generator)
+
         final long time = System.currentTimeMillis();
         final SecureConversationSession session = new SecureConversationSession(
             namespace,
-            newSessionIdentifier,
+            sessionIdentifier,
             sharedSecret,
             time,
-            time  + getDefaultSessionDuration(),
+            time  + sessionDuration,
             sessionOwner,
             credentials
         );
@@ -216,4 +256,3 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     private final Config config;
     private long lastExpirationCheck = System.currentTimeMillis();
 }
-

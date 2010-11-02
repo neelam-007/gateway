@@ -16,6 +16,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
@@ -56,6 +57,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final PolicyVersionManager policyVersionManager;
     private final ServiceTemplateManager serviceTemplateManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
+    private final SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final ExecutorService validatorExecutor;
@@ -86,7 +88,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             ServiceTemplateManager serviceTemplateManager,
                             ServiceDocumentResolver serviceDocumentResolver,
                             UDDIRegistryAdmin uddiRegistryAdmin,
-                            ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker )
+                            ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
+                            SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry)
     {
         this.licenseManager = licenseManager;
         this.uddiHelper = uddiHelper;
@@ -103,6 +106,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.serviceDocumentResolver = serviceDocumentResolver;
         this.uddiRegistryAdmin = uddiRegistryAdmin;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
+        this.tokenServiceTemplateRegistry = tokenServiceTemplateRegistry;
 
         int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -616,6 +620,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public Set<ServiceTemplate> findAllTemplates() {
         return serviceTemplateManager.findAll();
+    }
+
+    @Override
+    public ServiceTemplate createSecurityTokenServiceTemplate(String wsTrustNamespace) {
+        return tokenServiceTemplateRegistry.createServiceTemplate(wsTrustNamespace);
     }
 
     /**

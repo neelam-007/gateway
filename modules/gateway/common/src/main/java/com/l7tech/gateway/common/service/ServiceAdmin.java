@@ -380,4 +380,13 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITIES)
     Set<ServiceTemplate> findAllTemplates();
+
+    /**
+     * According to the given WS-Trust namespace, create a corresponding service template of Security Token Service.
+     *
+     * @param wsTrustNamespace: the namespace of a chosen WS-Trust version.
+     * @return a service template associated with the corresponding WS-Trust version.
+     */
+    @Secured(types=EntityType.SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITY)
+    ServiceTemplate createSecurityTokenServiceTemplate(String wsTrustNamespace);
 }

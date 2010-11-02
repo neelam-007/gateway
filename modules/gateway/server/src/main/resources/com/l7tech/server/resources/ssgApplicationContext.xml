@@ -1542,6 +1542,10 @@
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
 
+    <bean id="securityTokenServiceTemplateRegistry" class="com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry">
+        <constructor-arg index="0" ref="serviceTemplateManager"/>
+    </bean>
+
     <bean id="esmSubscriptionManager" class="com.l7tech.server.wsdm.subscription.SubscriptionManagerImpl" parent="hibernateBean"/>
 
     <bean id="kerberosConfig" class="com.l7tech.server.security.kerberos.ServerKerberosConfig">
