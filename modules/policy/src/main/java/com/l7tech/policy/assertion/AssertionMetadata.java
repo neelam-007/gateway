@@ -561,7 +561,6 @@ public interface AssertionMetadata {
     /**
      * Map< String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
      * Keys are names of cluster properties (and server config keys).  Values are tuples of [description, default].
-     * This is the same format returned by ClusterStatusAdmin#getKnownProperties.
      * <p/>
      * The default value is an empty HashMap.
      */
