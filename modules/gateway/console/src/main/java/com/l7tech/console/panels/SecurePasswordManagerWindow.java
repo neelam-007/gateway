@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.SimpleTableModel;
@@ -17,6 +18,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +37,7 @@ public class SecurePasswordManagerWindow extends JDialog {
     private JButton removeButton;
     private JButton editButton;
     private JTable passwordTable;
+    private JButton helpButton;
 
     private SimpleTableModel<SecurePassword> passwordTableModel;
 
@@ -126,6 +129,14 @@ public class SecurePasswordManagerWindow extends JDialog {
             }
         });
 
+        helpButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                Actions.invokeHelp(SecurePasswordManagerWindow.this);
+            }
+        } );
+
+        Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         Utilities.setDoubleClickAction(passwordTable, editButton);
         Utilities.setRowSorter(passwordTable, passwordTableModel);
 
