@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -123,6 +124,8 @@ public class SecurePasswordManagerWindow extends JDialog {
                             showError("delete stored password", de);
                         } catch (FindException fe) {
                             showError("delete stored password", fe);
+                        } catch (DataIntegrityViolationException dive) {
+                            DialogDisplayer.showMessageDialog(removeButton, "Error", "Unable to delete this stored password: it is currently in use", null);
                         }
                     }
                 });
