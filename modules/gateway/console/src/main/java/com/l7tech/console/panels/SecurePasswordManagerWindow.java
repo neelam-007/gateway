@@ -171,8 +171,9 @@ public class SecurePasswordManagerWindow extends JDialog {
 
     private void showError(String action, Throwable t) {
         String message = "Unable to " + action + ": " + ExceptionUtils.getMessage(t);
-        logger.log(Level.WARNING, message, t);
-        DialogDisplayer.showMessageDialog(this, message, "Error", t);
+        //noinspection ThrowableResultOfMethodCallIgnored
+        logger.log(Level.WARNING, message, ExceptionUtils.getDebugException(t));
+        DialogDisplayer.showMessageDialog(this, "Error", message, null);
     }
 
     /** @return the selected SecurePassword, or null if no row is selected. */

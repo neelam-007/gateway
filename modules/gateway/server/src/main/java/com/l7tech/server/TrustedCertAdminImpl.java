@@ -727,7 +727,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         // Preserve existing encoded password, ignoring any from client
         final long oid = securePassword.getOid();
         SecurePassword existing = securePasswordManager.findByPrimaryKey(oid);
-        if (existing == null) throw new ObjectNotFoundException();
+        if (existing == null) throw new ObjectNotFoundException("No stored password exists with object ID " + oid);
         securePassword.setEncodedPassword(existing.getEncodedPassword());
         securePasswordManager.update(securePassword);
         return oid;
