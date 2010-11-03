@@ -45,6 +45,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -2079,11 +2080,29 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         getPolicyTree().getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent e) {
-                migrateNamespacesAction.setEnabled(getPolicyTree().getSelectionCount() > 0);                
+                migrateNamespacesAction.setEnabled(isAtLeastOneNamespaceMigratableAssertionSelected());
             }
         });
 
         return migrateNamespacesAction;
+    }
+
+    private boolean isAtLeastOneNamespaceMigratableAssertionSelected() {
+        if (getPolicyTree().getSelectionCount() > 0) {
+            TreePath[] paths = getPolicyTree().getSelectionModel().getSelectionPaths();
+            for (TreePath path : paths) {
+                Object obj = path.getLastPathComponent();
+                if (obj instanceof AssertionTreeNode) {
+                    AssertionTreeNode node = (AssertionTreeNode) obj;
+                    Assertion ass = node.asAssertion();
+                    if (ass instanceof NamespaceMigratable) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public Action getImportAction() {
