@@ -145,8 +145,8 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
 
 
     @Override
-    public Set<String> getNamespaceUrisUsed() {
-        return getNamespaceUrisUsed(true);
+    public Set<String> findNamespaceUrisUsed() {
+        return findNameSpaceUrisUsed(true);
     }
 
     /**
@@ -159,7 +159,7 @@ public class XpathExpression extends CompilableXpath implements Serializable, Na
      *         Never null, but may be empty.
      *         The returned set belongs to the caller and may be freely modified.
      */
-    public Set<String> getNamespaceUrisUsed(final boolean lookForQnameLiterals) {
+    public Set<String> findNameSpaceUrisUsed(final boolean lookForQnameLiterals) {
         String expr = getExpression();
         if (expr == null)
             return Collections.emptySet();

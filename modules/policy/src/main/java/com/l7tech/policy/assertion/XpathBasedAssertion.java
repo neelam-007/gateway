@@ -108,8 +108,8 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     }
 
     @Override
-    public Set<String> getNamespaceUrisUsed() {
+    public Set<String> findNamespaceUrisUsed() {
         XpathExpression xpath = getXpathExpression();
-        return xpath == null ? Collections.<String>emptySet() : xpath.getNamespaceUrisUsed();
+        return xpath == null ? Collections.<String>emptySet() : xpath.findNamespaceUrisUsed();
     }
 }

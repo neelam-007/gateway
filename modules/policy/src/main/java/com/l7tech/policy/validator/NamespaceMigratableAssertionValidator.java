@@ -55,7 +55,7 @@ public class NamespaceMigratableAssertionValidator implements AssertionValidator
      */
     public static SoapVersion checkForUnwantedSoapVersion(NamespaceMigratable assertion, SoapVersion expectedSoapVersion) {
         // Look for all SOAP namespace URIs other than the one the service is configured to use
-        Set<String> usedUris = assertion.getNamespaceUrisUsed();
+        Set<String> usedUris = assertion.findNamespaceUrisUsed();
         Set<String> unwantedUris = expectedSoapVersion.getOtherNamespaceUris();
         usedUris.retainAll(unwantedUris);
         return usedUris.isEmpty() ? null : SoapVersion.namespaceToSoapVersion(usedUris.iterator().next());

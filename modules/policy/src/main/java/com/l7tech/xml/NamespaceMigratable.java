@@ -24,5 +24,5 @@ public interface NamespaceMigratable {
      * @return a list of all namespace URIs currently actively used by this assertion.  May be empty but never null.
      *         The returned Set belongs to the caller and may be modified.
      */
-    Set<String> getNamespaceUrisUsed();
+    Set<String> findNamespaceUrisUsed();
 }

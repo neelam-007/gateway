@@ -107,12 +107,12 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
     }
 
     @Override
-    public Set<String> getNamespaceUrisUsed() {
+    public Set<String> findNamespaceUrisUsed() {
         Set<String> ret = new HashSet<String>();
         if (xpathExpressions != null) {
             for (XpathExpression xpathExpression : xpathExpressions) {
                 if (xpathExpression != null)
-                    ret.addAll(xpathExpression.getNamespaceUrisUsed());
+                    ret.addAll(xpathExpression.findNamespaceUrisUsed());
             }
         }
         return ret;
