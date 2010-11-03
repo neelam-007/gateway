@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Implementation of {@link SecurePasswordManager}.
  */
-@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class SecurePasswordManagerImpl extends HibernateEntityManager<SecurePassword, EntityHeader> implements SecurePasswordManager {
     private final SharedKeyManager sharedKeyManager;
     private final AtomicReference<MasterPasswordManager> encryptor = new AtomicReference<MasterPasswordManager>();

@@ -435,7 +435,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem locating an existing entity in order to update it.
      * @throws SaveException if there is a problem saving a new entity.
      */
-    @Transactional(propagation=Propagation.REQUIRED)
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     @Secured(types=SECURE_PASSWORD,stereotype=SAVE_OR_UPDATE)
     long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException;
 
