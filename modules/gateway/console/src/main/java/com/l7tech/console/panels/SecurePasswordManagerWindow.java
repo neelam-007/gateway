@@ -127,6 +127,7 @@ public class SecurePasswordManagerWindow extends JDialog {
         });
 
         Utilities.setDoubleClickAction(passwordTable, editButton);
+        Utilities.setRowSorter(passwordTable, passwordTableModel);
 
         loadSecurePasswords(null);
     }
