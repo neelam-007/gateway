@@ -6,15 +6,13 @@
 
 package com.l7tech.console.panels;
 
-import static com.l7tech.policy.assertion.alert.EmailAlertAssertion.Protocol;
-
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
@@ -26,6 +24,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+
+import static com.l7tech.policy.assertion.alert.EmailAlertAssertion.Protocol;
 
 /**
  * Properties dialog for {@link com.l7tech.policy.assertion.alert.EmailAlertAssertion}.
@@ -241,16 +241,16 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
     }
 
     private boolean usesContextVars(EmailAlertAssertion eaa) {
-        if(Syntax.getReferencedNames(eaa.getSmtpHost()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getSmtpPort()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getTargetEmailAddress()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getTargetCCEmailAddress()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getTargetBCCEmailAddress()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getSubject()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.messageString()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getSourceEmailAddress()).length > 0  ) return true;
-        if(Syntax.getReferencedNames(eaa.getAuthUsername()).length > 0  ) return true;
-        if(contextVarPasswordCheckBox.isSelected() && Syntax.getReferencedNames(eaa.getAuthPassword()).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSmtpHost(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSmtpPort(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetEmailAddress(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetCCEmailAddress(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getTargetBCCEmailAddress(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSubject(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.messageString(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getSourceEmailAddress(), false).length > 0  ) return true;
+        if(Syntax.getReferencedNames(eaa.getAuthUsername(), false).length > 0  ) return true;
+        if(contextVarPasswordCheckBox.isSelected() && Syntax.getReferencedNames(eaa.getAuthPassword(), false).length > 0  ) return true;
         return false;
     }
 
