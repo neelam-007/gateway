@@ -1,15 +1,19 @@
 package com.l7tech.xml.xpath;
 
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.NamespaceMigratable;
+
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.text.ParseException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class <code>XpathExpression</code> contains the XPath expression
  * and the namespace array.
  */
-public class XpathExpression extends CompilableXpath implements Serializable {
+public class XpathExpression extends CompilableXpath implements Serializable, NamespaceMigratable {
 
     //- PUBLIC
 
@@ -127,8 +131,54 @@ public class XpathExpression extends CompilableXpath implements Serializable {
         return ret;
     }
 
+    @Override
+    public void migrateNamespaces(Map<String, String> nsUriSourceToDest) {
+        Map<String, String> origNsMap = getNamespaces();
+        Map<String, String> newNsMap = new HashMap<String, String>();
+        for (Map.Entry<String, String> entry : origNsMap.entrySet()) {
+            String origUri = entry.getValue();
+            String newUri = nsUriSourceToDest.get(origUri);
+            newNsMap.put(entry.getKey(), newUri != null ? newUri : origUri);
+        }
+        setNamespaces(newNsMap);
+    }
+
+
+    @Override
+    public Set<String> getNamespaceUrisUsed() {
+        return getNamespaceUrisUsed(true);
+    }
+
+    /**
+     * Finds all namespace URIs from the namespace map that are visibly used within the actual expression.
+     *
+     * @param lookForQnameLiterals if true, we will take note of anything that looks like it might be a qname literal
+     *                             that appears within a string literal, and consider the corresponding namespace URI
+     *                             as visibly used.
+     * @return the set of namespace URIs from this expressions namespace map that are visibly used by the expression.
+     *         Never null, but may be empty.
+     *         The returned set belongs to the caller and may be freely modified.
+     */
+    public Set<String> getNamespaceUrisUsed(final boolean lookForQnameLiterals) {
+        String expr = getExpression();
+        if (expr == null)
+            return Collections.emptySet();
+
+        try {
+            Set<String> usedPrefixes = XpathUtil.getNamespacePrefixesUsedByXpath(expr, lookForQnameLiterals);
+            Map<String, String> nsmap = new HashMap<String, String>(namespaces);
+            nsmap.keySet().retainAll(usedPrefixes);
+            return new HashSet<String>(nsmap.values());
+        } catch (ParseException e) {
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Unable to parse XPath expression to determine namespaces used: " + ExceptionUtils.getMessage(e), e);
+            return Collections.emptySet();
+        }
+    }
+
     //- PRIVATE
 
     private String expression;
     private Map<String, String> namespaces = new LinkedHashMap<String, String>();
+    private static final Logger logger = Logger.getLogger(XpathExpression.class.getName());
 }

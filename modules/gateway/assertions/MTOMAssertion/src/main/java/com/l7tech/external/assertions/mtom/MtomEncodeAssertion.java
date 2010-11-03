@@ -5,12 +5,11 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -18,7 +17,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * 
  */
-public class MtomEncodeAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
+public class MtomEncodeAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables, NamespaceMigratable {
 
     //- PUBLIC
 
@@ -98,6 +97,28 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
     }
 
     @Override
+    public void migrateNamespaces(Map<String, String> nsUriSourceToDest) {
+        if (xpathExpressions != null) {
+            for (XpathExpression xpathExpression : xpathExpressions) {
+                if (xpathExpression != null)
+                    xpathExpression.migrateNamespaces(nsUriSourceToDest);
+            }
+        }
+    }
+
+    @Override
+    public Set<String> getNamespaceUrisUsed() {
+        Set<String> ret = new HashSet<String>();
+        if (xpathExpressions != null) {
+            for (XpathExpression xpathExpression : xpathExpressions) {
+                if (xpathExpression != null)
+                    ret.addAll(xpathExpression.getNamespaceUrisUsed());
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -110,6 +131,7 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.NamespaceMigratableAssertionValidator");
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mtom.console.MtomEncodeAssertionPropertiesDialog");
 

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test case for {@link XpathBasedAssertionNamespaceMigrator}.
+ * Test case for {@link NamespaceMigrator}.
  */
 public class XpathBasedAssertionNamespaceMigratorTest {
 
@@ -23,7 +23,7 @@ public class XpathBasedAssertionNamespaceMigratorTest {
         Map<String, String> xlatMap = new HashMap<String, String>();
         xlatMap.put("urn:source", "urn:dest");
         xlatMap.put("urn:othersource", "urn:otherdest");
-        XpathBasedAssertionNamespaceMigrator migrator = new XpathBasedAssertionNamespaceMigrator(xlatMap);
+        NamespaceMigrator migrator = new NamespaceMigrator(xlatMap);
 
         Map<String, String> nsmap = new HashMap<String, String>();
         nsmap.put("s", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);

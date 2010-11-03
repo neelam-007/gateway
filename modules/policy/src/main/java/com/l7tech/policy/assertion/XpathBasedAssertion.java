@@ -10,13 +10,13 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -24,7 +24,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * Base class for XML security assertions whose primary configurable feature is an Xpath expression.
  */
 @RequiresXML()
-public abstract class XpathBasedAssertion extends Assertion implements UsesVariables {
+public abstract class XpathBasedAssertion extends Assertion implements UsesVariables, NamespaceMigratable {
     protected XpathExpression xpathExpression;
 
     protected XpathBasedAssertion() {
@@ -98,5 +98,18 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
      */
     public static XpathExpression compatOrigDefaultXpathValue() {
         return new XpathExpression("/soapenv:Envelope/soapenv:Body", "soapenv", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+    }
+
+    @Override
+    public void migrateNamespaces(Map<String, String> nsUriSourceToDest) {
+        XpathExpression xpath = getXpathExpression();
+        if (xpath != null)
+            xpath.migrateNamespaces(nsUriSourceToDest);
+    }
+
+    @Override
+    public Set<String> getNamespaceUrisUsed() {
+        XpathExpression xpath = getXpathExpression();
+        return xpath == null ? Collections.<String>emptySet() : xpath.getNamespaceUrisUsed();
     }
 }

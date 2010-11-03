@@ -11,10 +11,10 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.validator.XpathBasedAssertionValidator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 
 import javax.swing.*;
@@ -27,15 +27,15 @@ import java.util.logging.Logger;
  * ready to confirm to repair a mismatched SOAP namespace version issue.
  */
 @SuppressWarnings({"UnusedDeclaration"}) // Used reflectively; returned as validator warning remedial action classname
-public class XpathBasedAssertionSoapVersionMigrator implements Functions.UnaryVoid<AssertionTreeNode> {
-    private static final Logger logger = Logger.getLogger(XpathBasedAssertionSoapVersionMigrator.class.getName());
+public class NamespaceMigratableSoapVersionMigrator implements Functions.UnaryVoid<AssertionTreeNode> {
+    private static final Logger logger = Logger.getLogger(NamespaceMigratableSoapVersionMigrator.class.getName());
 
     @Override
     public void call(AssertionTreeNode node) {
         Assertion assertion = node.asAssertion();
-        if (!(assertion instanceof XpathBasedAssertion))
+        if (!(assertion instanceof NamespaceMigratable))
             return;
-        final XpathBasedAssertion xba = (XpathBasedAssertion) assertion;
+        final NamespaceMigratable migratable = (NamespaceMigratable) assertion;
 
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
         if (pep == null)
@@ -62,7 +62,7 @@ public class XpathBasedAssertionSoapVersionMigrator implements Functions.UnaryVo
         if (serviceSoapVersion == null || serviceSoapVersion.getNamespaceUri() == null)
             return;
 
-        SoapVersion unwantedSoapVersion = XpathBasedAssertionValidator.checkForUnwantedSoapVersion(xba, serviceSoapVersion);
+        SoapVersion unwantedSoapVersion = XpathBasedAssertionValidator.checkForUnwantedSoapVersion(migratable, serviceSoapVersion);
         if (unwantedSoapVersion == null)
             return;                
 

@@ -2,18 +2,18 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.PolicyUtil;
 import com.l7tech.util.Functions;
-import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.NamespaceMigratable;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Utility class for changing namespaces in one or more assertions that may be XpathBasedAssertions.
+ * Utility class for changing namespaces in one or more assertions that may be NamespaceMigratable.
  */
-public class XpathBasedAssertionNamespaceMigrator implements Functions.UnaryVoid<Assertion> {
+public class NamespaceMigrator implements Functions.UnaryVoid<Assertion> {
     private Map<String, String> nsUriSourceToDest;
 
-    public XpathBasedAssertionNamespaceMigrator(Map<String, String> nsUriSourceToDest) {
+    public NamespaceMigrator(Map<String, String> nsUriSourceToDest) {
         this.nsUriSourceToDest = new HashMap<String, String>(nsUriSourceToDest);
     }
 
@@ -31,32 +31,18 @@ public class XpathBasedAssertionNamespaceMigrator implements Functions.UnaryVoid
      * Perform migration for the specified assertion, but none of its descendants (if any).
      *
      * @param target a single assertion to migrate, or null.  This method does nothing unless
-     *               this is an XpathBasedAssertion.
+     *               this assertion implements NamespaceMigratable.
      */
     public void migrate(Assertion target) {
-        if (target instanceof XpathBasedAssertion) {
-            migrateXpathBasedAssertion((XpathBasedAssertion) target);
+        if (target instanceof NamespaceMigratable) {
+            NamespaceMigratable migratable = (NamespaceMigratable) target;
+            migratable.migrateNamespaces(nsUriSourceToDest);
         }
     }
 
     @Override
     public void call(Assertion assertion) {
         migrate(assertion);
-    }
-
-    private void migrateXpathBasedAssertion(XpathBasedAssertion xba) {
-        XpathExpression xpath = xba.getXpathExpression();
-
-        Map<String, String> origNsMap = xpath.getNamespaces();
-        Map<String, String> newNsMap = new HashMap<String, String>();
-
-        for (Map.Entry<String, String> entry : origNsMap.entrySet()) {
-            String origUri = entry.getValue();
-            String newUri = nsUriSourceToDest.get(origUri);
-            newNsMap.put(entry.getKey(), newUri != null ? newUri : origUri);
-        }
-
-        xba.setXpathExpression(new XpathExpression(xpath.getExpression(), newNsMap));
     }
 }
 

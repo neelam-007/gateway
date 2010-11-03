@@ -6,7 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.XpathBasedAssertionNamespaceMigrator;
+import com.l7tech.policy.assertion.NamespaceMigrator;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -101,7 +101,7 @@ public class MigrateNamespacesDialog extends JDialog {
 
         Map<String, String> map = new HashMap<String, String>();
         map.put(oldNs, newNs);
-        XpathBasedAssertionNamespaceMigrator migrator = new XpathBasedAssertionNamespaceMigrator(map);
+        NamespaceMigrator migrator = new NamespaceMigrator(map);
         for (AssertionTreeNode node : nodesToMigrate) {
             Assertion assertion = node.asAssertion();
             if (assertion != null) {
