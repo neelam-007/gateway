@@ -3,11 +3,7 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.EditKeyAliasForAssertion;
-import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
-import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
-import com.l7tech.console.action.SelectIdentityTargetAction;
-import com.l7tech.console.action.SelectMessageTargetAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.action.SelectIdentityTargetAction;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.*;
@@ -61,6 +57,7 @@ public abstract class XpathBasedAssertionTreeNode<AT extends XpathBasedAssertion
         if (assertion instanceof SecurityHeaderAddressable) {
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }
+        list.add(new MigrateNamespacesAction(this));
         if ( superList.size() > 1 ) {
             list.addAll( superList.subList(1, superList.size()) );
         }

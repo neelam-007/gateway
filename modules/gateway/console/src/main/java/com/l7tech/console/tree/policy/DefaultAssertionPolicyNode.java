@@ -3,10 +3,7 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.SelectMessageTargetAction;
-import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
-import com.l7tech.console.action.EditKeyAliasForAssertion;
-import com.l7tech.console.action.SelectIdentityTargetAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
@@ -14,6 +11,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
+import com.l7tech.xml.NamespaceMigratable;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -159,14 +157,17 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
     public Action[] getActions() {
         LinkedList<Action> list = new LinkedList<Action>(Arrays.asList(super.getActions()));
         int addIndex = getPreferredAction() == null ? 0 : 1;
-        if (asAssertion() instanceof SecurityHeaderAddressable)
+        final Assertion assertion = asAssertion();
+        if (assertion instanceof SecurityHeaderAddressable)
             list.add(addIndex, new EditXmlSecurityRecipientContextAction(this));
-        if (asAssertion() instanceof PrivateKeyable)
+        if (assertion instanceof PrivateKeyable)
             list.add(addIndex, new EditKeyAliasForAssertion(this));
-        if (asAssertion() instanceof MessageTargetable)
+        if (assertion instanceof MessageTargetable)
             list.add(addIndex, new SelectMessageTargetAction(this));
-        if (asAssertion() instanceof IdentityTargetable)
+        if (assertion instanceof IdentityTargetable)
             list.add(addIndex, new SelectIdentityTargetAction((AssertionTreeNode<? extends IdentityTargetable>)this));
+        if (assertion instanceof NamespaceMigratable)
+            list.add(addIndex, new MigrateNamespacesAction(this));
         
         return list.toArray(new Action[list.size()]);
     }

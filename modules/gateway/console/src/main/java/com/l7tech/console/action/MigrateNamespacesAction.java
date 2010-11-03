@@ -10,26 +10,48 @@ import javax.swing.*;
 import javax.swing.tree.TreePath;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
 * Action that opens the Migrate Namespaces dialog.
 */
 public class MigrateNamespacesAction extends AbstractAction {
+    private final AssertionTreeNode specificNode;
+
     public MigrateNamespacesAction() {
+        this(null);
+    }
+
+    public MigrateNamespacesAction(AssertionTreeNode specificNode) {
         super("Migrate Namespaces");
+        this.specificNode = specificNode;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        List<AssertionTreeNode> selectedAssertionNodes = findNodesToMigrate();
+
+        if (selectedAssertionNodes == null) return;
+
+        final MigrateNamespacesDialog dlg = new MigrateNamespacesDialog(TopComponents.getInstance().getTopParent(), selectedAssertionNodes, null, null);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, null);
+    }
+
+    private List<AssertionTreeNode> findNodesToMigrate() {
+        if (specificNode != null)
+            return Arrays.asList(specificNode);
+
         JTree policyTree = TopComponents.getInstance().getPolicyTree();
         if (policyTree == null)
-            return;
+            return null;
 
         TreePath[] selectedPaths = policyTree.getSelectionPaths();
         if (selectedPaths == null || selectedPaths.length < 1) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "No policy assertions are selected.", "Nothing to Migrate", JOptionPane.ERROR_MESSAGE, null);
-            return;
+            return null;
         }
 
         List<AssertionTreeNode> selectedAssertionNodes = new ArrayList<AssertionTreeNode>();
@@ -40,10 +62,6 @@ public class MigrateNamespacesAction extends AbstractAction {
                 selectedAssertionNodes.add(node);
             }
         }
-
-        final MigrateNamespacesDialog dlg = new MigrateNamespacesDialog(TopComponents.getInstance().getTopParent(), selectedAssertionNodes, null, null);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg, null);
+        return selectedAssertionNodes;
     }
 }
