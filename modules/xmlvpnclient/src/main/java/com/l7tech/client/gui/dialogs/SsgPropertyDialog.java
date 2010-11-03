@@ -420,12 +420,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             return;
         char[] pass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter pass phrase for this PKCS#12 file",
+                                                 256,
                                                  true);
 
         char[] ssgPass = trustPane.getUserPasswordField().getPassword();
         if (ssgPass == null || ssgPass.length < 1) {
             ssgPass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
-                                                 "Enter new password for " + serverName());
+                                                 "Enter new password for " + serverName(), 256);
             if (ssgPass == null)
                 return;
             trustPane.getUserPasswordField().setText(new String(ssgPass));

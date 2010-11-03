@@ -5,6 +5,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
+import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
@@ -106,16 +107,23 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             }
         });
 
+        final int maxPasswordLength = EntityUtil.getMaxFieldLength(SecurePassword.class, "password", 128);
+
         changePasswordButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                char[] got = PasswordDoubleEntryDialog.getPassword(SecurePasswordPropertiesDialog.this, "Enter Password");
+                char[] got = PasswordDoubleEntryDialog.getPassword(SecurePasswordPropertiesDialog.this, "Enter Password", maxPasswordLength);
                 if (got == null)
                     return;
                 enteredPassword = got;
                 lastUpdateLabel.setText(new Date().toString());
             }
         });
+
+        Utilities.setMaxLength(nameField.getDocument(), EntityUtil.getMaxFieldLength(SecurePassword.class, "name", 128));
+        Utilities.setMaxLength(descriptionField.getDocument(), EntityUtil.getMaxFieldLength(SecurePassword.class, "description", 128));
+        Utilities.setMaxLength(passwordField.getDocument(), maxPasswordLength);
+        Utilities.setMaxLength(confirmPasswordField.getDocument(), maxPasswordLength);
 
         modelToView();
     }
@@ -127,8 +135,8 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     }
 
     private void modelToView() {
-        nameField.setText(securePassword.getName());
-        descriptionField.setText(securePassword.getDescription());
+        nameField.setText(nn(securePassword.getName()));
+        descriptionField.setText(nn(securePassword.getDescription()));
         final long update = securePassword.getLastUpdate();
         lastUpdateLabel.setText(update > 0 ? new Date(update).toString() : "<Never Set>");
         allowVariableCheckBox.setSelected(securePassword.isUsageFromVariable());
@@ -140,6 +148,10 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         securePassword.setName(nameField.getText());
         securePassword.setDescription(descriptionField.getText());
         securePassword.setUsageFromVariable(allowVariableCheckBox.isSelected());
+    }
+
+    private String nn(String s) {
+        return s == null ? "" : s;
     }
 
     public boolean isConfirmed() {

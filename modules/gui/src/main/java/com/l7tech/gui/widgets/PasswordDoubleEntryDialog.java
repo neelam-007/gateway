@@ -37,17 +37,16 @@ public class PasswordDoubleEntryDialog extends JDialog {
     private JLabel capsMessage = new JLabel();
     private boolean singleInputOnly;
 
-    public PasswordDoubleEntryDialog(Window owner, String title, boolean singleInputOnly) {
+    public PasswordDoubleEntryDialog(Window owner, String title, int maxPasswordLength, boolean singleInputOnly) {
         super(owner, title, ModalityType.DOCUMENT_MODAL);
-        init(singleInputOnly);
+        init(singleInputOnly, maxPasswordLength);
     }
 
     public PasswordDoubleEntryDialog(Window owner, String title) {
-        super(owner, title, ModalityType.DOCUMENT_MODAL);
-        init(false);
+        this(owner, title, 128, false);
     }
 
-    private void init(boolean singleInputOnly) {
+    private void init(boolean singleInputOnly, int maxPasswordLength) {
         setContentPane(getMainPanel());
         this.singleInputOnly = singleInputOnly;
         Utilities.equalizeButtonSizes(new JButton[] { getButtonOk(), getButtonCancel() });
@@ -56,6 +55,8 @@ public class PasswordDoubleEntryDialog extends JDialog {
         Utilities.centerOnParentWindow(this);
         pack();
         fieldPassword.requestFocusInWindow();
+        Utilities.setMaxLength(getFieldPassword().getDocument(), maxPasswordLength);
+        Utilities.setMaxLength(getFieldPasswordVerify().getDocument(), maxPasswordLength);
     }
 
     private JPanel getMainPanel() {
@@ -251,22 +252,22 @@ public class PasswordDoubleEntryDialog extends JDialog {
      * @param title
      * @return The password the user typed, or null if the dialog was canceled.
      */
-    public static char[] getPassword(Window parent, String title, boolean singleInputOnly) {
-        PasswordDoubleEntryDialog pd = new PasswordDoubleEntryDialog(parent, title, singleInputOnly);
+    public static char[] getPassword(Window parent, String title, int maxPasswordLength, boolean singleInputOnly) {
+        PasswordDoubleEntryDialog pd = new PasswordDoubleEntryDialog(parent, title, maxPasswordLength, singleInputOnly);
         char[] word = pd.runPasswordPrompt();
         pd.dispose();
         return word;
     }
 
-    public static char[] getPassword(Window parent, String title) {
-        return getPassword(parent, title, false);
+    public static char[] getPassword(Window parent, String title, int maxPasswordLength) {
+        return getPassword(parent, title, maxPasswordLength, false);
     }
 
     public static void main(String[] argv) {
         JFrame frame = new JFrame("test");
         frame.setVisible(true);
         char[] word = PasswordDoubleEntryDialog.getPassword(frame,
-                                             "Enter new password for Gateway <My gateway with a long long very extremely longish long name>");
+                                             "Enter new password for Gateway <My gateway with a long long very extremely longish long name>", 4);
 //        char[] word = PasswordDoubleEntryDialog.getPassword(null, "Get Password", true);
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
         System.exit(0);
