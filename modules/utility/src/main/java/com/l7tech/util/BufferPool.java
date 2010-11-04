@@ -12,8 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Class that provides access to a pool of not-zeroed-on-use byte arrays to use as read buffers.
- * Each thread has its own pool of small buffers, but buffers larger than 64k are shared process wide
- * (and involve some synchronization).
  * <p/>
  * <b>Note</b>: Since buffers are not prezeroed they might contain sensitive data from previous unrelated computations.
  * Buffers obtained from this class, even partially overwritten ones, should never be saved, logged, or serialized over RMI.
@@ -127,10 +125,6 @@ public class BufferPool {
      * Return a no-longer-needed buffer to the pool.  The buffer need not have been allocated using this class
      * originally, as long as it is larger than {@link #MIN_BUFFER_SIZE},
      * although allocating all buffers through this class will help ensure that the buffer sizes stay reasonable.
-     * <p/>
-     * Buffers must be returned only on threads that will be calling getBuffer() some time in the future.
-     * Specifically, buffers <b>must not</b> be returned on the Finalizer thread since small buffers will
-     * just accumulate there forever.
      *
      * @param buffer the buffer to return to the pool. No action is taken if this is null or smaller than {@link #MIN_BUFFER_SIZE}.
      */
