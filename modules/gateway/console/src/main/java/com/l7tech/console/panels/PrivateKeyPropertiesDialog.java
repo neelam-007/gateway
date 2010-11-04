@@ -76,14 +76,16 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private boolean defaultKeyChanged = false;
     private final PermissionFlags flags;
 
-    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags) {
+    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags,
+                                      boolean shouldEnableMakeDefaultSslButton, boolean shouldEnableMakeDefaultCaButton)
+    {
         super(owner, true);
         this.subject = subject;
         this.flags = flags;
-        initialize();
+        initialize(shouldEnableMakeDefaultSslButton, shouldEnableMakeDefaultCaButton);
     }
 
-    private void initialize() {
+    private void initialize(boolean shouldEnableMakeDefaultSslButton, boolean shouldEnableMakeDefaultCaButton) {
         setContentPane(mainPanel);
         setTitle("Private Key Properties");
 
@@ -170,8 +172,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         defaultCaLabel.setVisible(subject.isDefaultCa());
         caCapableLabel.setVisible(isCertChainCaCapable(subject));
 
-        makeDefaultCAButton.setEnabled(!subject.isDefaultCa());
-        makeDefaultSSLButton.setEnabled(!subject.isDefaultSsl());
+        makeDefaultCAButton.setEnabled((!subject.isDefaultCa()) && shouldEnableMakeDefaultCaButton);
+        if (!shouldEnableMakeDefaultCaButton)
+            makeDefaultCAButton.setToolTipText("The default CA key cannot be changed on this system.");
+        makeDefaultSSLButton.setEnabled((!subject.isDefaultSsl()) && shouldEnableMakeDefaultSslButton);
+        if (!shouldEnableMakeDefaultSslButton)
+            makeDefaultSSLButton.setToolTipText("The default SSL key cannot be changed on this system.");
 
         certList.addListSelectionListener(new ListSelectionListener() {
             @Override

@@ -522,7 +522,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     private void doProperties() {
         final KeyTableRow data = getSelectedObject();
-        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags);
+        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags, defaultAliasTracker.isDefaultSslKeyMutable(), defaultAliasTracker.isDefaultCaKeyMutable());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

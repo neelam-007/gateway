@@ -309,7 +309,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
      * @param store  the keystore in which to find the alias.  Required.
      * @param keyAlias  the alias to find.  Required.
      * @return true if the specified key appears to be in use by the current admin connection.
-     * @throws KeyStoreException
+     * @throws KeyStoreException if there is a problem reading a keystore
      */
     boolean isKeyActive(SsgKeyFinder store, String keyAlias) throws KeyStoreException {
         HttpServletRequest req = RemoteUtils.getHttpServletRequest();
@@ -500,6 +500,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.INFO, "error getting keystore to set new cert: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new UpdateException("Error getting keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
@@ -515,51 +516,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             // Force it to be synchronous (Bug #3852)
             future.get();
         } catch (Exception e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.INFO, "error setting new cert: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new UpdateException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    @Override
-    public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
-            throws SaveException, CertificateException, InvalidKeyException {
-        checkLicenseKeyStore();
-        X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
-
-        SsgKeyStore keystore = getKeyStore(keystoreId);
-
-        // Ensure all certs are instances that have come from the default certificate factory
-        try {
-            PrivateKey rsaPrivateKey = (PrivateKey)KeyFactory.getInstance("RSA").translateKey(new PrivateKey() {
-                @Override
-                public String getAlgorithm() {
-                    return "RSA";
-                }
-
-                @Override
-                public String getFormat() {
-                    return "PKCS#8";
-                }
-
-                @Override
-                public byte[] getEncoded() {
-                    return privateKeyPkcs8;
-                }
-            });
-            SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
-
-            Future<Boolean> result = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
-            // Force it to be synchronous (Bug #3924)
-            result.get();
-        } catch (NoSuchAlgorithmException e) {
-            throw new SaveException("error setting new cert: " + ExceptionUtils.getMessage(e), e);
-        } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error setting new cert", e);
-            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
-        } catch (ExecutionException e) {
-            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
-        } catch (InterruptedException e) {
-            throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -592,6 +551,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         } catch (InterruptedException e) {
             throw new KeyStoreException(e);
         } catch (NoSuchProviderException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.WARNING, "Invalid " + PROP_PKCS12_PARSING_PROVIDER + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new KeyStoreException(e);
         } finally {
@@ -693,6 +653,41 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new KeyStoreException(e);
         } finally {
             baos.close();
+        }
+    }
+
+    @Override
+    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException {
+        switch (keyType) {
+            case SSL:
+                try {
+                    return defaultKey.getSslInfo();
+                } catch (IOException e) {
+                    throw new KeyStoreException("Unable to obtain default SSL key: " + ExceptionUtils.getMessage(e), e);
+                }
+
+            case CA:
+                SsgKeyEntry ca = defaultKey.getCaInfo();
+                if (ca == null)
+                    throw new ObjectNotFoundException("There is currently no default CA key.");
+                return ca;
+
+            default:
+                throw new IllegalArgumentException("No such keyType: " + keyType);
+        }
+    }
+
+    @Override
+    public boolean isDefaultKeyMutable(SpecialKeyType keyType) {
+        switch (keyType) {
+            case SSL:
+                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultSsl.alias", "unset"));
+
+            case CA:
+                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultCa.alias", "unset"));
+            
+            default:
+                return false;
         }
     }
 

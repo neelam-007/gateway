@@ -14,7 +14,6 @@ import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
@@ -135,10 +134,6 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public void importKey(long keystoreId, String alias, String[] pemChain, byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException {
-    }
-
-    @Override
     public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
         return null;
     }
@@ -146,6 +141,16 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     @Override
     public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         return new byte[0];
+    }
+
+    @Override
+    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException {
+        throw new ObjectNotFoundException("not currently implemented in stub");
+    }
+
+    @Override
+    public boolean isDefaultKeyMutable(SpecialKeyType keyType) {
+        return false;
     }
 
     @Override

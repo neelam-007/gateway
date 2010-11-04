@@ -3,7 +3,9 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -26,12 +28,14 @@ public class DefaultAliasTracker implements ApplicationListener {
 
     private String defaultSslAlias = null;
     private String defaultCaAlias = null;
+    private boolean defaultSslMutability;
+    private boolean defaultCaMutability;
 
     /**
      * @return the current (possibly cached) default SSL alias.  Normally never null.
      */
     public String getDefaultSslAlias() {
-        if (defaultSslAlias == null) updateDefaultAliases();
+        checkUpdate();
         return defaultSslAlias;
     }
 
@@ -39,7 +43,7 @@ public class DefaultAliasTracker implements ApplicationListener {
      * @return the current (possibly cached) default CA alias.  May be null if no default CA alias is defined.
      */
     public String getDefaultCaAlias() {
-        if (defaultSslAlias == null) updateDefaultAliases();
+        checkUpdate();
         return defaultCaAlias;
     }
 
@@ -49,6 +53,21 @@ public class DefaultAliasTracker implements ApplicationListener {
     public void invalidate() {
         defaultSslAlias = null;
         defaultCaAlias = null;
+    }
+
+    public boolean isDefaultSslKeyMutable() {
+        checkUpdate();
+        return defaultSslMutability;
+    }
+
+    public boolean isDefaultCaKeyMutable() {
+        checkUpdate();
+        return defaultCaMutability;
+    }
+
+    private void checkUpdate() {
+        if (defaultSslAlias == null)
+            updateDefaultAliases();
     }
 
     private String getAlias(String clusterPropertyName, String defaultVal) throws FindException {
@@ -66,15 +85,30 @@ public class DefaultAliasTracker implements ApplicationListener {
     }
 
     private void updateDefaultAliases() {
+        defaultSslMutability = Registry.getDefault().getTrustedCertManager().isDefaultKeyMutable(TrustedCertAdmin.SpecialKeyType.SSL);
+        defaultCaMutability = Registry.getDefault().getTrustedCertManager().isDefaultKeyMutable(TrustedCertAdmin.SpecialKeyType.CA);
+
         try {
-            defaultSslAlias = getAlias(CLUSTER_PROP_DEFAULT_SSL, "SSL");
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to determine default SSL alias: " + ExceptionUtils.getMessage(e), e);
+            defaultSslAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.SSL).getAlias();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to determine default SSL alias using findDefaultKey: " + ExceptionUtils.getMessage(e), e);
+            try {
+                defaultSslAlias = getAlias(CLUSTER_PROP_DEFAULT_SSL, "SSL");
+            } catch (FindException e1) {
+                logger.log(Level.WARNING, "Unable to determine default SSL alias using cluster property: " + ExceptionUtils.getMessage(e), e);
+            }
         }
         try {
-            defaultCaAlias = getAlias(CLUSTER_PROP_DEFAULT_CA, null);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to determine default CA alias: " + ExceptionUtils.getMessage(e), e);
+            defaultCaAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.CA).getAlias();
+        } catch (ObjectNotFoundException e) {
+            logger.info("There is currently no default CA key");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to determine default CA alias using findDefaultKey: " + ExceptionUtils.getMessage(e), e);
+            try {
+                defaultCaAlias = getAlias(CLUSTER_PROP_DEFAULT_CA, null);
+            } catch (FindException e1) {
+                logger.log(Level.WARNING, "Unable to determine default CA alias using cluster property: " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 

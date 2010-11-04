@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
@@ -332,34 +331,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException;
 
     /**
-     * Create a new RSA private key entry in the specified keystore with the specified alias, cert chain,
-     * and RSA private key components.
-     * <p/>
-     * <b>Note:</b> Callers of this method (and implementors, for that matter) must take care not to allow
-     * the privateExponent to be persisted, audited, logged, displayed, saved, or even left in memory
-     * without being overwritten.
-     *
-     * @param keystoreId the ID of the key store in which the new private key entry is to be created.  Required.
-     * @param alias      the alias that is to be used for the new private key entry.  Required.
-     * @param pemChain   the cert chain to store, with each certificate in PEM-encoded (Base64) format.
-     *                   Must contain at least one certificate
-     *                   (the subject cert, the first cert in the list).
-     *                   All certificates in the chain must be in X.509 format, and the subject certificate must use
-     *                   an RSA public key.
-     *                   The new subject cert must contain
-     *                   the RSA public key corresponding to the RSA private key described by modulus and privateExponent.
-     * @param privateKeyPkcs8  the PKCS#8 encoded RSA private key.  Required.
-     * @throws CertificateException if there is a problem with the PEM chain
-     * @throws InvalidKeyException   if a valid RSA key corresponding to the subject cert private key
-     *                                 could not be created from privateKeyPkcs8.
-     * @throws SaveException if there is some other problem importing the new private key entry
-     */
-    // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
-    @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException;
-
-    /**
      * Import an RSA or ECC private key and certificate chain into the specified keystore ID under the specified alias,
      * from the specified PKCS#12 file (passed in as a byte array), decrypted with the specified passphrase.
      * <p/>
@@ -411,6 +382,39 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 
+
+    /** Describes a type of specially-marked key that can be located by {@link TrustedCertAdmin#findDefaultKey}. */
+    public static enum SpecialKeyType {
+        /** Represents a key marked as the default SSL key. */
+        SSL,
+
+        /** Represents a key marked as the default CA key. */
+        CA;
+
+        private static final long serialVersionUID = 932856867393187254L;
+    }
+
+    /**
+     * Look up the current default SSL or CA key.
+     *
+     * @param keyType  whether to find the SSL or CA key.  Required.
+     * @return the current default SSL or CA key.  Never null.
+     * @throws ObjectNotFoundException  if keyType was CA but there is not currently a default CA key.
+     * @throws KeyStoreException if there is a problem reading a keystore.
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype=FIND_ENTITY, types=SSG_KEY_ENTRY)
+    SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException;
+
+    /**
+     * Check whether the default key can be changed by editing the appropriate cluster property.
+     *
+     * @param keyType whether to inquire about the SSL or CA key.  Required.
+     * @return true if the specified default key type can be changed by editing its cluster property.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    boolean isDefaultKeyMutable(SpecialKeyType keyType);
 
     /**
      * Retrieves all {@link SecurePassword} entity headers from the database.
