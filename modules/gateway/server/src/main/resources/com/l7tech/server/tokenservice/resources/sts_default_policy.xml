@@ -131,7 +131,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                     <L7p:Properties mapValue="included">
                         <L7p:entry>
                             <L7p:key stringValue="LEFT.COMMENT"/>
-                            <L7p:value stringValue="Autentication Mechanism"/>
+                            <L7p:value stringValue="Authentication Mechanism"/>
                         </L7p:entry>
                     </L7p:Properties>
                 </L7p:assertionComment>
@@ -141,7 +141,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                     <L7p:Properties mapValue="included">
                         <L7p:entry>
                             <L7p:key stringValue="LEFT.COMMENT"/>
-                            <L7p:value stringValue="WS-Addressing Action Retrieving"/>
+                            <L7p:value stringValue="WS-Addressing Action Retrieval"/>
                         </L7p:entry>
                     </L7p:Properties>
                 </L7p:AssertionComment>
@@ -289,7 +289,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                     <L7p:Properties mapValue="included">
                         <L7p:entry>
                             <L7p:key stringValue="LEFT.COMMENT"/>
-                            <L7p:value stringValue="RSTR Response Decoration:"/>
+                            <L7p:value stringValue="RSTR Response Decoration"/>
                         </L7p:entry>
                     </L7p:Properties>
                 </L7p:assertionComment>
