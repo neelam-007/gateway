@@ -23,7 +23,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
     public static final int CUSTOM_AND_ORIGINAL_PASSTHROUGH = 2;
     public static final int BLOCK = 3;
 
-    public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"host", "keep-alive", "connection",
+    public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"keep-alive", "connection",
                                                                        "server", "content-type", "date",
                                                                        "content-length", "transfer-encoding"};
 

@@ -101,6 +101,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     private int proxyPort = -1;
     private String proxyUsername = "";
     private String proxyPassword = "";
+    private String virtualHost = ""; 
 
     // WARNING
     // WARNING : If you add properties, update the copyFrom method
@@ -158,6 +159,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setProxyPassword(source.getProxyPassword());
         this.setUseKeepAlives(source.isUseKeepAlives());
         this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
+        this.setVirtualHost(source.getVirtualHost());
     }
 
     @Override
@@ -421,6 +423,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
         if (!StringUtils.isEmpty(krbConfiguredAccount)) tmp.append(krbConfiguredAccount);
         if (!StringUtils.isEmpty(krbConfiguredPassword)) tmp.append(krbConfiguredPassword);
+        if (!StringUtils.isEmpty(virtualHost)) tmp.append(virtualHost);
         if (customURLs != null) tmp.append(Arrays.toString(customURLs));
         if (customIpAddresses != null) tmp.append(Arrays.toString(customIpAddresses));
 
@@ -589,6 +592,14 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setUseKeepAlives(boolean useKeepAlives) {
         this.useKeepAlives = useKeepAlives;
+    }
+
+    public String getVirtualHost() {
+        return virtualHost;
+    }
+
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHost = virtualHost;
     }
 
     final static String baseName = "Route via HTTP(S)";

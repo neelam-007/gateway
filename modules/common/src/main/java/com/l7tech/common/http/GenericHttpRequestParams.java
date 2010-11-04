@@ -34,6 +34,7 @@ public class GenericHttpRequestParams {
     private boolean useExpectContinue = false;
     private boolean gzipEncode = false;
     private HttpVersion httpVersion = HttpVersion.HTTP_VERSION_1_1;
+    private String virtualHost;
     private int connectionTimeout = -1;
     private int readTimeout = -1;
     private String proxyHost;
@@ -415,6 +416,24 @@ public class GenericHttpRequestParams {
 
     public void setProxyAuthentication( final PasswordAuthentication proxyAuthentication ) {
         this.proxyAuthentication = proxyAuthentication;
+    }
+
+    /**
+     * Get the HTTP virtual host.
+     *
+     * @return the virtual host value
+     */
+    public String getVirtualHost() {
+        return virtualHost;
+    }
+
+    /**
+     * Set the HTTP virtual host value
+     *
+     * @param virtualHost the virtual Host value
+     */
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHost = virtualHost;
     }
 
     /**
