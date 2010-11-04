@@ -11,9 +11,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -60,6 +58,21 @@ public class XpathCredentialSource extends XpathBasedAssertion {
     }
 
     @Override
+    public void migrateNamespaces(Map<String, String> nsUriSourceToDest) {
+        super.migrateNamespaces(nsUriSourceToDest);
+        if (passwordExpression != null)
+            passwordExpression.migrateNamespaces(nsUriSourceToDest);
+    }
+
+    @Override
+    public Set<String> findNamespaceUrisUsed() {
+        HashSet<String> ret = new HashSet<String>(super.findNamespaceUrisUsed());
+        if (passwordExpression != null)
+            ret.addAll(passwordExpression.findNamespaceUrisUsed());
+        return ret;
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
@@ -95,6 +108,7 @@ public class XpathCredentialSource extends XpathBasedAssertion {
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddXpathCredentialSourceAdvice");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.NamespaceMigratableAssertionValidator");
 
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "XPath Credentials Properties");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EditXpathCredentialSourceAction");
