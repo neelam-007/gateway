@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
@@ -111,6 +112,8 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
                 oldTimeUnit = newTimeUnit;
             }
         });
+
+        varPrefixTextField.setDocument(new MaxLengthDocument(128));
 
         modelToView();
     }

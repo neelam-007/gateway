@@ -3,9 +3,12 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="279" height="162"/>
+      <xy x="20" y="20" width="500" height="160"/>
     </constraints>
-    <properties/>
+    <properties>
+      <minimumSize width="410" height="100"/>
+      <preferredSize width="400" height="100"/>
+    </properties>
     <border type="none"/>
     <children>
       <grid id="558be" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
