@@ -8,6 +8,8 @@
  */
 package com.l7tech.gateway.common.transport.ftp;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.*;
 
@@ -60,7 +62,14 @@ public class FtpUtils {
             ftp.setDebug(true);
         }
         ftp.setTimeout(config.getTimeout());
+
         ftpConnect(ftp);
+
+        try {
+            ftp.setUseEPSV(InetAddress.getByName(config.getHost()) instanceof Inet6Address);
+        } catch (UnknownHostException e) {
+            // do nothing, go with PASV / assume IPv4
+        }
 
         String directory = config.getDirectory();
         try {

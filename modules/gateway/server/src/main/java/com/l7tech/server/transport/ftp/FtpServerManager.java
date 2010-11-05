@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -216,7 +217,7 @@ public class FtpServerManager extends TransportModule {
 
         String address = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
         address = ssgConnectorManager.translateBindAddress(address, connector.getPort());
-        if (address == null) address = "0.0.0.0";
+        if (address == null) address = InetAddressUtil.isUseIpv6() ? "::" : "0.0.0.0";
 
         int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");
         int portEnd = portStart + toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_COUNT), "FTP port range count");
@@ -225,6 +226,8 @@ public class FtpServerManager extends TransportModule {
         String p = PROP_FTP_LISTENER + prefix;
         props.setProperty(p + "port", String.valueOf(connector.getPort()));
         props.setProperty(p + "server-address", address);
+        props.setProperty(p + "data-connection.passive.address", address);
+        props.setProperty(p + "data-connection.passive.external-address", address);
         props.setProperty(p + "data-connection.passive.ports", passiveRange);
         return props;
     }

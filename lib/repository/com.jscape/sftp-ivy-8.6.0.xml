@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="com.jscape"
 		module="sftp"
-		revision="7.0.2"
+		revision="8.6.0"
 		status="release"
-		publication="20080707125040"
+		publication="20101104191939"
 		default="true"
 	/>
 	<configurations>
