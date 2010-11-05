@@ -1,5 +1,6 @@
 package com.l7tech.server.event;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 public class AdminInfo {
     public static final Logger logger = Logger.getLogger(AdminInfo.class.getName());
 
-    public static final String LOCALHOST_IP = "127.0.0.1";
+    public static final String LOCALHOST_IP = InetAddressUtil.getLocalHostAddress();
     public static final String LOCALHOST_SUBJECT = "localsystem";
 
     public AdminInfo(String login, String id, long ipOid, String ip, Subject subject) {

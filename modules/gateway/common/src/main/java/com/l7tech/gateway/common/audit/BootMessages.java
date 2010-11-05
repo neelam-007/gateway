@@ -5,6 +5,8 @@
  */
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.common.io.InetAddressUtil;
+
 import java.util.logging.Level;
 
 /**
@@ -16,7 +18,7 @@ public class BootMessages extends Messages {
     public static final M XMLHARDWARE_INIT      = m(1001, Level.INFO,    "Initializing hardware XML acceleration");
     public static final M XMLHARDWARE_ERROR     = m(1002, Level.WARNING, "Error initializing Tarari board");
     public static final M XMLHARDWARE_DISABLED  = m(1003, Level.INFO,    "Hardware XML acceleration disabled");
-    public static final M NO_IP                 = m(1004, Level.WARNING, "Unable to retrieve local IP address - 127.0.0.1 will be used in audit records");
+    public static final M NO_IP                 = m(1004, Level.WARNING, "Unable to retrieve local IP address - " + InetAddressUtil.getLocalHostAddress() + " will be used in audit records");
     public static final M CRYPTO_INIT           = m(1005, Level.INFO,    "Initializing cryptography subsystem");
     public static final M CRYPTO_ASYMMETRIC     = m(1006, Level.INFO,    "Using asymmetric cryptography provider: {0}");
     public static final M CRYPTO_SYMMETRIC      = m(1007, Level.INFO,    "Using symmetric cryptography provider: {0}");

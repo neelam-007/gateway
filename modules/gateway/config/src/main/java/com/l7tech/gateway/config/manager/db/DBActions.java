@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.manager.db;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
@@ -1531,8 +1532,8 @@ public class DBActions {
                 //grant the ACTUAL hostname, not the localhost one
                 try {
                     if ( !host.equals("localhost") &&
-                         !host.equals("127.0.0.1") &&
-                         !host.equals("localhost.localdomain")) {
+                         !host.equals("localhost.localdomain") &&
+                         !InetAddressUtil.isLoopbackAddress(host)) {
                         // add pre-canonicalized
                         list.add(getPermissionStatement(host));
 
@@ -1545,7 +1546,9 @@ public class DBActions {
             }
 
             list.add(getPermissionStatement("localhost"));
+            list.add(getPermissionStatement("localhost6"));
             list.add(getPermissionStatement("localhost.localdomain"));
+            list.add(getPermissionStatement("localhost6.localdomain6"));
             list.add("FLUSH PRIVILEGES");
             
             return list.toArray(new String[list.size()]);

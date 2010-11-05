@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -381,7 +382,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         try {
             addr = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
-            addr = "0.0.0.0";
+            addr = InetAddressUtil.getAnyHostAddress();
         }
         return addr;
     }
@@ -557,7 +558,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         m.put("acceptCount", "100");
 
         String bindAddress = c.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        if (bindAddress == null || bindAddress.equals("*") || bindAddress.equals("0.0.0.0")) {
+        if (bindAddress == null || InetAddressUtil.isAnyHostAddress(bindAddress)) {
             m.remove("address");
         } else {
             m.put("address", ssgConnectorManager.translateBindAddress(bindAddress, c.getPort()));

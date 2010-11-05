@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.server.ems.setup.SetupManager;
 import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.Config;
@@ -41,7 +42,7 @@ public class ListenerEditPanel extends Panel {
         String listenerAddr = config.getProperty("em.server.listenaddr", "*");
         final String listenerPort = config.getProperty("em.server.listenport", "8182");
 
-        if ( "0.0.0.0".equals(listenerAddr) ) {
+        if (InetAddressUtil.isAnyHostAddress(listenerAddr) ) {
             listenerAddr = "*";
         }
 

@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -122,7 +123,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         props.put("mail." + protoVal + ".connectiontimeout", Long.toString(connectTimeout));
         props.put("mail." + protoVal + ".timeout", Long.toString(readTimeout));
         String smtpHost = rule.getSmtpHost();
-        props.put("mail." + protoVal + ".host", smtpHost == null ? "127.0.0.1" : smtpHost);
+        props.put("mail." + protoVal + ".host", smtpHost == null ? InetAddressUtil.getLocalHostAddress() : smtpHost);
         props.put("mail." + protoVal + ".port", Integer.toString(rule.getPort()));
         props.put("mail." + protoVal + ".fallback", "false");
 

@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mtom.server;
 
+import com.l7tech.common.io.InetAddressUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -586,7 +587,7 @@ public class XOPUtils {
     private static final Charset CHARSET_UTF8 = Charset.forName( CHARSET_UTF8_ID );
     private static final String ENCODING_BINARY = "binary";
     private static final String CID_PREFIX = "cid:";
-    private static final String DOMAIN_SUFFIX = "@127.0.0.1";
+    private static final String DOMAIN_SUFFIX = "@" + InetAddressUtil.getLocalHostUrlAddress();
     private static final byte[] DASHDASH = MimeUtil.MULTIPART_BOUNDARY_PREFIX.getBytes(CHARSET_UTF8);
     private static final byte[] HEADER_SEPARATOR = ": ".getBytes(CHARSET_UTF8);
     private static final String[] XMLMIME_NAMESPACES = new String[]{ NS_XMLMIME_2, NS_XMLMIME_1 };

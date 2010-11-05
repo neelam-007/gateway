@@ -1,5 +1,6 @@
 package com.l7tech.client;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.security.prov.JceProvider;
@@ -125,7 +126,7 @@ public class ClientProxy {
             httpServer.setThreadPool(threadPool);
 
             Connector socketListener = new SocketConnector();
-            socketListener.setHost("127.0.0.1");
+            socketListener.setHost(InetAddressUtil.getLocalHostAddress());
             socketListener.setPort(bindPort);
             httpServer.addConnector(socketListener);
 
@@ -150,7 +151,7 @@ public class ClientProxy {
             init();
         getHttpServer().start();
         isRunning = true;
-        URL url = new URL("http", "127.0.0.1", bindPort, "/");
+        URL url = new URL("http", InetAddressUtil.getLocalHostUrlAddress(), bindPort, "/");
 
         log.info("ClientProxy started; listening on " + url);
         log.info("Using asymmetric cryptography provider: " + JceProvider.getInstance().getDisplayName());

@@ -134,7 +134,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
                     @Override
                     public String getHost() {
-                        return "127.0.0.1";
+                        return InetAddressUtil.getLocalHostAddress4();
                     }
                 };
                 server.addConnector( localSslConnector );
@@ -146,7 +146,6 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
             if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT || ! (httpAddr instanceof Inet6Address) ||
                  ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
-                logger.log(Level.INFO, "Adding default IPv6 connector.");
                 final SslSocketConnector localSslConnector = new SslSocketConnector() {
                     @Override
                     protected SSLServerSocketFactory createFactory() throws Exception {
@@ -160,7 +159,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
                     @Override
                     public String getHost() {
-                        return "::1";
+                        return InetAddressUtil.getLocalHostAddress6();
                     }
                 };
                 server.addConnector( localSslConnector );

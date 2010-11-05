@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.options.OptionType;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
@@ -33,12 +34,13 @@ public class DeveloperTrustInterviewer extends TrustInterviewer {
     List<ConfigurationBean> doInterview(List<ConfigurationBean> inBeans, ResourceBundle bundle) throws IOException {
         boolean setIp = false;
 
+        String anyHostAddress = InetAddressUtil.getAnyHostAddress();
         for ( ConfigurationBean bean : inBeans ) {
             if ( bean instanceof RemoteNodeManagementEnabled ) {
                 bean.setConfigValue(Boolean.TRUE);
             } else if ( bean instanceof TypedConfigurableBean) {
                 if ( bean.getId().equals(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS) ) {
-                    bean.setConfigValue("0.0.0.0");
+                    bean.setConfigValue(anyHostAddress);
                     setIp = true;
                 }
             }
@@ -46,7 +48,8 @@ public class DeveloperTrustInterviewer extends TrustInterviewer {
         }
 
         if ( !setIp ) {
-            inBeans.add(new TypedConfigurableBean<String>( HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", "0.0.0.0", OptionType.IP_ADDRESS ) );
+            inBeans.add(new TypedConfigurableBean<String>( HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, "Listener IP Address",
+                "Valid inputs are any IP Address or * for all.", "localhost", anyHostAddress, OptionType.IP_ADDRESS ) );
         }
 
         try {

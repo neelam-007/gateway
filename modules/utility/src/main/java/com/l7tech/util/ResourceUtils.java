@@ -6,6 +6,7 @@ import javax.naming.NamingException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.*;
+import java.net.*;
 import java.nio.channels.FileLock;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,10 +18,6 @@ import java.util.zip.ZipFile;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
-import java.net.Socket;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 
 /**
  * Utility class for working with resources.

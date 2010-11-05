@@ -165,13 +165,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private String getDefaultSslIpAddress() {
-        if (InetAddressUtil.isIpv4Enabled()) {
-            return "127.0.0.1";
-        } else if (InetAddressUtil.isIpv6Enabled()) {
-            return "::1";
-        } else {
-            throw new IllegalStateException("No IPv4 or IPv6 interfaces found, cannot start process controller.");
-        }
+        return InetAddressUtil.getLocalHostAddress();
     }
 
     @PostConstruct

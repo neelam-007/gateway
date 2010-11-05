@@ -4,6 +4,7 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.options.OptionType;
 import com.l7tech.config.client.beans.ConfigurationBean;
@@ -75,7 +76,7 @@ public class TrustInterviewer {
             char[] trustStorePass = null;
 
             boolean enabled = "true".equalsIgnoreCase(hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED));
-            String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, "127.0.0.1");
+            String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, InetAddressUtil.getLocalHostAddress());
             String listenPort = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_PORT, "8765");
 
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( masterPasswordFile ) );
@@ -313,7 +314,7 @@ public class TrustInterviewer {
         boolean isLocalhost = false;
         for (ConfigurationBean bean : beans) {
             if (bean instanceof TypedConfigurableBean && "host.controller.sslIpAddress".equals(bean.getId())) {
-                isLocalhost = "127.0.0.1".equals(bean.getConfigValue());
+                isLocalhost = InetAddressUtil.isLoopbackAddress(String.valueOf(bean.getConfigValue()));
                 break;
             }
         }

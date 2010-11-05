@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
@@ -189,7 +190,7 @@ public class DefaultHttpConnectors {
         if ( ipAddress != null ) {
             boolean isOk = false;
             try {
-                isOk = "0.0.0.0".equals(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
+                isOk = InetAddressUtil.isAnyHostAddress(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
             } catch (UnknownHostException uhe) {
                 // not ok
             } catch (SocketException e) {

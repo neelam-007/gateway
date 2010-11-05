@@ -1,6 +1,7 @@
 package com.l7tech.client;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
@@ -571,7 +572,10 @@ public class RequestHandler extends AbstractHandler {
 
             // Rewrite the wsdl URLs
             int port = request.getLocalPort();
-            String newUrl = "http://" + request.getLocalName() + ":" + port + "/" +
+            String host = request.getLocalName();
+            if (InetAddressUtil.isValidIpv6Address(host))
+                host = "[" + host + "]";
+            String newUrl = "http://" + host + ":" + port + "/" +
               ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
             NodeList descList = wsil.getElementsByTagName("description");
             Pattern replaceService = Pattern.compile("http.*serviceoid=(-?\\d+)");

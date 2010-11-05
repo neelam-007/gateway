@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.setup;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -93,7 +94,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         // update server settings
         serverConfig.putProperty( "em.server.listenport", Integer.toString(port) );
         if ( "*".equals(ipaddress) ) {            
-            serverConfig.putProperty( "em.server.listenaddr", "0.0.0.0" );
+            serverConfig.putProperty( "em.server.listenaddr", InetAddressUtil.getAnyHostAddress());
         } else {
             serverConfig.putProperty( "em.server.listenaddr", ipaddress );
         }

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.objectmodel.DeleteException;
@@ -87,7 +88,7 @@ public class NodeManagementApiFactory {
      * @return The hostname or ip address.
      */
     public String getHost() {
-        return nodeManagementUrl==null ? "127.0.0.1" : nodeManagementUrl.getHost();
+        return nodeManagementUrl==null ? InetAddressUtil.getLocalHostAddress() : nodeManagementUrl.getHost();
     }
 
     //- PRIVATE

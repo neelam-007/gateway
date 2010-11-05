@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.PropertiesConfigurationBeanProvider;
 import com.l7tech.config.client.ConfigurationException;
@@ -109,7 +110,7 @@ public class SoftwareNodeConfigurationBeanProvider extends NodeConfigurationBean
         if ( ipAddress != null ) {
             boolean isOk = false;
             try {
-                isOk = "*".equals(ipAddress) || "0.0.0.0".equals(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
+                isOk = InetAddressUtil.isAnyHostAddress(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
             } catch (UnknownHostException uhe) {
                 // not ok
             } catch (SocketException e) {

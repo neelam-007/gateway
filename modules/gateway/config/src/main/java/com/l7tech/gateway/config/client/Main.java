@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
@@ -128,7 +129,7 @@ public class Main {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
-    private static final String pcUrl = "https://127.0.0.1:8765/services/nodeManagementApi";
+    private static final String pcUrl = "https://" + InetAddressUtil.getLocalHostUrlAddress() + ":8765/services/nodeManagementApi";
     private static final String PROP_NODE_PROPS = "com.l7tech.server.config.nodePropsPath";
     private static final String DEFAULT_NODE_PROPS = "../node/default/etc/conf/node.properties";
 

@@ -4,6 +4,7 @@ import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ResourceUtils;
@@ -70,7 +71,7 @@ public class BridgeWsdlProxyTest {
         assertTrue(!descriptions.isEmpty());
         for (ElementCursor description : descriptions) {
             String loc = description.getAttributeValue("location");
-            assertTrue(loc.startsWith(expectedUrlPrefix));
+            assertTrue(InetAddressUtil.isSubUrl(expectedUrlPrefix, loc));
         }
     }
 
@@ -82,7 +83,7 @@ public class BridgeWsdlProxyTest {
     @Test
     @BugNumber(9108)
     public void testWsdlRewritingHttpBindings() throws Exception {
-        doTestWsdlRewriting(REST_WSDL, "http://127.0.0.1:5555/ssg0/egis/");
+        doTestWsdlRewriting(REST_WSDL, "http://" + InetAddressUtil.getLocalHostUrlAddress() + ":5555/ssg0/egis/");
     }
 
     private void doTestWsdlRewriting(String wsdlString, String expectedUrlPrefix) throws GenericHttpException, MalformedURLException, SAXException, InvalidXpathException, XPathExpressionException {
@@ -108,7 +109,7 @@ public class BridgeWsdlProxyTest {
         assertTrue(!descriptions.isEmpty());
         for (ElementCursor description : descriptions) {
             String loc = description.getAttributeValue("location");
-            assertTrue("loc should start with " + expectedUrlPrefix + ": " + loc, loc.startsWith(expectedUrlPrefix));
+            assertTrue("loc should start with " + expectedUrlPrefix + ": " + loc, InetAddressUtil.isSubUrl(expectedUrlPrefix, loc));
         }
     }
 

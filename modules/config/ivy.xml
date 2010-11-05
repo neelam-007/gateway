@@ -22,6 +22,7 @@
     </publications>
     <dependencies>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
 
         <dependency org="commons-configuration" name="commons-configuration" rev="1.6" force="true" conf="core">
             <exclude org="commons-digester" module="commons-digester" name="*" type="*" ext="*" conf=""

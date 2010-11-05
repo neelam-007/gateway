@@ -63,6 +63,39 @@ public class InetAddressUtil {
         return localHost;
     }
 
+    public static String getLocalHostAddress() {
+        return isUseIpv6() ? getLocalHostAddress6() : getLocalHostAddress4();
+    }
+
+    public static String getLocalHostUrlAddress() {
+        return isUseIpv6() ? "[" + getLocalHostAddress6() + "]" : getLocalHostAddress4();
+    }
+
+    public static String getLocalHostAddress4() {
+        return "127.0.0.1";
+    }
+
+    public static String getLocalHostAddress6() {
+        return "::1";
+    }
+
+    public static String getAnyHostAddress() {
+        return isUseIpv6() ? getAnyHostAddress6() : getAnyHostAddress4();
+    }
+
+    public static String getAnyHostAddress4() {
+        return "0.0.0.0";
+    }
+
+    public static String getAnyHostAddress6() {
+        return "::";
+    }
+
+    public static boolean isAnyHostAddress(String address) {
+        InetAddress addr = getAddress(address);
+        return "*".equals(address) || (addr != null && addr.isAnyLocalAddress());
+    }
+
     /**
      * Verifies if the provided string parameter is a valid IPv4 address.
      *
@@ -107,7 +140,7 @@ public class InetAddressUtil {
     /**
      * Non-throwing, no-lookup version of InetAddress.getByName()
      *
-     * @param address the address string to parse into a InetAddress object
+     * @param address the address string to parse into a InetAddress object; IPv6 addresses must not include brackets
      * @return the InetAddress, or null if the supplied address string is not a valid IPv4 or IPv6 address
      */
     public static InetAddress getAddress(String address) {
@@ -119,6 +152,7 @@ public class InetAddressUtil {
         }
     }
     /**
+     * @param address an IPv6 address to be tested, in string literal representation, without brackets 
      * @return true if the provided string is a valid IPv6 address, false otherwise
      */
     public static boolean isValidIpv6Address(String address) {
@@ -128,6 +162,7 @@ public class InetAddressUtil {
     /**
      * Parse the provided string into a Inet6Address, without performing any lookups.
      *
+     * @param address an IPv6 address to be parsed, in string literal representation, without brackets
      * @return a Inet6Address or null if the provided string is not a valid IPv6 one.
      *
      */
@@ -425,5 +460,105 @@ public class InetAddressUtil {
         }
 
         return networkBytes;
+    }
+
+    /**
+     * Proper, non-blocking URL comparison. Similar to URL.equals
+     * but without attempting to resolve host names.
+     *
+     * Two URL objects are equal if they have the same protocol, host,
+     * port number on the host, and the same file and fragment of the file.
+     *
+     * Different representations of the same IP address literals in the hostname
+     * will compare equal. No path normalization is performed.
+     *
+     * @param url1 the first URL to compare
+     * @param url2 the second URL to compare
+     * @return true if the URL are equal as described above, false otherwise
+     *             (or if either of the provided strings is not a valid URL)
+     * @see java.net.URL#equals(Object)
+     */
+    public static boolean isEqualUrl(String url1, String url2) {
+        URL u1, u2;
+        try {
+            u1 = new URL(url1);
+            u2 = new URL(url2);
+        } catch (MalformedURLException e) {
+            return false;
+        }
+
+        if ( ! isEqualIgnoreCaseString(u1.getProtocol(), u2.getProtocol()) )
+            return false;
+
+        String host1 = u1.getHost();
+        String host2 = u2.getHost();
+        String host1address = getHostAddress(host1);
+        if (host1address != null) {
+            if ( ! getAddress(host1address).equals(getAddress(getHostAddress(host2))) )
+                return false;
+        } else {
+            if ( ! isEqualIgnoreCaseString(host1, host2) )
+                return false;
+        }
+
+        int port1 = u1.getPort();
+        if (port1 == -1) port1 = u1.getDefaultPort();
+        int port2 = u2.getPort();
+        if (port2 == -1) port2 = u2.getDefaultPort();
+        if (port1 != port2) return false;
+
+        if ( ! isEqualString(u1.getFile(), u2.getFile()) )
+            return false;
+
+        if ( ! isEqualString(u1.getRef(), u2.getRef()) )
+            return false;
+
+        return true;
+    }
+
+    /**
+     * @param url1 the first URL to compare
+     * @param url2 the second URL to compare
+     * @return true if second URL's file is a subcomponent of the first URL's file
+     */
+    public static boolean isSubUrl(String url1, String url2) {
+        URL u1, u2;
+        try {
+            u1 = new URL(url1);
+            u2 = new URL(url2);
+        } catch (MalformedURLException e) {
+            return false;
+        }
+
+
+        if (u1.getFile() != null) {
+            if (u2.getFile() == null || ! u2.getFile().startsWith(u1.getFile())) {
+                return false;
+            }
+        }
+
+        try {
+            return isEqualUrl(url1, (new URL(u2.getProtocol(), u2.getHost(), u2.getPort(), u1.getFile())).toString());
+        } catch (MalformedURLException e) {
+            return false;
+        }
+    }
+
+    private static String getHostAddress(String maybeIpAddress) {
+        if (isValidIpAddress(maybeIpAddress)) return maybeIpAddress;
+        if (maybeIpAddress != null && maybeIpAddress.length() > 2 &&
+            maybeIpAddress.charAt(0) == '[' && maybeIpAddress.charAt(maybeIpAddress.length()-1) == ']' &&
+            isValidIpv6Address(maybeIpAddress.substring(1, maybeIpAddress.length() - 1)) ) {
+            return maybeIpAddress.substring(1, maybeIpAddress.length() - 1);
+        }
+        return null;
+    }
+
+    private static boolean isEqualString(String s1, String s2) {
+        return s1 == null ? s2 == null : s1.equals(s2);
+    }
+
+    private static boolean isEqualIgnoreCaseString(String s1, String s2) {
+        return s1 == null ? s2 == null : s1.equalsIgnoreCase(s2);
     }
 }

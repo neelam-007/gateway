@@ -1,5 +1,7 @@
 package com.l7tech.config.client.options;
 
+import com.l7tech.common.io.InetAddressUtil;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.Format;
@@ -179,9 +181,9 @@ public enum OptionType {
     private static final class WildcardIpFormat extends Format {
         @Override
         public StringBuffer format( final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
-            if ( "0.0.0.0".equals(obj) ) {
+            if ( InetAddressUtil.isAnyHostAddress(String.valueOf(obj)) ) {
                 toAppendTo.append( "*" );
-            } else if ( "127.0.0.1".equals(obj) ) {
+            } else if ( InetAddressUtil.isLoopbackAddress(String.valueOf(obj)) ) {
                 toAppendTo.append( "localhost" );            
             } else {
                 toAppendTo.append( obj );
@@ -198,9 +200,9 @@ public enum OptionType {
                 pos.setIndex(source.length());
 
                 if ( "*".equals(source) ) {
-                   result = "0.0.0.0";
+                   result = InetAddressUtil.getAnyHostAddress();
                 } else if ( "localhost".equals(source) ) {
-                    result = "127.0.0.1";
+                    result = InetAddressUtil.getLocalHostAddress();
                 }
             }
 

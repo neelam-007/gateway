@@ -3,6 +3,7 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.BootMessages;
@@ -347,7 +348,7 @@ public class BootProcess
         return ipAddress;
     }
 
-    public static final String LOCALHOST_IP = "127.0.0.1";
+    public static final String LOCALHOST_IP = InetAddressUtil.getLocalHostAddress();
 
     private Collection<ServerComponentLifecycle> discoveredComponents;
     private Map<String, String> otherPropertiesFiles;

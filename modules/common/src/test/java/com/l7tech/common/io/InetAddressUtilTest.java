@@ -111,4 +111,14 @@ public class InetAddressUtilTest {
         notIp("cafe.babe");
         notIp("cafe:babe:food::344");
     }
+
+    @Test
+    public void testUrlCompare() throws Exception {
+        assertTrue(InetAddressUtil.isEqualUrl("http://bla", "http://bla:80"));
+        assertTrue(InetAddressUtil.isEqualUrl("https://bla", "https://bla:443"));
+        assertTrue(InetAddressUtil.isEqualUrl("ftp://bla", "ftp://bla:21"));
+        assertFalse(InetAddressUtil.isEqualUrl("http://example.com/path#f1", "http://example.com/path#f2"));
+        assertFalse(InetAddressUtil.isEqualUrl("HTTP://EXAMPLE.COM/%63", "http://example.com/c"));
+        assertTrue(InetAddressUtil.isEqualUrl("http://[::1]", "http://[0:0::000:1]"));
+    }
 }

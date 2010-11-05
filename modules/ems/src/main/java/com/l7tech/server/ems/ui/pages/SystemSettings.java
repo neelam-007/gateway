@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -730,7 +731,7 @@ public class SystemSettings extends EsmStandardWebPage {
         private void init() {
             if ( listenerAddr==null || listenerPort==null ) {
                 listenerAddr = config.getProperty("em.server.listenaddr", "*");
-                if ( "0.0.0.0".equals(listenerAddr) ) {
+                if (InetAddressUtil.isAnyHostAddress(listenerAddr) ) {
                     listenerAddr = "*";
                 }
 

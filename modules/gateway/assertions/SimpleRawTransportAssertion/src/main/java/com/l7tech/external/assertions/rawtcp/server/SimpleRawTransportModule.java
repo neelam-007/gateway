@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gateway.common.LicenseManager;
@@ -308,10 +309,10 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             return;
 
         String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        if (bindAddress != null && !bindAddress.equals("*") && !bindAddress.equals("0.0.0.0")) {
+        if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
             bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
         } else {
-            bindAddress = "0.0.0.0";
+            bindAddress = InetAddressUtil.getAnyHostAddress();
         }
 
         int backlog = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_BACKLOG, 5);
