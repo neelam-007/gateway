@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.HexUtils;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.junit.Test;
 
@@ -32,8 +33,20 @@ public class ServerCertUtilsTest {
 
     @Test
     @BugNumber(9347)
+    public void testCRLURL_distPointMulti() throws Exception {
+        X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(BUG_9347_CRL_DIST_MULTI_URL));
+
+        String[] crlUrls = ServerCertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap:///CN=Layer%207%20Support,CN=supad1,CN=CDP,CN=Public%20Key%20Services,CN=Services,CN=Configuration,DC=test2003,DC=com?certificateRevocationList?base?objectClass=cRLDistributionPoint", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://supad1.test2003.com/CertEnroll/Layer%207%20Support.crl", crlUrls[1]);
+    }
+
+    @Test
+    @BugNumber(9347)
     public void testCRLURL_oneDistPoint_twoUrls() throws Exception {
-        TestCertificateGenerator gen = new TestCertificateGenerator();
+        TestCertificateGenerator gen = new TestCertificateGenerator().keySize(512);
         gen.getCertGenParams().setIncludeCrlDistributionPoints(true);
         gen.getCertGenParams().setCrlDistributionPointsUrls(Arrays.asList(Arrays.asList("ldap://ldapone.example.com", "http://httpone.example.com")));
 
@@ -49,7 +62,7 @@ public class ServerCertUtilsTest {
     @Test
     @BugNumber(9347)
     public void testCRLURL_twoDistPoints_oneUrlEach() throws Exception {
-        TestCertificateGenerator gen = new TestCertificateGenerator();
+        TestCertificateGenerator gen = new TestCertificateGenerator().keySize(512);
         gen.getCertGenParams().setIncludeCrlDistributionPoints(true);
         gen.getCertGenParams().setCrlDistributionPointsUrls(Arrays.asList(Arrays.asList("ldap://ldapone.example.com"), Arrays.asList("http://httpone.example.com")));
 
@@ -150,4 +163,35 @@ public class ServerCertUtilsTest {
             "K9n5qaAQqZn3FUKSpVDXEQfxAtXgcORVbirOJfhdzQsvEGH49iBCzMOJ+IpPgiQS\n" +
             "zzl/IagsjVKXUsX3X0KlhwlmsMw=\n" +
             "-----END CERTIFICATE-----";
+
+    private static final String BUG_9347_CRL_DIST_MULTI_URL =
+            "MIIFUDCCBDigAwIBAgIKLi6BKAAAAAAANjANBgkqhkiG9w0BAQUFADBJMRMwEQYK\n" +
+            "CZImiZPyLGQBGRYDY29tMRgwFgYKCZImiZPyLGQBGRYIdGVzdDIwMDMxGDAWBgNV\n" +
+            "BAMTD0xheWVyIDcgU3VwcG9ydDAeFw0xMDExMDUwMTM5MDJaFw0xMTExMDUwMTQ5\n" +
+            "MDJaMBQxEjAQBgNVBAMTCXRlc3RKYXNvbjCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\n" +
+            "gYkCgYEA03ryUeb4W3fc588UG7wmbJVLi12F+LJiA3+01fVYPBiPhlWKL1NrSqzK\n" +
+            "ny8P/pn+a42pPY3HGg9SaZcG5dYs40qf7uWf2lkqcs9CJCYs37R45HBaJb1/ngqg\n" +
+            "dWtkmQ7pEs+k2iDz9hAW2bueebhldkD6a7Ll1bw4wD2cd2h8pFsCAwEAAaOCAvEw\n" +
+            "ggLtMA4GA1UdDwEB/wQEAwIE8DBEBgkqhkiG9w0BCQ8ENzA1MA4GCCqGSIb3DQMC\n" +
+            "AgIAgDAOBggqhkiG9w0DBAICAIAwBwYFKw4DAgcwCgYIKoZIhvcNAwcwHQYDVR0O\n" +
+            "BBYEFGFx+gMOleTBhksNYhunjvv6VQu/MBMGA1UdJQQMMAoGCCsGAQUFBwMCMB8G\n" +
+            "A1UdIwQYMBaAFCooOCWPsc5SzpS7T5dc5UPfwysKMIIBEwYDVR0fBIIBCjCCAQYw\n" +
+            "ggECoIH/oIH8hoG6bGRhcDovLy9DTj1MYXllciUyMDclMjBTdXBwb3J0LENOPXN1\n" +
+            "cGFkMSxDTj1DRFAsQ049UHVibGljJTIwS2V5JTIwU2VydmljZXMsQ049U2Vydmlj\n" +
+            "ZXMsQ049Q29uZmlndXJhdGlvbixEQz10ZXN0MjAwMyxEQz1jb20/Y2VydGlmaWNh\n" +
+            "dGVSZXZvY2F0aW9uTGlzdD9iYXNlP29iamVjdENsYXNzPWNSTERpc3RyaWJ1dGlv\n" +
+            "blBvaW50hj1odHRwOi8vc3VwYWQxLnRlc3QyMDAzLmNvbS9DZXJ0RW5yb2xsL0xh\n" +
+            "eWVyJTIwNyUyMFN1cHBvcnQuY3JsMIIBJwYIKwYBBQUHAQEEggEZMIIBFTCBswYI\n" +
+            "KwYBBQUHMAKGgaZsZGFwOi8vL0NOPUxheWVyJTIwNyUyMFN1cHBvcnQsQ049QUlB\n" +
+            "LENOPVB1YmxpYyUyMEtleSUyMFNlcnZpY2VzLENOPVNlcnZpY2VzLENOPUNvbmZp\n" +
+            "Z3VyYXRpb24sREM9dGVzdDIwMDMsREM9Y29tP2NBQ2VydGlmaWNhdGU/YmFzZT9v\n" +
+            "YmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MF0GCCsGAQUFBzAChlFo\n" +
+            "dHRwOi8vc3VwYWQxLnRlc3QyMDAzLmNvbS9DZXJ0RW5yb2xsL3N1cGFkMS50ZXN0\n" +
+            "MjAwMy5jb21fTGF5ZXIlMjA3JTIwU3VwcG9ydC5jcnQwDQYJKoZIhvcNAQEFBQAD\n" +
+            "ggEBAAsBMmExw0W1QroxjjkSSWtlU2wFjL8R5T29aiTb4kVxiSn4Z+Cmew84uZSt\n" +
+            "O2eNgWd+N/UgQ9LhyivsoBIP9X/wBA7QldDR5fpO4a3GspYJ0IttCI+B0aST/FW8\n" +
+            "AgDWIHgRtS8/c+zZ7RtXDrUmXQpDwzZBV8rpsGr91crBZkRQ7T9Z2+lp6DGxASMI\n" +
+            "zN76wxuXKtHYyZvd6bnpGUZJWHWUHJN7aOJlJv3MWF0zs3Aqula8safTInG/5QX9\n" +
+            "yU/OOxityjqITM5ITy4BKUWPSNYS10F3303bzyQ9LS+ScOha0CIWST8InBV8iCL7\n" +
+            "UATtteuIVGjcXy5b/C9a5m4IET4=";
 }
