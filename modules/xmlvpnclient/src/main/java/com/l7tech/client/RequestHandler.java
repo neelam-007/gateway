@@ -57,7 +57,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import static com.l7tech.wsdl.WsdlConstants.*;
+import static com.l7tech.wsdl.WsdlConstants.ATTR_LOCATION;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -100,7 +100,7 @@ public class RequestHandler extends AbstractHandler {
 
         QName[] names = null;
 
-        if (!IGNORE_PAYLOAD_NS) {
+        if (!IGNORE_PAYLOAD_NS && requestEnvelope != null) {
             names = SoapUtil.getPayloadNames(requestEnvelope);
         }
 
@@ -246,11 +246,10 @@ public class RequestHandler extends AbstractHandler {
                 prequest.initialize(Managers.createStashManager(),
                                     outerContentType,
                                     httpRequest.getInputStream());
-                prequest.getXmlKnob(); // assert request is XML.  Will throw SAXException early, otherwise.
                 prequest.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(gatherHeaders(httpRequest)));
 
                 URL originalUrl = getOriginalUrl(httpRequest, endpoint);
-                PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.getXmlKnob().getDocumentReadOnly(), originalUrl);
+                PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.isXml() ? prequest.getXmlKnob().getDocumentReadOnly() : null, originalUrl);
 
                 if (hbt != null) prequest.getSecurityKnob().addSecurityToken(hbt);
 

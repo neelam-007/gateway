@@ -211,8 +211,11 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
      */
     public void reset() throws SAXException, IOException {
         policySettings = new PolicySettings();
-        final Document original = getRequest().getXmlKnob().getOriginalDocument();
-        getRequest().getXmlKnob().setDocument((Document)original.cloneNode(true));
+        Message request = getRequest();
+        if (request.isXml()) {
+            final Document original = getRequest().getXmlKnob().getOriginalDocument();
+            getRequest().getXmlKnob().setDocument((Document)original.cloneNode(true));
+        }
     }
 
     public Ssg getSsg() {

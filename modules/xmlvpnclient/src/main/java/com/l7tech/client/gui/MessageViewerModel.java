@@ -420,9 +420,17 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         if (!isRecordFromClient()) return;
         HttpHeadersKnob hhk = context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
+            final Message message = context.getRequest();
+            final HttpHeaders headers = hhk.getHeaders();
+            if (!message.isXml()) {
+                appendMessage(new SavedTextMessage("From Client",
+                        "<Non-XML request of type " + message.getMimeKnob().getOuterContentType().getMainValue() + '>',
+                        headers, perMessageStorageSize));
+                return;
+            }
             appendMessage(new SavedXmlMessage("From Client",
-                    XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()),
-                    hhk.getHeaders(), perMessageStorageSize));
+                    XmlUtil.nodeToString(message.getXmlKnob().getOriginalDocument()),
+                    headers, perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
@@ -457,8 +465,15 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         if (!isRecordToServer()) return;
         try {
             GenericHttpHeaders headers = new GenericHttpHeaders(headersSent.toArray(new HttpHeader[headersSent.size()]));
+            final Message message = context.getRequest();
+            if (!message.isXml()) {
+                appendMessage(new SavedTextMessage(TO_SERVER,
+                        "<Non-XML request of type " + message.getMimeKnob().getOuterContentType().getMainValue() + '>',
+                        headers, perMessageStorageSize));
+                return;
+            }
             appendMessage(new SavedXmlMessage(TO_SERVER,
-                                              XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly()),
+                                              XmlUtil.nodeToString(message.getXmlKnob().getDocumentReadOnly()),
                                               headers, perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
