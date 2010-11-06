@@ -14,6 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -39,17 +40,20 @@ public class ServerCertUtils {
                 DistributionPointName dpn = point.getDistributionPoint();
                 obj = dpn.getName().toASN1Object();
                 ASN1Sequence seq = ASN1Sequence.getInstance(obj);
-                DEREncodable first = seq.getObjectAt(0);
-                if (first instanceof GeneralName) {
-                    GeneralName generalName = (GeneralName) first;
-                    urls.add(generalName.getName().toString());
-                } else if (first instanceof ASN1Encodable) {
-                    ASN1Encodable tag = (ASN1Encodable) first;
-                    DERObject foo = tag.getDERObject().getDERObject();
-                    if (foo instanceof DEROctetString) {
-                        DEROctetString derOctetString = (DEROctetString) foo;
-                        distibutionPointBytes = derOctetString.getOctets();
-                        urls.add(new String(distibutionPointBytes, "ISO8859-1"));
+                Enumeration objs = seq.getObjects();
+                if (objs != null) while (objs.hasMoreElements()) {
+                    DEREncodable first = (DEREncodable)objs.nextElement();
+                    if (first instanceof GeneralName) {
+                        GeneralName generalName = (GeneralName) first;
+                        urls.add(generalName.getName().toString());
+                    } else if (first instanceof ASN1Encodable) {
+                        ASN1Encodable tag = (ASN1Encodable) first;
+                        DERObject foo = tag.getDERObject().getDERObject();
+                        if (foo instanceof DEROctetString) {
+                            DEROctetString derOctetString = (DEROctetString) foo;
+                            distibutionPointBytes = derOctetString.getOctets();
+                            urls.add(new String(distibutionPointBytes, "ISO8859-1"));
+                        }
                     }
                 }
             }

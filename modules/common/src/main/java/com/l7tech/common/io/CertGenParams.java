@@ -56,6 +56,11 @@ public class CertGenParams implements Serializable {
     private boolean subjectAlternativeNameCritical;
     private List<X509GeneralName> subjectAlternativeNames;
 
+    // CRL Distribution Points
+    private boolean includeCrlDistributionPoints;
+    private boolean crlDistributionPointsCritical;
+    private List<List<String>> crlDistributionPointsUrls;
+
     // AuthorityInfoAccess (OCSP responder URLs)
     private boolean includeAuthorityInfoAccess;
     private boolean authorityInfoAccessCritical;
@@ -306,6 +311,36 @@ public class CertGenParams implements Serializable {
 
     public void setSubjectAlternativeNameCritical(boolean subjectAlternativeNameCritical) {
         this.subjectAlternativeNameCritical = subjectAlternativeNameCritical;
+    }
+
+    public boolean isIncludeCrlDistributionPoints() {
+        return includeCrlDistributionPoints;
+    }
+
+    public void setIncludeCrlDistributionPoints(boolean includeCrlDistributionPoints) {
+        this.includeCrlDistributionPoints = includeCrlDistributionPoints;
+    }
+
+    public boolean isCrlDistributionPointsCritical() {
+        return crlDistributionPointsCritical;
+    }
+
+    public void setCrlDistributionPointsCritical(boolean crlDistributionPointsCritical) {
+        this.crlDistributionPointsCritical = crlDistributionPointsCritical;
+    }
+
+    /**
+     * @return a List of distribution points; for each distribution point, its List of distribution URLs.
+     */
+    public List<List<String>> getCrlDistributionPointsUrls() {
+        return crlDistributionPointsUrls;
+    }
+
+    /**
+     * @param crlDistributionPointsUrls a List of distribution points; for each distribution point, its List of distribution URLs
+     */
+    public void setCrlDistributionPointsUrls(List<List<String>> crlDistributionPointsUrls) {
+        this.crlDistributionPointsUrls = crlDistributionPointsUrls;
     }
 
     public boolean isIncludeAuthorityInfoAccess() {

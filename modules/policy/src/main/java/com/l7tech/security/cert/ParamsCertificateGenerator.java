@@ -109,6 +109,10 @@ public class ParamsCertificateGenerator {
             certgen.addExtension(X509Extensions.AuthorityInfoAccess, c.isAuthorityInfoAccessCritical(), createAuthorityInfoAccess(c.getAuthorityInfoAccessOcspUrls()));
         }
 
+        if (c.isIncludeCrlDistributionPoints()) {
+            certgen.addExtension(X509Extensions.CRLDistributionPoints, c.isCrlDistributionPointsCritical(), createCrlDistributionPoints(c.getCrlDistributionPointsUrls()));
+        }
+
         try {
             Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
             return prov == null
@@ -204,6 +208,22 @@ public class ParamsCertificateGenerator {
         });
 
         return new GeneralNames(new DERSequence(generalNames.toArray(new ASN1Encodable[generalNames.size()])));
+    }
+
+    private DEREncodable createCrlDistributionPoints(List<List<String>> crlDistributionPointsUrls) {
+        List<DistributionPoint> distPoints = new ArrayList<DistributionPoint>();
+
+        for (List<String> urls : crlDistributionPointsUrls) {
+            List<GeneralName> generalNames = new ArrayList<GeneralName>();
+            for (String url : urls) {
+                generalNames.add(new GeneralName(GeneralName.uniformResourceIdentifier, url));
+            }
+            final ASN1Encodable[] generalNamesArray = generalNames.toArray(new ASN1Encodable[generalNames.size()]);
+            final DERSequence generalNamesSeq = new DERSequence(generalNamesArray);
+            distPoints.add(new DistributionPoint(new DistributionPointName(new GeneralNames(generalNamesSeq)), null, null));
+        }
+
+        return new CRLDistPoint(distPoints.toArray(new DistributionPoint[distPoints.size()]));
     }
 
     private DEREncodable createAuthorityInfoAccess(List<String> authorityInfoAccessUrls) {

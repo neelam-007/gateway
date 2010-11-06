@@ -1,12 +1,16 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.test.BugNumber;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for ServerCertUtils
@@ -24,6 +28,38 @@ public class ServerCertUtilsTest {
         assertTrue("Empty CRL urls", crlUrls.length > 0);
         assertEquals("CRL url missing or invalid", "http://crl.thawte.com/ThawteSGCCA.crl", crlUrls[0]);
 
+    }
+
+    @Test
+    @BugNumber(9347)
+    public void testCRLURL_oneDistPoint_twoUrls() throws Exception {
+        TestCertificateGenerator gen = new TestCertificateGenerator();
+        gen.getCertGenParams().setIncludeCrlDistributionPoints(true);
+        gen.getCertGenParams().setCrlDistributionPointsUrls(Arrays.asList(Arrays.asList("ldap://ldapone.example.com", "http://httpone.example.com")));
+
+        X509Certificate certificate = gen.generate();
+
+        String[] crlUrls = ServerCertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap://ldapone.example.com", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://httpone.example.com", crlUrls[1]);
+    }
+
+    @Test
+    @BugNumber(9347)
+    public void testCRLURL_twoDistPoints_oneUrlEach() throws Exception {
+        TestCertificateGenerator gen = new TestCertificateGenerator();
+        gen.getCertGenParams().setIncludeCrlDistributionPoints(true);
+        gen.getCertGenParams().setCrlDistributionPointsUrls(Arrays.asList(Arrays.asList("ldap://ldapone.example.com"), Arrays.asList("http://httpone.example.com")));
+
+        X509Certificate certificate = gen.generate();
+
+        String[] crlUrls = ServerCertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap://ldapone.example.com", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://httpone.example.com", crlUrls[1]);
     }
 
     @Test
