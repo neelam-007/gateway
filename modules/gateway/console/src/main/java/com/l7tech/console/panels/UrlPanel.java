@@ -156,6 +156,8 @@ public class UrlPanel extends ValidatedPanel<String> {
                     return "no host";
                 } else if ( model.contains( " " ) ) {
                     return "' ' must be url encoded";
+                } else if ( model.contains( "\t" ) ) {
+                    return "tab must be url encoded";
                 } else {
                     return null;
                 }
