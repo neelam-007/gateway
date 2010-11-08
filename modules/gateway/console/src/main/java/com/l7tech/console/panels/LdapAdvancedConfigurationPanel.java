@@ -350,8 +350,8 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         if ( groupMaxNesting==null ) groupMaxNesting = DEFAULT_GROUP_MAX_NESTING;
 
         groupCacheSizeTextField.setText( Integer.toString(groupCacheSize) );
+        groupCacheHierarchyMaxAgeTextField.setValue( (double)groupHierarchyMaxAge / oldTimeUnit.getMultiplier() );
         hierarchyUnitcomboBox.setSelectedItem(maxAgeUnit);
-        groupCacheHierarchyMaxAgeTextField.setValue( (double)groupHierarchyMaxAge / maxAgeUnit.getMultiplier() );
         groupMaximumNestingTextField.setText( Integer.toString(groupMaxNesting) );
         groupMembershipCaseInsensitive.setSelected( config.isGroupMembershipCaseInsensitive() );
 
