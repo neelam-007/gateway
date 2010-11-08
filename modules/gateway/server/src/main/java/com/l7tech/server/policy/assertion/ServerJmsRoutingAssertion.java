@@ -334,16 +334,16 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 MessageProducer jmsProducer = null;
                 try {
-                    if ( jmsSession instanceof QueueSession ) {
+                    if ( cfg.isQueue() && jmsSession instanceof QueueSession ) {
                         if ( !(jmsOutboundDestination instanceof Queue ) ) {
                             auditor.logAndAudit( AssertionMessages.JMS_ROUTING_DESTINATION_SESSION_MISMATCH );
                             throw new AssertionStatusException(AssertionStatus.FAILED);
                         }
                         // the reason for this distinction is that IBM throws java.lang.AbstractMethodError: com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
                         jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDestination );
-                    } else if ( jmsSession instanceof TopicSession && cfg.getEndpoint().getReplyType() != JmsReplyType.NO_REPLY) {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_TOPIC_WITH_REPLY);
-                        throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
+//                    } else if ( jmsSession instanceof TopicSession && cfg.getEndpoint().getReplyType() != JmsReplyType.NO_REPLY) {
+//                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_TOPIC_WITH_REPLY);
+//                        throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
                     } else {
                         jmsProducer = jmsSession.createProducer( jmsOutboundDestination );
                     }
@@ -402,7 +402,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
                     try {
-                        if (jmsSession instanceof QueueSession) {
+                        if ( cfg.isQueue() && jmsSession instanceof QueueSession ) {
                             jmsConsumer = ((QueueSession)jmsSession).createReceiver((Queue)jmsInboundDestination, selector);
                         } else {
                             jmsConsumer = jmsSession.createConsumer(jmsInboundDestination, selector);

@@ -28,9 +28,9 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /** JmsBag that holds A Connection for the jms endpoint */
     private JmsBag _connBag;
     /** Inbound queue receiver */
-    private QueueReceiver _consumer;
+    private MessageConsumer _consumer;
     /** Inbound jms queue */
-    private Queue _queue;
+    private Destination _queue;
     /** The failure queue */
     private Queue _failureQueue;
     /** Mutex object */
@@ -130,8 +130,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
             // create the work task
             taskBag = handOffJmsBag(getJmsBag());
-            JmsTask task = new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), _consumer);
-            return task;
+            return new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), _consumer);
 
         } catch (JMSException jex) {
             ok = false;
@@ -160,7 +159,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getConsumer()
      */
     @Override
-    protected QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
+    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException {
         synchronized(sync) {
             if ( _consumer == null ) {
                 _logger.finest( "Getting new MessageConsumer" );
@@ -169,13 +168,8 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
                 try {
                     JmsBag bag = getJmsBag();
                     Session s = bag.getSession();
-                    if ( !(s instanceof QueueSession) ) {
-                        message = "Only QueueSessions are supported";
-                        throw new JmsConfigException(message);
-                    }
-                    QueueSession qs = (QueueSession)s;
-                    Queue q = getQueue();
-                    _consumer = qs.createReceiver( q );
+                    Destination d = getDestination();
+                    _consumer = s.createConsumer( d );
                     ok = true;
                 } catch (JMSException e) {
                     message = ExceptionUtils.getMessage(e);
@@ -199,14 +193,14 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
-    protected Queue getQueue() throws NamingException, JmsConfigException, JMSException {
+    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException {
         synchronized(sync) {
             if ( _queue == null ) {
-                _logger.finest( "Getting new Queue" );
+                _logger.finest( "Getting new Destination" );
                 JmsBag bag = getJmsBag();
                 Context context = bag.getJndiContext();
                 String qname = _endpointCfg.getEndpoint().getDestinationName();
-                _queue = (Queue)context.lookup( qname );
+                _queue = (Destination)context.lookup( qname );
             }
             return _queue;
         }

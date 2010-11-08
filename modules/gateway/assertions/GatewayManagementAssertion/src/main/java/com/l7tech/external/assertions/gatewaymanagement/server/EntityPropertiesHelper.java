@@ -193,7 +193,8 @@ class EntityPropertiesHelper {
             "connectionOid",
             "maxConcurrentRequests",
             "messageSource",
-            "template"
+            "template",
+            "queue"
         ) ) )
         .put( Policy.class, Collections.unmodifiableCollection( Arrays.asList(
             "xml",

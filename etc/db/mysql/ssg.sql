@@ -376,6 +376,7 @@ CREATE TABLE jms_endpoint(
   version integer NOT NULL,
   connection_oid bigint NOT NULL,
   name varchar(128) NOT NULL,
+  destination_type tinyint(1) NOT NULL default 1,
   destination_name varchar(128),
   failure_destination_name varchar(128),
   acknowledgement_type varchar(128),    

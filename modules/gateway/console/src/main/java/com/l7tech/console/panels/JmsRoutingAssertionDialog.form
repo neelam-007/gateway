@@ -89,7 +89,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="JMS Queue:"/>
+              <text value="JMS Destination:"/>
             </properties>
           </component>
           <component id="20964" class="javax.swing.JButton" binding="newQueueButton">
@@ -97,7 +97,7 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="New Queue"/>
+              <text value="&amp;New Destination"/>
             </properties>
           </component>
           <component id="3c825" class="javax.swing.JComboBox" binding="queueComboBox">
@@ -380,7 +380,7 @@
             </constraints>
             <properties>
               <labelFor value="48192"/>
-              <text value="Queue Connection &amp;Factory Name:"/>
+              <text value="Connection &amp;Factory Name:"/>
             </properties>
           </component>
           <component id="a2571" class="javax.swing.JLabel">
@@ -389,7 +389,7 @@
             </constraints>
             <properties>
               <labelFor value="15c52"/>
-              <text value="Destination &amp;Queue Name:"/>
+              <text value="Destination &amp;Name:"/>
             </properties>
           </component>
           <component id="b406c" class="javax.swing.JLabel">

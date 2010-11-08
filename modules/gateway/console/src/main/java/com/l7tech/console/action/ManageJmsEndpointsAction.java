@@ -30,20 +30,23 @@ public class ManageJmsEndpointsAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
-        return "Manage JMS Queues";
+        return "Manage JMS Destinations";
     }
 
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
-        return "View and manage JMS queues";
+        return "View and manage JMS Destinations";
     }
 
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/enableService.gif";
     }
@@ -54,10 +57,11 @@ public class ManageJmsEndpointsAction extends SecureAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         JmsQueuesWindow jqw = new JmsQueuesWindow(TopComponents.getInstance().getTopParent());
         jqw.pack();
-        Utilities.centerOnScreen(jqw);
+        Utilities.centerOnParentWindow(jqw);
         DialogDisplayer.display(jqw);
     }
 

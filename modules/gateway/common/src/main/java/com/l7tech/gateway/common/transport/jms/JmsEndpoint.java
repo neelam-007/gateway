@@ -34,6 +34,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
     private long _connectionOid;
+    private boolean queue = true;
     private String _destinationName;
     private String _failureDestinationName;
     private JmsAcknowledgementType _acknowledgementType;
@@ -60,6 +61,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setOid( other.getOid() );
         setVersion( other.getVersion() );
         setName( other.getName() );
+        setQueue( other.isQueue() );
         setConnectionOid( other.getConnectionOid() );
         setDestinationName( other.getDestinationName() );
         setFailureDestinationName( other.getFailureDestinationName() );
@@ -156,6 +158,21 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         checkLocked();
         _connectionOid = conn;
     }
+
+    /**
+     * Is the destination a Queue or Topic.
+     *
+     * @return True if the destination is a queue.
+     */
+    @Column(name="destination_type")
+    public boolean isQueue() {
+        return queue;
+    }
+
+    public void setQueue( final boolean queue ) {
+        this.queue = queue;
+    }
+
 
     @Pattern(regexp=".*?[^\\p{Space}].*") // at least one non-space character
     @NotNull(groups=StandardValidationGroup.class)

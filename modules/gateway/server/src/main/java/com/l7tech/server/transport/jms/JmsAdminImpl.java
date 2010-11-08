@@ -165,6 +165,7 @@ public class JmsAdminImpl implements JmsAdmin {
         MessageConsumer jmsQueueReceiver = null;
         QueueSender jmsQueueSender = null;
         TopicSubscriber jmsTopicSubscriber = null;
+        TopicPublisher jmsTopicPublisher = null;
         Connection jmsConnection;
 
         try {
@@ -179,7 +180,7 @@ public class JmsAdminImpl implements JmsAdmin {
             logger.finer("Connected, getting Session...");
             Session jmsSession = bag.getSession();
             logger.finer("Got Session...");
-            if (jmsSession instanceof QueueSession) {
+            if ( endpoint.isQueue() && jmsSession instanceof QueueSession) {
                 QueueSession qs = ((QueueSession)jmsSession);
                 // inbound queue
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
@@ -231,16 +232,37 @@ public class JmsAdminImpl implements JmsAdmin {
                     logger.fine("Creating queue receiver for " + fq);
                     jmsQueueSender = qs.createSender(fq);
                 }
-            } else if (jmsSession instanceof TopicSession) {
-                throw new JmsNotSupportTopicException(conn.getName() + " is a JMS Topic.  However, JMS Topics are not supported by the SSG.");
-                // Since we don't support TOPIC in the SSG, this is why we comment the below code.
-                /*TopicSession ts = ((TopicSession)jmsSession);
+            } else if (!endpoint.isQueue() && jmsSession instanceof TopicSession) {
+                TopicSession ts = ((TopicSession)jmsSession);
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
                 if (!(o instanceof Topic))
                     throw new JmsTestException(endpoint.getDestinationName() + " is not a Topic");
                 Topic t = (Topic)o;
-                logger.fine("Creating topic subscriber for " + t);
-                jmsTopicSubscriber = ts.createSubscriber(t);*/
+                
+                boolean canreceive = false;
+                JMSException laste = null;
+                try {
+                    logger.fine("Creating topic subscriber for " + t);
+                    jmsTopicSubscriber = ts.createSubscriber(t);
+                    canreceive = true;
+                } catch (JMSException e) {
+                    logger.info("This topic cannot be opened for subscribing, will test for publishing");
+                    laste = e;
+                }
+                if (!canreceive) {
+                    try {
+                        logger.fine("Unable to subscribe with this topic, will try to open a publisher");
+                        jmsTopicPublisher = ts.createPublisher(t);
+                    } catch (JMSException e) {
+                        if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
+                            logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing", ExceptionUtils.getDebugException(e));
+                        } else {
+                            logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing", e);
+                        }
+                        if (laste != null) throw laste;
+                        else throw e;
+                    }
+                }
             } else {
                 throw new JMSException("Unknown JMS session.");
             }
@@ -253,9 +275,6 @@ public class JmsAdminImpl implements JmsAdmin {
         } catch (JmsConfigException e) {
             logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
-        } catch (JmsNotSupportTopicException e) {
-            logger.log(Level.INFO, "Caught JmsNotSupportTopicException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-            throw new JmsTestException(e.getMessage(), e);
         } catch (Throwable t) {
             logger.log(Level.INFO, "Caught Throwable while testing endpoint" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
             throw new JmsTestException(t.toString());
@@ -263,6 +282,7 @@ public class JmsAdminImpl implements JmsAdmin {
             JmsUtil.closeQuietly(jmsQueueSender);
             JmsUtil.closeQuietly(jmsQueueReceiver);
             JmsUtil.closeQuietly(jmsTopicSubscriber);
+            JmsUtil.closeQuietly(jmsTopicPublisher);
             if (bag != null) bag.close();
         }
     }

@@ -11,7 +11,7 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.QueueReceiver;
+import javax.jms.MessageConsumer;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.util.concurrent.RejectedExecutionException;
@@ -99,14 +99,11 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     protected abstract JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException;
 
     /**
-     * Return a consumer that can read messages on the inbound Jms queue.
+     * Return a consumer that can read messages on the inbound Jms destination.
      *
-     * @return JMS QueueReceiver for the inbound queue
-     * @throws JMSException
-     * @throws NamingException
-     * @throws JmsConfigException
+     * @return JMS MessageConsumer for the inbound destination
      */
-    protected abstract QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException;
+    protected abstract MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException;
 
     /**
      * Method used to ensure that the connection (javax.jms.Connection) used to communicate with the endpoint
@@ -162,6 +159,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      *
      * @throws LifecycleException when an error is encountered in the thread startup
      */
+    @Override
     public void start() throws LifecycleException {
         synchronized(sync) {
             log(Level.FINE, JmsMessages.INFO_LISTENER_START, toString());
@@ -173,6 +171,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     /**
      * Tells the listener thread to stop.
      */
+    @Override
     public void stop() {
         synchronized(sync) {
             log(Level.FINE, JmsMessages.INFO_LISTENER_STOP, toString());
@@ -184,6 +183,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     /**
      * Give the listener thread a set amount of time to shutdown, before it gets interrupted.
      */
+    @Override
     public void ensureStopped() {
         long stopRequestedTime;
 
@@ -239,7 +239,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      */
     private Message receiveMessage() throws JMSException, NamingException, JmsConfigException
     {
-        QueueReceiver receiver = getConsumer();
+        MessageConsumer receiver = getConsumer();
         ensureConnectionStarted();
 
         return receiver.receive( RECEIVE_TIMEOUT );
@@ -259,14 +259,17 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         return this._endpointCfg;
     }
 
+    @Override
     public long getJmsConnectionOid() {
         return this._endpointCfg.getConnection().getOid();
     }
 
+    @Override
     public long getJmsEndpointOid() {
         return this._endpointCfg.getEndpoint().getOid();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
         if (PROPERTY_ERROR_SLEEP.equals(evt.getPropertyName())) {
@@ -351,6 +354,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         /**
          *
          */
+        @Override
         public final void run() {
 
             int oopses = 0;

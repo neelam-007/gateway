@@ -198,6 +198,15 @@ public class JmsEndpointConfig {
         return dynamic;
     }
 
+    /**
+    * Is the destination a Queue?
+    *
+    * @return True for a Queue, False for a Topic
+    */
+    public boolean isQueue() {
+        return endpoint.isQueue();
+    }
+ 	 
     public void validate() throws JmsConfigException {
         if ( conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()) ) {
             throw new JmsConfigException( "Initial context factory class name is required" );

@@ -55,7 +55,7 @@ public class JmsQueuesWindow extends JDialog {
     private enum FilterTarget {
         NAME("Name Contains", 0),
         URL("JNDI URL Contains", 1),
-        QUEUE_NAME("Queue Name Contains", 2);
+        QUEUE_NAME("Destination Name Contains", 2);
 
         private final String name;
         private final int tableModelColumn;
@@ -93,12 +93,12 @@ public class JmsQueuesWindow extends JDialog {
     }
 
     public JmsQueuesWindow(Frame owner) {
-        super(owner, "Manage JMS Queues", true);
+        super(owner, "Manage JMS Destinations", true);
         initialize();
     }
 
     public JmsQueuesWindow(Dialog owner) {
-        super(owner, "Manage JMS Queues", true);
+        super(owner, "Manage JMS Destinations", true);
         initialize();
     }
 
@@ -199,7 +199,7 @@ public class JmsQueuesWindow extends JDialog {
                 case 1:
                     return "JNDI URL";
                 case 2:
-                    return "Queue Name";
+                    return "Destination Name";
                 case MESSAGE_SOURCE_COL:
                     return "Direction";
             }
@@ -303,11 +303,11 @@ public class JmsQueuesWindow extends JDialog {
 
                             int result = JOptionPane.showOptionDialog(null,
                               "<HTML>Are you sure you want to remove the " +
-                              "registration for the JMS Queue " +
+                              "registration for the JMS Destination " +
                               name + "?<br>" +
                               "<center>This action cannot be undone." +
                               "</center></html>",
-                              "Remove JMS Queue?",
+                              "Remove JMS Destination?",
                               0, JOptionPane.WARNING_MESSAGE,
                               null, options, options[1]);
                             if (result == 0) {
@@ -340,7 +340,7 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent event) {
                     final JmsQueuePropertiesDialog jmsQueuePropertiesDialog = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
                     jmsQueuePropertiesDialog.pack();
-                    Utilities.centerOnScreen(jmsQueuePropertiesDialog);
+                    Utilities.centerOnParentWindow(jmsQueuePropertiesDialog);
                     DialogDisplayer.display(jmsQueuePropertiesDialog, new Runnable() {
                         @Override
                         public void run() {
@@ -378,7 +378,7 @@ public class JmsQueuesWindow extends JDialog {
                             final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(
                                     JmsQueuesWindow.this, newConnection, newEndpoint, false);
                             pd.pack();
-                            Utilities.centerOnScreen(pd);
+                            Utilities.centerOnParentWindow(pd);
                             DialogDisplayer.display(pd, new Runnable() {
                                 @Override
                                 public void run() {
@@ -440,7 +440,7 @@ public class JmsQueuesWindow extends JDialog {
                         final JmsQueuePropertiesDialog pd =
                                 JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, connection, endpoint, false);
                         pd.pack();
-                        Utilities.centerOnScreen(pd);
+                        Utilities.centerOnParentWindow(pd);
                         DialogDisplayer.display(pd, refreshEndpointList(endpoint)); //refresh after any changes
                     }
                 } catch (FindException fe) {
@@ -504,7 +504,7 @@ public class JmsQueuesWindow extends JDialog {
             DialogDisplayer.showMessageDialog(
                 JmsQueuesWindow.this,
                 "Invalid syntax for the regular expression, \"" + filterString + "\"",
-                "JMS Queues Filtering",
+                "JMS Destinations Filtering",
                 JOptionPane.WARNING_MESSAGE,
                 null);
         }

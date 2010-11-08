@@ -41,9 +41,9 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
         if (ass.getEndpointOid() == null) {
             return addCommentToDisplayText(assertion, assertionName + " (Not Yet Specified)" + actor);
         }
-        String endpointName = endpointName();
 
-        return addCommentToDisplayText(assertion, assertionName + " Queue " + (endpointName == null ? "(unnamed)" : endpointName) + actor);
+        final String endpointDescription = endpointDescription();
+ 	 	return addCommentToDisplayText(assertion,assertionName + " " + (endpointDescription == null ? "Destination (unnamed)" : endpointDescription) + actor);
     }
 
     /**
@@ -81,31 +81,33 @@ public class JmsRoutingAssertionTreeNode extends DefaultAssertionPolicyNode<JmsR
 
     //- PRIVATE
 
-    private String endpointName;
+    private String endpointDescription;
 
-    private String endpointName() {
-        String endpointName = this.endpointName;
+    private String endpointDescription() {
+        String endpointDescription = this.endpointDescription;
 
-        if ( endpointName == null ) {
+        if ( endpointDescription == null ) {
             final JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
             try {
-                JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
-                if(endpoint != null) {
-                    endpointName = endpoint.getName();
-                } else {
-                    endpointName = ass.getEndpointName();
+                final JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
+                if( endpoint != null ) {
+ 	 	            endpointDescription = (endpoint.isQueue() ? "Queue " : "Topic ") + endpoint.getName();
                 }
             } catch(FindException e) {
-                endpointName = ass.getEndpointName();
+                // Use name from assertion
             }
 
-            this.endpointName = endpointName;
+            if ( endpointDescription == null ) {
+                endpointDescription = "Destination " + ass.getEndpointName();
+ 	 	    }
+
+ 	 	    this.endpointDescription = endpointDescription;
         }
 
-        return endpointName;
+        return endpointDescription;
     }
 
     private void invalidateCachedInfo() {
-        endpointName = null;
+        endpointDescription = null;
     }
 }

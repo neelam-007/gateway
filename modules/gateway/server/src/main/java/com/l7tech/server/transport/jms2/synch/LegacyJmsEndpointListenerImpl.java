@@ -48,6 +48,7 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getJmsBag()
      */
+    @Override
     protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException {
         synchronized(sync) {
             if ( _jmsBag == null ) {
@@ -61,6 +62,7 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#handleMessage(javax.jms.Message)
      */
+    @Override
     protected void handleMessage(Message jmsMessage) throws JmsRuntimeException {
 
         try {
@@ -83,7 +85,8 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
-    protected QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
+    @Override
+    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException {
         synchronized(sync) {
             if ( _consumer == null ) {
                 _logger.finest( "Getting new MessageConsumer" );
@@ -194,6 +197,7 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#cleanup()
      */
+    @Override
     protected void cleanup() {
 
         synchronized (sync) {

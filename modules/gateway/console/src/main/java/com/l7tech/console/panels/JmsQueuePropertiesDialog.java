@@ -37,12 +37,15 @@ import java.util.logging.Logger;
 import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
 
 /**
- * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
+ * Dialog for configuring a JMS Destination (ie, a [JmsConnection, JmsEndpoint] pair).
  *
  * @author mike
  * @author rmak
  */
 public class JmsQueuePropertiesDialog extends JDialog {
+    private static final String TYPE_QUEUE = "Queue";
+    private static final String TYPE_TOPIC = "Topic";
+
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
     private JRadioButton inboundRadioButton;
@@ -104,6 +107,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox isTemplateQueue;
     private JTextField jmsEndpointDescriptiveName;
     private JButton applyReset;
+    private JComboBox destinationTypeComboBox;
     private JTable environmentPropertiesTable;
     private JButton addEnvironmentButton;
     private JButton editEnvironmentButton;
@@ -189,15 +193,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     /**
-     * Create a new JmsQueuePropertiesDialog, configured to adjust the JMS Queue defined by the union of the
+     * Create a new JmsQueuePropertiesDialog, configured to adjust the JMS Destination defined by the union of the
      * specified connection and endpoint.  The connection and endpoint may be null, in which case a new
-     * Queue will be created by the dialog.  After show() returns, check isCanceled() to see whether the user
+     * Destination will be created by the dialog.  After show() returns, check isCanceled() to see whether the user
      * OK'ed the changes.  If so, call getConnection() and getEndpoint() to read them.  If the dialog completes
      * successfully, the (possibly-new) connection and endpoint will already have been saved to the database.
      *
      * @param parent       the parent window for the new dialog.
-     * @param connection   the JMS connection to edit, or null to create a new one for this Queue.
-     * @param endpoint     the JMS endpoint to edit, or null to create a new one for this Queue.
+     * @param connection   the JMS connection to edit, or null to create a new one for this Destination.
+     * @param endpoint     the JMS endpoint to edit, or null to create a new one for this Destination.
      * @param outboundOnly if true, the direction will be locked and defaulted to Outbound only.
      * @return the new instance
      */
@@ -262,7 +266,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void init() {
-        setTitle(connection == null ? "Add JMS Queue" : "JMS Queue Properties");
+        setTitle(connection == null ? "Add JMS Destination" : "JMS Destination Properties");
         setContentPane(contentPane);
         setModal(true);
 
@@ -286,6 +290,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(jndiUsernameTextField);
         Utilities.enableGrayOnDisabled(jndiPasswordField);
 
+        destinationTypeComboBox.setModel( new DefaultComboBoxModel( new String[]{ TYPE_QUEUE, TYPE_TOPIC } ) );
+        
         useQueueCredentialsCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -305,7 +311,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
         jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
         jndiPasswordField.setDocument(new MaxLengthDocument(255));
-        // Case 2: in the Queue Tab
+        // Case 2: in the Destination Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
         queueNameTextField.setDocument(new MaxLengthDocument(128));
         queueUsernameTextField.setDocument(new MaxLengthDocument(255));
@@ -324,7 +330,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         icfTextField.getDocument().addDocumentListener( enableDisableListener );
         jndiUrlTextField.getDocument().addDocumentListener( enableDisableListener );
         environmentPropertiesTable.getSelectionModel().addListSelectionListener( enableDisableListener );
-        // Case 2: in the Queue Tab
+        // Case 2: in the Destination Tab
         qcfTextField.getDocument().addDocumentListener( enableDisableListener );
         queueNameTextField.getDocument().addDocumentListener( enableDisableListener );
         // Case 3: in the Inbound or Outbound Options Tab
@@ -560,8 +566,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         } else if (providerType == connection.getProviderType()) {
             // same provider "type", offer overwrite/don't overwrite/cancel choice
             DialogDisplayer.showConfirmDialog(this,
-                "Overwrite current JMS queue properties?",
-                "JMS Queue Reset Confirmation",
+                "Overwrite current JMS destination properties?",
+                "JMS Destination Reset Confirmation",
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 new DialogDisplayer.OptionListener() {
                     @Override
@@ -582,8 +588,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         } else {
             // different provider "type", just warn
             DialogDisplayer.showConfirmDialog(this,
-                "Current JMS queue properties will be overwritten",
-                "JMS Queue Reset Confirmation",
+                "Current JMS destination properties will be overwritten",
+                "JMS Destination Reset Confirmation",
                 JOptionPane.OK_CANCEL_OPTION,
                 new DialogDisplayer.OptionListener() {
                     @Override
@@ -678,7 +684,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JmsConnection makeJmsConnectionFromView() throws IOException{
         if (!validateForm()) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-              "At minimum, the name, queue name, naming URL and factory URL are required.",
+              "At minimum, the name, destination name, naming URL and factory URL are required.",
               "Unable to proceed",
               JOptionPane.ERROR_MESSAGE);
             return null;
@@ -794,7 +800,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JmsEndpoint makeJmsEndpointFromView() {
         if (!validateForm()) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-              "The queue name must be provided.",
+              "The destination name must be provided.",
               "Unable to proceed",
               JOptionPane.ERROR_MESSAGE);
             return null;
@@ -805,6 +811,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.copyFrom(endpoint);
         String name = jmsEndpointDescriptiveName.getText();
         ep.setName(name);
+        ep.setQueue( TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem()) );
         ep.setTemplate(viewIsTemplate());
         ep.setDestinationName(getTextOrNull(queueNameTextField));
         
@@ -854,7 +861,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setPassword(null);
         }
 
-        // Save if the queue is disabled or not
+        // Save if the destination is disabled or not
         if (inboundRadioButton.isSelected()) {
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
         }
@@ -883,7 +890,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setReplyType(JmsReplyType.REPLY_TO_OTHER);
             final String t = getTextOrNull(specifiedField);
             ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
-            if (!isTemplate && (t == null || t.length() == 0) ) throw new IllegalStateException(what + " Specified Queue name must be set");
+            if (!isTemplate && (t == null || t.length() == 0) ) throw new IllegalStateException(what + " Specified Destination name must be set");
             ep.setReplyToQueueName(t);
         } else {
             throw new IllegalStateException(what + " was selected, but no reply type was selected");
@@ -955,7 +962,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                         specifyContentTypeFreeForm.setSelected(true);
                     } catch (IOException e1) {
                         logger.log(Level.WARNING,
-                                MessageFormat.format("Error while parsing the Content-Type for JMS Queue {0}. Value was {1}", connection.toString(), ctStr),
+                                MessageFormat.format("Error while parsing the Content-Type for JMS Destination {0}. Value was {1}", connection.toString(), ctStr),
                                 ExceptionUtils.getMessage(e1));
                         shouldSelect = false;
                     }
@@ -1013,6 +1020,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if ( endpoint.isTemplate() ) {
                 isTemplateQueue.setSelected(true); // template if either endpoint or connection are templates
             }
+            destinationTypeComboBox.setSelectedItem( endpoint.isQueue() ? TYPE_QUEUE : TYPE_TOPIC );
             jmsEndpointDescriptiveName.setText(endpoint.getName());
             JmsAcknowledgementType type = endpoint.getAcknowledgementType();
             if (type != null) {
@@ -1245,6 +1253,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 failureQueueNameTextField,
                 jmsEndpointDescriptiveName,
                 isTemplateQueue,
+                destinationTypeComboBox,
                 addEnvironmentButton,
                 editEnvironmentButton,
                 removeEnvironmentButton,
@@ -1267,12 +1276,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
             Registry.getDefault().getJmsManager().testEndpoint(newConnection, newEndpoint);
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
-              "The Gateway has verified the existence of this JMS Queue.",
+              "The Gateway has verified the existence of this JMS Destination.",
               "JMS Connection Successful",
               JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-            String errorMsg = (ExceptionUtils.causedBy(ex, JmsNotSupportTopicException.class))?
-                    ex.getMessage() : "The Gateway was unable to find this JMS Queue.\n";
+            String errorMsg = "The Gateway was unable to find this JMS Destination.\n";
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
               errorMsg,
               "JMS Connection Settings",
@@ -1290,7 +1298,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (newEndpoint == null)
                 return;
 
-            // For the case where the queue name is changed, then the connection should be updated.
+            // For the case where the destination name is changed, then the connection should be updated.
             newConnection.setName(newEndpoint.getName());
 
             long oid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
@@ -1319,7 +1327,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 JOptionPane.showMessageDialog(this, errorMsg, "JMS Connection Settings", JOptionPane.ERROR_MESSAGE);
                 onCancel();               
             } else {
-                throw new RuntimeException("Unable to save changes to this JMS Queue", e);
+                throw new RuntimeException("Unable to save changes to this JMS Destination", e);
             }
         }
     }

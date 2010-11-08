@@ -166,6 +166,8 @@ INSERT INTO resource_entry (objectid, version, uri, uri_hash, type, content_type
 
 DROP TABLE IF EXISTS community_schemas;
 
+ALTER TABLE jms_endpoint ADD COLUMN destination_type tinyint(1) NOT NULL default 1 AFTER name;
+
 --
 -- Reenable FK at very end of script
 --
