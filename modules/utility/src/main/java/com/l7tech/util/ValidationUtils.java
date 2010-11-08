@@ -245,7 +245,7 @@ public class ValidationUtils {
         return valid;
     }
 
-        /**
+    /**
      * Check if an integer string is a valid long.
      *
      * @param doubleText The value as a string
@@ -255,12 +255,27 @@ public class ValidationUtils {
      * @return True if a valid integer in the required range.
      */
     public static boolean isValidDouble(String doubleText, boolean allowEmpty, double min, double max) {
+        return isValidDouble(doubleText, allowEmpty, min, true, max, true);
+    }
+
+    /**
+     * Check if an integer string is a valid long.
+     *
+     * @param doubleText The value as a string
+     * @param allowEmpty true to treat an empty string as valid
+     * @param min The minimum allowed value
+     * @param minInclusive Indicates if the minimum is inclusive or not.
+     * @param max The maximum allowed value
+     * @param maxInclusive Indicates if the maximum is inclusive or not. 
+     * @return True if a valid integer in the required range.
+     */
+    public static boolean isValidDouble(String doubleText, boolean allowEmpty, double min, boolean minInclusive, double max, boolean maxInclusive) {
         boolean valid = false;
 
         if ( doubleText != null && doubleText.length() > 0 ) {
             try {
                 double value = Double.parseDouble( doubleText );
-                valid = value >= min && value <= max;
+                valid = (minInclusive? value >= min : value > min) && (maxInclusive? value <= max : value < max);
             } catch ( NumberFormatException nfe ) {
                 // so is invalid
             }

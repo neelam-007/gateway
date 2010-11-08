@@ -137,7 +137,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
 
         lifetimeTextField.getDocument().addDocumentListener(validationListener);
 
-        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
+        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum((double) 0);
 
@@ -319,7 +319,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         // Check Lifetime
         if (lifetimeCheckBox.isSelected()) {
             int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
-            boolean lifetimeStatusOk = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, MILLIS_100_YEARS  / multiplier);
+            boolean lifetimeStatusOk = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true);
             if (! lifetimeStatusOk) {
                 okButton.setEnabled(false);
                 return;

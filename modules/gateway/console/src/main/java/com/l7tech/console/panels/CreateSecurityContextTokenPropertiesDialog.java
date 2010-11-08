@@ -75,7 +75,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             }
         });
 
-        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
+        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum((double) 0);
         
@@ -142,7 +142,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     private void enableOrDisableOkButton() {
         int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
-        boolean enabled = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, MILLIS_100_YEARS  / multiplier);
+        boolean enabled = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true);
         okButton.setEnabled(enabled);
     }
 
