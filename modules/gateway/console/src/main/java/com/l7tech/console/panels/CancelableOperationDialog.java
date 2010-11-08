@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogFactoryShower;
@@ -83,7 +77,7 @@ public class CancelableOperationDialog extends JDialog {
 
     private void doPack() {
         pack();
-        Utilities.centerOnScreen(this);
+        Utilities.centerOnParentWindow(this);
     }
 
     private void maybeInit() {
@@ -119,7 +113,7 @@ public class CancelableOperationDialog extends JDialog {
     public void setMessage(String message) {
         messageLabel.setText(message);
         requestPack(); // Repack after changing label (Bug #3686)
-        Utilities.centerOnScreen(this);
+        Utilities.centerOnParentWindow(this);
     }
 
     public String getMessage() {
@@ -142,6 +136,7 @@ public class CancelableOperationDialog extends JDialog {
      * This method makes use of {@link Utilities#doWithDelayedCancelDialog(java.util.concurrent.Callable, javax.swing.JDialog, long)}.
      *
      * @param callable      some work that may safely be done in a new thread.  Required.
+     * @param parent        the parent window for the dialog. Optional.
      * @param dialogTitle   the title to display for the cancel dialog, if one is put up.  Required
      * @param dialogMessage the message to display inside the cancel dialog, if one is put up.  Required
      * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
@@ -150,7 +145,11 @@ public class CancelableOperationDialog extends JDialog {
      * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
-    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final String dialogTitle, final String dialogMessage, final long msBeforeDlg)
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable,
+                                                  final Window parent,
+                                                  final String dialogTitle,
+                                                  final String dialogMessage,
+                                                  final long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
         final DialogFactoryShower factory = new DialogFactoryShower(new Functions.Nullary<JDialog>() {
@@ -159,7 +158,7 @@ public class CancelableOperationDialog extends JDialog {
                 final JProgressBar progressBar = new JProgressBar();
                 progressBar.setIndeterminate(true);
                 final CancelableOperationDialog cancelDialog =
-                        new CancelableOperationDialog(null, dialogTitle, dialogMessage, progressBar);
+                        new CancelableOperationDialog(parent, dialogTitle, dialogMessage, progressBar);
                 cancelDialog.setModal(true);
                 return cancelDialog;
             }

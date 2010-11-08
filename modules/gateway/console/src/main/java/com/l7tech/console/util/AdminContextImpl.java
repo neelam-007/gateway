@@ -188,7 +188,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
                         throw new ThrowableWrapper(throwable);
                     }
                 }
-            }, "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
+            }, null, "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
         } catch (InterruptedException e) {
             String msg = "Remote invocation canceled by user: " + ExceptionUtils.getMessage(e);
 

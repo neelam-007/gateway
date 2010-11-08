@@ -177,7 +177,7 @@ class GlobalResourceImportSearchStep extends GlobalResourceImportWizardStepPanel
 
                     return null;
                 }
-            }, "Waiting for Server", "Waiting for response from Gateway...", 2000 );
+            }, this.getWizard(), "Finding Resources", "Finding resources, please wait ...", 2000 );
         } catch ( InterruptedException e ) {
             logger.log( Level.FINE, "Resource file search cancelled.", ExceptionUtils.getDebugException(e) );
         } catch ( InvocationTargetException e ) {
