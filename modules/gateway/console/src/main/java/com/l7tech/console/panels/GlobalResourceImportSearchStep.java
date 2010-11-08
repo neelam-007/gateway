@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.gateway.common.resources.ResourceType;
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
+import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
@@ -224,7 +226,11 @@ class GlobalResourceImportSearchStep extends GlobalResourceImportWizardStepPanel
             public void run() {
                 String url = (String)dlg.getValue();
                 if (url != null) {
-                    resourceInputTableModel.addRow( getContext().newResourceInputSource( URI.create(url), (ResourceType)null) );
+                    try {
+                        resourceInputTableModel.addRow( getContext().newResourceInputSource( new URI(url), (ResourceType)null) );
+                    } catch ( URISyntaxException e ) {
+                        showErrorMessage( GlobalResourceImportSearchStep.this, "Add From URL Error", "Error processing URL:\n"+url+"\n"+ExceptionUtils.getMessage(e));
+                    }
                 }
             }
         });
