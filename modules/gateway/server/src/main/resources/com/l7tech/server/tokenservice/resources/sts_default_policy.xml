@@ -208,8 +208,6 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                         <L7p:IncludeKeySize booleanValue="true"/>
                         <L7p:IncludeLifetime booleanValue="true"/>
                         <L7p:IncludeUnattachedRef booleanValue="true"/>
-                        <L7p:KeySize intValue="256"/>
-                        <L7p:Lifetime longValue="6000000"/>
                         <L7p:TokenIssued stringValue="${sctBuilder.issuedSCT}"/>
                     </L7p:BuildRstrSoapResponse>
                     <L7p:assertionComment>
