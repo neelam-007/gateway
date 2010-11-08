@@ -943,7 +943,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                             parent,
                             Utilities.getTextDisplayComponent(builder.toString(), 600, 100, -1, -1),
                             "Manual Resource Import",
-                            JOptionPane.OK_CANCEL_OPTION,
+                            JOptionPane.YES_NO_OPTION,
                             JOptionPane.QUESTION_MESSAGE,
                             null,
                             new Object[]{"Import","Cancel"},
@@ -980,6 +980,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                         "Resource Import Error",
                                         "Unable to import resource:\n " + TextUtils.truncStringMiddleExact( resourceUriAndContent.left, 80 ) + "\ndue to:\n" + ExceptionUtils.getMessage(e));
                         }
+                    } else if ( choice == JOptionPane.NO_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+                        break; // manual import cancelled
                     }
                 }
 
