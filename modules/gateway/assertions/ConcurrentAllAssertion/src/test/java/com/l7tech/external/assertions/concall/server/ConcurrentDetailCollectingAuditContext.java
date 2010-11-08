@@ -31,15 +31,16 @@ public class ConcurrentDetailCollectingAuditContext implements AuditContext {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail(detail, source, null);
+        addDetail(detail, source, null, null);
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
+    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
         List<AuditDetail> list = getDetailListForThread();
         list.add(detail);
 
         if (logDetails) {
+
             logger.info("Detail: " + detailToString(detail));
         }
     }

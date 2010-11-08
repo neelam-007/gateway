@@ -77,11 +77,11 @@ public class AuditContextImpl implements AuditContext {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail(detail, source, null);
+        addDetail(detail, source, null, null);
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
+    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
         if (detail == null) throw new NullPointerException();
 
         AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detail.getMessageId());
@@ -89,7 +89,7 @@ public class AuditContextImpl implements AuditContext {
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
-        getDetailList(source).add(new AuditDetailWithInfo(source, detail, thrown));
+        getDetailList(source).add(new AuditDetailWithInfo(source, detail, thrown, loggerName));
         if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
             highestLevelYetSeen = severity;
         }
@@ -230,6 +230,7 @@ public class AuditContextImpl implements AuditContext {
 
                         listener.notifyDetailFlushed(
                                 getSource(detailWithInfo.source, "com.l7tech.server.audit"),
+                                detailWithInfo.loggerName,
                                 message,
                                 detailWithInfo.detail.getParams(),
                                 formatter,
@@ -538,13 +539,16 @@ public class AuditContextImpl implements AuditContext {
         private final Object source;
         private final AuditDetail detail;
         private final Throwable exception;
+        private final String loggerName;  // loggerName is permitted to be null
 
         private AuditDetailWithInfo(final Object source,
                                     final AuditDetail detail,
-                                    final Throwable exception) {
+                                    final Throwable exception,
+                                    final String loggerName) {
             this.source = source;
             this.detail = detail;
-            this.exception = exception;                    
+            this.exception = exception;
+            this.loggerName = loggerName;
         }
     }
 }

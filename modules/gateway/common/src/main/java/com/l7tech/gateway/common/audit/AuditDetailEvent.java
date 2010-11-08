@@ -14,11 +14,13 @@ import org.springframework.context.ApplicationEvent;
 public class AuditDetailEvent extends ApplicationEvent {
     private final AuditDetail detail;
     private final Throwable exception;
+    private final String loggerName;
 
-    public AuditDetailEvent(Object source, AuditDetail detail, Throwable exception) {
+    public AuditDetailEvent(Object source, AuditDetail detail, Throwable exception, String loggerName) {
         super(source);
         this.detail = detail;
         this.exception = exception;
+        this.loggerName = loggerName;
     }
 
     public AuditDetail getDetail() {
@@ -27,5 +29,12 @@ public class AuditDetailEvent extends ApplicationEvent {
 
     public Throwable getException() {
         return exception;
+    }
+
+    /**
+     * @return the name of the associated Logger, or null.
+     */
+    public String getLoggerName() {
+        return loggerName;
     }
 }

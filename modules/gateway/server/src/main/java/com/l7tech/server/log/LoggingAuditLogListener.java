@@ -22,6 +22,7 @@ public class LoggingAuditLogListener implements AuditLogListener {
 
     @Override
     public void notifyDetailCreated(final String source,
+                                    final String loggerName,
                                     final AuditDetailMessage message,
                                     final String[] params,
                                     final AuditLogFormatter formatter,
@@ -30,7 +31,7 @@ public class LoggingAuditLogListener implements AuditLogListener {
         String logMessage =  params == null || params.length==0 ? message.getMessage() : MessageFormat.format(message.getMessage(), params);
 
         AuditLogRecord record = new AuditLogRecord( message.getLevel(), logMessage );
-        record.setLoggerName( source );
+        record.setLoggerName( loggerName != null ? loggerName : source );
         record.setThrown( logThrown );
 
         logger.log( record );
@@ -50,13 +51,17 @@ public class LoggingAuditLogListener implements AuditLogListener {
             record = new AuditLogRecord(audit.getLevel(), formatter.format(audit, header));
 
         if ( record != null ) {
-            // TODO move this to the AuditRecord subclasses
-            if ( audit instanceof MessageSummaryAuditRecord) {
-                record.setLoggerName("com.l7tech.server.message");
-            } else if ( audit instanceof AdminAuditRecord) {
-                record.setLoggerName("com.l7tech.server.admin");
+            if (audit.getLoggerName() != null) {
+                record.setLoggerName(audit.getLoggerName());
             } else {
-                record.setLoggerName("com.l7tech.server");
+                // TODO move this to the AuditRecord subclasses
+                if ( audit instanceof MessageSummaryAuditRecord) {
+                    record.setLoggerName("com.l7tech.server.message");
+                } else if ( audit instanceof AdminAuditRecord) {
+                    record.setLoggerName("com.l7tech.server.admin");
+                } else {
+                    record.setLoggerName("com.l7tech.server");
+                }
             }
 
             logger.log( record );
@@ -65,6 +70,7 @@ public class LoggingAuditLogListener implements AuditLogListener {
 
     @Override
     public void notifyDetailFlushed(final String source,
+                                    final String loggerName,
                                     final AuditDetailMessage message,
                                     final String[] params,
                                     final AuditLogFormatter formatter,

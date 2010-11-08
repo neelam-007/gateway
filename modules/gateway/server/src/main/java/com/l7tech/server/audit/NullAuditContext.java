@@ -21,7 +21,7 @@ public class NullAuditContext implements AuditContext {
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
+    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
     }
 
     @Override

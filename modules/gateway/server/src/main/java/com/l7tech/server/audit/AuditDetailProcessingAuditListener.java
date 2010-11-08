@@ -25,7 +25,8 @@ public class AuditDetailProcessingAuditListener implements ApplicationListener {
 
         if ( event instanceof AuditDetailEvent ) {
             AuditDetailEvent auditDetailEvent = (AuditDetailEvent)event;
-            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException());
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException(), auditDetailEvent.getLoggerName());
         }
     }
 }

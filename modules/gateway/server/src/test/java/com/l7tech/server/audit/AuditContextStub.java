@@ -29,11 +29,11 @@ public class AuditContextStub implements AuditContextStubInt {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail( detail, source, null );
+        addDetail( detail, source, null, null );
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable exception) {
+    public void addDetail(AuditDetail detail, Object source, Throwable exception, String loggerName) {
         List<AuditDetail> details = this.details.get( source );
         if ( details == null ) {
             details = new ArrayList<AuditDetail>();

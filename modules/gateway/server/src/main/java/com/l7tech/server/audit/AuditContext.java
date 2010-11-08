@@ -108,8 +108,9 @@ public interface AuditContext {
      * @param detail the {@link com.l7tech.gateway.common.audit.AuditDetail} record to add. Must not be null.
      * @param source the source of the {@link com.l7tech.gateway.common.audit.AuditDetailEvent}.
      * @param thrown the exception associated with the {@link com.l7tech.gateway.common.audit.AuditDetailEvent}.
+     * @param loggerName the name of the Logger object associated with this detail record, or null.
      */
-    void addDetail(AuditDetail detail, Object source, Throwable thrown);
+    void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName);
 
     /**
      * Is the current record an update?

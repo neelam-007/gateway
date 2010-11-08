@@ -29,7 +29,8 @@ public class MessageProcessingAuditListener implements ApplicationListener {
         Object source = event.getSource();
         if (event instanceof AuditDetailEvent) {
             AuditDetailEvent auditDetailEvent = (AuditDetailEvent)event;
-            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException());
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException(), auditDetailEvent.getLoggerName());
         } else if (event instanceof MessageProcessed) {
             MessageProcessed mp = (MessageProcessed)event;
             auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(mp.getContext(), mp.getStatus()));

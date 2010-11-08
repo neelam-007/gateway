@@ -99,8 +99,9 @@ public class Auditor implements Audit {
 
     @Override
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
+        String loggerName = logger == null ? null : logger.getName();
         if ( eventPub != null && (filter == null || filter.isAuditable(msg)) )
-            eventPub.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e));
+            eventPub.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e, loggerName));
 
         if (logger == null) return;
 
@@ -120,13 +121,14 @@ public class Auditor implements Audit {
     protected void log(AuditDetailMessage msg, String[] params, Throwable e) {
         if (logger.isLoggable(msg.getLevel())) {
             if ( listener != null ) {
-                listener.notifyDetailCreated( logger.getName(), msg, params, formatter, e );
+                listener.notifyDetailCreated( logger.getName(), logger.getName(), msg, params, formatter, e );
             } else {
                 LogRecord record = new LogRecord(msg.getLevel(), formatter.formatDetail(msg));
                 record.setParameters(params);
                 record.setThrown(e);
                 record.setSourceClassName("");
                 record.setSourceMethodName("");
+                record.setLoggerName(logger.getName());
                 logger.log( record );
             }
         }

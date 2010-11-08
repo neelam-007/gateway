@@ -50,6 +50,7 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
             record.setParameters(new String[] { detail });
             record.setSourceClassName("");
             record.setSourceMethodName("");
+            record.setLoggerName(logger.getName());
             logger.log(record);
         } else {
             auditor.logAndAudit(detailMessage, detail);

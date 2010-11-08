@@ -55,17 +55,20 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Handle notification of an audit detail creation.
      *
      * @param source the source of the audit
+     * @param loggerName the relevant logger name (may be null)
      * @param message The audit detail message
      * @param params The detail parameters (may be null)
      * @param thrown The detail throwable (may be null)
      */
+    @Override
     public void notifyDetailCreated(final String source,
+                                    final String loggerName,
                                     final AuditDetailMessage message,
                                     final String[] params,
                                     final AuditLogFormatter formatter,
                                     final Throwable thrown) {
         if ( auditOnCreate.get() ) {
-            LogRecord record = generateMessage(source, message, params, formatter, thrown);
+            LogRecord record = generateMessage(source, loggerName, message, params, formatter, thrown);
             processMessage(record);
         }
     }
@@ -74,17 +77,20 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Handle notification of an audit detail flush.
      *
      * @param source the source of the audit
+     * @param loggerName the relevant logger name (may be null)
      * @param message The audit detail message
      * @param params The detail parameters (may be null)
      * @param thrown The detail throwable (may be null)
      */
+    @Override
     public void notifyDetailFlushed(final String source,
+                                    final String loggerName,
                                     final AuditDetailMessage message,
                                     final String[] params,
                                     final AuditLogFormatter formatter,
                                     final Throwable thrown) {
         if ( !auditOnCreate.get() ) {
-            LogRecord record = generateMessage(source, message, params, formatter, thrown);
+            LogRecord record = generateMessage(source, loggerName, message, params, formatter, thrown);
             processMessage(record);
         }
     }
@@ -95,6 +101,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * @param audit The audit record
      * @param header True if is header
      */
+    @Override
     public void notifyRecordFlushed(final AuditRecord audit, final AuditLogFormatter formatter, final boolean header) {
         LogRecord record = generateMessage(audit, formatter, header);
         if ( record != null )
@@ -106,6 +113,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      *
      * @param evt The property update event
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         if ( PROP_BATCH.equals( evt.getPropertyName() ) ) {
             auditOnCreate.set(!Boolean.parseBoolean((String)evt.getNewValue()));
@@ -126,6 +134,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Generate a LogRecord for the AuditDetailMessage.
      *
      * @param source source that generated the log
+     * @param loggerName the logger name to use, or null
      * @param message the audit detail message
      * @param params message parameters
      * @param formatter the logging formatter to handle the message formatting
@@ -134,6 +143,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      */
     @SuppressWarnings("unchecked")
     private LogRecord generateMessage(final String source,
+                                      final String loggerName,
                                       final AuditDetailMessage message,
                                       final String[] params,
                                       final AuditLogFormatter formatter,
@@ -141,7 +151,11 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
 //        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
         AuditLogRecord record = new AuditLogRecord(message.getLevel(), formatter.formatDetail(message));
 
-        record.setLoggerName(source);
+        if (loggerName != null) {
+            record.setLoggerName(loggerName);
+        } else {
+            record.setLoggerName(source);
+        }
         if (thrown != null)
             record.setThrown(thrown);
 
@@ -189,13 +203,17 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
             record = new AuditLogRecord(audit.getLevel(), formatter.format(audit, header));
 
         if ( record != null ) {
-            // TODO move this to the AuditRecord subclasses
-            if ( audit instanceof MessageSummaryAuditRecord) {
-                record.setLoggerName("com.l7tech.server.message");
-            } else if ( audit instanceof AdminAuditRecord ) {
-                record.setLoggerName("com.l7tech.server.admin");
+            if (audit.getLoggerName() != null) {
+                record.setLoggerName(audit.getLoggerName());
             } else {
-                record.setLoggerName("com.l7tech.server");
+                // TODO move this to the AuditRecord subclasses
+                if ( audit instanceof MessageSummaryAuditRecord) {
+                    record.setLoggerName("com.l7tech.server.message");
+                } else if ( audit instanceof AdminAuditRecord ) {
+                    record.setLoggerName("com.l7tech.server.admin");
+                } else {
+                    record.setLoggerName("com.l7tech.server");
+                }
             }
         }
 
@@ -218,10 +236,12 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
             super(level, msg);
         }
 
+        @Override
         public String getSourceClassName() {
             return getLoggerName(); // Use logger name to avoid infer caller expense (Bug #2862)
         }
 
+        @Override
         public String getSourceMethodName() {
             return null;
         }

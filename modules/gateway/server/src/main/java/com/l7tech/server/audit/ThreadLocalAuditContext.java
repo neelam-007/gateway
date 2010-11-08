@@ -38,8 +38,8 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable exception) {
-        threadLocalDelegate.get().addDetail(detail, source, exception);
+    public void addDetail(AuditDetail detail, Object source, Throwable exception, String loggerName) {
+        threadLocalDelegate.get().addDetail(detail, source, exception, loggerName);
     }
 
     @Override
