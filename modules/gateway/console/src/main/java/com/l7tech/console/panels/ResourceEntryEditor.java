@@ -187,7 +187,7 @@ public class ResourceEntryEditor extends JDialog {
 
         // support Enter and Esc keys
         Utilities.setEscAction(this, cancelButton);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         Utilities.setButtonAccelerator(this, helpButton, KeyEvent.VK_F1);
         setMinimumSize( getContentPane().getMinimumSize() );
 
