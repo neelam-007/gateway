@@ -284,12 +284,17 @@ class GlobalResourceImportSearchStep extends GlobalResourceImportWizardStepPanel
         if ( directory.isDirectory() ) {
             final File[] files = directory.listFiles( filter );
             if ( files != null ) {
-                for ( final File file : files ) {
-                    final ResourceInputSource resourceInfo = getContext().newResourceInputSource( file );
-                    if ( resourceInputTableModel.getRowIndex( resourceInfo ) == -1 ) {
-                        resourceInputTableModel.addRow( resourceInfo );
+                SwingUtilities.invokeLater( new Runnable(){
+                    @Override
+                    public void run() {
+                        for ( final File file : files ) {
+                            final ResourceInputSource resourceInfo = getContext().newResourceInputSource( file );
+                            if ( resourceInputTableModel.getRowIndex( resourceInfo ) == -1 ) {
+                                resourceInputTableModel.addRow( resourceInfo );
+                            }
+                        }
                     }
-                }
+                } );
 
                 if ( processSubdirectories ) {
                     final File[] directories = directory.listFiles( new FilenameFilter(){
@@ -314,7 +319,12 @@ class GlobalResourceImportSearchStep extends GlobalResourceImportWizardStepPanel
                 }
             }
         } else if ( directory.exists() && filter.accept( directory.getParentFile(), directory.getName() )) {
-            resourceInputTableModel.addRow( getContext().newResourceInputSource( directory ) );
+            SwingUtilities.invokeLater( new Runnable(){
+                @Override
+                public void run() {
+                    resourceInputTableModel.addRow( getContext().newResourceInputSource( directory ) );
+                }
+            } );
         }
     }
 
