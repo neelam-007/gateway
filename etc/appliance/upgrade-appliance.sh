@@ -54,3 +54,6 @@ chmod 660 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
 # process controller runs as layer7 on appliance, gateway shouldn't have any access to its files
 find /opt/SecureSpan/Controller/etc -user gateway -exec chown layer7 '{}' \;
 find /opt/SecureSpan/Controller/etc -group gateway -exec chgrp layer7 '{}' \;
+
+# re-enable IPv6 modules
+grep -v "alias ipv6 off" /etc/modprobe.conf | grep -v "alias net-pf-10 off" > /etc/modprobe.conf
