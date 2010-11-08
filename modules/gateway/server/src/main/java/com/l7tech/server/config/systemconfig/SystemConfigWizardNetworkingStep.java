@@ -6,6 +6,7 @@ import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.common.io.InetAddressUtil;
 import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.text.MessageFormat;
 import java.util.*;
@@ -81,7 +82,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
     private static final String CONFIGURE_IPV6 = EOL + "Would you like to configure IPv6 networking?";
     private static final String CONFIGURE_IPV6_AUTO = EOL + "Enable IPv6 auto-configuration for this interface?";
     private static final String CONFIGURE_IPV6_DHCP = EOL + "Enable DHCPv6 for this interface?";
-    private static final String CONFIGURE_IPV6_STATIC = EOL + "Add static IPv6 address(es) for this interface?";
+    private static final String CONFIGURE_IPV6_STATIC_FIRST = EOL + "Add static IPv6 address(es) for this interface?";
+    private static final String CONFIGURE_IPV6_STATIC_MORE = EOL + "Add more static IPv6 address(es) for this interface?";
 
     private static final String HEADER_BOOTPROTO = "-- Boot Protocol --" + EOL;
     private static final String PROMPT_STATIC_NIC = NetworkingConfigurationBean.STATIC_BOOT_PROTO + " - all configuration is fixed" + EOL;
@@ -271,8 +273,10 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
     private void doIpv6ConfigPrompts(NetworkingConfigurationBean.InterfaceConfig ifConfig) throws IOException, WizardNavigationException {
         ifConfig.setIpv6AutoConf(getConfirmationFromUser(CONFIGURE_IPV6_AUTO, "yes"));
         ifConfig.setIpv6Dhcp(getConfirmationFromUser(CONFIGURE_IPV6_DHCP, "no"));
-        while (getConfirmationFromUser(CONFIGURE_IPV6_STATIC, "yes")) {
+        String prompt = CONFIGURE_IPV6_STATIC_FIRST;
+        while (getConfirmationFromUser(prompt, "yes")) {
             ifConfig.addIpv6Address(getIpAddress(ifConfig, IpProtocol.IPv6));
+            prompt = ifConfig.getIpv6Addresses().isEmpty() ? CONFIGURE_IPV6_STATIC_FIRST : CONFIGURE_IPV6_STATIC_MORE;
         }
     }
 
@@ -381,15 +385,26 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
         List<InterfaceAddress> addresses = ifConfig.getInterfaceAddresses();
         String currentFirstAddress = null;
         if (!addresses.isEmpty()) {
-            List<String> stringAddresses = new ArrayList<String>();
+            List<InetAddress> matchingAddresses = new ArrayList<InetAddress>();
             for (InterfaceAddress address : addresses) {
-                String strAddress = address.getAddress().getHostAddress();
-                if ( (ipProtocol.validateAddress(strAddress)).isEmpty()) {
-                    stringAddresses.add(strAddress);
+                InetAddress addr = address.getAddress();
+                if (ipProtocol.validateAddress(InetAddress.getByAddress(addr.getAddress()).getHostAddress()).isEmpty()) {
+                    matchingAddresses.add(addr);
                 }
             }
-            if (! stringAddresses.isEmpty())
-                currentFirstAddress = stringAddresses.get(0);
+
+            if (!matchingAddresses.isEmpty()) {
+                if (ipProtocol == IpProtocol.IPv6) {
+                    for (InetAddress addr : matchingAddresses) {
+                        if (addr.isLinkLocalAddress()) continue;
+                        currentFirstAddress = InetAddress.getByAddress(addr.getAddress()).getHostAddress();
+                        break;
+                    }
+                }
+
+                if (currentFirstAddress == null)
+                    currentFirstAddress = InetAddress.getByAddress(matchingAddresses.get(0).getAddress()).getHostAddress();
+            }
         }
 
         boolean isValid;
