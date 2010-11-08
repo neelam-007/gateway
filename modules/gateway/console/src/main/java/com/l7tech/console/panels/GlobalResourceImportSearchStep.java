@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -300,7 +301,14 @@ class GlobalResourceImportSearchStep extends GlobalResourceImportWizardStepPanel
 
                     if ( directories != null ) {
                         for ( final File dir : directories ) {
-                            findSchemas( dir, filter, true );
+                            try {
+                                final File canonicalDir = dir.getCanonicalFile();
+                                if ( directory.equals( canonicalDir.getParentFile() ) ) {
+                                    findSchemas( dir, filter, true );
+                                }
+                            } catch ( IOException e ) {
+                                logger.log( Level.WARNING, "Error processing directory '"+dir.getAbsolutePath()+"'", e );
+                            }
                         }
                     }
                 }
