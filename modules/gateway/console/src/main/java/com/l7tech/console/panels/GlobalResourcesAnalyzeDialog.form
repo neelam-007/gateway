@@ -238,7 +238,9 @@
                   </scrollpane>
                   <scrollpane id="f6223">
                     <constraints>
-                      <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <minimum-size width="-1" height="32"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
@@ -259,7 +261,9 @@
                   </component>
                   <scrollpane id="43481">
                     <constraints>
-                      <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <minimum-size width="-1" height="32"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
