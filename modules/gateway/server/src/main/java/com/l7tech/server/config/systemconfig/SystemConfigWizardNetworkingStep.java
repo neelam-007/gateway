@@ -123,6 +123,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
                     if (!isValid) {
                         printText("Invalid default gateway IP address: " + EOL);
                         printText(errors);
+                        printText(EOL);
                     }
                 } while (!isValid);
 
