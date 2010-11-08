@@ -155,7 +155,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             try {
                 //TODO [steve] only process one level of dependency, no need to traverse the entire tree
                 final Map<String,ResourceHolder> processed = new HashMap<String,ResourceHolder>();
-                processResource( context, mainResource, type, true, processed);
+                processResource( context, mainResource, type, null, true, processed);
                 if ( processed.get(uriString) != null && processed.get(uriString).isPersist() ) {
                     // treat as missing since a relative URI had to be updated to resolve the dependency
                     missingDependencies = true;
@@ -286,7 +286,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             ResourceDocument resourceDocument = null;
             try {
                 resourceDocument = resourceInputSource.asResourceDocument();
-                processResource( context, resourceDocument, null, true, processedResources );
+                processResource( context, resourceDocument, null, null, true, processedResources );
             } catch ( SAXException e ) {
                 handleResourceError( context, resourceInputSource.getUri(), resourceDocument, e, processedResources );
             } catch ( IOException e ) {
@@ -611,6 +611,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     private static void processResource( final GlobalResourceImportContext context,
                                          final ResourceDocument resourceDocument,
                                          final ResourceType resourceType,  // resource type if known, else null
+                                         final String resourceKey, // Public ID for a DTD, Target Namespace for schema, may be null
                                          final boolean processDependencies,
                                          final Map<String, ResourceHolder> processedResources ) throws SAXException, IOException {
 
@@ -631,7 +632,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             Document schemaDoc = null;
             switch ( contentResourceType ) {
                 case XML_SCHEMA:
-                    processedResources.put( resourceUriStr, context.newSchemaResourceHolder(resourceDocument, XmlUtil.getSchemaTNS(content), null) ); // put early to prevent circular processing
+                    processedResources.put( resourceUriStr, context.newSchemaResourceHolder(resourceDocument, resourceKey!=null?resourceKey:XmlUtil.getSchemaTNS(content), null) ); // put early to prevent circular processing
                     schemaDoc = XmlUtil.parse(
                             new InputSource( resourceUriStr ){{setCharacterStream( new StringReader(content) );}},
                             new DefaultHandler2(){
@@ -661,7 +662,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     } );
                     break;
                 case DTD:
-                    processedResources.put( resourceUriStr, context.newDTDResourceHolder(resourceDocument, null, null) ); // put early to prevent circular processing
+                    processedResources.put( resourceUriStr, context.newDTDResourceHolder(resourceDocument, resourceKey, null) ); // put early to prevent circular processing
                     if (processDependencies) DtdUtils.processReferences( resourceUriStr, content, new DtdUtils.Resolver(){
                         @Override
                         public Pair<String, String> call( final String publicId, final String baseUri, final String systemId ) throws IOException {
@@ -709,7 +710,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         }
 
                         // Recursively resolve the schemas dependencies.
-                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, true, processedResources );
+                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, dependency.targetNamespace, true, processedResources );
                         continue;
                     }
                 } else if ( dependency.uri != null && !dependency.uri.isEmpty() ) {
@@ -728,7 +729,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         }
 
                         // Recursively resolve the dependencies.
-                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, true, processedResources );
+                        processResource( context, dependencyDocument, ResourceType.XML_SCHEMA, null, true, processedResources );
                         continue;
                     }
                 }
@@ -822,7 +823,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     dependencies.add( DependencyInfo.fromResourceDocument( ResourceType.DTD, dtdResourceDocument ) );
                 }
 
-                processResource( context, dtdResourceDocument, ResourceType.DTD, false, processedResources );
+                processResource( context, dtdResourceDocument, ResourceType.DTD, publicId, false, processedResources );
             } else {
                 throw new IOException("Resource not found for resource "+describe( baseURI, systemId, publicId, false, null ));
             }
