@@ -268,7 +268,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                 </L7p:assertionComment>
             </wsp:OneOrMore>
             <L7p:CommentAssertion>
-                <L7p:Comment stringValue="Add decoration requirements if needed."/>
+                <L7p:Comment stringValue="Add WS-Security decoration for the RSTR SOAP response as needed."/>
             </L7p:CommentAssertion>
             <L7p:HardcodedResponse>
                 <L7p:AssertionComment assertionComment="included">
