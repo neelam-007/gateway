@@ -39,6 +39,7 @@ public class RstSoapMessageProcessor {
     public final static String HAS_WS_ADDRESSING_ACTION = "has_ws_addressing_action";
     public final static String WS_ADDRESSING_ACTION = "ws_addressing_action";
     public final static String HAS_REQUEST_SECURITY_TOKEN = "has_request_security_token_element";
+    public final static String HAS_TOKEN_TYPE = "has_rst_token_type";
     public final static String TOKEN_TYPE = "rst_token_type";
     public final static String HAS_REQUEST_TYPE = "has_rst_request_type";
     public final static String REQUEST_TYPE = "rst_request_type";
@@ -188,7 +189,15 @@ public class RstSoapMessageProcessor {
                 elementName = SoapConstants.WST_TOKENTYPE;
                 Element tokenTypeEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_TOKENTYPE);
                 if (tokenTypeEl != null) {
-                    parameters.put(TOKEN_TYPE, DomUtils.getTextValue(tokenTypeEl));
+                    String tokenTypeValue = DomUtils.getTextValue(tokenTypeEl);
+                    if (tokenTypeValue != null && !tokenTypeValue.trim().isEmpty()) {
+                        parameters.put(HAS_TOKEN_TYPE, "true");
+                        parameters.put(TOKEN_TYPE, DomUtils.getTextValue(tokenTypeEl));
+                    } else {
+                        parameters.put(HAS_TOKEN_TYPE, "false");
+                    }
+                } else {
+                    parameters.put(HAS_TOKEN_TYPE, "false");
                 }
 
                 // Find RequestType (Required)

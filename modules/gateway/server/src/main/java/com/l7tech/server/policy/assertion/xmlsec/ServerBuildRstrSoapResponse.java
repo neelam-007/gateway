@@ -300,9 +300,12 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         String securityTokenXml = tokenInfo.get(TOKEN_XML);
 
         // Build TokenType
-        rstrBuilder
-            .append("<wst:TokenType>")
-            .append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("</wst:TokenType>\n");
+        boolean hasTokeType = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_TOKEN_TYPE));
+        if (hasTokeType) {
+            rstrBuilder
+                .append("<wst:TokenType>")
+                .append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("</wst:TokenType>\n");
+        }
 
         // Build RequestedSecurityToken with a security token inside.
         rstrBuilder
@@ -349,11 +352,20 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
             if (isSCT) { // If it is for SecurityContextToken, then include a Reference element.
                 String sctWsuId = tokenInfo.get(SCT_WSU_ID);
-                rstrBuilder.append("<wsse:Reference URI=\"#").append(sctWsuId).append("\" ValueType=\"").append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("\"/>\n");
+                rstrBuilder.append("<wsse:Reference URI=\"#").append(sctWsuId).append("\"");
+                if (hasTokeType) {
+                    rstrBuilder.append(" ValueType=\"").append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("\"");
+                }
+                rstrBuilder.append("/>\n");
             } else { // If it is a SAML token, then include a KeyIdentifier.
                 String valueType = tokenInfo.get(SAML_VALUE_TYPE);
                 String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
-                rstrBuilder.append("<wsse:KeyIdentifier ValueType=\"").append(valueType).append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
+
+                rstrBuilder.append("<wsse:KeyIdentifier");
+                if (hasTokeType) {
+                    rstrBuilder.append(" ValueType=\"").append(valueType);
+                }
+                rstrBuilder.append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
             }
             rstrBuilder
                 .append("</wsse:SecurityTokenReference>\n")
@@ -368,11 +380,21 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
             if (isSCT) { // If it is for SecurityContextToken, then include a Reference element.
                 String sctIdentifier = tokenInfo.get(SCT_IDENTIFIER);
-                rstrBuilder.append("<wsse:Reference URI=\"").append(sctIdentifier).append("\" ValueType=\"").append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("\"/>\n");
+
+                rstrBuilder.append("<wsse:Reference URI=\"").append(sctIdentifier).append("\"");
+                if (hasTokeType) {
+                    rstrBuilder.append(" ValueType=\"").append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("\"");
+                }
+                rstrBuilder.append("/>\n");
             } else { // If it is a SAML token, then include a KeyIdentifier.
                 String valueType = tokenInfo.get(SAML_VALUE_TYPE);
                 String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
-                rstrBuilder.append("<wsse:KeyIdentifier ValueType=\"").append(valueType).append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
+
+                rstrBuilder.append("<wsse:KeyIdentifier");
+                if (hasTokeType) {
+                    rstrBuilder.append(" ValueType=\"").append(valueType);
+                }
+                rstrBuilder.append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
             }
             rstrBuilder
                 .append("</wsse:SecurityTokenReference>\n")
