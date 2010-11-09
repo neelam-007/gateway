@@ -267,31 +267,9 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                     </L7p:Properties>
                 </L7p:assertionComment>
             </wsp:OneOrMore>
-            <wsp:All wsp:Usage="Required">
-                <L7p:AddWsAddressing>
-                    <L7p:Action stringValue="${responseBuilder.rstrWsaAction}"/>
-                    <L7p:Destination stringValue=""/>
-                    <L7p:FaultEndpoint stringValue=""/>
-                    <L7p:MessageId stringValue="1e3c1503-217f-4128-b1aa-58fa1a9f180b"/>
-                    <L7p:OtherTargetMessageVariable stringValue="responseBuilder.rstrResponse"/>
-                    <L7p:RelatesToMessageId stringValue=""/>
-                    <L7p:ReplyEndpoint stringValue=""/>
-                    <L7p:SourceEndpoint stringValue=""/>
-                    <L7p:Target target="OTHER"/>
-                    <L7p:WsaNamespaceUri stringValue="${responseBuilder.wsaNamespace}"/>
-                </L7p:AddWsAddressing>
-                <L7p:CommentAssertion>
-                    <L7p:Comment stringValue="Add more decoration requirements in this branch"/>
-                </L7p:CommentAssertion>
-                <L7p:assertionComment>
-                    <L7p:Properties mapValue="included">
-                        <L7p:entry>
-                            <L7p:key stringValue="LEFT.COMMENT"/>
-                            <L7p:value stringValue="RSTR Response Decoration"/>
-                        </L7p:entry>
-                    </L7p:Properties>
-                </L7p:assertionComment>
-            </wsp:All>
+            <L7p:CommentAssertion>
+                <L7p:Comment stringValue="Add decoration requirements if needed."/>
+            </L7p:CommentAssertion>
             <L7p:HardcodedResponse>
                 <L7p:AssertionComment assertionComment="included">
                     <L7p:Properties mapValue="included">
