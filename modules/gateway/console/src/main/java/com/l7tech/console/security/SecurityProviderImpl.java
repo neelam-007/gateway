@@ -3,14 +3,12 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.util.BuildInfo;
+import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.*;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.AdminContextFactory;
@@ -64,6 +62,7 @@ public class SecurityProviderImpl extends SecurityProvider
         permissiveSSLTrustFailureHandler = getTrustFailureHandler(hostBuffer);
     }
 
+    @Override
     public void acceptServerCertificate( final X509Certificate certificate ) {
         certsByHost.values().remove(certificate);
     }
@@ -72,6 +71,7 @@ public class SecurityProviderImpl extends SecurityProvider
      * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
      */
+    @Override
     public void login(PasswordAuthentication creds, String host, boolean validate, String newPassword)
             throws LoginException, VersionException, InvalidPasswordException {
         boolean authenticated = false;
@@ -81,8 +81,8 @@ public class SecurityProviderImpl extends SecurityProvider
         ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
         try {
             setPermissiveSslTrustHandler(host, validate);
-
-            chire.setSession( getHost(host), getPort(host), null );
+            Pair<String, Integer> hostAndPort = getHostAndPort(host);
+            chire.setSession( hostAndPort.left, hostAndPort.right, null );
             AdminLogin adminLogin = getAdminLoginRemoteReference();
 
             // dummy call, just to establish SSL connection (if none)
@@ -170,6 +170,7 @@ public class SecurityProviderImpl extends SecurityProvider
     }
 
     // Called by the Applet to connect to the server
+    @Override
     public void login(String sessionId, String host)
             throws LoginException, VersionException {
         boolean authenticated = false;
@@ -179,7 +180,8 @@ public class SecurityProviderImpl extends SecurityProvider
         try {
             adminLogin = getAdminLoginRemoteReference();
 
-            chire.setSession( getHost(host), getPort(host), null );
+            Pair<String, Integer> hostAndPort = getHostAndPort(host);
+            chire.setSession( hostAndPort.left, hostAndPort.right, null );
             AdminLoginResult result = adminLogin.resume(sessionId);
 
             String remoteVersion = checkRemoteProtocolVersion(result);
@@ -217,7 +219,8 @@ public class SecurityProviderImpl extends SecurityProvider
         TopComponents.getInstance().setSsgURL(URI.create("http://" + remoteHost));
 
         AdminContextFactory factory = applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
-        AdminContext ac = factory.buildAdminContext( getHost(remoteHost), getPort(remoteHost), sessionCookie );
+        Pair<String, Integer> hostAndPort = getHostAndPort(remoteHost);
+        AdminContext ac = factory.buildAdminContext( hostAndPort.left, hostAndPort.right, sessionCookie );
 
         synchronized (this) {
             this.user = user;
@@ -232,6 +235,7 @@ public class SecurityProviderImpl extends SecurityProvider
     /**
      * Change admin password.
      */
+    @Override
     public void changePassword(final PasswordAuthentication auth, final PasswordAuthentication newAuth)
             throws LoginException {
         if ( Registry.getDefault().isAdminContextPresent() ) {
@@ -244,6 +248,7 @@ public class SecurityProviderImpl extends SecurityProvider
     /**
      * Logoff the session, explicitely
      */
+    @Override
     public void logoff() {
         LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
         applicationContext.publishEvent(le);
@@ -253,10 +258,12 @@ public class SecurityProviderImpl extends SecurityProvider
             final AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
             if (adminLogin != null) {
                 new Thread(new Runnable() {
+                    @Override
                     public void run() {
                         ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
                         try {
-                            chire.setSession( getHost(host), getPort(host), cookie );
+                            Pair<String, Integer> hostAndPort = getHostAndPort(host);
+                            chire.setSession( hostAndPort.left, hostAndPort.right, cookie );
                             adminLogin.logout();
                         } catch (RuntimeException e) {
                             logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
@@ -285,6 +292,7 @@ public class SecurityProviderImpl extends SecurityProvider
      *          if thrown by application applicationContext methods
      * @see org.springframework.beans.factory.BeanInitializationException
      */
+    @Override
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         applicationContext = ctx;
     }
@@ -294,6 +302,7 @@ public class SecurityProviderImpl extends SecurityProvider
      *
      * @param event the event to respond to
      */
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)event;
@@ -306,6 +315,7 @@ public class SecurityProviderImpl extends SecurityProvider
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SecurityProviderImpl.class.getName());
+    private static final int DEFAULT_PORT= 8443;
     private static final String INVALID_PEER_HOST_PREFIX = "Invalid peer: ";
 
     private final SSLTrustFailureHandler permissiveSSLTrustFailureHandler;
@@ -322,7 +332,7 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     private void setPermissiveSslTrustHandler(String host, boolean validate) {
         hostBuffer.setLength(0);
-        if(validate) hostBuffer.append(getHost(host));
+        if(validate) hostBuffer.append(getHostAndPort(host).left);
         getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(permissiveSSLTrustFailureHandler);
     }
 
@@ -340,6 +350,7 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     private SSLTrustFailureHandler getTrustFailureHandler(final StringBuffer hostBuffer) {
         return new SSLTrustFailureHandler() {
+            @Override
             public boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean failure) {
                 if (chain == null || chain.length == 0) {
                     return false;
@@ -409,34 +420,40 @@ public class SecurityProviderImpl extends SecurityProvider
         resetCredentials();
     }
 
-    private String getHost(String hostAndPossiblyPort) {
-        String host = hostAndPossiblyPort;
+    private Pair<String,Integer> getHostAndPort(String hostAndPossiblyPort) {
+        String host;
+        Integer port = DEFAULT_PORT;
 
-        if (host != null) {
-            int sep = host.indexOf(':');
-            if (sep > 0) {
-                host = host.substring(0, sep);
-            }
-        }
-
-        return host;
-    }
-
-    private int getPort(String hostAndPossiblyPort) {
-        int port = 8443;
-
-        if (hostAndPossiblyPort != null) {
-            int sep = hostAndPossiblyPort.indexOf(':');
-            if (sep > 0) {
+        int lastColon = hostAndPossiblyPort.lastIndexOf(':');
+        if (lastColon < 0) {
+            host = hostAndPossiblyPort;
+        } else if ( hostAndPossiblyPort.startsWith("[")) {
+            if (hostAndPossiblyPort.lastIndexOf(']') == lastColon -1 ) {
+                host = hostAndPossiblyPort.substring(0, lastColon);
                 try {
-                    port = Integer.parseInt(hostAndPossiblyPort.substring(sep+1).trim());
+                    port = Integer.valueOf(hostAndPossiblyPort.substring(lastColon +1, hostAndPossiblyPort.length()));
+                } catch (NumberFormatException e1) {
+                    // use default port
+                } catch (ArrayIndexOutOfBoundsException e2) {
+                    // use default port
                 }
-                catch(NumberFormatException nfe) {
-                    // use default
+            } else {
+                host = hostAndPossiblyPort;
+            }
+        } else {
+            if (InetAddressUtil.isValidIpv6Address(hostAndPossiblyPort)) {
+                host = "[" + hostAndPossiblyPort + "]";
+            } else {
+                host = hostAndPossiblyPort.substring(0, lastColon);
+                try {
+                    port = Integer.valueOf(hostAndPossiblyPort.substring(lastColon+1, hostAndPossiblyPort.length()));
+                } catch (NumberFormatException e1) {
+                    // use default port
+                } catch (ArrayIndexOutOfBoundsException e2) {
+                    // use default port
                 }
             }
         }
-
-        return port;
+        return new Pair<String, Integer>(host, port);
     }
 }
