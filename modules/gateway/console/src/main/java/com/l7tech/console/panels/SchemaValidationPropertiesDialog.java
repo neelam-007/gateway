@@ -446,6 +446,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     schemaNames.add(new StringHolder(schemaEntry.getUri(), 128)); //128 is the old limit before it was extended to 4096
                 }
             }
+            Collections.sort( schemaNames );
             schemaNames.add( GLOBAL_SCHEMA_NOT_SET );
 
             globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new StringHolder[schemaNames.size()])));
@@ -461,7 +462,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
     }
 
-    private static class StringHolder{
+    private static class StringHolder implements Comparable<StringHolder> {
         private final String value;
         private final int maxSize;
 
@@ -495,6 +496,11 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         @Override
         public int hashCode() {
             return value.hashCode();
+        }
+
+        @Override
+        public int compareTo( final StringHolder o ) {
+            return value.compareTo( o.value );
         }
     }
 
