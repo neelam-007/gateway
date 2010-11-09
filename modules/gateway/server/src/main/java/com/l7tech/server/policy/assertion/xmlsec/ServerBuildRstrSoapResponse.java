@@ -43,6 +43,7 @@ import java.util.logging.Logger;
  */
 public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServerAssertion<BuildRstrSoapResponse> {
     private static final Logger logger = Logger.getLogger(ServerBuildRstrSoapResponse.class.getName());
+    private static final int DEFAULT_KEY_SIZE = 256;
 
     private static final String IS_SCT = "token.info.is.sct";
     private static final String TOKEN_XML = "token.info.token.xml.content";
@@ -450,6 +451,10 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             int clientKeySize = session.getKeySize();
             int serverKeySize = assertion.getKeySize();  // If it is 0, it means automatically using the client key size.
             int biggerKeySize = Math.max(clientKeySize, serverKeySize);
+
+            if (biggerKeySize == 0) {
+                biggerKeySize = DEFAULT_KEY_SIZE;
+            }
 
             session.setKeySize(biggerKeySize);
 
